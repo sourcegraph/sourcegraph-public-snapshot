@@ -1,29 +1,32 @@
-import { boolean } from '@storybook/addon-knobs'
-import { Meta } from '@storybook/react'
-import React from 'react'
+import type { Meta, StoryFn } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { BrandedStory } from '../../stories/BrandedStory'
 
 import { LoadingSpinner } from './LoadingSpinner'
 
 const config: Meta = {
     title: 'wildcard/LoadingSpinner',
+    component: LoadingSpinner,
 
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
 
     parameters: {
         component: LoadingSpinner,
         chromatic: {
             enableDarkMode: true,
+            disableSnapshot: false,
         },
+    },
+    argTypes: {
+        inline: {
+            control: { type: 'boolean' },
+        },
+    },
+    args: {
+        inline: true,
     },
 }
 
 export default config
 
-export const LoadingSpinnerExample = () => <LoadingSpinner inline={boolean('inline', true)} />
+export const Simple: StoryFn = (args = {}) => <LoadingSpinner inline={args.inline} />

@@ -1,4 +1,4 @@
-import { RouteComponentProps } from 'react-router'
+import type React from 'react'
 
 interface Conditional<C extends object> {
     /** Optional condition under which this item should be used */
@@ -19,15 +19,14 @@ export interface ComponentDescriptor<C extends object = {}> extends Conditional<
 }
 
 /**
- * Configuration for a route.
+ * Configuration for a react-router 6 route.
  *
  * @template C Context information that is passed to `render` and `condition`
  */
-export interface RouteDescriptor<C extends object = {}, P = any> extends Conditional<C> {
-    /** Path of this route (appended to the current match) */
+export interface RouteV6Descriptor<C extends object = {}> extends Conditional<C> {
     readonly path: string
+    readonly render: (props: C) => React.ReactNode
     readonly exact?: boolean
-    readonly render: (props: C & RouteComponentProps<P>) => React.ReactNode
 }
 
 export interface NavGroupDescriptor<C extends object = {}> extends Conditional<C> {
@@ -57,6 +56,9 @@ export interface NavItemDescriptor<C extends object = {}> extends Conditional<C>
 
     /** The link source to determine the render strategy (react-dom link component or <a>) */
     readonly source?: 'server' | 'client'
+
+    /** The text of the item calculated dynamically passing the context*/
+    readonly dynamicLabel?: (context: C) => React.ReactNode
 }
 
 export interface NavItemWithIconDescriptor<C extends object = {}> extends NavItemDescriptor<C>, WithIcon {}

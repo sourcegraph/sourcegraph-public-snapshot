@@ -1,23 +1,34 @@
-import { boolean, number } from '@storybook/addon-knobs'
 import { useState } from '@storybook/addons'
-import { storiesOf } from '@storybook/react'
-import React from 'react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
 
-const { add } = storiesOf('web/batches/close/BatchChangeCloseAlert', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/close/BatchChangeCloseAlert',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
-    })
+    },
+    argTypes: {
+        viewerCanAdminister: {
+            control: { type: 'boolean' },
+        },
+    },
+    args: {
+        viewerCanAdminister: true,
+    },
+}
 
-add('Has open changesets', () => {
+export default config
+
+export const HasOpenChangesets: StoryFn = args => {
     const [closeChangesets, setCloseChangesets] = useState(false)
-    const totalCount = number('totalCount', 10)
     return (
         <WebStory>
             {props => (
@@ -25,17 +36,28 @@ add('Has open changesets', () => {
                     {...props}
                     batchChangeID="change123"
                     batchChangeURL="/users/john/batch-changes/change123"
-                    totalCount={totalCount}
+                    totalCount={args.totalCount}
                     closeChangesets={closeChangesets}
                     setCloseChangesets={setCloseChangesets}
-                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    viewerCanAdminister={args.viewerCanAdminister}
                     closeBatchChange={() => Promise.resolve()}
                 />
             )}
         </WebStory>
     )
-})
-add('No open changesets', () => {
+}
+HasOpenChangesets.argTypes = {
+    totalCount: {
+        control: { type: 'number' },
+    },
+}
+HasOpenChangesets.args = {
+    totalCount: 10,
+}
+
+HasOpenChangesets.storyName = 'Has open changesets'
+
+export const NoOpenChangesets: StoryFn = args => {
     const [closeChangesets, setCloseChangesets] = useState(false)
     return (
         <WebStory>
@@ -47,10 +69,12 @@ add('No open changesets', () => {
                     totalCount={0}
                     closeChangesets={closeChangesets}
                     setCloseChangesets={setCloseChangesets}
-                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    viewerCanAdminister={args.viewerCanAdminister}
                     closeBatchChange={() => Promise.resolve()}
                 />
             )}
         </WebStory>
     )
-})
+}
+
+NoOpenChangesets.storyName = 'No open changesets'

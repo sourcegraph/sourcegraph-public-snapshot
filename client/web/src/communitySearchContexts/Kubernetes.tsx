@@ -2,8 +2,8 @@ import React from 'react'
 
 import { SearchPatternType } from '../graphql-operations'
 
-import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
-import { CommunitySearchContextMetadata } from './types'
+import { CommunitySearchContextPage, type CommunitySearchContextPageProps } from './CommunitySearchContextPage'
+import type { CommunitySearchContextMetadata } from './types'
 
 export const kubernetes: CommunitySearchContextMetadata = {
     title: 'Kubernetes',
@@ -12,32 +12,31 @@ export const kubernetes: CommunitySearchContextMetadata = {
     description: 'Explore Kubernetes repositories on GitHub. Search with examples below.',
     examples: [
         {
-            title:
-                'Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time',
+            title: 'Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time',
             query: 'file:pod.yaml content:"kind: ReplicationController"',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
         },
         {
             title: 'Look for outdated `apiVersions` of admission webhooks',
             description: `This apiVersion has been deprecated in favor of "admissionregistration.k8s.io/v1".
             You can read more about this at https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/`,
             query: 'content:"apiVersion: admissionregistration.k8s.io/v1beta1"',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
         },
         {
             title: 'Find Prometheus usage in YAML files',
             query: 'lang:yaml prom/prometheus',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
         },
         {
             title: 'Search for examples of the sidecar pattern in Go',
             query: 'lang:go sidecar',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
         },
         {
             title: 'Browse diffs for recent code changes',
             query: 'type:diff after:"1 week ago"',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
         },
     ],
     homepageDescription: 'Search within the Kubernetes community.',
@@ -45,5 +44,5 @@ export const kubernetes: CommunitySearchContextMetadata = {
 }
 
 export const KubernetesCommunitySearchContextPage: React.FunctionComponent<
-    Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>
+    React.PropsWithChildren<Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>>
 > = props => <CommunitySearchContextPage {...props} communitySearchContextMetadata={kubernetes} />

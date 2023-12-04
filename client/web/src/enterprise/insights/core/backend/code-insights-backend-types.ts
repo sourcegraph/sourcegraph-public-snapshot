@@ -1,16 +1,46 @@
-import { Duration } from 'date-fns'
-import { LineChartContent } from 'sourcegraph'
+import type { Series } from '@sourcegraph/wildcard'
 
-import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import type {
+    CaptureGroupInsight,
+    LangStatsInsight,
+    InsightsDashboardOwner,
+    SearchBasedInsight,
+    ComputeInsight,
+} from '../types'
+import type { InsightContentType, IncompleteDatapointAlert } from '../types/insight/common'
 
-import { ExtensionInsight, Insight, InsightDashboard, CustomInsightDashboard } from '../types'
-import { SearchBasedInsightSeries } from '../types/insight/search-insight'
+export interface CategoricalChartContent<Datum> {
+    data: Datum[]
+    getDatumValue: (datum: Datum) => number
+    getDatumName: (datum: Datum) => string
+    getDatumColor: (datum: Datum) => string | undefined
+    getDatumLink?: (datum: Datum) => string | undefined
+    getCategory?: (datum: Datum) => string | undefined
+}
+
+export interface BackendInsightSeries<Datum> extends Series<Datum> {
+    alerts: IncompleteDatapointAlert[]
+}
+
+export interface SeriesChartContent<Datum> {
+    series: BackendInsightSeries<Datum>[]
+}
+
+export interface InsightCategoricalContent<Datum> {
+    type: InsightContentType.Categorical
+    content: CategoricalChartContent<Datum>
+}
+
+export interface InsightSeriesContent<Datum> {
+    type: InsightContentType.Series
+    series: BackendInsightSeries<Datum>[]
+}
+
+export type InsightContent<Datum> = InsightSeriesContent<Datum> | InsightCategoricalContent<Datum>
 
 export interface DashboardCreateInput {
     name: string
-    visibility: string
-    insightIds?: string[]
-    type?: string
+    owners: InsightsDashboardOwner[]
 }
 
 export interface DashboardCreateResult {
@@ -18,9 +48,14 @@ export interface DashboardCreateResult {
 }
 
 export interface DashboardUpdateInput {
-    previousDashboard: CustomInsightDashboard
     nextDashboardInput: DashboardCreateInput
-    id?: string
+    id: string
+}
+
+export interface AssignInsightsToDashboardInput {
+    id: string
+    prevInsightIds: string[]
+    nextInsightIds: string[]
 }
 
 export interface DashboardUpdateResult {
@@ -28,81 +63,43 @@ export interface DashboardUpdateResult {
 }
 
 export interface DashboardDeleteInput {
-    dashboardSettingKey: string
-    dashboardOwnerId: string
-    id?: string
+    id: string
 }
 
-export interface FindInsightByNameInput {
-    name: string
-}
+export type MinimalSearchBasedInsightData = Omit<SearchBasedInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
+export type MinimalCaptureGroupInsightData = Omit<CaptureGroupInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
+export type MinimalLangStatsInsightData = Omit<LangStatsInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
+export type MinimalComputeInsightData = Omit<ComputeInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
+
+export type CreationInsightInput =
+    | MinimalSearchBasedInsightData
+    | MinimalCaptureGroupInsightData
+    | MinimalLangStatsInsightData
+    | MinimalComputeInsightData
 
 export interface InsightCreateInput {
-    insight: Insight
-    dashboard: InsightDashboard | null
+    insight: CreationInsightInput
+    dashboardId: string | null
 }
 
 export interface InsightUpdateInput {
-    oldInsight: Insight
-    newInsight: Insight
+    insightId: string
+    nextInsightData: CreationInsightInput
 }
 
-export interface SearchInsightSettings {
-    series: SearchBasedInsightSeries[]
-    step: Duration
-    repositories: string[]
+export interface RemoveInsightFromDashboardInput {
+    insightId: string
+    dashboardId: string
 }
 
-export interface LangStatsInsightsSettings {
-    repository: string
-    otherThreshold: number
-}
-
-export interface CaptureInsightSettings {
-    repositories: string[]
-    query: string
-    step: Duration
-}
-
-export type ReachableInsight = Insight & {
-    owner: {
-        id: string
-        name: string
-    }
+export interface BackendInsightDatum {
+    dateTime: Date
+    value: number
+    link?: string
 }
 
 export interface BackendInsightData {
-    id: string
-    view: {
-        title: string
-        subtitle?: string
-        content: LineChartContent<any, string>[]
-        isFetchingHistoricalData: boolean
-    }
-}
-
-export interface GetBuiltInsightInput<D extends keyof ViewContexts> {
-    insight: ExtensionInsight
-    options: { where: D; context: ViewContexts[D] }
-}
-
-export interface GetSearchInsightContentInput<D extends keyof ViewContexts> {
-    insight: SearchInsightSettings
-    options: {
-        where: D
-        context: ViewContexts[D]
-    }
-}
-
-export interface GetLangStatsInsightContentInput<D extends keyof ViewContexts> {
-    insight: LangStatsInsightsSettings
-    options: {
-        where: D
-        context: ViewContexts[D]
-    }
-}
-
-export interface RepositorySuggestionData {
-    id: string
-    name: string
+    data: InsightContent<any>
+    isFetchingHistoricalData: boolean
+    incompleteAlert: IncompleteDatapointAlert | null
 }

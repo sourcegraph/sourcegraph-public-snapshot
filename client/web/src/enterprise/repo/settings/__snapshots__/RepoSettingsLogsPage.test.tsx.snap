@@ -1,0 +1,568 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`RepoSettingsLogsPage > should render a warning when recording is disabled 1`] = `
+<DocumentFragment>
+  <div
+    class="container mb-3"
+  >
+    <div>
+      <h2
+        class="h2 heading"
+      >
+        <span
+          class="wrapper breadcrumb"
+        >
+          <span
+            class="path"
+          >
+            <span
+              class="text"
+            >
+              Logs and activities
+            </span>
+          </span>
+        </span>
+      </h2>
+    </div>
+  </div>
+  <div
+    class="container"
+  >
+    <div
+      class="wildcardTabs tabContainer"
+      data-orientation="horizontal"
+      data-reach-tabs=""
+      data-testid="wildcard-tabs"
+    >
+      <div
+        class="tablistWrapper"
+      >
+        <div
+          aria-orientation="horizontal"
+          class="tabList"
+          data-reach-tab-list=""
+          data-testid="wildcard-tab-list"
+          role="tablist"
+        >
+          <button
+            aria-controls="tabs--14--panel--0"
+            aria-selected="true"
+            class="medium"
+            data-orientation="horizontal"
+            data-reach-tab=""
+            data-selected=""
+            data-testid="wildcard-tab"
+            id="tabs--14--tab--0"
+            role="tab"
+            tabindex="0"
+            type="button"
+          >
+            <span
+              class="tabLabel"
+            >
+              Command logs
+            </span>
+          </button>
+          <button
+            aria-controls="tabs--14--panel--1"
+            aria-selected="false"
+            class="medium"
+            data-orientation="horizontal"
+            data-reach-tab=""
+            data-testid="wildcard-tab"
+            id="tabs--14--tab--1"
+            role="tab"
+            tabindex="-1"
+            type="button"
+          >
+            <span
+              class="tabLabel"
+            >
+              Sync output
+            </span>
+          </button>
+        </div>
+      </div>
+      <div
+        data-reach-tab-panels=""
+        data-testid="wildcard-tab-panel-list"
+      >
+        <div
+          aria-labelledby="tabs--14--tab--0"
+          data-reach-tab-panel=""
+          data-testid="wildcard-tab-panel"
+          id="tabs--14--panel--0"
+          role="tabpanel"
+          tabindex="0"
+        >
+          <div
+            aria-label="recorded commands"
+          >
+            <div
+              aria-live="polite"
+              class="mt-3"
+              role="alert"
+            >
+              <small>
+                Command recording isn't enabled for this repository.
+              </small>
+               
+              <small>
+                Visit 
+                <a
+                  class=""
+                  href="/help/admin/repo/recording"
+                >
+                  the docs
+                </a>
+                 to learn how to enable command recording.
+              </small>
+            </div>
+          </div>
+        </div>
+        <div
+          aria-labelledby="tabs--14--tab--1"
+          data-reach-tab-panel=""
+          data-testid="wildcard-tab-panel"
+          hidden=""
+          id="tabs--14--panel--1"
+          role="tabpanel"
+          tabindex="-1"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`RepoSettingsLogsPage > should render correctly when there are no recorded commands 1`] = `
+<DocumentFragment>
+  <div
+    class="container mb-3"
+  >
+    <div>
+      <h2
+        class="h2 heading"
+      >
+        <span
+          class="wrapper breadcrumb"
+        >
+          <span
+            class="path"
+          >
+            <span
+              class="text"
+            >
+              Logs and activities
+            </span>
+          </span>
+        </span>
+      </h2>
+    </div>
+  </div>
+  <div
+    class="container"
+  >
+    <div
+      class="wildcardTabs tabContainer"
+      data-orientation="horizontal"
+      data-reach-tabs=""
+      data-testid="wildcard-tabs"
+    >
+      <div
+        class="tablistWrapper"
+      >
+        <div
+          aria-orientation="horizontal"
+          class="tabList"
+          data-reach-tab-list=""
+          data-testid="wildcard-tab-list"
+          role="tablist"
+        >
+          <button
+            aria-controls="tabs--10--panel--0"
+            aria-selected="true"
+            class="medium"
+            data-orientation="horizontal"
+            data-reach-tab=""
+            data-selected=""
+            data-testid="wildcard-tab"
+            id="tabs--10--tab--0"
+            role="tab"
+            tabindex="0"
+            type="button"
+          >
+            <span
+              class="tabLabel"
+            >
+              Command logs
+            </span>
+          </button>
+          <button
+            aria-controls="tabs--10--panel--1"
+            aria-selected="false"
+            class="medium"
+            data-orientation="horizontal"
+            data-reach-tab=""
+            data-testid="wildcard-tab"
+            id="tabs--10--tab--1"
+            role="tab"
+            tabindex="-1"
+            type="button"
+          >
+            <span
+              class="tabLabel"
+            >
+              Sync output
+            </span>
+          </button>
+        </div>
+      </div>
+      <div
+        data-reach-tab-panels=""
+        data-testid="wildcard-tab-panel-list"
+      >
+        <div
+          aria-labelledby="tabs--10--tab--0"
+          data-reach-tab-panel=""
+          data-testid="wildcard-tab-panel"
+          id="tabs--10--panel--0"
+          role="tabpanel"
+          tabindex="0"
+        >
+          <div
+            aria-label="recorded commands"
+          >
+            <p
+              class="my-2"
+            >
+              No recorded commands yet.
+            </p>
+          </div>
+        </div>
+        <div
+          aria-labelledby="tabs--10--tab--1"
+          data-reach-tab-panel=""
+          data-testid="wildcard-tab-panel"
+          hidden=""
+          id="tabs--10--panel--1"
+          role="tabpanel"
+          tabindex="-1"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`RepoSettingsLogsPage > should render correctly when there are recorded commands 1`] = `
+<DocumentFragment>
+  <div
+    class="container mb-3"
+  >
+    <div>
+      <h2
+        class="h2 heading"
+      >
+        <span
+          class="wrapper breadcrumb"
+        >
+          <span
+            class="path"
+          >
+            <span
+              class="text"
+            >
+              Logs and activities
+            </span>
+          </span>
+        </span>
+      </h2>
+    </div>
+  </div>
+  <div
+    class="container"
+  >
+    <div
+      class="wildcardTabs tabContainer"
+      data-orientation="horizontal"
+      data-reach-tabs=""
+      data-testid="wildcard-tabs"
+    >
+      <div
+        class="tablistWrapper"
+      >
+        <div
+          aria-orientation="horizontal"
+          class="tabList"
+          data-reach-tab-list=""
+          data-testid="wildcard-tab-list"
+          role="tablist"
+        >
+          <button
+            aria-controls="tabs--1--panel--0"
+            aria-selected="true"
+            class="medium"
+            data-orientation="horizontal"
+            data-reach-tab=""
+            data-selected=""
+            data-testid="wildcard-tab"
+            id="tabs--1--tab--0"
+            role="tab"
+            tabindex="0"
+            type="button"
+          >
+            <span
+              class="tabLabel"
+            >
+              Command logs
+            </span>
+          </button>
+          <button
+            aria-controls="tabs--1--panel--1"
+            aria-selected="false"
+            class="medium"
+            data-orientation="horizontal"
+            data-reach-tab=""
+            data-testid="wildcard-tab"
+            id="tabs--1--tab--1"
+            role="tab"
+            tabindex="-1"
+            type="button"
+          >
+            <span
+              class="tabLabel"
+            >
+              Sync output
+            </span>
+          </button>
+        </div>
+      </div>
+      <div
+        data-reach-tab-panels=""
+        data-testid="wildcard-tab-panel-list"
+      >
+        <div
+          aria-labelledby="tabs--1--tab--0"
+          data-reach-tab-panel=""
+          data-testid="wildcard-tab-panel"
+          id="tabs--1--panel--0"
+          role="tabpanel"
+          tabindex="0"
+        >
+          <div
+            aria-label="recorded commands"
+          >
+            <div
+              class="commandNode"
+            >
+              <div
+                class="commandNodeHeader"
+              >
+                <div>
+                  <svg
+                    aria-hidden="true"
+                    class="mdi-icon iconInline commandNodeStatus commandNodeErrorStatus"
+                    fill="currentColor"
+                    height="24"
+                    role="img"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M11,15H13V17H11V15M11,7H13V13H11V7M12,2C6.47,2 2,6.5 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20Z"
+                    />
+                  </svg>
+                  <span
+                    class="font-weight-bold"
+                  >
+                    Failed
+                  </span>
+                   
+                  <span
+                    class="text-muted"
+                  >
+                    <span
+                      class="timestamp"
+                    >
+                      in over 17 years
+                    </span>
+                     on shard 127.0.0.1:3501
+                  </span>
+                </div>
+                <div
+                  class="commandNodeDurationGroup"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="mdi-icon iconInline mr-1 text-muted"
+                    fill="currentColor"
+                    height="24"
+                    role="img"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"
+                    />
+                  </svg>
+                  <p
+                    class="mb-0 text-muted"
+                  >
+                    10.91ms
+                  </p>
+                </div>
+              </div>
+              <span
+                style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+              >
+                Command:
+              </span>
+              <pre
+                class="logs rounded p-3 mb-0 commandNodeLogOutput commandNodeLogOutputFailState"
+              >
+                <code
+                  class="code d-block"
+                  role="code"
+                  tabindex="0"
+                >
+                  git cat-file -t -- 4b825dc642cb6eb9a060e54bf8d69288fbee4904
+                </code>
+              </pre>
+              <div
+                class="commandNodeFooter"
+              >
+                <div />
+                <small
+                  class="text-muted commandNodePath"
+                >
+                  Path: /Users/randomuser/.sourcegraph/repos_1/gerrit.sgdev.org/a/gabe/repo/.git
+                </small>
+              </div>
+            </div>
+            <div
+              class="commandNode"
+            >
+              <div
+                class="commandNodeHeader"
+              >
+                <div>
+                  <svg
+                    aria-hidden="true"
+                    class="mdi-icon iconInline commandNodeStatus commandNodeSuccessStatus"
+                    fill="currentColor"
+                    height="24"
+                    role="img"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M12 20C7.59 20 4 16.41 4 12S7.59 4 12 4 20 7.59 20 12 16.41 20 12 20M16.59 7.58L10 14.17L7.41 11.59L6 13L10 17L18 9L16.59 7.58Z"
+                    />
+                  </svg>
+                  <span
+                    class="font-weight-bold"
+                  >
+                    Succeeded
+                  </span>
+                   
+                  <span
+                    class="text-muted"
+                  >
+                    <span
+                      class="timestamp"
+                    >
+                      in over 17 years
+                    </span>
+                     on shard 127.0.0.1:3501
+                  </span>
+                </div>
+                <div
+                  class="commandNodeDurationGroup"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="mdi-icon iconInline mr-1 text-muted"
+                    fill="currentColor"
+                    height="24"
+                    role="img"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"
+                    />
+                  </svg>
+                  <p
+                    class="mb-0 text-muted"
+                  >
+                    10.10ms
+                  </p>
+                </div>
+              </div>
+              <span
+                style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+              >
+                Command:
+              </span>
+              <pre
+                class="logs rounded p-3 mb-0 commandNodeLogOutput"
+              >
+                <code
+                  class="code d-block"
+                  role="code"
+                  tabindex="0"
+                >
+                  git config --get sourcegraph.type
+                </code>
+              </pre>
+              <div
+                class="commandNodeFooter"
+              >
+                <div>
+                  <button
+                    aria-label="Show output"
+                    class="mr-2"
+                    type="button"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="mdi-icon iconInline commandNodeExpandBtn"
+                      fill="currentColor"
+                      height="24"
+                      role="img"
+                      viewBox="0 0 24 24"
+                      width="24"
+                    >
+                      <path
+                        d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
+                      />
+                    </svg>
+                    <small>
+                      Command output
+                    </small>
+                  </button>
+                </div>
+                <small
+                  class="text-muted commandNodePath"
+                >
+                  Path: /Users/randomuser/.sourcegraph/repos_1/gerrit.sgdev.org/a/gabe/repo/.git
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          aria-labelledby="tabs--1--tab--1"
+          data-reach-tab-panel=""
+          data-testid="wildcard-tab-panel"
+          hidden=""
+          id="tabs--1--panel--1"
+          role="tabpanel"
+          tabindex="-1"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

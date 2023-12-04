@@ -1,0 +1,74 @@
+.combobox {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-width: 25rem;
+    min-width: 22rem;
+
+    &--input-container {
+        padding: 0.5rem;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--dropdown-bg);
+    }
+
+    &--input {
+        font-size: 0.75rem;
+        padding-bottom: 0.25rem;
+    }
+
+    &--list {
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+        @-moz-document url-prefix('') {
+            scrollbar-width: thin;
+            scrollbar-color: var(--text-muted);
+        }
+    }
+
+    &--option {
+        display: flex;
+        align-items: baseline;
+        justify-content: flex-start;
+        gap: 0.5rem;
+        padding-left: 1rem;
+
+        &-selected {
+            background-color: var(--color-bg-3);
+        }
+    }
+}
+
+.trigger-button {
+    display: flex;
+    align-items: center;
+    background-color: var(--input-bg);
+    font-weight: normal;
+    width: 100%;
+
+    &--text {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+
+        /*
+            Without min-width with value, the flex child containing the other text elements
+            won’t narrow past the “implied width” of those text elements.
+
+            More info (https://css-tricks.com/flexbox-truncated-text/)
+        */
+        min-width: 0;
+        white-space: nowrap;
+        margin-right: 0.25rem;
+    }
+
+    &--icon {
+        flex-shrink: 0;
+        margin-left: auto;
+        // Compensate inner view box SVG padding
+        margin-right: -0.25rem;
+        color: var(--icon-color);
+    }
+}

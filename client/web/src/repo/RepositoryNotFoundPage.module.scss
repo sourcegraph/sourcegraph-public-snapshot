@@ -3,18 +3,3 @@
     max-width: 36rem;
     padding: 2rem;
 }
-
-.section {
-    width: 100%;
-
-    &-inner {
-        width: 100%;
-        display: flex;
-    }
-
-    &-description {
-        text-align: left;
-        margin-right: 2rem;
-        flex: 1;
-    }
-}

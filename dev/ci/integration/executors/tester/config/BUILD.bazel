@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+filegroup(
+    name = "testdata",
+    srcs = glob(["*.json"]),
+    visibility = ["//dev/ci/integration/executors:__subpackages__"],
+)
+
+go_library(
+    name = "config",
+    srcs = ["config.go"],
+    embedsrcs = ["repos.json"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/ci/integration/executors/tester/config",
+    visibility = ["//visibility:public"],
+)

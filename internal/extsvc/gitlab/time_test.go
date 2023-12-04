@@ -8,6 +8,11 @@ import (
 
 func TestTimeUnmarshal(t *testing.T) {
 	t.Run("valid", func(t *testing.T) {
+		loc, err := time.LoadLocation("Europe/Berlin")
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		for _, tc := range []struct {
 			input string
 			want  time.Time
@@ -23,6 +28,10 @@ func TestTimeUnmarshal(t *testing.T) {
 			{
 				input: "2020-06-24 00:05:18 UTC",
 				want:  time.Date(2020, 6, 24, 0, 5, 18, 0, time.UTC),
+			},
+			{
+				input: "2022-07-05 20:52:49 +0200",
+				want:  time.Date(2022, 7, 5, 20, 52, 49, 0, loc),
 			},
 		} {
 			t.Run(tc.input, func(t *testing.T) {

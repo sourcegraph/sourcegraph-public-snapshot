@@ -1,0 +1,10 @@
+.section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.card {
+    flex: 1;
+    flex-basis: 25rem;
+}

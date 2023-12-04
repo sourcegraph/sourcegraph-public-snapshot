@@ -1,0 +1,37 @@
+:root {
+    // TODO find a better way to scale icons that is not proportional to the font size
+    // 14px font size -> 20px icon size
+    --icon-inline-md-size: #{(20 / 14)}em;
+    --icon-inline-size: #{(16 / 14)}em;
+}
+
+// Formats an icon so that it appears inline in the text
+// with height matching the text
+.icon-inline {
+    // SVGs already include padding to account for text baseline,
+    // so align with the bottom of the text
+    vertical-align: bottom;
+    display: inline-flex;
+    align-items: center;
+}
+
+svg.icon-inline,
+div.icon-inline,
+img.icon-inline,
+.icon-inline svg {
+    width: var(--icon-inline-size);
+    height: var(--icon-inline-size);
+    // Match color of the text
+    fill: currentColor;
+    vertical-align: text-bottom;
+}
+
+.icon-inline-md {
+    width: var(--icon-inline-md-size);
+    height: var(--icon-inline-md-size);
+}
+
+// Special case for the loader
+.icon-inline > .icon-loader {
+    stroke: currentColor;
+}

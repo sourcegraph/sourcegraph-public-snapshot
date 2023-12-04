@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { VALID_USERNAME_REGEXP } from '.'
 
 describe('VALID_USERNAME_REGEX', () => {
@@ -23,7 +25,7 @@ describe('VALID_USERNAME_REGEX', () => {
         })
     }
 
-    const INVALID_USERNAMES: string[] = ['!foo', '-foo', 'foo_bar']
+    const INVALID_USERNAMES: string[] = ['!foo', '-foo', 'foo--bar']
 
     for (const username of INVALID_USERNAMES) {
         test(`should not match ${JSON.stringify(username)}`, () => {

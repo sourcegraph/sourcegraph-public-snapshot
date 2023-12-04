@@ -1,22 +1,4 @@
-import { PollyServer } from '@pollyjs/core'
-import type * as sourcegraph from 'sourcegraph'
-
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-
-import { ExtensionManifest } from '../../extensions/extensionManifest'
-import { ExtensionsResult } from '../../graphql-operations'
-import { Settings } from '../../settings/settings'
-
-interface ExtensionMockingInit {
-    /**
-     * The polly server object, used to intercept extension bundle requests.
-     */
-    pollyServer: PollyServer
-    /**
-     * The base Sourcegraph URL for the test instance, used to construst bundle URL.
-     */
-    sourcegraphBaseUrl: string
-}
+import type { ExtensionContext } from '../../codeintel/legacy-extensions/api'
 
 interface ExtensionMockingUtils {
     /**
@@ -26,74 +8,16 @@ interface ExtensionMockingUtils {
      */
     mockExtension: ({ id, bundle }: { id: string; bundle: () => void }) => void
     /**
-     * Use this as the `Extension` override for `TestContext#overrideGraphQL`.
-     */
-    Extensions: SharedGraphQlOperations['Extensions']
-    /**
      * Merge/replace your mock settings `extensions` property with this object.
      */
-    extensionSettings: Settings['extensions']
-}
-
-interface ExtensionsResultMock {
-    extensionRegistry: ExtensionsResult['extensionRegistry'] & {
-        __typename: 'ExtensionRegistry'
-    }
+    extensionSettings: {}
 }
 
 /**
  * Set up Sourcegraph extension mocking for an integration test.
  */
-export function setupExtensionMocking({
-    pollyServer,
-    sourcegraphBaseUrl,
-}: ExtensionMockingInit): ExtensionMockingUtils {
-    let internalID = 0
-
-    const extensionSettings: Settings['extensions'] = {}
-    const extensionsResult: ExtensionsResultMock = {
-        extensionRegistry: {
-            __typename: 'ExtensionRegistry',
-            extensions: {
-                nodes: [],
-            },
-        },
-    }
-
-    return {
-        mockExtension: ({ id, bundle }) => {
-            internalID++
-
-            /** The URL at which the manifest says the extension bundle is served. We should intercept requests to this URL. */
-            const bundleURL = new URL(
-                `/-/static/extension/00${internalID}-${id.replace(/\//g, '-')}.js?hash--${id.replace(/\//g, '-')}`,
-                sourcegraphBaseUrl
-            ).href
-
-            const extensionManifest: ExtensionManifest = {
-                url: bundleURL,
-                activationEvents: ['*'],
-            }
-
-            // Mutate mock data objects
-            extensionSettings[id] = true
-            extensionsResult.extensionRegistry.extensions.nodes.push({
-                id,
-                extensionID: id,
-                manifest: {
-                    jsonFields: extensionManifest,
-                },
-            })
-
-            pollyServer.get(bundleURL).intercept((request, response) => {
-                // Create an immediately-invoked function expression for the extensionBundle function
-                const extensionBundleString = `(${bundle.toString()})()`
-                response.type('application/javascript; charset=utf-8').send(extensionBundleString)
-            })
-        },
-        Extensions: () => extensionsResult,
-        extensionSettings,
-    }
+export function setupExtensionMocking(): ExtensionMockingUtils {
+    throw new Error('not yet reimplemented after the extension API deprecation')
 }
 
 // Commonly mocked extensions.
@@ -107,7 +31,7 @@ export function simpleHoverProvider(): void {
     // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
     const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
 
-    function activate(context: sourcegraph.ExtensionContext): void {
+    function activate(context: ExtensionContext): void {
         context.subscriptions.add(
             sourcegraph.languages.registerHoverProvider(['*'], {
                 provideHover: (document, position) => {

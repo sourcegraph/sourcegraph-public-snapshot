@@ -1,11 +1,17 @@
-.underline {
-    text-decoration: underline;
-}
+.label {
+    display: inline-block;
+    font-weight: 500;
+    letter-spacing: -(0.1/14) + em;
 
-.uppercase {
-    text-transform: uppercase;
-}
+    &--underline {
+        text-decoration: underline;
+    }
 
-.single-line {
-    display: block;
+    &--uppercase {
+        text-transform: uppercase;
+    }
+
+    &--single-line {
+        display: block;
+    }
 }

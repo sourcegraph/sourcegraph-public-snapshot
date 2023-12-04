@@ -1,0 +1,38 @@
+# Melange-based replacement for Coursier
+# Previously packaged in the scip-java repo
+
+package:
+  name: coursier
+  version: 2.0.13 # IMPORTANT: Coursier uses a non-standard release model, so updating this version alone will not update the package
+  epoch: 1
+  description: "Java dependency resolver"
+  target-architecture:
+    - x86_64
+  copyright:
+    - paths:
+      - "*"
+      license: 'Apache License 2.0'
+  dependencies:
+    runtime:
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - wolfi-base
+
+pipeline:
+  # Download specific release from git commit - does NOT use ${{package.version}}
+  - uses: fetch
+    with:
+      uri: https://github.com/coursier/launchers/raw/34ff76b7e1b41a9b633809028faa2d3fee6c8f86/cs-x86_64-pc-linux
+      expected-sha256: 1ae089789cc4b0a4d296d6852b760d7f8bf72805267a6b7571e99b681d5e13b4
+      extract: false
+
+  - runs: |
+      mkdir -p ${{targets.destdir}}/usr/local/bin/
+      chmod +x cs-x86_64-pc-linux
+      cp cs-x86_64-pc-linux ${{targets.destdir}}/usr/local/bin/coursier

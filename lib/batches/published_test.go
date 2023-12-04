@@ -10,7 +10,7 @@ import (
 func TestPublishedValue(t *testing.T) {
 	tests := []struct {
 		name    string
-		val     interface{}
+		val     any
 		True    bool
 		False   bool
 		Draft   bool
@@ -46,7 +46,7 @@ func TestPublishedValue(t *testing.T) {
 	t.Run("JSON marshal", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			val      interface{}
+			val      any
 			expected string
 		}{
 			{name: "true", val: true, expected: "true"},
@@ -71,7 +71,7 @@ func TestPublishedValue(t *testing.T) {
 		tests := []struct {
 			name     string
 			val      string
-			expected interface{}
+			expected any
 		}{
 			{name: "true", val: "true", expected: true},
 			{name: "false", val: "false", expected: false},
@@ -94,7 +94,7 @@ func TestPublishedValue(t *testing.T) {
 		tests := []struct {
 			name     string
 			val      string
-			expected interface{}
+			expected any
 		}{
 			{name: "true", val: "true", expected: true},
 			{name: "true", val: "yes", expected: true},

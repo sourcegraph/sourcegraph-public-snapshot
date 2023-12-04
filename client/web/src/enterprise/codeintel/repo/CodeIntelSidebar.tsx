@@ -1,45 +1,30 @@
-import * as React from 'react'
-import { RouteComponentProps } from 'react-router-dom'
+import type { FC } from 'react'
 
 import { SidebarGroupHeader, SidebarGroup, SidebarNavItem } from '../../../components/Sidebar'
-import { NavGroupDescriptor } from '../../../util/contributions'
+import type { NavGroupDescriptor } from '../../../util/contributions'
 
 export interface CodeIntelSideBarGroup extends NavGroupDescriptor {}
 
 export type CodeIntelSideBarGroups = readonly CodeIntelSideBarGroup[]
 
-interface Props extends RouteComponentProps<{}> {
+interface Props {
     codeIntelSidebarGroups: CodeIntelSideBarGroups
     className?: string
     repo: { url: string }
 }
 
-/** Sidebar for code intelligence pages. */
-export const CodeIntelSidebar: React.FunctionComponent<Props> = ({
-    codeIntelSidebarGroups,
-    className,
-    repo,
-}: Props) => (
+/** Sidebar for code navigation pages. */
+export const CodeIntelSidebar: FC<Props> = ({ codeIntelSidebarGroups, className, repo }) => (
     <div className={className}>
-        {codeIntelSidebarGroups.map(
-            ({ header, items, condition = () => true }, index) =>
-                condition({}) && (
-                    <SidebarGroup key={index}>
-                        {header && <SidebarGroupHeader label={header.label} />}
-                        {items.map(
-                            ({ label, to, exact, condition = () => true }) =>
-                                condition({}) && (
-                                    <SidebarNavItem
-                                        to={`${repo.url}/-/code-intelligence${to}`}
-                                        exact={exact}
-                                        key={label}
-                                    >
-                                        {label}
-                                    </SidebarNavItem>
-                                )
-                        )}
-                    </SidebarGroup>
-                )
-        )}
+        {codeIntelSidebarGroups.map(({ header, items }, index) => (
+            <SidebarGroup key={index}>
+                {header && <SidebarGroupHeader label={header.label} />}
+                {items.map(({ label, to }) => (
+                    <SidebarNavItem to={`${repo.url}/-/code-graph${to}`} key={label}>
+                        {label}
+                    </SidebarNavItem>
+                ))}
+            </SidebarGroup>
+        ))}
     </div>
 )

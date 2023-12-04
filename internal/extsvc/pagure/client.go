@@ -9,42 +9,36 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"time"
 
-	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 	"github.com/sourcegraph/sourcegraph/schema"
-)
-
-const (
-	defaultRateLimit      = rate.Limit(8) // 480/min or 28,800/hr
-	defaultRateLimitBurst = 500
 )
 
 // Client access a Pagure via the REST API.
 type Client struct {
-	// HTTP Client used to communicate with the API
-	httpClient httpcli.Doer
-
 	// Config is the code host connection config for this client
 	Config *schema.PagureConnection
 
 	// URL is the base URL of Pagure.
 	URL *url.URL
 
+	// HTTP Client used to communicate with the API
+	httpClient httpcli.Doer
+
 	// RateLimit is the self-imposed rate limiter (since Pagure does not have a concept
 	// of rate limiting in HTTP response headers).
-	RateLimit *rate.Limiter
+	rateLimit *ratelimit.InstrumentedLimiter
 }
 
 // NewClient returns an authenticated Pagure API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(config *schema.PagureConnection, httpClient httpcli.Doer) (*Client, error) {
+func NewClient(urn string, config *schema.PagureConnection, httpClient httpcli.Doer) (*Client, error) {
 	u, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -54,17 +48,11 @@ func NewClient(config *schema.PagureConnection, httpClient httpcli.Doer) (*Clien
 		httpClient = httpcli.ExternalDoer
 	}
 
-	// Normally our registry will return a default infinite limiter when nothing has been
-	// synced from config. However, we always want to ensure there is at least some form of rate
-	// limiting for Pagure.
-	defaultLimiter := rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
-	l := ratelimit.DefaultRegistry.GetOrSet(u.String(), defaultLimiter)
-
 	return &Client{
-		httpClient: httpClient,
 		Config:     config,
 		URL:        u,
-		RateLimit:  l,
+		httpClient: httpClient,
+		rateLimit:  ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("PagureClient"), urn)),
 	}, nil
 }
 
@@ -77,52 +65,66 @@ type ListProjectsArgs struct {
 	Fork      bool
 }
 
-// ListProjectsResponse defines a response struct returned from ListProjects method calls.
-type ListProjectsResponse struct {
+// listProjectsResponse defines a response struct returned from ListProjects method calls.
+type listProjectsResponse struct {
 	*Pagination `json:"pagination"`
 	Projects    []*Project `json:"projects"`
 }
 
-func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (*ListProjectsResponse, error) {
-	qs := make(url.Values)
-
-	if opts.Cursor == nil {
-		opts.Cursor = &Pagination{PerPage: 100, Page: 1}
+func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) *iterator.Iterator[*Project] {
+	cursor := opts.Cursor
+	if cursor == nil {
+		cursor = &Pagination{PerPage: 100, Page: 1}
 	}
 
-	opts.Cursor.EncodeTo(qs)
-	for _, tag := range opts.Tags {
-		if tag != "" {
-			qs.Add("tags", tag)
+	return iterator.New(func() ([]*Project, error) {
+		if cursor == nil {
+			return nil, nil
 		}
-	}
 
-	if opts.Pattern != "" {
-		qs.Set("pattern", opts.Pattern)
-	}
+		qs := make(url.Values)
 
-	if opts.Namespace != "" {
-		qs.Set("namespace", opts.Namespace)
-	}
+		cursor.EncodeTo(qs)
+		for _, tag := range opts.Tags {
+			if tag != "" {
+				qs.Add("tags", tag)
+			}
+		}
 
-	qs.Set("fork", strconv.FormatBool(opts.Fork))
+		if opts.Pattern != "" {
+			qs.Set("pattern", opts.Pattern)
+		}
 
-	u := url.URL{Path: "api/0/projects", RawQuery: qs.Encode()}
+		if opts.Namespace != "" {
+			qs.Set("namespace", opts.Namespace)
+		}
 
-	req, err := http.NewRequest("GET", u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
+		qs.Set("fork", strconv.FormatBool(opts.Fork))
 
-	var resp ListProjectsResponse
-	if _, err = c.do(ctx, req, &resp); err != nil {
-		return nil, err
-	}
+		u := url.URL{Path: "api/0/projects", RawQuery: qs.Encode()}
 
-	return &resp, nil
+		req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+		if err != nil {
+			return nil, err
+		}
+
+		var resp listProjectsResponse
+		if _, err = c.do(ctx, req, &resp); err != nil {
+			return nil, err
+		}
+
+		cursor = resp.Pagination
+		if cursor.Next == "" {
+			cursor = nil
+		} else {
+			cursor.Page++
+		}
+
+		return resp.Projects, nil
+	})
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (*http.Response, error) {
+func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 	if req.Header.Get("Content-Type") == "" && req.Method != "GET" {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -132,13 +134,8 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		req.Header.Add("Authorization", "token "+c.Config.Token)
 	}
 
-	startWait := time.Now()
-	if err := c.RateLimit.Wait(ctx); err != nil {
+	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
-	}
-
-	if d := time.Since(startWait); d > 200*time.Millisecond {
-		log15.Warn("Pagure self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 
 	resp, err := c.httpClient.Do(req)

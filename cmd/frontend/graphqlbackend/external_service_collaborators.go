@@ -2,7 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
-	"net/url"
+	"math/rand"
 	"sort"
 	"strings"
 	"sync"
@@ -10,75 +10,58 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// See schema.graphql for an explanation of how this is intended to be used. This is particularly
-// for listing collaborators to *some* of the repositories associated with this external service
-// *before* they are cloned onto Sourcegraph.
-func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([]*invitableCollaboratorResolver, error) {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return nil, errors.New("no current user")
-	}
-	authUserEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
-		UserID: a.UID,
-	})
-	if err != nil {
-		return nil, err
-	}
+type invitableCollaboratorResolver struct {
+	likelySourcegraphUsername string
+	email                     string
+	name                      string
+	avatarURL                 string
+	date                      time.Time
+}
 
-	// SECURITY: This API should only be exposed for user-added external services, not for example by
-	// site-wide (CloudDefault) external services (the API also makes zero sense in that context.)
-	//
-	// IMPORTANT: This API is allowed for org external services. You may not have access to every repo
-	// within an org external service, and so if we expose too much information here it could be an
-	// ACL vulnerability. Since we only expose name+email+avatar URL, this is fine to do.
-	if r.externalService.IsSiteOwned() {
-		return nil, errors.New("InvitableCollaborators may only be used on user-added external services.")
+func (i *invitableCollaboratorResolver) Name() string        { return i.name }
+func (i *invitableCollaboratorResolver) Email() string       { return i.email }
+func (i *invitableCollaboratorResolver) DisplayName() string { return i.name }
+func (i *invitableCollaboratorResolver) AvatarURL() *string {
+	if i.avatarURL == "" {
+		return nil
 	}
-	cfg, err := r.externalService.Configuration()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse external service config")
-	}
-	githubCfg, ok := cfg.(*schema.GitHubConnection)
-	if !ok {
-		// We only support GitHub for now as that's the most popular / important.
-		// Don't return an error, just an empty list, because e.g. that's what you want if we just
-		// can't find any collaborators.
-		return []*invitableCollaboratorResolver{}, nil
-	}
-	baseURL, err := url.Parse(githubCfg.Url)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse external service URL")
-	}
-	baseURL = extsvc.NormalizeBaseURL(baseURL)
-	githubUrl, _ := github.APIRoot(baseURL)
-	client := github.NewV4Client(githubUrl, &auth.OAuthBearerToken{Token: githubCfg.Token}, nil)
+	return &i.avatarURL
+}
+func (i *invitableCollaboratorResolver) User() *UserResolver { return nil }
 
-	// We'll only look in 20 repos. We limit ourselves here to prevent having our github token run
-	// into rate limits (which could affect repo discovery / cloning / other API operations we need
-	// to perform for the user elsewhere.)
-	const maxReposToScan = 20
-	fewRepos := githubCfg.Repos
-	if len(fewRepos) > maxReposToScan {
-		fewRepos = fewRepos[:maxReposToScan]
-	}
+func (r *invitableCollaboratorResolver) OwnerField() string {
+	return ""
+}
 
-	// In parallel collect all recent committers info for the few repos we're going to scan.
+type RecentCommittersFunc func(context.Context, *github.RecentCommittersParams) (*github.RecentCommittersResults, error)
+
+func pickReposToScanForCollaborators(possibleRepos []string, maxReposToScan int) []string {
+	var picked []string
+	swapRemove := func(i int) {
+		s := possibleRepos
+		s[i] = s[len(s)-1]
+		possibleRepos = s[:len(s)-1]
+	}
+	for len(picked) < maxReposToScan && len(possibleRepos) > 0 {
+		randomRepoIndex := rand.Intn(len(possibleRepos))
+		picked = append(picked, possibleRepos[randomRepoIndex])
+		swapRemove(randomRepoIndex)
+	}
+	return picked
+}
+
+func parallelRecentCommitters(ctx context.Context, repos []string, recentCommitters RecentCommittersFunc) (allRecentCommitters []*invitableCollaboratorResolver, err error) {
 	var (
-		wg                  sync.WaitGroup
-		mu                  sync.Mutex
-		allRecentCommitters []*invitableCollaboratorResolver
+		wg sync.WaitGroup
+		mu sync.Mutex
 	)
-	for _, repoName := range fewRepos {
+	for _, repoName := range repos {
 		owner, name, err := github.SplitRepositoryNameWithOwner(repoName)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to split repository name")
@@ -86,7 +69,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			recentCommits, err := client.RecentCommitters(ctx, &github.RecentCommittersParams{
+			recentCommits, err := recentCommitters(ctx, &github.RecentCommittersParams{
 				Name:  name,
 				Owner: owner,
 				First: 100,
@@ -101,24 +84,33 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 				for _, author := range commit.Authors.Nodes {
 					parsedTime, _ := time.Parse(time.RFC3339, author.Date)
 					allRecentCommitters = append(allRecentCommitters, &invitableCollaboratorResolver{
-						email:     author.Email,
-						name:      author.Name,
-						avatarURL: author.AvatarURL,
-						date:      parsedTime,
+						likelySourcegraphUsername: author.User.Login,
+						email:                     author.Email,
+						name:                      author.Name,
+						avatarURL:                 author.AvatarURL,
+						date:                      parsedTime,
 					})
 				}
 			}
 		})
 	}
 	wg.Wait()
+	return
+}
 
+func filterInvitableCollaborators(
+	recentCommitters []*invitableCollaboratorResolver,
+	authUserEmails []*database.UserEmail,
+	userExistsByUsername func(username string) bool,
+	userExistsByEmail func(email string) bool,
+) []*invitableCollaboratorResolver {
 	// Sort committers by most-recent-first. This ensures that the top of the list of people you can
 	// invite are people who recently committed to code, which means they're more active and more
 	// likely the person you want to invite (compared to e.g. if we hit a very old repo and the
 	// committer is say no longer working at that organization.)
-	sort.Slice(allRecentCommitters, func(i, j int) bool {
-		a := allRecentCommitters[i].date
-		b := allRecentCommitters[j].date
+	sort.SliceStable(recentCommitters, func(i, j int) bool {
+		a := recentCommitters[i].date
+		b := recentCommitters[j].date
 		return a.After(b)
 	})
 
@@ -129,8 +121,9 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 		invitable   []*invitableCollaboratorResolver
 		deduplicate = map[string]struct{}{}
 	)
-	for _, recentCommitter := range allRecentCommitters {
-		if recentCommitter.email == "" || strings.Contains(recentCommitter.email, "noreply") {
+	for _, recentCommitter := range recentCommitters {
+		likelyBot := strings.Contains(recentCommitter.email, "bot") || strings.Contains(strings.ToLower(recentCommitter.name), "bot")
+		if recentCommitter.email == "" || strings.Contains(recentCommitter.email, "noreply") || likelyBot {
 			continue
 		}
 		isOurEmail := false
@@ -147,20 +140,66 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 			continue
 		}
 		deduplicate[recentCommitter.email] = struct{}{}
+
+		if len(invitable) > 200 {
+			// 200 users is more than enough, don't do any more work (such as checking if users
+			// exist.)
+			break
+		}
+		// If a Sourcegraph user with a matching username exists, or a matching email exists, don't
+		// consider them someone who is invitable (would be annoying to receive invites after having
+		// an account.)
+		if userExistsByEmail(recentCommitter.email) {
+			continue
+		}
+		if userExistsByUsername(recentCommitter.likelySourcegraphUsername) {
+			continue
+		}
+
 		invitable = append(invitable, recentCommitter)
 	}
-	return invitable, nil
-}
 
-type invitableCollaboratorResolver struct {
-	email     string
-	name      string
-	avatarURL string
-	date      time.Time
-}
+	// domain turns "stephen@sourcegraph.com" -> "sourcegraph.com"
+	domain := func(email string) string {
+		idx := strings.LastIndex(email, "@")
+		if idx == -1 {
+			return email
+		}
+		return email[idx:]
+	}
 
-func (i *invitableCollaboratorResolver) Name() string        { return i.name }
-func (i *invitableCollaboratorResolver) Email() string       { return i.email }
-func (i *invitableCollaboratorResolver) DisplayName() string { return i.name }
-func (i *invitableCollaboratorResolver) AvatarURL() *string  { return &i.avatarURL }
-func (i *invitableCollaboratorResolver) User() *UserResolver { return nil }
+	// Determine the number of invitable people per email domain, then sort so that those with the
+	// most similar email domain to others in the list appear first. e.g. all @sourcegraph.com team
+	// members should appear before a random @gmail.com contributor.
+	invitablePerDomain := map[string]int{}
+	for _, person := range invitable {
+		current := invitablePerDomain[domain(person.email)]
+		invitablePerDomain[domain(person.email)] = current + 1
+	}
+	sort.SliceStable(invitable, func(i, j int) bool {
+		// First, sort popular personal email domains lower.
+		iDomain := domain(invitable[i].email)
+		jDomain := domain(invitable[j].email)
+		if iDomain != jDomain {
+			for _, popularPersonalDomain := range []string{"@gmail.com", "@yahoo.com", "@outlook.com", "@fastmail.com", "@protonmail.com"} {
+				if jDomain == popularPersonalDomain {
+					return true
+				}
+				if iDomain == popularPersonalDomain {
+					return false
+				}
+			}
+
+			// Sort domains with most invitable collaborators higher.
+			iPeopleWithDomain := invitablePerDomain[iDomain]
+			jPeopleWithDomain := invitablePerDomain[jDomain]
+			if iPeopleWithDomain != jPeopleWithDomain {
+				return iPeopleWithDomain > jPeopleWithDomain
+			}
+		}
+
+		// Finally, sort most-recent committers higher.
+		return invitable[i].date.After(invitable[j].date)
+	})
+	return invitable
+}

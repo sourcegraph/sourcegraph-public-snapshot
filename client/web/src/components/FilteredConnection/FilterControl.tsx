@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback } from 'react'
+
+import { Select, Text } from '@sourcegraph/wildcard'
 
 import { RadioButtons } from '../RadioButtons'
 
@@ -13,12 +14,13 @@ export interface FilteredConnectionFilterValue {
 }
 
 /**
- * A filter to display next to the filter input field.
+ * A filter to display next to the search input field.
  */
 export interface FilteredConnectionFilter {
     /** The UI label for the filter. */
     label: string
 
+    /** "radio" or "select" */
     type: string
 
     /**
@@ -42,7 +44,7 @@ interface FilterControlProps {
     values: Map<string, FilteredConnectionFilterValue>
 }
 
-export const FilterControl: React.FunctionComponent<FilterControlProps> = ({
+export const FilterControl: React.FunctionComponent<React.PropsWithChildren<FilterControlProps>> = ({
     filters,
     values,
     onValueSelect,
@@ -80,22 +82,26 @@ export const FilterControl: React.FunctionComponent<FilterControlProps> = ({
                 }
 
                 if (filter.type === 'select') {
+                    const filterLabelId = `filtered-select-label-${filter.id}`
                     return (
-                        <div
-                            key={filter.id}
-                            className={classNames('d-inline-flex flex-row align-center flex-wrap', styles.select)}
-                        >
-                            <div className="d-inline-flex flex-row mr-3 align-items-baseline">
-                                <p className="text-xl-center text-nowrap mr-2">{filter.label}:</p>
-                                <select
-                                    className="form-control"
+                        <div key={filter.id} className="d-inline-flex flex-row align-center flex-wrap">
+                            <div className="d-inline-flex flex-row align-items-baseline">
+                                <Text className="text-xl-center text-nowrap mr-2 mb-0" id={filterLabelId}>
+                                    {filter.label}:
+                                </Text>
+                                <Select
+                                    aria-labelledby={filterLabelId}
+                                    id=""
                                     name={filter.id}
                                     onChange={event => onChange(filter, event.currentTarget.value)}
+                                    value={values.get(filter.id)?.value}
+                                    className="mb-0"
+                                    isCustomStyle={true}
                                 >
                                     {filter.values.map(value => (
                                         <option key={value.value} value={value.value} label={value.label} />
                                     ))}
-                                </select>
+                                </Select>
                             </div>
                         </div>
                     )

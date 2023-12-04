@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner/testdata"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -20,12 +22,12 @@ func makeTestSchemas(t *testing.T) []*schemas.Schema {
 }
 
 func makeTestSchema(t *testing.T, name string) *schemas.Schema {
-	fs, err := fs.Sub(testdata.Content, name)
+	fsys, err := fs.Sub(testdata.Content, name)
 	if err != nil {
 		t.Fatalf("malformed migration definitions %q: %s", name, err)
 	}
 
-	definitions, err := definition.ReadDefinitions(fs)
+	definitions, err := definition.ReadDefinitions(fsys, name)
 	if err != nil {
 		t.Fatalf("malformed migration definitions %q: %s", name, err)
 	}
@@ -33,7 +35,6 @@ func makeTestSchema(t *testing.T, name string) *schemas.Schema {
 	return &schemas.Schema{
 		Name:                name,
 		MigrationsTableName: fmt.Sprintf("%s_migrations_table", name),
-		FS:                  fs,
 		Definitions:         definitions,
 	}
 }
@@ -78,6 +79,7 @@ func testStoreWithVersion(version int, dirty bool) *MockStore {
 }
 
 func makeTestRunner(t *testing.T, store Store) *Runner {
+	logger := logtest.Scoped(t)
 	testSchemas := makeTestSchemas(t)
 	storeFactories := make(map[string]StoreFactory, len(testSchemas))
 
@@ -87,5 +89,5 @@ func makeTestRunner(t *testing.T, store Store) *Runner {
 		}
 	}
 
-	return NewRunner(storeFactories)
+	return NewRunner(logger, storeFactories)
 }

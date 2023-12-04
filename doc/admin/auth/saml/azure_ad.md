@@ -8,7 +8,7 @@
   * **Reply URL (Assertion Consumer Service URL):** `https://sourcegraph.example.com/.auth/saml/acs`
   * **Sign-on URL, Relay State, and Logout URL** can be left empty.
   * **User Attributes & Claims:** Add the following attributes.<br>
-    `email`: user.mail (required)<br>
+    `emailaddress`: user.mail (required)<br>
     `name`: user.userprincipalname (optional)<br>
     `login`: user.userprincipalname (optional)<br>
   * **Name ID**: `email`
@@ -32,3 +32,5 @@
  ]
 }
 ```
+
+> NOTE: Optional, but recommended: [add automatic provisioning of users with SCIM](../../scim.md). 

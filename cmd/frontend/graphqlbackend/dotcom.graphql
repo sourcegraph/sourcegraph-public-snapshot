@@ -4,22 +4,6 @@ FOR INTERNAL USE ONLY.
 """
 type DotcomMutation {
     """
-    Set or unset a user's associated billing information.
-    Only Sourcegraph.com site admins may perform this mutation.
-    FOR INTERNAL USE ONLY.
-    """
-    setUserBilling(
-        """
-        The user to update.
-        """
-        user: ID!
-        """
-        The billing customer ID (on the billing system) to associate this user with. If null, the association is
-        removed (i.e., the user is unlinked from the billing customer record).
-        """
-        billingCustomerID: String
-    ): EmptyResponse!
-    """
     Creates new product subscription for an account.
     Only Sourcegraph.com site admins may perform this mutation.
     FOR INTERNAL USE ONLY.
@@ -30,22 +14,6 @@ type DotcomMutation {
         """
         accountID: ID!
     ): ProductSubscription!
-    """
-    Set or unset a product subscription's associated billing system subscription.
-    Only Sourcegraph.com site admins may perform this mutation.
-    FOR INTERNAL USE ONLY.
-    """
-    setProductSubscriptionBilling(
-        """
-        The product subscription to update.
-        """
-        id: ID!
-        """
-        The billing subscription ID (on the billing system) to associate this product subscription with. If null,
-        the association is removed (i.e., the subscription is unlinked from billing).
-        """
-        billingSubscriptionID: String
-    ): EmptyResponse!
     """
     Generates and signs a new product license and associates it with an existing product subscription. The
     product license key is signed with Sourcegraph.com's private key and is verifiable with the corresponding
@@ -64,56 +32,45 @@ type DotcomMutation {
         license: ProductLicenseInput!
     ): ProductLicense!
     """
-    Creates a new product subscription and bills the associated payment method.
-    Only Sourcegraph.com authenticated users may perform this mutation.
+    Revokes an existing product license, rendering it invalid.
+    """
+    revokeLicense(
+        """
+        The UUID of the license to revoke
+        """
+        id: ID!
+        """
+        Reason for revoking of the license
+        """
+        reason: String!
+    ): EmptyResponse!
+    """
+    Applies a partial update to a product subscription.
+
+    Only Sourcegraph.com site admins may perform this mutation.
     FOR INTERNAL USE ONLY.
     """
-    createPaidProductSubscription(
+    updateProductSubscription(
         """
-        The ID of the user (i.e., customer) to whom the product subscription is assigned.
-        Only Sourcegraph.com site admins may perform this mutation for an accountID != the user ID of the
-        authenticated user.
+        The product subscription ID to update.
         """
-        accountID: ID!
+        id: ID!
         """
-        The details of the product subscription.
+        Partial update to apply.
         """
-        productSubscription: ProductSubscriptionInput!
-        """
-        The token that represents the payment method used to purchase this product subscription,
-        or null if no payment is required.
-        """
-        paymentToken: String
-    ): CreatePaidProductSubscriptionResult!
-    """
-    Updates a new product subscription and credits or debits the associated payment method.
-    Only Sourcegraph.com site admins and the subscription's account owner may perform this
-    mutation.
-    FOR INTERNAL USE ONLY.
-    """
-    updatePaidProductSubscription(
-        """
-        The subscription to update.
-        """
-        subscriptionID: ID!
-        """
-        The updated details of the product subscription. All fields of the input type must be set
-        (i.e., it does not support passing a null value to mean "do not update this field's
-        value").
-        """
-        update: ProductSubscriptionInput!
-        """
-        The token that represents the payment method used to pay for (or receive credit for) this
-        product subscription update, or null if no payment is required.
-        """
-        paymentToken: String
-    ): UpdatePaidProductSubscriptionResult!
+        update: UpdateProductSubscriptionInput!
+    ): EmptyResponse!
     """
     Archives an existing product subscription.
     Only Sourcegraph.com site admins may perform this mutation.
     FOR INTERNAL USE ONLY.
     """
-    archiveProductSubscription(id: ID!): EmptyResponse!
+    archiveProductSubscription(
+        """
+        The product subscription to archive.
+        """
+        id: ID!
+    ): EmptyResponse!
 }
 
 """
@@ -129,6 +86,15 @@ type DotcomQuery {
     FOR INTERNAL USE ONLY.
     """
     productSubscription(uuid: String!): ProductSubscription!
+    """
+    The access available to the product subscription with the given access token.
+    The returned ProductSubscription may be archived or not associated with an active license.
+
+    Only Sourcegraph.com site admins, the account owners of the product subscription, and
+    specific service accounts may perform this query.
+    FOR INTERNAL USE ONLY.
+    """
+    productSubscriptionByAccessToken(accessToken: String!): ProductSubscription!
     """
     A list of product subscriptions.
     FOR INTERNAL USE ONLY.
@@ -148,30 +114,7 @@ type DotcomQuery {
         """
         query: String
     ): ProductSubscriptionConnection!
-    """
-    The invoice that would be generated for a new or updated subscription. This is used to show
-    users a preview of the credits, debits, and other billing information before creating or
-    updating a subscription.
-    Performing this query does not mutate any data or cause any billing changes to be made.
-    """
-    previewProductSubscriptionInvoice(
-        """
-        The customer account (user) for whom this preview invoice will be generated, or null if there is none.
-        """
-        account: ID
-        """
-        If non-null, preview the invoice for an update to the existing product subscription. The
-        product subscription's billing customer must match the account parameter. If null, preview
-        the invoice for a new subscription.
-        """
-        subscriptionToUpdate: ID
-        """
-        The parameters for the product subscription to preview. All fields of the input type must
-        be set (i.e., it does not support passing a null value to mean "do not update this field's
-        value" when updating an existing subscription).
-        """
-        productSubscription: ProductSubscriptionInput!
-    ): ProductSubscriptionPreviewInvoice!
+
     """
     A list of product licenses.
     Only Sourcegraph.com site admins may perform this query.
@@ -191,10 +134,14 @@ type DotcomQuery {
         """
         productSubscriptionID: ID
     ): ProductLicenseConnection!
+
     """
-    A list of product pricing plans for Sourcegraph.
+    A dotcom user for purposes of connecting to the Cody Gateway.
+    Only Sourcegraph.com site admins or service accounts may perform this query.
+    Token is a Cody Gateway token, not a Sourcegraph instance access token.
+    FOR INTERNAL USE ONLY.
     """
-    productPlans: [ProductPlan!]!
+    codyGatewayDotcomUserByToken(token: String!): CodyGatewayDotcomUser
 }
 
 extend type Mutation {
@@ -236,39 +183,6 @@ type ProductSubscriptionConnection {
 }
 
 """
-A preview of an invoice that would be generated for a new or updated product subscription.
-FOR INTERNAL USE ONLY.
-"""
-type ProductSubscriptionPreviewInvoice {
-    """
-    The net price for this invoice, in USD cents. If this invoice represents an update to a
-    subscription, this is the difference between the existing price and the updated price.
-    """
-    price: Int!
-    """
-    For updates to existing subscriptions, the effective date for which this preview invoice was
-    calculated, expressed as the number of seconds since the epoch. For new subscriptions, this is
-    null.
-    """
-    prorationDate: String
-    """
-    Whether this invoice requires manual intervention.
-    """
-    isDowngradeRequiringManualIntervention: Boolean!
-    """
-    The "before" state of the product subscription (i.e., the existing subscription), prior to the update that this preview
-    represents, or null if the preview is for a new subscription.
-    """
-    beforeInvoiceItem: ProductSubscriptionInvoiceItem
-    """
-    The "after" state of the product subscription, with the update applied to the subscription.
-    For new subscriptions, this is just the invoice item for the subscription that will be
-    created.
-    """
-    afterInvoiceItem: ProductSubscriptionInvoiceItem!
-}
-
-"""
 An input type that describes a product license to be generated and signed.
 FOR INTERNAL USE ONLY.
 """
@@ -285,6 +199,14 @@ input ProductLicenseInput {
     The expiration date of this product license, expressed as the number of seconds since the epoch.
     """
     expiresAt: Int!
+    """
+    The Salesforce subscription ID associated with this product license.
+    """
+    salesforceSubscriptionID: String
+    """
+    The Salesforce opportunity ID associated with this product license.
+    """
+    salesforceOpportunityID: String
 }
 
 """
@@ -309,9 +231,25 @@ type ProductLicense implements Node {
     """
     licenseKey: String!
     """
+    Site ID of the instance that uses the license.
+    """
+    siteID: String
+    """
     The date when this product license was created.
     """
     createdAt: DateTime!
+    """
+    The date when this product license was revoked.
+    """
+    revokedAt: DateTime
+    """
+    The reason for revoking product license.
+    """
+    revokeReason: String
+    """
+    The version of the license.
+    """
+    version: Int!
 }
 
 """
@@ -332,154 +270,6 @@ type ProductLicenseConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
-}
-
-"""
-A product pricing plan for Sourcegraph.
-FOR INTERNAL USE ONLY.
-"""
-type ProductPlan {
-    """
-    The billing system's unique ID for the plan.
-    """
-    billingPlanID: String!
-    """
-    The unique ID for the product.
-    """
-    productPlanID: String!
-    """
-    The name of the product plan (e.g., "Enterprise Starter"). This is displayed to the user and
-    should be human-readable.
-    """
-    name: String!
-    """
-    The name with the brand (e.g., "Sourcegraph Enterprise Starter").
-    """
-    nameWithBrand: String!
-    """
-    The price (in USD cents) for one user for a year.
-    """
-    pricePerUserPerYear: Int!
-    """
-    The minimum quantity (user count) that can be purchased. Only applies when using tiered pricing.
-    """
-    minQuantity: Int
-    """
-    The maximum quantity (user count) that can be purchased. Only applies when using tiered pricing.
-    """
-    maxQuantity: Int
-    """
-    Defines if the tiering price should be graduated or volume based.
-    """
-    tiersMode: String!
-    """
-    The tiered pricing for the plan.
-    """
-    planTiers: [PlanTier!]!
-}
-
-"""
-The information about a plan's tier.
-FOR INTERNAL USE ONLY.
-"""
-type PlanTier {
-    """
-    The per-user amount for this tier.
-    """
-    unitAmount: Int!
-    """
-    The maximum number of users that this tier applies to.
-    """
-    upTo: Int!
-    """
-    The flat fee for this tier.
-    """
-    flatAmount: Int!
-}
-
-"""
-The information about a product subscription that determines its price.
-FOR INTERNAL USE ONLY.
-"""
-type ProductSubscriptionInvoiceItem {
-    """
-    The product plan for the subscription.
-    """
-    plan: ProductPlan!
-    """
-    This subscription's user count.
-    """
-    userCount: Int!
-    """
-    The date when the subscription expires.
-    """
-    expiresAt: DateTime!
-}
-
-"""
-An input type that describes a product subscription to be purchased. Corresponds to
-ProductSubscriptionInvoiceItem.
-FOR INTERNAL USE ONLY.
-"""
-input ProductSubscriptionInput {
-    """
-    The billing plan ID for the subscription (ProductPlan.billingPlanID). This also specifies the
-    billing product, because a plan is associated with its product in the billing system.
-    """
-    billingPlanID: String!
-    """
-    This subscription's user count.
-    """
-    userCount: Int!
-}
-
-"""
-The result of Mutation.dotcom.createPaidProductSubscription.
-FOR INTERNAL USE ONLY.
-"""
-type CreatePaidProductSubscriptionResult {
-    """
-    The newly created product subscription.
-    """
-    productSubscription: ProductSubscription!
-}
-
-"""
-The result of Mutation.dotcom.updatePaidProductSubscription.
-FOR INTERNAL USE ONLY.
-"""
-type UpdatePaidProductSubscriptionResult {
-    """
-    The updated product subscription.
-    """
-    productSubscription: ProductSubscription!
-}
-
-"""
-An event related to a product subscription.
-FOR INTERNAL USE ONLY.
-"""
-type ProductSubscriptionEvent {
-    """
-    The unique ID of the event.
-    """
-    id: String!
-    """
-    The date when the event occurred.
-    """
-    date: String!
-    """
-    The title of the event.
-    """
-    title: String!
-    """
-    A description of the event.
-    """
-    description: String
-    """
-    A URL where the user can see more information about the event.
-    """
-    url: String
 }
 
 """
@@ -505,15 +295,6 @@ type ProductSubscription implements Node {
     """
     account: User
     """
-    The information that determines the price of this subscription, or null if there is no billing
-    information associated with this subscription.
-    """
-    invoiceItem: ProductSubscriptionInvoiceItem
-    """
-    A list of billing-related events related to this product subscription.
-    """
-    events: [ProductSubscriptionEvent!]!
-    """
     The currently active product license associated with this product subscription, if any.
     """
     activeLicense: ProductLicense
@@ -528,6 +309,21 @@ type ProductSubscription implements Node {
         """
         first: Int
     ): ProductLicenseConnection!
+    """
+    The most preferable Sourcegraph access token to use for authenticating as the
+    subscription holder with managed Sourcegraph services.
+    Null only if creating a token failed, for example when no active license exists.
+    """
+    currentSourcegraphAccessToken: String
+    """
+    Available access tokens for authenticating as the subscription holder with managed
+    Sourcegraph services.
+    """
+    sourcegraphAccessTokens: [String!]!
+    """
+    Cody Gateway access granted to this subscription. Properties may be inferred from the active license, or be defined in overrides.
+    """
+    codyGatewayAccess: CodyGatewayAccess!
     """
     The date when this product subscription was created.
     """
@@ -545,18 +341,189 @@ type ProductSubscription implements Node {
     Only Sourcegraph.com site admins may query this field.
     """
     urlForSiteAdmin: String
-    """
-    The URL to view this product subscription's billing information (for site admins).
-    Only Sourcegraph.com site admins may query this field.
-    """
-    urlForSiteAdminBilling: String
 }
 
-extend type User {
+"""
+A usage data point of Cody Gateway usage of a subscription.
+"""
+type CodyGatewayUsageDatapoint {
     """
-    The URL to view this user's customer information (for Sourcegraph.com site admins).
-    Only Sourcegraph.com site admins may query this field.
-    FOR INTERNAL USE ONLY.
+    The day the usage occurred.
     """
-    urlForSiteAdminBilling: String
+    date: DateTime!
+    """
+    The number of requests made.
+    """
+    count: BigInt!
+    """
+    The model that was used.
+    """
+    model: String!
+}
+
+"""
+Cody Gateway access granted to a subscription.
+FOR INTERNAL USE ONLY.
+"""
+type CodyGatewayAccess {
+    """
+    Whether or not a subscription has Cody Gateway access.
+    """
+    enabled: Boolean!
+    """
+    Rate limit for chat completions access, or null if not enabled.
+    """
+    chatCompletionsRateLimit: CodyGatewayRateLimit
+    """
+    Rate limit for code completions access, or null if not enabled.
+    """
+    codeCompletionsRateLimit: CodyGatewayRateLimit
+    """
+    Rate limit for embedding text chunks, or null if not enabled.
+    """
+    embeddingsRateLimit: CodyGatewayRateLimit
+}
+
+"""
+The source of the rate limit returned.
+FOR INTERNAL USE ONLY.
+"""
+enum CodyGatewayRateLimitSource {
+    """
+    Indicates that a custom override for the rate limit has been stored.
+    """
+    OVERRIDE
+
+    """
+    Indicates that the rate limit is inferred by the subscriptions active plan.
+    """
+    PLAN
+}
+
+"""
+Cody Gateway access rate limits for a subscription.
+FOR INTERNAL USE ONLY.
+"""
+type CodyGatewayRateLimit {
+    """
+    The source of the rate limit configuration.
+    """
+    source: CodyGatewayRateLimitSource!
+    """
+    The models that are allowed for this rate limit bucket.
+    Usually, customers will have two separate rate limits, one
+    for chat completions and one for code completions. A usual
+    config could include:
+
+        chatCompletionsRateLimit: {
+            allowedModels: [anthropic/claude-v1, anthropic/claude-v1.3]
+        },
+        codeCompletionsRateLimit: {
+            allowedModels: [anthropic/claude-instant-v1]
+        }
+
+    In general, the model names are of the format "$PROVIDER/$MODEL_NAME".
+    """
+    allowedModels: [String!]!
+    """
+    Requests per time interval.
+    """
+    limit: BigInt!
+    """
+    Interval for rate limiting.
+    """
+    intervalSeconds: Int!
+    """
+    Recent usage data of Cody Gateway for the subscription.
+    """
+    usage: [CodyGatewayUsageDatapoint!]!
+}
+
+"""
+Partial update to apply to a subscription. Omitted fields are not applied.
+"""
+input UpdateProductSubscriptionInput {
+    """
+    Partial update to Cody Gateway access granted to this subscription.
+    """
+    codyGatewayAccess: UpdateCodyGatewayAccessInput
+}
+
+"""
+Partial update to apply to a subscription's Cody Gateway access. Omitted fields are not applied.
+"""
+input UpdateCodyGatewayAccessInput {
+    """
+    Enable or disable Cody Gateway access.
+    """
+    enabled: Boolean
+    """
+    Override default requests per time interval.
+
+    Set to 0 to remove the override.
+    """
+    chatCompletionsRateLimit: BigInt
+    """
+    Override default interval for rate limiting.
+
+    Set to 0 to remove the override.
+    """
+    chatCompletionsRateLimitIntervalSeconds: Int
+    """
+    Override the set of allowed models for chat completions
+    for this subscription.
+    """
+    chatCompletionsAllowedModels: [String!]
+    """
+    Override default requests per time interval.
+
+    Set to 0 to remove the override.
+    """
+    codeCompletionsRateLimit: BigInt
+    """
+    Override default interval for rate limiting.
+
+    Set to 0 to remove the override.
+    """
+    codeCompletionsRateLimitIntervalSeconds: Int
+    """
+    Override the set of allowed models for chat completions
+    for this subscription.
+    """
+    codeCompletionsAllowedModels: [String!]
+    """
+    Override default requests per time interval for embeddings generation.
+
+    Set to 0 to remove the override.
+    """
+    embeddingsRateLimit: BigInt
+    """
+    Override default interval for rate limiting for embeddings generation.
+
+    Set to 0 to remove the override.
+    """
+    embeddingsRateLimitIntervalSeconds: Int
+    """
+    Override the set of allowed models for embeddings generation for this subscription.
+    """
+    embeddingsAllowedModels: [String!]
+}
+
+"""
+A dotcom user allowed to access the Cody Gateway
+FOR INTERNAL USE ONLY.
+"""
+type CodyGatewayDotcomUser {
+    """
+    The id of the user
+    """
+    id: ID!
+    """
+    The user name of the user
+    """
+    username: String!
+    """
+    Cody Gateway access granted to this user. Properties may be inferred from dotcom site config, or be defined in overrides on the user.
+    """
+    codyGatewayAccess: CodyGatewayAccess!
 }

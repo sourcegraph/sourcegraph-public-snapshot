@@ -10,33 +10,37 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	api2 "github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestServeStream_empty(t *testing.T) {
-	mock := &mockSearchResolver{
-		done: make(chan struct{}),
-	}
-	mock.Close()
+	settings.MockCurrentUserFinal = &schema.Settings{}
+	t.Cleanup(func() { settings.MockCurrentUserFinal = nil })
+
+	mock := client.NewMockSearchClient()
+	mock.PlanFunc.SetDefaultReturn(&search.Inputs{}, nil)
 
 	ts := httptest.NewServer(&streamHandler{
+		logger:              logtest.Scoped(t),
 		flushTickerInternal: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
-		newSearchResolver: func(context.Context, database.DB, *graphqlbackend.SearchArgs) (searchResolver, error) {
-			return mock, nil
-		}})
+		searchClient:        mock,
+	})
 	defer ts.Close()
 
 	res, err := http.Get(ts.URL + "?q=test")
@@ -56,15 +60,72 @@ func TestServeStream_empty(t *testing.T) {
 	}
 }
 
-// Ensures graphqlbackend matches the interface we expect
-func TestDefaultNewSearchResolver(t *testing.T) {
-	_, err := defaultNewSearchResolver(context.Background(), database.NewMockDB(), &graphqlbackend.SearchArgs{
-		Version:  "V2",
-		Settings: &schema.Settings{},
+func TestServeStream_chunkMatches(t *testing.T) {
+	settings.MockCurrentUserFinal = &schema.Settings{}
+	t.Cleanup(func() { settings.MockCurrentUserFinal = nil })
+
+	mock := client.NewMockSearchClient()
+	mock.PlanFunc.SetDefaultReturn(&search.Inputs{Query: query.Q{query.Parameter{Field: "count", Value: "1000"}}}, nil)
+	mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, s streaming.Sender, _ *search.Inputs) (*search.Alert, error) {
+		s.Send(streaming.SearchEvent{
+			Results: result.Matches{&result.FileMatch{
+				File: result.File{Path: "testpath"},
+				ChunkMatches: result.ChunkMatches{{
+					Content: "line1",
+					Ranges: result.Ranges{{
+						Start: result.Location{0, 0, 0},
+						End:   result.Location{1, 0, 1},
+					}},
+				}},
+			}},
+		})
+		return nil, nil
 	})
+
+	mockRepos := dbmocks.NewMockRepoStore()
+	mockRepos.MetadataFunc.SetDefaultHook(func(_ context.Context, ids ...api2.RepoID) ([]*types.SearchedRepo, error) {
+		out := make([]*types.SearchedRepo, 0, len(ids))
+		for _, id := range ids {
+			out = append(out, &types.SearchedRepo{ID: id})
+		}
+		return out, nil
+	})
+
+	db := dbmocks.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(mockRepos)
+
+	ts := httptest.NewServer(&streamHandler{
+		logger:              logtest.Scoped(t),
+		db:                  db,
+		flushTickerInternal: 1 * time.Millisecond,
+		pingTickerInterval:  1 * time.Millisecond,
+		searchClient:        mock,
+	})
+	defer ts.Close()
+
+	res, err := http.Get(ts.URL + "?q=test&cm=t&display=1000")
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer res.Body.Close()
+
+	var matches []streamhttp.EventMatch
+	decoder := streamhttp.FrontendStreamDecoder{
+		OnMatches: func(ev []streamhttp.EventMatch) {
+			matches = append(matches, ev...)
+		},
+	}
+	err = decoder.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != 200 {
+		t.Errorf("expected status 200, got %d", res.StatusCode)
+	}
+	require.Len(t, matches, 1)
+	chunkMatches := matches[0].(*streamhttp.EventContentMatch).ChunkMatches
+	require.Len(t, chunkMatches, 1)
+	require.Len(t, chunkMatches[0].Ranges, 1)
 }
 
 func TestDisplayLimit(t *testing.T) {
@@ -109,7 +170,7 @@ func TestDisplayLimit(t *testing.T) {
 	}
 
 	// any returns item, true if skipped contains an item matching reason.
-	any := func(reason api.SkippedReason, skipped []api.Skipped) (api.Skipped, bool) {
+	anySkipped := func(reason api.SkippedReason, skipped []api.Skipped) (api.Skipped, bool) {
 		for _, s := range skipped {
 			if s.Reason == reason {
 				return s, true
@@ -120,11 +181,25 @@ func TestDisplayLimit(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("q=%s;displayLimit=%d", c.queryString, c.displayLimit), func(t *testing.T) {
-			mock := &mockSearchResolver{
-				done: make(chan struct{}),
-			}
+			settings.MockCurrentUserFinal = &schema.Settings{}
+			t.Cleanup(func() { settings.MockCurrentUserFinal = nil })
 
-			repos := database.NewStrictMockRepoStore()
+			mockInput := make(chan streaming.SearchEvent)
+			mock := client.NewMockSearchClient()
+			mock.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, queryString string, _ search.Mode, _ search.Protocol) (*search.Inputs, error) {
+				q, err := query.Parse(queryString, query.SearchTypeLiteral)
+				require.NoError(t, err)
+				return &search.Inputs{
+					Query: q,
+				}, nil
+			})
+			mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, stream streaming.Sender, _ *search.Inputs) (*search.Alert, error) {
+				event := <-mockInput
+				stream.Send(event)
+				return nil, nil
+			})
+
+			repos := dbmocks.NewStrictMockRepoStore()
 			repos.MetadataFunc.SetDefaultHook(func(_ context.Context, ids ...api2.RepoID) (_ []*types.SearchedRepo, err error) {
 				res := make([]*types.SearchedRepo, 0, len(ids))
 				for _, id := range ids {
@@ -134,24 +209,16 @@ func TestDisplayLimit(t *testing.T) {
 				}
 				return res, nil
 			})
-			db := database.NewStrictMockDB()
+			db := dbmocks.NewStrictMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			ts := httptest.NewServer(&streamHandler{
+				logger:              logtest.Scoped(t),
 				db:                  db,
 				flushTickerInternal: 1 * time.Millisecond,
 				pingTickerInterval:  1 * time.Millisecond,
-				newSearchResolver: func(_ context.Context, _ database.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
-					mock.c = args.Stream
-					q, err := query.Parse(c.queryString, query.Literal)
-					if err != nil {
-						t.Fatal(err)
-					}
-					mock.inputs = &run.SearchInputs{
-						Query: q,
-					}
-					return mock, nil
-				}})
+				searchClient:        mock,
+			})
 			defer ts.Close()
 
 			req, _ := streamhttp.NewRequest(ts.URL, c.queryString)
@@ -166,7 +233,7 @@ func TestDisplayLimit(t *testing.T) {
 			var matchCount int
 			decoder := streamhttp.FrontendStreamDecoder{
 				OnProgress: func(progress *api.Progress) {
-					if skipped, ok := any(api.DisplayLimit, progress.Skipped); ok {
+					if skipped, ok := anySkipped(api.DisplayLimit, progress.Skipped); ok {
 						displayLimitHit = true
 						message = skipped.Message
 					}
@@ -187,10 +254,9 @@ func TestDisplayLimit(t *testing.T) {
 			})
 
 			// Send 2 repository matches.
-			mock.c.Send(streaming.SearchEvent{
+			mockInput <- streaming.SearchEvent{
 				Results: []result.Match{mkRepoMatch(1), mkRepoMatch(2)},
-			})
-			mock.Close()
+			}
 			if err := g.Wait(); err != nil {
 				t.Fatal(err)
 			}
@@ -217,33 +283,4 @@ func mkRepoMatch(id int) *result.RepoMatch {
 		ID:   api2.RepoID(id),
 		Name: api2.RepoName(fmt.Sprintf("repo%d", id)),
 	}
-}
-
-type mockSearchResolver struct {
-	done   chan struct{}
-	c      streaming.Sender
-	inputs *run.SearchInputs
-}
-
-func (h *mockSearchResolver) Results(ctx context.Context) (*graphqlbackend.SearchResultsResolver, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case <-h.done:
-		return &graphqlbackend.SearchResultsResolver{
-			UserSettings:  &schema.Settings{},
-			SearchResults: &graphqlbackend.SearchResults{},
-		}, nil
-	}
-}
-
-func (h *mockSearchResolver) Close() {
-	close(h.done)
-}
-
-func (h *mockSearchResolver) Inputs() run.SearchInputs {
-	if h.inputs == nil {
-		return run.SearchInputs{}
-	}
-	return *h.inputs
 }

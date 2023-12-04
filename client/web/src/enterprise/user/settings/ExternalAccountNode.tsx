@@ -1,15 +1,15 @@
 import * as React from 'react'
-import { Observable, Subject, Subscription } from 'rxjs'
+
+import { type Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Badge, Button, Link } from '@sourcegraph/wildcard'
+import { Badge, Button, Link, AnchorLink, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { Timestamp } from '../../../components/time/Timestamp'
-import {
+import type {
     DeleteExternalAccountResult,
     DeleteExternalAccountVariables,
     ExternalAccountFields,
@@ -107,7 +107,7 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
     }
@@ -148,13 +148,17 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                         </small>
                     </div>
                     <div className="text-nowrap">
-                        {this.props.node.accountData && (
+                        {/*
+                         * Issue: This JSX tag's 'children' prop expects a single child of type 'ReactNode', but multiple children were provided
+                         * It seems that v18 requires explicit boolean value
+                         */}
+                        {!!this.props.node.accountData && (
                             <Button onClick={this.toggleShowData} variant="secondary">
                                 {this.state.showData ? 'Hide' : 'Show'} data
                             </Button>
                         )}{' '}
-                        {this.props.node.refreshURL && (
-                            <Button href={this.props.node.refreshURL} variant="secondary" as="a">
+                        {!!this.props.node.refreshURL && (
+                            <Button to={this.props.node.refreshURL} variant="secondary" as={AnchorLink}>
                                 Refresh
                             </Button>
                         )}{' '}

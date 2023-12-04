@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+# gazelle:resolve go github.com/sourcegraph/sourcegraph/ui/assets //ui/assets
+
+go_library(
+    name = "assetsutil",
+    srcs = [
+        "handler.go",
+        "url.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//internal/env",
+        "//ui/assets",
+        "@com_github_shurcool_httpgzip//:httpgzip",
+    ],
+)

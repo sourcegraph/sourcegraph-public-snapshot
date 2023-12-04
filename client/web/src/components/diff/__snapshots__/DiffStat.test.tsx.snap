@@ -1,39 +1,44 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`DiffStat expandedCounts 1`] = `
+exports[`DiffStat > expandedCounts 1`] = `
 <DocumentFragment>
   <div
-    class="diffStat"
-    data-tooltip="1 addition, 2 changes, 3 deletions"
+    class=""
   >
-    <strong
-      class="text-success mr-1"
+    <div
+      aria-label="3 additions, 5 deletions"
+      class="diffStat"
+      role="note"
     >
-      +1
-    </strong>
-    <strong
-      class="text-warning mr-1"
-    >
-      •2
-    </strong>
-    <strong
-      class="text-danger"
-    >
-      −3
-    </strong>
+      <strong
+        class="mr-1 a11y-ignore text-success"
+      >
+        +3
+      </strong>
+      <strong
+        class="a11y-ignore text-danger"
+      >
+        −5
+      </strong>
+    </div>
   </div>
 </DocumentFragment>
 `;
 
-exports[`DiffStat standard 1`] = `
+exports[`DiffStat > standard 1`] = `
 <DocumentFragment>
   <div
-    class="diffStat"
-    data-tooltip="1 addition, 2 changes, 3 deletions"
+    class=""
   >
-    <small>
-      8
-    </small>
+    <div
+      aria-label="3 additions, 5 deletions"
+      class="diffStat"
+      role="note"
+    >
+      <small>
+        8
+      </small>
+    </div>
   </div>
 </DocumentFragment>
 `;
@@ -47,7 +52,7 @@ exports[`DiffStatSquares 1`] = `
       class="square bg-success"
     />
     <div
-      class="square bg-warning"
+      class="square bg-danger"
     />
     <div
       class="square bg-danger"
@@ -68,24 +73,24 @@ exports[`DiffStatStack 1`] = `
     class="d-flex flex-column align-items-center"
   >
     <div
-      class="diffStat pb-1"
-      data-tooltip="1 addition, 2 changes, 3 deletions"
+      class="pb-1"
     >
-      <strong
-        class="text-success mr-1"
+      <div
+        aria-label="3 additions, 5 deletions"
+        class="diffStat"
+        role="note"
       >
-        +1
-      </strong>
-      <strong
-        class="text-warning mr-1"
-      >
-        •2
-      </strong>
-      <strong
-        class="text-danger"
-      >
-        −3
-      </strong>
+        <strong
+          class="mr-1 a11y-ignore text-success"
+        >
+          +3
+        </strong>
+        <strong
+          class="a11y-ignore text-danger"
+        >
+          −5
+        </strong>
+      </div>
     </div>
     <div
       class="squares"
@@ -94,7 +99,7 @@ exports[`DiffStatStack 1`] = `
         class="square bg-success"
       />
       <div
-        class="square bg-warning"
+        class="square bg-danger"
       />
       <div
         class="square bg-danger"

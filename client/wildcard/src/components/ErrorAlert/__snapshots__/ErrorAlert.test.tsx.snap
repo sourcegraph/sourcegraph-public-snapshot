@@ -1,0 +1,68 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ErrorAlert > should add a prefix if given 1`] = `
+<DocumentFragment>
+  <div
+    aria-live="assertive"
+    class="alert alertDanger"
+    role="alert"
+  >
+    <strong>
+      An error happened:
+    </strong>
+     
+    <span
+      class="markdown"
+    >
+      An error happened
+    </span>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ErrorAlert > should render a Go multierror nicely 1`] = `
+<DocumentFragment>
+  <div
+    aria-live="assertive"
+    class="alert alertDanger"
+    role="alert"
+  >
+     
+    <span
+      class="markdown"
+    >
+      <ul>
+        
+
+        <li>
+          Additional property asdasd is not allowed
+        </li>
+        
+
+        <li>
+          projectQuery.0: String length must be greater than or equal to 1
+        </li>
+        
+
+      </ul>
+    </span>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ErrorAlert > should render an Error object as an alert 1`] = `
+<DocumentFragment>
+  <div
+    aria-live="assertive"
+    class="alert alertDanger"
+    role="alert"
+  >
+     
+    <span
+      class="markdown"
+    >
+      An error happened
+    </span>
+  </div>
+</DocumentFragment>
+`;

@@ -1,22 +1,28 @@
-import { storiesOf } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import classNames from 'classnames'
-import React from 'react'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../../components/WebStory'
 
 import { ChangesetApplyPreviewNode } from './ChangesetApplyPreviewNode'
-import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
-import styles from './PreviewList.module.scss'
-import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
+import { hiddenChangesetApplyPreviewStories, visibleChangesetApplyPreviewNodeStories } from './storyData'
 
-const { add } = storiesOf('web/batches/preview/ChangesetApplyPreviewNode', module).addDecorator(story => (
-    <div className={classNames(styles.previewListGrid, 'p-3 container')}>{story()}</div>
-))
+import styles from './PreviewList.module.scss'
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-add('Overview', () => {
+const decorator: Decorator = story => (
+    <div className={classNames(styles.previewListGrid, 'p-3 container')}>{story()}</div>
+)
+
+const config: Meta = {
+    title: 'web/batches/preview/ChangesetApplyPreviewNode',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Overview: StoryFn = () => {
     const nodes = [
         ...Object.values(visibleChangesetApplyPreviewNodeStories(false)),
         ...Object.values(hiddenChangesetApplyPreviewStories),
@@ -34,7 +40,7 @@ add('Overview', () => {
                                 url: '/users/alice',
                                 displayName: 'Alice',
                                 username: 'alice',
-                                email: 'alice@email.test',
+                                emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                             }}
                             queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                         />
@@ -43,4 +49,4 @@ add('Overview', () => {
             )}
         </WebStory>
     )
-})
+}

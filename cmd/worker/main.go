@@ -2,10 +2,11 @@ package main
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
+	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
 )
 
 func main() {
-	authz.SetProviders(true, []authz.Provider{})
-	shared.Start(nil, nil)
+	sanitycheck.Pass()
+	svcmain.SingleServiceMain(shared.Service)
 }

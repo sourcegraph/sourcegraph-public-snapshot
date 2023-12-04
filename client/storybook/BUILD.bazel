@@ -1,0 +1,81 @@
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "npm_package", "sass", "ts_project")
+load("//client/shared/dev:tools.bzl", "module_style_typings")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
+
+# gazelle:js_resolve **/*.module.scss :module_style_typings
+
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+
+npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root()
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/build-config:tsconfig",
+        "//client/common:tsconfig",
+        "//client/http-client:tsconfig",
+        "//client/shared:tsconfig",
+        "//client/wildcard:tsconfig",
+    ],
+)
+
+module_style_typings(
+    name = "module_style_typings",
+)
+
+sass(
+    name = "module_styles",
+    srcs = glob(["src/**/*.module.scss"]),
+)
+
+ts_project(
+    name = "storybook_lib",
+    srcs = [
+        "globals.d.ts",
+        "src/decorators/withChromaticThemes/ChromaticRoot/ChromaticRoot.tsx",
+        "src/decorators/withChromaticThemes/ChromaticRoot/index.ts",
+        "src/decorators/withChromaticThemes/index.ts",
+        "src/decorators/withChromaticThemes/withChromaticThemes.tsx",
+        "src/dummyEventSourcePolyfill.ts",
+        "src/environment-config.ts",
+        "src/main.ts",
+        "src/preview.ts",
+        "src/themes.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":module_style_typings",
+        ":node_modules/@sourcegraph/build-config",
+        ":node_modules/@sourcegraph/wildcard",
+        "//:node_modules/@storybook/addon-actions",
+        "//:node_modules/@storybook/addon-console",
+        "//:node_modules/@storybook/builder-vite",
+        "//:node_modules/@storybook/react",
+        "//:node_modules/@storybook/react-vite",
+        "//:node_modules/@storybook/theming",
+        "//:node_modules/@storybook/types",
+        "//:node_modules/@types/classnames",
+        "//:node_modules/@types/node",
+        "//:node_modules/@types/react",
+        "//:node_modules/classnames",
+        "//:node_modules/focus-visible",
+        "//:node_modules/open-color",
+        "//:node_modules/react",
+        "//:node_modules/vite-plugin-turbosnap",
+    ],
+)
+
+npm_package(
+    name = "storybook_pkg",
+    srcs = [
+        "package.json",
+        ":module_styles",  #keep
+        ":storybook_lib",
+    ],
+)

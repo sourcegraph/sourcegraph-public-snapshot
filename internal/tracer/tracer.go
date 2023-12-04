@@ -1,31 +1,76 @@
-// Package tracer initializes distributed tracing and log15 behavior. It also updates distributed
-// tracing behavior in response to changes in site configuration. When the Init function of this
-// package is invoked, opentracing.SetGlobalTracer is called (and subsequently called again after
-// every Sourcegraph site configuration change). Importing programs should not invoke
-// opentracing.SetGlobalTracer anywhere else.
 package tracer
 
 import (
 	"fmt"
-	"io"
-	"reflect"
-	"sync"
+	"sync/atomic"
+	"text/template"
 
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
-	"github.com/uber/jaeger-client-go"
-	jaegercfg "github.com/uber/jaeger-client-go/config"
-	jaegermetrics "github.com/uber/jaeger-lib/metrics"
+	"github.com/go-logr/logr"
+	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/automaxprocs/maxprocs"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	"github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func init() {
+// options control the behavior of a TracerType
+type options struct {
+	TracerType
+	externalURL string
+	// these values are not configurable by site config
+	resource log.Resource
+}
+
+type TracerType string
+
+const (
+	None TracerType = "none"
+
+	// Jaeger exports traces over the Jaeger thrift protocol.
+	Jaeger TracerType = "jaeger"
+
+	// OpenTelemetry exports traces over OTLP.
+	OpenTelemetry TracerType = "opentelemetry"
+)
+
+// DefaultTracerType is the default tracer type if not explicitly set by the user and
+// some trace policy is enabled.
+const DefaultTracerType = OpenTelemetry
+
+// isSetByUser returns true if the TracerType is one supported by the schema
+// should be kept in sync with ObservabilityTracing.Type in schema/site.schema.json
+func (t TracerType) isSetByUser() bool {
+	switch t {
+	case Jaeger, OpenTelemetry:
+		return true
+	}
+	return false
+}
+
+type Configuration struct {
+	ExternalURL string
+	*schema.ObservabilityTracing
+}
+
+type ConfigurationSource interface {
+	Config() Configuration
+}
+
+type WatchableConfigurationSource interface {
+	ConfigurationSource
+
+	// Watchable allows the caller to be notified when the configuration changes.
+	conftypes.Watchable
+}
+
+// Init should be called from the main function of service
+func Init(logger log.Logger, c WatchableConfigurationSource) {
 	// Tune GOMAXPROCS for kubernetes. All our binaries import this package,
 	// so we tune for all of them.
 	//
@@ -33,196 +78,55 @@ func init() {
 	// import for sourcegraph binaries which would have less surprising
 	// behaviour.
 	if _, err := maxprocs.Set(); err != nil {
-		log15.Error("automaxprocs failed", "error", err)
-	}
-}
-
-// Options control the behavior of a tracer.
-type Options struct {
-	serviceName string
-}
-
-// If this idiom seems strange:
-// https://github.com/tmrts/go-patterns/blob/master/idiom/functional-options.md
-type Option func(*Options)
-
-func ServiceName(s string) Option {
-	return func(o *Options) {
-		o.serviceName = s
-	}
-}
-
-func Init(c conftypes.WatchableSiteConfig, options ...Option) {
-	opts := &Options{}
-	for _, setter := range options {
-		setter(opts)
-	}
-	if opts.serviceName == "" {
-		opts.serviceName = env.MyName
+		logger.Error("automaxprocs failed", log.Error(err))
 	}
 
-	initTracer(opts.serviceName, c)
-}
-
-type jaegerOpts struct {
-	ServiceName string
-	ExternalURL string
-	Enabled     bool
-	Debug       bool
-}
-
-// initTracer is a helper that should be called exactly once (from Init).
-func initTracer(serviceName string, c conftypes.WatchableSiteConfig) {
-	globalTracer := newSwitchableTracer()
-	opentracing.SetGlobalTracer(globalTracer)
-
-	// initial tracks if its our first run of conf.Watch. This is used to
-	// prevent logging "changes" when its the first run.
-	initial := true
-
-	// Initially everything is disabled since we haven't read conf yet.
-	oldOpts := jaegerOpts{
-		ServiceName: serviceName,
-		Enabled:     false,
-		Debug:       false,
+	// Resource mirrors the initialization used by our OpenTelemetry logger.
+	resource := log.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
 	}
 
-	// Watch loop
-	go c.Watch(func() {
-		siteConfig := c.SiteConfig()
+	// Additionally set a dev namespace
+	if version.IsDev(version.Version()) {
+		resource.Namespace = "dev"
+	}
 
-		// Set sampling strategy
-		samplingStrategy := ot.TraceNone
-		shouldLog := false
-		if tracingConfig := siteConfig.ObservabilityTracing; tracingConfig != nil {
-			switch tracingConfig.Sampling {
-			case "all":
-				samplingStrategy = ot.TraceAll
-			case "selective":
-				samplingStrategy = ot.TraceSelective
-			}
-			shouldLog = tracingConfig.Debug
-		} else if siteConfig.UseJaeger {
-			samplingStrategy = ot.TraceAll
+	// Set up initial configurations
+	debugMode := &atomic.Bool{}
+	provider := newOtelTracerProvider(resource)
+
+	// Set up logging
+	otelLogger := logger.AddCallerSkip(2).Scoped("otel")
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		if debugMode.Load() {
+			otelLogger.Warn("error encountered", log.Error(err))
+		} else {
+			otelLogger.Debug("error encountered", log.Error(err))
 		}
-		if tracePolicy := ot.GetTracePolicy(); tracePolicy != samplingStrategy && !initial {
-			log15.Info("opentracing: TracePolicy", "oldValue", tracePolicy, "newValue", samplingStrategy)
+	}))
+	otel.SetLogger(logr.Discard()) // we only care about errors, handled above - discard everything else
+
+	// Create and set up global tracers from provider. We will be making updates to these
+	// tracers through the debugMode ref and underlying provider.
+	otelTracerProvider := newLoggedOtelTracerProvider(logger, provider, debugMode)
+	otel.SetTextMapPropagator(oteldefaults.Propagator())
+	otel.SetTracerProvider(otelTracerProvider)
+
+	// Initially everything is disabled since we haven't read conf yet - start a goroutine
+	// that watches for updates to configure the undelrying provider and debugMode.
+	go c.Watch(newConfWatcher(logger, c, provider, newOtelSpanProcessor, debugMode))
+
+	// Contribute validation for tracing package
+	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) conf.Problems {
+		tracing := c.SiteConfig().ObservabilityTracing
+		if tracing == nil || tracing.UrlTemplate == "" {
+			return nil
 		}
-		initial = false
-		ot.SetTracePolicy(samplingStrategy)
-
-		opts := jaegerOpts{
-			ServiceName: serviceName,
-			ExternalURL: siteConfig.ExternalURL,
-			Enabled:     samplingStrategy == ot.TraceAll || samplingStrategy == ot.TraceSelective,
-			Debug:       shouldLog,
+		if _, err := template.New("").Parse(tracing.UrlTemplate); err != nil {
+			return conf.NewSiteProblems(fmt.Sprintf("observability.tracing.traceURL is not a valid template: %s", err.Error()))
 		}
-
-		if opts == oldOpts {
-			// Nothing changed
-			return
-		}
-
-		oldOpts = opts
-
-		tracer, closer, err := newTracer(&opts)
-		if err != nil {
-			log15.Warn("Could not initialize jaeger tracer", "error", err.Error())
-			return
-		}
-
-		globalTracer.set(tracer, closer, opts.Debug)
+		return nil
 	})
-}
-
-func newTracer(opts *jaegerOpts) (opentracing.Tracer, io.Closer, error) {
-	if !opts.Enabled {
-		log15.Info("opentracing: Jaeger disabled")
-		return opentracing.NoopTracer{}, nil, nil
-	}
-
-	log15.Info("opentracing: Jaeger enabled")
-	cfg, err := jaegercfg.FromEnv()
-	cfg.ServiceName = opts.ServiceName
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "jaegercfg.FromEnv failed")
-	}
-	cfg.Tags = append(cfg.Tags, opentracing.Tag{Key: "service.version", Value: version.Version()})
-	if reflect.DeepEqual(cfg.Sampler, &jaegercfg.SamplerConfig{}) {
-		// Default sampler configuration for when it is not specified via
-		// JAEGER_SAMPLER_* env vars. In most cases, this is sufficient
-		// enough to connect Sourcegraph to Jaeger without any env vars.
-		cfg.Sampler.Type = jaeger.SamplerTypeConst
-		cfg.Sampler.Param = 1
-	}
-	tracer, closer, err := cfg.NewTracer(
-		jaegercfg.Logger(log15Logger{}),
-		jaegercfg.Metrics(jaegermetrics.NullFactory),
-	)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "jaegercfg.NewTracer failed")
-	}
-
-	return tracer, closer, nil
-}
-
-type log15Logger struct{}
-
-func (l log15Logger) Error(msg string) { log15.Error(msg) }
-
-func (l log15Logger) Infof(msg string, args ...interface{}) {
-	log15.Info(fmt.Sprintf(msg, args...))
-}
-
-// switchableTracer implements opentracing.Tracer. The underlying tracer used is switchable (set via
-// the `set` method).
-type switchableTracer struct {
-	mu           sync.RWMutex
-	tracer       opentracing.Tracer
-	tracerCloser io.Closer
-	log          bool
-}
-
-func newSwitchableTracer() *switchableTracer {
-	return &switchableTracer{tracer: opentracing.NoopTracer{}}
-}
-
-func (t *switchableTracer) StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	if t.log {
-		log15.Info("opentracing: StartSpan", "operationName", operationName, "tracer", fmt.Sprintf("%T", t.tracer))
-	}
-	return t.tracer.StartSpan(operationName, opts...)
-}
-
-func (t *switchableTracer) Inject(sm opentracing.SpanContext, format interface{}, carrier interface{}) error {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	if t.log {
-		log15.Info("opentracing: Inject", "tracer", fmt.Sprintf("%T", t.tracer))
-	}
-	return t.tracer.Inject(sm, format, carrier)
-}
-
-func (t *switchableTracer) Extract(format interface{}, carrier interface{}) (opentracing.SpanContext, error) {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	if t.log {
-		log15.Info("opentracing: Extract", "tracer", fmt.Sprintf("%T", t.tracer))
-	}
-	return t.tracer.Extract(format, carrier)
-}
-
-func (t *switchableTracer) set(tracer opentracing.Tracer, tracerCloser io.Closer, log bool) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if tc := t.tracerCloser; tc != nil {
-		// Close the old tracerCloser outside the critical zone
-		go tc.Close()
-	}
-
-	t.tracerCloser = tracerCloser
-	t.tracer = tracer
-	t.log = log
 }

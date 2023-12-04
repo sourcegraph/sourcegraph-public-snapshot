@@ -1,0 +1,22 @@
+.search-type-query-part {
+    border-right: 1px solid var(--border-color-2);
+    padding-right: 0.5rem;
+    margin-right: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+}
+
+.query-input-wrapper {
+    display: flex;
+    align-items: center;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    background-color: var(--color-bg-1);
+    border: 1px solid var(--border-color);
+
+    &:focus,
+    &:focus-within {
+        border: 1px solid var(--border-active-color) !important;
+        box-shadow: 0 0 0 0.125rem var(--primary-2);
+    }
+}

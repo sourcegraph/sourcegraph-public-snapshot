@@ -1,0 +1,55 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "linters",
+    srcs = [
+        "buf.go",
+        "client.go",
+        "go_checks.go",
+        "godirective.go",
+        "gogenerate.go",
+        "gomod.go",
+        "hadolint.go",
+        "linters.go",
+        "misc.go",
+        "prettier.go",
+        "runner.go",
+        "shell.go",
+        "svg.go",
+        "usage_linter.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/linters",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/sg/buf",
+        "//dev/sg/internal/check",
+        "//dev/sg/internal/generate/golang",
+        "//dev/sg/internal/generate/proto",
+        "//dev/sg/internal/repo",
+        "//dev/sg/internal/run",
+        "//dev/sg/internal/std",
+        "//dev/sg/root",
+        "//internal/download",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_masterminds_semver//:semver",
+        "@com_github_sourcegraph_run//:run",
+        "@dev_bobheadxi_go_streamline//pipeline",
+    ],
+)
+
+go_test(
+    name = "linters_test",
+    timeout = "short",
+    srcs = [
+        "go_checks_test.go",
+        "gomod_test.go",
+    ],
+    embed = [":linters"],
+    deps = [
+        "//dev/sg/internal/repo",
+        "//dev/sg/internal/std",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

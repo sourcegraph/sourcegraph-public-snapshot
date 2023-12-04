@@ -4,7 +4,7 @@
 > The Stream API is still evolving. Although parts of it can be considered
 > stable, we don't guarantee backward compatibility just yet. This means it is
 > possible that fields are added, removed, or renamed. All backward incompatible changes to the
-> event stream format will be documented in the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md).
+> event stream format will be documented in the [CHANGELOG](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md).
 
 
 With the Stream API you can consume search results and related metadata as
@@ -24,13 +24,13 @@ curl --header "Accept: text/event-stream" \
      --get \
      --url "<Sourcegraph URL>/.api/search/stream" \
      --data-urlencode "q=<query>" \
-     [--data-urlencode "display=<display-limit>"]
+     ["display=<display-limit>"]
 ```
 
 | parameter | description |
 | --- | --- |
 | access token | [Sourcegraph access token](https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token) |
-| Sourcegraph URL | The URL of your instance of Sourcegraph or https://sourcegraph.com for Sourcegraph's Cloud instance. |
+| Sourcegraph URL | The URL of your Sourcegraph instance, or https://sourcegraph.com. |
 | query | A Sourcegraph query string, see our [search query syntax](../../code_search/reference/queries.md) |
 | display-limit | The maximum number of matches the backend returns. Defaults to -1 (no limit). If the backend finds more then display-limit results, it will keep searching and aggregating statistics, but the matches will not be returned anymore. Note that the display-limit is different from the query filter `count:` which causes the search to stop and return once we found `count:` matches. |
 
@@ -76,7 +76,7 @@ Refer to the [interface definitions of our typescript client](https://sourcegrap
 
 ## Example (curl) 
 
-On Sourcegraph Cloud we can run queries without authentication.
+On Sourcegraph.com we can run queries without authentication.
 
 ```shellsession
 $ curl --header "Accept: text/event-stream" \
@@ -110,8 +110,12 @@ To search a pattern over all indexed repositories, add `count:all` and remove al
 curl --header "Accept:text/event-stream" --get --url "https://sourcegraph.com/.api/search/stream" --data-urlencode "q=secret count:all"
 ```
 
-If you don't want to write your own client, you can also use Sourcegraph's [src-cli](https://github.com/sourcegraph/src-cli).
+If you don't want to write your own client, you can also use Sourcegraph's [src-cli](https://sourcegraph.com/github.com/sourcegraph/src-cli).
 
 ```bash
 src search -stream "secret count:all"
 ```
+
+### Q: Are there plans for supporting a streaming client or interface with more functionality (e.g., parallelizing multiple streaming requests or aggregating results from multiple streams)?
+
+There are currently no plans to support additional client-side functionality to interact with a streaming endpoint. We recommend users write their own scripts or client wrappers that handle, e.g., firing multiple requests, accepting and aggregating the return values, and additional result formatting or processing.

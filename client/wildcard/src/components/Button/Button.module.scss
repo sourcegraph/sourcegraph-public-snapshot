@@ -28,10 +28,9 @@
     line-height: 1.4285714286;
     border-radius: var(--border-radius);
     padding: 0.375rem 0.75rem;
-    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
-        box-shadow 0.15s ease-in-out;
 
-    &:disabled {
+    &:disabled,
+    &[aria-disabled='true'] {
         cursor: not-allowed;
     }
 
@@ -41,12 +40,35 @@
     }
 }
 
+// Handle a special case for Button as="input" type="checkbox | radio"
+// since button doesn't use disabled attribute we enforce/mimic the native
+// disabled control styles.
+input.btn {
+    &:focus-visible {
+        outline: 2px solid var(--primary-2);
+        outline-offset: 2px;
+    }
+
+    &[aria-disabled='true'] {
+        cursor: not-allowed;
+
+        :global(.theme-light) & {
+            filter: brightness(0.9);
+        }
+
+        :global(.theme-dark) & {
+            filter: brightness(0.5);
+        }
+    }
+}
+
 .btn-link {
     color: var(--link-color);
     background-color: var(--link-1);
 
     &:global(.disabled),
-    &:disabled {
+    &:disabled,
+    &[aria-disabled='true'] {
         :global(.theme-light) & {
             opacity: 0.2;
         }
@@ -56,16 +78,16 @@
         }
     }
 
-    &:not(:disabled):not(:global(.disabled)) {
-        &:hover:not(:global(.focus)):not(:focus) {
+    &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
+        &:hover:not(:global(.focus)):not(:focus-visible),
+        &:active,
+        &:global(.active) {
             text-decoration: underline;
             color: var(--link-hover-color);
         }
 
-        &:focus,
-        &:global(.focus),
-        &:active,
-        &:global(.active) {
+        &:focus-visible,
+        &:global(.focus) {
             text-decoration: underline;
 
             :global(.theme-light) & {
@@ -79,7 +101,7 @@
     }
 }
 
-.btn-block {
+.btn.btn-block {
     display: block;
     width: 100%;
 }
@@ -115,16 +137,17 @@
     border: none;
     cursor: pointer;
 
-    &:focus-visible:not(:disabled):not(:global(.disabled)) {
+    &.focus:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
         box-shadow: 0 0 0 2px var(--primary-2);
     }
 
-    &:hover:not(:disabled):not(:global(.disabled)) {
+    &:hover:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
         color: var(--body-color);
     }
 
     // Add color for disabled state of button icon
-    &:disabled {
+    &:disabled,
+    &[aria-disabled='true'] {
         :global(.theme-light) & {
             color: var(--btn-icon-disabled-light-color);
         }
@@ -135,202 +158,209 @@
     }
 }
 
-@mixin button-variant(
-    $name,
-    $base-color,
-    $light-color-variant,
-    $dark-color-variant,
-    $text-color: var(--light-text),
-    $disabled-text-color: var(--light-text)
-) {
-    .btn-#{$name} {
-        color: $text-color;
-        border-color: $base-color;
-        background-color: $base-color;
+.btn-primary,
+.btn-secondary,
+.btn-success,
+.btn-danger,
+.btn-warning,
+.btn-info,
+.btn-merged {
+    --btn-text-color: var(--light-text);
+    --btn-base-color: var(--primary);
+    --btn-light-color-variant: var(--primary-2);
+    --btn-dark-color-variant: var(--primary-3);
+    --btn-light-disabled-text-color: var(--light-text);
+    --btn-dark-disabled-text-color: var(--text-disabled);
 
-        &:global(.disabled),
-        &:disabled {
-            opacity: 1;
-            background-color: $light-color-variant;
-            border-color: $light-color-variant;
-            color: $disabled-text-color;
+    color: var(--btn-text-color);
+    border-color: var(--btn-base-color);
+    background-color: var(--btn-base-color);
+
+    &:global(.disabled),
+    &:disabled,
+    &[aria-disabled='true'] {
+        opacity: 1;
+        background-color: var(--btn-light-color-variant);
+        border-color: var(--btn-light-color-variant);
+
+        :global(.theme-light) & {
+            color: var(--btn-light-disabled-text-color);
+        }
+        :global(.theme-dark) & {
+            color: var(--btn-dark-disabled-text-color);
+        }
+    }
+
+    &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
+        &:hover:not(:global(.focus)):not(:focus-visible),
+        &:active,
+        &:global(.active) {
+            color: var(--btn-text-color);
+            background-color: var(--btn-dark-color-variant);
         }
 
-        &:not(:disabled):not(:global(.disabled)) {
-            &:hover:not(:global(.focus)):not(:focus) {
-                color: $text-color;
-                background-color: $dark-color-variant;
+        &:focus-visible,
+        &:global(.focus) {
+            color: var(--btn-text-color);
+            background-color: var(--btn-base-color);
+            border-color: var(--body-bg);
+
+            :global(.theme-light) & {
+                box-shadow: 0 0 0 2px var(--btn-light-color-variant);
             }
 
-            &:focus,
-            &:global(.focus),
-            &:active,
-            &:global(.active) {
-                color: $text-color;
-                background-color: $base-color;
-                border-color: var(--body-bg);
-
-                :global(.theme-light) & {
-                    box-shadow: 0 0 0 2px $light-color-variant;
-                }
-
-                :global(.theme-dark) & {
-                    box-shadow: 0 0 0 2px $dark-color-variant;
-                }
+            :global(.theme-dark) & {
+                box-shadow: 0 0 0 2px var(--btn-dark-color-variant);
             }
         }
     }
 
-    :global(.show) > .btn-#{$name} :global(.dropdown-toggle) {
-        color: $text-color;
-        background-color: $base-color;
+    :global(.show) > &:global(.dropdown-toggle) {
         border-color: var(--body-bg);
 
         :global(.theme-light) & {
-            box-shadow: 0 0 0 2px $light-color-variant;
+            box-shadow: 0 0 0 2px var(--btn-light-color-variant);
         }
         :global(.theme-dark) & {
-            box-shadow: 0 0 0 2px $dark-color-variant;
-        }
-    }
-
-    .btn-outline-#{$name} {
-        color: var(--body-color);
-        border-color: $base-color;
-        background-color: transparent;
-
-        &:global(.disabled),
-        &:disabled {
-            opacity: 1;
-            color: var(--text-disabled);
-            border-color: $light-color-variant;
-        }
-
-        &:not(:disabled):not(:global(.disabled)) {
-            // Set inlined icons to match outline border
-            svg {
-                fill: $base-color;
-            }
-
-            &:hover:not(:global(.focus)):not(:focus) {
-                background-color: var(--color-bg-1);
-                :global(.theme-light) & {
-                    color: $dark-color-variant;
-                    border-color: $dark-color-variant;
-
-                    svg {
-                        fill: $dark-color-variant;
-                    }
-                }
-                :global(.theme-dark) & {
-                    color: $base-color;
-                    border-color: $base-color;
-                }
-            }
-
-            &:focus,
-            &:global(.focus),
-            &:active,
-            &:global(.active) {
-                color: var(--body-color);
-                border-color: var(--body-bg);
-                background-color: var(--body-bg);
-                outline: none;
-
-                :global(.theme-light) & {
-                    box-shadow: 0 0 0 2px $light-color-variant;
-                }
-
-                :global(.theme-dark) & {
-                    box-shadow: 0 0 0 2px $dark-color-variant;
-                }
-            }
-        }
-    }
-
-    :global(.show) > .btn-outline-#{$name}:global(.dropdown-toggle) {
-        color: var(--body-color);
-        border-color: var(--body-bg);
-        background-color: var(--body-bg);
-        :global(.theme-light) & {
-            box-shadow: 0 0 0 2px $light-color-variant;
-        }
-        :global(.theme-dark) & {
-            box-shadow: 0 0 0 2px $dark-color-variant;
+            box-shadow: 0 0 0 2px var(--btn-dark-color-variant);
         }
     }
 }
 
-@include button-variant(
-    $name: 'primary',
-    $base-color: var(--primary),
-    $light-color-variant: var(--primary-2),
-    $dark-color-variant: var(--primary-3)
-);
+.btn-outline {
+    color: var(--body-color);
+    background-color: transparent;
 
-@include button-variant(
-    $name: 'secondary',
-    $base-color: var(--secondary),
-    $light-color-variant: var(--secondary-2),
-    $dark-color-variant: var(--secondary-3),
+    &:global(.disabled),
+    &:disabled,
+    &[aria-disabled='true'] {
+        --btn-light-disabled-text-color: var(--text-disabled);
+        --btn-dark-disabled-text-color: var(--text-disabled);
+
+        background-color: transparent;
+    }
+
+    &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
+        // Set inlined icons to match outline border
+        // except [data-caret] attribute (which can be used for button carret
+        svg:not([data-caret]) {
+            fill: var(--btn-base-color);
+        }
+
+        &:hover:not(:global(.focus)):not(:focus-visible),
+        &:active,
+        &:global(.active) {
+            background-color: var(--color-bg-1);
+
+            :global(.theme-light) & {
+                color: var(--btn-dark-color-variant);
+                border-color: var(--btn-dark-color-variant);
+
+                svg {
+                    fill: var(--btn-dark-color-variant);
+                }
+            }
+
+            :global(.theme-dark) & {
+                color: var(--btn-base-color);
+                border-color: var(--btn-base-color);
+            }
+        }
+
+        &:focus-visible,
+        &:global(.focus) {
+            color: var(--body-color);
+            background-color: var(--body-bg);
+            border-color: var(--body-bg);
+            outline: none;
+        }
+    }
+
+    :global(.show) > &:global(.dropdown-toggle) {
+        border-color: var(--body-bg);
+        background-color: var(--body-bg);
+
+        :global(.theme-light) & {
+            box-shadow: 0 0 0 2px var(--btn-light-color-variant);
+        }
+        :global(.theme-dark) & {
+            box-shadow: 0 0 0 2px var(--btn-dark-color-variant);
+        }
+    }
+}
+
+.btn-primary {
+    --btn-text-color: var(--light-text);
+    --btn-base-color: var(--primary);
+    --btn-light-color-variant: var(--primary-2);
+    --btn-dark-color-variant: var(--primary-3);
+    --btn-light-disabled-text-color: var(--light-text);
+    --btn-dark-disabled-text-color: var(--light-text-disabled);
+}
+
+.btn-secondary {
+    --btn-base-color: var(--secondary);
+    --btn-light-color-variant: var(--secondary-2);
+    --btn-dark-color-variant: var(--secondary-3);
     // Use darker text colors for contrast
-    $text-color: var(--body-color),
-    $disabled-text-color: var(--text-disabled)
-);
+    --btn-text-color: var(--body-color);
+    --btn-light-disabled-text-color: var(--text-disabled);
+    --btn-dark-disabled-text-color: var(--text-muted);
+}
 
-@include button-variant(
-    $name: 'success',
-    $base-color: var(--success),
-    $light-color-variant: var(--success-2),
-    $dark-color-variant: var(--success-3)
-);
+.btn-success {
+    --btn-base-color: var(--success);
+    --btn-light-color-variant: var(--success-2);
+    --btn-dark-color-variant: var(--success-3);
+}
 
-@include button-variant(
-    $name: 'danger',
-    $base-color: var(--danger),
-    $light-color-variant: var(--danger-2),
-    $dark-color-variant: var(--danger-3)
-);
+.btn-danger {
+    --btn-base-color: var(--danger);
+    --btn-light-color-variant: var(--danger-2);
+    --btn-dark-color-variant: var(--danger-3);
+}
 
-@include button-variant(
-    $name: 'warning',
-    $base-color: var(--warning),
-    $light-color-variant: var(--warning-2),
-    $dark-color-variant: var(--warning-3),
+.btn-warning {
+    --btn-base-color: var(--warning);
+    --btn-light-color-variant: var(--warning-2);
+    --btn-dark-color-variant: var(--warning-3);
     // Use darker text colors for contrast
-    $text-color: var(--dark-text),
-    $disabled-text-color: var(--text-disabled)
-);
+    --btn-text-color: var(--dark-text);
+    --btn-light-disabled-text-color: var(--text-muted);
+    --btn-dark-disabled-text-color: var(--text-muted);
+}
 
-@include button-variant(
-    $name: 'info',
-    $base-color: var(--info),
-    $light-color-variant: var(--info-2),
-    $dark-color-variant: var(--info-3),
+.btn-info {
+    --btn-base-color: var(--info);
+    --btn-light-color-variant: var(--info-2);
+    --btn-dark-color-variant: var(--info-3);
     // Use darker text colors for contrast
-    $text-color: var(--dark-text),
-    $disabled-text-color: var(--text-disabled)
-);
+    --btn-text-color: var(--dark-text);
+    --btn-light-disabled-text-color: var(--text-muted);
+    --btn-dark-disabled-text-color: var(--text-muted);
+}
 
-@include button-variant(
-    $name: 'merged',
-    $base-color: var(--merged),
-    $light-color-variant: var(--merged-2),
-    $dark-color-variant: var(--merged-3)
-);
+.btn-merged {
+    --btn-base-color: var(--merged);
+    --btn-light-color-variant: var(--merged-2);
+    --btn-dark-color-variant: var(--merged-3);
+    --btn-dark-disabled-text-color: var(--light-text);
+}
 
 :global(.theme-dark),
 :global(.theme-light) {
     // btn-secondary needs specific styles to ensure good contrast
-    .btn-secondary,
-    .btn-outline-secondary {
+    .btn-secondary {
         &:global(.disabled),
-        &:disabled {
+        &:disabled,
+        &[aria-disabled='true'] {
             border-color: var(--input-disabled-bg);
         }
 
-        &:not(:disabled):not(:global(.disabled)) {
-            &:hover:not(:global(.focus)):not(:focus) {
+        &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
+            &:hover:not(:global(.focus)):not(:focus-visible),
+            &:active,
+            &:global(.active) {
                 text-decoration: none;
                 color: var(--body-color);
                 border-color: var(--secondary);
@@ -340,10 +370,8 @@
                 }
             }
 
-            &:focus,
-            &:global(.focus),
-            &:active,
-            &:global(.active) {
+            &:focus-visible,
+            &:global(.focus) {
                 box-shadow: 0 0 0 2px var(--primary-2);
             }
 
@@ -364,36 +392,24 @@
     > .btn {
         position: relative;
         flex: 1 1 auto;
-
-        // Bring the hover, focused, and "active" buttons to the front to overlay
-        // the borders properly
-        &:hover {
-            z-index: 1;
-        }
-        &:focus,
-        &:active,
-        &:global(.active) {
-            z-index: 1;
-        }
     }
 }
 
 .btn-group {
     // Prevent double borders when buttons are next to each other
-    > .btn:not(:first-child),
-    > .btn-group:not(:first-child) {
+    > *:not(:first-child) {
         margin-left: calc(-1 * var(--btn-border-width));
     }
 
     // Reset rounded corners
     > .btn:not(:last-child):not(:global(.dropdown-toggle)),
-    > .btn-group:not(:last-child) > .btn {
+    > *:not(:last-child) .btn {
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
     }
 
     > .btn:not(:first-child),
-    > .btn-group:not(:first-child) > .btn {
+    > *:not(:first-child) .btn {
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
     }
@@ -430,17 +446,4 @@
         border-top-left-radius: 0;
         border-top-right-radius: 0;
     }
-}
-
-.container {
-    display: inline-block;
-    position: relative;
-}
-
-.disabled-tooltip {
-    cursor: not-allowed;
-    position: absolute;
-    height: 100%;
-    width: 100%;
-    z-index: 999999;
 }

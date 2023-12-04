@@ -1,0 +1,22 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+    - mailcap
+
+    ## symbols packages
+    - ca-certificates
+    - jansson
+    - libstdc++ # Used by tree-sitter, which is not packaged
+    - ctags@sourcegraph
+
+paths:
+  - path: /mnt/cache/symbols
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

@@ -1,0 +1,7 @@
+{
+  "Input": "(a)(?P\u003cThisIsNamed\u003eb)",
+  "Result": {
+    "1": "a",
+    "ThisIsNamed": "b"
+  }
+}

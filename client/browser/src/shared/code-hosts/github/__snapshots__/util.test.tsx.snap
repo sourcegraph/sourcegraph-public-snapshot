@@ -1,0 +1,95 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`util > parseURL() > blob page 1`] = `
+Object {
+  "pageType": "blob",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
+  "repoName": "sourcegraph/sourcegraph",
+  "revisionAndFilePath": "3.3/shared/src/hover/HoverOverlay.tsx",
+}
+`;
+
+exports[`util > parseURL() > branch name with forward slashes 1`] = `
+Object {
+  "pageType": "blob",
+  "rawRepoName": "ghe.sgdev.org/beyang/mux",
+  "repoName": "beyang/mux",
+  "revisionAndFilePath": "jr/branch/mux.go",
+}
+`;
+
+exports[`util > parseURL() > commit page 1`] = `
+Object {
+  "pageType": "commit",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
+  "repoName": "sourcegraph/sourcegraph",
+}
+`;
+
+exports[`util > parseURL() > compare page 1`] = `
+Object {
+  "pageType": "compare",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph-basic-code-intel",
+  "repoName": "sourcegraph/sourcegraph-basic-code-intel",
+}
+`;
+
+exports[`util > parseURL() > pull request list 1`] = `
+Object {
+  "pageType": "other",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
+  "repoName": "sourcegraph/sourcegraph",
+}
+`;
+
+exports[`util > parseURL() > pull request page 1`] = `
+Object {
+  "pageType": "pull",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
+  "repoName": "sourcegraph/sourcegraph",
+}
+`;
+
+exports[`util > parseURL() > selections - range 1`] = `
+Object {
+  "pageType": "blob",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
+  "repoName": "sourcegraph/sourcegraph",
+  "revisionAndFilePath": "main/jest.config.base.js",
+}
+`;
+
+exports[`util > parseURL() > selections - single line 1`] = `
+Object {
+  "pageType": "blob",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
+  "repoName": "sourcegraph/sourcegraph",
+  "revisionAndFilePath": "main/jest.config.base.js",
+}
+`;
+
+exports[`util > parseURL() > snippet permalink 1`] = `
+Object {
+  "pageType": "blob",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
+  "repoName": "sourcegraph/sourcegraph",
+  "revisionAndFilePath": "6a91ccec97a46bfb511b7ff58d790554a7d075c8/client/browser/src/shared/repo/backend.tsx",
+}
+`;
+
+exports[`util > parseURL() > tree page 1`] = `
+Object {
+  "pageType": "tree",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
+  "repoName": "sourcegraph/sourcegraph",
+  "revisionAndFilePath": "main/client",
+}
+`;
+
+exports[`util > parseURL() > wiki page 1`] = `
+Object {
+  "pageType": "other",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
+  "repoName": "sourcegraph/sourcegraph",
+}
+`;

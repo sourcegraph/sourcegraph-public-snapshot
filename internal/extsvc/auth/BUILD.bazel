@@ -1,0 +1,31 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "auth",
+    srcs = [
+        "auth.go",
+        "basic.go",
+        "oauth1.go",
+        "oauth_bearer.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/auth",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/httpcli",
+        "//lib/errors",
+        "@com_github_gomodule_oauth1//oauth",
+    ],
+)
+
+go_test(
+    name = "auth_test",
+    timeout = "short",
+    srcs = [
+        "basic_test.go",
+        "oauth1_test.go",
+        "oauth_bearer_test.go",
+    ],
+    embed = [":auth"],
+    deps = ["@com_github_gomodule_oauth1//oauth"],
+)

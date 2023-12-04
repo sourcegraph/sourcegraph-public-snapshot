@@ -1,11 +1,12 @@
-import { Meta, Story } from '@storybook/react'
-import React from 'react'
+import type { Meta, StoryFn } from '@storybook/react'
+
+import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../../components/WebStory'
 
 import { CaptureGroupInsightCard, LangStatsInsightCard, SearchInsightCard } from './InsightCards'
 
-export default {
+const meta: Meta = {
     title: 'web/insights/InsightCards',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
     parameters: {
@@ -14,20 +15,22 @@ export default {
             disableSnapshot: false,
         },
     },
-} as Meta
+}
 
-export const InsightCards: Story = () => (
+export default meta
+
+export const InsightCards: StoryFn = () => (
     <section className="row">
         <article className="col-sm-4">
-            <h2>Search Insight Card</h2>
+            <H2>Search Insight Card</H2>
             <SearchInsightCard />
         </article>
         <article className="col-sm-4">
-            <h2>Language Stats Insight Card</h2>
+            <H2>Language Stats Insight Card</H2>
             <LangStatsInsightCard />
         </article>
         <article className="col-sm-4">
-            <h2>Capture Group Insight Card</h2>
+            <H2>Capture Group Insight Card</H2>
             <CaptureGroupInsightCard />
         </article>
     </section>

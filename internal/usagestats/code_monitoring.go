@@ -2,49 +2,54 @@ package usagestats
 
 import (
 	"context"
+	_ "embed"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetCodeMonitoringUsageStatistics(ctx context.Context, db database.DB) (*types.CodeMonitoringUsageStatistics, error) {
-	const getCodeMonitoringUsageStatisticsQuery = `
-SELECT
-    codeMonitoringPageViews,
-    createCodeMonitorPageViews,
-    createCodeMonitorPageViewsWithTriggerQuery,
-    createCodeMonitorPageViewsWithoutTriggerQuery,
-    manageCodeMonitorPageViews,
-    codeMonitorEmailLinkClicks
-FROM (
-    SELECT
-        NULLIF(COUNT(*) FILTER (WHERE name = 'ViewCodeMonitoringPage'), 0) :: INT AS codeMonitoringPageViews,
-        NULLIF(COUNT(*) FILTER (WHERE name = 'ViewCreateCodeMonitorPage'), 0) :: INT AS createCodeMonitorPageViews,
-        NULLIF(COUNT(*) FILTER (WHERE name = 'ViewCreateCodeMonitorPage' AND (argument->>'hasTriggerQuery')::bool), 0) :: INT AS createCodeMonitorPageViewsWithTriggerQuery,
-        NULLIF(COUNT(*) FILTER (WHERE name = 'ViewCreateCodeMonitorPage' AND NOT (argument->>'hasTriggerQuery')::bool), 0) :: INT AS createCodeMonitorPageViewsWithoutTriggerQuery,
-        NULLIF(COUNT(*) FILTER (WHERE name = 'ViewManageCodeMonitorPage'), 0) :: INT AS manageCodeMonitorPageViews,
-        NULLIF(COUNT(*) FILTER (WHERE name = 'CodeMonitorEmailLinkClicked'), 0) :: INT AS codeMonitorEmailLinkClicks
-    FROM event_logs
-    WHERE
-        name IN (
-            'ViewCodeMonitoringPage',
-            'ViewCreateCodeMonitorPage',
-            'ViewManageCodeMonitorPage',
-            'CodeMonitorEmailLinkClicked'
-        )
-) sub`
+//go:embed code_monitoring_usage_stats.sql
+var getCodeMonitoringUsageStatisticsQuery string
 
-	codeMonitoringUsageStats := &types.CodeMonitoringUsageStatistics{}
+func GetCodeMonitoringUsageStatistics(ctx context.Context, db database.DB) (*types.CodeMonitoringUsageStatistics, error) {
+	var stats types.CodeMonitoringUsageStatistics
 	if err := db.QueryRowContext(ctx, getCodeMonitoringUsageStatisticsQuery).Scan(
-		&codeMonitoringUsageStats.CodeMonitoringPageViews,
-		&codeMonitoringUsageStats.CreateCodeMonitorPageViews,
-		&codeMonitoringUsageStats.CreateCodeMonitorPageViewsWithTriggerQuery,
-		&codeMonitoringUsageStats.CreateCodeMonitorPageViewsWithoutTriggerQuery,
-		&codeMonitoringUsageStats.ManageCodeMonitorPageViews,
-		&codeMonitoringUsageStats.CodeMonitorEmailLinkClicks,
+		&stats.CodeMonitoringPageViews,
+		&stats.CreateCodeMonitorPageViews,
+		&stats.CreateCodeMonitorPageViewsWithTriggerQuery,
+		&stats.CreateCodeMonitorPageViewsWithoutTriggerQuery,
+		&stats.ManageCodeMonitorPageViews,
+		&stats.CodeMonitorEmailLinkClicked,
+		&stats.ExampleMonitorClicked,
+		&stats.GettingStartedPageViewed,
+		&stats.CreateFormSubmitted,
+		&stats.ManageFormSubmitted,
+		&stats.ManageDeleteSubmitted,
+		&stats.LogsPageViewed,
+		&stats.EmailActionsEnabled,
+		&stats.EmailActionsEnabledUniqueUsers,
+		&stats.SlackActionsEnabled,
+		&stats.SlackActionsEnabledUniqueUsers,
+		&stats.WebhookActionsEnabled,
+		&stats.WebhookActionsEnabledUniqueUsers,
+		&stats.EmailActionsTriggered,
+		&stats.EmailActionsTriggeredUniqueUsers,
+		&stats.EmailActionsErrored,
+		&stats.SlackActionsTriggered,
+		&stats.SlackActionsTriggeredUniqueUsers,
+		&stats.SlackActionsErrored,
+		&stats.WebhookActionsTriggered,
+		&stats.WebhookActionsTriggeredUniqueUsers,
+		&stats.WebhookActionsErrored,
+		&stats.TriggerRuns,
+		&stats.TriggerRunsErrored,
+		&stats.P50TriggerRunTimeSeconds,
+		&stats.P90TriggerRunTimeSeconds,
+		&stats.MonitorsEnabled,
+		&stats.MonitorsEnabledUniqueUsers,
 	); err != nil {
 		return nil, err
 	}
 
-	return codeMonitoringUsageStats, nil
+	return &stats, nil
 }

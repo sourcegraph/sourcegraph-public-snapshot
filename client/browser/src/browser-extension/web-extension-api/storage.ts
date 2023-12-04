@@ -1,10 +1,10 @@
-import { concat, from, Observable, of } from 'rxjs'
+import { concat, from, type Observable, of } from 'rxjs'
 import { filter, map } from 'rxjs/operators'
 
 import { getPlatformName } from '../../shared/util/context'
 
 import { fromBrowserEvent } from './fromBrowserEvent'
-import { LocalStorageItems, SyncStorageItems, ManagedStorageItems } from './types'
+import type { LocalStorageItems, SyncStorageItems, ManagedStorageItems } from './types'
 
 interface ExtensionStorageItems {
     local: LocalStorageItems
@@ -45,9 +45,13 @@ export const observeStorageKey = <A extends browser.storage.AreaName, K extends 
         fromBrowserEvent(storage.onChanged).pipe(
             filter(([, name]) => areaName === name),
             map(([changes]) => changes),
-            filter((changes): changes is {
-                [k in K]: browser.storage.StorageChange<ExtensionStorageItems[A][K]>
-            } => Object.prototype.hasOwnProperty.call(changes, key)),
+            filter(
+                (
+                    changes
+                ): changes is {
+                    [k in K]: browser.storage.StorageChange<ExtensionStorageItems[A][K]>
+                } => Object.prototype.hasOwnProperty.call(changes, key)
+            ),
             map(changes => changes[key].newValue)
         )
     )

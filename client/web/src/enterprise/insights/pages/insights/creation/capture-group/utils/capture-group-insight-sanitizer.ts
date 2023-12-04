@@ -1,22 +1,34 @@
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { Filter } from '@sourcegraph/shared/src/search/query/token'
+import type { Filter } from '@sourcegraph/shared/src/search/query/token'
 
-import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit'
-import { CaptureGroupInsight, InsightExecutionType, InsightType } from '../../../../../core/types'
-import { CaptureGroupFormFields } from '../types'
+import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
+import { InsightType, type MinimalCaptureGroupInsightData } from '../../../../../core'
+import type { CaptureGroupFormFields } from '../types'
 
-export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields): CaptureGroupInsight {
+export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields): MinimalCaptureGroupInsightData {
     return {
         title: values.title.trim(),
         query: getSanitizedCaptureQuery(values.groupSearchQuery.trim()),
-        viewType: InsightType.CaptureGroup,
-        type: InsightExecutionType.Backend,
-        id: '',
-        visibility: '',
+        type: InsightType.CaptureGroup,
         step: { [values.step]: +values.stepValue },
-        repositories: values.allRepos ? [] : getSanitizedRepositories(values.repositories),
-        dashboardReferenceCount: values.dashboardReferenceCount,
+        repoQuery: values.repoMode === 'search-query' ? values.repoQuery.query : '',
+        repositories: values.repoMode === 'urls-list' ? values.repositories : [],
+
+        filters: {
+            includeRepoRegexp: '',
+            excludeRepoRegexp: '',
+            context: '',
+            seriesDisplayOptions: {
+                limit: null,
+                numSamples: null,
+                sortOptions: {
+                    direction: SeriesSortDirection.DESC,
+                    mode: SeriesSortMode.RESULT_COUNT,
+                },
+            },
+        },
+        dashboards: [],
     }
 }
 

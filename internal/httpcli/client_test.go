@@ -13,7 +13,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"strings"
 	"sync/atomic"
@@ -23,7 +22,12 @@ import (
 
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -178,7 +182,7 @@ func TestNewCertPool(t *testing.T) {
 			name:  "fails if transport isn't an http.Transport",
 			cli:   &http.Client{Transport: bogusTransport{}},
 			certs: []string{cert},
-			err:   "httpcli.NewCertPoolOpt: http.Client.Transport is not an *http.Transport: httpcli.bogusTransport",
+			err:   "httpcli.NewCertPoolOpt: http.Client.Transport cannot be cast as a *http.Transport: httpcli.bogusTransport",
 		},
 		{
 			name:  "pool is set to what is given",
@@ -186,7 +190,7 @@ func TestNewCertPool(t *testing.T) {
 			certs: []string{cert},
 			assert: func(t testing.TB, cli *http.Client) {
 				pool := cli.Transport.(*http.Transport).TLSClientConfig.RootCAs
-				for _, have := range pool.Subjects() {
+				for _, have := range pool.Subjects() { //nolint:staticcheck // pool.Subjects, see https://github.com/golang/go/issues/46287
 					if bytes.Contains(have, []byte(subject)) {
 						return
 					}
@@ -216,6 +220,11 @@ func TestNewCertPool(t *testing.T) {
 
 func TestNewIdleConnTimeoutOpt(t *testing.T) {
 	timeout := 33 * time.Second
+
+	// originalRoundtripper must only be used in one test, set at this scope for
+	// convenience.
+	originalRoundtripper := &http.Transport{}
+
 	for _, tc := range []struct {
 		name    string
 		cli     *http.Client
@@ -235,7 +244,7 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 		{
 			name: "fails if transport isn't an http.Transport",
 			cli:  &http.Client{Transport: bogusTransport{}},
-			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Transport is not an *http.Transport: httpcli.bogusTransport",
+			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Transport cannot be cast as a *http.Transport: httpcli.bogusTransport",
 		},
 		{
 			name:    "IdleConnTimeout is set to what is given",
@@ -246,6 +255,28 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 				if want := timeout; !reflect.DeepEqual(have, want) {
 					t.Fatal(cmp.Diff(have, want))
 				}
+			},
+		},
+		{
+			name: "IdleConnTimeout is set to what is given on a wrapped transport",
+			cli: func() *http.Client {
+				return &http.Client{Transport: &wrappedTransport{
+					RoundTripper: &actor.HTTPTransport{RoundTripper: originalRoundtripper},
+					Wrapped:      originalRoundtripper,
+				}}
+			}(),
+			timeout: timeout,
+			assert: func(t testing.TB, cli *http.Client) {
+				unwrapped := unwrapAll(cli.Transport.(WrappedTransport))
+				have := (*unwrapped).(*http.Transport).IdleConnTimeout
+
+				// Timeout is set on the underlying transport
+				if want := timeout; !reflect.DeepEqual(have, want) {
+					t.Fatal(cmp.Diff(have, want))
+				}
+
+				// Original roundtripper unchanged!
+				assert.Equal(t, time.Duration(0), originalRoundtripper.IdleConnTimeout)
 			},
 		},
 	} {
@@ -315,7 +346,7 @@ func TestErrorResilience(t *testing.T) {
 				ContextErrorMiddleware,
 			),
 			NewErrorResilientTransportOpt(
-				NewRetryPolicy(20),
+				NewRetryPolicy(20, time.Second),
 				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
@@ -338,7 +369,7 @@ func TestErrorResilience(t *testing.T) {
 				ContextErrorMiddleware,
 			),
 			NewErrorResilientTransportOpt(
-				NewRetryPolicy(0), // zero retries
+				NewRetryPolicy(0, time.Second), // zero retries
 				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
@@ -356,7 +387,7 @@ func TestErrorResilience(t *testing.T) {
 	t.Run("no such host", func(t *testing.T) {
 		// spy on policy so we see what decisions it makes
 		retries := 0
-		policy := NewRetryPolicy(5) // smaller retries for faster failures
+		policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
 		wrapped := func(a rehttp.Attempt) bool {
 			if policy(a) {
 				retries++
@@ -374,9 +405,8 @@ func TestErrorResilience(t *testing.T) {
 				// hardcode what go returns for DNS not found to avoid
 				// flakiness across machines. However, CI correctly respects
 				// this so we continue to run against a real DNS server on CI.
-				if os.Getenv("CI") == "" {
-					cli.Transport = notFoundTransport{}
-				}
+				// TODO(burmudar): Fix DNS infrastructure in Aspect Workflows Infra
+				cli.Transport = notFoundTransport{}
 				return nil
 			},
 			NewErrorResilientTransportOpt(
@@ -404,13 +434,175 @@ func TestErrorResilience(t *testing.T) {
 	})
 }
 
+func TestLoggingMiddleware(t *testing.T) {
+	failures := int64(3)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		status := 0
+		switch n := atomic.AddInt64(&failures, -1); n {
+		case 2:
+			status = 500
+		case 1:
+			status = 302
+			w.Header().Set("Location", "/")
+		case 0:
+			status = 404 // last
+		}
+		w.WriteHeader(status)
+	}))
+
+	t.Cleanup(srv.Close)
+
+	req, err := http.NewRequest("GET", srv.URL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("log on error", func(t *testing.T) {
+		logger, exportLogs := logtest.Captured(t)
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+				NewLoggingMiddleware(logger),
+			),
+			func(c *http.Client) error {
+				c.Transport = &notFoundTransport{} // returns an error
+				return nil
+			},
+		).Doer()
+
+		resp, err := cli.Do(req)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+
+		// Check log entries for logged fields about retries
+		logEntries := exportLogs()
+		require.Len(t, logEntries, 1)
+		entry := logEntries[0]
+		assert.Contains(t, entry.Scope, "httpcli")
+		assert.NotEmpty(t, entry.Fields["error"])
+	})
+
+	t.Run("log NewRetryPolicy", func(t *testing.T) {
+		logger, exportLogs := logtest.Captured(t)
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+				NewLoggingMiddleware(logger),
+			),
+			NewErrorResilientTransportOpt(
+				NewRetryPolicy(20, time.Second),
+				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			),
+		).Doer()
+
+		res, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if res.StatusCode != 404 {
+			t.Fatalf("want status code 404, got: %d", res.StatusCode)
+		}
+
+		// Check log entries for logged fields about retries
+		logEntries := exportLogs()
+		assert.Greater(t, len(logEntries), 0)
+		var attemptsLogged int
+		for _, entry := range logEntries {
+			// Check for appropriate scope
+			if !strings.Contains(entry.Scope, "httpcli") {
+				continue
+			}
+
+			// Check for retry log fields
+			retry := entry.Fields["retry"]
+			if retry != nil {
+				// Non-zero number of attempts only
+				retryFields := retry.(map[string]any)
+				assert.NotZero(t, retryFields["attempts"])
+
+				// We must find at least some desired log entries
+				attemptsLogged += 1
+			}
+		}
+		assert.NotZero(t, attemptsLogged)
+	})
+
+	t.Run("log redisLoggerMiddleware error", func(t *testing.T) {
+		const wantErrMessage = "redisLoggingError"
+		redisErrorMiddleware := func(next Doer) Doer {
+			return DoerFunc(func(req *http.Request) (*http.Response, error) {
+				// simplified version of what we do in redisLoggerMiddleware, since
+				// we just test that adding and reading the context key/value works
+				var middlewareErrors error
+				defer func() {
+					if middlewareErrors != nil {
+						*req = *req.WithContext(context.WithValue(req.Context(),
+							redisLoggingMiddlewareErrorKey, middlewareErrors))
+					}
+				}()
+
+				middlewareErrors = errors.New(wantErrMessage)
+
+				return next.Do(req)
+			})
+		}
+
+		logger, exportLogs := logtest.Captured(t)
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+				redisErrorMiddleware,
+				NewLoggingMiddleware(logger),
+			),
+		).Doer()
+
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+		t.Cleanup(srv.Close)
+
+		req, _ := http.NewRequest("GET", srv.URL, nil)
+		_, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Check log entries for logged fields about retries
+		logEntries := exportLogs()
+		assert.Greater(t, len(logEntries), 0)
+		var found bool
+		for _, entry := range logEntries {
+			// Check for appropriate scope
+			if !strings.Contains(entry.Scope, "httpcli") {
+				continue
+			}
+
+			// Check for redisLoggerErr
+			errField, ok := entry.Fields["redisLoggerErr"]
+			if !ok {
+				continue
+			}
+			if assert.Contains(t, errField, wantErrMessage) {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found)
+	})
+}
+
 type notFoundTransport struct{}
 
 func (notFoundTransport) RoundTrip(*http.Request) (*http.Response, error) {
 	return nil, &net.DNSError{IsNotFound: true}
 }
 
-func TestExpJitterDelay(t *testing.T) {
+func TestExpJitterDelayOrRetryAfterDelay(t *testing.T) {
+	// Ensure that at least one value is not base.
+	var hasNonBase bool
+
 	prop := func(b, m uint32, a uint16) bool {
 		base := time.Duration(b)
 		max := time.Duration(m)
@@ -419,7 +611,7 @@ func TestExpJitterDelay(t *testing.T) {
 		}
 		attempt := int(a)
 
-		delay := ExpJitterDelay(base, max)(rehttp.Attempt{
+		delay := ExpJitterDelayOrRetryAfterDelay(base, max)(rehttp.Attempt{
 			Index: attempt,
 		})
 
@@ -434,6 +626,10 @@ func TestExpJitterDelay(t *testing.T) {
 			return false
 		}
 
+		if delay > base {
+			hasNonBase = true
+		}
+
 		return true
 	}
 
@@ -441,13 +637,61 @@ func TestExpJitterDelay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.True(t, hasNonBase, "at least one delay should be greater than base")
+
+	t.Run("respect Retry-After header", func(t *testing.T) {
+		for _, tc := range []struct {
+			name            string
+			base            time.Duration
+			max             time.Duration
+			responseHeaders http.Header
+			wantDelay       time.Duration
+		}{
+			{
+				name:            "seconds: up to max",
+				max:             3 * time.Second,
+				responseHeaders: http.Header{"Retry-After": []string{"20"}},
+				wantDelay:       3 * time.Second,
+			},
+			{
+				name:            "seconds: at least base",
+				base:            2 * time.Second,
+				max:             3 * time.Second,
+				responseHeaders: http.Header{"Retry-After": []string{"1"}},
+				wantDelay:       2 * time.Second,
+			},
+			{
+				name:            "seconds: exactly as provided",
+				base:            1 * time.Second,
+				max:             3 * time.Second,
+				responseHeaders: http.Header{"Retry-After": []string{"2"}},
+				wantDelay:       2 * time.Second,
+			},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				assert.Equal(t, tc.wantDelay, ExpJitterDelayOrRetryAfterDelay(tc.base, tc.max)(rehttp.Attempt{
+					Index: 2,
+					Response: &http.Response{
+						Header: tc.responseHeaders,
+					},
+				}))
+			})
+		}
+	})
 }
 
 func newFakeClient(code int, body []byte, err error) Doer {
+	return newFakeClientWithHeaders(map[string][]string{}, code, body, err)
+}
+
+func newFakeClientWithHeaders(respHeaders map[string][]string, code int, body []byte, err error) Doer {
 	return DoerFunc(func(r *http.Request) (*http.Response, error) {
 		rr := httptest.NewRecorder()
+		for k, v := range respHeaders {
+			rr.Header()[k] = v
+		}
 		_, _ = rr.Write(body)
-		rr.WriteHeader(code)
+		rr.Code = code
 		return rr.Result(), err
 	})
 }
@@ -456,4 +700,303 @@ type bogusTransport struct{}
 
 func (t bogusTransport) RoundTrip(*http.Request) (*http.Response, error) {
 	panic("should not be called")
+}
+
+func TestRetryAfter(t *testing.T) {
+	t.Run("Not set", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusTooManyRequests)
+		}))
+
+		t.Cleanup(srv.Close)
+
+		req, err := http.NewRequest("GET", srv.URL, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// spy on policy so we see what decisions it makes
+		retries := 0
+		policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
+		wrapped := func(a rehttp.Attempt) bool {
+			if policy(a) {
+				retries++
+				return true
+			}
+			return false
+		}
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+			),
+			NewErrorResilientTransportOpt(
+				wrapped,
+				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			),
+		).Doer()
+
+		res, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if res.StatusCode != 429 {
+			t.Fatalf("want status code 429, got: %d", res.StatusCode)
+		}
+
+		if want := 5; retries != want {
+			t.Fatalf("expected %d retries, got %d", want, retries)
+		}
+	})
+	t.Run("Format seconds", func(t *testing.T) {
+		t.Run("Within configured limit", func(t *testing.T) {
+			for _, responseCode := range []int{
+				http.StatusTooManyRequests,
+				http.StatusServiceUnavailable,
+			} {
+				t.Run(fmt.Sprintf("%d", responseCode), func(t *testing.T) {
+					srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Add("retry-after", "1") // 1 second is smaller than the 2s we give the retry policy below.
+						w.WriteHeader(responseCode)
+					}))
+
+					t.Cleanup(srv.Close)
+
+					req, err := http.NewRequest("GET", srv.URL, nil)
+					if err != nil {
+						t.Fatal(err)
+					}
+					// spy on policy so we see what decisions it makes
+					retries := 0
+					policy := NewRetryPolicy(5, 2*time.Second) // smaller retries for faster failures
+					wrapped := func(a rehttp.Attempt) bool {
+						if policy(a) {
+							retries++
+							return true
+						}
+						return false
+					}
+
+					cli, _ := NewFactory(
+						NewMiddleware(
+							ContextErrorMiddleware,
+						),
+						NewErrorResilientTransportOpt(
+							wrapped,
+							rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+						),
+					).Doer()
+
+					res, err := cli.Do(req)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if res.StatusCode != responseCode {
+						t.Fatalf("want status code %d, got: %d",
+							responseCode, res.StatusCode)
+					}
+
+					if want := 5; retries != want {
+						t.Fatalf("expected %d retries, got %d", want, retries)
+					}
+				})
+			}
+		})
+		t.Run("Exceeds configured limit", func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Add("retry-after", "2") // 2 seconds is larger than the 1s we give the retry policy below.
+				w.WriteHeader(http.StatusTooManyRequests)
+			}))
+
+			t.Cleanup(srv.Close)
+
+			req, err := http.NewRequest("GET", srv.URL, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// spy on policy so we see what decisions it makes
+			retries := 0
+			policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
+			wrapped := func(a rehttp.Attempt) bool {
+				if policy(a) {
+					retries++
+					return true
+				}
+				return false
+			}
+
+			cli, _ := NewFactory(
+				NewMiddleware(
+					ContextErrorMiddleware,
+				),
+				NewErrorResilientTransportOpt(
+					wrapped,
+					rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+				),
+			).Doer()
+
+			res, err := cli.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if res.StatusCode != 429 {
+				t.Fatalf("want status code 429, got: %d", res.StatusCode)
+			}
+
+			if want := 0; retries != want {
+				t.Fatalf("expected %d retries, got %d", want, retries)
+			}
+		})
+	})
+	t.Run("Format Date", func(t *testing.T) {
+		now := time.Now()
+		t.Run("Within configured limit", func(t *testing.T) {
+			for _, responseCode := range []int{
+				http.StatusTooManyRequests,
+				http.StatusServiceUnavailable,
+			} {
+				t.Run(fmt.Sprintf("%d", responseCode), func(t *testing.T) {
+					srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Add("retry-after", now.Add(time.Second).Format(time.RFC1123)) // 1 second is smaller than the 2s we give the retry policy below.
+						w.WriteHeader(responseCode)
+					}))
+
+					t.Cleanup(srv.Close)
+
+					req, err := http.NewRequest("GET", srv.URL, nil)
+					if err != nil {
+						t.Fatal(err)
+					}
+					// spy on policy so we see what decisions it makes
+					retries := 0
+					policy := NewRetryPolicy(5, 2*time.Second) // smaller retries for faster failures
+					wrapped := func(a rehttp.Attempt) bool {
+						if policy(a) {
+							retries++
+							return true
+						}
+						return false
+					}
+
+					cli, _ := NewFactory(
+						NewMiddleware(
+							ContextErrorMiddleware,
+						),
+						NewErrorResilientTransportOpt(
+							wrapped,
+							rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+						),
+					).Doer()
+
+					res, err := cli.Do(req)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if res.StatusCode != responseCode {
+						t.Fatalf("want status code %d, got: %d",
+							responseCode, res.StatusCode)
+					}
+
+					if want := 5; retries != want {
+						t.Fatalf("expected %d retries, got %d", want, retries)
+					}
+				})
+			}
+		})
+		t.Run("Exceeds configured limit", func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Add("retry-after", now.Add(5*time.Second).Format(time.RFC1123)) // 5 seconds is larger than the 1s we give the retry policy below.
+				w.WriteHeader(http.StatusTooManyRequests)
+			}))
+
+			t.Cleanup(srv.Close)
+
+			req, err := http.NewRequest("GET", srv.URL, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// spy on policy so we see what decisions it makes
+			retries := 0
+			policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
+			wrapped := func(a rehttp.Attempt) bool {
+				if policy(a) {
+					retries++
+					return true
+				}
+				return false
+			}
+
+			cli, _ := NewFactory(
+				NewMiddleware(
+					ContextErrorMiddleware,
+				),
+				NewErrorResilientTransportOpt(
+					wrapped,
+					rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+				),
+			).Doer()
+
+			res, err := cli.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if res.StatusCode != 429 {
+				t.Fatalf("want status code 429, got: %d", res.StatusCode)
+			}
+
+			if want := 0; retries != want {
+				t.Fatalf("expected %d retries, got %d", want, retries)
+			}
+		})
+	})
+	t.Run("Invalid retry-after header", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Add("retry-after", "unparseable")
+			w.WriteHeader(http.StatusTooManyRequests)
+		}))
+
+		t.Cleanup(srv.Close)
+
+		req, err := http.NewRequest("GET", srv.URL, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// spy on policy so we see what decisions it makes
+		retries := 0
+		policy := NewRetryPolicy(5, 2*time.Second) // smaller retries for faster failures
+		wrapped := func(a rehttp.Attempt) bool {
+			if policy(a) {
+				retries++
+				return true
+			}
+			return false
+		}
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+			),
+			NewErrorResilientTransportOpt(
+				wrapped,
+				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			),
+		).Doer()
+
+		res, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if res.StatusCode != 429 {
+			t.Fatalf("want status code 429, got: %d", res.StatusCode)
+		}
+
+		if want := 5; retries != want {
+			t.Fatalf("expected %d retries, got %d", want, retries)
+		}
+	})
 }

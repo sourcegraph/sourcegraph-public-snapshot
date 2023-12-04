@@ -8,7 +8,7 @@ import (
 )
 
 func GetSiteUsageStats(ctx context.Context, db database.DB, monthsOnly bool) (*types.SiteUsageStatistics, error) {
-	summary, err := database.EventLogs(db).SiteUsage(ctx)
+	summary, err := db.EventLogs().SiteUsageCurrentPeriods(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -44,6 +44,15 @@ func groupSiteUsageStats(summary types.SiteUsageSummary, monthsOnly bool) *types
 				RegisteredUserCount:  summary.RegisteredUniquesMonth,
 				AnonymousUserCount:   summary.UniquesMonth - summary.RegisteredUniquesMonth,
 				IntegrationUserCount: summary.IntegrationUniquesMonth,
+			},
+		},
+		RMAUs: []*types.SiteActivityPeriod{
+			{
+				StartTime:            summary.RollingMonth,
+				UserCount:            summary.UniquesRollingMonth,
+				RegisteredUserCount:  summary.RegisteredUniquesRollingMonth,
+				AnonymousUserCount:   summary.UniquesRollingMonth - summary.RegisteredUniquesRollingMonth,
+				IntegrationUserCount: summary.IntegrationUniquesRollingMonth,
 			},
 		},
 	}

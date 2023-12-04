@@ -1,46 +1,36 @@
+import * as React from 'react'
+
+import type * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import * as React from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
-import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { Route, Routes, type NavigateFunction } from 'react-router-dom'
+import { combineLatest, merge, type Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { type ErrorLike, isErrorLike, asError, logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { LoadingSpinner, ErrorMessage } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
-import { BatchChangesProps } from '../../batches'
-import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
+import type { BatchChangesProps } from '../../batches'
+import type { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
+import { RouteError } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
-import {
-    OrganizationResult,
-    OrganizationVariables,
-    OrgAreaOrganizationFields,
-    OrgFeatureFlagValueResult,
-    OrgFeatureFlagValueVariables,
-} from '../../graphql-operations'
-import { NamespaceProps } from '../../namespaces'
-import { RouteDescriptor } from '../../util/contributions'
-import { ORG_CODE_FEATURE_FLAG_EMAIL_INVITE } from '../backend'
+import type { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
+import type { NamespaceProps } from '../../namespaces'
+import type { RouteV6Descriptor } from '../../util/contributions'
+import type { OrgSettingsAreaRoute } from '../settings/OrgSettingsArea'
+import type { OrgSettingsSidebarItems } from '../settings/OrgSettingsSidebar'
 
-import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
+import { type OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
 import { OrgInvitationPageLegacy } from './OrgInvitationPageLegacy'
 
-function queryOrganization(args: {
-    name: string
-    // id: string
-    // flagName: string organizationFeatureFlagValue(orgID: $orgID, flagName: $flagName)
-}): Observable<OrgAreaOrganizationFields> {
+function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizationFields> {
     return requestGraphQL<OrganizationResult, OrganizationVariables>(
         gql`
             query Organization($name: String!) {
@@ -83,47 +73,37 @@ function queryOrganization(args: {
     )
 }
 
-function queryMembersFFlag(args: { orgID: string; flagName: string }): Observable<boolean> {
-    return requestGraphQL<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
-        gql`
-            query OrgFeatureFlagValue($orgID: ID!, $flagName: String!) {
-                organizationFeatureFlagValue(orgID: $orgID, flagName: $flagName)
-            }
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.organizationFeatureFlagValue)
-    )
-}
-
-const NotFoundPage: React.FunctionComponent = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 
-export interface OrgAreaRoute extends RouteDescriptor<OrgAreaPageProps> {
+export interface OrgAreaRoute extends RouteV6Descriptor<OrgAreaRouteContext> {
     /** When true, the header is not rendered and the component is not wrapped in a container. */
     fullPage?: boolean
 }
 
-interface Props
-    extends RouteComponentProps<{ name: string }>,
-        PlatformContextProps,
+export interface OrgAreaProps
+    extends PlatformContextProps,
         SettingsCascadeProps,
-        ThemeProps,
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        ExtensionsControllerProps,
         BatchChangesProps {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
+    orgSettingsSideBarItems: OrgSettingsSidebarItems
+    orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
 
     /**
      * The currently authenticated user.
      */
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
+    isCodyApp: boolean
+
+    location: H.Location
+    navigate: NavigateFunction
+    orgName: string
 }
 
 interface State extends BreadcrumbSetters {
@@ -131,17 +111,14 @@ interface State extends BreadcrumbSetters {
      * The fetched org or an error if an error occurred; undefined while loading.
      */
     orgOrError?: OrgAreaOrganizationFields | ErrorLike
-    newMembersInviteEnabled: boolean
 }
 
 /**
  * Properties passed to all page components in the org area.
  */
-export interface OrgAreaPageProps
-    extends ExtensionsControllerProps,
-        PlatformContextProps,
+export interface OrgAreaRouteContext
+    extends PlatformContextProps,
         SettingsCascadeProps,
-        ThemeProps,
         TelemetryProps,
         NamespaceProps,
         BreadcrumbsProps,
@@ -157,33 +134,34 @@ export interface OrgAreaPageProps
     authenticatedUser: AuthenticatedUser
 
     isSourcegraphDotCom: boolean
+    isCodyApp: boolean
 
-    newMembersInviteEnabled: boolean
+    orgSettingsSideBarItems: OrgSettingsSidebarItems
+    orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
 }
 
 /**
  * An organization's public profile area.
  */
-export class OrgArea extends React.Component<Props> {
+export class OrgArea extends React.Component<OrgAreaProps> {
     public state: State
 
-    private componentUpdates = new Subject<Props>()
+    private componentUpdates = new Subject<OrgAreaProps>()
     private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
 
-    constructor(props: Props) {
+    constructor(props: OrgAreaProps) {
         super(props)
         this.state = {
             setBreadcrumb: props.setBreadcrumb,
             useBreadcrumb: props.useBreadcrumb,
-            newMembersInviteEnabled: false,
         }
     }
 
     public componentDidMount(): void {
         // Changes to the route-matched org name.
         const nameChanges = this.componentUpdates.pipe(
-            map(props => props.match.params.name),
+            map(props => props.orgName),
             distinctUntilChanged()
         )
 
@@ -202,25 +180,6 @@ export class OrgArea extends React.Component<Props> {
                         )
                     })
                 )
-                .pipe(
-                    switchMap(state => {
-                        const flagObservable =
-                            state.orgOrError && !isErrorLike(state.orgOrError)
-                                ? queryMembersFFlag({
-                                      orgID: state.orgOrError.id,
-                                      flagName: ORG_CODE_FEATURE_FLAG_EMAIL_INVITE,
-                                  })
-                                : of(false)
-                        return flagObservable.pipe(
-                            catchError((): [boolean] => [false]), // set flag to false in case of error reading it
-                            map(newMembersInviteEnabled =>
-                                !state.orgOrError
-                                    ? { newMembersInviteEnabled }
-                                    : { orgOrError: state.orgOrError, newMembersInviteEnabled }
-                            )
-                        )
-                    })
-                )
                 .subscribe(
                     stateUpdate => {
                         if (stateUpdate.orgOrError && !isErrorLike(stateUpdate.orgOrError)) {
@@ -233,13 +192,12 @@ export class OrgArea extends React.Component<Props> {
                                 useBreadcrumb: childBreadcrumbSetters.useBreadcrumb,
                                 setBreadcrumb: childBreadcrumbSetters.setBreadcrumb,
                                 orgOrError: stateUpdate.orgOrError,
-                                newMembersInviteEnabled: stateUpdate.newMembersInviteEnabled,
                             })
                         } else {
                             this.setState(stateUpdate)
                         }
                     },
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
 
@@ -268,72 +226,68 @@ export class OrgArea extends React.Component<Props> {
             )
         }
 
-        const context: OrgAreaPageProps = {
+        const context: OrgAreaRouteContext = {
             authenticatedUser: this.props.authenticatedUser,
             org: this.state.orgOrError,
             onOrganizationUpdate: this.onDidUpdateOrganization,
-            extensionsController: this.props.extensionsController,
             platformContext: this.props.platformContext,
             settingsCascade: this.props.settingsCascade,
-            isLightTheme: this.props.isLightTheme,
             namespace: this.state.orgOrError,
             telemetryService: this.props.telemetryService,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
+            isCodyApp: this.props.isCodyApp,
             batchChangesEnabled: this.props.batchChangesEnabled,
             batchChangesExecutionEnabled: this.props.batchChangesExecutionEnabled,
             batchChangesWebhookLogsEnabled: this.props.batchChangesWebhookLogsEnabled,
             breadcrumbs: this.props.breadcrumbs,
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,
-            newMembersInviteEnabled: this.state.newMembersInviteEnabled,
+            orgSettingsAreaRoutes: this.props.orgSettingsAreaRoutes,
+            orgSettingsSideBarItems: this.props.orgSettingsSideBarItems,
         }
 
-        if (this.props.location.pathname === `${this.props.match.url}/invitation`) {
+        if (this.props.location.pathname === `/organizations/${this.props.orgName}/invitation`) {
             // The OrgInvitationPageLegacy is displayed without the OrgHeader because it is modal-like.
             return <OrgInvitationPageLegacy {...context} onDidRespondToInvitation={this.onDidRespondToInvitation} />
         }
 
         return (
-            <ErrorBoundary location={this.props.location}>
-                <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
-                    <Switch>
-                        {this.props.orgAreaRoutes.map(
-                            ({ path, exact, render, condition = () => true, fullPage }) =>
-                                condition(context) && (
-                                    <Route
-                                        path={this.props.match.url + path}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        exact={exact}
-                                        render={routeComponentProps =>
-                                            fullPage ? (
-                                                render({ ...context, ...routeComponentProps })
-                                            ) : (
-                                                <Page className="org-area">
-                                                    <OrgHeader
-                                                        {...this.props}
-                                                        {...context}
-                                                        navItems={this.props.orgAreaHeaderNavItems}
-                                                        className="mb-3"
-                                                    />
-                                                    <div className="container">
-                                                        {render({ ...context, ...routeComponentProps })}
-                                                    </div>
-                                                </Page>
-                                            )
-                                        }
-                                    />
-                                )
-                        )}
-                        <Route key="hardcoded-key" component={NotFoundPage} />
-                    </Switch>
-                </React.Suspense>
-            </ErrorBoundary>
+            <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
+                <Routes>
+                    {this.props.orgAreaRoutes.map(
+                        ({ path, render, condition = () => true, fullPage }) =>
+                            condition(context) && (
+                                <Route
+                                    path={path}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    errorElement={<RouteError />}
+                                    element={
+                                        fullPage ? (
+                                            render(context)
+                                        ) : (
+                                            <Page className="org-area">
+                                                <OrgHeader
+                                                    {...this.props}
+                                                    {...context}
+                                                    navItems={this.props.orgAreaHeaderNavItems}
+                                                    className="mb-3"
+                                                />
+                                                <div className="container">{render(context)}</div>
+                                            </Page>
+                                        )
+                                    }
+                                />
+                            )
+                    )}
+                    <Route path="*" element={<NotFoundPage />} />
+                </Routes>
+            </React.Suspense>
         )
     }
 
     private onDidRespondToInvitation = (accepted: boolean): void => {
         if (!accepted) {
-            this.props.history.push('/user/settings')
+            this.props.navigate('/user/settings')
             return
         }
         this.refreshRequests.next()

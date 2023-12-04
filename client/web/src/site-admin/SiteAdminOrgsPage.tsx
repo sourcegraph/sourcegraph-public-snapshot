@@ -1,20 +1,15 @@
-import * as H from 'history'
-import AccountIcon from 'mdi-react/AccountIcon'
-import AddIcon from 'mdi-react/AddIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { RouteComponentProps } from 'react-router'
+
+import { mdiCog, mdiAccount, mdiDelete, mdiPlus } from '@mdi/js'
 import { Subject } from 'rxjs'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Alert } from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button, Link, Icon, H2, Text, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { OrganizationFields } from '../graphql-operations'
+import type { OrganizationFields } from '../graphql-operations'
 import { orgURL } from '../org'
 
 import { deleteOrganization, fetchAllOrganizations } from './backend'
@@ -29,10 +24,9 @@ interface OrgNodeProps {
      * Called when the org is updated by an action in this list item.
      */
     onDidUpdate?: () => void
-    history: H.History
 }
 
-const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, onDidUpdate }) => {
+const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = ({ node, onDidUpdate }) => {
     const [loading, setLoading] = useState<boolean | Error>(false)
 
     const deleteOrg = useCallback(() => {
@@ -64,38 +58,32 @@ const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, onDidUpdate }) =
                     <span className="text-muted">{node.displayName}</span>
                 </div>
                 <div>
-                    <Button
-                        to={`${orgURL(node.name)}/settings`}
-                        data-tooltip="Organization settings"
-                        variant="secondary"
-                        size="sm"
-                        as={Link}
-                    >
-                        <SettingsIcon className="icon-inline" /> Settings
-                    </Button>{' '}
-                    <Button
-                        to={`${orgURL(node.name)}/settings/members`}
-                        data-tooltip="Organization members"
-                        variant="secondary"
-                        size="sm"
-                        as={Link}
-                    >
-                        <AccountIcon className="icon-inline" />{' '}
-                        {node.members && (
-                            <>
-                                {node.members.totalCount} {pluralize('member', node.members.totalCount)}
-                            </>
-                        )}
-                    </Button>{' '}
-                    <Button
-                        onClick={deleteOrg}
-                        disabled={loading === true}
-                        data-tooltip="Delete organization"
-                        variant="danger"
-                        size="sm"
-                    >
-                        <DeleteIcon className="icon-inline" />
-                    </Button>
+                    <Tooltip content="Organization settings">
+                        <Button to={`${orgURL(node.name)}/settings`} variant="secondary" size="sm" as={Link}>
+                            <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
+                        </Button>
+                    </Tooltip>{' '}
+                    <Tooltip content="Organization members">
+                        <Button to={`${orgURL(node.name)}/settings/members`} variant="secondary" size="sm" as={Link}>
+                            <Icon aria-hidden={true} svgPath={mdiAccount} />{' '}
+                            {node.members && (
+                                <>
+                                    {node.members.totalCount} {pluralize('member', node.members.totalCount)}
+                                </>
+                            )}
+                        </Button>
+                    </Tooltip>{' '}
+                    <Tooltip content="Delete organization">
+                        <Button
+                            aria-label="Delete"
+                            onClick={deleteOrg}
+                            disabled={loading === true}
+                            variant="danger"
+                            size="sm"
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiDelete} />
+                        </Button>
+                    </Tooltip>
                 </div>
             </div>
             {isErrorLike(loading) && <ErrorAlert className="mt-2" error={loading.message} />}
@@ -103,12 +91,12 @@ const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, onDidUpdate }) =
     )
 }
 
-interface Props extends RouteComponentProps<{}>, TelemetryProps {}
+interface Props extends TelemetryProps {}
 
 /**
  * A page displaying the orgs on this site.
  */
-export const SiteAdminOrgsPage: React.FunctionComponent<Props> = ({ telemetryService, history, location }) => {
+export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemetryService }) => {
     const orgUpdates = useMemo(() => new Subject<void>(), [])
     const onDidUpdateOrg = useCallback((): void => orgUpdates.next(), [orgUpdates])
 
@@ -120,43 +108,27 @@ export const SiteAdminOrgsPage: React.FunctionComponent<Props> = ({ telemetrySer
         <div className="site-admin-orgs-page">
             <PageTitle title="Organizations - Admin" />
             <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="mb-0">Organizations</h2>
+                <H2 className="mb-0">Organizations</H2>
                 <Button to="/organizations/new" className="test-create-org-button" variant="primary" as={Link}>
-                    <AddIcon className="icon-inline" /> Create organization
+                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Create organization
                 </Button>
             </div>
-            <p>
+            <Text>
                 An organization is a set of users with associated configuration. See{' '}
                 <Link to="/help/admin/organizations">Sourcegraph documentation</Link> for information about configuring
                 organizations.
-            </p>
-            {window.context.sourcegraphDotComMode ? (
-                <>
-                    <Alert variant="info">Only organization members can view & modify organization settings.</Alert>
-                    <h3>Enable early access</h3>
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                        <p>Enable early access for organization code host connections and repositories on Cloud.</p>
-                        <Button to="./organizations/early-access-orgs-code" variant="primary" outline={true} as={Link}>
-                            Enable early access
-                        </Button>
-                    </div>
-                </>
-            ) : (
-                <FilteredConnection<OrganizationFields, Omit<OrgNodeProps, 'node'>>
-                    className="list-group list-group-flush mt-3"
-                    noun="organization"
-                    pluralNoun="organizations"
-                    queryConnection={fetchAllOrganizations}
-                    nodeComponent={OrgNode}
-                    nodeComponentProps={{
-                        onDidUpdate: onDidUpdateOrg,
-                        history,
-                    }}
-                    updates={orgUpdates}
-                    history={history}
-                    location={location}
-                />
-            )}
+            </Text>
+            <FilteredConnection<OrganizationFields, Omit<OrgNodeProps, 'node'>>
+                className="list-group list-group-flush mt-3"
+                noun="organization"
+                pluralNoun="organizations"
+                queryConnection={fetchAllOrganizations}
+                nodeComponent={OrgNode}
+                nodeComponentProps={{
+                    onDidUpdate: onDidUpdateOrg,
+                }}
+                updates={orgUpdates}
+            />
         </div>
     )
 }

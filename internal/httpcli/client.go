@@ -15,20 +15,24 @@ import (
 	"sync"
 	"time"
 
+	"code.gitea.io/gitea/modules/hostmatcher"
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/gregjones/httpcache"
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -76,87 +80,171 @@ type Factory struct {
 	common []Opt
 }
 
-// redisCache is a HTTP cache backed by Redis. The TTL of a week is a balance
+// redisCache is an HTTP cache backed by Redis. The TTL of a week is a balance
 // between caching values for a useful amount of time versus growing the cache
 // too large.
 var redisCache = rcache.NewWithTTL("http", 604800)
 
+// CachedTransportOpt is the default transport cache - it will return values from
+// the cache where possible (avoiding a network request) and will additionally add
+// validators (etag/if-modified-since) to repeated requests allowing servers to
+// return 304 / Not Modified.
+//
+// Responses load from cache will have the 'X-From-Cache' header set.
+var CachedTransportOpt = NewCachedTransportOpt(redisCache, true)
+
 // ExternalClientFactory is a httpcli.Factory with common options
 // and middleware pre-set for communicating with external services.
+// WARN: Clients from this factory cache entire responses for etag matching. Do not
+// use them for one-off requests if possible, and definitely not for larger payloads,
+// like downloading arbitrarily sized files! See UncachedExternalClientFactory instead.
 var ExternalClientFactory = NewExternalClientFactory()
 
+// UncachedExternalClientFactory is a httpcli.Factory with common options
+// and middleware pre-set for communicating with external services, but with caching
+// responses disabled.
+var UncachedExternalClientFactory = newExternalClientFactory(false, false)
+
 var (
-	externalTimeout, _          = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_TIMEOUT", "5m", "Timeout for external HTTP requests"))
-	externalRetryDelayBase, _   = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_BASE", "200ms", "Base retry delay duration for external HTTP requests"))
-	externalRetryDelayMax, _    = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_MAX", "3s", "Max retry delay duration for external HTTP requests"))
-	externalRetryMaxAttempts, _ = strconv.Atoi(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for external HTTP requests"))
+	externalTimeout, _               = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_TIMEOUT", "5m", "Timeout for external HTTP requests"))
+	externalRetryDelayBase, _        = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_BASE", "200ms", "Base retry delay duration for external HTTP requests"))
+	externalRetryDelayMax, _         = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_MAX", "3s", "Max retry delay duration for external HTTP requests"))
+	externalRetryMaxAttempts, _      = strconv.Atoi(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for external HTTP requests"))
+	externalRetryAfterMaxDuration, _ = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION", "3s", "Max duration to wait in retry-after header before we won't auto-retry"))
 )
 
 // NewExternalClientFactory returns a httpcli.Factory with common options
-// and middleware pre-set for communicating with external services.
-func NewExternalClientFactory() *Factory {
-	return NewFactory(
-		NewMiddleware(
-			ContextErrorMiddleware,
-			HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
-		),
+// and middleware pre-set for communicating with external services. Additional
+// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
+// WARN: Clients from this factory cache entire responses for etag matching. Do not
+// use them for one-off requests if possible, and definitely not for larger payloads,
+// like downloading arbitrarily sized files!
+func NewExternalClientFactory(middleware ...Middleware) *Factory {
+	return newExternalClientFactory(true, false, middleware...)
+}
+
+// NewExternalClientFactory returns a httpcli.Factory with common options
+// and middleware pre-set for communicating with external services. Additional
+// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
+// If cache is true, responses will be cached in redis for improved rate limiting
+// and reduced byte transfer sizes.
+// If testOpt is true, a test-only transport option will be used that does not have
+// any IP restrictions for external requests.
+func newExternalClientFactory(cache bool, testOpt bool, middleware ...Middleware) *Factory {
+	mw := []Middleware{
+		ContextErrorMiddleware,
+		HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
+		redisLoggerMiddleware(),
+	}
+	mw = append(mw, middleware...)
+
+	externalTransportOpt := ExternalTransportOpt
+	if testOpt || env.InsecureDev {
+		externalTransportOpt = TestExternalTransportOpt
+	}
+
+	opts := []Opt{
 		NewTimeoutOpt(externalTimeout),
-		// ExternalTransportOpt needs to be before TracedTransportOpt and
+		// externalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
 		// not a generic http.RoundTripper.
-		ExternalTransportOpt,
+		externalTransportOpt,
 		NewErrorResilientTransportOpt(
-			NewRetryPolicy(MaxRetries(externalRetryMaxAttempts)),
-			ExpJitterDelay(externalRetryDelayBase, externalRetryDelayMax),
+			NewRetryPolicy(MaxRetries(externalRetryMaxAttempts), externalRetryAfterMaxDuration),
+			ExpJitterDelayOrRetryAfterDelay(externalRetryDelayBase, externalRetryDelayMax),
 		),
+		RequestInteractionTransportOpt,
 		TracedTransportOpt,
-		NewCachedTransportOpt(redisCache, true),
+	}
+	if cache {
+		opts = append(opts, CachedTransportOpt)
+	}
+
+	return NewFactory(
+		NewMiddleware(mw...),
+		opts...,
 	)
 }
 
 // ExternalDoer is a shared client for external communication. This is a
 // convenience for existing uses of http.DefaultClient.
+// WARN: This client caches entire responses for etag matching. Do not use it for
+// one-off requests if possible, and definitely not for larger payloads, like
+// downloading arbitrarily sized files! See UncachedExternalDoer instead.
 var ExternalDoer, _ = ExternalClientFactory.Doer()
+
+// UncachedExternalDoer is a shared client for external communication. This is a
+// convenience for existing uses of http.DefaultClient.
+// This client does not cache responses. To cache responses see ExternalDoer instead.
+var UncachedExternalDoer, _ = UncachedExternalClientFactory.Doer()
+
+// TestExternalClientFactory is a httpcli.Factory with common options
+// and is created for tests where you'd normally use an ExternalClientFactory.
+// Must be used in tests only as it doesn't apply any IP restrictions.
+var TestExternalClientFactory = newExternalClientFactory(false, true)
+
+// TestExternalClient is a shared client for external communication.
+// It does not apply any IP filering and must only be used in tests.
+var TestExternalClient, _ = TestExternalClientFactory.Client()
+
+// TestExternalDoer is a shared client for testing external communications.
+// It does not apply any IP filering and must only be used in tests.
+var TestExternalDoer, _ = TestExternalClientFactory.Doer()
 
 // ExternalClient returns a shared client for external communication. This is
 // a convenience for existing uses of http.DefaultClient.
+// WARN: This client caches entire responses for etag matching. Do not use it for
+// one-off requests if possible, and definitely not for larger payloads, like
+// downloading arbitrarily sized files! See UncachedExternalClient instead.
 var ExternalClient, _ = ExternalClientFactory.Client()
+
+// UncachedExternalClient returns a shared client for external communication. This is
+// a convenience for existing uses of http.DefaultClient.
+// WARN: This client does not cache responses. To cache responses see ExternalClient instead.
+var UncachedExternalClient, _ = UncachedExternalClientFactory.Client()
 
 // InternalClientFactory is a httpcli.Factory with common options
 // and middleware pre-set for communicating with internal services.
 var InternalClientFactory = NewInternalClientFactory("internal")
 
 var (
-	internalTimeout, _          = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_TIMEOUT", "0", "Timeout for internal HTTP requests"))
-	internalRetryDelayBase, _   = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_BASE", "50ms", "Base retry delay duration for internal HTTP requests"))
-	internalRetryDelayMax, _    = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_MAX", "1s", "Max retry delay duration for internal HTTP requests"))
-	internalRetryMaxAttempts, _ = strconv.Atoi(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for internal HTTP requests"))
+	internalTimeout, _               = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_TIMEOUT", "0", "Timeout for internal HTTP requests"))
+	internalRetryDelayBase, _        = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_BASE", "50ms", "Base retry delay duration for internal HTTP requests"))
+	internalRetryDelayMax, _         = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_MAX", "1s", "Max retry delay duration for internal HTTP requests"))
+	internalRetryMaxAttempts, _      = strconv.Atoi(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for internal HTTP requests"))
+	internalRetryAfterMaxDuration, _ = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_AFTER_MAX_DURATION", "3s", "Max duration to wait in retry-after header before we won't auto-retry"))
 )
 
 // NewInternalClientFactory returns a httpcli.Factory with common options
-// and middleware pre-set for communicating with internal services.
-func NewInternalClientFactory(subsystem string) *Factory {
+// and middleware pre-set for communicating with internal services. Additional
+// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
+func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Factory {
+	mw := []Middleware{
+		ContextErrorMiddleware,
+	}
+	mw = append(mw, middleware...)
+
 	return NewFactory(
-		NewMiddleware(
-			ContextErrorMiddleware,
-		),
+		NewMiddleware(mw...),
 		NewTimeoutOpt(internalTimeout),
 		NewMaxIdleConnsPerHostOpt(500),
 		NewErrorResilientTransportOpt(
-			NewRetryPolicy(MaxRetries(internalRetryMaxAttempts)),
-			ExpJitterDelay(internalRetryDelayBase, internalRetryDelayMax),
+			NewRetryPolicy(MaxRetries(internalRetryMaxAttempts), internalRetryAfterMaxDuration),
+			ExpJitterDelayOrRetryAfterDelay(internalRetryDelayBase, internalRetryDelayMax),
 		),
 		MeteredTransportOpt(subsystem),
 		ActorTransportOpt,
+		RequestClientTransportOpt,
+		RequestInteractionTransportOpt,
 		TracedTransportOpt,
 	)
 }
 
-// InternalDoer is a shared client for external communication. This is a
+// InternalDoer is a shared client for internal communication. This is a
 // convenience for existing uses of http.DefaultClient.
 var InternalDoer, _ = InternalClientFactory.Doer()
 
-// InternalClient returns a shared client for external communication. This is
+// InternalClient returns a shared client for internal communication. This is
 // a convenience for existing uses of http.DefaultClient.
 var InternalClient, _ = InternalClientFactory.Client()
 
@@ -185,13 +273,13 @@ func (f Factory) Client(base ...Opt) (*http.Client, error) {
 	opts = append(opts, f.common...)
 
 	var cli http.Client
-	var err *errors.MultiError
+	var err error
 
 	for _, opt := range opts {
 		err = errors.Append(err, opt(&cli))
 	}
 
-	return &cli, err.ErrorOrNil()
+	return &cli, err
 }
 
 // NewFactory returns a Factory that applies the given common
@@ -224,8 +312,8 @@ func HeadersMiddleware(headers ...string) Middleware {
 }
 
 // ContextErrorMiddleware wraps a Doer with context.Context error
-// handling.  It checks if the request context is done, and if so,
-// returns its error. Otherwise it returns the error from the inner
+// handling. It checks if the request context is done, and if so,
+// returns its error. Otherwise, it returns the error from the inner
 // Doer call.
 func ContextErrorMiddleware(cli Doer) Doer {
 	return DoerFunc(func(req *http.Request) (*http.Response, error) {
@@ -241,34 +329,88 @@ func ContextErrorMiddleware(cli Doer) Doer {
 	})
 }
 
-// GitHubProxyRedirectMiddleware rewrites requests to the "github-proxy" host
-// to "https://api.github.com".
-func GitHubProxyRedirectMiddleware(cli Doer) Doer {
-	return DoerFunc(func(req *http.Request) (*http.Response, error) {
-		if req.URL.Hostname() == "github-proxy" {
-			req.URL.Host = "api.github.com"
-			req.URL.Scheme = "https"
-		}
-		return cli.Do(req)
-	})
+// requestContextKey is used to denote keys to fields that should be logged by the logging
+// middleware. They should be set to the request context associated with a response.
+type requestContextKey int
+
+const (
+	// requestRetryAttemptKey is the key to the rehttp.Attempt attached to a request, if
+	// a request undergoes retries via NewRetryPolicy
+	requestRetryAttemptKey requestContextKey = iota
+
+	// redisLoggingMiddlewareErrorKey is the key to any errors that occurred when logging
+	// a request to Redis via redisLoggerMiddleware
+	redisLoggingMiddlewareErrorKey
+)
+
+// NewLoggingMiddleware logs basic diagnostics about requests made through this client at
+// debug level. The provided logger is given the 'httpcli' subscope.
+//
+// It also logs metadata set by request context by other middleware, such as NewRetryPolicy.
+func NewLoggingMiddleware(logger log.Logger) Middleware {
+	logger = logger.Scoped("httpcli")
+
+	return func(d Doer) Doer {
+		return DoerFunc(func(r *http.Request) (*http.Response, error) {
+			start := time.Now()
+			resp, err := d.Do(r)
+
+			// Gather fields about this request.
+			fields := append(make([]log.Field, 0, 5), // preallocate some space
+				log.String("host", r.URL.Host),
+				log.String("path", r.URL.Path),
+				log.Duration("duration", time.Since(start)))
+			if err != nil {
+				fields = append(fields, log.Error(err))
+			}
+			// Check incoming request context, unless a response is available, in which
+			// case we check the request associated with the response in case it is not
+			// the same as the original request (e.g. due to retries)
+			ctx := r.Context()
+			if resp != nil {
+				ctx = resp.Request.Context()
+				fields = append(fields, log.Int("code", resp.StatusCode))
+			}
+			// Gather fields from request context. When adding fields set into context,
+			// make sure to test that the fields get propagated and picked up correctly
+			// in TestLoggingMiddleware.
+			if attempt, ok := ctx.Value(requestRetryAttemptKey).(rehttp.Attempt); ok {
+				// Get fields from NewRetryPolicy
+				fields = append(fields, log.Object("retry",
+					log.Int("attempts", attempt.Index),
+					log.Error(attempt.Error)))
+			}
+			if redisErr, ok := ctx.Value(redisLoggingMiddlewareErrorKey).(error); ok {
+				// Get fields from redisLoggerMiddleware
+				fields = append(fields, log.NamedError("redisLoggerErr", redisErr))
+			}
+
+			// Log results with link to trace if present
+			trace.Logger(ctx, logger).
+				Debug("request", fields...)
+
+			return resp, err
+		})
+	}
 }
 
-//
 // Common Opts
-//
+var externalDenyList = env.Get("EXTERNAL_DENY_LIST", "", "Deny list for outgoing requests")
 
-// ExternalTransportOpt returns an Opt that ensures the http.Client.Transport
-// can contact non-Sourcegraph services. For example Admins can configure
-// TLS/SSL settings.
-func ExternalTransportOpt(cli *http.Client) error {
+type denyRule struct {
+	pattern string
+	builtin string
+}
+
+var defaultDenylist = []denyRule{
+	{builtin: "loopback"},
+	{pattern: "169.254.169.254"},
+}
+
+// TestTransportOpt creates a transport for tests that does not apply any denylisting
+func TestExternalTransportOpt(cli *http.Client) error {
 	tr, err := getTransportForMutation(cli)
 	if err != nil {
-		// TODO(keegancsmith) for now we don't support unwrappable
-		// transports. https://github.com/sourcegraph/sourcegraph/pull/7741
-		// https://github.com/sourcegraph/sourcegraph/pull/71
-		if isUnwrappableTransport(cli) {
-			return nil
-		}
 		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
 
@@ -276,15 +418,33 @@ func ExternalTransportOpt(cli *http.Client) error {
 	return nil
 }
 
-func isUnwrappableTransport(cli *http.Client) bool {
-	if cli.Transport == nil {
-		return false
+// ExternalTransportOpt returns an Opt that ensures the http.Client.Transport
+// can contact non-Sourcegraph services. For example Admins can configure
+// TLS/SSL settings. This adds filtering for external requests based on
+// predefined deny lists. Can be extended using the EXTERNAL_DENY_LIST
+// environment variable.
+func ExternalTransportOpt(cli *http.Client) error {
+	tr, err := getTransportForMutation(cli)
+	if err != nil {
+		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
-	_, ok := cli.Transport.(interface{ UnwrappableTransport() })
-	return ok
+
+	var denyList = hostmatcher.ParseHostMatchList("EXTERNAL_DENY_LIST", externalDenyList)
+	for _, rule := range defaultDenylist {
+		if rule.builtin != "" {
+			denyList.AppendBuiltin(rule.builtin)
+		} else if rule.pattern != "" {
+			denyList.AppendPattern(rule.pattern)
+		}
+	}
+
+	// this dialer will match resolved domain names against the deny list
+	tr.DialContext = hostmatcher.NewDialContext("", nil, denyList)
+	cli.Transport = &externalTransport{base: tr}
+	return nil
 }
 
-// NewCertPoolOpt returns a Opt that sets the RootCAs pool of an http.Client's
+// NewCertPoolOpt returns an Opt that sets the RootCAs pool of an http.Client's
 // transport.
 func NewCertPoolOpt(certs ...string) Opt {
 	return func(cli *http.Client) error {
@@ -316,16 +476,22 @@ func NewCertPoolOpt(certs ...string) Opt {
 
 // NewCachedTransportOpt returns an Opt that wraps the existing http.Transport
 // of an http.Client with caching using the given Cache.
+//
+// If markCachedResponses, responses returned from the cache will be given an extra header,
+// X-From-Cache.
 func NewCachedTransportOpt(c httpcache.Cache, markCachedResponses bool) Opt {
 	return func(cli *http.Client) error {
 		if cli.Transport == nil {
 			cli.Transport = http.DefaultTransport
 		}
 
-		cli.Transport = &httpcache.Transport{
-			Transport:           cli.Transport,
-			Cache:               c,
-			MarkCachedResponses: markCachedResponses,
+		cli.Transport = &wrappedTransport{
+			RoundTripper: &httpcache.Transport{
+				Transport:           cli.Transport,
+				Cache:               c,
+				MarkCachedResponses: markCachedResponses,
+			},
+			Wrapped: cli.Transport,
 		}
 
 		return nil
@@ -339,7 +505,13 @@ func TracedTransportOpt(cli *http.Client) error {
 		cli.Transport = http.DefaultTransport
 	}
 
-	cli.Transport = &ot.Transport{RoundTripper: cli.Transport}
+	// Propagate trace policy
+	cli.Transport = &policy.Transport{RoundTripper: cli.Transport}
+
+	// Collect and propagate OpenTelemetry trace (among other formats initialized
+	// in internal/tracer)
+	cli.Transport = instrumentation.NewHTTPTransport(cli.Transport)
+
 	return nil
 }
 
@@ -362,7 +534,10 @@ func MeteredTransportOpt(subsystem string) Opt {
 		}
 
 		cli.Transport = meter.Transport(cli.Transport, func(u *url.URL) string {
-			return u.Path
+			// We don't have a way to return a low cardinality label here (for
+			// the prometheus label "category"). Previously we returned u.Path
+			// but that blew up prometheus. So we just return unknown.
+			return "unknown"
 		})
 
 		return nil
@@ -388,52 +563,62 @@ var schemeErrorRe = lazyregexp.New(`unsupported protocol scheme`)
 // to NewRetryPolicy. If we're in tests, it returns 1, otherwise it tries to
 // parse SRC_HTTP_CLI_MAX_RETRIES and return that. If it can't, it defaults to 20.
 func MaxRetries(n int) int {
-	if strings.HasSuffix(os.Args[0], ".test") {
+	if strings.HasSuffix(os.Args[0], ".test") || strings.HasSuffix(os.Args[0], "_test") {
 		return 0
 	}
 	return n
 }
 
-// NewRetryPolicy returns a retry policy used in any Doer or Client returned
-// by NewExternalClientFactory.
-func NewRetryPolicy(max int) rehttp.RetryFn {
+// NewRetryPolicy returns a retry policy based on some Sourcegraph defaults.
+func NewRetryPolicy(max int, maxRetryAfterDuration time.Duration) rehttp.RetryFn {
+	// Indicates in trace whether or not this request was retried at some point
+	const retriedTraceAttributeKey = "httpcli.retried"
+
 	return func(a rehttp.Attempt) (retry bool) {
+		tr := trace.FromContext(a.Request.Context())
+		if a.Index == 0 {
+			// For the initial attempt set it to false in case we never retry,
+			// to make this easier to query in Cloud Trace. This attribute will
+			// get overwritten later if a retry occurs.
+			tr.SetAttributes(
+				attribute.Bool(retriedTraceAttributeKey, false))
+		}
+
 		status := 0
+		var retryAfterHeader string
 
 		defer func() {
 			// Avoid trace log spam if we haven't invoked the retry policy.
 			shouldTraceLog := retry || a.Index > 0
-			if span := opentracing.SpanFromContext(a.Request.Context()); span != nil && shouldTraceLog {
-				fields := []otlog.Field{
-					otlog.Event("request-retry-decision"),
-					otlog.Bool("retry", retry),
-					otlog.Int("attempt", a.Index),
-					otlog.String("method", a.Request.Method),
-					otlog.String("url", a.Request.URL.String()),
-					otlog.Int("status", status),
+			if tr.IsRecording() && shouldTraceLog {
+				fields := []attribute.KeyValue{
+					attribute.Bool("retry", retry),
+					attribute.Int("attempt", a.Index),
+					attribute.String("method", a.Request.Method),
+					attribute.Stringer("url", a.Request.URL),
+					attribute.Int("status", status),
+					attribute.String("retry-after", retryAfterHeader),
 				}
 				if a.Error != nil {
-					fields = append(fields, otlog.Error(a.Error))
+					fields = append(fields, trace.Error(a.Error))
 				}
-				span.LogFields(fields...)
+				tr.AddEvent("request-retry-decision", fields...)
+				// Record on span itself as well for ease of querying, updates
+				// will overwrite previous values.
+				tr.SetAttributes(
+					attribute.Bool(retriedTraceAttributeKey, true),
+					attribute.Int("httpcli.retriedAttempts", a.Index))
+			}
+
+			// Update request context with latest retry for logging middleware
+			if shouldTraceLog {
+				*a.Request = *a.Request.WithContext(
+					context.WithValue(a.Request.Context(), requestRetryAttemptKey, a))
 			}
 
 			if retry {
 				metricRetry.Inc()
 			}
-
-			if retry || a.Error == nil || a.Index == 0 {
-				return
-			}
-
-			log15.Error(
-				"retrying HTTP request failed",
-				"attempt", a.Index,
-				"method", a.Request.Method,
-				"url", a.Request.URL,
-				"status", status,
-				"err", a.Error,
-			)
 		}()
 
 		if a.Response != nil {
@@ -479,17 +664,71 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 			return true
 		}
 
-		if status == 0 || status == 429 || (status >= 500 && status != 501) {
-			return true
+		// If we have some 5xx response or 429 response that could work after
+		// a few retries, retry the request, as determined by retryWithRetryAfter
+		if status == 0 ||
+			(status >= 500 && status != http.StatusNotImplemented) ||
+			status == http.StatusTooManyRequests {
+			retry, retryAfterHeader = retryWithRetryAfter(a.Response, maxRetryAfterDuration)
+			return retry
 		}
 
 		return false
 	}
 }
 
-// ExpJitterDelay returns a DelayFn that returns a delay between 0 and
-// base * 2^attempt capped at max (an exponential backoff delay with
-// jitter).
+// retryWithRetryAfter always retries, unless we have a non-nil response that
+// indicates a retry-after header as outlined here: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
+func retryWithRetryAfter(response *http.Response, retryAfterMaxSleepDuration time.Duration) (bool, string) {
+	// If a retry-after header exists, we only want to retry if it might resolve
+	// the issue.
+	retryAfterHeader, retryAfter := extractRetryAfter(response)
+	if retryAfter != nil {
+		// Retry if retry-after is within the maximum sleep duration, otherwise
+		// there's no point retrying
+		return *retryAfter <= retryAfterMaxSleepDuration, retryAfterHeader
+	}
+
+	// Otherwise, default to the behavior we always had: retry.
+	return true, retryAfterHeader
+}
+
+// extractRetryAfter attempts to extract a retry-after time from retryAfterHeader,
+// returning a nil duration if it cannot infer one.
+func extractRetryAfter(response *http.Response) (retryAfterHeader string, retryAfter *time.Duration) {
+	if response != nil {
+		// See  https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
+		// for retry-after standards.
+		retryAfterHeader = response.Header.Get("retry-after")
+		if retryAfterHeader != "" {
+			// There are two valid formats for retry-after headers: seconds
+			// until retry in int, or a RFC1123 date string.
+			// First, see if it is denoted in seconds.
+			s, err := strconv.Atoi(retryAfterHeader)
+			if err == nil {
+				d := time.Duration(s) * time.Second
+				return retryAfterHeader, &d
+			}
+
+			// If we weren't able to parse as seconds, try to parse as RFC1123.
+			if err != nil {
+				after, err := time.Parse(time.RFC1123, retryAfterHeader)
+				if err != nil {
+					// We don't know how to parse this header
+					return retryAfterHeader, nil
+				}
+				in := time.Until(after)
+				return retryAfterHeader, &in
+			}
+		}
+	}
+	return retryAfterHeader, nil
+}
+
+// ExpJitterDelayOrRetryAfterDelay returns a DelayFn that returns a delay
+// between 0 and base * 2^attempt capped at max (an exponential backoff delay
+// with jitter), unless a 'retry-after' value is provided in the response - then
+// the 'retry-after' duration is used, up to max.
 //
 // See the full jitter algorithm in:
 // http://www.awsarchitectureblog.com/2015/03/backoff.html
@@ -497,20 +736,31 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 // This is adapted from rehttp.ExpJitterDelay to not use a non-thread-safe
 // package level PRNG and to be safe against overflows. It assumes that
 // max > base.
-func ExpJitterDelay(base, max time.Duration) rehttp.DelayFn {
+//
+// This retry policy has also been adapted to support using
+func ExpJitterDelayOrRetryAfterDelay(base, max time.Duration) rehttp.DelayFn {
 	var mu sync.Mutex
 	prng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return func(attempt rehttp.Attempt) time.Duration {
-		exp := math.Pow(2, float64(attempt.Index))
-		top := float64(base) * exp
-		n := int64(math.Min(float64(max), top))
-		if n <= 0 {
-			return base
-		}
+		var delay time.Duration
+		if _, retryAfter := extractRetryAfter(attempt.Response); retryAfter != nil {
+			// Delay by what upstream request tells us. If retry-after is
+			// significantly higher than max, then it should be up to the retry
+			// policy to choose not to retry the request.
+			delay = *retryAfter
+		} else {
+			// Otherwise, generate a delay with some jitter.
+			exp := math.Pow(2, float64(attempt.Index))
+			top := float64(base) * exp
+			n := int64(math.Min(float64(max), top))
+			if n <= 0 {
+				return base
+			}
 
-		mu.Lock()
-		delay := time.Duration(prng.Int63n(n))
-		mu.Unlock()
+			mu.Lock()
+			delay = time.Duration(prng.Int63n(n))
+			mu.Unlock()
+		}
 
 		// Overflow handling
 		switch {
@@ -587,15 +837,30 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 		cli.Transport = http.DefaultTransport
 	}
 
-	tr, ok := cli.Transport.(*http.Transport)
-	if !ok {
-		return nil, errors.Errorf("http.Client.Transport is not an *http.Transport: %T", cli.Transport)
+	// Try to get the underlying, concrete *http.Transport implementation, copy it, and
+	// replace it.
+	var transport *http.Transport
+	switch v := cli.Transport.(type) {
+	case *http.Transport:
+		transport = v.Clone()
+		// Replace underlying implementation
+		cli.Transport = transport
+
+	case WrappedTransport:
+		wrapped := unwrapAll(v)
+		t, ok := (*wrapped).(*http.Transport)
+		if !ok {
+			return nil, errors.Errorf("http.Client.Transport cannot be unwrapped as *http.Transport: %T", cli.Transport)
+		}
+		transport = t.Clone()
+		// Replace underlying implementation
+		*wrapped = transport
+
+	default:
+		return nil, errors.Errorf("http.Client.Transport cannot be cast as a *http.Transport: %T", cli.Transport)
 	}
 
-	tr = tr.Clone()
-	cli.Transport = tr
-
-	return tr, nil
+	return transport, nil
 }
 
 // ActorTransportOpt wraps an existing http.Transport of an http.Client to pull the actor
@@ -607,7 +872,71 @@ func ActorTransportOpt(cli *http.Client) error {
 		cli.Transport = http.DefaultTransport
 	}
 
-	cli.Transport = &actor.HTTPTransport{RoundTripper: cli.Transport}
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &actor.HTTPTransport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
 
 	return nil
+}
+
+// RequestClientTransportOpt wraps an existing http.Transport of an http.Client to pull
+// the original client's IP from the context and add it to each request's HTTP headers.
+//
+// Servers can use requestclient.HTTPMiddleware to populate client context from incoming requests.
+func RequestClientTransportOpt(cli *http.Client) error {
+	if cli.Transport == nil {
+		cli.Transport = http.DefaultTransport
+	}
+
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &requestclient.HTTPTransport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
+
+	return nil
+}
+
+func RequestInteractionTransportOpt(cli *http.Client) error {
+	if cli.Transport == nil {
+		cli.Transport = http.DefaultTransport
+	}
+
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &requestinteraction.HTTPTransport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
+
+	return nil
+}
+
+// IsRiskyHeader returns true if the request or response header is likely to contain private data.
+func IsRiskyHeader(name string, values []string) bool {
+	return isRiskyHeaderName(name) || containsRiskyHeaderValue(values)
+}
+
+// isRiskyHeaderName returns true if the request or response header is likely to contain private data
+// based on its name.
+func isRiskyHeaderName(name string) bool {
+	riskyHeaderKeys := []string{"auth", "cookie", "token"}
+	for _, riskyKey := range riskyHeaderKeys {
+		if strings.Contains(strings.ToLower(name), riskyKey) {
+			return true
+		}
+	}
+	return false
+}
+
+// ContainsRiskyHeaderValue returns true if the values array of a request or response header
+// looks like it's likely to contain private data.
+func containsRiskyHeaderValue(values []string) bool {
+	riskyHeaderValues := []string{"bearer", "ghp_", "glpat-"}
+	for _, value := range values {
+		for _, riskyValue := range riskyHeaderValues {
+			if strings.Contains(strings.ToLower(value), riskyValue) {
+				return true
+			}
+		}
+	}
+	return false
 }

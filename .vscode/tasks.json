@@ -3,7 +3,7 @@
   // for the documentation about the tasks.json format
   "version": "2.0.0",
   "options": {
-    "cwd": "${workspaceFolder}",
+    "cwd": "${workspaceFolder}"
   },
   "tasks": [
     {
@@ -14,10 +14,7 @@
       "problemMatcher": "$tsc-watch",
       "isBackground": true,
       "command": ["node_modules/.bin/tsc"],
-      "args": ["--build", "tsconfig.all.json", "--watch", "--incremental"],
-      "runOptions": {
-        "runOn": "folderOpen",
-      },
+      "args": ["--build", "tsconfig.all.json", "--watch", "--incremental"]
     },
     {
       "label": "Watch web app",
@@ -25,21 +22,12 @@
       "type": "npm",
       "script": "watch-web",
       "problemMatcher": [],
-      "isBackground": true,
-    },
-    {
-      "label": "Watch code generation",
-      "detail": "Watch files and generate types when files are changed",
-      "type": "npm",
-      "script": "watch-generate",
-      "group": "build",
-      "problemMatcher": [],
-      "isBackground": true,
+      "isBackground": true
     },
     {
       "label": "stylelint",
-      "command": "yarn",
-      "args": ["-s", "run", "all:stylelint", "--", "--formatter", "compact"],
+      "command": "pnpm",
+      "args": ["run", "lint:css:all", "--", "--formatter", "compact"],
       "problemMatcher": {
         "owner": "stylelint",
         "applyTo": "closedDocuments",
@@ -51,16 +39,16 @@
             "line": 2,
             "column": 3,
             "severity": 4,
-            "message": 5,
-          },
-        ],
-      },
+            "message": 5
+          }
+        ]
+      }
     },
     {
       "label": "launch",
       "command": "${workspaceRoot}/dev/start.sh",
       "isBackground": true,
-      "problemMatcher": [],
+      "problemMatcher": []
     },
     {
       "label": "ESLint all",
@@ -71,45 +59,45 @@
         "eslint:browser",
         "eslint:precise-code-intel",
         "eslint:release",
-        "eslint:extension-api",
+        "eslint:extension-api"
       ],
       "dependsOrder": "parallel",
-      "problemMatcher": [],
+      "problemMatcher": []
     },
     {
       "label": "eslint:shared",
       "type": "npm",
       "script": "eslint",
       "path": "client/shared/",
-      "problemMatcher": ["$eslint-stylish"],
+      "problemMatcher": ["$eslint-stylish"]
     },
     {
       "label": "eslint:browser",
       "type": "npm",
       "script": "eslint",
       "path": "client/browser/",
-      "problemMatcher": ["$eslint-stylish"],
+      "problemMatcher": ["$eslint-stylish"]
     },
     {
       "label": "eslint:web",
       "type": "npm",
       "script": "eslint",
       "path": "client/web/",
-      "problemMatcher": ["$eslint-stylish"],
+      "problemMatcher": ["$eslint-stylish"]
     },
     {
       "label": "eslint:release",
       "type": "npm",
       "script": "eslint",
       "path": "dev/release/",
-      "problemMatcher": ["$eslint-stylish"],
+      "problemMatcher": ["$eslint-stylish"]
     },
     {
       "label": "eslint:extension-api",
       "type": "npm",
       "script": "eslint",
       "path": "client/extension-api/",
-      "problemMatcher": ["$eslint-stylish"],
-    },
-  ],
+      "problemMatcher": ["$eslint-stylish"]
+    }
+  ]
 }

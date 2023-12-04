@@ -1,0 +1,31 @@
+.main-wrapper {
+    height: 100%;
+    overflow: hidden;
+    filter: drop-shadow(0 0 4px rgba(36, 41, 54, 0.1));
+}
+
+.cody-sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color-2);
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    position: sticky;
+    top: 0;
+    background-color: var(--input-bg);
+    z-index: 3;
+}
+
+.cody-sidebar {
+    background-color: var(--input-bg);
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.action-buttons {
+    min-width: 52px;
+}

@@ -1,5 +1,6 @@
-import { SourcegraphContext } from '../../src/jscontext'
+import type { SourcegraphContext } from '../../src/jscontext'
 
+import { ENVIRONMENT_CONFIG } from './environment-config'
 import { getSiteConfig } from './get-site-config'
 
 // TODO: share with `client/web/src/integration/jscontext` which is not included into `tsconfig.json` now.
@@ -12,7 +13,7 @@ export const builtinAuthProvider = {
     authenticationURL: '',
 }
 
-// Create dummy JS context that will be added to index.html when `WEBPACK_SERVE_INDEX` is set to true.
+// Create dummy JS context that will be added to index.html when `WEB_BUILDER_SERVE_INDEX` is set to true.
 export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: string }): SourcegraphContext => {
     const siteConfig = getSiteConfig()
 
@@ -20,7 +21,9 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         siteConfig.authProviders.unshift(builtinAuthProvider)
     }
 
-    return {
+    const jsContext: SourcegraphContext = {
+        currentUser: null,
+        temporarySettings: null,
         externalURL: sourcegraphBaseUrl,
         accessTokensAllow: 'all-users-create',
         allowSignup: true,
@@ -28,35 +31,54 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         batchChangesDisableWebhooksWarning: false,
         batchChangesWebhookLogsEnabled: true,
         executorsEnabled: false,
+        codyEnabled: true,
+        codyEnabledForCurrentUser: true,
+        codyRequiresVerifiedEmail: false,
         codeIntelAutoIndexingEnabled: false,
         codeIntelAutoIndexingAllowGlobalPolicies: false,
-        codeInsightsGqlApiEnabled: true,
-        externalServicesUserMode: 'public',
+        codeInsightsEnabled: true,
         productResearchPageEnabled: true,
         assetsRoot: '/.assets',
         deployType: 'dev',
         debug: true,
         emailEnabled: false,
         experimentalFeatures: {},
+        extsvcConfigAllowEdits: false,
+        extsvcConfigFileExists: false,
         isAuthenticatedUser: true,
-        likelyDockerOnMac: false,
         needServerRestart: false,
         needsSiteInit: false,
+        needsRepositoryConfiguration: false,
         resetPasswordEnabled: true,
+        runningOnMacOS: true,
         sentryDSN: null,
         site: {
             'update.channel': 'release',
         },
         siteID: 'TestSiteID',
         siteGQLID: 'TestGQLSiteID',
-        sourcegraphDotComMode: true,
-        githubAppCloudSlug: 'TestApp',
-        githubAppCloudClientID: 'TestClientID',
+        sourcegraphDotComMode: ENVIRONMENT_CONFIG.SOURCEGRAPHDOTCOM_MODE,
+        codyAppMode: false,
+        srcServeGitUrl: 'http://127.0.0.1:3434',
         userAgentIsBot: false,
         version: '0.0.0',
         xhrHeaders: {},
         authProviders: [builtinAuthProvider],
+        authMinPasswordLength: 12,
+        authPasswordPolicy: {
+            enabled: false,
+            numberOfSpecialCharacters: 2,
+            requireAtLeastOneNumber: true,
+            requireUpperandLowerCase: true,
+        },
+        openTelemetry: {
+            endpoint: ENVIRONMENT_CONFIG.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT,
+        },
+        embeddingsEnabled: false,
+        primaryLoginProvidersCount: 5,
         // Site-config overrides default JS context
         ...siteConfig,
     }
+
+    return jsContext
 }

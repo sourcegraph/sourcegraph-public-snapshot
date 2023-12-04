@@ -1,740 +1,231 @@
-# Table "public.codeintel_schema_migrations"
+# Table "public.codeintel_last_reconcile"
 ```
- Column  |  Type   | Collation | Nullable | Default 
----------+---------+-----------+----------+---------
- version | bigint  |           | not null | 
- dirty   | boolean |           | not null | 
+      Column       |           Type           | Collation | Nullable | Default 
+-------------------+--------------------------+-----------+----------+---------
+ dump_id           | integer                  |           | not null | 
+ last_reconcile_at | timestamp with time zone |           | not null | 
 Indexes:
-    "codeintel_schema_migrations_pkey" PRIMARY KEY, btree (version)
+    "codeintel_last_reconcile_dump_id_key" UNIQUE CONSTRAINT, btree (dump_id)
+    "codeintel_last_reconcile_last_reconcile_at_dump_id" btree (last_reconcile_at, dump_id)
 
 ```
 
-# Table "public.lsif_data_apidocs_num_dumps"
-```
- Column |  Type  | Collation | Nullable | Default 
---------+--------+-----------+----------+---------
- count  | bigint |           |          | 
+Stores the last time processed LSIF data was reconciled with the other database.
 
+# Table "public.codeintel_scip_document_lookup"
 ```
-
-# Table "public.lsif_data_apidocs_num_dumps_indexed"
-```
- Column |  Type  | Collation | Nullable | Default 
---------+--------+-----------+----------+---------
- count  | bigint |           |          | 
-
-```
-
-# Table "public.lsif_data_apidocs_num_pages"
-```
- Column |  Type  | Collation | Nullable | Default 
---------+--------+-----------+----------+---------
- count  | bigint |           |          | 
-
-```
-
-# Table "public.lsif_data_apidocs_num_search_results_private"
-```
- Column |  Type  | Collation | Nullable | Default 
---------+--------+-----------+----------+---------
- count  | bigint |           |          | 
-
-```
-
-# Table "public.lsif_data_apidocs_num_search_results_public"
-```
- Column |  Type  | Collation | Nullable | Default 
---------+--------+-----------+----------+---------
- count  | bigint |           |          | 
-
-```
-
-# Table "public.lsif_data_definitions"
-```
-     Column     |  Type   | Collation | Nullable | Default 
-----------------+---------+-----------+----------+---------
- dump_id        | integer |           | not null | 
- scheme         | text    |           | not null | 
- identifier     | text    |           | not null | 
- data           | bytea   |           |          | 
- schema_version | integer |           | not null | 
- num_locations  | integer |           | not null | 
+    Column     |  Type   | Collation | Nullable |                          Default                           
+---------------+---------+-----------+----------+------------------------------------------------------------
+ id            | bigint  |           | not null | nextval('codeintel_scip_document_lookup_id_seq'::regclass)
+ upload_id     | integer |           | not null | 
+ document_path | text    |           | not null | 
+ document_id   | bigint  |           | not null | 
 Indexes:
-    "lsif_data_definitions_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
-    "lsif_data_definitions_dump_id_schema_version" btree (dump_id, schema_version)
-Triggers:
-    lsif_data_definitions_schema_versions_insert AFTER INSERT ON lsif_data_definitions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_definitions_schema_versions_insert()
-
-```
-
-Associates (document, range) pairs with the import monikers attached to the range.
-
-**data**: A gob-encoded payload conforming to an array of [LocationData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L106:6) types.
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
-
-**identifier**: The moniker identifier.
-
-**num_locations**: The number of locations stored in the data field.
-
-**schema_version**: The schema version of this row - used to determine presence and encoding of data.
-
-**scheme**: The moniker scheme.
-
-# Table "public.lsif_data_definitions_schema_versions"
-```
-       Column       |  Type   | Collation | Nullable | Default 
---------------------+---------+-----------+----------+---------
- dump_id            | integer |           | not null | 
- min_schema_version | integer |           |          | 
- max_schema_version | integer |           |          | 
-Indexes:
-    "lsif_data_definitions_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
-    "lsif_data_definitions_schema_versions_dump_id_schema_version_bo" btree (dump_id, min_schema_version, max_schema_version)
-
-```
-
-Tracks the range of schema_versions for each upload in the lsif_data_definitions table.
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table.
-
-**max_schema_version**: An upper-bound on the `lsif_data_definitions.schema_version` where `lsif_data_definitions.dump_id = dump_id`.
-
-**min_schema_version**: A lower-bound on the `lsif_data_definitions.schema_version` where `lsif_data_definitions.dump_id = dump_id`.
-
-# Table "public.lsif_data_docs_search_current_private"
-```
-        Column        |           Type           | Collation | Nullable |                              Default                              
-----------------------+--------------------------+-----------+----------+-------------------------------------------------------------------
- repo_id              | integer                  |           | not null | 
- dump_root            | text                     |           | not null | 
- lang_name_id         | integer                  |           | not null | 
- dump_id              | integer                  |           | not null | 
- last_cleanup_scan_at | timestamp with time zone |           | not null | now()
- created_at           | timestamp with time zone |           | not null | now()
- id                   | integer                  |           | not null | nextval('lsif_data_docs_search_current_private_id_seq'::regclass)
-Indexes:
-    "lsif_data_docs_search_current_private_pkey" PRIMARY KEY, btree (id)
-    "lsif_data_docs_search_current_private_last_cleanup_scan_at" btree (last_cleanup_scan_at)
-    "lsif_data_docs_search_current_private_lookup" btree (repo_id, dump_root, lang_name_id, created_at) INCLUDE (dump_id)
-
-```
-
-A table indicating the most current search index for a unique repository, root, and language.
-
-**created_at**: The time this record was inserted. The records with the latest created_at value for the same repository, root, and language is the only visible one and others will be deleted asynchronously.
-
-**dump_id**: The associated dump identifier.
-
-**dump_root**: The root of the associated dump.
-
-**lang_name_id**: The interned index name of the associated dump.
-
-**last_cleanup_scan_at**: The last time this record was checked as part of a data retention scan.
-
-**repo_id**: The repository identifier of the associated dump.
-
-# Table "public.lsif_data_docs_search_current_public"
-```
-        Column        |           Type           | Collation | Nullable |                             Default                              
-----------------------+--------------------------+-----------+----------+------------------------------------------------------------------
- repo_id              | integer                  |           | not null | 
- dump_root            | text                     |           | not null | 
- lang_name_id         | integer                  |           | not null | 
- dump_id              | integer                  |           | not null | 
- last_cleanup_scan_at | timestamp with time zone |           | not null | now()
- created_at           | timestamp with time zone |           | not null | now()
- id                   | integer                  |           | not null | nextval('lsif_data_docs_search_current_public_id_seq'::regclass)
-Indexes:
-    "lsif_data_docs_search_current_public_pkey" PRIMARY KEY, btree (id)
-    "lsif_data_docs_search_current_public_last_cleanup_scan_at" btree (last_cleanup_scan_at)
-    "lsif_data_docs_search_current_public_lookup" btree (repo_id, dump_root, lang_name_id, created_at) INCLUDE (dump_id)
-
-```
-
-A table indicating the most current search index for a unique repository, root, and language.
-
-**created_at**: The time this record was inserted. The records with the latest created_at value for the same repository, root, and language is the only visible one and others will be deleted asynchronously.
-
-**dump_id**: The associated dump identifier.
-
-**dump_root**: The root of the associated dump.
-
-**lang_name_id**: The interned index name of the associated dump.
-
-**last_cleanup_scan_at**: The last time this record was checked as part of a data retention scan.
-
-**repo_id**: The repository identifier of the associated dump.
-
-# Table "public.lsif_data_docs_search_lang_names_private"
-```
-  Column   |   Type   | Collation | Nullable |                               Default                                
------------+----------+-----------+----------+----------------------------------------------------------------------
- id        | bigint   |           | not null | nextval('lsif_data_docs_search_lang_names_private_id_seq'::regclass)
- lang_name | text     |           | not null | 
- tsv       | tsvector |           | not null | 
-Indexes:
-    "lsif_data_docs_search_lang_names_private_pkey" PRIMARY KEY, btree (id)
-    "lsif_data_docs_search_lang_names_private_lang_name_key" UNIQUE CONSTRAINT, btree (lang_name)
-    "lsif_data_docs_search_lang_names_private_tsv_idx" gin (tsv)
-Referenced by:
-    TABLE "lsif_data_docs_search_private" CONSTRAINT "lsif_data_docs_search_private_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_private(id)
-
-```
-
-Each unique language name being stored in the API docs search index.
-
-**id**: The ID of the language name.
-
-**lang_name**: The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name.
-
-**tsv**: Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
-
-# Table "public.lsif_data_docs_search_lang_names_public"
-```
-  Column   |   Type   | Collation | Nullable |                               Default                               
------------+----------+-----------+----------+---------------------------------------------------------------------
- id        | bigint   |           | not null | nextval('lsif_data_docs_search_lang_names_public_id_seq'::regclass)
- lang_name | text     |           | not null | 
- tsv       | tsvector |           | not null | 
-Indexes:
-    "lsif_data_docs_search_lang_names_public_pkey" PRIMARY KEY, btree (id)
-    "lsif_data_docs_search_lang_names_public_lang_name_key" UNIQUE CONSTRAINT, btree (lang_name)
-    "lsif_data_docs_search_lang_names_public_tsv_idx" gin (tsv)
-Referenced by:
-    TABLE "lsif_data_docs_search_public" CONSTRAINT "lsif_data_docs_search_public_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_public(id)
-
-```
-
-Each unique language name being stored in the API docs search index.
-
-**id**: The ID of the language name.
-
-**lang_name**: The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name.
-
-**tsv**: Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
-
-# Table "public.lsif_data_docs_search_private"
-```
-         Column         |   Type   | Collation | Nullable |                          Default                          
-------------------------+----------+-----------+----------+-----------------------------------------------------------
- id                     | bigint   |           | not null | nextval('lsif_data_docs_search_private_id_seq'::regclass)
- repo_id                | integer  |           | not null | 
- dump_id                | integer  |           | not null | 
- dump_root              | text     |           | not null | 
- path_id                | text     |           | not null | 
- detail                 | text     |           | not null | 
- lang_name_id           | integer  |           | not null | 
- repo_name_id           | integer  |           | not null | 
- tags_id                | integer  |           | not null | 
- search_key             | text     |           | not null | 
- search_key_tsv         | tsvector |           | not null | 
- search_key_reverse_tsv | tsvector |           | not null | 
- label                  | text     |           | not null | 
- label_tsv              | tsvector |           | not null | 
- label_reverse_tsv      | tsvector |           | not null | 
-Indexes:
-    "lsif_data_docs_search_private_pkey" PRIMARY KEY, btree (id)
-    "lsif_data_docs_search_private_dump_id_idx" btree (dump_id)
-    "lsif_data_docs_search_private_dump_root_idx" btree (dump_root)
-    "lsif_data_docs_search_private_label_reverse_tsv_idx" gin (label_reverse_tsv)
-    "lsif_data_docs_search_private_label_tsv_idx" gin (label_tsv)
-    "lsif_data_docs_search_private_repo_id_idx" btree (repo_id)
-    "lsif_data_docs_search_private_search_key_reverse_tsv_idx" gin (search_key_reverse_tsv)
-    "lsif_data_docs_search_private_search_key_tsv_idx" gin (search_key_tsv)
+    "codeintel_scip_document_lookup_pkey" PRIMARY KEY, btree (id)
+    "codeintel_scip_document_lookup_upload_id_document_path_key" UNIQUE CONSTRAINT, btree (upload_id, document_path)
+    "codeintel_scip_document_lookup_document_id" hash (document_id)
 Foreign-key constraints:
-    "lsif_data_docs_search_private_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_private(id)
-    "lsif_data_docs_search_private_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_private(id)
-    "lsif_data_docs_search_private_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_private(id)
+    "codeintel_scip_document_lookup_document_id_fk" FOREIGN KEY (document_id) REFERENCES codeintel_scip_documents(id)
+Referenced by:
+    TABLE "codeintel_scip_symbols" CONSTRAINT "codeintel_scip_symbols_document_lookup_id_fk" FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE
 Triggers:
-    lsif_data_docs_search_private_delete AFTER DELETE ON lsif_data_docs_search_private REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_private_delete()
-    lsif_data_docs_search_private_insert AFTER INSERT ON lsif_data_docs_search_private REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_private_insert()
+    codeintel_scip_document_lookup_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert()
+    codeintel_scip_documents_dereference_logs_insert AFTER DELETE ON codeintel_scip_document_lookup REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_dereference_logs_delete()
 
 ```
 
-A tsvector search index over API documentation (private repos only)
+A mapping from file paths to document references within a particular SCIP index.
 
-**detail**: The detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation
+**document_id**: The foreign key to the shared document payload (see the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup)).
 
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
+**document_path**: The file path to the document relative to the root of the index.
 
-**dump_root**: Identical to lsif_dumps.root; The working directory of the indexer image relative to the repository root.
+**id**: An auto-generated identifier. This column is used as a foreign key target to reduce occurrences of the full document path value.
 
-**id**: The row ID of the search result.
+**upload_id**: The identifier of the upload that provided this SCIP index.
 
-**label**: The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation
-
-**label_reverse_tsv**: Indexed tsvector for the reverse of the label field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
-
-**label_tsv**: Indexed tsvector for the label field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
-
-**lang_name_id**: The programming language (or indexer name) that produced the result. Foreign key into lsif_data_docs_search_lang_names_private.
-
-**path_id**: The fully qualified documentation page path ID, e.g. including "#section". See GraphQL codeintel.schema:documentationPage for what this is.
-
-**repo_id**: The repo ID, from the main app DB repo table. Used to search over a select set of repos by ID.
-
-**repo_name_id**: The repository name that produced the result. Foreign key into lsif_data_docs_search_repo_names_private.
-
-**search_key**: The search key generated by the indexer, e.g. mux.Router.ServeHTTP. It is language-specific, and likely unique within a repository (but not always.) See protocol/documentation.go:Documentation.SearchKey
-
-**search_key_reverse_tsv**: Indexed tsvector for the reverse of the search_key field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
-
-**search_key_tsv**: Indexed tsvector for the search_key field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
-
-**tags_id**: The tags from the documentation node. Foreign key into lsif_data_docs_search_tags_private.
-
-# Table "public.lsif_data_docs_search_public"
+# Table "public.codeintel_scip_document_lookup_schema_versions"
 ```
-         Column         |   Type   | Collation | Nullable |                         Default                          
-------------------------+----------+-----------+----------+----------------------------------------------------------
- id                     | bigint   |           | not null | nextval('lsif_data_docs_search_public_id_seq'::regclass)
- repo_id                | integer  |           | not null | 
- dump_id                | integer  |           | not null | 
- dump_root              | text     |           | not null | 
- path_id                | text     |           | not null | 
- detail                 | text     |           | not null | 
- lang_name_id           | integer  |           | not null | 
- repo_name_id           | integer  |           | not null | 
- tags_id                | integer  |           | not null | 
- search_key             | text     |           | not null | 
- search_key_tsv         | tsvector |           | not null | 
- search_key_reverse_tsv | tsvector |           | not null | 
- label                  | text     |           | not null | 
- label_tsv              | tsvector |           | not null | 
- label_reverse_tsv      | tsvector |           | not null | 
+       Column       |  Type   | Collation | Nullable | Default 
+--------------------+---------+-----------+----------+---------
+ upload_id          | integer |           | not null | 
+ min_schema_version | integer |           |          | 
+ max_schema_version | integer |           |          | 
 Indexes:
-    "lsif_data_docs_search_public_pkey" PRIMARY KEY, btree (id)
-    "lsif_data_docs_search_public_dump_id_idx" btree (dump_id)
-    "lsif_data_docs_search_public_dump_root_idx" btree (dump_root)
-    "lsif_data_docs_search_public_label_reverse_tsv_idx" gin (label_reverse_tsv)
-    "lsif_data_docs_search_public_label_tsv_idx" gin (label_tsv)
-    "lsif_data_docs_search_public_repo_id_idx" btree (repo_id)
-    "lsif_data_docs_search_public_search_key_reverse_tsv_idx" gin (search_key_reverse_tsv)
-    "lsif_data_docs_search_public_search_key_tsv_idx" gin (search_key_tsv)
+    "codeintel_scip_document_lookup_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
+
+```
+
+Tracks the range of `schema_versions` values associated with each SCIP index in the [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) table.
+
+**max_schema_version**: An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.
+
+**min_schema_version**: A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.
+
+**upload_id**: The identifier of the associated SCIP index.
+
+# Table "public.codeintel_scip_documents"
+```
+      Column      |  Type   | Collation | Nullable |                       Default                        
+------------------+---------+-----------+----------+------------------------------------------------------
+ id               | bigint  |           | not null | nextval('codeintel_scip_documents_id_seq'::regclass)
+ payload_hash     | bytea   |           | not null | 
+ schema_version   | integer |           | not null | 
+ raw_scip_payload | bytea   |           | not null | 
+Indexes:
+    "codeintel_scip_documents_pkey" PRIMARY KEY, btree (id)
+    "codeintel_scip_documents_payload_hash_key" UNIQUE CONSTRAINT, btree (payload_hash)
+Referenced by:
+    TABLE "codeintel_scip_document_lookup" CONSTRAINT "codeintel_scip_document_lookup_document_id_fk" FOREIGN KEY (document_id) REFERENCES codeintel_scip_documents(id)
+
+```
+
+A lookup of SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document&amp;patternType=standard) payloads by their hash.
+
+**id**: An auto-generated identifier. This column is used as a foreign key target to reduce occurrences of the full payload hash value.
+
+**payload_hash**: A deterministic hash of the raw SCIP payload. We use this as a unique value to enforce deduplication between indexes with the same document data.
+
+**raw_scip_payload**: The raw, canonicalized SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document&amp;patternType=standard) payload.
+
+**schema_version**: The schema version of this row - used to determine presence and encoding of (future) denormalized data.
+
+# Table "public.codeintel_scip_documents_dereference_logs"
+```
+      Column       |           Type           | Collation | Nullable |                                Default                                
+-------------------+--------------------------+-----------+----------+-----------------------------------------------------------------------
+ id                | bigint                   |           | not null | nextval('codeintel_scip_documents_dereference_logs_id_seq'::regclass)
+ document_id       | bigint                   |           | not null | 
+ last_removal_time | timestamp with time zone |           | not null | now()
+Indexes:
+    "codeintel_scip_documents_dereference_logs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_scip_documents_dereference_logs_last_removal_time_des" btree (last_removal_time DESC, document_id)
+
+```
+
+A list of document rows that were recently dereferenced by the deletion of an index.
+
+**document_id**: The identifier of the document that was dereferenced.
+
+**last_removal_time**: The time that the log entry was inserted.
+
+# Table "public.codeintel_scip_metadata"
+```
+         Column         |  Type   | Collation | Nullable |                       Default                       
+------------------------+---------+-----------+----------+-----------------------------------------------------
+ id                     | bigint  |           | not null | nextval('codeintel_scip_metadata_id_seq'::regclass)
+ upload_id              | integer |           | not null | 
+ tool_name              | text    |           | not null | 
+ tool_version           | text    |           | not null | 
+ tool_arguments         | text[]  |           | not null | 
+ text_document_encoding | text    |           | not null | 
+ protocol_version       | integer |           | not null | 
+Indexes:
+    "codeintel_scip_metadata_pkey" PRIMARY KEY, btree (id)
+    "codeintel_scip_metadata_upload_id" btree (upload_id)
+
+```
+
+Global metadatadata about a single processed upload.
+
+**id**: An auto-generated identifier.
+
+**protocol_version**: The version of the SCIP protocol used to encode this index.
+
+**text_document_encoding**: The encoding of the text documents within this index. May affect range boundaries.
+
+**tool_arguments**: Command-line arguments that were used to invoke this indexer.
+
+**tool_name**: Name of the indexer that produced this index.
+
+**tool_version**: Version of the indexer that produced this index.
+
+**upload_id**: The identifier of the upload that provided this SCIP index.
+
+# Table "public.codeintel_scip_symbol_names"
+```
+    Column    |  Type   | Collation | Nullable | Default 
+--------------+---------+-----------+----------+---------
+ id           | integer |           | not null | 
+ upload_id    | integer |           | not null | 
+ name_segment | text    |           | not null | 
+ prefix_id    | integer |           |          | 
+Indexes:
+    "codeintel_scip_symbol_names_pkey" PRIMARY KEY, btree (upload_id, id)
+    "codeintel_scip_symbol_names_upload_id_roots" btree (upload_id) WHERE prefix_id IS NULL
+    "codeisdntel_scip_symbol_names_upload_id_children" btree (upload_id, prefix_id) WHERE prefix_id IS NOT NULL
+
+```
+
+Stores a prefix tree of symbol names within a particular upload.
+
+**id**: An identifier unique within the index for this symbol name segment.
+
+**name_segment**: The portion of the symbol name that is unique to this symbol and its children.
+
+**prefix_id**: The identifier of the segment that forms the prefix of this symbol, if any.
+
+**upload_id**: The identifier of the upload that provided this SCIP index.
+
+# Table "public.codeintel_scip_symbols"
+```
+         Column         |  Type   | Collation | Nullable | Default 
+------------------------+---------+-----------+----------+---------
+ upload_id              | integer |           | not null | 
+ document_lookup_id     | bigint  |           | not null | 
+ schema_version         | integer |           | not null | 
+ definition_ranges      | bytea   |           |          | 
+ reference_ranges       | bytea   |           |          | 
+ implementation_ranges  | bytea   |           |          | 
+ type_definition_ranges | bytea   |           |          | 
+ symbol_id              | integer |           | not null | 
+Indexes:
+    "codeintel_scip_symbols_pkey" PRIMARY KEY, btree (upload_id, symbol_id, document_lookup_id)
+    "codeintel_scip_symbols_document_lookup_id" btree (document_lookup_id)
 Foreign-key constraints:
-    "lsif_data_docs_search_public_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_public(id)
-    "lsif_data_docs_search_public_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_public(id)
-    "lsif_data_docs_search_public_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_public(id)
+    "codeintel_scip_symbols_document_lookup_id_fk" FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE
 Triggers:
-    lsif_data_docs_search_public_delete AFTER DELETE ON lsif_data_docs_search_public REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_public_delete()
-    lsif_data_docs_search_public_insert AFTER INSERT ON lsif_data_docs_search_public REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_public_insert()
+    codeintel_scip_symbols_schema_versions_insert AFTER INSERT ON codeintel_scip_symbols REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_symbols_schema_versions_insert()
 
 ```
 
-A tsvector search index over API documentation (public repos only)
+A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Symbol&amp;patternType=standard) to path and ranges where that symbol occurs within a particular SCIP index.
 
-**detail**: The detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation
+**definition_ranges**: An encoded set of ranges within the associated document that have a **definition** relationship to the associated symbol.
 
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
+**document_lookup_id**: A reference to the `id` column of [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup). Joining on this table yields the document path relative to the index root.
 
-**dump_root**: Identical to lsif_dumps.root; The working directory of the indexer image relative to the repository root.
+**implementation_ranges**: An encoded set of ranges within the associated document that have a **implementation** relationship to the associated symbol.
 
-**id**: The row ID of the search result.
+**reference_ranges**: An encoded set of ranges within the associated document that have a **reference** relationship to the associated symbol.
 
-**label**: The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation
+**schema_version**: The schema version of this row - used to determine presence and encoding of denormalized data.
 
-**label_reverse_tsv**: Indexed tsvector for the reverse of the label field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+**symbol_id**: The identifier of the segment that terminates the name of this symbol. See the table [`codeintel_scip_symbol_names`](#table-publiccodeintel_scip_symbol_names) on how to reconstruct the full symbol name.
 
-**label_tsv**: Indexed tsvector for the label field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+**type_definition_ranges**: An encoded set of ranges within the associated document that have a **type definition** relationship to the associated symbol.
 
-**lang_name_id**: The programming language (or indexer name) that produced the result. Foreign key into lsif_data_docs_search_lang_names_public.
+**upload_id**: The identifier of the upload that provided this SCIP index.
 
-**path_id**: The fully qualified documentation page path ID, e.g. including "#section". See GraphQL codeintel.schema:documentationPage for what this is.
-
-**repo_id**: The repo ID, from the main app DB repo table. Used to search over a select set of repos by ID.
-
-**repo_name_id**: The repository name that produced the result. Foreign key into lsif_data_docs_search_repo_names_public.
-
-**search_key**: The search key generated by the indexer, e.g. mux.Router.ServeHTTP. It is language-specific, and likely unique within a repository (but not always.) See protocol/documentation.go:Documentation.SearchKey
-
-**search_key_reverse_tsv**: Indexed tsvector for the reverse of the search_key field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
-
-**search_key_tsv**: Indexed tsvector for the search_key field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
-
-**tags_id**: The tags from the documentation node. Foreign key into lsif_data_docs_search_tags_public.
-
-# Table "public.lsif_data_docs_search_repo_names_private"
-```
-   Column    |   Type   | Collation | Nullable |                               Default                                
--------------+----------+-----------+----------+----------------------------------------------------------------------
- id          | bigint   |           | not null | nextval('lsif_data_docs_search_repo_names_private_id_seq'::regclass)
- repo_name   | text     |           | not null | 
- tsv         | tsvector |           | not null | 
- reverse_tsv | tsvector |           | not null | 
-Indexes:
-    "lsif_data_docs_search_repo_names_private_pkey" PRIMARY KEY, btree (id)
-    "lsif_data_docs_search_repo_names_private_repo_name_key" UNIQUE CONSTRAINT, btree (repo_name)
-    "lsif_data_docs_search_repo_names_private_reverse_tsv_idx" gin (reverse_tsv)
-    "lsif_data_docs_search_repo_names_private_tsv_idx" gin (tsv)
-Referenced by:
-    TABLE "lsif_data_docs_search_private" CONSTRAINT "lsif_data_docs_search_private_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_private(id)
-
-```
-
-Each unique repository name being stored in the API docs search index.
-
-**id**: The ID of the repository name.
-
-**repo_name**: The fully qualified name of the repository.
-
-**reverse_tsv**: Indexed tsvector for the reverse of the lang_name field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
-
-**tsv**: Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
-
-# Table "public.lsif_data_docs_search_repo_names_public"
-```
-   Column    |   Type   | Collation | Nullable |                               Default                               
--------------+----------+-----------+----------+---------------------------------------------------------------------
- id          | bigint   |           | not null | nextval('lsif_data_docs_search_repo_names_public_id_seq'::regclass)
- repo_name   | text     |           | not null | 
- tsv         | tsvector |           | not null | 
- reverse_tsv | tsvector |           | not null | 
-Indexes:
-    "lsif_data_docs_search_repo_names_public_pkey" PRIMARY KEY, btree (id)
-    "lsif_data_docs_search_repo_names_public_repo_name_key" UNIQUE CONSTRAINT, btree (repo_name)
-    "lsif_data_docs_search_repo_names_public_reverse_tsv_idx" gin (reverse_tsv)
-    "lsif_data_docs_search_repo_names_public_tsv_idx" gin (tsv)
-Referenced by:
-    TABLE "lsif_data_docs_search_public" CONSTRAINT "lsif_data_docs_search_public_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_public(id)
-
-```
-
-Each unique repository name being stored in the API docs search index.
-
-**id**: The ID of the repository name.
-
-**repo_name**: The fully qualified name of the repository.
-
-**reverse_tsv**: Indexed tsvector for the reverse of the lang_name field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
-
-**tsv**: Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
-
-# Table "public.lsif_data_docs_search_tags_private"
-```
- Column |   Type   | Collation | Nullable |                            Default                             
---------+----------+-----------+----------+----------------------------------------------------------------
- id     | bigint   |           | not null | nextval('lsif_data_docs_search_tags_private_id_seq'::regclass)
- tags   | text     |           | not null | 
- tsv    | tsvector |           | not null | 
-Indexes:
-    "lsif_data_docs_search_tags_private_pkey" PRIMARY KEY, btree (id)
-    "lsif_data_docs_search_tags_private_tags_key" UNIQUE CONSTRAINT, btree (tags)
-    "lsif_data_docs_search_tags_private_tsv_idx" gin (tsv)
-Referenced by:
-    TABLE "lsif_data_docs_search_private" CONSTRAINT "lsif_data_docs_search_private_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_private(id)
-
-```
-
-Each uniques sequence of space-separated tags being stored in the API docs search index.
-
-**id**: The ID of the tags.
-
-**tags**: The full sequence of space-separated tags. See protocol/documentation.go:Documentation
-
-**tsv**: Indexed tsvector for the tags field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
-
-# Table "public.lsif_data_docs_search_tags_public"
-```
- Column |   Type   | Collation | Nullable |                            Default                            
---------+----------+-----------+----------+---------------------------------------------------------------
- id     | bigint   |           | not null | nextval('lsif_data_docs_search_tags_public_id_seq'::regclass)
- tags   | text     |           | not null | 
- tsv    | tsvector |           | not null | 
-Indexes:
-    "lsif_data_docs_search_tags_public_pkey" PRIMARY KEY, btree (id)
-    "lsif_data_docs_search_tags_public_tags_key" UNIQUE CONSTRAINT, btree (tags)
-    "lsif_data_docs_search_tags_public_tsv_idx" gin (tsv)
-Referenced by:
-    TABLE "lsif_data_docs_search_public" CONSTRAINT "lsif_data_docs_search_public_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_public(id)
-
-```
-
-Each uniques sequence of space-separated tags being stored in the API docs search index.
-
-**id**: The ID of the tags.
-
-**tags**: The full sequence of space-separated tags. See protocol/documentation.go:Documentation
-
-**tsv**: Indexed tsvector for the tags field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
-
-# Table "public.lsif_data_documentation_mappings"
-```
-  Column   |  Type   | Collation | Nullable | Default 
------------+---------+-----------+----------+---------
- dump_id   | integer |           | not null | 
- path_id   | text    |           | not null | 
- result_id | integer |           | not null | 
- file_path | text    |           |          | 
-Indexes:
-    "lsif_data_documentation_mappings_pkey" PRIMARY KEY, btree (dump_id, path_id)
-    "lsif_data_documentation_mappings_inverse_unique_idx" UNIQUE, btree (dump_id, result_id)
-
-```
-
-Maps documentation path IDs to their corresponding integral documentationResult vertex IDs, which are unique within a dump.
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
-
-**file_path**: The document file path for the documentationResult, if any. e.g. the path to the file where the symbol described by this documentationResult is located, if it is a symbol.
-
-**path_id**: The documentation page path ID, see see GraphQL codeintel.schema:documentationPage for what this is.
-
-**result_id**: The documentationResult vertex ID.
-
-# Table "public.lsif_data_documentation_pages"
-```
-     Column     |  Type   | Collation | Nullable | Default 
-----------------+---------+-----------+----------+---------
- dump_id        | integer |           | not null | 
- path_id        | text    |           | not null | 
- data           | bytea   |           |          | 
- search_indexed | boolean |           |          | false
-Indexes:
-    "lsif_data_documentation_pages_pkey" PRIMARY KEY, btree (dump_id, path_id)
-    "lsif_data_documentation_pages_dump_id_unindexed" btree (dump_id) WHERE NOT search_indexed
-Triggers:
-    lsif_data_documentation_pages_delete AFTER DELETE ON lsif_data_documentation_pages REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_delete()
-    lsif_data_documentation_pages_insert AFTER INSERT ON lsif_data_documentation_pages REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_insert()
-    lsif_data_documentation_pages_update AFTER UPDATE ON lsif_data_documentation_pages REFERENCING OLD TABLE AS oldtbl NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_update()
-
-```
-
-Associates documentation pathIDs to their documentation page hierarchy chunk.
-
-**data**: A gob-encoded payload conforming to a `type DocumentationPageData struct` pointer (lib/codeintel/semantic/types.go)
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
-
-**path_id**: The documentation page path ID, see see GraphQL codeintel.schema:documentationPage for what this is.
-
-# Table "public.lsif_data_documentation_path_info"
-```
- Column  |  Type   | Collation | Nullable | Default 
----------+---------+-----------+----------+---------
- dump_id | integer |           | not null | 
- path_id | text    |           | not null | 
- data    | bytea   |           |          | 
-Indexes:
-    "lsif_data_documentation_path_info_pkey" PRIMARY KEY, btree (dump_id, path_id)
-
-```
-
-Associates documentation page pathIDs to information about what is at that pathID, its immediate children, etc.
-
-**data**: A gob-encoded payload conforming to a `type DocumentationPathInoData struct` pointer (lib/codeintel/semantic/types.go)
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
-
-**path_id**: The documentation page path ID, see see GraphQL codeintel.schema:documentationPage for what this is.
-
-# Table "public.lsif_data_documents"
-```
-     Column      |  Type   | Collation | Nullable | Default 
------------------+---------+-----------+----------+---------
- dump_id         | integer |           | not null | 
- path            | text    |           | not null | 
- data            | bytea   |           |          | 
- schema_version  | integer |           | not null | 
- num_diagnostics | integer |           | not null | 
- ranges          | bytea   |           |          | 
- hovers          | bytea   |           |          | 
- monikers        | bytea   |           |          | 
- packages        | bytea   |           |          | 
- diagnostics     | bytea   |           |          | 
-Indexes:
-    "lsif_data_documents_pkey" PRIMARY KEY, btree (dump_id, path)
-    "lsif_data_documents_dump_id_schema_version" btree (dump_id, schema_version)
-Triggers:
-    lsif_data_documents_schema_versions_insert AFTER INSERT ON lsif_data_documents REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_documents_schema_versions_insert()
-
-```
-
-Stores reference, hover text, moniker, and diagnostic data about a particular text document witin a dump.
-
-**data**: A gob-encoded payload conforming to the [DocumentData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L13:6) type. This field is being migrated across ranges, hovers, monikers, packages, and diagnostics columns and will be removed in a future release of Sourcegraph.
-
-**diagnostics**: A gob-encoded payload conforming to the [Diagnostics](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L18:2) field of the DocumentDatatype.
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
-
-**hovers**: A gob-encoded payload conforming to the [HoversResults](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L15:2) field of the DocumentDatatype.
-
-**monikers**: A gob-encoded payload conforming to the [Monikers](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L16:2) field of the DocumentDatatype.
-
-**num_diagnostics**: The number of diagnostics stored in the data field.
-
-**packages**: A gob-encoded payload conforming to the [PackageInformation](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L17:2) field of the DocumentDatatype.
-
-**path**: The path of the text document relative to the associated dump root.
-
-**ranges**: A gob-encoded payload conforming to the [Ranges](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L14:2) field of the DocumentDatatype.
-
-**schema_version**: The schema version of this row - used to determine presence and encoding of data.
-
-# Table "public.lsif_data_documents_schema_versions"
+# Table "public.codeintel_scip_symbols_schema_versions"
 ```
        Column       |  Type   | Collation | Nullable | Default 
 --------------------+---------+-----------+----------+---------
- dump_id            | integer |           | not null | 
+ upload_id          | integer |           | not null | 
  min_schema_version | integer |           |          | 
  max_schema_version | integer |           |          | 
 Indexes:
-    "lsif_data_documents_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
-    "lsif_data_documents_schema_versions_dump_id_schema_version_boun" btree (dump_id, min_schema_version, max_schema_version)
+    "codeintel_scip_symbols_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
 
 ```
 
-Tracks the range of schema_versions for each upload in the lsif_data_documents table.
+Tracks the range of `schema_versions` for each index in the [`codeintel_scip_symbols`](#table-publiccodeintel_scip_symbols) table.
 
-**dump_id**: The identifier of the associated dump in the lsif_uploads table.
+**max_schema_version**: An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_symbols`](#table-publiccodeintel_scip_symbols) where the `upload_id` column matches the associated SCIP index.
 
-**max_schema_version**: An upper-bound on the `lsif_data_documents.schema_version` where `lsif_data_documents.dump_id = dump_id`.
+**min_schema_version**: A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_symbols`](#table-publiccodeintel_scip_symbols) where the `upload_id` column matches the associated SCIP index.
 
-**min_schema_version**: A lower-bound on the `lsif_data_documents.schema_version` where `lsif_data_documents.dump_id = dump_id`.
-
-# Table "public.lsif_data_implementations"
-```
-     Column     |  Type   | Collation | Nullable | Default 
-----------------+---------+-----------+----------+---------
- dump_id        | integer |           | not null | 
- scheme         | text    |           | not null | 
- identifier     | text    |           | not null | 
- data           | bytea   |           |          | 
- schema_version | integer |           | not null | 
- num_locations  | integer |           | not null | 
-Indexes:
-    "lsif_data_implementations_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
-    "lsif_data_implementations_dump_id_schema_version" btree (dump_id, schema_version)
-Triggers:
-    lsif_data_implementations_schema_versions_insert AFTER INSERT ON lsif_data_implementations REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_implementations_schema_versions_insert()
-
-```
-
-Associates (document, range) pairs with the implementation monikers attached to the range.
-
-**data**: A gob-encoded payload conforming to an array of [LocationData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L106:6) types.
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
-
-**identifier**: The moniker identifier.
-
-**num_locations**: The number of locations stored in the data field.
-
-**schema_version**: The schema version of this row - used to determine presence and encoding of data.
-
-**scheme**: The moniker scheme.
-
-# Table "public.lsif_data_implementations_schema_versions"
-```
-       Column       |  Type   | Collation | Nullable | Default 
---------------------+---------+-----------+----------+---------
- dump_id            | integer |           | not null | 
- min_schema_version | integer |           |          | 
- max_schema_version | integer |           |          | 
-Indexes:
-    "lsif_data_implementations_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
-    "lsif_data_implementations_schema_versions_dump_id_schema_versio" btree (dump_id, min_schema_version, max_schema_version)
-
-```
-
-Tracks the range of schema_versions for each upload in the lsif_data_implementations table.
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table.
-
-**max_schema_version**: An upper-bound on the `lsif_data_implementations.schema_version` where `lsif_data_implementations.dump_id = dump_id`.
-
-**min_schema_version**: A lower-bound on the `lsif_data_implementations.schema_version` where `lsif_data_implementations.dump_id = dump_id`.
-
-# Table "public.lsif_data_metadata"
-```
-      Column       |  Type   | Collation | Nullable | Default 
--------------------+---------+-----------+----------+---------
- dump_id           | integer |           | not null | 
- num_result_chunks | integer |           |          | 
-Indexes:
-    "lsif_data_metadata_pkey" PRIMARY KEY, btree (dump_id)
-
-```
-
-Stores the number of result chunks associated with a dump.
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
-
-**num_result_chunks**: A bound of populated indexes in the lsif_data_result_chunks table for the associated dump. This value is used to hash identifiers into the result chunk index to which they belong.
-
-# Table "public.lsif_data_references"
-```
-     Column     |  Type   | Collation | Nullable | Default 
-----------------+---------+-----------+----------+---------
- dump_id        | integer |           | not null | 
- scheme         | text    |           | not null | 
- identifier     | text    |           | not null | 
- data           | bytea   |           |          | 
- schema_version | integer |           | not null | 
- num_locations  | integer |           | not null | 
-Indexes:
-    "lsif_data_references_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
-    "lsif_data_references_dump_id_schema_version" btree (dump_id, schema_version)
-Triggers:
-    lsif_data_references_schema_versions_insert AFTER INSERT ON lsif_data_references REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_references_schema_versions_insert()
-
-```
-
-Associates (document, range) pairs with the export monikers attached to the range.
-
-**data**: A gob-encoded payload conforming to an array of [LocationData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L106:6) types.
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
-
-**identifier**: The moniker identifier.
-
-**num_locations**: The number of locations stored in the data field.
-
-**schema_version**: The schema version of this row - used to determine presence and encoding of data.
-
-**scheme**: The moniker scheme.
-
-# Table "public.lsif_data_references_schema_versions"
-```
-       Column       |  Type   | Collation | Nullable | Default 
---------------------+---------+-----------+----------+---------
- dump_id            | integer |           | not null | 
- min_schema_version | integer |           |          | 
- max_schema_version | integer |           |          | 
-Indexes:
-    "lsif_data_references_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
-    "lsif_data_references_schema_versions_dump_id_schema_version_bou" btree (dump_id, min_schema_version, max_schema_version)
-
-```
-
-Tracks the range of schema_versions for each upload in the lsif_data_references table.
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table.
-
-**max_schema_version**: An upper-bound on the `lsif_data_references.schema_version` where `lsif_data_references.dump_id = dump_id`.
-
-**min_schema_version**: A lower-bound on the `lsif_data_references.schema_version` where `lsif_data_references.dump_id = dump_id`.
-
-# Table "public.lsif_data_result_chunks"
-```
- Column  |  Type   | Collation | Nullable | Default 
----------+---------+-----------+----------+---------
- dump_id | integer |           | not null | 
- idx     | integer |           | not null | 
- data    | bytea   |           |          | 
-Indexes:
-    "lsif_data_result_chunks_pkey" PRIMARY KEY, btree (dump_id, idx)
-
-```
-
-Associates result set identifiers with the (document path, range identifier) pairs that compose the set.
-
-**data**: A gob-encoded payload conforming to the [ResultChunkData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L76:6) type.
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
-
-**idx**: The unique result chunk index within the associated dump. Every result set identifier present should hash to this index (modulo lsif_data_metadata.num_result_chunks).
+**upload_id**: The identifier of the associated SCIP index.
 
 # Table "public.migration_logs"
 ```
@@ -749,7 +240,56 @@ Associates result set identifiers with the (document path, range identifier) pai
  finished_at                   | timestamp with time zone |           |          | 
  success                       | boolean                  |           |          | 
  error_message                 | text                     |           |          | 
+ backfilled                    | boolean                  |           | not null | false
 Indexes:
     "migration_logs_pkey" PRIMARY KEY, btree (id)
+
+```
+
+# Table "public.rockskip_ancestry"
+```
+  Column   |         Type          | Collation | Nullable |                    Default                    
+-----------+-----------------------+-----------+----------+-----------------------------------------------
+ id        | integer               |           | not null | nextval('rockskip_ancestry_id_seq'::regclass)
+ repo_id   | integer               |           | not null | 
+ commit_id | character varying(40) |           | not null | 
+ height    | integer               |           | not null | 
+ ancestor  | integer               |           | not null | 
+Indexes:
+    "rockskip_ancestry_pkey" PRIMARY KEY, btree (id)
+    "rockskip_ancestry_repo_id_commit_id_key" UNIQUE CONSTRAINT, btree (repo_id, commit_id)
+    "rockskip_ancestry_repo_commit_id" btree (repo_id, commit_id)
+
+```
+
+# Table "public.rockskip_repos"
+```
+      Column      |           Type           | Collation | Nullable |                  Default                   
+------------------+--------------------------+-----------+----------+--------------------------------------------
+ id               | integer                  |           | not null | nextval('rockskip_repos_id_seq'::regclass)
+ repo             | text                     |           | not null | 
+ last_accessed_at | timestamp with time zone |           | not null | 
+Indexes:
+    "rockskip_repos_pkey" PRIMARY KEY, btree (id)
+    "rockskip_repos_repo_key" UNIQUE CONSTRAINT, btree (repo)
+    "rockskip_repos_last_accessed_at" btree (last_accessed_at)
+    "rockskip_repos_repo" btree (repo)
+
+```
+
+# Table "public.rockskip_symbols"
+```
+ Column  |   Type    | Collation | Nullable |                   Default                    
+---------+-----------+-----------+----------+----------------------------------------------
+ id      | integer   |           | not null | nextval('rockskip_symbols_id_seq'::regclass)
+ added   | integer[] |           | not null | 
+ deleted | integer[] |           | not null | 
+ repo_id | integer   |           | not null | 
+ path    | text      |           | not null | 
+ name    | text      |           | not null | 
+Indexes:
+    "rockskip_symbols_pkey" PRIMARY KEY, btree (id)
+    "rockskip_symbols_gin" gin (singleton_integer(repo_id) gin__int_ops, added gin__int_ops, deleted gin__int_ops, name gin_trgm_ops, singleton(name), singleton(lower(name)), path gin_trgm_ops, singleton(path), path_prefixes(path), singleton(lower(path)), path_prefixes(lower(path)), singleton(get_file_extension(path)), singleton(get_file_extension(lower(path))))
+    "rockskip_symbols_repo_id_path_name" btree (repo_id, path, name)
 
 ```

@@ -6,12 +6,14 @@ import (
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -43,13 +45,13 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		// for themselves. A site admin should NOT be allowed to do this since they could
 		// then use the token to impersonate a user and gain access to their private
 		// code.
-		if err := backend.CheckSameUser(ctx, userID); err != nil {
+		if err := auth.CheckSameUser(ctx, userID); err != nil {
 			return nil, err
 		}
 	case conf.AccessTokensAdmin:
 		// 🚨 SECURITY: The site has opted in to only allow site admins to create access
 		// tokens. In this case, they can create a token for any user.
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, errors.New("Access token creation has been restricted to admin users. Contact an admin user to create a new access token.")
 		}
 	case conf.AccessTokensNone:
@@ -67,7 +69,7 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 			hasUserAllScope = true
 		case authz.ScopeSiteAdminSudo:
 			// 🚨 SECURITY: Only site admins may create a token with the "site-admin:sudo" scope.
-			if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+			if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 				return nil, err
 			} else if envvar.SourcegraphDotComMode() {
 				return nil, errors.Errorf("creation of access tokens with scope %q is disabled on Sourcegraph.com", authz.ScopeSiteAdminSudo)
@@ -85,11 +87,14 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		return nil, errors.Errorf("all access tokens must have scope %q", authz.ScopeUserAll)
 	}
 
-	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
+	uid := actor.FromContext(ctx).UID
+	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, uid)
+	logger := r.logger.Scoped("CreateAccessToken").
+		With(log.Int32("userID", uid))
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, userID, "created an access token"); err != nil {
-			log15.Warn("Failed to send email to inform user of access token creation", "error", err)
+		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(ctx, userID, args.Note, false); err != nil {
+			logger.Warn("Failed to send email to inform user of access token creation", log.Error(err))
 		}
 	}
 
@@ -117,32 +122,53 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		return nil, errors.New("exactly one of byID or byToken must be specified")
 	}
 
-	var subjectUserID int32
+	var token *database.AccessToken
 	switch {
 	case args.ByID != nil:
 		accessTokenID, err := unmarshalAccessTokenID(*args.ByID)
 		if err != nil {
 			return nil, err
 		}
-		token, err := r.db.AccessTokens().GetByID(ctx, accessTokenID)
+		t, err := r.db.AccessTokens().GetByID(ctx, accessTokenID)
 		if err != nil {
 			return nil, err
 		}
+		token = t
 
 		// 🚨 SECURITY: Only site admins and the user can delete a user's access token.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, token.SubjectUserID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, token.SubjectUserID); err != nil {
 			return nil, err
 		}
+		// 🚨 SECURITY: Only Sourcegraph Operator (SOAP) users can delete a
+		// Sourcegraph Operator's access token. If actor is not token owner,
+		// and they aren't a SOAP user, make sure the token owner is not a
+		// SOAP user.
+		if a := actor.FromContext(ctx); a.UID != token.SubjectUserID && !a.SourcegraphOperator {
+			tokenOwnerExtAccounts, err := r.db.UserExternalAccounts().List(ctx,
+				database.ExternalAccountsListOptions{UserID: token.SubjectUserID})
+			if err != nil {
+				return nil, errors.Wrap(err, "list external accounts for token owner")
+			}
+			for _, acct := range tokenOwnerExtAccounts {
+				// If the delete target is a SOAP user, then this non-SOAP user
+				// cannot delete its tokens.
+				if acct.ServiceType == auth.SourcegraphOperatorProviderType {
+					return nil, errors.Newf("%[1]q user %[2]d's token cannot be deleted by a non-%[1]q user",
+						auth.SourcegraphOperatorProviderType, token.SubjectUserID)
+				}
+			}
+		}
+
 		if err := r.db.AccessTokens().DeleteByID(ctx, token.ID); err != nil {
 			return nil, err
 		}
 
 	case args.ByToken != nil:
-		token, err := r.db.AccessTokens().GetByToken(ctx, *args.ByToken)
+		t, err := r.db.AccessTokens().GetByToken(ctx, *args.ByToken)
 		if err != nil {
 			return nil, err
 		}
-		subjectUserID = token.SubjectUserID
+		token = t
 
 		// 🚨 SECURITY: This is easier than the ByID case because anyone holding the access token's
 		// secret value is assumed to be allowed to delete it.
@@ -152,9 +178,12 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 
 	}
 
+	logger := r.logger.Scoped("DeleteAccessToken").
+		With(log.Int32("userID", token.SubjectUserID))
+
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, subjectUserID, "deleted an access token"); err != nil {
-			log15.Warn("Failed to send email to inform user of access token deletion", "error", err)
+		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(ctx, token.SubjectUserID, token.Note, true); err != nil {
+			logger.Warn("Failed to send email to inform user of access token deletion", log.Error(err))
 		}
 	}
 
@@ -166,7 +195,7 @@ func (r *siteResolver) AccessTokens(ctx context.Context, args *struct {
 }) (*accessTokenConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins can list all access tokens. This is safe as the
 	// token values themselves are not stored in our database.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -179,7 +208,7 @@ func (r *UserResolver) AccessTokens(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 }) (*accessTokenConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins and the user can list a user's access tokens.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 

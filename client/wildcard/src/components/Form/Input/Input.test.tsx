@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react'
-import React from 'react'
+import { describe, expect, it } from 'vitest'
 
 import { Input } from './Input'
 
@@ -16,31 +16,42 @@ describe('Input', () => {
                 placeholder="loading status input"
             />
         )
+
         expect(container.firstChild).toMatchInlineSnapshot(`
-            <label
-              class="w-100"
+            <div
+              class="container loader-input loaderInput"
             >
+              <input
+                class="inputLoading form-control with-invalid-icon"
+                placeholder="loading status input"
+                title="Input loading"
+                type="text"
+                value="Input value"
+              />
               <div
-                class="container d-flex"
-              >
-                <input
-                  class="input form-control with-invalid-icon"
-                  placeholder="loading status input"
-                  title="Input loading"
-                  type="text"
-                  value="Input value"
-                />
-                <div
-                  class="loadingSpinner spinner"
-                />
-              </div>
-              <small
-                class="text-muted form-text font-weight-normal mt-2"
-              >
-                random message
-              </small>
-            </label>
+                aria-label="Loading"
+                aria-live="polite"
+                class="mdi-icon loadingSpinner spinner"
+                data-loading-spinner="true"
+                role="img"
+              />
+            </div>
         `)
+    })
+
+    it('renders an input with label correctly', () => {
+        const { container } = render(
+            <Input
+                defaultValue="Input value"
+                title="Input loading"
+                message="random message"
+                status="loading"
+                placeholder="loading status input"
+                label="Input label"
+            />
+        )
+
+        expect(container.firstChild).toMatchSnapshot()
     })
 
     it.each(STATUS)("Renders status '%s' correctly", status => {

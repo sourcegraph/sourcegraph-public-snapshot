@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { CardBody, Card } from '@sourcegraph/wildcard'
 
@@ -15,7 +16,11 @@ interface Props {
 /**
  * A page that displays a modal prompt in the middle of the screen.
  */
-export const ModalPage: React.FunctionComponent<Props> = ({ icon, className = '', children }) => (
+export const ModalPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    icon,
+    className = '',
+    children,
+}) => (
     <div className={classNames(styles.modalPage, className)}>
         <Card>
             <CardBody>

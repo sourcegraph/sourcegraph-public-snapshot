@@ -6,11 +6,21 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
+
+func (s *schemaResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
+		return nil, err
+	}
+
+	return s.CodeMonitorsResolver.Monitors(ctx, nil, args)
+}
 
 type CodeMonitorsResolver interface {
 	// Query
-	Monitors(ctx context.Context, userID int32, args *ListMonitorsArgs) (MonitorConnectionResolver, error)
+	Monitors(ctx context.Context, userID *int32, args *ListMonitorsArgs) (MonitorConnectionResolver, error)
 	MonitorByID(ctx context.Context, id graphql.ID) (MonitorResolver, error)
 
 	// Mutations
@@ -20,10 +30,10 @@ type CodeMonitorsResolver interface {
 	UpdateCodeMonitor(ctx context.Context, args *UpdateCodeMonitorArgs) (MonitorResolver, error)
 	ResetTriggerQueryTimestamps(ctx context.Context, args *ResetTriggerQueryTimestampsArgs) (*EmptyResponse, error)
 	TriggerTestEmailAction(ctx context.Context, args *TriggerTestEmailActionArgs) (*EmptyResponse, error)
+	TriggerTestWebhookAction(ctx context.Context, args *TriggerTestWebhookActionArgs) (*EmptyResponse, error)
+	TriggerTestSlackWebhookAction(ctx context.Context, args *TriggerTestSlackWebhookActionArgs) (*EmptyResponse, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
-
-	CodeMonitorSearch(context.Context, *SearchArgs) (SearchImplementer, error)
 }
 
 type MonitorConnectionResolver interface {
@@ -35,7 +45,7 @@ type MonitorConnectionResolver interface {
 type MonitorResolver interface {
 	ID() graphql.ID
 	CreatedBy(ctx context.Context) (*UserResolver, error)
-	CreatedAt() DateTime
+	CreatedAt() gqlutil.DateTime
 	Description() string
 	Owner(ctx context.Context) (NamespaceResolver, error)
 	Enabled() bool
@@ -63,8 +73,10 @@ type MonitorTriggerEventResolver interface {
 	ID() graphql.ID
 	Status() (string, error)
 	Message() *string
-	Timestamp() (DateTime, error)
+	Timestamp() (gqlutil.DateTime, error)
 	Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error)
+	ResultCount() int32
+	Query() *string
 }
 
 type MonitorActionConnectionResolver interface {
@@ -126,7 +138,7 @@ type MonitorActionEventResolver interface {
 	ID() graphql.ID
 	Status() (string, error)
 	Message() *string
-	Timestamp() DateTime
+	Timestamp() gqlutil.DateTime
 }
 
 type ListEventsArgs struct {
@@ -202,6 +214,18 @@ type TriggerTestEmailActionArgs struct {
 	Namespace   graphql.ID
 	Description string
 	Email       *CreateActionEmailArgs
+}
+
+type TriggerTestWebhookActionArgs struct {
+	Namespace   graphql.ID
+	Description string
+	Webhook     *CreateActionWebhookArgs
+}
+
+type TriggerTestSlackWebhookActionArgs struct {
+	Namespace    graphql.ID
+	Description  string
+	SlackWebhook *CreateActionSlackWebhookArgs
 }
 
 type CreateMonitorArgs struct {

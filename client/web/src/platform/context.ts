@@ -1,31 +1,38 @@
-import { ApolloQueryResult, ObservableQuery } from '@apollo/client'
+import type { ApolloQueryResult, ObservableQuery } from '@apollo/client'
 import { map, publishReplay, refCount, shareReplay } from 'rxjs/operators'
 
-import { createAggregateError, asError, LocalStorageSubject, appendSubtreeQueryParameter } from '@sourcegraph/common'
+import { createAggregateError, asError, logger } from '@sourcegraph/common'
 import { fromObservableQueryPromise, getDocumentNode } from '@sourcegraph/http-client'
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
-import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
+import type { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
-import { gqlToCascade } from '@sourcegraph/shared/src/settings/settings'
+import { gqlToCascade, type SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import {
     toPrettyBlobURL,
-    RepoFile,
-    UIPositionSpec,
-    ViewStateSpec,
-    RenderModeSpec,
-    UIRangeSpec,
+    type RepoFile,
+    type UIPositionSpec,
+    type ViewStateSpec,
+    type RenderModeSpec,
+    type UIRangeSpec,
 } from '@sourcegraph/shared/src/util/url'
-import { TooltipController } from '@sourcegraph/wildcard'
+import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
 
 import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
+import type { TelemetryRecorderProvider } from '../telemetry'
 import { eventLogger } from '../tracking/eventLogger'
 
 /**
  * Creates the {@link PlatformContext} for the web app.
  */
-export function createPlatformContext(): PlatformContext {
+export function createPlatformContext(props: {
+    /**
+     * The {@link TelemetryRecorderProvider} for the platform. Callers should
+     * make sure to configure desired buffering and add the teardown of the
+     * provider to a subscription or similar.
+     */
+    telemetryRecorderProvider: TelemetryRecorderProvider
+}): PlatformContext {
     const settingsQueryWatcherPromise = watchViewerSettingsQuery()
 
     const context: PlatformContext = {
@@ -69,19 +76,26 @@ export function createPlatformContext(): PlatformContext {
             }
 
             // The error will be emitted to consumers from the `context.settings` observable.
-            await settingsQueryWatcher.refetch().catch(error => console.error(error))
+            await settingsQueryWatcher.refetch().catch(error => logger.error(error))
         },
         getGraphQLClient: getWebGraphQLClient,
         requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
-        forceUpdateTooltip: () => TooltipController.forceUpdate(),
-        createExtensionHost: async () =>
-            (await import('@sourcegraph/shared/src/api/extension/worker')).createExtensionHost(),
+        createExtensionHost: () => {
+            throw new Error('extensions are no longer supported in the web app')
+        },
         urlToFile: toPrettyWebBlobURL,
-        getScriptURLForExtension: () => undefined,
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
-        sideloadedExtensionURL: new LocalStorageSubject<string | null>('sideloadedExtensionURL', null),
         telemetryService: eventLogger,
+        telemetryRecorder: props.telemetryRecorderProvider.getRecorder(
+            window.context.debug
+                ? [
+                      new CallbackTelemetryProcessor(event =>
+                          logger.info(`telemetry: ${event.feature}/${event.action}`, { event })
+                      ),
+                  ]
+                : undefined
+        ),
     }
 
     return context
@@ -94,15 +108,17 @@ function toPrettyWebBlobURL(
         Partial<UIRangeSpec> &
         Partial<RenderModeSpec>
 ): string {
-    return appendSubtreeQueryParameter(toPrettyBlobURL(context))
+    return toPrettyBlobURL(context)
 }
 
-function mapViewerSettingsResult({ data, errors }: ApolloQueryResult<ViewerSettingsResult>): GQL.ISettingsCascade {
+function mapViewerSettingsResult({ data, errors }: ApolloQueryResult<ViewerSettingsResult>): {
+    subjects: SettingsSubject[]
+} {
     if (!data?.viewerSettings) {
         throw createAggregateError(errors)
     }
 
-    return data.viewerSettings as GQL.ISettingsCascade
+    return data.viewerSettings
 }
 
 /**

@@ -1,0 +1,12 @@
+schema:
+  - ../../../../cmd/frontend/graphqlbackend/schema.graphql
+  - ../../../../cmd/frontend/graphqlbackend/dotcom.graphql
+operations:
+  - operations.graphql
+generated: operations.go
+bindings:
+  DateTime:
+    type: time.Time
+  BigInt:
+    type: github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom/genhelper.BigInt
+optional: pointer

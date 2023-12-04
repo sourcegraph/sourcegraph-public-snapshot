@@ -1,0 +1,36 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pagure",
+    srcs = [
+        "client.go",
+        "testing.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/pagure",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/httpcli",
+        "//internal/httptestutil",
+        "//internal/lazyregexp",
+        "//internal/ratelimit",
+        "//lib/errors",
+        "//lib/iterator",
+        "//schema",
+        "@com_github_dnaeon_go_vcr//cassette",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_time//rate",
+    ],
+)
+
+go_test(
+    name = "pagure_test",
+    timeout = "short",
+    srcs = ["client_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":pagure"],
+    deps = [
+        "//internal/testutil",
+        "@com_github_inconshreveable_log15//:log15",
+    ],
+)

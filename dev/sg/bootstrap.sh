@@ -34,7 +34,7 @@ main() {
   printf '%s\n' 'determining latest release of sg' 1>&2
 
   local _location_header
-  _location_header="$(curl --silent -I "https://github.com/sourcegraph/sg/releases/latest" | grep "location:" | tr -d '\r')"
+  _location_header="$(curl --silent -I "https://github.com/sourcegraph/sg/releases/latest" | grep -i "location:" | tr -d '\r')"
 
   local _base_url
   _base_url="$(echo "${_location_header}" | sed s/location:\ // | sed s/tag/download/ | tr -d "[:blank:]")"
@@ -58,8 +58,8 @@ main() {
     exit 1
   fi
 
-  printf '%s\n' 'running sg install' 1>&2
-  "$_file" install </dev/tty
+  printf 'running "%s %s"\n' 'sg install' "$*" 1>&2
+  "$_file" install "$*" </dev/tty
 }
 
 get_architecture() {

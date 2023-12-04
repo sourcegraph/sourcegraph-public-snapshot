@@ -1,0 +1,27 @@
+(FILTER
+  (LIMIT
+    (limit . 100)
+    (TIMEOUT
+      (duration . 50ms)
+      (PARALLEL
+        (AND
+          (LEAF
+            (life_meaning . 42)
+            (leaf_meaning . 420))
+          (LEAF
+            (life_meaning . 42)
+            (leaf_meaning . 420)))
+        (OR
+          (LEAF
+            (life_meaning . 42)
+            (leaf_meaning . 420))
+          (LEAF
+            (life_meaning . 42)
+            (leaf_meaning . 420)))
+        (AND
+          (LEAF
+            (life_meaning . 42)
+            (leaf_meaning . 420))
+          (LEAF
+            (life_meaning . 42)
+            (leaf_meaning . 420)))))))

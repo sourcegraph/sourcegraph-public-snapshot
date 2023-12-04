@@ -99,8 +99,22 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 		}
 	}
 
+	if keyConfig.GitHubAppKey != nil {
+		r.GitHubAppKey, err = NewKey(ctx, keyConfig.GitHubAppKey, keyConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if keyConfig.UserExternalAccountKey != nil {
 		r.UserExternalAccountKey, err = NewKey(ctx, keyConfig.UserExternalAccountKey, keyConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if keyConfig.WebhookKey != nil {
+		r.WebhookKey, err = NewKey(ctx, keyConfig.WebhookKey, keyConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -113,14 +127,25 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 		}
 	}
 
+	if keyConfig.ExecutorSecretKey != nil {
+		r.ExecutorSecretKey, err = NewKey(ctx, keyConfig.ExecutorSecretKey, keyConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &r, nil
 }
 
 type Ring struct {
 	BatchChangesCredentialKey encryption.Key
 	ExternalServiceKey        encryption.Key
+	GitHubAppKey              encryption.Key
+	OutboundWebhookKey        encryption.Key
 	UserExternalAccountKey    encryption.Key
+	WebhookKey                encryption.Key
 	WebhookLogKey             encryption.Key
+	ExecutorSecretKey         encryption.Key
 }
 
 func NewKey(ctx context.Context, k *schema.EncryptionKey, config *schema.EncryptionKeys) (encryption.Key, error) {

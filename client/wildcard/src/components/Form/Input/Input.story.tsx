@@ -1,30 +1,26 @@
-import { Meta } from '@storybook/react'
 import React, { useCallback } from 'react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import type { Meta } from '@storybook/react'
 
-import { Input } from './Input'
+import { BrandedStory } from '../../../stories/BrandedStory'
+
+import { Input, InputDescription, InputElement, InputErrorMessage, InputStatus, Label } from './Input'
 
 const Story: Meta = {
     title: 'wildcard/Input',
 
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
 
     parameters: {
         component: Input,
         chromatic: {
             enableDarkMode: true,
+            disableSnapshot: false,
         },
         design: {
             type: 'figma',
             name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A1943',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=875%3A797',
         },
     },
 }
@@ -52,7 +48,7 @@ export const Simple = () => {
             />
             <Input
                 value={selected}
-                title="Input loading"
+                label="Input loading"
                 onChange={handleChange}
                 message="random message"
                 status="loading"
@@ -62,7 +58,7 @@ export const Simple = () => {
                 value={selected}
                 label="Input error"
                 onChange={handleChange}
-                message="a message with error"
+                error="An error message that can contain `code` or other **Markdown** _formatting_. [Learn more](https://docs.sourcegraph.com)"
                 status="error"
                 placeholder="error status input"
             />
@@ -85,6 +81,25 @@ export const Simple = () => {
                 placeholder="testing this one"
                 variant="small"
             />
+
+            <section>
+                <Label htmlFor="customInput">Custom label layout</Label>
+                <InputElement
+                    id="customInput"
+                    placeholder="Field with custom label layout"
+                    status={InputStatus.error}
+                />
+                <InputErrorMessage message="Input custom error message" className="mt-2" />
+                <InputDescription className="mt-2">
+                    <ul>
+                        <li>Hint: you can use regular expressions within each of the available filters</li>
+                        <li>
+                            Datapoints will be automatically backfilled using the list of repositories resulting from
+                            today’s search. Future data points will use the list refreshed for every snapshot.
+                        </li>
+                    </ul>
+                </InputDescription>
+            </section>
         </>
     )
 }

@@ -1,8 +1,8 @@
 import * as util from 'util'
 
-import chalk, { Chalk } from 'chalk'
+import chalk, { type Chalk } from 'chalk'
 import { identity } from 'lodash'
-import { ConsoleMessage, ConsoleMessageType, Page } from 'puppeteer'
+import type { ConsoleMessage, ConsoleMessageType, Page } from 'puppeteer'
 import stringWidth from 'string-width'
 import terminalSize from 'term-size'
 
@@ -24,11 +24,7 @@ const icons: Partial<Record<ConsoleMessageType, string>> = {
  * output on the NodeJS terminal. Tries to mirror Chrome's console output as
  * closely as possible and makes sense.
  */
-export async function formatPuppeteerConsoleMessage(
-    page: Page,
-    message: ConsoleMessage,
-    simple?: boolean
-): Promise<string> {
+export async function formatPuppeteerConsoleMessage(page: Page, message: ConsoleMessage): Promise<string> {
     const color = colors[message.type()] ?? identity
     const icon = icons[message.type()] ?? ''
     const formattedLocation =
@@ -50,28 +46,23 @@ export async function formatPuppeteerConsoleMessage(
                     : '\t' + formattedLocation)
     )
 
-    const argumentObjects = simple
-        ? // Firefox tests with `puppeteer-firefox`: It does not support
-          // `argumentHandle.evaluateHandle` so messages will be broken, until we
-          // migrate away from `puppeteer-firefox` which is deprecated.
-          []
-        : await Promise.allSettled(
-              message.args().map(async argumentHandle => {
-                  const json = (await (
-                      await argumentHandle.evaluateHandle(value =>
-                          JSON.stringify(value, (key, value: unknown) => {
-                              // Check if value is error, because Errors are not serializable but commonly logged
-                              if (value instanceof Error) {
-                                  return value.stack
-                              }
-                              return value
-                          })
-                      )
-                  ).jsonValue()) as string
-                  const parsed: unknown = JSON.parse(json)
-                  return parsed
-              })
-          )
+    const argumentObjects = await Promise.allSettled(
+        message.args().map(async argumentHandle => {
+            const json = await (
+                await argumentHandle.evaluateHandle(value =>
+                    JSON.stringify(value, (key, value: unknown) => {
+                        // Check if value is error, because Errors are not serializable but commonly logged
+                        if (value instanceof Error) {
+                            return value.stack
+                        }
+                        return value
+                    })
+                )
+            ).jsonValue()
+            const parsed: unknown = JSON.parse(json as string)
+            return parsed
+        })
+    )
 
     return [
         chalk.bold('🖥  Browser console:'),

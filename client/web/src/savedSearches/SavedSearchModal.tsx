@@ -1,21 +1,20 @@
-import classNames from 'classnames'
-import * as H from 'history'
 import * as React from 'react'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { SearchPatternTypeProps } from '@sourcegraph/search'
-import { Button, Modal } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
+import type { NavigateFunction } from 'react-router-dom'
 
-import { AuthenticatedUser } from '../auth'
+import type { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
+import { Button, Modal, Select, H3, Form } from '@sourcegraph/wildcard'
+
+import type { AuthenticatedUser } from '../auth'
 
 import styles from './SavedSearchModal.module.scss'
 
 interface Props extends SearchPatternTypeProps {
-    location: H.Location
-    history: H.History
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: Pick<AuthenticatedUser, 'organizations' | 'username'> | null
     query?: string
     onDidCancel: () => void
+    navigate: NavigateFunction
 }
 
 enum UserOrOrg {
@@ -58,37 +57,35 @@ export class SavedSearchModal extends React.Component<Props, State> {
                     data-testid="saved-search-modal"
                 >
                     <Form onSubmit={this.onSubmit} className="test-saved-search-modal">
-                        <h3 id={MODAL_LABEL_ID}>Save search query to: </h3>
-                        <div className="form-group">
-                            <select
-                                onChange={this.onLocationChange}
-                                className={classNames(styles.select, 'form-control')}
-                            >
-                                <option value={UserOrOrg.User}>User</option>
-                                {this.props.authenticatedUser.organizations &&
-                                    this.props.authenticatedUser.organizations.nodes.length > 0 && (
-                                        <option value={UserOrOrg.Org}>Organization</option>
-                                    )}
-                            </select>
+                        <H3 id={MODAL_LABEL_ID}>Save search query to: </H3>
+
+                        <Select aria-label="" onChange={this.onLocationChange} selectClassName={styles.select}>
+                            <option value={UserOrOrg.User}>User</option>
                             {this.props.authenticatedUser.organizations &&
-                                this.props.authenticatedUser.organizations.nodes.length > 0 &&
-                                this.state.saveLocation === UserOrOrg.Org && (
-                                    <select
-                                        onChange={this.onOrganizationChange}
-                                        placeholder="Select an organization"
-                                        className={classNames(styles.select, 'form-control')}
-                                    >
-                                        <option value="" disabled={true} selected={true}>
-                                            Select an organization
-                                        </option>
-                                        {this.props.authenticatedUser.organizations.nodes.map(org => (
-                                            <option value={org.name} key={org.name}>
-                                                {org.displayName ? org.displayName : org.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                this.props.authenticatedUser.organizations.nodes.length > 0 && (
+                                    <option value={UserOrOrg.Org}>Organization</option>
                                 )}
-                        </div>
+                        </Select>
+                        {this.props.authenticatedUser.organizations &&
+                            this.props.authenticatedUser.organizations.nodes.length > 0 &&
+                            this.state.saveLocation === UserOrOrg.Org && (
+                                <Select
+                                    aria-label=""
+                                    onChange={this.onOrganizationChange}
+                                    placeholder="Select an organization"
+                                    selectClassName={styles.select}
+                                >
+                                    <option value="" disabled={true} selected={true}>
+                                        Select an organization
+                                    </option>
+                                    {this.props.authenticatedUser.organizations.nodes.map(org => (
+                                        <option value={org.name} key={org.name}>
+                                            {org.displayName ? org.displayName : org.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            )}
+
                         <Button
                             type="submit"
                             disabled={this.state.saveLocation === UserOrOrg.Org && !this.state.organization}
@@ -106,7 +103,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
     private onSubmit = (): void => {
         if (this.props.query && this.props.authenticatedUser) {
             const encodedQuery = encodeURIComponent(this.props.query)
-            this.props.history.push(
+            this.props.navigate(
                 this.state.saveLocation.toLowerCase() === 'user'
                     ? `/users/${this.props.authenticatedUser.username}/searches/add?query=${encodedQuery}&patternType=${this.props.patternType}`
                     : `/organizations/${this.state.organization!}/searches/add?query=${encodedQuery}&patternType=${

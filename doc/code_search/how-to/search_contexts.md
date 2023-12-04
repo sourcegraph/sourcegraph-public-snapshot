@@ -4,7 +4,20 @@ Search contexts help you search the code you care about on Sourcegraph. A search
 
 Every search on Sourcegraph uses a search context. Search contexts can be defined with the contexts selector shown in the search input, or entered directly in a search query.
 
+## Available contexts
+
+**Sourcegraph.com** supports a [set of predefined search contexts](https://sourcegraph.com/contexts?order=spec-asc&visible=17&owner=all) that include:
+
+- The global context, `context:global`, which includes all repositories on Sourcegraph.com.
+- Search contexts for various software communities like [CNCF](https://sourcegraph.com/search?q=context:CNCF), [crates.io](https://sourcegraph.com/search?q=context:crates.io), [JVM](https://sourcegraph.com/search?q=context:JVM), and more.  
+
 If no search context is specified, `context:global` is used.
+
+**Private Sourcegraph instances** support custom search contexts:
+
+- Contexts owned by a user, such as `context:@username/context-name`, which can be private to the user or public to all users on the Sourcegraph instance.
+- Contexts at the global level, such as `context:example-context`, which can be private to site admins or public to all users on the Sourcegraph instance.
+- The global context, `context:global`, which includes all repositories on the Sourcegraph instance.
 
 ## Using search contexts
 
@@ -18,6 +31,31 @@ You can also search across multiple contexts at once using the `OR` [boolean ope
 
 `(context:release1 OR context:release2 OR context:release3) someTerribleBug` 
 
+## Organizing search contexts
+
+To organize your search contexts better, you can use a specific context as your default and star any number of contexts. This affects what context is selected when loading Sourcegraph and how the list of contexts is sorted.
+
+### Default context
+
+Any authenticated user can use a search context as their default. To set a default, go to the search context management page, open the "..." menu for a context, and click on "Use as default". If the user doesn't have a default, `global` will be used.
+
+If a user ever loses access to their default search context (eg. the search context is made private), they will see a warning at the top of the search contexts dropdown menu list and `global` will be used. If a user's default search context is deleted, `global` will immediately be set as their default.
+
+The default search context is always selected when loading the Sourcegraph webapp. The one exception is when opening a link to a search query that does not contain a `context:` filter, in which case the `global` context will be used.
+
+### Starred contexts
+
+Any authenticated user can star a search context. To star a context, click on the star icon in the search context management page. This will cause the context to appear near the top of their search contexts list. The `global` context cannot be starred.
+
+### Sort order
+
+The order of search contexts in the search results dropdown menu list and in the search context management page is always the following:
+
+- The `global` context first
+- The user's default context, if set
+- All of the user's starred contexts
+- Any remaining contexts available
+
 ## Creating search contexts
 
 When search contexts are [enabled on your private Sourcegraph instance](../explanations/features.md#search-contexts), you can create your own search contexts.
@@ -26,7 +64,7 @@ A search context consists of a name, description, and a set of repositories at o
 
 Contexts can be owned by a user, and can be private to the user or public to all users on the Sourcegraph instance.
 
-Contexts can also be at the global instance level, and can be private to site admins or public to all users on the Sourcegraph instance.\
+Contexts can also be at the global instance level, and can be private to site admins or public to all users on the Sourcegraph instance.
 
 ### Creating search contexts from header navigation
 
@@ -65,8 +103,10 @@ For example:
 
 You will be returned to the list of search contexts. Your new search context will appear in the search contexts selector in the search input, and can be [used immediately](#using-search-contexts).
 
-## Beta: Query-based search contexts
-As of release 3.36, search contexts can be defined with a restricted search query as an alternative to a specific list of repositories and revisions. This feature is in beta and may change in following releases. Allowed filters are: `repo`, `rev`, `file`, `lang`, `case`, `fork`, and `visibility`. `OR` and `AND` expressions are also allowed.
+## Query-based search contexts
+As of release 3.36, search contexts can be defined with a restricted search query as an alternative to a specific list of repositories and revisions. Allowed filters are: `repo`, `rev`, `file`, `lang`, `case`, `fork`, and `visibility`. `OR` and `AND` expressions are also allowed.
+
+> NOTE: Currently, repo built in predicates for example `repo:has.file`, `repo:has.content` etc, aren't currently supported in search contexts.
 
 If you're an admin, to enable this feature for all users set `experimentalFeatures.searchContextsQuery` to `true` in your global settings (for regular users, just use the normal settings menu). You'll then see a "Create context" button from the search results page and a "Query" input field in the search contexts form. If you want revisions specified in these query based search contexts to be indexed, set `experimentalFeatures.search.index.query.contexts` to `true` in site configuration.
 
@@ -76,7 +116,3 @@ You can now create new search contexts right from the search results page. Once 
 ## Managing search contexts with the API
 
 Learn how to [manage search contexts with the GraphQL API](../../api/graphql/managing-search-contexts-with-api.md).
-
-## Search contexts on Sourcegraph Cloud
-
-Sourcegraph Cloud is the Software-as-a-Service version of Sourcegraph designed to be used by individuals for personal use. Search contexts are still under active development on Sourcegraph Cloud. Learn more about [searching across repositories you've added to Sourcegraph Cloud with search contexts](./searching_with_search_contexts.md).

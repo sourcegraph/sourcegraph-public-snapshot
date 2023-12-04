@@ -1,0 +1,35 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "keyword",
+    srcs = [
+        "keyword_search_job.go",
+        "query_transformer.go",
+        "stop_words.go",
+        "string_set.go",
+        "term_utils.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/keyword",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/search",
+        "//internal/search/job",
+        "//internal/search/query",
+        "//internal/search/streaming",
+        "//lib/errors",
+        "@com_github_kljensen_snowball//:snowball",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "keyword_test",
+    timeout = "short",
+    srcs = ["query_transformer_test.go"],
+    embed = [":keyword"],
+    deps = [
+        "//internal/search/query",
+        "@com_github_hexops_autogold_v2//:autogold",
+    ],
+)

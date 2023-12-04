@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "graph",
+    srcs = [
+        "graph.go",
+        "imports.go",
+        "names.go",
+        "packages.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph",
+    visibility = ["//dev/depgraph:__subpackages__"],
+    deps = [
+        "//internal/byteutils",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)

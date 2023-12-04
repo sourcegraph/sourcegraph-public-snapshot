@@ -1,19 +1,19 @@
 import * as comlink from 'comlink'
 import { isMatch } from 'lodash'
-import { Subscription, Unsubscribable } from 'rxjs'
-import * as sourcegraph from 'sourcegraph'
+import { ReplaySubject, Subscription, type Unsubscribable } from 'rxjs'
+import type * as sourcegraph from 'sourcegraph'
 
-import { EndpointPair } from '../../platform/context'
-import { SettingsCascade } from '../../settings/settings'
-import { ClientAPI } from '../client/api/api'
+import type { EndpointPair } from '../../platform/context'
+import type { SettingsCascade } from '../../settings/settings'
+import type { ClientAPI } from '../client/api/api'
 import { registerComlinkTransferHandlers } from '../util'
 
 import { activateExtensions, replaceAPIRequire } from './activation'
-import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
+import type { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { setActiveLoggers } from './api/logging'
 import { createExtensionAPIFactory } from './extensionApi'
 import { createExtensionHostAPI } from './extensionHostApi'
-import { createExtensionHostState, ExtensionHostState } from './extensionHostState'
+import { createExtensionHostState, type ExtensionHostState } from './extensionHostState'
 
 /**
  * Required information when initializing an extension host.
@@ -53,10 +53,11 @@ export function startExtensionHost(
                 throw new Error('extension host is already initialized')
             }
             initialized = true
-            const { subscription: extensionHostSubscription, extensionAPI, extensionHostAPI } = initializeExtensionHost(
-                endpoints,
-                initData
-            )
+            const {
+                subscription: extensionHostSubscription,
+                extensionAPI,
+                extensionHostAPI,
+            } = initializeExtensionHost(endpoints, initData)
             subscription.add(extensionHostSubscription)
             resolve(extensionAPI)
             return extensionHostAPI
@@ -84,10 +85,11 @@ function initializeExtensionHost(
 ): { extensionHostAPI: ExtensionHostAPI; extensionAPI: typeof sourcegraph; subscription: Subscription } {
     const subscription = new Subscription()
 
-    const { extensionAPI, extensionHostAPI, subscription: apiSubscription } = createExtensionAndExtensionHostAPIs(
-        initData,
-        endpoints
-    )
+    const {
+        extensionAPI,
+        extensionHostAPI,
+        subscription: apiSubscription,
+    } = createExtensionAndExtensionHostAPIs(initData, endpoints)
     subscription.add(apiSubscription)
 
     // Make `import 'sourcegraph'` or `require('sourcegraph')` return the default extension API (for testing).
@@ -113,18 +115,28 @@ function createExtensionAndExtensionHostAPIs(
 
     registerComlinkTransferHandlers()
 
+    /**
+     * Used to wait until the main thread API has been initialized. Ensures
+     * that message of main thread API calls (e.g. getActiveExtensions)
+     * during extension host initialization are not dropped.
+     *
+     * Debt: ensure this works holds true for all clients.
+     * If not, add `waitForMainThread` parameter to make this opt-in.
+     */
+    const mainThreadAPIInitializations = new ReplaySubject<boolean>(1)
+
     /** Proxy to main thread */
     const proxy = comlink.wrap<ClientAPI>(endpoints.proxy)
 
     // Create extension host state
-    const extensionHostState = createExtensionHostState(initData, proxy)
+    const extensionHostState = createExtensionHostState(initData, proxy, mainThreadAPIInitializations)
     // Create extension host API
     const extensionHostAPINew = createExtensionHostAPI(extensionHostState)
     // Create extension API factory
     const createExtensionAPI = createExtensionAPIFactory(extensionHostState, proxy, initData)
 
     // Activate extensions. Create extension APIs on extension activation.
-    subscription.add(activateExtensions(extensionHostState, proxy, createExtensionAPI))
+    subscription.add(activateExtensions(extensionHostState, proxy, createExtensionAPI, mainThreadAPIInitializations))
 
     // Observe settings and update active loggers state
     subscription.add(setActiveLoggers(extensionHostState))
@@ -134,6 +146,9 @@ function createExtensionAndExtensionHostAPIs(
         [comlink.proxyMarker]: true,
 
         ping: () => 'pong',
+        mainThreadAPIInitialized: () => {
+            mainThreadAPIInitializations.next(true)
+        },
         ...extensionHostAPINew,
     }
 

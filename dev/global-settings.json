@@ -1,29 +1,18 @@
 {
   // This is set from an environment variable
   "experimentalFeatures": {
-    "showRepogroupHomepage": true,
+    "batchChangesExecution": true,
     "showMultilineSearchConsole": true,
     "codeMonitoring": true,
-    "codeInsights": true
+    "enableLazyBlobSyntaxHighlighting": true,
+    "enableLazyFileResultSyntaxHighlighting": true,
+    "enableSearchFilePrefetch": true,
+    "enableSidebarFilePrefetch": true
   },
-  "insights": [
-    {
-      "title": "fmt usage",
-      "description": "fmt.Errorf/fmt.Printf usage",
-      "series": [
-        {
-          "label": "fmt.Errorf",
-          "search": "errorf"
-        },
-        {
-          "label": "printf",
-          "search": "fmt.Printf"
-        }
-      ],
-      "id": "1"
-    }
-  ],
   "search.repositoryGroups": {
     "test": ["github.com/gorilla/mux", "github.com/gorilla/pat"]
-  }
+  },
+  // team search platform: This enables the experimental "precise (NEW)" search mode by default
+  "search.defaultMode": "precise",
+  "search.defaultPatternType": "newStandardRC1"
 }

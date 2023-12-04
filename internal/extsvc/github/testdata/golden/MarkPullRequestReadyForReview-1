@@ -9,6 +9,7 @@
   "HeadRefName": "test-pr-8",
   "BaseRefName": "master",
   "Number": 466,
+  "ReviewDecision": "REVIEW_REQUIRED",
   "Author": {
    "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
    "Login": "LawnGnome",
@@ -16,12 +17,14 @@
   },
   "BaseRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Name": "automation-testing",
    "Owner": {
     "Login": "sourcegraph"
    }
   },
   "HeadRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Name": "automation-testing",
    "Owner": {
     "Login": "sourcegraph"
    }
@@ -56,7 +59,7 @@
        }
       },
       "CommittedDate": "2021-12-30T22:41:48Z",
-      "PushedDate": "2021-12-30T22:43:12Z"
+      "PushedDate": "2021-12-30T22:43:11Z"
      }
     }
    }

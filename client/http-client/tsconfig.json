@@ -1,12 +1,19 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "commonjs",
     "sourceRoot": "src",
     "rootDir": ".",
     "outDir": "./out",
-    "baseUrl": "./src",
+    "jsx": "react-jsx",
   },
-  "include": ["./src/**/*", "./*.ts"],
-  "references": [{ "path": "../common" }],
+  "include": ["src"],
+  "references": [
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../testing",
+    },
+  ],
 }

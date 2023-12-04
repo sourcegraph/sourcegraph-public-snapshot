@@ -7,26 +7,31 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
 func TestReposService_Get(t *testing.T) {
@@ -34,7 +39,7 @@ func TestReposService_Get(t *testing.T) {
 
 	wantRepo := &types.Repo{ID: 1, Name: "github.com/u/r"}
 
-	repoStore := database.NewMockRepoStore()
+	repoStore := dbmocks.NewMockRepoStore()
 	repoStore.GetFunc.SetDefaultReturn(wantRepo, nil)
 	s := &repos{store: repoStore}
 
@@ -52,7 +57,7 @@ func TestReposService_List(t *testing.T) {
 		{Name: "r2"},
 	}
 
-	repoStore := database.NewMockRepoStore()
+	repoStore := dbmocks.NewMockRepoStore()
 	repoStore.ListFunc.SetDefaultReturn(wantRepos, nil)
 	s := &repos{store: repoStore}
 
@@ -62,7 +67,7 @@ func TestReposService_List(t *testing.T) {
 	require.Equal(t, wantRepos, repos)
 }
 
-func TestRepos_Add(t *testing.T) {
+func TestRepos_AddRepoToSourcegraphDotCom(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
@@ -81,16 +86,15 @@ func TestRepos_Add(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 
-	gitserver.MockIsRepoCloneable = func(name api.RepoName) error {
-		if name != repoName {
-			t.Errorf("got %q, want %q", name, repoName)
-		}
-		return nil
-	}
-	defer func() { gitserver.MockIsRepoCloneable = nil }()
-
 	// The repoName could change if it has been renamed on the code host
-	addedName, err := s.Add(ctx, repoName)
+	s = repos{
+		logger: logtest.Scoped(t),
+		cf: httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+			require.Equal(t, "https://github.com/my/repo.git/info/refs?service=git-upload-pack", r.URL.String())
+			return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(""))}, nil
+		}),
+	}
+	addedName, err := s.addRepoToSourcegraphDotCom(ctx, repoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,6 +104,18 @@ func TestRepos_Add(t *testing.T) {
 	if !calledRepoLookup {
 		t.Error("!calledRepoLookup")
 	}
+
+	// Verify that non 200 codes return the right error.
+	s = repos{
+		logger: logtest.Scoped(t),
+		cf: httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+			require.Equal(t, "https://github.com/my/repo.git/info/refs?service=git-upload-pack", r.URL.String())
+			return &http.Response{StatusCode: 401, Body: io.NopCloser(strings.NewReader(""))}, nil
+		}),
+	}
+	_, err = s.addRepoToSourcegraphDotCom(ctx, repoName)
+	require.Error(t, err)
+	require.IsType(t, &database.RepoNotFoundErr{}, err)
 }
 
 func TestRepos_Add_NonPublicCodehosts(t *testing.T) {
@@ -121,7 +137,7 @@ func TestRepos_Add_NonPublicCodehosts(t *testing.T) {
 	defer func() { gitserver.MockIsRepoCloneable = nil }()
 
 	// The repoName could change if it has been renamed on the code host
-	_, err := s.Add(ctx, repoName)
+	_, err := s.addRepoToSourcegraphDotCom(ctx, repoName)
 	if !errcode.IsNotFound(err) {
 		t.Fatalf("expected a not found error, got: %v", err)
 	}
@@ -131,12 +147,11 @@ type gitObjectInfo string
 
 func (oid gitObjectInfo) OID() gitdomain.OID {
 	var v gitdomain.OID
-	copy(v[:], []byte(oid))
+	copy(v[:], oid)
 	return v
 }
 
 func TestReposGetInventory(t *testing.T) {
-	var s repos
 	ctx := testContext()
 
 	const (
@@ -144,6 +159,7 @@ func TestReposGetInventory(t *testing.T) {
 		wantCommitID = "cccccccccccccccccccccccccccccccccccccccc"
 		wantRootOID  = "oid-root"
 	)
+	gitserverClient := gitserver.NewMockClient()
 	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 		if args.Repo != wantRepo {
 			t.Errorf("got %q, want %q", args.Repo, wantRepo)
@@ -151,29 +167,29 @@ func TestReposGetInventory(t *testing.T) {
 		return &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{Name: wantRepo}}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
-	git.Mocks.Stat = func(commit api.CommitID, path string) (fs.FileInfo, error) {
+	gitserverClient.StatFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
-		return &util.FileInfo{Name_: path, Mode_: os.ModeDir, Sys_: gitObjectInfo(wantRootOID)}, nil
-	}
-	git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
+		return &fileutil.FileInfo{Name_: path, Mode_: os.ModeDir, Sys_: gitObjectInfo(wantRootOID)}, nil
+	})
+	gitserverClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, name string, _ bool) ([]fs.FileInfo, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
 		switch name {
 		case "":
 			return []fs.FileInfo{
-				&util.FileInfo{Name_: "a", Mode_: os.ModeDir, Sys_: gitObjectInfo("oid-a")},
-				&util.FileInfo{Name_: "b.go", Size_: 12},
+				&fileutil.FileInfo{Name_: "a", Mode_: os.ModeDir, Sys_: gitObjectInfo("oid-a")},
+				&fileutil.FileInfo{Name_: "b.go", Size_: 12},
 			}, nil
 		case "a":
-			return []fs.FileInfo{&util.FileInfo{Name_: "a/c.m", Size_: 24}}, nil
+			return []fs.FileInfo{&fileutil.FileInfo{Name_: "a/c.m", Size_: 24}}, nil
 		default:
 			panic("unhandled mock ReadDir " + name)
 		}
-	}
-	git.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
+	})
+	gitserverClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
@@ -187,8 +203,11 @@ func TestReposGetInventory(t *testing.T) {
 			panic("unhandled mock ReadFile " + name)
 		}
 		return io.NopCloser(bytes.NewReader(data)), nil
+	})
+	s := repos{
+		logger:          logtest.Scoped(t),
+		gitserverClient: gitserverClient,
 	}
-	defer git.ResetMocks()
 
 	tests := []struct {
 		useEnhancedLanguageDetection bool
@@ -234,7 +253,9 @@ func TestReposGetInventory(t *testing.T) {
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		logtest.InitWithLevel(m, log.LevelNone)
+	} else {
+		logtest.Init(m)
 	}
 	os.Exit(m.Run())
 }

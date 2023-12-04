@@ -1,90 +1,55 @@
-import AddIcon from 'mdi-react/AddIcon'
 import React, { useEffect } from 'react'
-import { RouteComponentProps } from 'react-router'
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { mdiPlus } from '@mdi/js'
 
-import { queryGraphQL } from '../../../../backend/graphql'
+import { Button, Link, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
+
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
+import type { SiteAdminProductSubscriptionFields } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 
+import { queryProductSubscriptions } from './backend'
 import {
-    siteAdminProductSubscriptionFragment,
     SiteAdminProductSubscriptionNode,
     SiteAdminProductSubscriptionNodeHeader,
-    SiteAdminProductSubscriptionNodeProps,
+    type SiteAdminProductSubscriptionNodeProps,
 } from './SiteAdminProductSubscriptionNode'
 
-interface Props extends RouteComponentProps<{}> {}
-
-class FilteredSiteAdminProductSubscriptionConnection extends FilteredConnection<
-    GQL.IProductSubscription,
-    SiteAdminProductSubscriptionNodeProps
-> {}
+interface Props {}
 
 /**
  * Displays the product subscriptions that have been created on Sourcegraph.com.
  */
-export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<Props> = ({ history, location }) => {
+export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscriptions'), [])
+
     return (
         <div className="site-admin-product-subscriptions-page">
             <PageTitle title="Product subscriptions" />
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="mb-0">Product subscriptions</h2>
-                <Button to="/site-admin/dotcom/product/subscriptions/new" variant="primary" as={Link}>
-                    <AddIcon className="icon-inline" />
-                    Create product subscription
-                </Button>
-            </div>
-            <FilteredSiteAdminProductSubscriptionConnection
-                className="mt-3"
-                listComponent="table"
-                listClassName="table"
-                noun="product subscription"
-                pluralNoun="product subscriptions"
-                queryConnection={queryProductSubscriptions}
-                headComponent={SiteAdminProductSubscriptionNodeHeader}
-                nodeComponent={SiteAdminProductSubscriptionNode}
-                history={history}
-                location={location}
-            />
-        </div>
-    )
-}
-
-function queryProductSubscriptions(args: {
-    first?: number
-    query?: string
-}): Observable<GQL.IProductSubscriptionConnection> {
-    return queryGraphQL(
-        gql`
-            query ProductSubscriptionsDotCom($first: Int, $account: ID, $query: String) {
-                dotcom {
-                    productSubscriptions(first: $first, account: $account, query: $query) {
-                        nodes {
-                            ...SiteAdminProductSubscriptionFields
-                        }
-                        totalCount
-                        pageInfo {
-                            hasNextPage
-                        }
-                    }
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Product subscriptions' }]}
+                actions={
+                    <Button to="/site-admin/dotcom/product/subscriptions/new" variant="primary" as={Link}>
+                        <Icon aria-hidden={true} svgPath={mdiPlus} />
+                        Create product subscription
+                    </Button>
                 }
-            }
-            ${siteAdminProductSubscriptionFragment}
-        `,
-        {
-            first: args.first,
-            query: args.query,
-        } as GQL.IProductSubscriptionsOnDotcomQueryArguments
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.dotcom.productSubscriptions)
+                className="mb-3"
+            />
+
+            <Container>
+                <FilteredConnection<SiteAdminProductSubscriptionFields, SiteAdminProductSubscriptionNodeProps>
+                    listComponent="table"
+                    listClassName="table"
+                    noun="product subscription"
+                    pluralNoun="product subscriptions"
+                    queryConnection={queryProductSubscriptions}
+                    headComponent={SiteAdminProductSubscriptionNodeHeader}
+                    nodeComponent={SiteAdminProductSubscriptionNode}
+                />
+            </Container>
+        </div>
     )
 }

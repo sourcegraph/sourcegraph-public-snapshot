@@ -1,0 +1,34 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "repoupdater",
+    srcs = [
+        "client.go",
+        "errors.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/repoupdater",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/conf",
+        "//internal/conf/deploy",
+        "//internal/grpc/defaults",
+        "//internal/httpcli",
+        "//internal/repoupdater/protocol",
+        "//internal/repoupdater/v1:repoupdater",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+go_test(
+    name = "repoupdater_test",
+    timeout = "short",
+    srcs = ["client_test.go"],
+    embed = [":repoupdater"],
+)

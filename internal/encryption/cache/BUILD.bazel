@@ -1,0 +1,30 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cache",
+    srcs = [
+        "cache.go",
+        "metrics.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/encryption/cache",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/encryption",
+        "@com_github_hashicorp_golang_lru_v2//:golang-lru",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+    ],
+)
+
+go_test(
+    name = "cache_test",
+    timeout = "short",
+    srcs = ["cache_test.go"],
+    embed = [":cache"],
+    deps = [
+        "//internal/encryption",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

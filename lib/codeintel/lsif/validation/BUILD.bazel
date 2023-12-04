@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "validation",
+    srcs = [
+        "context.go",
+        "ownership.go",
+        "util.go",
+        "validator.go",
+        "validators.go",
+        "validators_edge.go",
+        "validators_relationship.go",
+        "validators_vertex.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/validation",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/codeintel/lsif/protocol/reader",
+        "//lib/codeintel/lsif/reader",
+    ],
+)

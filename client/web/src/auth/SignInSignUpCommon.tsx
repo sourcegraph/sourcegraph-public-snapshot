@@ -1,21 +1,24 @@
-import classNames from 'classnames'
-import * as H from 'history'
 import * as React from 'react'
 
+import type * as H from 'history'
+
+import { Input, type InputProps } from '@sourcegraph/wildcard'
+
+import { PageRoutes } from '../routes.constants'
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface CommonInputProps extends InputProps, React.InputHTMLAttributes<HTMLInputElement> {
     inputRef?: React.Ref<HTMLInputElement>
 }
 
-export const PasswordInput: React.FunctionComponent<InputProps> = props => {
+export const PasswordInput: React.FunctionComponent<React.PropsWithChildren<CommonInputProps>> = props => {
     const { inputRef, ...other } = props
     return (
-        <input
+        <Input
             name="password"
             id="password"
             {...other}
-            className={classNames('form-control', props.className)}
+            className={props.className}
             placeholder={props.placeholder || 'Password'}
             type="password"
             required={true}
@@ -24,14 +27,14 @@ export const PasswordInput: React.FunctionComponent<InputProps> = props => {
     )
 }
 
-export const EmailInput: React.FunctionComponent<InputProps> = props => {
+export const EmailInput: React.FunctionComponent<React.PropsWithChildren<CommonInputProps>> = props => {
     const { inputRef, ...other } = props
     return (
-        <input
+        <Input
             name="email"
             id="email"
             {...other}
-            className={classNames('form-control', props.className)}
+            className={props.className}
             type="email"
             placeholder={props.placeholder || 'Email'}
             spellCheck={false}
@@ -41,15 +44,14 @@ export const EmailInput: React.FunctionComponent<InputProps> = props => {
     )
 }
 
-export const UsernameInput: React.FunctionComponent<InputProps> = props => {
+export const UsernameInput: React.FunctionComponent<React.PropsWithChildren<CommonInputProps>> = props => {
     const { inputRef, ...other } = props
     return (
-        <input
+        <Input
             name="username"
             id="username"
             {...other}
-            className={classNames('form-control', props.className)}
-            type="text"
+            className={props.className}
             placeholder={props.placeholder || 'Username'}
             spellCheck={false}
             pattern={VALID_USERNAME_REGEXP}
@@ -68,31 +70,14 @@ export const UsernameInput: React.FunctionComponent<InputProps> = props => {
  *
  * 🚨 SECURITY: We must disallow open redirects (to arbitrary hosts).
  */
-export function getReturnTo(location: H.Location): string {
+export function getReturnTo(location: H.Location, defaultReturnTo: string = PageRoutes.Search): string {
     const searchParameters = new URLSearchParams(location.search)
-    const returnTo = searchParameters.get('returnTo') || '/search'
-    const newURL = new URL(returnTo, window.location.href)
+    const returnTo = searchParameters.get('returnTo') || defaultReturnTo
 
-    newURL.searchParams.append('toast', 'integrations')
-    return newURL.pathname + newURL.search + newURL.hash
-}
-
-export function maybeAddPostSignUpRedirect(url?: string): string {
-    const enablePostSignupFlow = window.context?.experimentalFeatures?.enablePostSignupFlow
-    const isDotCom = window.context?.sourcegraphDotComMode
-    const shouldAddRedirect = isDotCom && enablePostSignupFlow
-
-    if (url) {
-        if (shouldAddRedirect) {
-            // second param to protect against relative urls
-            const urlObject = new URL(url, window.location.href)
-
-            urlObject.searchParams.append('redirect', '/welcome')
-            return urlObject.toString()
-        }
-
-        return url
+    // 🚨 SECURITY: check newURL scheme http or https or relative
+    if (returnTo.startsWith('http:') || returnTo.startsWith('https:') || returnTo.startsWith('/')) {
+        const newURL = new URL(returnTo, window.location.href)
+        return newURL.pathname + newURL.search + newURL.hash
     }
-
-    return shouldAddRedirect ? '/welcome' : ''
+    return defaultReturnTo
 }

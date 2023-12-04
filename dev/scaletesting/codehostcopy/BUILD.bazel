@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "codehostcopy_lib",
+    srcs = [
+        "bitbucket.go",
+        "config.go",
+        "dummy.go",
+        "github.go",
+        "gitlab.go",
+        "main.go",
+        "runner.go",
+    ],
+    embedsrcs = ["config.example.cue"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/scaletesting/codehostcopy",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//dev/scaletesting/codehostcopy/bitbucket",
+        "//dev/scaletesting/internal/store",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_google_go_github_v55//github",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_run//:run",
+        "@com_github_urfave_cli_v2//:cli",
+        "@com_github_xanzy_go_gitlab//:go-gitlab",
+        "@org_cuelang_go//cue",
+        "@org_cuelang_go//cue/cuecontext",
+        "@org_cuelang_go//cue/errors",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)
+
+go_binary(
+    name = "codehostcopy",
+    embed = [":codehostcopy_lib"],
+    visibility = ["//visibility:public"],
+)

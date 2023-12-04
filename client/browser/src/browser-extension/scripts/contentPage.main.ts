@@ -1,3 +1,7 @@
+// Set globals first before any imports.
+import '../../config/extension.entry'
+import '../../config/content.entry'
+// Polyfill before other imports.
 import '../../shared/polyfills'
 
 import { fromEvent, Subscription } from 'rxjs'
@@ -92,10 +96,10 @@ async function main(): Promise<void> {
 
     let previousSubscription: Subscription
     subscriptions.add(
-        // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises
+        // eslint-disable-next-line rxjs/no-async-subscribe
         observeSourcegraphURL(IS_EXTENSION).subscribe(async sourcegraphURL => {
             if (previousSubscription) {
-                console.log('Sourcegraph detached code intelligence')
+                console.log('Sourcegraph detached code navigation')
                 previousSubscription.unsubscribe()
             }
 
@@ -113,18 +117,18 @@ async function main(): Promise<void> {
                         const styleSheets = [
                             {
                                 id: 'ext-style-sheet',
-                                path: 'css/style.bundle.css',
+                                path: 'css/app.bundle.css',
                             },
                             {
                                 id: 'ext-style-sheet-css-modules',
-                                path: 'css/inject.bundle.css',
+                                path: 'css/contentPage.main.bundle.css',
                             },
                         ]
 
                         await Promise.all(styleSheets.map(loadStyleSheet).map(waitForStyleSheet))
                     }
                 )
-                console.log('Sourcegraph attached code intelligence')
+                console.log('Sourcegraph attached code navigation')
             } catch (error) {
                 console.log('Sourcegraph code host integration stopped initialization. Reason:', error)
             }

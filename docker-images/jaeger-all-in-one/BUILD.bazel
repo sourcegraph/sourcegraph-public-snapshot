@@ -1,0 +1,54 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//dev:oci_defs.bzl", "image_repository")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+
+filegroup(
+    name = "config",
+    srcs = glob(["config/*"]),
+)
+
+pkg_tar(
+    name = "config_tar",
+    srcs = [":config"],
+    remap_paths = {"": "/etc/jaeger/"},
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_jaeger_all_in_one_base",
+    cmd = ["--sampling.strategies-file=/etc/jaeger/sampling_strategies.json"],
+    entrypoint = ["/usr/local/bin/jaeger-all-in-one"],
+    env = {
+        # Used in order to reverse proxy the Jaeger UI
+        "QUERY_BASE_PATH": "/-/debug/jaeger",
+        # Default configuration file for setting sampling strategies, we override the command in docker-compose
+        "SAMPLING_STRATEGIES_FILE": "/etc/jaeger/sampling_strategies.json",
+    },
+    tars = [":config_tar"],
+    user = "jaeger",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["jaeger-all-in-one:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("jaeger-all-in-one"),
+)

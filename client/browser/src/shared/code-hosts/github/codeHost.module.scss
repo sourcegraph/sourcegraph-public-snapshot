@@ -1,31 +1,21 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
-@mixin github-dark-theme {
-    [data-color-mode='dark'] {
-        @content;
-    }
-
-    [data-color-mode='auto'] {
-        @media (prefers-color-scheme: dark) {
-            @content;
-        }
-    }
-}
-
 :root {
-    /* Map out CSS variables to the theme-aware GitHub ones */
-    --body-bg: var(--color-bg-canvas);
-    --border-color: var(--color-border-primary);
-    --secondary: var(--color-auto-gray-2);
+    // Map out CSS variables to the theme-aware GitHub ones
+    // Latest variable, backwards compat (GitHub Enterprise) fallback, last-resort fallback to Sourcegraph color (in case GitHub changes its variables again)
+    --body-bg: var(--color-canvas-default, var(--color-bg-canvas, var(--white)));
+    --border-color: var(--color-border-default, var(--color-border-primary, var(--secondary)));
+    --secondary: var(--color-btn-bg, var(--color-auto-gray-2), var(--gray-06));
 }
 
-@include github-dark-theme {
+[data-color-mode='dark'] {
     --mark-bg: var(--mark-bg-dark);
 }
 
-.command-palette-action-item {
-    /* Reset GitHub's 44px min-height */
-    min-height: initial;
+[data-color-mode='auto'] {
+    @media (prefers-color-scheme: dark) {
+        --mark-bg: var(--mark-bg-dark);
+    }
 }
 
 .action-item {
@@ -40,9 +30,15 @@
 }
 
 .code-view-toolbar {
-    margin-right: 4px;
     margin-bottom: -4px;
     text-align: right;
+}
+
+/* Old GitHub code view blob header */
+:global(.js-blob-header) {
+    .code-view-toolbar {
+        margin-right: 4px;
+    }
 }
 
 .code-view-toolbar-item {
@@ -60,6 +56,24 @@
 .hover-overlay-close-button {
     /* Align close button with large GitHub badges */
     top: 0.33rem !important; /* !important to override default close button `top` */
+}
+
+/* View repo on Sourcegraph link when global navigation update feature preview is enabled */
+:global(.AppHeader .open-on-sourcegraph),
+/* View file on Sourcegraph link in the blob header */
+:global(.sourcegraph-github-file-code-view-toolbar-mount .open-on-sourcegraph) {
+    /* Center link icon */
+    min-height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+/* New GitHub code view: view repo on Sourcegraph link when global navigation update feature preview is disabled */
+:global(.pagehead-actions .open-on-sourcegraph) {
+    .icon {
+        /* Center link icon */
+        margin-bottom: -1px;
+    }
 }
 
 /* Blob view

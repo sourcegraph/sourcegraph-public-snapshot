@@ -6,6 +6,7 @@
   "allowComments": true,
   "type": "object",
   "additionalProperties": false,
+  "required": ["maven"],
   "properties": {
     "maven": {
       "description": "Configuration for resolving from Maven repositories.",
@@ -25,7 +26,7 @@
           ]
         },
         "credentials": {
-          "description": "Contents of a coursier.credentials file needed for accessing the Maven repositories.",
+          "description": "Contents of a coursier.credentials file needed for accessing the Maven repositories. See the 'Inline' section at https://get-coursier.io/docs/other-credentials#inline for more details.",
           "type": "string"
         },
         "rateLimit": {
@@ -42,7 +43,7 @@
             "requestsPerHour": {
               "description": "Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.",
               "type": "number",
-              "default": 5000,
+              "default": 7200,
               "minimum": 0
             }
           },
@@ -60,6 +61,28 @@
           },
           "examples": [["groupID:artifactID"], ["org.apache.commons:commons-csv", "com.google.guava:guava"]]
         }
+      },
+      "examples": [
+        {
+          "maven": {
+            "repositories": ["central", "http://repo.extendedclip.com/content/repositories/public/"],
+            "rateLimit": {
+              "enabled": true,
+              "requestsPerHour": 3600
+            },
+            "credentials": "jfrog.frogger.com myuser:supersecret\njfrogmirror.frogger.com(basicauth realm) frog:detective",
+            "dependencies": ["com.sourcegraph:semanticdb-kotlinc:0.1.1"]
+          }
+        }
+      ],
+      "default": {
+        "repositories": [],
+        "credentials": "",
+        "rateLimit": {
+          "enabled": true,
+          "requestsPerHour": 7200
+        },
+        "dependencies": []
       }
     }
   }

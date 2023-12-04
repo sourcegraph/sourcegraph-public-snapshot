@@ -5,8 +5,8 @@ Guide to contribute to the Sourcegraph web app. Please also see our general [Typ
 ## Local development
 
 See [common commands for local development](../../setup/quickstart.md).
-Commands specifically useful for the web team can be found in the root [package.json](https://github.com/sourcegraph/sourcegraph/blob/main/package.json).
-Also, check out the web app [README](https://github.com/sourcegraph/sourcegraph/blob/main/client/web/README.md).
+Commands specifically useful for the web team can be found in the root [package.json](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/package.json).
+Also, check out the web app [README](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/README.md).
 
 ### Prerequisites
 
@@ -16,28 +16,15 @@ To install it, [see the instructions](../../setup/quickstart.md).
 
 ### Commands
 
-1. Start the web server and point it to any deployed API instance. See more info in the web app [README](https://github.com/sourcegraph/sourcegraph/blob/main/client/web/README.md).
+1. Start the web server and point it to any deployed API instance. See more info in the web app [README](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/README.md).
 
     ```sh
     sg start web-standalone
     ```
-
-    For the open-source version:
-
-    ```sh
-    sg start oss-web-standalone
-    ```
-
     To use a public API that doesn't require authentication for most of the functionality:
 
     ```sh
     SOURCEGRAPH_API_URL=https://sourcegraph.com sg start web-standalone
-    ```
-
-    For open-source version:
-
-    ```sh
-    SOURCEGRAPH_API_URL=https://sourcegraph.com sg start oss-web-standalone
     ```
 
 2. Start all backend services with the frontend server.
@@ -46,45 +33,33 @@ To install it, [see the instructions](../../setup/quickstart.md).
     sg start # which defaults to `sg start enterprise`
     ```
 
-    For the open-source version:
-
-    ```sh
-    sg start oss
-    ```
-
 3. Regenerate GraphQL schema, Typescript types for GraphQL operations and CSS Modules.
 
     ```sh
-    yarn generate
-    ```
-
-    To regenerate on file change:
-
-    ```sh
-    yarn watch-generate
+    pnpm generate
     ```
 
 ### Storybook
 
 Storybook is used to work on the components in isolation. The latest version is deployed at http://storybook.sgdev.org/.
 
-To use it locally, use `yarn storybook` command to start the Storybook development server. This will load stories from all the workspaces that we have in the monorepo.
+To use it locally, use `pnpm storybook` command to start the Storybook development server. This will load stories from all the workspaces that we have in the monorepo.
 
 To boost the build/recompilation performance of the Storybook, it's possible to load only a subset of stories needed for the current feature implementation. This is done via the environment variable `STORIES_GLOB`:
 
 ```sh
-STORIES_GLOB=client/web/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start
+STORIES_GLOB='client/web/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start
 ```
 
 It's common for a developer to work only in one client workspace, e.g., `web` or `browser`.
 The root `package.json` has commands to launch Storybook only for each individual workspace, which greatly increases the build performance.
 
 ```sh
-yarn storybook:branded
-yarn storybook:browser
-yarn storybook:shared
-yarn storybook:web
-yarn storybook:wildcard
+pnpm storybook:branded
+pnpm storybook:browser
+pnpm storybook:shared
+pnpm storybook:web
+pnpm storybook:wildcard
 ```
 
 ## Naming files
@@ -104,7 +79,7 @@ The `tsx` extension makes certain generic syntax impossible and also enables emm
 
 ### `index.*` files
 
-Index files should not never contain declarations on their own.
+Index files should never contain declarations on their own.
 Their purpose is to reexport symbols from a number of other files to make imports easier and define the the public API.
 
 ## Components
@@ -130,8 +105,8 @@ If you don't do this (and just use a normal `import`), it will still work, but i
 
 ## Formatting
 
-We use [Prettier](https://github.com/prettier/prettier) so you never have to worry about how to format your code.
-`yarn run prettier` will check & autoformat all code.
+We use [Prettier](https://sourcegraph.com/github.com/prettier/prettier) so you never have to worry about how to format your code.
+`pnpm run format` will check & autoformat all code.
 
 ## Tests
 
@@ -143,8 +118,19 @@ Unit tests are for things that can be tested in isolation; you provide inputs an
 
 React component snapshot tests are a special kind of unit test that we use to test React components. See "[React component snapshot tests](../../how-to/testing.md#react-component-snapshot-tests)" for more information.
 
-You can run unit tests via `yarn test` (to run all) or `yarn test --watch` (to run only tests changed since the last commit). See "[Testing](../../how-to/testing.md)" for more information.
+You can run unit tests via `pnpm test` (to run all) or `pnpm test --watch` (to run only tests changed since the last commit). See "[Testing](../../how-to/testing.md)" for more information.
 
 ### E2E tests
 
 See [testing.md](../../how-to/testing.md).
+
+## Logging
+
+`console` methods are banned in browser environments via [the `no-console` ESLint rule](https://eslint.org/docs/latest/rules/no-console) to:
+
+1. Avoid leaving `console.*` added for debugging purposes during development.
+2. Have more control over logging pipelines. E.g.,
+    - Forward errors to the error monitoring services.
+    - Dynamically change logging level depending on the environment.
+
+Use [the `logger` service](https://https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+export+const+logger:+Logger+%3D&patternType=standard&sm=1&groupBy=path) that wraps console methods where we want to preserve console output in non-development environments. E.g., logging helpful information during an integration test execution. Feel free to disable the `no-console` ESLint rule for node.js environments via [the `overrides` configuration key](https://eslint.org/docs/latest/user-guide/configuring/configuration-files#configuration-based-on-glob-patterns). Check out [the Unified logger service RFC](https://docs.google.com/document/d/1PolGRDS9XfKj-IJEBi7BTbVZeUsQfM-3qpjLsLlB-yw/edit) for more context.

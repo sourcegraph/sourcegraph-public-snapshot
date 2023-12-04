@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -8,19 +9,34 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"google.golang.org/grpc"
 
-	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 )
 
 func TestGitServiceHandlers(t *testing.T) {
-	m := apirouter.NewInternal(mux.NewRouter())
+	db := dbmocks.NewMockDB()
+	grpcServer := grpc.NewServer()
+	dummyCodeIntelHandler := func(_ bool) http.Handler { return noopHandler }
+	dummyComputeStreamHandler := func() http.Handler { return noopHandler }
+
+	m := mux.NewRouter()
+
+	RegisterInternalServices(m, grpcServer, db, nil, dummyCodeIntelHandler, nil, dummyComputeStreamHandler, nil)
 
 	gitService := &gitServiceHandler{
 		Gitserver: mockAddrForRepo{},
 	}
-	m.Get(apirouter.GitInfoRefs).Handler(http.HandlerFunc(gitService.serveInfoRefs))
-	m.Get(apirouter.GitUploadPack).Handler(http.HandlerFunc(gitService.serveGitUploadPack))
+	handler := JsonMiddleware(&ErrorHandler{
+		Logger: logtest.Scoped(t),
+		// Internal endpoints can expose sensitive errors
+		WriteErrBody: true,
+	})
+	m.Get(gitInfoRefs).Handler(handler(gitService.serveInfoRefs()))
+	m.Get(gitUploadPack).Handler(handler(gitService.serveGitUploadPack()))
 
 	cases := map[string]string{
 		"/git/foo/bar/info/refs?service=git-upload-pack": "http://foo.bar.gitserver/git/foo/bar/info/refs?service=git-upload-pack",
@@ -48,6 +64,6 @@ func TestGitServiceHandlers(t *testing.T) {
 
 type mockAddrForRepo struct{}
 
-func (mockAddrForRepo) AddrForRepo(name api.RepoName) string {
+func (mockAddrForRepo) AddrForRepo(ctx context.Context, name api.RepoName) string {
 	return strings.ReplaceAll(string(name), "/", ".") + ".gitserver"
 }

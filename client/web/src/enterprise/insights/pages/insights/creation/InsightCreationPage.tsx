@@ -1,98 +1,76 @@
-import React, { useContext, useMemo } from 'react'
-import { useHistory } from 'react-router'
+import { type FC, useContext } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { useNavigate } from 'react-router-dom'
 
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { parseDashboardScope } from '../../../core/backend/utils/parse-dashboard-scope'
-import { InsightDashboard, isVirtualDashboard, Insight } from '../../../core/types'
-import { isUserSubject } from '../../../core/types/subjects'
-import { useQueryParameters } from '../../../hooks/use-query-parameters'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { CaptureGroupCreationPage } from './capture-group/CaptureGroupCreationPage'
-import { LangStatsInsightCreationPage } from './lang-stats/LangStatsInsightCreationPage'
+import { CodeInsightsBackendContext, type CreationInsightInput } from '../../../core'
+import { useQueryParameters } from '../../../hooks'
+import { encodeDashboardIdQueryParam } from '../../../routers.constant'
+
+import { CaptureGroupCreationPage } from './capture-group'
+import { ComputeInsightCreationPage } from './compute'
+import { LangStatsInsightCreationPage } from './lang-stats'
 import { SearchInsightCreationPage } from './search-insight'
 
 export enum InsightCreationPageType {
     LangStats = 'lang-stats',
+    Compute = 'compute',
     Search = 'search-based',
     CaptureGroup = 'capture-group',
 }
 
-const getVisibilityFromDashboard = (dashboard: InsightDashboard | null): string | undefined => {
-    if (!dashboard || isVirtualDashboard(dashboard)) {
-        return undefined
-    }
-
-    // If no owner, this is using the graphql api
-    if (!dashboard.owner) {
-        return parseDashboardScope(dashboard.grants)
-    }
-
-    return dashboard.owner.id
-}
-
 interface InsightCreateEvent {
-    insight: Insight
+    insight: CreationInsightInput
 }
 
 interface InsightCreationPageProps extends TelemetryProps {
     mode: InsightCreationPageType
 }
 
-export const InsightCreationPage: React.FunctionComponent<InsightCreationPageProps> = props => {
+export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     const { mode, telemetryService } = props
 
-    const history = useHistory()
-    const { getDashboardById, getInsightSubjects, createInsight } = useContext(CodeInsightsBackendContext)
-
+    const navigate = useNavigate()
+    const { createInsight } = useContext(CodeInsightsBackendContext)
     const { dashboardId } = useQueryParameters(['dashboardId'])
-    const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
-    const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
 
-    if (dashboard === undefined || subjects === undefined) {
-        return <LoadingSpinner inline={false} />
-    }
+    const codeInsightsCompute = useExperimentalFeatures(features => features.codeInsightsCompute)
 
     const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<unknown> => {
         const { insight } = event
 
-        return createInsight({ insight, dashboard }).toPromise()
+        return createInsight({ insight, dashboardId: dashboardId ?? null }).toPromise()
     }
 
-    const handleInsightSuccessfulCreation = (insight: Insight): void => {
-        if (!dashboard || isVirtualDashboard(dashboard)) {
+    const handleInsightSuccessfulCreation = (): void => {
+        if (!dashboardId) {
             // Navigate to the dashboard page with new created dashboard
-            history.push(`/insights/dashboards/${insight.visibility}`)
+            navigate('/insights/all')
 
             return
         }
 
-        if (!dashboard.owner) {
-            history.push(`/insights/dashboards/${dashboard.id}`)
-            return
-        }
-
-        if (dashboard.owner.id === insight.visibility) {
-            history.push(`/insights/dashboards/${dashboard.id}`)
-        } else {
-            history.push(`/insights/dashboards/${insight.visibility}`)
-        }
+        navigate(`/insights/dashboards/${dashboardId}`)
     }
 
     const handleCancel = (): void => {
-        history.push(`/insights/dashboards/${dashboard?.id ?? 'all'}`)
+        if (!dashboardId) {
+            navigate('/insights/all')
+
+            return
+        }
+
+        navigate(`/insights/dashboards/${dashboardId}`)
     }
 
-    // Calculate initial value for the visibility setting
-    const personalVisibility = subjects.find(isUserSubject)?.id ?? ''
-    const dashboardBasedVisibility = getVisibilityFromDashboard(dashboard)
-    const insightVisibility = dashboardBasedVisibility ?? personalVisibility
+    const backCreateUrl = encodeDashboardIdQueryParam('/insights/create', dashboardId)
 
     if (mode === InsightCreationPageType.CaptureGroup) {
         return (
             <CaptureGroupCreationPage
+                backUrl={backCreateUrl}
                 telemetryService={telemetryService}
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
@@ -104,8 +82,19 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
     if (mode === InsightCreationPageType.Search) {
         return (
             <SearchInsightCreationPage
-                visibility={insightVisibility}
-                subjects={subjects}
+                backUrl={backCreateUrl}
+                telemetryService={telemetryService}
+                onInsightCreateRequest={handleInsightCreateRequest}
+                onSuccessfulCreation={handleInsightSuccessfulCreation}
+                onCancel={handleCancel}
+            />
+        )
+    }
+
+    if (codeInsightsCompute && mode === InsightCreationPageType.Compute) {
+        return (
+            <ComputeInsightCreationPage
+                backUrl={backCreateUrl}
                 telemetryService={telemetryService}
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
@@ -116,8 +105,7 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
 
     return (
         <LangStatsInsightCreationPage
-            visibility={insightVisibility}
-            subjects={subjects}
+            backUrl={backCreateUrl}
             telemetryService={telemetryService}
             onInsightCreateRequest={handleInsightCreateRequest}
             onSuccessfulCreation={handleInsightSuccessfulCreation}

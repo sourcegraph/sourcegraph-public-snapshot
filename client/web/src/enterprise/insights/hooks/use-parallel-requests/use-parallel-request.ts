@@ -1,8 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { of, from, Subject, ObservableInput, Observable, asyncScheduler, scheduled, Unsubscribable } from 'rxjs'
+
+import {
+    of,
+    from,
+    Subject,
+    type ObservableInput,
+    type Observable,
+    asyncScheduler,
+    scheduled,
+    type Unsubscribable,
+} from 'rxjs'
 import { mergeMap, map, takeUntil, take, catchError, takeWhile, switchMap, publish, refCount } from 'rxjs/operators'
 
-import { ErrorLike, asError, isErrorLike } from '@sourcegraph/common'
+import { type ErrorLike, asError, isErrorLike } from '@sourcegraph/common'
 
 interface Request<T> {
     /**
@@ -29,7 +39,23 @@ export interface FetchResult<T> {
     loading: boolean
 }
 
-const MAX_PARALLEL_QUERIES = 2
+export enum LazyQueryStatus {
+    Loading,
+    Data,
+    Error,
+}
+
+export type LazyQueryState<T> =
+    | { status: LazyQueryStatus.Loading }
+    | { status: LazyQueryStatus.Data; data: T }
+    | { status: LazyQueryStatus.Error; error: ErrorLike }
+
+export interface LazyQueryResult<T> {
+    state: LazyQueryState<T>
+    query: (request: () => ObservableInput<T>) => Unsubscribable
+}
+
+const MAX_PARALLEL_QUERIES = 3
 
 /**
  * Parallel requests hooks factory. This factory/function generates special
@@ -42,7 +68,7 @@ const MAX_PARALLEL_QUERIES = 2
  * these hooks unit tests.
  */
 /* eslint-disable react-hooks/rules-of-hooks */
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type,@typescript-eslint/explicit-module-boundary-types
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests: MAX_PARALLEL_QUERIES }) {
     const requests = new Subject<Request<T>>()
     const cancelledRequests = new Set<Request<T>>()
@@ -74,7 +100,7 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
                             takeUntil(cancel),
                             map(payload => ({ payload, onComplete })),
                             // In order to close observable and free up space for other queued requests
-                            // in merge map queue. Consider to move this into consumers request calls
+                            // in merge map queue. Consider moving this into consumers request calls
                             take(1),
                             catchError(error =>
                                 of({
@@ -126,11 +152,11 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
                     },
                 }
 
-                requests.next((event as unknown) as Request<T>)
+                requests.next(event as unknown as Request<T>)
 
                 return () => {
                     // Cancel scheduled stream
-                    cancelledRequests.add((event as unknown) as Request<T>)
+                    cancelledRequests.add(event as unknown as Request<T>)
 
                     // Stop/cancel ongoing/started request stream
                     cancelStream.next(true)
@@ -140,15 +166,11 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
             return state
         },
         /**
-         * This provides query methods that allows to you run your request in parallel with
+         * This provides query methods that allow to you run your request in parallel with
          * other request that have been made with useParallelRequests request calls.
          */
-        lazyQuery: <D>(): FetchResult<D> & { query: (request: () => ObservableInput<D>) => Unsubscribable } => {
-            const [state, setState] = useState<FetchResult<D>>({
-                data: undefined,
-                error: undefined,
-                loading: true,
-            })
+        lazyQuery: <D>(): LazyQueryResult<D> => {
+            const [state, setState] = useState<LazyQueryState<D>>({ status: LazyQueryStatus.Loading })
 
             const localRequestPool = useRef<Request<D>[]>([])
 
@@ -156,7 +178,7 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
                 () => () => {
                     for (const request of localRequestPool.current) {
                         // Cancel scheduled stream
-                        cancelledRequests.add((request as unknown) as Request<T>)
+                        cancelledRequests.add(request as unknown as Request<T>)
                     }
                 },
                 []
@@ -165,7 +187,7 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
             const query = useCallback((request: () => ObservableInput<D>) => {
                 const cancelStream = new Subject<boolean>()
 
-                setState({ data: undefined, loading: true, error: undefined })
+                setState({ status: LazyQueryStatus.Loading })
 
                 const event: Request<D> = {
                     request,
@@ -175,20 +197,20 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
                         localRequestPool.current = localRequestPool.current.filter(request => request !== event)
 
                         if (isErrorLike(result)) {
-                            return setState({ data: undefined, loading: false, error: result })
+                            return setState({ status: LazyQueryStatus.Error, error: result })
                         }
 
-                        setState({ data: result, loading: false, error: undefined })
+                        setState({ status: LazyQueryStatus.Data, data: result })
                     },
                 }
 
                 localRequestPool.current.push(event)
-                requests.next((event as unknown) as Request<T>)
+                requests.next(event as unknown as Request<T>)
 
                 return {
                     unsubscribe: () => {
                         // Cancel scheduled stream
-                        cancelledRequests.add((event as unknown) as Request<T>)
+                        cancelledRequests.add(event as unknown as Request<T>)
 
                         // Stop/cancel ongoing/started request stream
                         cancelStream.next(true)
@@ -198,7 +220,7 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
                 }
             }, [])
 
-            return { ...state, query }
+            return { state, query }
         },
     }
 }

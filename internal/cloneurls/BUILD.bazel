@@ -1,0 +1,35 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cloneurls",
+    srcs = ["clone_urls.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/cloneurls",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//internal/api",
+        "//internal/conf/reposource",
+        "//internal/database",
+        "//internal/extsvc",
+        "//internal/trace",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "cloneurls_test",
+    timeout = "short",
+    srcs = ["clone_urls_test.go"],
+    embed = [":cloneurls"],
+    deps = [
+        "//internal/api",
+        "//internal/database/dbmocks",
+        "//internal/extsvc",
+        "//internal/types",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

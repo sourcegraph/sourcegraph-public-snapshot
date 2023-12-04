@@ -1,0 +1,64 @@
+---
+source: crates/scip-syntax/src/lib.rs
+expression: dumped
+---
+  use std::{path::Path, time::Instant};
+  
+  use clap::Parser;
+  use scip_syntax::locals::parse_tree;
+  use scip_treesitter_languages::parsers::BundledParser;
+  use walkdir::WalkDir;
+  
+  static LANGUAGE: &str = "Rust";
+//       ^^^^^^^^ definition(Variable) scip-ctags LANGUAGE.
+  const THRESHOLD: i32 = 10;
+//      ^^^^^^^^^ definition(Constant) scip-ctags THRESHOLD.
+  
+  trait Yay {}
+//      ^^^ definition(Trait) scip-ctags Yay#
+  
+  #[derive(Parser)]
+  #[command(author, version, about, long_about = None)]
+  struct Arguments {
+//       ^^^^^^^^^ definition(Struct) scip-ctags Arguments#
+      /// Root directory to run local navigation over
+      root_dir: String,
+//    ^^^^^^^^ definition(Field) scip-ctags Arguments#root_dir.
+  }
+  
+  impl Arguments {
+//     ^^^^^^^^^ definition(Struct) scip-ctags Arguments#
+      fn parse() {}
+//       ^^^^^ definition(Function) scip-ctags Arguments#parse().
+  }
+  
+  impl Yay for Arguments {
+//     ^^^ definition(Trait) scip-ctags Yay#
+//             ^^^^^^^^^ definition(Struct) scip-ctags Yay#Arguments#
+      fn pog() {}
+//       ^^^ definition(Function) scip-ctags Yay#Arguments#pog().
+  }
+  
+  struct ParseTiming {
+//       ^^^^^^^^^^^ definition(Struct) scip-ctags ParseTiming#
+      pub filepath: String,
+//        ^^^^^^^^ definition(Field) scip-ctags ParseTiming#filepath.
+      pub duration: std::time::Duration,
+//        ^^^^^^^^ definition(Field) scip-ctags ParseTiming#duration.
+  }
+  
+  fn parse_files(dir: &Path) -> Vec<ParseTiming> {
+//   ^^^^^^^^^^^ definition(Function) scip-ctags parse_files().
+      // TODO
+  }
+  
+  fn measure_parsing() {
+//   ^^^^^^^^^^^^^^^ definition(Function) scip-ctags measure_parsing().
+      // TODO
+  }
+  
+  fn main() {
+//   ^^^^ definition(Function) scip-ctags main().
+      // TODO
+  }
+

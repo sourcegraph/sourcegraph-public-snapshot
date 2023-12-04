@@ -468,13 +468,17 @@ export class TemplateLexer extends Lexer {
 
 function backslashEscapeCodeString(character: string): string {
     switch (character) {
-        case 'n':
+        case 'n': {
             return '\n'
-        case 'r':
+        }
+        case 'r': {
             return '\r'
-        case 't':
+        }
+        case 't': {
             return '\t'
-        default:
+        }
+        default: {
             return character
+        }
     }
 }

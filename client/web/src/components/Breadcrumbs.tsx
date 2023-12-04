@@ -1,12 +1,13 @@
+import React, { type FC, useState, useEffect, useMemo, useCallback, type ReactNode } from 'react'
+
+import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 import { sortBy } from 'lodash'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { Unsubscribable } from 'sourcegraph'
+import { useLocation } from 'react-router-dom'
+import type { Unsubscribable } from 'rxjs'
 
 import { isDefined } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import styles from './Breadcrumbs.module.scss'
 
@@ -81,7 +82,7 @@ export interface BreadcrumbSetters {
     setBreadcrumb: (breadcrumb: NullableBreadcrumb) => BreadcrumbSetters & Unsubscribable
 }
 
-interface BreadcrumbAtDepth {
+export interface BreadcrumbAtDepth {
     /**
      * The position of the breadcrumb in the sequence of breadcrumbs
      */
@@ -147,44 +148,55 @@ export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
     }
 }
 
+interface BreadcrumbsInternalProps {
+    breadcrumbs: BreadcrumbAtDepth[]
+    className?: string
+    children?: ReactNode
+}
+
 /**
  * Renders breadcrumbs by depth.
  */
-export const Breadcrumbs: React.FunctionComponent<{ breadcrumbs: BreadcrumbAtDepth[]; location: H.Location }> = ({
-    breadcrumbs,
-    location,
-}) => (
-    <nav className="d-flex container-fluid flex-nowrap flex-shrink-past-contents pl-3 pr-2" aria-label="Breadcrumbs">
-        {sortBy(breadcrumbs, 'depth')
-            .map(({ breadcrumb }) => breadcrumb)
-            .filter(isDefined)
-            .map((breadcrumb, index, validBreadcrumbs) => {
-                const divider = breadcrumb.divider ?? (
-                    <ChevronRightIcon className={classNames('icon-inline', styles.divider)} />
-                )
-                // When the last breadcrumbs is a link and the hash is empty (to allow user to reset hash),
-                // render link breadcrumbs as plain text
-                return (
-                    <span
-                        key={breadcrumb.key}
-                        className={classNames(
-                            'text-muted d-flex align-items-center test-breadcrumb',
-                            breadcrumb.className
-                        )}
-                    >
-                        {index !== 0 && <span className="font-weight-medium">{divider}</span>}
-                        {isElementBreadcrumb(breadcrumb) ? (
-                            breadcrumb.element
-                        ) : index === validBreadcrumbs.length - 1 && !location.hash ? (
-                            breadcrumb.link.label
-                        ) : (
-                            <Link to={breadcrumb.link.to}>{breadcrumb.link.label}</Link>
-                        )}
-                    </span>
-                )
-            })}
-    </nav>
-)
+export const Breadcrumbs: FC<BreadcrumbsInternalProps> = ({ breadcrumbs, className, children }) => {
+    const location = useLocation()
+
+    return (
+        <nav
+            className={classNames('d-flex container-fluid flex-shrink-past-contents px-0', className)}
+            aria-label="Breadcrumbs"
+        >
+            {sortBy(breadcrumbs, 'depth')
+                .map(({ breadcrumb }) => breadcrumb)
+                .filter(isDefined)
+                .map((breadcrumb, index, validBreadcrumbs) => {
+                    const divider = breadcrumb.divider ?? (
+                        <Icon className={styles.divider} aria-hidden={true} svgPath={mdiChevronRight} />
+                    )
+                    // When the last breadcrumbs is a link and the hash is empty (to allow user to reset hash),
+                    // render link breadcrumbs as plain text
+                    return (
+                        <span
+                            key={breadcrumb.key}
+                            className={classNames(
+                                'text-muted d-flex align-items-center test-breadcrumb',
+                                breadcrumb.className
+                            )}
+                        >
+                            {index !== 0 && <span className="font-weight-medium">{divider}</span>}
+                            {isElementBreadcrumb(breadcrumb) ? (
+                                breadcrumb.element
+                            ) : index === validBreadcrumbs.length - 1 && !location.hash ? (
+                                breadcrumb.link.label
+                            ) : (
+                                <Link to={breadcrumb.link.to}>{breadcrumb.link.label}</Link>
+                            )}
+                        </span>
+                    )
+                })}
+            {children}
+        </nav>
+    )
+}
 
 /**
  * To be used in unit tests, it minimally fulfills the BreadcrumbSetters interface.

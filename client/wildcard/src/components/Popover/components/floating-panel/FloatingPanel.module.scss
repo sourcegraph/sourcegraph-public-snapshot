@@ -1,0 +1,15 @@
+[hidden] {
+    display: none;
+}
+
+.floating-panel {
+    position: fixed;
+    display: block;
+    overflow: auto;
+    top: 0;
+    left: 0;
+
+    &-absolute {
+        position: absolute;
+    }
+}

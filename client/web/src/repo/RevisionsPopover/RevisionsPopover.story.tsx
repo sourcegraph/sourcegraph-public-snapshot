@@ -1,7 +1,6 @@
-import { Meta } from '@storybook/react'
-import React from 'react'
+import type { Meta } from '@storybook/react'
 
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
+import { WebStory } from '../../components/WebStory'
 
 import { RevisionsPopover } from './RevisionsPopover'
 import { MOCK_PROPS, MOCK_REQUESTS } from './RevisionsPopover.mocks'
@@ -27,8 +26,7 @@ const Story: Meta = {
         design: {
             type: 'figma',
             name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=954%3A2161',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=954%3A2161',
         },
     },
 }

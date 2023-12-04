@@ -1,9 +1,9 @@
 import { isEqual } from 'lodash'
-import { fromEvent, Observable } from 'rxjs'
+import { fromEvent, type Observable } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 
 import { lprToSelectionsZeroIndexed } from '@sourcegraph/common'
-import { Selection } from '@sourcegraph/extension-api-types'
+import type { Selection } from '@sourcegraph/extension-api-types'
 import { parseHash } from '@sourcegraph/shared/src/util/url'
 
 export function getSelectionsFromHash(): Selection[] {

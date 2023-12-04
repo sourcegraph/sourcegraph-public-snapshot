@@ -1,24 +1,41 @@
-import classNames from 'classnames'
-import { upperFirst } from 'lodash'
 import React, { useRef } from 'react'
 
-import { PANEL_POSITIONS } from './constants'
-import styles from './Panel.module.scss'
-import { useResizablePanel } from './useResizablePanel'
+import classNames from 'classnames'
+import { upperFirst } from 'lodash'
 
-export interface PanelProps {
+import { useResizablePanel, type UseResizablePanelParameters } from './useResizablePanel'
+import { getDisplayStyle, getPositionStyle } from './utils'
+
+import styles from './Panel.module.scss'
+
+export interface PanelProps extends Omit<UseResizablePanelParameters, 'panelRef' | 'handleRef'> {
+    /**
+     * If true, panel moves over elements on resize
+     *
+     * @default false
+     */
+    isFloating?: boolean
+    /**
+     * CSS class applied to the resize handle
+     */
+    handleClassName?: string
     className?: string
-    storageKey?: string
-    defaultSize?: number
-    position?: typeof PANEL_POSITIONS[number]
+    id?: string
+    ariaLabel: string
 }
 
-export const Panel: React.FunctionComponent<PanelProps> = ({
+export const Panel: React.FunctionComponent<React.PropsWithChildren<PanelProps>> = ({
     children,
     className,
     defaultSize = 200,
     storageKey,
     position = 'bottom',
+    isFloating = false,
+    handleClassName,
+    minSize,
+    maxSize,
+    ariaLabel,
+    onResize,
 }) => {
     const handleReference = useRef<HTMLDivElement | null>(null)
     const panelReference = useRef<HTMLDivElement | null>(null)
@@ -29,6 +46,9 @@ export const Panel: React.FunctionComponent<PanelProps> = ({
         handleRef: handleReference,
         storageKey,
         defaultSize,
+        minSize,
+        maxSize,
+        onResize,
     })
 
     return (
@@ -38,15 +58,20 @@ export const Panel: React.FunctionComponent<PanelProps> = ({
             className={classNames(
                 className,
                 styles.panel,
-                styles[`panel${upperFirst(position)}` as keyof typeof styles]
+                getPositionStyle({ position }),
+                getDisplayStyle({ isFloating })
             )}
             ref={panelReference}
+            role="region"
+            aria-label={ariaLabel}
         >
             <div
                 ref={handleReference}
+                role="presentation"
                 className={classNames(
                     styles.handle,
                     styles[`handle${upperFirst(position)}` as keyof typeof styles],
+                    handleClassName,
                     isResizing && styles.handleResizing
                 )}
             />

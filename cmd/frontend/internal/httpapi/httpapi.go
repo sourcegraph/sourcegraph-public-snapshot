@@ -12,21 +12,25 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
+	sglog "github.com/sourcegraph/log"
+	"google.golang.org/grpc"
+
+	zoektProto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/codyapp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
-	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
-	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
+	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	confProto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -34,148 +38,236 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// NewHandler returns a new API handler that uses the provided API
-// router, which must have been created by httpapi/router.New, or
-// creates a new one if nil.
+type Handlers struct {
+	// Repo sync
+	GitHubSyncWebhook          webhooks.Registerer
+	GitLabSyncWebhook          webhooks.Registerer
+	BitbucketServerSyncWebhook webhooks.Registerer
+	BitbucketCloudSyncWebhook  webhooks.Registerer
+
+	// Permissions
+	PermissionsGitHubWebhook webhooks.Registerer
+
+	// Batch changes
+	BatchesGitHubWebhook            webhooks.Registerer
+	BatchesGitLabWebhook            webhooks.RegistererHandler
+	BatchesBitbucketServerWebhook   webhooks.RegistererHandler
+	BatchesBitbucketCloudWebhook    webhooks.RegistererHandler
+	BatchesAzureDevOpsWebhook       webhooks.Registerer
+	BatchesChangesFileGetHandler    http.Handler
+	BatchesChangesFileExistsHandler http.Handler
+	BatchesChangesFileUploadHandler http.Handler
+
+	// SCIM
+	SCIMHandler http.Handler
+
+	// Code intel
+	NewCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler
+
+	// Compute
+	NewComputeStreamHandler enterprise.NewComputeStreamHandler
+
+	// Code Insights
+	CodeInsightsDataExportHandler http.Handler
+
+	// Search jobs
+	SearchJobsDataExportHandler http.Handler
+	SearchJobsLogsHandler       http.Handler
+
+	// Dotcom license check
+	NewDotcomLicenseCheckHandler enterprise.NewDotcomLicenseCheckHandler
+
+	// Completions stream
+	NewChatCompletionsStreamHandler enterprise.NewChatCompletionsStreamHandler
+	NewCodeCompletionsHandler       enterprise.NewCodeCompletionsHandler
+}
+
+// NewHandler returns a new API handler.
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
 func NewHandler(
 	db database.DB,
-	m *mux.Router,
 	schema *graphql.Schema,
-	githubWebhook webhooks.Registerer,
-	gitlabWebhook,
-	bitbucketServerWebhook http.Handler,
-	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
-	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimiter graphqlbackend.LimitWatcher,
-) http.Handler {
-	if m == nil {
-		m = apirouter.New(nil)
-	}
+	handlers *Handlers,
+) (http.Handler, error) {
+	logger := sglog.Scoped("Handler")
+
+	m := mux.NewRouter().PathPrefix("/.api/").Subrouter()
 	m.StrictSlash(true)
 
-	handler := jsonMiddleware(&errorHandler{
+	jsonHandler := JsonMiddleware(&ErrorHandler{
+		Logger: logger,
 		// Only display error message to admins when in debug mode, since it
 		// may contain sensitive info (like API keys in net/http error
 		// messages).
 		WriteErrBody: env.InsecureDev,
 	})
 
-	// Set handlers for the installed routes.
-	m.Get(apirouter.RepoShield).Handler(trace.Route(handler(serveRepoShield(db))))
+	m.PathPrefix("/registry").Methods("GET").Handler(trace.Route(jsonHandler(frontendregistry.HandleRegistry)))
+	m.PathPrefix("/scim/v2").Methods("GET", "POST", "PUT", "PATCH", "DELETE").Handler(trace.Route(handlers.SCIMHandler))
+	m.Path("/graphql").Methods("POST").Handler(trace.Route(jsonHandler(serveGraphQL(logger, schema, rateLimiter, false))))
 
-	m.Get(apirouter.RepoRefresh).Handler(trace.Route(handler(serveRepoRefresh(db))))
-
-	gh := webhooks.GitHubWebhook{
-		ExternalServices: database.ExternalServices(db),
+	// Webhooks
+	//
+	// First: register handlers
+	wh := webhooks.Router{
+		Logger: logger.Scoped("webhooks.Router"),
+		DB:     db,
 	}
+	webhookhandlers.Init(&wh)
+	handlers.BatchesGitHubWebhook.Register(&wh)
+	handlers.BatchesGitLabWebhook.Register(&wh)
+	handlers.BitbucketServerSyncWebhook.Register(&wh)
+	handlers.BitbucketCloudSyncWebhook.Register(&wh)
+	handlers.BatchesBitbucketServerWebhook.Register(&wh)
+	handlers.BatchesBitbucketCloudWebhook.Register(&wh)
+	handlers.GitHubSyncWebhook.Register(&wh)
+	handlers.GitLabSyncWebhook.Register(&wh)
+	handlers.PermissionsGitHubWebhook.Register(&wh)
+	handlers.BatchesAzureDevOpsWebhook.Register(&wh)
+	// Second: register handler on main router
+	// 🚨 SECURITY: This handler implements its own secret-based auth
+	webhookMiddleware := webhooks.NewLogMiddleware(db.WebhookLogs(keyring.Default().WebhookLogKey))
+	webhookHandler := webhooks.NewHandler(logger, db, &wh)
+	m.Path("/webhooks/{webhook_uuid}").Methods("POST").Handler(trace.Route(webhookMiddleware.Logger(webhookHandler)))
 
-	webhookhandlers.Init(db, &gh)
-	webhookMiddleware := webhooks.NewLogMiddleware(
-		database.WebhookLogs(db, keyring.Default().WebhookLogKey),
-	)
+	// Old, soon to be deprecated, webhook handlers
+	gitHubWebhook := webhooks.GitHubWebhook{Router: &wh}
+	m.Path("/github-webhooks").Methods("POST").Handler(trace.Route(webhookMiddleware.Logger(&gitHubWebhook)))
+	m.Path("/gitlab-webhooks").Methods("POST").Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesGitLabWebhook)))
+	m.Path("/bitbucket-server-webhooks").Methods("POST").Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesBitbucketServerWebhook)))
+	m.Path("/bitbucket-cloud-webhooks").Methods("POST").Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesBitbucketCloudWebhook)))
 
-	githubWebhook.Register(&gh)
+	// Other routes
+	m.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Handler(trace.Route(handlers.BatchesChangesFileGetHandler))
+	m.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Handler(trace.Route(handlers.BatchesChangesFileExistsHandler))
+	m.Path("/files/batch-changes/{spec}").Methods("POST").Handler(trace.Route(handlers.BatchesChangesFileUploadHandler))
+	m.Path("/lsif/upload").Methods("POST").Handler(trace.Route(lsifDeprecationHandler))
+	m.Path("/scip/upload").Methods("POST").Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
+	m.Path("/scip/upload").Methods("HEAD").Handler(trace.Route(noopHandler))
+	m.Path("/compute/stream").Methods("GET", "POST").Handler(trace.Route(handlers.NewComputeStreamHandler()))
+	m.Path("/blame/" + routevar.Repo + routevar.RepoRevSuffix + "/stream/{Path:.*}").Methods("GET").Handler(trace.Route(handleStreamBlame(logger, db, gitserver.NewClient("http.blamestream"))))
+	// Set up the src-cli version cache handler (this will effectively be a
+	// no-op anywhere other than dot-com).
+	m.Path("/src-cli/versions/{rest:.*}").Methods("GET", "POST").Handler(trace.Route(releasecache.NewHandler(logger)))
+	// Return the minimum src-cli version that's compatible with this instance
+	m.Path("/src-cli/{rest:.*}").Methods("GET").Handler(trace.Route(newSrcCliVersionHandler(logger)))
+	m.Path("/insights/export/{id}").Methods("GET").Handler(trace.Route(handlers.CodeInsightsDataExportHandler))
+	m.Path("/search/stream").Methods("GET").Handler(trace.Route(frontendsearch.StreamHandler(db)))
+	m.Path("/search/export/{id}.csv").Methods("GET").Handler(trace.Route(handlers.SearchJobsDataExportHandler))
+	m.Path("/search/export/{id}.log").Methods("GET").Handler(trace.Route(handlers.SearchJobsLogsHandler))
 
-	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
-	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(gitlabWebhook)))
-	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(bitbucketServerWebhook)))
-	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
-	m.Get(apirouter.ComputeStream).Handler(trace.Route(newComputeStreamHandler()))
+	m.Path("/completions/stream").Methods("POST").Handler(trace.Route(handlers.NewChatCompletionsStreamHandler()))
+	m.Path("/completions/code").Methods("POST").Handler(trace.Route(handlers.NewCodeCompletionsHandler()))
 
 	if envvar.SourcegraphDotComMode() {
-		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.Handler)))
+		m.Path("/app/check/update").Name(codyapp.RouteAppUpdateCheck).Handler(trace.Route(codyapp.AppUpdateHandler(logger)))
+		m.Path("/app/latest").Name(codyapp.RouteCodyAppLatestVersion).Handler(trace.Route(codyapp.LatestVersionHandler(logger)))
+		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(trace.Route(handlers.NewDotcomLicenseCheckHandler()))
+
+		updatecheckHandler, err := updatecheck.ForwardHandler()
+		if err != nil {
+			return nil, errors.Errorf("create updatecheck handler: %v", err)
+		}
+		m.Path("/updates").
+			Methods(http.MethodGet, http.MethodPost).
+			Name("updatecheck").
+			Handler(trace.Route(updatecheckHandler))
 	}
 
-	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimiter, false))))
-
-	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
-
-	// Return the minimum src-cli version that's compatible with this instance
-	m.Get(apirouter.SrcCliVersion).Handler(trace.Route(handler(srcCliVersionServe)))
-	m.Get(apirouter.SrcCliDownload).Handler(trace.Route(handler(srcCliDownloadServe)))
-
-	m.Get(apirouter.Registry).Handler(trace.Route(handler(registry.HandleRegistry(db))))
+	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
+	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
+	repoPath := `/repos/` + routevar.Repo
+	// Additional paths added will be treated as a repo. To add a new path that should not be treated as a repo
+	// add above repo paths.
+	repo := m.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
+	repo.Path("/shield").Methods("GET").Handler(trace.Route(jsonHandler(serveRepoShield())))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
 		http.Error(w, "no route", http.StatusNotFound)
 	})
 
-	return m
+	return m, nil
 }
 
-// NewInternalHandler returns a new API handler for internal endpoints that uses
-// the provided API router, which must have been created by httpapi/router.NewInternal.
+const (
+	gitInfoRefs   = "internal.git.info-refs"
+	gitUploadPack = "internal.git.upload-pack"
+)
+
+// RegisterInternalServices registers REST and gRPC handlers for Sourcegraph's internal API on the
+// provided mux.Router and gRPC server.
 //
 // 🚨 SECURITY: This handler should not be served on a publicly exposed port. 🚨
 // This handler is not guaranteed to provide the same authorization checks as
 // public API handlers.
-func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, rateLimitWatcher graphqlbackend.LimitWatcher) http.Handler {
-	if m == nil {
-		m = apirouter.New(nil)
-	}
+func RegisterInternalServices(
+	m *mux.Router,
+	s *grpc.Server,
+
+	db database.DB,
+	schema *graphql.Schema,
+	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
+	rankingService enterprise.RankingService,
+	newComputeStreamHandler enterprise.NewComputeStreamHandler,
+	rateLimitWatcher graphqlbackend.LimitWatcher,
+) {
+	logger := sglog.Scoped("InternalHandler")
 	m.StrictSlash(true)
 
-	handler := jsonMiddleware(&errorHandler{
+	handler := JsonMiddleware(&ErrorHandler{
+		Logger: logger,
 		// Internal endpoints can expose sensitive errors
 		WriteErrBody: true,
 	})
 
-	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs(db))))
-	m.Get(apirouter.ExternalServicesList).Handler(trace.Route(handler(serveExternalServicesList(db))))
-	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.Route(handler(servePhabricatorRepoCreate(db))))
-
 	// zoekt-indexserver endpoints
+	gsClient := gitserver.NewClient("http.zoektindexerserver")
+
 	indexer := &searchIndexerServer{
-		ListIndexable: backend.NewRepos(db.Repos()).ListIndexable,
-		RepoStore:     database.Repos(db),
+		db:              db,
+		logger:          logger.Scoped("searchIndexerServer"),
+		gitserverClient: gsClient,
+		ListIndexable:   backend.NewRepos(logger, db, gsClient).ListIndexable,
+		RepoStore:       db.Repos(),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
 		},
-		Indexers: search.Indexers(),
-
+		Indexers:               search.Indexers(),
+		Ranking:                rankingService,
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
 	}
-	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))
-	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))
 
-	m.Get(apirouter.ReposGetByName).Handler(trace.Route(handler(serveReposGetByName(db))))
-	m.Get(apirouter.SettingsGetForSubject).Handler(trace.Route(handler(serveSettingsGetForSubject(db))))
-	m.Get(apirouter.OrgsListUsers).Handler(trace.Route(handler(serveOrgsListUsers(db))))
-	m.Get(apirouter.OrgsGetByName).Handler(trace.Route(handler(serveOrgsGetByName(db))))
-	m.Get(apirouter.UsersGetByUsername).Handler(trace.Route(handler(serveUsersGetByUsername(db))))
-	m.Get(apirouter.UserEmailsGetEmail).Handler(trace.Route(handler(serveUserEmailsGetEmail(db))))
-	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
-	m.Get(apirouter.CanSendEmail).Handler(trace.Route(handler(serveCanSendEmail)))
-	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
-	m.Get(apirouter.GitExec).Handler(trace.Route(handler(serveGitExec(db))))
-	m.Get(apirouter.GitResolveRevision).Handler(trace.Route(handler(serveGitResolveRevision)))
-	m.Get(apirouter.GitTar).Handler(trace.Route(handler(serveGitTar)))
-	gitService := &gitServiceHandler{
-		Gitserver: gitserver.DefaultClient,
-	}
-	m.Get(apirouter.GitInfoRefs).Handler(trace.Route(http.HandlerFunc(gitService.serveInfoRefs)))
-	m.Get(apirouter.GitUploadPack).Handler(trace.Route(http.HandlerFunc(gitService.serveGitUploadPack)))
-	m.Get(apirouter.Telemetry).Handler(trace.Route(telemetryHandler(db)))
-	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimitWatcher, true))))
-	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
+	gitService := &gitServiceHandler{Gitserver: gsClient}
+	m.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(gitInfoRefs).Handler(trace.Route(handler(gitService.serveInfoRefs())))
+	m.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(gitUploadPack).Handler(trace.Route(handler(gitService.serveGitUploadPack())))
+	m.Path("/repos/index").Methods("POST").Handler(trace.Route(handler(indexer.serveList)))
+	m.Path("/configuration").Methods("POST").Handler(trace.Route(handler(serveConfiguration)))
+	m.Path("/ranks/{RepoName:.*}/documents").Methods("GET").Handler(trace.Route(handler(indexer.serveDocumentRanks)))
+	m.Path("/search/configuration").Methods("GET", "POST").Handler(trace.Route(handler(indexer.serveConfiguration)))
+	m.Path("/search/index-status").Methods("POST").Handler(trace.Route(handler(indexer.handleIndexStatusUpdate)))
+	m.Path("/lsif/upload").Methods("POST").Handler(trace.Route(newCodeIntelUploadHandler(false)))
+	m.Path("/scip/upload").Methods("POST").Handler(trace.Route(newCodeIntelUploadHandler(false)))
+	m.Path("/scip/upload").Methods("HEAD").Handler(trace.Route(noopHandler))
+	m.Path("/search/stream").Methods("GET").Handler(trace.Route(frontendsearch.StreamHandler(db)))
+	m.Path("/compute/stream").Methods("GET", "POST").Handler(trace.Route(newComputeStreamHandler()))
+	m.Path("/graphql").Methods("POST").Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimitWatcher, true))))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
-	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(db)))
 
-	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(true)))
+	zoektProto.RegisterZoektConfigurationServiceServer(s, &searchIndexerGRPCServer{server: indexer})
+	confProto.RegisterConfigServiceServer(s, &configServer{})
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
 		http.Error(w, "no route", http.StatusNotFound)
 	})
-
-	return m
 }
 
 var schemaDecoder = schema.NewDecoder()
@@ -194,11 +286,16 @@ func init() {
 	})
 }
 
-type errorHandler struct {
+type ErrorHandler struct {
+	// Logger is required
+	Logger sglog.Logger
+
 	WriteErrBody bool
 }
 
-func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int, err error) {
+func (h *ErrorHandler) Handle(w http.ResponseWriter, r *http.Request, status int, err error) {
+	logger := trace.Logger(r.Context(), h.Logger)
+
 	trace.SetRequestErrorCause(r.Context(), err)
 
 	// Handle custom errors
@@ -206,7 +303,9 @@ func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 	if errors.As(err, &e) {
 		err := handlerutil.RedirectToNewRepoName(w, r, e.NewRepo)
 		if err != nil {
-			log15.Error("error redirecting to new URI", "err", err, "new_url", e.NewRepo)
+			logger.Error("error redirecting to new URI",
+				sglog.Error(err),
+				sglog.String("new_url", string(e.NewRepo)))
 		}
 		return
 	}
@@ -221,15 +320,11 @@ func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 		displayErrBody = errBody
 	}
 	http.Error(w, displayErrBody, status)
-	traceID := trace.ID(r.Context())
-	traceURL := trace.URL(traceID, conf.ExternalURL())
 
-	if status < 200 || status >= 500 {
-		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", traceURL, "traceID", traceID)
-	}
+	// No need to log, as SetRequestErrorCause is consumed and logged.
 }
 
-func jsonMiddleware(errorHandler *errorHandler) func(func(http.ResponseWriter, *http.Request) error) http.Handler {
+func JsonMiddleware(errorHandler *ErrorHandler) func(func(http.ResponseWriter, *http.Request) error) http.Handler {
 	return func(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 		return handlerutil.HandlerWithErrorReturn{
 			Handler: func(w http.ResponseWriter, r *http.Request) error {
@@ -240,3 +335,12 @@ func jsonMiddleware(errorHandler *errorHandler) func(func(http.ResponseWriter, *
 		}
 	}
 }
+
+var noopHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+})
+
+var lsifDeprecationHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+	w.Write([]byte("Sourcegraph v4.5+ no longer accepts LSIF uploads. The Sourcegraph CLI v4.4.2+ will translate LSIF to SCIP prior to uploading. Please check the version of the CLI utility used to upload this artifact."))
+})

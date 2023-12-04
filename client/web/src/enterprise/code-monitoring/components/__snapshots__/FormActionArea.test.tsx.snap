@@ -1,9 +1,9 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`FormActionArea Error is shown if code monitor has empty description 1`] = `
+exports[`FormActionArea > Error is shown if code monitor has empty description 1`] = `
 <DocumentFragment>
   <h3
-    class="mb-1"
+    class="h3 mb-1"
   >
     Actions
   </h3>
@@ -15,11 +15,11 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
   <div
     class="card card p-3"
   >
-    <div
-      class="font-weight-bold"
+    <h4
+      class="h4 mb-0 font-weight-bold"
     >
       Send email notifications
-    </div>
+    </h4>
     <span
       class="text-muted"
     >
@@ -30,18 +30,26 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       data-testid="action-form-email"
     >
       <label
-        for="code-monitoring-form-actions-recipients"
+        class="label label mb-2"
       >
-        Recipients
+        <div
+          class="mb-2"
+        >
+          Recipients
+        </div>
+        <div
+          class="container loader-input loaderInput"
+        >
+          <input
+            class="form-control with-invalid-icon"
+            disabled=""
+            id="code-monitoring-form-actions-recipients"
+            required=""
+            type="text"
+            value="user@me.com (you)"
+          />
+        </div>
       </label>
-      <input
-        class="form-control mb-2"
-        disabled=""
-        id="code-monitoring-form-actions-recipients"
-        required=""
-        type="text"
-        value="user@me.com (you)"
-      />
       <small
         class="text-muted"
       >
@@ -49,17 +57,45 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       </small>
     </div>
     <div
+      class="d-flex align-items-center mb-3"
+    >
+      <div>
+        <button
+          aria-checked="false"
+          aria-labelledby="code-monitoring-email-include-results-toggle"
+          class="toggle mr-2 inlineCenter"
+          data-testid="include-results-toggle-email"
+          role="switch"
+          type="button"
+          value="0"
+        >
+          <span
+            class="bar"
+          />
+          <span
+            class="knob"
+          />
+        </button>
+      </div>
+      <span
+        id="code-monitoring-email-include-results-toggle"
+      >
+        Include search results in sent message
+      </span>
+    </div>
+    <div
       class="flex mt-1"
     >
       <button
+        aria-disabled="true"
         class="btn btnSecondary btnSm mr-2"
         data-testid="send-test-email"
-        disabled=""
         type="button"
       >
         Send test email
       </button>
       <div
+        aria-live="polite"
         class="mt-2 testActionError"
       >
         Please provide a name for the code monitor before sending a test
@@ -75,7 +111,6 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
           class="toggle mr-2 inlineCenter"
           data-testid="enable-action-toggle-expanded-email"
           role="switch"
-          title="Enabled"
           type="button"
           value="1"
         >
@@ -94,26 +129,28 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       </span>
     </div>
     <div
-      class="d-flex justify-content-between"
+      class="actionButtonRow"
     >
-      <div>
-        <button
-          class="btn btnSecondary mr-1 test-submit-action-email"
-          data-testid="submit-action-email"
-          type="button"
-        >
-          Continue
-        </button>
-        <button
-          class="btn btnOutlineSecondary"
-          data-testid="cancel-action-email"
-          type="button"
-        >
-          Cancel
-        </button>
-      </div>
       <button
-        class="btn btnOutlineDanger"
+        aria-disabled="false"
+        class="btn btnSecondary test-submit-action-email"
+        data-testid="submit-action-email"
+        type="button"
+      >
+        Continue
+      </button>
+      <button
+        class="btn btnSecondary btnOutline"
+        data-testid="cancel-action-email"
+        type="button"
+      >
+        Cancel
+      </button>
+      <div
+        class="flex-grow-1"
+      />
+      <button
+        class="btn btnDanger btnOutline"
         data-testid="delete-action-email"
         type="button"
       >
@@ -121,6 +158,92 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       </button>
     </div>
   </div>
+  <button
+    aria-disabled="false"
+    class="btn card test-action-button-slack-webhook cardButton"
+    data-testid="form-action-toggle-slack-webhook"
+    type="button"
+  >
+    <div
+      class="d-flex flex-wrap justify-content-between align-items-center w-100"
+    >
+      <div>
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          Edit action: 
+        </span>
+        <div
+          class="font-weight-bold cardLink"
+        >
+          <div>
+            Send Slack message to channel 
+            <span
+              style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+            >
+              This feature is currently in beta
+            </span>
+            <span
+              aria-hidden="true"
+              class="badge info productStatusBadge ml-1 mb-1"
+              status="beta"
+            >
+              beta
+            </span>
+             
+          </div>
+        </div>
+        <span
+          class="text-muted font-weight-normal"
+        >
+          Post to a specified Slack channel. Requires webhook configuration.
+        </span>
+      </div>
+    </div>
+  </button>
+  <button
+    aria-disabled="false"
+    class="btn card test-action-button-webhook cardButton"
+    data-testid="form-action-toggle-webhook"
+    type="button"
+  >
+    <div
+      class="d-flex flex-wrap justify-content-between align-items-center w-100"
+    >
+      <div>
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          Edit action: 
+        </span>
+        <div
+          class="font-weight-bold cardLink"
+        >
+          <div>
+            Call a webhook 
+            <span
+              style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+            >
+              This feature is currently in beta
+            </span>
+            <span
+              aria-hidden="true"
+              class="badge info productStatusBadge ml-1 mb-1"
+              status="beta"
+            >
+              beta
+            </span>
+             
+          </div>
+        </div>
+        <span
+          class="text-muted font-weight-normal"
+        >
+          Calls the specified URL with a JSON payload.
+        </span>
+      </div>
+    </div>
+  </button>
   <small
     class="text-muted"
   >

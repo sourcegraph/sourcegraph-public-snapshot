@@ -1,36 +1,44 @@
 {
-  "ID": "PR_kwDODS5xec4waL43",
+  "ID": "PR_kwDODS5xec5TxsSC",
   "Title": "This is a test PR, feel free to ignore",
   "Body": "I'm opening this PR to test something. Please ignore.",
   "State": "OPEN",
-  "URL": "https://github.com/sourcegraph/automation-testing/pull/467",
-  "HeadRefOid": "c447ff8dabfd39e88ff99fe1cd69089dbdec4b72",
-  "BaseRefOid": "36f6827a9ac62710ca5fb3df18000b9e7eb9b6ea",
-  "HeadRefName": "test-pr-9",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/507",
+  "HeadRefOid": "6653600c1ddda040a235926e79e576900cb39848",
+  "BaseRefOid": "58dd8da9d9099a823c814c528b29b72c9b2ac98b",
+  "HeadRefName": "test-pr-15",
   "BaseRefName": "master",
-  "Number": 467,
+  "Number": 507,
+  "ReviewDecision": "REVIEW_REQUIRED",
   "Author": {
-   "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
-   "Login": "LawnGnome",
-   "URL": "https://github.com/LawnGnome"
+   "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+   "Login": "davejrt",
+   "URL": "https://github.com/davejrt"
   },
   "BaseRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Name": "automation-testing",
    "Owner": {
     "Login": "sourcegraph"
    }
   },
   "HeadRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Name": "automation-testing",
    "Owner": {
     "Login": "sourcegraph"
    }
   },
   "Participants": [
    {
-    "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
-    "Login": "LawnGnome",
-    "URL": "https://github.com/LawnGnome"
+    "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+    "Login": "davejrt",
+    "URL": "https://github.com/davejrt"
+   },
+   {
+    "AvatarURL": "https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466\u0026v=4",
+    "Login": "courier-new",
+    "URL": "https://github.com/courier-new"
    }
   ],
   "Labels": {
@@ -41,22 +49,17 @@
     "Type": "PullRequestCommit",
     "Item": {
      "Commit": {
-      "OID": "c447ff8dabfd39e88ff99fe1cd69089dbdec4b72",
-      "Message": "Test commit.",
-      "MessageHeadline": "Test commit.",
-      "URL": "https://github.com/sourcegraph/automation-testing/commit/c447ff8dabfd39e88ff99fe1cd69089dbdec4b72",
+      "OID": "6653600c1ddda040a235926e79e576900cb39848",
+      "Message": "Update README.md",
+      "MessageHeadline": "Update README.md",
+      "URL": "https://github.com/sourcegraph/automation-testing/commit/6653600c1ddda040a235926e79e576900cb39848",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
-       "Email": "adam@adamharvey.name",
-       "Name": "Adam Harvey",
-       "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
-        "Login": "LawnGnome",
-        "URL": "https://github.com/LawnGnome"
-       }
+       "AvatarURL": "https://avatars.githubusercontent.com/u/19864447?v=4",
+       "Email": "noreply@github.com",
+       "Name": "GitHub"
       },
-      "CommittedDate": "2021-12-30T22:41:59Z",
-      "PushedDate": "2021-12-30T22:43:12Z"
+      "CommittedDate": "2023-02-03T20:10:00Z",
+      "PushedDate": "2023-02-03T20:10:00Z"
      }
     }
    }
@@ -65,11 +68,11 @@
    "Nodes": [
     {
      "Commit": {
-      "OID": "c447ff8dabfd39e88ff99fe1cd69089dbdec4b72",
+      "OID": "6653600c1ddda040a235926e79e576900cb39848",
       "CheckSuites": {
        "Nodes": [
         {
-         "ID": "CS_kwDODS5xec8AAAABHenIlg",
+         "ID": "CS_kwDODS5xec8AAAACgfMAPw",
          "Status": "QUEUED",
          "Conclusion": "",
          "ReceivedAt": "0001-01-01T00:00:00Z",
@@ -78,7 +81,7 @@
          }
         },
         {
-         "ID": "CS_kwDODS5xec8AAAABHenIlw",
+         "ID": "CS_kwDODS5xec8AAAACgfMAVA",
          "Status": "QUEUED",
          "Conclusion": "",
          "ReceivedAt": "0001-01-01T00:00:00Z",
@@ -87,7 +90,25 @@
          }
         },
         {
-         "ID": "CS_kwDODS5xec8AAAABHenImg",
+         "ID": "CS_kwDODS5xec8AAAACgfMAbw",
+         "Status": "QUEUED",
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
+        },
+        {
+         "ID": "CS_kwDODS5xec8AAAACgfMAfg",
+         "Status": "QUEUED",
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
+        },
+        {
+         "ID": "CS_kwDODS5xec8AAAACgfMAkw",
          "Status": "QUEUED",
          "Conclusion": "",
          "ReceivedAt": "0001-01-01T00:00:00Z",
@@ -101,12 +122,12 @@
        "State": "",
        "Contexts": null
       },
-      "CommittedDate": "2021-12-30T22:41:59Z"
+      "CommittedDate": "2023-02-03T20:10:00Z"
      }
     }
    ]
   },
   "IsDraft": true,
-  "CreatedAt": "2021-12-30T22:43:31Z",
-  "UpdatedAt": "2021-12-30T22:43:31Z"
+  "CreatedAt": "2023-06-23T19:24:59Z",
+  "UpdatedAt": "2023-06-23T19:24:59Z"
  }

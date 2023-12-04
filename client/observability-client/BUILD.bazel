@@ -1,0 +1,99 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "npm_package", "ts_project", "vitest_test")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
+
+npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root()
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/common:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "observability-client_lib",
+    srcs = [
+        "src/constants.ts",
+        "src/exporters/consoleBatchSpanExporter.ts",
+        "src/index.ts",
+        "src/instrumentations/constants.ts",
+        "src/instrumentations/fetch.ts",
+        "src/instrumentations/history.ts",
+        "src/instrumentations/window-load.ts",
+        "src/processors/clientAttributesSpanProcessor.ts",
+        "src/processors/sharedSpanStoreProcessor.ts",
+        "src/react/TraceSpanProvider/TraceSpanProvider.tsx",
+        "src/react/TraceSpanProvider/index.ts",
+        "src/react/TraceSpanProvider/useNewTraceContextProviderValue.ts",
+        "src/react/constants.ts",
+        "src/react/index.ts",
+        "src/react/useCurrentSpan.ts",
+        "src/sdk/createActiveSpan.ts",
+        "src/sdk/createFinishedSpan.ts",
+        "src/sdk/getTracingUrl.ts",
+        "src/sdk/index.ts",
+        "src/sdk/instrumentationBaseWeb.ts",
+        "src/sdk/performance.ts",
+        "src/sdk/sharedSpanStore.ts",
+        "src/sdk/span.ts",
+        "src/sdk/trace.ts",
+        "src/sdk/tracer.ts",
+        "src/types/@opentelemetry/api/index.d.ts",
+        "src/types/@opentelemetry/core/index.d.ts",
+        "src/types/@opentelemetry/exporter-trace-otlp-http/index.d.ts",
+        "src/types/@opentelemetry/instrumentation/index.d.ts",
+        "src/types/@opentelemetry/resources/index.d.ts",
+        "src/types/@opentelemetry/sdk-trace-base/index.d.ts",
+        "src/types/@opentelemetry/semantic-conventions/index.d.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":node_modules/@sourcegraph/common",
+        "//:node_modules/@opentelemetry/api",
+        "//:node_modules/@opentelemetry/core",
+        "//:node_modules/@opentelemetry/exporter-trace-otlp-http",
+        "//:node_modules/@opentelemetry/instrumentation",
+        "//:node_modules/@opentelemetry/resources",
+        "//:node_modules/@opentelemetry/sdk-trace-base",
+        "//:node_modules/@opentelemetry/sdk-trace-web",
+        "//:node_modules/@opentelemetry/semantic-conventions",
+        "//:node_modules/@types/lodash",
+        "//:node_modules/@types/react",
+        "//:node_modules/is-absolute-url",
+        "//:node_modules/lodash",
+        "//:node_modules/react",
+    ],
+)
+
+npm_package(
+    name = "observability-client_pkg",
+    srcs = [
+        "package.json",
+        ":observability-client_lib",
+    ],
+)
+
+ts_project(
+    name = "observability-client_tests",
+    testonly = True,
+    srcs = ["src/sdk/__tests__/getTracingUrl.test.ts"],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":observability-client_lib",
+        "//:node_modules/vitest",
+    ],
+)
+
+vitest_test(
+    name = "test",
+    data = [
+        ":observability-client_tests",
+    ],
+)

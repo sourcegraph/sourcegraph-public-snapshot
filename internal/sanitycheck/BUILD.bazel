@@ -1,0 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "sanitycheck",
+    srcs = ["sanitycheck.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/sanitycheck",
+    visibility = ["//:__subpackages__"],
+)

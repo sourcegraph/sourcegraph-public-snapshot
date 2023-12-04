@@ -8,19 +8,19 @@ Sourcegraph is designed, and ships with, a number of observability tools and cap
 <div class="getting-started">
   <a href="metrics" class="btn" alt="Run through the Quickstart guide">
    <span>Metrics and dashboards</span>
-   </br>
+   <br>
    Learn about the metrics and dashboards provided out-of-the-box.
   </a>
 
   <a href="alerting" class="btn" alt="Set up alerting">
    <span>Alerting</span>
-   </br>
+   <br>
    Receive notifications about the health of your Sourcegraph deployment.
   </a>
 
   <a href="troubleshooting" class="btn" alt="Set up alerting">
    <span>Troubleshooting</span>
-   </br>
+   <br>
    Investigate a specific production issue with our troubleshooting guide.
   </a>
 </div>
@@ -28,17 +28,19 @@ Sourcegraph is designed, and ships with, a number of observability tools and cap
 ## Guides
 
 * [Metrics and dashboards](metrics.md)
-* [Alerting](./alerting.md)
-* [Tracing](./tracing.md)
-* [Logs](./logs.md)
-* [Health checks](./health_checks.md)
+* [Alerting](alerting.md)
+* [Tracing](tracing.md)
+* [Logs](logs.md)
+* [Outbound request log](outbound-request-log.md)
+* [OpenTelemetry](opentelemetry.md)
+* [Health checks](health_checks.md)
 * [Troubleshooting guide](troubleshooting.md)
 * [Monitoring guide](../how-to/monitoring-guide.md)
 
 ## Reference
 
 * [Dashboards reference](./dashboards.md)
-* [Alert solutions](./alert_solutions.md)
+* [Alert solutions](./alerts.md)
 
 ## Support
 

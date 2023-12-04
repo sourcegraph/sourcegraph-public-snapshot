@@ -1,0 +1,34 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "outbound",
+    srcs = [
+        "event_types.go",
+        "outbound.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/webhooks/outbound",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/encryption",
+        "//internal/encryption/keyring",
+        "//lib/errors",
+        "@io_gitea_code_gitea//modules/hostmatcher",
+    ],
+)
+
+go_test(
+    name = "outbound_test",
+    timeout = "short",
+    srcs = ["outbound_test.go"],
+    embed = [":outbound"],
+    deps = [
+        "//internal/database/dbmocks",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_derision_test_go_mockgen//testutil/assert",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

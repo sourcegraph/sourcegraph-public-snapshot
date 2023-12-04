@@ -1,6 +1,8 @@
 [
   {
+   "id": 65169595,
    "login": "sourcegraph-vcr-repos",
+   "node_id": "MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1",
    "default_repository_permission": "none",
    "state": "active",
    "role": "admin"

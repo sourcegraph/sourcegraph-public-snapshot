@@ -8,12 +8,16 @@ interactions:
     headers:
       Accept:
       - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"addComment":{"subject":{"id":"MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5"}}}}'
+    body: '{"data":{"addComment":{"subject":{"id":"MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5"}}},"extensions":{"warnings":[{"type":"DEPRECATION","message":"The
+      id MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5 is deprecated. Update your cache to use
+      the next_global_id from the data payload.","data":{"legacy_global_id":"MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5","next_global_id":"PR_kwDODS5xec4UVCmB"},"link":"https://docs.github.com"}]}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -27,7 +31,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 30 Dec 2021 22:43:33 GMT
+      - Fri, 23 Jun 2023 19:25:01 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -36,8 +40,6 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -45,20 +47,17 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - DCB4:3D8A:1B3AA2D:51869CE:61CE3613
-      X-Oauth-Scopes:
-      - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
-        read:user, repo, workflow
+      - E125:4AB7:158BCAD:2BE6E22:6495F18C
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4874"
+      - "4913"
       X-Ratelimit-Reset:
-      - "1640906777"
+      - "1687551677"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "126"
+      - "87"
       X-Xss-Protection:
       - "0"
     status: 200 OK

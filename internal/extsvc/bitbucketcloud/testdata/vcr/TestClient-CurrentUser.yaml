@@ -1,0 +1,130 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://api.bitbucket.org/2.0/user
+    method: GET
+  response:
+    body: '{"username": "sourcegraph-testing", "has_2fa_enabled": null, "display_name":
+      "Sourcegraph Testing", "account_id": "623316f53fbb880068413f6b", "links": {"hooks":
+      {"href": "https://api.bitbucket.org/2.0/workspaces/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/hooks"},
+      "self": {"href": "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"},
+      "repositories": {"href": "https://api.bitbucket.org/2.0/repositories/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"},
+      "html": {"href": "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"},
+      "avatar": {"href": "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"},
+      "snippets": {"href": "https://api.bitbucket.org/2.0/snippets/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"}},
+      "nickname": "Sourcegraph Testing", "created_on": "2022-03-17T11:11:13.234825+00:00",
+      "is_staff": false, "location": null, "account_status": "active", "type": "user",
+      "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}"}'
+    headers:
+      Cache-Control:
+      - private
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 13 Apr 2022 20:59:05 GMT
+      Etag:
+      - '"gz[fb05780d8edaad6069fa5c038d40fc2c]"'
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Authorization, Origin, cookie, user-context
+      - Accept-Encoding
+      X-Accepted-Oauth-Scopes:
+      - account
+      X-B3-Traceid:
+      - 8cc2a5205d71d0f9
+      X-Credential-Type:
+      - apppassword
+      X-Dc-Location:
+      - Micros
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Oauth-Scopes:
+      - pipeline, pullrequest:write, account
+      X-Render-Time:
+      - "0.052649974823"
+      X-Request-Count:
+      - "1766"
+      X-Served-By:
+      - b4fa9c8495f3
+      X-Static-Version:
+      - e82c15c517a3
+      X-Usage-Input-Ops:
+      - "0"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.000000"
+      X-Usage-User-Time:
+      - "0.030890"
+      X-Version:
+      - e82c15c517a3
+      X-View-Name:
+      - bitbucket.apps.bb.api.v20.handlers.CurrentUserHandler
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://api.bitbucket.org/2.0/user
+    method: GET
+  response:
+    body: |
+      Bitbucket Cloud recently stopped supporting account passwords for API authentication.
+      See our community post for more details: https://atlassian.community/t5/x/x/ba-p/1948231
+      App passwords are recommended for most use cases and can be created in your Personal settings:
+      https://bitbucket.org/account/settings/app-passwords/
+      For more details on API authentication methods see our documentation:
+      https://developer.atlassian.com/cloud/bitbucket/rest/intro/#authentication
+    headers:
+      Content-Length:
+      - "469"
+      Content-Type:
+      - text/plain
+      Date:
+      - Wed, 13 Apr 2022 20:59:05 GMT
+      Etag:
+      - '"935f9cc870c47576216a47e768df0190"'
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Origin
+      Www-Authenticate:
+      - Basic realm="Bitbucket.org HTTP"
+      X-B3-Traceid:
+      - d2427f474dd353df
+      X-Dc-Location:
+      - Micros
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Render-Time:
+      - "0.0249171257019"
+      X-Request-Count:
+      - "996"
+      X-Served-By:
+      - e64a230477da
+      X-Static-Version:
+      - e82c15c517a3
+      X-Usage-Input-Ops:
+      - "0"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.002339"
+      X-Usage-User-Time:
+      - "0.015208"
+      X-Version:
+      - e82c15c517a3
+    status: 401 Unauthorized
+    code: 401
+    duration: ""

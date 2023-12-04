@@ -1,0 +1,147 @@
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
+
+rust_binary(
+    name = "syntect_server",
+    srcs = ["src/main.rs"],
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    visibility = ["//visibility:public"],
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        "//docker-images/syntax-highlighter/crates/scip-syntax",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
+        "//docker-images/syntax-highlighter/crates/sg-syntax",
+    ],
+)
+
+rust_test(
+    name = "unit_test",
+    size = "small",
+    aliases = aliases(
+        normal_dev = True,
+        proc_macro_dev = True,
+    ),
+    crate = ":syntect_server",
+    proc_macro_deps = all_crate_deps(
+        proc_macro_dev = True,
+    ),
+    deps = all_crate_deps(
+        normal_dev = True,
+    ),
+)
+
+rust_binary(
+    name = "scip-ctags",
+    srcs = ["src/bin/scip-ctags.rs"],
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    visibility = ["//visibility:public"],
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        "//docker-images/syntax-highlighter/crates/scip-syntax",
+    ],
+)
+
+pkg_tar(
+    name = "tar_scip-ctags",
+    srcs = [":scip-ctags"],
+)
+
+# We are shipping a minimal scip-ctags container, which is used for testing purposes
+# in the zoekt repository, so we can test it against it instead of scip-ctags,
+# reflecting better real production usage.
+oci_image(
+    name = "scip-ctags_image",
+    base = "@wolfi_base",
+    entrypoint = ["/scip-ctags"],
+    tars = [":tar_scip-ctags"],
+)
+
+oci_tarball(
+    name = "scip-ctags_image_tarball",
+    image = ":scip-ctags_image",
+    repo_tags = ["scip-ctags:candidate"],
+)
+
+pkg_tar(
+    name = "tar_syntect_server",
+    srcs = [":syntect_server"],
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_syntax_highlighter_base",
+    entrypoint = [
+        "/usr/local/bin/http-server-stabilizer",
+        "-listen=:9238",
+        "-prometheus-app-name=syntax_highlighter",
+        # The more workers, the more resilient syntect_server is to getting stuck on
+        # bad grammar/file combinations. If it happens with four workers, only 1/4th of
+        # requests will be affected for a short period of time. Each worker can require
+        # at peak around 1.1 GiB of memory.
+        "-workers=4",
+        "--",
+        "env",
+        "ROCKET_PORT={{.Port}}",  # {{.Port}} is a templated variable used by http-server-stabilizer
+        "/syntect_server",
+    ],
+    env = {
+        "ROCKET_ENV": "production",
+        "ROCKET_LIMITS": "{json=10485760}",
+        # syntect_server does not need a secret key since it uses no cookies, but
+        # without one set Rocket emits a warning.
+        "ROCKET_SECRET_KEY": "SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA=",
+        # When keep-alive is on, we observe connection resets in our Go clients of
+        # syntect_server. It is unclear why this is, especially because our Go clients do
+        # not reuse the connection (i.e. we make a fresh connection every time).
+        # Disabling keep-alive does resolve the issue though, our best guess is that
+        # this is a bug in Hyper 0.10 (see https://github.com/SergioBenitez/Rocket/issues/928#issuecomment-464632953).
+        # See https://github.com/sourcegraph/sourcegraph/issues/2615 for details on
+        # what we observed when this was enabled with the default 5s.
+        "ROCKET_KEEP_ALIVE": "0",
+        "WORKERS": "4",
+        "QUIET": "true",
+    },
+    tars = [":tar_syntect_server"],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["syntect-server:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("syntax-highlighter"),
+)
+
+oci_push(
+    name = "scip-ctags_candidate_push",
+    image = ":scip-ctags_image",
+    repository = image_repository("scip-ctags"),
+)

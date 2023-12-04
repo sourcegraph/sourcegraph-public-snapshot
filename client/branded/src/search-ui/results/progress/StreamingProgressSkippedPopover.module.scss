@@ -1,0 +1,102 @@
+:root {
+    --streaming-skipped-item-button-margin: 0.5rem;
+    --streaming-skipped-item-message-border-size: 2px;
+}
+
+.nested-collapse-reasons {
+    margin-right: calc(var(--streaming-skipped-item-button-margin) * -1);
+}
+
+.streaming-skipped-item {
+    width: 100%;
+    padding-top: 0.5rem;
+    padding-left: var(--streaming-skipped-item-button-margin);
+    padding-right: var(--streaming-skipped-item-button-margin);
+
+    &-warn {
+        .message {
+            border-left-color: var(--danger);
+        }
+    }
+}
+
+.button {
+    &:disabled {
+        --btn-light-disabled-text-color: var(--body-color);
+    }
+}
+
+.icon {
+    margin-right: var(--streaming-skipped-item-button-margin) !important;
+}
+
+.message {
+    border-left: var(--streaming-skipped-item-message-border-size) solid var(--primary);
+
+    // Border should appear directly under the width of the icon
+    // Halfway past the icon, minus half the border size
+    /* stylelint-disable scss/operator-no-newline-after */
+    margin-left: calc(
+        var(--icon-inline-size) / 2 - var(--streaming-skipped-item-message-border-size) / 2 +
+            var(--streaming-skipped-item-button-margin)
+    );
+    // Halfway past the icon, minus half the border size, plus the icon's right margin
+    padding-left: calc(
+        var(--icon-inline-size) / 2 - var(--streaming-skipped-item-message-border-size) / 2 +
+            var(--streaming-skipped-item-button-margin)
+    );
+    /* stylelint-enable scss/operator-no-newline-after */
+
+    margin-right: var(--streaming-skipped-item-button-margin);
+}
+
+.markdown {
+    code {
+        // Force line breaks on markdown `code` elements
+        // Added !important to overwrite the p>class css of Markdown.module.scss
+        white-space: normal !important;
+        word-break: break-all;
+    }
+
+    ul {
+        padding-left: 1rem;
+    }
+}
+
+.bottom-border-spacer {
+    border-bottom: 1px solid var(--border-color-2);
+    margin-left: var(--streaming-skipped-item-button-margin);
+    margin-right: var(--streaming-skipped-item-button-margin);
+}
+
+.chevron {
+    fill: currentColor !important;
+}
+
+.exhaustive-search {
+    padding: 1rem;
+
+    &-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    &-text {
+        margin-left: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    &-warning-list {
+        margin: 0;
+        padding: 0 1rem;
+    }
+
+    &-submit {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        margin-top: 0.75rem;
+    }
+}

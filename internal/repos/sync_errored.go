@@ -4,12 +4,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,45 +27,54 @@ var totalErroredRepos = promauto.NewGauge(prometheus.GaugeOpts{
 	Help: "Total number of repos with last error currently.",
 })
 
-func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimiter *rate.Limiter) {
-	for {
-		log15.Info("running worker for SyncReposWithLastErrors", "time", time.Now())
-		err := s.SyncReposWithLastErrors(ctx, rateLimiter)
-		if err != nil {
-			log15.Error("Error syncing repos w/ errors", "err", err)
-		}
-
-		// Wait and run task again
-		time.Sleep(syncInterval)
-	}
+func (s *Syncer) NewSyncReposWithLastErrorsWorker(ctx context.Context, rateLimiter *ratelimit.InstrumentedLimiter) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(
+		actor.WithInternalActor(ctx),
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			s.ObsvCtx.Logger.Info("running worker for SyncReposWithLastErrors", log.Time("time", time.Now()))
+			err := s.SyncReposWithLastErrors(ctx, rateLimiter)
+			if err != nil {
+				return errors.Wrap(err, "Error syncing repos with errors")
+			}
+			return nil
+		}),
+		goroutine.WithName("repo-updater.repos-with-last-errors-syncer"),
+		goroutine.WithDescription("iterates through all repos which have a non-empty last_error column in the gitserver_repos table, indicating there was an issue updating the repo, and syncs each of these repos. Repos which are no longer visible (i.e. deleted or made private) will be deleted from the DB. Sourcegraph.com only."),
+		goroutine.WithInterval(syncInterval),
+	)
 }
 
 // SyncReposWithLastErrors iterates through all repos which have a non-empty last_error column in the gitserver_repos
 // table, indicating there was an issue updating the repo, and syncs each of these repos. Repos which are no longer
 // visible (i.e. deleted or made private) will be deleted from the DB. Note that this is only being run in Sourcegraph
 // Dot com mode.
-func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *rate.Limiter) error {
+func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *ratelimit.InstrumentedLimiter) error {
 	erroredRepoGauge.Set(0)
 	s.setTotalErroredRepos(ctx)
-	err := s.Store.GitserverReposStore.IterateWithNonemptyLastError(ctx, func(repo types.RepoGitserverStatus) error {
+	repoNames, err := s.Store.GitserverReposStore().ListReposWithLastError(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to list gitserver_repos with last_error not null")
+	}
+
+	for _, repoName := range repoNames {
 		err := rateLimiter.Wait(ctx)
 		if err != nil {
 			return errors.Errorf("error waiting for rate limiter: %s", err)
 		}
-		_, err = s.SyncRepo(ctx, repo.Name, false)
+		_, err = s.SyncRepo(ctx, repoName, false)
 		if err != nil {
-			log15.Error("error syncing repo", "repo", repo.Name, "err", err)
+			s.ObsvCtx.Logger.Error("error syncing repo", log.String("repo", string(repoName)), log.Error(err))
 		}
-		erroredRepoGauge.Add(1)
-		return nil
-	})
+		erroredRepoGauge.Inc()
+	}
+
 	return err
 }
 
 func (s *Syncer) setTotalErroredRepos(ctx context.Context) {
-	totalErrored, err := s.Store.GitserverReposStore.TotalErroredCloudDefaultRepos(ctx)
+	totalErrored, err := s.Store.GitserverReposStore().TotalErroredCloudDefaultRepos(ctx)
 	if err != nil {
-		log15.Error("error fetching count of total errored repos", "err", err)
+		s.ObsvCtx.Logger.Error("error fetching count of total errored repos", log.Error(err))
 		return
 	}
 	totalErroredRepos.Set(float64(totalErrored))

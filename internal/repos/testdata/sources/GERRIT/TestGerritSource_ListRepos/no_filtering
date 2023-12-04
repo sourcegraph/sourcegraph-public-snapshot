@@ -1,0 +1,194 @@
+[
+  {
+   "ID": 0,
+   "Name": "gerrit.sgdev.org/beatrix",
+   "URI": "gerrit.sgdev.org/beatrix",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "beatrix",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/beatrix"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "beatrix",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit.sgdev.org/idan-temp",
+   "URI": "gerrit.sgdev.org/idan-temp",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "idan-temp",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/idan-temp"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "idan-temp",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit.sgdev.org/k8s-gerrit",
+   "URI": "gerrit.sgdev.org/k8s-gerrit",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "k8s-gerrit",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/k8s-gerrit"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "k8s-gerrit",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit.sgdev.org/sourcegraph",
+   "URI": "gerrit.sgdev.org/sourcegraph",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "sourcegraph",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/sourcegraph"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "sourcegraph",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit.sgdev.org/sourcegraph/create",
+   "URI": "gerrit.sgdev.org/sourcegraph/create",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "sourcegraph%2Fcreate",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/sourcegraph/create"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "sourcegraph%2Fcreate",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit.sgdev.org/src-cli",
+   "URI": "gerrit.sgdev.org/src-cli",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "src-cli",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/src-cli"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "src-cli",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  }
+ ]

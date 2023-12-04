@@ -21,12 +21,6 @@ A code view is any instance of source code being displayed on any code host page
 
 Code host integrations work by first [identifying all code views on a given page](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a3b40f3ae9376b42ce9a67b5a33f177ba98ac050/-/blob/browser/src/shared/code-hosts/shared/codeHost.tsx?subtree=true#L715), and then by adding interface elements (such as [action buttons](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a3b40f3ae9376b42ce9a67b5a33f177ba98ac050/-/blob/browser/src/shared/code-hosts/shared/codeHost.tsx?subtree=true#L747-765)), and [listening for hover events](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a3b40f3ae9376b42ce9a67b5a33f177ba98ac050/-/blob/browser/src/shared/code-hosts/shared/codeHost.tsx?subtree=true#L971-992) over specific code tokens in order to show hover pop-ups.
 
-## Relationship to the web UI
-
-Sourcegraph code host integrations share some functionality and source code with the Sourcegraph web UI. Both support [Sourcegraph extensions](../../../extensions/index.md), which is how Sourcegraph provides code intelligence hovers, code decorations, action buttons, and other features.
-
-The browser extensions, native integrations, and the web UI are collectively labeled as the [web clients](index.md).
-
 ## Contributing to code host integrations
 
 The source code for code host integrations is located in the [`browser`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/tree/main/client/browser) directory of the Sourcegraph repository.

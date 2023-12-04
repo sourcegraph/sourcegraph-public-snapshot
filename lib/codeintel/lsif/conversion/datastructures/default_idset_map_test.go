@@ -175,6 +175,36 @@ func TestDefaultIDSetMap_getOrCreate(t *testing.T) {
 	require.NotNil(t, sm.getOrCreate(0))
 }
 
+func TestDefaultIDSetMap_Pop(t *testing.T) {
+	sm := NewDefaultIDSetMap()
+	sm.AddID(0, 1)
+	sm.AddID(1, 1)
+
+	sm.Pop(2)
+	require.Equal(t, mapStateHeap, sm.state())
+	expect := DefaultIDSetMapWith(map[int]*IDSet{
+		0: IDSetWith(1),
+		1: IDSetWith(1),
+	})
+	if diff := cmp.Diff(expect, sm, Comparers...); diff != "" {
+		t.Errorf("unexpected state (-want +got):\n%s", diff)
+	}
+
+	sm.Pop(0)
+	require.Equal(t, mapStateInline, sm.state())
+	expect = DefaultIDSetMapWith(map[int]*IDSet{1: IDSetWith(1)})
+	if diff := cmp.Diff(expect, sm, Comparers...); diff != "" {
+		t.Errorf("unexpected state (-want +got):\n%s", diff)
+	}
+
+	sm.Pop(1)
+	require.Equal(t, mapStateEmpty, sm.state())
+	expect = DefaultIDSetMapWith(map[int]*IDSet{})
+	if diff := cmp.Diff(expect, sm, Comparers...); diff != "" {
+		t.Errorf("unexpected state (-want +got):\n%s", diff)
+	}
+}
+
 func TestDefaultIDSetMap_UnorderedKeys(t *testing.T) {
 	sm := NewDefaultIDSetMap()
 	require.Equal(t, 0, len(sm.UnorderedKeys()))

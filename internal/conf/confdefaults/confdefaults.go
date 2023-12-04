@@ -5,7 +5,11 @@
 // pkg/database/confdb, which we have a linter to protect against.
 package confdefaults
 
-import "github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+import (
+	"github.com/russellhaering/gosaml2/uuid"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+)
 
 // TODO(slimsag): consider moving these into actual json files for improved
 // editing.
@@ -25,8 +29,6 @@ var DevAndTesting = conftypes.RawUnified{
 			"allowSignup": true
 		}
 	],
-
-	"search.index.enabled": true
 }`,
 }
 
@@ -43,10 +45,7 @@ var DockerContainer = conftypes.RawUnified{
 			"type": "builtin",
 			"allowSignup": true
 		}
-	],
-
-	"disablePublicRepoRedirects": true,
-	"search.index.enabled": true
+	]
 }`,
 }
 
@@ -71,8 +70,58 @@ var KubernetesOrDockerComposeOrPureDocker = conftypes.RawUnified{
 			"allowSignup": false
 		}
 	],
+}`,
+}
 
-	"search.index.enabled": true
+// AppInMemoryExecutorPassword is an in-memory generated shared access token for communication
+// between the bundled executor and the publicly-facing executor API.
+var AppInMemoryExecutorPassword = uuid.NewV4().String()
+
+// App is the default configuration for the Cody app.
+var App = conftypes.RawUnified{
+	Site: `{
+	"auth.providers": [
+		{ "type": "builtin" }
+	],
+	"externalURL": "http://localhost:3080",
+	"codeIntelAutoIndexing.enabled": true,
+	"codeIntelAutoIndexing.allowGlobalPolicies": true,
+	"executors.frontendURL": "http://host.docker.internal:3080",
+	"experimentalFeatures": {
+		"structuralSearch": "disabled"
+	},
+	"cody.enabled": true,
+	"repoListUpdateInterval": 0,
+	"completions": {
+		"enabled": true,
+		"provider": "sourcegraph"
+	},
+	"embeddings": {
+		"enabled": true,
+		"provider": "sourcegraph"
+	}
+}`,
+}
+
+// SingleProgram is the default configuration for the single-program distribution.
+var SingleProgram = conftypes.RawUnified{
+	Site: `{
+	"auth.providers": [
+		{ "type": "builtin" }
+	],
+	"externalURL": "http://localhost:3080",
+	"codeIntelAutoIndexing.enabled": true,
+	"codeIntelAutoIndexing.allowGlobalPolicies": true,
+	"executors.frontendURL": "http://host.docker.internal:3080",
+	"cody.enabled": true,
+	"completions": {
+		"enabled": true,
+		"provider": "sourcegraph"
+	},
+	"embeddings": {
+		"enabled": true,
+		"provider": "sourcegraph"
+	}
 }`,
 }
 

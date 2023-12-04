@@ -1,13 +1,14 @@
 import expect from 'expect'
 import { isEqual } from 'lodash'
+import { describe, it } from 'mocha'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
-import { PhabricatorMapping } from '../browser-extension/web-extension-api/types'
+import type { PhabricatorMapping } from '../browser-extension/web-extension-api/types'
 
 // By default, these tests run against a local Phabricator instance and a local Sourcegraph instance.
 // To run them against phabricator.sgdev.org and umami.sgdev.org, set the below env vars in addition to SOURCEGRAPH_BASE_URL.
@@ -78,10 +79,10 @@ async function addPhabricatorRepo(driver: Driver): Promise<void> {
     // Activate the repo and wait for it to clone
     await driver.page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/')
     const activateButton = await driver.page.waitForSelector('a[href="/source/jrpc/edit/activate/"]')
-    const buttonLabel = ((await (await activateButton.getProperty('textContent')).jsonValue()) as string).trim()
+    const buttonLabel = (await (await activateButton!.getProperty('textContent')).jsonValue<string>()).trim()
     // Don't click if it says "Deactivate Repository"
     if (buttonLabel === 'Activate Repository') {
-        await activateButton.click()
+        await activateButton!.click()
         await driver.page.waitForSelector('form[action="/source/jrpc/edit/activate/"]')
         await (await driver.page.$x('//button[text()="Activate Repository"]'))[0].click()
         await driver.page.waitForNavigation()
@@ -137,7 +138,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
  */
 async function init(driver: Driver): Promise<void> {
     if (restConfig.testUserPassword) {
-        await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+        await driver.ensureSignedIn({ username: 'test', password: restConfig.testUserPassword })
     }
     // TODO test with a Gitolite external service
     await driver.ensureHasExternalService({
@@ -204,11 +205,11 @@ describe('Sourcegraph Phabricator extension', () => {
         const codeLine = await driver.page.waitForSelector(
             `.diffusion-source > tbody > tr:nth-child(${lineNumber}) > td`
         )
-        await codeLine.hover()
+        await codeLine!.hover()
 
         // Once the line is tokenized, we can click on the individual token we want a hover for.
         const codeElement = await driver.page.waitForXPath(`//tbody/tr[${lineNumber}]//span[text()="CallOption"]`)
-        await codeElement.click()
+        await codeElement!.click()
         await driver.page.waitForSelector('.test-tooltip-go-to-definition')
     })
 

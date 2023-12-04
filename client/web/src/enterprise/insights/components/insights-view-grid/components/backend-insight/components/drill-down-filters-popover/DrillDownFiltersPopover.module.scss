@@ -1,0 +1,83 @@
+.filter-button {
+    position: relative;
+
+    // Set default border color for the filter marker dot
+    &::before {
+        color: var(--body-bg);
+    }
+
+    // Change the icon color on hover/focus state
+    &:hover,
+    &[aria-expanded='true'] {
+        background-color: var(--color-bg-2) !important;
+    }
+
+    // Change the icon and button state with opened filter panel
+    &--with-open-panel {
+        background-color: var(--color-bg-2);
+
+        // Highlight the filter icon
+        .filter-icon {
+            fill: var(--body-color);
+        }
+
+        &::before {
+            color: var(--color-bg-2);
+        }
+    }
+
+    // Show filter marker dot if we have an applied filter
+    &--active {
+        &::before {
+            content: '';
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 50%;
+            background-color: var(--purple);
+
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            border: 2px solid currentColor;
+            transform: translate(0%, 0%);
+
+            &:hover {
+                border: 2px solid currentColor;
+            }
+        }
+    }
+}
+
+.filter-icon {
+    fill: var(--icon-color);
+}
+
+.popover {
+    width: 100%;
+    border-radius: 0;
+    padding: 0.75rem;
+
+    &--with-filters {
+        max-width: 33.375rem;
+        min-width: 15rem;
+    }
+
+    &--with-view-creation {
+        max-width: 24rem;
+    }
+
+    &::-webkit-scrollbar {
+        width: 0.25rem;
+        height: 0.25rem;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        border-radius: 3px;
+        box-shadow: inset 0 0 6px var(--text-muted);
+    }
+
+    @-moz-document url-prefix('') {
+        scrollbar-width: thin;
+        scrollbar-color: var(--text-muted);
+    }
+}

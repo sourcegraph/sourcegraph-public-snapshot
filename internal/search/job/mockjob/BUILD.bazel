@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mockjob",
+    srcs = ["mocks_temp.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/job/mockjob",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/search",
+        "//internal/search/job",
+        "//internal/search/streaming",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)

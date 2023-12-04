@@ -1,0 +1,24 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "env",
+    srcs = [
+        "baseconfig.go",
+        "env.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/env",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_dustin_go_humanize//:go-humanize",
+    ],
+)
+
+go_test(
+    name = "env_test",
+    timeout = "short",
+    srcs = ["env_test.go"],
+    embed = [":env"],
+    deps = ["@com_github_google_go_cmp//cmp"],
+)

@@ -1,0 +1,53 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "searchcontexts",
+    srcs = ["search_contexts.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/searchcontexts",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/auth",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/errcode",
+        "//internal/lazyregexp",
+        "//internal/search",
+        "//internal/search/query",
+        "//internal/trace",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_inconshreveable_log15//:log15",
+        "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_x_sync//errgroup",
+        "@org_golang_x_sync//semaphore",
+    ],
+)
+
+go_test(
+    name = "searchcontexts_test",
+    srcs = ["search_contexts_test.go"],
+    embed = [":searchcontexts"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//internal/actor",
+        "//internal/database",
+        "//internal/database/dbmocks",
+        "//internal/database/dbtest",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

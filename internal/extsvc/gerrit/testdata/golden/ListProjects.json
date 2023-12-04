@@ -1,0 +1,47 @@
+{
+  "All-Projects": {
+   "description": "",
+   "id": "All-Projects",
+   "name": "",
+   "parent": "",
+   "state": "ACTIVE",
+   "branches": null,
+   "labels": null
+  },
+  "All-Users": {
+   "description": "",
+   "id": "All-Users",
+   "name": "",
+   "parent": "",
+   "state": "ACTIVE",
+   "branches": null,
+   "labels": null
+  },
+  "beatrix": {
+   "description": "",
+   "id": "beatrix",
+   "name": "",
+   "parent": "",
+   "state": "ACTIVE",
+   "branches": null,
+   "labels": null
+  },
+  "idan-temp": {
+   "description": "",
+   "id": "idan-temp",
+   "name": "",
+   "parent": "",
+   "state": "ACTIVE",
+   "branches": null,
+   "labels": null
+  },
+  "k8s-gerrit": {
+   "description": "",
+   "id": "k8s-gerrit",
+   "name": "",
+   "parent": "",
+   "state": "ACTIVE",
+   "branches": null,
+   "labels": null
+  }
+ }

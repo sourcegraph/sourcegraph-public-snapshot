@@ -3,7 +3,7 @@ import React from 'react'
 /**
  * Displays a "/"-separated path with the last path component bolded.
  */
-export const Path: React.FunctionComponent<{ path: string }> = ({ path }) => {
+export const Path: React.FunctionComponent<React.PropsWithChildren<{ path: string }>> = ({ path }) => {
     if (path === '') {
         return null
     }
@@ -11,7 +11,7 @@ export const Path: React.FunctionComponent<{ path: string }> = ({ path }) => {
     return (
         <>
             {parts.length > 1 ? <span className="text-muted">{parts.slice(0, -1).join('/')}/</span> : ''}
-            <strong>{parts[parts.length - 1]}</strong>
+            <strong>{parts.at(-1)}</strong>
         </>
     )
 }

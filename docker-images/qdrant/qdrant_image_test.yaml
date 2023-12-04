@@ -1,0 +1,20 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "not running as root"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    excludedOutput: ["^0"]
+    exitCode: 0
+  - name: "qdrant is runnable"
+    command: "/usr/local/bin/qdrant"
+    args:
+      - --version
+
+fileExistenceTests:
+- name: 'Test for qdrant'
+  path: '/usr/local/bin/qdrant'
+  shouldExist: true
+  uid: 0
+  gid: 0

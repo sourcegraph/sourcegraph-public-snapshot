@@ -68,13 +68,13 @@ signale.success('Downloaded and unzipped sourcegraph/sourcegraph repository')
 
 if (includeCodeIntelExtensions) {
   shelljs.pushd(rootDirectoryNameForZip)
-  shelljs.exec('yarn install')
-  shelljs.exec('yarn --cwd client/browser run fetch-code-intel-extensions')
+  shelljs.exec('pnpm install')
+  shelljs.exec('pnpm --filter @sourcegraph/browser run build-inline-extensions')
   shelljs.popd()
 }
 
 // Copy build script to main dir
-shelljs.cp({}, buildBashFile, path.join(rootDirectoryNameForZip, buildBashFile))
+shelljs.cp({}, path.join(process.cwd(), 'scripts', buildBashFile), path.join(rootDirectoryNameForZip, buildBashFile))
 
 // Delete all unnecessary directories
 shelljs.pushd(rootDirectoryNameForZip)

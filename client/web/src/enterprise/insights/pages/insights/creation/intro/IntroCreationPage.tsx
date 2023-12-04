@@ -1,65 +1,62 @@
-import classNames from 'classnames'
-import React, { useContext, useEffect } from 'react'
-import { useHistory } from 'react-router'
-import { useLocation } from 'react-router-dom'
+import React, { useEffect } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useLocation, useNavigate } from 'react-router-dom'
+
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
-import { Page } from '../../../../../../components/Page'
+import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import { BetaFeedbackPanel } from '../../../../components/beta-feedback-panel/BetaFeedbackPanel'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-api/code-insights-gql-backend'
+import { CodeInsightsPage } from '../../../../components'
 
 import {
     CaptureGroupInsightCard,
-    ExtensionInsightsCard,
+    ComputeInsightCard,
     LangStatsInsightCard,
     SearchInsightCard,
 } from './cards/InsightCards'
+
 import styles from './IntroCreationPage.module.scss'
 
 interface IntroCreationPageProps extends TelemetryProps {}
 
 /** Displays intro page for insights creation UI. */
-export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> = props => {
+export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<IntroCreationPageProps>> = props => {
     const { telemetryService } = props
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const { search } = useLocation()
-    const api = useContext(CodeInsightsBackendContext)
+    const codeInsightsCompute = useExperimentalFeatures(features => features.codeInsightsCompute)
 
     const handleCreateSearchBasedInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateSearchBasedInsightClick')
-        history.push(`/insights/create/search${search}`)
+        navigate(`/insights/create/search${search}`)
     }
 
     const handleCaptureGroupInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateCaptureGroupInsightClick')
-        history.push(`/insights/create/capture-group${search}`)
+        navigate(`/insights/create/capture-group${search}`)
+    }
+
+    const handleCreateComputeInsightClick = (): void => {
+        telemetryService.log('CodeInsightsCreateComputeInsightClick')
+        navigate(`/insights/create/group-results${search}`)
     }
 
     const handleCreateCodeStatsInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateCodeStatsInsightClick')
-        history.push(`/insights/create/lang-stats${search}`)
-    }
-
-    const handleExploreExtensionsClick = (): void => {
-        telemetryService.log('CodeInsightsExploreInsightExtensionsClick')
-        history.push('/extensions?query=category:Insights&experimental=true')
+        navigate(`/insights/create/lang-stats${search}`)
     }
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsCreationPage')
     }, [telemetryService])
 
-    const isGqlApi = api instanceof CodeInsightsGqlBackend
-
     return (
-        <Page className={classNames('container pb-5', styles.container)}>
+        <CodeInsightsPage className={styles.container}>
+            <PageTitle title="Create insight - Code Insights" />
             <PageHeader
-                annotation={<BetaFeedbackPanel />}
                 path={[{ icon: CodeInsightsIcon }, { text: 'Create new code insight' }]}
                 description={
                     <>
@@ -73,18 +70,26 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
             />
 
             <div className={styles.sectionContent}>
-                <SearchInsightCard data-testid="create-search-insights" onClick={handleCreateSearchBasedInsightClick} />
+                <SearchInsightCard
+                    data-testid="create-search-insights"
+                    handleCreate={handleCreateSearchBasedInsightClick}
+                />
 
-                {isGqlApi && (
-                    <CaptureGroupInsightCard
-                        data-testid="create-capture-group-insight"
-                        onClick={handleCaptureGroupInsightClick}
+                <CaptureGroupInsightCard
+                    data-testid="create-capture-group-insight"
+                    handleCreate={handleCaptureGroupInsightClick}
+                />
+
+                {codeInsightsCompute && (
+                    <ComputeInsightCard
+                        data-testid="create-compute-insights"
+                        handleCreate={handleCreateComputeInsightClick}
                     />
                 )}
 
                 <LangStatsInsightCard
                     data-testid="create-lang-usage-insight"
-                    onClick={handleCreateCodeStatsInsightClick}
+                    handleCreate={handleCreateCodeStatsInsightClick}
                 />
 
                 <div className={styles.info}>
@@ -93,9 +98,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                         use cases.
                     </Link>
                 </div>
-
-                <ExtensionInsightsCard data-testid="explore-extensions" onClick={handleExploreExtensionsClick} />
             </div>
-        </Page>
+        </CodeInsightsPage>
     )
 }

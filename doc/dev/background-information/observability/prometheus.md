@@ -20,7 +20,7 @@ To learn more about developing metrics, see the [observability developer guides]
 ## Prom-wrapper
 
 The entrypoint of the image is a sidecar program called the prom-wrapper.
-It manages Prometheus and Alertmanager, and provides integration with the Sourcgraph frontend.
+It manages Prometheus and Alertmanager, and provides integration with the Sourcegraph frontend.
 Learn more about it [here](https://handbook.sourcegraph.com/engineering/observability/monitoring_architecture#prom-wrapper).
 
 The source code for this program is currently kept in [`docker-images/prometheus/cmd/prom-wrapper`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/docker-images/prometheus/cmd/prom-wrapper).
@@ -32,7 +32,7 @@ To learn more about developing our observability stack, see the [local Sourcegra
 
 The [Sourcegraph Prometheus image ships with Alertmanager](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Edocker-images/prometheus/Dockerfile+FROM+prom/alertmanager&patternType=literal), which provides our [alerting capabilities](../../../admin/observability/alerting.md).
 
-Note that [prom-wrapper](#prom-wrapper) uses a [fork of Alertmanager](https://github.com/sourcegraph/alertmanager) to better manipulate Alertmanager configuration - prom-wrapper needs to be able to write alertmanager configuration with secrets, etc, which the Alertmanager project is currently not planning on accepting changes for ([alertmanager#2316](https://github.com/prometheus/alertmanager/pull/2316)).
+Note that [prom-wrapper](#prom-wrapper) uses a [fork of Alertmanager](https://github.com/sourcegraph/alertmanager) to better manipulate Alertmanager configuration—prom-wrapper needs to be able to write alertmanager configuration with secrets, etc, which the Alertmanager project is currently not planning on accepting changes for ([alertmanager#2316](https://github.com/prometheus/alertmanager/pull/2316)).
 This *does not* affect the version of Alertmanager that we ship with, the fork exists purely for use as a library.
 
 ## Upgrading Prometheus or Alertmanager

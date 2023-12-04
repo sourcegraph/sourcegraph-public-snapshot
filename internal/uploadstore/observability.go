@@ -8,32 +8,36 @@ import (
 )
 
 type Operations struct {
-	Get     *observation.Operation
-	Upload  *observation.Operation
-	Compose *observation.Operation
-	Delete  *observation.Operation
+	Get           *observation.Operation
+	Upload        *observation.Operation
+	Compose       *observation.Operation
+	Delete        *observation.Operation
+	ExpireObjects *observation.Operation
+	List          *observation.Operation
 }
 
-func NewOperations(observationContext *observation.Context, domain, storeName string) *Operations {
-	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+func NewOperations(observationCtx *observation.Context, domain, storeName string) *Operations {
+	redMetrics := metrics.NewREDMetrics(
+		observationCtx.Registerer,
 		fmt.Sprintf("%s_%s", domain, storeName),
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("%s.%s.%s", domain, storeName, name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 
 	return &Operations{
-		Get:     op("Get"),
-		Upload:  op("Upload"),
-		Compose: op("Compose"),
-		Delete:  op("Delete"),
+		Get:           op("Get"),
+		Upload:        op("Upload"),
+		Compose:       op("Compose"),
+		Delete:        op("Delete"),
+		ExpireObjects: op("ExpireObjects"),
+		List:          op("List"),
 	}
 }

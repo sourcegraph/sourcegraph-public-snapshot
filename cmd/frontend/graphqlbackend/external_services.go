@@ -2,34 +2,41 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
-
-const syncExternalServiceTimeout = 15 * time.Second
+func externalServicesWritable() error {
+	if envvar.ExtsvcConfigFile() != "" && !envvar.ExtsvcConfigAllowEdits() {
+		return errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
+	}
+	return nil
+}
 
 type addExternalServiceArgs struct {
 	Input addExternalServiceInput
@@ -44,66 +51,46 @@ type addExternalServiceInput struct {
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
 	start := time.Now()
-	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
-	var namespaceUserID, namespaceOrgID int32
+	// 🚨 SECURITY: Only site admins may add external services. User's external services are not supported anymore.
 	var err error
-	defer reportExternalServiceDuration(start, Add, &err, &namespaceUserID, &namespaceOrgID)
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
-		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
-	}
+	defer reportExternalServiceDuration(start, Add, &err)
 
-	if args.Input.Namespace != nil {
-		err = UnmarshalNamespaceID(*args.Input.Namespace, &namespaceUserID, &namespaceOrgID)
-		if err != nil {
-			return nil, err
-		}
-
-		if namespaceUserID > 0 {
-			var allowUserExternalServices conf.ExternalServiceMode
-			allowUserExternalServices, err = r.db.Users().CurrentUserAllowedExternalServices(ctx)
-			if err != nil {
-				return nil, err
-			}
-			if allowUserExternalServices == conf.ExternalServiceModeDisabled {
-				return nil, errors.New("allow users to add external services is not enabled")
-			}
-			if namespaceUserID != actor.FromContext(ctx).UID {
-				return nil, errors.New("the namespace is not the same as the authenticated user")
-			}
-		}
-		if namespaceOrgID > 0 {
-			if err = backend.CheckOrgExternalServices(ctx, r.db, namespaceOrgID); err != nil {
-				return nil, err
-			}
-			if err = backend.CheckOrgAccess(ctx, r.db, namespaceOrgID); err != nil {
-				err = errors.New("the authenticated user does not belong to the organization requested")
-				return nil, err
-			}
-		}
-
-	} else if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-		err = backend.ErrMustBeSiteAdmin
+	if err := externalServicesWritable(); err != nil {
 		return nil, err
 	}
 
-	externalService := &types.ExternalService{
-		Kind:        args.Input.Kind,
-		DisplayName: args.Input.DisplayName,
-		Config:      args.Input.Config,
-	}
-	if namespaceUserID > 0 {
-		externalService.NamespaceUserID = namespaceUserID
-	}
-	if namespaceOrgID > 0 {
-		externalService.NamespaceOrgID = namespaceOrgID
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		err = auth.ErrMustBeSiteAdmin
+		return nil, err
 	}
 
+	userID := actor.FromContext(ctx).UID
+
+	externalService := &types.ExternalService{
+		Kind:          args.Input.Kind,
+		DisplayName:   args.Input.DisplayName,
+		Config:        extsvc.NewUnencryptedConfig(args.Input.Config),
+		CreatorID:     &userID,
+		LastUpdaterID: &userID,
+	}
+
+	// Create the external service in the database.
 	if err = r.db.ExternalServices().Create(ctx, conf.Get, externalService); err != nil {
 		return nil, err
 	}
 
-	res := &externalServiceResolver{db: r.db, externalService: externalService}
-	if err = syncExternalService(ctx, externalService, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
+	// Now, schedule the external service for syncing immediately.
+	s := repos.NewStore(r.logger, r.db)
+	err = s.EnqueueSingleSyncJob(ctx, externalService.ID)
+	if err != nil {
+		// Not a fatal issue, it will be picked up by the scheduler again.
+		r.logger.Warn("Failed to trigger external service sync")
+	}
+
+	// Verify if the connection is functional, to render a warning message in the
+	// editor if not.
+	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver"), db: r.db, externalService: externalService}
+	if err = newExternalServices(r.logger, r.db).ValidateConnection(ctx, externalService); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
 
@@ -123,10 +110,15 @@ type updateExternalServiceInput struct {
 func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *updateExternalServiceArgs) (*externalServiceResolver, error) {
 	start := time.Now()
 	var err error
-	var namespaceUserID, namespaceOrgID int32
-	defer reportExternalServiceDuration(start, Update, &err, &namespaceUserID, &namespaceOrgID)
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
-		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
+	defer reportExternalServiceDuration(start, Update, &err)
+
+	if err := externalServicesWritable(); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
 	}
 
 	id, err := UnmarshalExternalServiceID(args.Input.ID)
@@ -138,11 +130,9 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	if err != nil {
 		return nil, err
 	}
-	oldConfig := es.Config
-	namespaceUserID, namespaceOrgID = es.NamespaceUserID, es.NamespaceOrgID
 
-	// 🚨 SECURITY: check access to external service
-	if err = backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+	oldConfig, err := es.Config.Decrypt(ctx)
+	if err != nil {
 		return nil, err
 	}
 
@@ -151,11 +141,16 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
+	userID := actor.FromContext(ctx).UID
+
 	ps := conf.Get().AuthProviders
 	update := &database.ExternalServiceUpdate{
-		DisplayName: args.Input.DisplayName,
-		Config:      args.Input.Config,
+		DisplayName:   args.Input.DisplayName,
+		Config:        args.Input.Config,
+		LastUpdaterID: &userID,
 	}
+
+	// Update the external service in the database.
 	if err = r.db.ExternalServices().Update(ctx, ps, id, update); err != nil {
 		return nil, err
 	}
@@ -165,12 +160,25 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	if err != nil {
 		return nil, err
 	}
+	newConfig, err := es.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	res := &externalServiceResolver{db: r.db, externalService: es}
+	// Now, schedule the external service for syncing immediately.
+	s := repos.NewStore(r.logger, r.db)
+	err = s.EnqueueSingleSyncJob(ctx, es.ID)
+	if err != nil {
+		// Not a fatal issue, it will be picked up by the scheduler again.
+		r.logger.Warn("Failed to trigger external service sync")
+	}
 
-	if oldConfig != es.Config {
-		err = syncExternalService(ctx, es, syncExternalServiceTimeout, r.repoupdaterClient)
-		if err != nil {
+	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver"), db: r.db, externalService: es}
+
+	if oldConfig != newConfig {
+		// Verify if the connection is functional, to render a warning message in the
+		// editor if not.
+		if err = newExternalServices(r.logger, r.db).ValidateConnection(ctx, es); err != nil {
 			res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 		}
 	}
@@ -178,59 +186,64 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	return res, nil
 }
 
-// repoupdaterClient is an interface with only the methods required in syncExternalService. As a
-// result instead of using the entire repoupdater client implementation, we use a thinner API which
-// only needs the SyncExternalService method to be defined on the object.
-type repoupdaterClient interface {
-	SyncExternalService(ctx context.Context, svc api.ExternalService) (*protocol.ExternalServiceSyncResult, error)
+func newExternalServices(logger log.Logger, db database.DB) backend.ExternalServicesService {
+	if mockExternalServicesService != nil {
+		return mockExternalServicesService
+	}
+	return backend.NewExternalServices(logger, db)
 }
 
-// syncExternalService will eagerly trigger a repo-updater sync. It accepts a
-// timeout as an argument which is recommended to be 5 seconds unless the caller
-// has special requirements for it to be larger or smaller.
-func syncExternalService(ctx context.Context, svc *types.ExternalService, timeout time.Duration, client repoupdaterClient) error {
-	// Set a timeout to validate external service sync. It usually fails in
-	// under 5s if there is a problem.
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
+var mockExternalServicesService backend.ExternalServicesService
 
-	_, err := client.SyncExternalService(ctx, api.ExternalService{
-		ID:              svc.ID,
-		Kind:            svc.Kind,
-		DisplayName:     svc.DisplayName,
-		Config:          svc.Config,
-		CreatedAt:       svc.CreatedAt,
-		UpdatedAt:       svc.UpdatedAt,
-		DeletedAt:       svc.DeletedAt,
-		LastSyncAt:      svc.LastSyncAt,
-		NextSyncAt:      svc.NextSyncAt,
-		NamespaceUserID: svc.NamespaceUserID,
-		NamespaceOrgID:  svc.NamespaceOrgID,
-	})
+type excludeRepoFromExternalServiceArgs struct {
+	ExternalServices []graphql.ID
+	Repo             graphql.ID
+}
 
-	// If context error is anything but a deadline exceeded error, we do not want to propagate
-	// it. But we definitely want to log the error as a warning.
-	if ctx.Err() != nil && ctx.Err() != context.DeadlineExceeded {
-		log15.Warn("syncExternalService: context error discarded", "err", ctx.Err())
-		return nil
+// ExcludeRepoFromExternalServices excludes the given repo from the given external service configs.
+func (r *schemaResolver) ExcludeRepoFromExternalServices(ctx context.Context, args *excludeRepoFromExternalServiceArgs) (*EmptyResponse, error) {
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
 	}
 
-	// err is either nil or contains an actual error from the API call. And we return it
-	// nonetheless.
-	return errors.Wrapf(err, "error in syncExternalService for service %q with ID %d", svc.Kind, svc.ID)
+	extSvcIDs := make([]int64, 0, len(args.ExternalServices))
+	for _, externalServiceID := range args.ExternalServices {
+		extSvcID, err := UnmarshalExternalServiceID(externalServiceID)
+		if err != nil {
+			return nil, err
+		}
+		extSvcIDs = append(extSvcIDs, extSvcID)
+	}
+
+	repositoryID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = newExternalServices(r.logger, r.db).ExcludeRepoFromExternalServices(ctx, extSvcIDs, repositoryID); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
 }
 
 type deleteExternalServiceArgs struct {
 	ExternalService graphql.ID
+	Async           bool
 }
 
 func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *deleteExternalServiceArgs) (*EmptyResponse, error) {
 	start := time.Now()
 	var err error
-	var namespaceUserID, namespaceOrgID int32
-	defer reportExternalServiceDuration(start, Delete, &err, &namespaceUserID, &namespaceOrgID)
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
-		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
+	defer reportExternalServiceDuration(start, Delete, &err)
+
+	if err := externalServicesWritable(); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
 	}
 
 	id, err := UnmarshalExternalServiceID(args.ExternalService)
@@ -238,58 +251,39 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		return nil, err
 	}
 
-	es, err := r.db.ExternalServices().GetByID(ctx, id)
+	// Load external service to make sure it exists
+	_, err = r.db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	namespaceUserID, namespaceOrgID = es.NamespaceUserID, es.NamespaceOrgID
 
-	// 🚨 SECURITY: check external service access
-	if err = backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
-		return nil, err
-	}
-
-	if err = r.db.ExternalServices().Delete(ctx, id); err != nil {
-		return nil, err
-	}
-	now := time.Now()
-	es.DeletedAt = now
-
-	// The user doesn't care if triggering syncing failed when deleting a
-	// service, so kick off in the background.
-	go func() {
-		if err := syncExternalService(context.Background(), es, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
-			log15.Warn("Performing final sync after external service deletion", "err", err)
+	if args.Async {
+		// run deletion in the background and return right away
+		go func() {
+			if err := r.db.ExternalServices().Delete(context.Background(), id); err != nil {
+				r.logger.Error("Background external service deletion failed", log.Error(err))
+			}
+		}()
+	} else {
+		if err := r.db.ExternalServices().Delete(ctx, id); err != nil {
+			return nil, err
 		}
-	}()
+	}
 
 	return &EmptyResponse{}, nil
 }
 
 type ExternalServicesArgs struct {
-	Namespace *graphql.ID
 	graphqlutil.ConnectionArgs
-	After *string
+	After     *string
+	Namespace *graphql.ID
+	Repo      *graphql.ID
 }
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
-	var namespaceUserID int32
-	var namespaceOrgID int32
-	if args.Namespace != nil {
-		err := UnmarshalNamespaceID(*args.Namespace, &namespaceUserID, &namespaceOrgID)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if err := backend.CheckExternalServiceAccess(ctx, r.db, namespaceUserID, namespaceOrgID); err != nil {
+	// 🚨 SECURITY: Check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
-	}
-
-	if namespaceOrgID > 0 {
-		if err := backend.CheckOrgExternalServices(ctx, r.db, namespaceOrgID); err != nil {
-			return nil, err
-		}
 	}
 
 	var afterID int64
@@ -302,16 +296,17 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 	}
 
 	opt := database.ExternalServicesListOptions{
-		// 🚨 SECURITY: When both `namespaceUserID` and `namespaceOrgID` are not
-		// specified we need to explicitly specify `NoNamespace`, otherwise site
-		// admins will be able to list all user code host connections that are not
-		// accessible when trying to access them individually.
-		NoNamespace:     namespaceUserID == 0 && namespaceOrgID == 0,
-		NamespaceUserID: namespaceUserID,
-		NamespaceOrgID:  namespaceOrgID,
-		AfterID:         afterID,
+		AfterID: afterID,
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
+
+	if args.Repo != nil {
+		repoID, err := UnmarshalRepositoryID(*args.Repo)
+		if err != nil {
+			return nil, err
+		}
+		opt.RepoID = repoID
+	}
 	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
 }
 
@@ -339,7 +334,7 @@ func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*exter
 	}
 	resolvers := make([]*externalServiceResolver, 0, len(externalServices))
 	for _, externalService := range externalServices {
-		resolvers = append(resolvers, &externalServiceResolver{db: r.db, externalService: externalService})
+		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver"), db: r.db, externalService: externalService})
 	}
 	return resolvers, nil
 }
@@ -378,34 +373,42 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 
 	if count > len(externalServices) {
 		endCursorID := externalServices[len(externalServices)-1].ID
-		return graphqlutil.NextPageCursor(string(marshalExternalServiceID(endCursorID))), nil
+		return graphqlutil.NextPageCursor(string(MarshalExternalServiceID(endCursorID))), nil
 	}
 	return graphqlutil.HasNextPage(false), nil
 }
 
-type computedExternalServiceConnectionResolver struct {
+type ComputedExternalServiceConnectionResolver struct {
 	args             graphqlutil.ConnectionArgs
 	externalServices []*types.ExternalService
 	db               database.DB
 }
 
-func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) []*externalServiceResolver {
+func NewComputedExternalServiceConnectionResolver(db database.DB, externalServices []*types.ExternalService, args graphqlutil.ConnectionArgs) *ComputedExternalServiceConnectionResolver {
+	return &ComputedExternalServiceConnectionResolver{
+		db:               db,
+		externalServices: externalServices,
+		args:             args,
+	}
+}
+
+func (r *ComputedExternalServiceConnectionResolver) Nodes(_ context.Context) []*externalServiceResolver {
 	svcs := r.externalServices
 	if r.args.First != nil && int(*r.args.First) < len(svcs) {
 		svcs = svcs[:*r.args.First]
 	}
 	resolvers := make([]*externalServiceResolver, 0, len(svcs))
 	for _, svc := range svcs {
-		resolvers = append(resolvers, &externalServiceResolver{db: r.db, externalService: svc})
+		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver"), db: r.db, externalService: svc})
 	}
 	return resolvers
 }
 
-func (r *computedExternalServiceConnectionResolver) TotalCount(ctx context.Context) int32 {
+func (r *ComputedExternalServiceConnectionResolver) TotalCount(_ context.Context) int32 {
 	return int32(len(r.externalServices))
 }
 
-func (r *computedExternalServiceConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
+func (r *ComputedExternalServiceConnectionResolver) PageInfo(_ context.Context) *graphqlutil.PageInfo {
 	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
 }
 
@@ -415,7 +418,6 @@ const (
 	Add ExternalServiceMutationType = iota
 	Update
 	Delete
-	SetRepos
 )
 
 func (d ExternalServiceMutationType) String() string {
@@ -428,19 +430,149 @@ var mutationDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets: trace.UserLatencyBuckets,
 }, []string{"success", "mutation", "namespace"})
 
-func reportExternalServiceDuration(startTime time.Time, mutation ExternalServiceMutationType, err *error, userId, orgId *int32) {
+func reportExternalServiceDuration(startTime time.Time, mutation ExternalServiceMutationType, err *error) {
 	duration := time.Since(startTime)
 	ns := "global"
-	if userId != nil && *userId != 0 {
-		ns = "user"
-	} else if orgId != nil && *orgId != 0 {
-		ns = "org"
-	}
 	labels := prometheus.Labels{
 		"mutation":  mutation.String(),
 		"success":   strconv.FormatBool(*err == nil),
 		"namespace": ns,
 	}
 	mutationDuration.With(labels).Observe(duration.Seconds())
+}
 
+type syncExternalServiceArgs struct {
+	ID graphql.ID
+}
+
+func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExternalServiceArgs) (*EmptyResponse, error) {
+	start := time.Now()
+	var err error
+	defer reportExternalServiceDuration(start, Update, &err)
+
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	id, err := UnmarshalExternalServiceID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	es, err := r.db.ExternalServices().GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Enqueue a sync job for the external service, if none exists yet.
+	rstore := repos.NewStore(r.logger, r.db)
+	if err := rstore.EnqueueSingleSyncJob(ctx, es.ID); err != nil {
+		return nil, err
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+type cancelExternalServiceSyncArgs struct {
+	ID graphql.ID
+}
+
+func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *cancelExternalServiceSyncArgs) (*EmptyResponse, error) {
+	start := time.Now()
+	var err error
+	defer reportExternalServiceDuration(start, Update, &err)
+
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	id, err := unmarshalExternalServiceSyncJobID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.db.ExternalServices().CancelSyncJob(ctx, database.ExternalServicesCancelSyncJobOptions{ID: id}); err != nil {
+		return nil, err
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+type externalServiceNamespacesArgs struct {
+	ID    *graphql.ID
+	Kind  string
+	Token string
+	Url   string
+}
+
+func (r *schemaResolver) ExternalServiceNamespaces(ctx context.Context, args *externalServiceNamespacesArgs) (*externalServiceNamespaceConnectionResolver, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
+
+	return &externalServiceNamespaceConnectionResolver{
+		args: args,
+		db:   r.db,
+	}, nil
+}
+
+type externalServiceNamespaceConnectionResolver struct {
+	args *externalServiceNamespacesArgs
+	db   database.DB
+
+	once       sync.Once
+	nodes      []*types.ExternalServiceNamespace
+	totalCount int32
+	err        error
+}
+
+type externalServiceRepositoriesArgs struct {
+	ID           *graphql.ID
+	Kind         string
+	Token        string
+	Url          string
+	Query        string
+	ExcludeRepos []string
+	First        *int32
+}
+
+func (r *schemaResolver) ExternalServiceRepositories(ctx context.Context, args *externalServiceRepositoriesArgs) (*externalServiceRepositoryConnectionResolver, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
+
+	return &externalServiceRepositoryConnectionResolver{
+		db:                r.db,
+		args:              args,
+		repoupdaterClient: r.repoupdaterClient,
+	}, nil
+}
+
+type externalServiceRepositoryConnectionResolver struct {
+	args              *externalServiceRepositoriesArgs
+	db                database.DB
+	repoupdaterClient *repoupdater.Client
+
+	once  sync.Once
+	nodes []*types.ExternalServiceRepository
+	err   error
+}
+
+// NewSourceConfiguration returns a configuration string for defining a Source for discovery.
+// Only external service kinds that implement source discovery functions are returned.
+func NewSourceConfiguration(kind, url, token string) (string, error) {
+	switch kind {
+	case extsvc.KindGitHub:
+		cnxn := schema.GitHubConnection{
+			Url:   url,
+			Token: token,
+		}
+
+		marshalled, err := json.Marshal(cnxn)
+		return string(marshalled), err
+	default:
+		return "", errors.New(repos.UnimplementedDiscoverySource)
+	}
 }

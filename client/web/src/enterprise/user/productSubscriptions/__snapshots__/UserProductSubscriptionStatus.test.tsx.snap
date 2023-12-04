@@ -1,9 +1,10 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
+exports[`UserProductSubscriptionStatus > toggle > license key hidden 1`] = `
 <DocumentFragment>
   <div
-    class="card test-product-certificate"
+    class="card"
+    data-testid="product-certificate"
   >
     <div
       class="cardBody d-flex align-items-center"
@@ -14,13 +15,13 @@ exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
         src="/.assets/img/sourcegraph-mark.svg?v2"
       />
       <div>
-        <h2
-          class="font-weight-normal mb-1"
+        <h3
+          class="h2 font-weight-normal mb-1"
         >
           P
-        </h2>
+        </h3>
         <h3
-          class="text-muted font-weight-normal"
+          class="h3 text-muted font-weight-normal"
         >
           123-user license, 
           <span>
@@ -48,9 +49,19 @@ exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
           class="btn btnPrimary mr-4 my-1"
           type="button"
         >
-          <keyicon
-            class="icon-inline"
-          />
+          <svg
+            aria-hidden="true"
+            class="mdi-icon iconInline"
+            fill="currentColor"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M7 14C5.9 14 5 13.1 5 12S5.9 10 7 10 9 10.9 9 12 8.1 14 7 14M12.6 10C11.8 7.7 9.6 6 7 6C3.7 6 1 8.7 1 12S3.7 18 7 18C9.6 18 11.8 16.3 12.6 14H16V18H20V14H23V10H12.6Z"
+            />
+          </svg>
            Reveal license key
         </button>
         <div
@@ -65,10 +76,11 @@ exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
 </DocumentFragment>
 `;
 
-exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
+exports[`UserProductSubscriptionStatus > toggle > license key revealed 1`] = `
 <DocumentFragment>
   <div
-    class="card test-product-certificate"
+    class="card"
+    data-testid="product-certificate"
   >
     <div
       class="cardBody d-flex align-items-center"
@@ -79,13 +91,13 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
         src="/.assets/img/sourcegraph-mark.svg?v2"
       />
       <div>
-        <h2
-          class="font-weight-normal mb-1"
+        <h3
+          class="h2 font-weight-normal mb-1"
         >
           P
-        </h2>
+        </h3>
         <h3
-          class="text-muted font-weight-normal"
+          class="h3 text-muted font-weight-normal"
         >
           123-user license, 
           <span>
@@ -113,9 +125,19 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
           class="btn btnPrimary mr-4 my-1"
           type="button"
         >
-          <keyicon
-            class="icon-inline"
-          />
+          <svg
+            aria-hidden="true"
+            class="mdi-icon iconInline"
+            fill="currentColor"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M7 14C5.9 14 5 13.1 5 12S5.9 10 7 10 9 10.9 9 12 8.1 14 7 14M12.6 10C11.8 7.7 9.6 6 7 6C3.7 6 1 8.7 1 12S3.7 18 7 18C9.6 18 11.8 16.3 12.6 14H16V18H20V14H23V10H12.6Z"
+            />
+          </svg>
            Hide license key
         </button>
         <div
@@ -128,26 +150,35 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
       <div
         class="cardFooter"
       >
-        <h3>
+        <h3
+          class="h3"
+        >
           License key
         </h3>
-        <copyabletext
-          class="d-block"
-          text="lk"
-        />
+        CopyableText
         <small
           class="mt-2 d-flex align-items-center"
         >
-          <informationicon
-            class="icon-inline mr-1"
-          />
+          <svg
+            aria-hidden="true"
+            class="mdi-icon iconInline mr-1"
+            fill="currentColor"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+            />
+          </svg>
            
           <span>
             Use this license key as the 
-            <code>
-              <strong>
-                licenseKey
-              </strong>
+            <code
+              class="code fontWeightBold"
+            >
+              licenseKey
             </code>
              property value in Sourcegraph site configuration.
           </span>

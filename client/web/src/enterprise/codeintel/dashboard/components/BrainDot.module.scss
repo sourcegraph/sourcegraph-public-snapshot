@@ -1,0 +1,36 @@
+.dropdown-menu {
+    min-width: 20rem;
+}
+
+.braindot {
+    position: relative;
+    margin-right: 0.625rem;
+    padding: 0.25rem;
+}
+
+.braindot::after {
+    content: '';
+    position: absolute;
+    bottom: 0.2rem;
+    right: -0.25rem;
+    border-radius: 1rem;
+    width: 0.65rem;
+    height: 0.65rem;
+    border: 2px solid var(--body-bg);
+}
+
+.braindot-success::after {
+    background-color: var(--success);
+}
+
+.braindot-warning::after {
+    background-color: var(--warning);
+}
+
+.braindot-danger::after {
+    background-color: var(--danger);
+}
+
+input[type='radio'] + label {
+    vertical-align: sub;
+}

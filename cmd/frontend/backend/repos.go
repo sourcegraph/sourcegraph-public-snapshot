@@ -3,58 +3,66 @@ package backend
 import (
 	"context"
 	"fmt"
-	"net/url"
+	"net/http"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
-// server.
-type ErrRepoSeeOther struct {
-	// RedirectURL is the base URL for the repository at an external location.
-	RedirectURL string
+type ReposService interface {
+	Get(ctx context.Context, repo api.RepoID) (*types.Repo, error)
+	GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error)
+	List(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error)
+	ListIndexable(ctx context.Context) ([]types.MinimalRepo, error)
+	GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (*inventory.Inventory, error)
+	DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) error
+	RequestRepositoryClone(ctx context.Context, repoID api.RepoID) error
+	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
 }
 
-func (e ErrRepoSeeOther) Error() string {
-	return fmt.Sprintf("repo not found at this location, but might exist at %s", e.RedirectURL)
-}
-
-// NewRepos uses the provided `database.RepoStore` to initialize a new repos
-// store for the backend.
+// NewRepos uses the provided `database.DB` to initialize a new RepoService.
 //
 // NOTE: The underlying cache is reused from Repos global variable to actually
 // make cache be useful. This is mostly a workaround for now until we come up a
 // more idiomatic solution.
-func NewRepos(repoStore database.RepoStore) *repos {
+func NewRepos(logger log.Logger, db database.DB, client gitserver.Client) ReposService {
+	repoStore := db.Repos()
+	logger = logger.Scoped("repos")
 	return &repos{
-		store: repoStore,
-		cache: dbcache.NewIndexableReposLister(repoStore),
+		logger:          logger,
+		db:              db,
+		gitserverClient: client,
+		store:           repoStore,
+		cache:           dbcache.NewIndexableReposLister(logger, repoStore),
 	}
 }
 
 type repos struct {
-	store database.RepoStore
-	cache *dbcache.IndexableReposLister
+	logger          log.Logger
+	db              database.DB
+	gitserverClient gitserver.Client
+	cf              httpcli.Doer
+	store           database.RepoStore
+	cache           *dbcache.IndexableReposLister
 }
 
 func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {
@@ -62,86 +70,70 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 		return Mocks.Repos.Get(ctx, repo)
 	}
 
-	ctx, done := trace(ctx, "Repos", "Get", repo, &err)
+	ctx, done := startTrace(ctx, "Get", repo, &err)
 	defer done()
 
 	return s.store.Get(ctx, repo)
 }
 
-// GetByName retrieves the repository with the given name. On sourcegraph.com,
-// if the name refers to a repository on a github.com or gitlab.com that is not
-// yet present in the database, it will automatically look up the
-// repository externally and add it to the database before returning it.
+// GetByName retrieves the repository with the given name. It will lazy sync a repo
+// not yet present in the database under certain conditions. See repos.Syncer.SyncRepo.
 func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo, err error) {
 	if Mocks.Repos.GetByName != nil {
 		return Mocks.Repos.GetByName(ctx, name)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetByName", name, &err)
+	ctx, done := startTrace(ctx, "GetByName", name, &err)
 	defer done()
 
-	switch repo, err := s.store.GetByName(ctx, name); {
-	case err == nil:
+	repo, err := s.store.GetByName(ctx, name)
+	if err == nil {
 		return repo, nil
-	case !errcode.IsNotFound(err):
-		return nil, err
-	case envvar.SourcegraphDotComMode():
-		// Automatically add repositories on Sourcegraph.com.
-		newName, err := s.Add(ctx, name)
-		if err != nil {
-			return nil, err
-		}
-		return s.store.GetByName(ctx, newName)
-	case shouldRedirect(name):
-		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
-			Scheme:   "https",
-			Host:     "sourcegraph.com",
-			Path:     string(name),
-			RawQuery: url.Values{"utm_source": []string{deploy.Type()}}.Encode(),
-		}).String()}
-	default:
+	}
+
+	if !errcode.IsNotFound(err) {
 		return nil, err
 	}
+
+	if errcode.IsNotFound(err) && !envvar.SourcegraphDotComMode() {
+		// The repo doesn't exist and we're not on sourcegraph.com, we should not lazy
+		// clone it.
+		return nil, err
+	}
+
+	newName, err := s.addRepoToSourcegraphDotCom(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.store.GetByName(ctx, newName)
+
 }
 
-func shouldRedirect(name api.RepoName) bool {
-	return !conf.Get().DisablePublicRepoRedirects &&
-		extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...) != nil
-}
-
-var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_frontend_repo_add_is_cloneable",
-	Help: "temporary metric to measure if this codepath is valuable on sourcegraph.com",
-}, []string{"status"})
-
-// Add adds the repository with the given name to the database by calling
+// addRepoToSourcegraphDotCom adds the repository with the given name to the database by calling
 // repo-updater when in sourcegraph.com mode. It's possible that the repo has
 // been renamed on the code host in which case a different name may be returned.
-func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoName, err error) {
-	ctx, done := trace(ctx, "Repos", "Add", name, &err)
+// name is assumed to not exist as a repo in the database.
+func (s *repos) addRepoToSourcegraphDotCom(ctx context.Context, name api.RepoName) (addedName api.RepoName, err error) {
+	ctx, done := startTrace(ctx, "Add", name, &err)
 	defer done()
 
 	// Avoid hitting repo-updater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	if host := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...); host == nil {
+	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
+	if codehost == nil {
 		return "", &database.RepoNotFoundErr{Name: name}
 	}
 
-	status := "unknown"
-	defer func() {
-		metricIsRepoCloneable.WithLabelValues(status).Inc()
-	}()
-
-	if err := gitserver.DefaultClient.IsRepoCloneable(ctx, name); err != nil {
-		if ctx.Err() != nil {
-			status = "timeout"
-		} else {
-			status = "fail"
+	// Verify repo exists and is cloneable publicly before continuing to put load
+	// on repo-updater.
+	// For package hosts, we have no good metric to figure this out at the moment.
+	if !codehost.IsPackageHost() {
+		if err := s.isGitRepoPubliclyCloneable(ctx, name); err != nil {
+			return "", err
 		}
-		return "", err
 	}
-	status = "success"
 
 	// Looking up the repo in repo-updater makes it sync that repo to the
 	// database on sourcegraph.com if that repo is from github.com or gitlab.com
@@ -152,16 +144,80 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoN
 	return "", err
 }
 
+var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_frontend_repo_add_is_cloneable",
+	Help: "temporary metric to measure if this codepath is valuable on sourcegraph.com",
+}, []string{"status"})
+
+// isGitRepoPubliclyCloneable checks if a git repo with the given name would be
+// cloneable without auth - ie. if sourcegraph.com could clone it with a cloud_default
+// external service. This is explicitly without any auth, so we don't consume
+// any API rate limit, since many users visit private or bogus repos.
+// We deduce the unauthenticated clone URL from the repo name by simply adding .git
+// to it.
+// Name is verified by the caller to be for either of our public cloud default
+// hosts.
+func (s *repos) isGitRepoPubliclyCloneable(ctx context.Context, name api.RepoName) error {
+	// This is on the request path, don't block for too long if upstream is struggling.
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	status := "unknown"
+	defer func() {
+		metricIsRepoCloneable.WithLabelValues(status).Inc()
+	}()
+
+	// Speak git smart protocol to check if repo exists without cloning.
+	remoteURL, err := vcs.ParseURL("https://" + string(name) + ".git/info/refs?service=git-upload-pack")
+	if err != nil {
+		// No idea how to construct a remote URL for this repo, bail.
+		return &database.RepoNotFoundErr{Name: api.RepoName(name)}
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, remoteURL.String(), nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to construct request to check if repository exists")
+	}
+
+	cf := httpcli.ExternalDoer
+	if s.cf != nil {
+		cf = s.cf
+	}
+
+	resp, err := cf.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if repository exists")
+	}
+
+	// No interest in the response body.
+	_ = resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		if ctx.Err() != nil {
+			status = "timeout"
+		} else {
+			status = "fail"
+		}
+		// Not cloneable without auth.
+		return &database.RepoNotFoundErr{Name: api.RepoName(name)}
+	}
+
+	status = "success"
+
+	return nil
+}
+
 func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos []*types.Repo, err error) {
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}
 
-	ctx, done := trace(ctx, "Repos", "List", opt, &err)
+	ctx, done := startTrace(ctx, "List", opt, &err)
 	defer func() {
 		if err == nil {
-			span := opentracing.SpanFromContext(ctx)
-			span.LogFields(otlog.Int("result.len", len(repos)))
+			trace.FromContext(ctx).SetAttributes(
+				attribute.Int("result.len", len(repos)),
+			)
 		}
 		done()
 	}()
@@ -169,14 +225,18 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	return s.store.List(ctx, opt)
 }
 
-// ListIndexable calls database.IndexableRepos.List, with tracing. It lists ALL
-// indexable repos which could include private user added repos.
+// ListIndexable calls database.ListMinimalRepos, with tracing. It lists ALL
+// indexable repos. In addition, it only lists cloned repositories.
+//
+// The intended call site for this is the logic which assigns repositories to
+// zoekt shards.
 func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, err error) {
-	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
+	ctx, done := startTrace(ctx, "ListIndexable", nil, &err)
 	defer func() {
 		if err == nil {
-			span := opentracing.SpanFromContext(ctx)
-			span.LogFields(otlog.Int("result.len", len(repos)))
+			trace.FromContext(ctx).SetAttributes(
+				attribute.Int("result.len", len(repos)),
+			)
 		}
 		done()
 	}()
@@ -185,8 +245,9 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 		return s.cache.List(ctx)
 	}
 
-	trueP := true
-	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{Index: &trueP})
+	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{
+		OnlyCloned: true,
+	})
 }
 
 func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
@@ -194,19 +255,19 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetInventory", map[string]interface{}{"repo": repo.Name, "commitID": commitID}, &err)
+	ctx, done := startTrace(ctx, "GetInventory", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
 	defer done()
 
 	// Cap GetInventory operation to some reasonable time.
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	invCtx, err := InventoryContext(repo.Name, commitID, forceEnhancedLanguageDetection)
+	invCtx, err := InventoryContext(s.logger, repo.Name, s.gitserverClient, commitID, forceEnhancedLanguageDetection)
 	if err != nil {
 		return nil, err
 	}
 
-	root, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
+	root, err := s.gitserverClient.Stat(ctx, repo.Name, commitID, "")
 	if err != nil {
 		return nil, err
 	}
@@ -220,4 +281,71 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return nil, err
 	}
 	return &inv, nil
+}
+
+func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) (err error) {
+	if Mocks.Repos.DeleteRepositoryFromDisk != nil {
+		return Mocks.Repos.DeleteRepositoryFromDisk(ctx, repoID)
+	}
+
+	repo, err := s.Get(ctx, repoID)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
+	}
+
+	ctx, done := startTrace(ctx, "DeleteRepositoryFromDisk", repoID, &err)
+	defer done()
+
+	err = s.gitserverClient.Remove(ctx, repo.Name)
+	return err
+}
+
+func (s *repos) RequestRepositoryClone(ctx context.Context, repoID api.RepoID) (err error) {
+	repo, err := s.Get(ctx, repoID)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
+	}
+
+	ctx, done := startTrace(ctx, "RequestRepositoryClone", repoID, &err)
+	defer done()
+
+	resp, err := s.gitserverClient.RequestRepoClone(ctx, repo.Name)
+	if err != nil {
+		return err
+	}
+	if resp.Error != "" {
+		return errors.Newf("requesting clone for repo ID %d failed: %s", repoID, resp.Error)
+	}
+
+	return nil
+}
+
+// ResolveRev will return the absolute commit for a commit-ish spec in a repo.
+// If no rev is specified, HEAD is used.
+// Error cases:
+// * Repo does not exist: gitdomain.RepoNotExistError
+// * Commit does not exist: gitdomain.RevisionNotFoundError
+// * Empty repository: gitdomain.RevisionNotFoundError
+// * The user does not have permission: errcode.IsNotFound
+// * Other unexpected errors.
+func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (commitID api.CommitID, err error) {
+	if Mocks.Repos.ResolveRev != nil {
+		return Mocks.Repos.ResolveRev(ctx, repo, rev)
+	}
+
+	ctx, done := startTrace(ctx, "ResolveRev", map[string]any{"repo": repo.Name, "rev": rev}, &err)
+	defer done()
+
+	return s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
+}
+
+// ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
+// server.
+type ErrRepoSeeOther struct {
+	// RedirectURL is the base URL for the repository at an external location.
+	RedirectURL string
+}
+
+func (e ErrRepoSeeOther) Error() string {
+	return fmt.Sprintf("repo not found at this location, but might exist at %s", e.RedirectURL)
 }

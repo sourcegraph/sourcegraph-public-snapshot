@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "hubspotutil",
+    srcs = ["hubspotutil.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//cmd/frontend/hubspot",
+        "//internal/env",
+        "//lib/errors",
+        "@com_github_inconshreveable_log15//:log15",
+    ],
+)

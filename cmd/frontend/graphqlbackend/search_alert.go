@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 )
 
 type searchAlertResolver struct {
@@ -28,23 +27,26 @@ func (a searchAlertResolver) Description() *string {
 	return &a.alert.Description
 }
 
+func (a searchAlertResolver) Kind() *string {
+	if a.alert.Kind == "" {
+		return nil
+	}
+	return &a.alert.Kind
+}
+
 func (a searchAlertResolver) PrometheusType() string {
 	return a.alert.PrometheusType
 }
 
-func (a searchAlertResolver) ProposedQueries() *[]*searchQueryDescription {
+func (a searchAlertResolver) ProposedQueries() *[]*searchQueryDescriptionResolver {
 	if len(a.alert.ProposedQueries) == 0 {
 		return nil
 	}
-	var proposedQueries []*searchQueryDescription
+	var proposedQueries []*searchQueryDescriptionResolver
 	for _, q := range a.alert.ProposedQueries {
-		proposedQueries = append(proposedQueries, &searchQueryDescription{q})
+		proposedQueries = append(proposedQueries, &searchQueryDescriptionResolver{q})
 	}
 	return &proposedQueries
-}
-
-func alertToSearchResults(alert *search.Alert) *SearchResults {
-	return &SearchResults{Alert: alert}
 }
 
 func (a searchAlertResolver) wrapSearchImplementer(db database.DB) *alertSearchImplementer {
@@ -62,10 +64,7 @@ type alertSearchImplementer struct {
 }
 
 func (a alertSearchImplementer) Results(context.Context) (*SearchResultsResolver, error) {
-	return &SearchResultsResolver{db: a.db, SearchResults: alertToSearchResults(a.alert.alert)}, nil
+	return &SearchResultsResolver{db: a.db, SearchAlert: a.alert.alert}, nil
 }
 
 func (alertSearchImplementer) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
-func (alertSearchImplementer) Inputs() run.SearchInputs {
-	return run.SearchInputs{}
-}

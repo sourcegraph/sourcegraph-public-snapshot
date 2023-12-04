@@ -1,12 +1,35 @@
-import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
-import { Link, LinkProps, Button } from '@sourcegraph/wildcard'
+import { mdiPlus } from '@mdi/js'
 
-interface NewBatchChangeButtonProps extends Pick<LinkProps, 'to'> {}
+import { Link, type LinkProps, Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-export const NewBatchChangeButton: React.FunctionComponent<NewBatchChangeButtonProps> = ({ to }) => (
-    <Button to={to} variant="primary" as={Link}>
-        <PlusIcon className="icon-inline" /> Create batch change
-    </Button>
-)
+import { eventLogger } from '../../../tracking/eventLogger'
+
+interface NewBatchChangeButtonProps extends Pick<LinkProps, 'to'> {
+    // canCreate indicates whether or not the currently-authenticated user has sufficient
+    // permissions to create a batch change in whatever context this button is being
+    // presented. If not, canCreate should be a string reason why the user cannot create
+    // to be used for the button tooltip.
+    canCreate: true | string
+}
+
+export const NewBatchChangeButton: React.FunctionComponent<React.PropsWithChildren<NewBatchChangeButtonProps>> = ({
+    canCreate,
+    to,
+}) => {
+    const button = (
+        <Button
+            disabled={typeof canCreate === 'string'}
+            to={to}
+            variant="primary"
+            as={Link}
+            onClick={() => {
+                eventLogger.log('batch_change_list_page:create_batch_change_details:clicked')
+            }}
+        >
+            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create batch change
+        </Button>
+    )
+    return typeof canCreate === 'string' ? <Tooltip content={canCreate}>{button}</Tooltip> : button
+}

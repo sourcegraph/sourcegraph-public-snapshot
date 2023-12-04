@@ -1,0 +1,23 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "process",
+    srcs = [
+        "logger.go",
+        "pipe.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/process",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/errors",
+        "@com_github_sourcegraph_conc//pool",
+    ],
+)
+
+go_test(
+    name = "process_test",
+    timeout = "short",
+    srcs = ["pipe_test.go"],
+    embed = [":process"],
+)

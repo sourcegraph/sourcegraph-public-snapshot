@@ -1,0 +1,10 @@
+.repositories-suggest {
+    // Set min height in order to avoid content jumps between
+    // searches as user types search term in repositories search field
+    min-height: 20rem;
+    margin-top: 0.5rem;
+}
+
+.item {
+    border-radius: 3px;
+}

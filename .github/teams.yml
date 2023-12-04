@@ -1,6 +1,12 @@
-team/frontend-platform:
-  - '@alicjasuska'
+team/code-exploration:
   - '@umpox'
   - '@valerybugakov'
-  - '@pdubroy'
-  - '@oleggromov'
+  - '@lrhacker'
+  - '@philipp-spiess'
+
+team/source:
+  - '@ryphil'
+  - '@mrnugget'
+  - '@pjlast'
+  - '@eseliger'
+  - '@ggilmore'

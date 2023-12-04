@@ -5,15 +5,20 @@
    "URL": "https://api.github.com/organizations/65169595/team/3878345",
    "ReposCount": 1,
    "Organization": {
-    "login": "sourcegraph-vcr-repos"
+    "id": 65169595,
+    "login": "sourcegraph-vcr-repos",
+    "node_id": "MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1"
    }
   },
   {
    "Name": "all_read_only",
    "Slug": "all_read_only",
    "URL": "https://api.github.com/organizations/65169595/team/5058995",
+   "ReposCount": 2,
    "Organization": {
-    "login": "sourcegraph-vcr-repos"
+    "id": 65169595,
+    "login": "sourcegraph-vcr-repos",
+    "node_id": "MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1"
    }
   }
  ]

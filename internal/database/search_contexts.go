@@ -9,6 +9,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -19,13 +21,8 @@ import (
 
 var ErrSearchContextNotFound = errors.New("search context not found")
 
-func SearchContexts(db dbutil.DB) SearchContextsStore {
-	store := basestore.NewWithDB(db, sql.TxOptions{})
-	return &searchContextsStore{store}
-}
-
-func SearchContextsWith(other basestore.ShareableStore) SearchContextsStore {
-	return &searchContextsStore{basestore.NewWithHandle(other.Handle())}
+func SearchContextsWith(logger log.Logger, other basestore.ShareableStore) SearchContextsStore {
+	return &searchContextsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
 }
 
 type SearchContextsStore interface {
@@ -43,10 +40,15 @@ type SearchContextsStore interface {
 	SetSearchContextRepositoryRevisions(context.Context, int64, []*types.SearchContextRepositoryRevisions) error
 	Transact(context.Context) (SearchContextsStore, error)
 	UpdateSearchContextWithRepositoryRevisions(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error)
+	SetUserDefaultSearchContextID(ctx context.Context, userID int32, searchContextID int64) error
+	GetDefaultSearchContextForCurrentUser(ctx context.Context) (*types.SearchContext, error)
+	CreateSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error
+	DeleteSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error
 }
 
 type searchContextsStore struct {
 	*basestore.Store
+	logger log.Logger
 }
 
 func (s *searchContextsStore) Transact(ctx context.Context) (SearchContextsStore, error) {
@@ -61,61 +63,102 @@ const searchContextsPermissionsConditionFmtStr = `(
     -- Bypass permission check
     %s
     -- Happy path of public search contexts
-    OR sc.public
+    OR public
     -- Private user contexts are available only to its creator
-    OR (sc.namespace_user_id IS NOT NULL AND sc.namespace_user_id = %d)
+    OR (namespace_user_id IS NOT NULL AND namespace_user_id = %d)
     -- Private org contexts are available only to its members
-    OR (sc.namespace_org_id IS NOT NULL AND EXISTS (SELECT FROM org_members om WHERE om.org_id = sc.namespace_org_id AND om.user_id = %d))
+    OR (namespace_org_id IS NOT NULL AND EXISTS (SELECT FROM org_members om WHERE om.org_id = namespace_org_id AND om.user_id = %d))
     -- Private instance-level contexts are available only to site-admins
-    OR (sc.namespace_user_id IS NULL AND sc.namespace_org_id IS NULL AND EXISTS (SELECT FROM users u WHERE u.id = %d AND u.site_admin))
+    OR (namespace_user_id IS NULL AND namespace_org_id IS NULL AND EXISTS (SELECT FROM users u WHERE u.id = %d AND u.site_admin))
 )`
 
-func searchContextsPermissionsCondition(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
+func searchContextsPermissionsCondition(ctx context.Context) *sqlf.Query {
 	a := actor.FromContext(ctx)
-	authenticatedUserID := int32(0)
+	authenticatedUserID := a.UID
 	bypassPermissionsCheck := a.Internal
-	if !bypassPermissionsCheck && a.IsAuthenticated() {
-		currentUser, err := Users(db).GetByCurrentAuthUser(ctx)
-		if err != nil {
-			return nil, err
-		}
-		authenticatedUserID = currentUser.ID
-	}
 	q := sqlf.Sprintf(searchContextsPermissionsConditionFmtStr, bypassPermissionsCheck, authenticatedUserID, authenticatedUserID, authenticatedUserID)
-	return q, nil
+	return q
 }
+
+const searchContextQueryFmtStr = `
+	SELECT -- The global context is not in the database, it needs to be added here for the sake of pagination.
+		0 as id, -- All other contexts have a non-zero ID.
+		'global' as context_name,
+		'All repositories on Sourcegraph' as description,
+		true as public,
+		true as autodefined,
+		NULL as namespace_user_id,
+		NULL as namespace_org_id,
+		TIMESTAMP WITH TIME ZONE 'epoch' as updated_at, -- Timestamp is not used for global context, but we need to return something.
+		NULL as query,
+		NULL as namespace_name,
+		NULL as namespace_username,
+		NULL as namespace_org_name,
+		NOT EXISTS (SELECT FROM search_context_default scd WHERE scd.user_id = %d) as user_default, -- Global context is the default if there is no default set.
+		false as user_starred -- Global context cannot be starred.
+	UNION ALL
+	SELECT
+		sc.id as id,
+		sc.name as context_name,
+		sc.description as description,
+		sc.public as public,
+		false as autodefined, -- Context in the database are never autodefined.
+		sc.namespace_user_id as namespace_user_id,
+		sc.namespace_org_id as namespace_org_id,
+		sc.updated_at as updated_at,
+		sc.query as query,
+		COALESCE(u.username, o.name) as namespace_name,
+		u.username as namespace_username,
+		o.name as namespace_org_name,
+		scd.search_context_id IS NOT NULL as user_default,
+		scs.search_context_id IS NOT NULL as user_starred
+	FROM search_contexts sc
+	LEFT JOIN users u on sc.namespace_user_id = u.id
+	LEFT JOIN orgs o on sc.namespace_org_id = o.id
+	LEFT JOIN search_context_stars scs
+		ON scs.user_id = %d AND scs.search_context_id = sc.id
+	LEFT JOIN search_context_default scd
+		ON scd.user_id = %d AND scd.search_context_id = sc.id
+`
 
 const listSearchContextsFmtStr = `
 SELECT
-  sc.id,
-  sc.name,
-  sc.description,
-  sc.public,
-  sc.namespace_user_id,
-  sc.namespace_org_id,
-  sc.updated_at,
-  sc.query,
-  u.username,
-  o.name
-FROM search_contexts sc
-LEFT JOIN users u on sc.namespace_user_id = u.id
-LEFT JOIN orgs o on sc.namespace_org_id = o.id
+	id,
+	context_name,
+	description,
+	public,
+	autodefined,
+	namespace_user_id,
+	namespace_org_id,
+	updated_at,
+	query,
+	namespace_username,
+	namespace_org_name,
+	user_default,
+	user_starred
+FROM (
+	` + searchContextQueryFmtStr + `
+) AS t
 WHERE
 	(%s) -- permission conditions
 	AND (%s) -- query conditions
-ORDER BY %s
+ORDER BY
+	autodefined DESC, -- Always show global context first
+	user_default DESC,
+	user_starred DESC,
+	%s
 LIMIT %d
 OFFSET %d
 `
 
 const countSearchContextsFmtStr = `
 SELECT COUNT(*)
-FROM search_contexts sc
-LEFT JOIN users u on sc.namespace_user_id = u.id
-LEFT JOIN orgs o on sc.namespace_org_id = o.id
+FROM (
+	` + searchContextQueryFmtStr + `
+) AS t
 WHERE
-	(%s) -- permission conditions
-	AND (%s) -- query conditions
+(%s) -- permission conditions
+AND (%s) -- query conditions
 `
 
 type SearchContextsOrderByOption uint8
@@ -161,11 +204,11 @@ func getSearchContextOrderByClause(orderBy SearchContextsOrderByOption, descendi
 	}
 	switch orderBy {
 	case SearchContextsOrderBySpec:
-		return sqlf.Sprintf(fmt.Sprintf("COALESCE(u.username, o.name) %s, sc.name %s", orderDirection, orderDirection))
+		return sqlf.Sprintf(fmt.Sprintf("namespace_name %s, context_name %s", orderDirection, orderDirection))
 	case SearchContextsOrderByUpdatedAt:
-		return sqlf.Sprintf("sc.updated_at " + orderDirection)
+		return sqlf.Sprintf("updated_at " + orderDirection)
 	case SearchContextsOrderByID:
-		return sqlf.Sprintf("sc.id " + orderDirection)
+		return sqlf.Sprintf("id " + orderDirection)
 	}
 	panic("invalid SearchContextsOrderByOption option")
 }
@@ -176,10 +219,10 @@ func getSearchContextNamespaceQueryConditions(namespaceUserID, namespaceOrgID in
 		return nil, errors.New("options NamespaceUserID and NamespaceOrgID are mutually exclusive")
 	}
 	if namespaceUserID > 0 {
-		conds = append(conds, sqlf.Sprintf("sc.namespace_user_id = %s", namespaceUserID))
+		conds = append(conds, sqlf.Sprintf("namespace_user_id = %s", namespaceUserID))
 	}
 	if namespaceOrgID > 0 {
-		conds = append(conds, sqlf.Sprintf("sc.namespace_org_id = %s", namespaceOrgID))
+		conds = append(conds, sqlf.Sprintf("namespace_org_id = %s", namespaceOrgID))
 	}
 	return conds, nil
 }
@@ -192,16 +235,16 @@ func idsToQueries(ids []int32) []*sqlf.Query {
 	return queries
 }
 
-func getSearchContextsQueryConditions(opts ListSearchContextsOptions) ([]*sqlf.Query, error) {
+func getSearchContextsQueryConditions(opts ListSearchContextsOptions) []*sqlf.Query {
 	namespaceConds := []*sqlf.Query{}
 	if opts.NoNamespace {
-		namespaceConds = append(namespaceConds, sqlf.Sprintf("(sc.namespace_user_id IS NULL AND sc.namespace_org_id IS NULL)"))
+		namespaceConds = append(namespaceConds, sqlf.Sprintf("(namespace_user_id IS NULL AND namespace_org_id IS NULL)"))
 	}
 	if len(opts.NamespaceUserIDs) > 0 {
-		namespaceConds = append(namespaceConds, sqlf.Sprintf("sc.namespace_user_id IN (%s)", sqlf.Join(idsToQueries(opts.NamespaceUserIDs), ",")))
+		namespaceConds = append(namespaceConds, sqlf.Sprintf("namespace_user_id IN (%s)", sqlf.Join(idsToQueries(opts.NamespaceUserIDs), ",")))
 	}
 	if len(opts.NamespaceOrgIDs) > 0 {
-		namespaceConds = append(namespaceConds, sqlf.Sprintf("sc.namespace_org_id IN (%s)", sqlf.Join(idsToQueries(opts.NamespaceOrgIDs), ",")))
+		namespaceConds = append(namespaceConds, sqlf.Sprintf("namespace_org_id IN (%s)", sqlf.Join(idsToQueries(opts.NamespaceOrgIDs), ",")))
 	}
 
 	conds := []*sqlf.Query{}
@@ -211,11 +254,11 @@ func getSearchContextsQueryConditions(opts ListSearchContextsOptions) ([]*sqlf.Q
 
 	if opts.Name != "" {
 		// name column has type citext which automatically performs case-insensitive comparison
-		conds = append(conds, sqlf.Sprintf("sc.name LIKE %s", "%"+opts.Name+"%"))
+		conds = append(conds, sqlf.Sprintf("context_name LIKE %s", "%"+opts.Name+"%"))
 	}
 
 	if opts.NamespaceName != "" {
-		conds = append(conds, sqlf.Sprintf("COALESCE(u.username, o.name, '') ILIKE %s", "%"+opts.NamespaceName+"%"))
+		conds = append(conds, sqlf.Sprintf("COALESCE(namespace_username, namespace_org_name, '') ILIKE %s", "%"+opts.NamespaceName+"%"))
 	}
 
 	if len(conds) == 0 {
@@ -223,15 +266,15 @@ func getSearchContextsQueryConditions(opts ListSearchContextsOptions) ([]*sqlf.Q
 		conds = append(conds, sqlf.Sprintf("1 = 1"))
 	}
 
-	return conds, nil
+	return conds
 }
 
 func (s *searchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf.Query, orderBy *sqlf.Query, limit int32, offset int32) ([]*types.SearchContext, error) {
-	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
-	if err != nil {
-		return nil, err
-	}
-	rows, err := s.Query(ctx, sqlf.Sprintf(listSearchContextsFmtStr, permissionsCond, cond, orderBy, limit, offset))
+	permissionsCond := searchContextsPermissionsCondition(ctx)
+	authenticatedUserId := actor.FromContext(ctx).UID
+
+	query := sqlf.Sprintf(listSearchContextsFmtStr, authenticatedUserId, authenticatedUserId, authenticatedUserId, permissionsCond, cond, orderBy, limit, offset)
+	rows, err := s.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -240,25 +283,19 @@ func (s *searchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf
 }
 
 func (s *searchContextsStore) ListSearchContexts(ctx context.Context, pageOpts ListSearchContextsPageOptions, opts ListSearchContextsOptions) ([]*types.SearchContext, error) {
-	conds, err := getSearchContextsQueryConditions(opts)
-	if err != nil {
-		return nil, err
-	}
+	conds := getSearchContextsQueryConditions(opts)
 	orderBy := getSearchContextOrderByClause(opts.OrderBy, opts.OrderByDescending)
 	return s.listSearchContexts(ctx, sqlf.Join(conds, "\n AND "), orderBy, pageOpts.First, pageOpts.After)
 }
 
 func (s *searchContextsStore) CountSearchContexts(ctx context.Context, opts ListSearchContextsOptions) (int32, error) {
-	conds, err := getSearchContextsQueryConditions(opts)
-	if err != nil {
-		return -1, err
-	}
-	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
-	if err != nil {
-		return -1, err
-	}
+	conds := getSearchContextsQueryConditions(opts)
+	permissionsCond := searchContextsPermissionsCondition(ctx)
+	authenticatedUserId := actor.FromContext(ctx).UID
+
 	var count int32
-	err = s.QueryRow(ctx, sqlf.Sprintf(countSearchContextsFmtStr, permissionsCond, sqlf.Join(conds, "\n AND "))).Scan(&count)
+	query := sqlf.Sprintf(countSearchContextsFmtStr, authenticatedUserId, authenticatedUserId, authenticatedUserId, permissionsCond, sqlf.Join(conds, "\n AND "))
+	err := s.QueryRow(ctx, query).Scan(&count)
 	if err != nil {
 		return -1, err
 	}
@@ -274,7 +311,7 @@ type GetSearchContextOptions struct {
 func (s *searchContextsStore) GetSearchContext(ctx context.Context, opts GetSearchContextOptions) (*types.SearchContext, error) {
 	conds := []*sqlf.Query{}
 	if opts.NamespaceUserID == 0 && opts.NamespaceOrgID == 0 {
-		conds = append(conds, sqlf.Sprintf("sc.namespace_user_id IS NULL"), sqlf.Sprintf("sc.namespace_org_id IS NULL"))
+		conds = append(conds, sqlf.Sprintf("namespace_user_id IS NULL"), sqlf.Sprintf("namespace_org_id IS NULL"))
 	} else {
 		namespaceConds, err := getSearchContextNamespaceQueryConditions(opts.NamespaceUserID, opts.NamespaceOrgID)
 		if err != nil {
@@ -282,16 +319,17 @@ func (s *searchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 		}
 		conds = append(conds, namespaceConds...)
 	}
-	conds = append(conds, sqlf.Sprintf("sc.name = %s", opts.Name))
+	conds = append(conds, sqlf.Sprintf("context_name = %s", opts.Name))
 
-	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
-	if err != nil {
-		return nil, err
-	}
+	permissionsCond := searchContextsPermissionsCondition(ctx)
+	authenticatedUserId := actor.FromContext(ctx).UID
 	rows, err := s.Query(
 		ctx,
 		sqlf.Sprintf(
 			listSearchContextsFmtStr,
+			authenticatedUserId,
+			authenticatedUserId,
+			authenticatedUserId,
 			permissionsCond,
 			sqlf.Join(conds, "\n AND "),
 			getSearchContextOrderByClause(SearchContextsOrderByID, false),
@@ -410,11 +448,11 @@ func createSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		searchContext.Name,
 		searchContext.Description,
 		searchContext.Public,
-		nullInt32Column(searchContext.NamespaceUserID),
-		nullInt32Column(searchContext.NamespaceOrgID),
-		nullStringColumn(searchContext.Query),
+		dbutil.NullInt32Column(searchContext.NamespaceUserID),
+		dbutil.NullInt32Column(searchContext.NamespaceOrgID),
+		dbutil.NullStringColumn(searchContext.Query),
 	)
-	_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -431,10 +469,10 @@ func updateSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		searchContext.Name,
 		searchContext.Description,
 		searchContext.Public,
-		nullStringColumn(searchContext.Query),
+		dbutil.NullStringColumn(searchContext.Query),
 		searchContext.ID,
 	)
-	_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -465,12 +503,15 @@ func scanSearchContexts(rows *sql.Rows) ([]*types.SearchContext, error) {
 			&sc.Name,
 			&sc.Description,
 			&sc.Public,
+			&sc.AutoDefined,
 			&dbutil.NullInt32{N: &sc.NamespaceUserID},
 			&dbutil.NullInt32{N: &sc.NamespaceOrgID},
 			&sc.UpdatedAt,
 			&dbutil.NullString{S: &sc.Query},
 			&dbutil.NullString{S: &sc.NamespaceUserName},
 			&dbutil.NullString{S: &sc.NamespaceOrgName},
+			&sc.Default,
+			&sc.Starred,
 		)
 		if err != nil {
 			return nil, err
@@ -481,7 +522,6 @@ func scanSearchContexts(rows *sql.Rows) ([]*types.SearchContext, error) {
 }
 
 var getSearchContextRepositoryRevisionsFmtStr = `
--- source:internal/database/search_contexts.go:GetSearchContextRepositoryRevisions
 SELECT
 	sc.repo_id,
 	sc.revision,
@@ -505,7 +545,7 @@ WHERE sc.search_context_id = %d
 `
 
 func (s *searchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64) ([]*types.SearchContextRepositoryRevisions, error) {
-	authzConds, err := AuthzQueryConds(ctx, NewDB(s.Handle().DB()))
+	authzConds, err := AuthzQueryConds(ctx, NewDBWith(s.logger, s))
 	if err != nil {
 		return nil, err
 	}
@@ -555,7 +595,6 @@ func (s *searchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 }
 
 var getAllRevisionsForReposFmtStr = `
--- source:internal/database/search_contexts.go:GetAllRevisionsForRepos
 SELECT DISTINCT
 	scr.repo_id,
 	scr.revision
@@ -612,4 +651,64 @@ func (s *searchContextsStore) GetAllQueries(ctx context.Context) (qs []string, _
 	q := sqlf.Sprintf(`SELECT array_agg(query) FROM search_contexts WHERE query IS NOT NULL`)
 
 	return qs, s.QueryRow(ctx, q).Scan(pq.Array(&qs))
+}
+
+// 🚨 SECURITY: The caller must ensure that the actor is the user setting the context as their default.
+func (s *searchContextsStore) SetUserDefaultSearchContextID(ctx context.Context, userID int32, searchContextID int64) error {
+	if searchContextID == 0 {
+		// If the search context ID is 0, we want to delete the default search context for the user.
+		// This will cause the user to use the global search context as their default.
+		return s.Exec(ctx, sqlf.Sprintf("DELETE FROM search_context_default WHERE user_id = %d", userID))
+	}
+
+	q := sqlf.Sprintf(
+		`INSERT INTO search_context_default (user_id, search_context_id)
+		VALUES (%d, %d)
+		ON CONFLICT (user_id) DO
+		UPDATE SET search_context_id=EXCLUDED.search_context_id`,
+		userID,
+		searchContextID)
+	return s.Exec(ctx, q)
+}
+
+func (s *searchContextsStore) GetDefaultSearchContextForCurrentUser(ctx context.Context) (*types.SearchContext, error) {
+	permissionsCond := searchContextsPermissionsCondition(ctx)
+	authenticatedUserId := actor.FromContext(ctx).UID
+	rows, err := s.Query(
+		ctx,
+		sqlf.Sprintf(
+			listSearchContextsFmtStr,
+			authenticatedUserId,
+			authenticatedUserId,
+			authenticatedUserId,
+			permissionsCond,
+			sqlf.Sprintf("user_default = true"),
+			getSearchContextOrderByClause(SearchContextsOrderByID, false),
+			1, // limit
+			0, // offset
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanSingleSearchContext(rows)
+}
+
+// 🚨 SECURITY: The caller must ensure that the actor is the user creating the star for themselves.
+func (s *searchContextsStore) CreateSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error {
+	q := sqlf.Sprintf(
+		`INSERT INTO search_context_stars (user_id, search_context_id)
+		VALUES (%d, %d)
+		ON CONFLICT DO NOTHING`, userID, searchContextID)
+	return s.Exec(ctx, q)
+}
+
+// 🚨 SECURITY: The caller must ensure that the actor is the user deleting the star for themselves.
+func (s *searchContextsStore) DeleteSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error {
+	q := sqlf.Sprintf(
+		`DELETE FROM search_context_stars
+		WHERE user_id = %d AND search_context_id = %d`,
+		userID, searchContextID)
+	return s.Exec(ctx, q)
 }

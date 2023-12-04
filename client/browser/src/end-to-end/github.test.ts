@@ -1,13 +1,14 @@
 import assert from 'assert'
 
 import { startCase } from 'lodash'
-import { Target, Page } from 'puppeteer'
+import { describe, it } from 'mocha'
+import type { Target, Page } from 'puppeteer'
 import { fromEvent } from 'rxjs'
 import { first, filter, timeout, mergeMap } from 'rxjs/operators'
 
 import { isDefined } from '@sourcegraph/common'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
@@ -25,7 +26,7 @@ describe('Sourcegraph browser extension on github.com', function () {
         driver = await createDriverForTest({ loadExtension: true, browser, sourcegraphBaseUrl, ...restConfig })
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             if (restConfig.testUserPassword) {
-                await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+                await driver.ensureSignedIn({ username: 'test', password: restConfig.testUserPassword })
             }
             await driver.setExtensionSourcegraphUrl()
         }
@@ -38,13 +39,14 @@ describe('Sourcegraph browser extension on github.com', function () {
 
     testSingleFilePage({
         getDriver: () => driver,
-        url: 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go',
+        url: 'https://github.com/sourcegraph/jsonrpc2/blob/6864d8cc6d35a79f50745f8990cb4d594a8036f4/call_opt.go',
         repoName: 'github.com/sourcegraph/jsonrpc2',
+        commitID: '6864d8cc6d35a79f50745f8990cb4d594a8036f4',
         sourcegraphBaseUrl,
-        // Not using '.js-file-line' because it breaks the reliance on :nth-child() in testSingleFilePage()
-        lineSelector: '.js-file-line-container tr',
+        // Hovercards are broken on the new GitHub file page
+        // getLineSelector: lineNumber => `#LC${lineNumber}`,
         goToDefinitionURL:
-            'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go#L5:6',
+            'https://github.com/sourcegraph/jsonrpc2/blob/6864d8cc6d35a79f50745f8990cb4d594a8036f4/call_opt.go#L5:6',
     })
 
     const tokens = {

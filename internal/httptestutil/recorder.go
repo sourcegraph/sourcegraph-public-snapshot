@@ -27,13 +27,8 @@ func NewRecorder(file string, record bool, filters ...cassette.Filter) (*recorde
 		return nil, err
 	}
 
-	filters = append(filters, func(i *cassette.Interaction) error {
-		delete(i.Request.Headers, "Authorization")
-		// This is used for GitLab.
-		delete(i.Request.Headers, "Private-Token")
-		delete(i.Response.Headers, "Set-Cookie")
-		return nil
-	})
+	// Remove headers that might include secrets.
+	filters = append(filters, riskyHeaderFilter)
 
 	for _, f := range filters {
 		rec.AddFilter(f)
@@ -58,8 +53,7 @@ func NewRecorderOpt(rec *recorder.Recorder) httpcli.Opt {
 	}
 }
 
-// NewGitHubRecorderFactory returns a *http.Factory that rewrites HTTP requests
-// to github-proxy to github.com and records all HTTP requests in
+// NewGitHubRecorderFactory returns a *http.Factory that records all HTTP requests in
 // "testdata/vcr/{name}" with {name} being the name that's passed in.
 //
 // If update is true, the HTTP requests are recorded, otherwise they're replayed
@@ -75,9 +69,7 @@ func NewGitHubRecorderFactory(t testing.TB, update bool, name string) (*httpcli.
 		t.Fatal(err)
 	}
 
-	mw := httpcli.NewMiddleware(httpcli.GitHubProxyRedirectMiddleware)
-
-	hc := httpcli.NewFactory(mw, NewRecorderOpt(rec))
+	hc := httpcli.NewFactory(httpcli.NewMiddleware(), httpcli.CachedTransportOpt, NewRecorderOpt(rec))
 
 	return hc, func() {
 		if err := rec.Stop(); err != nil {
@@ -103,11 +95,24 @@ func NewRecorderFactory(t testing.TB, update bool, name string) (*httpcli.Factor
 		t.Fatal(err)
 	}
 
-	hc := httpcli.NewFactory(nil, NewRecorderOpt(rec))
+	hc := httpcli.NewFactory(nil, httpcli.CachedTransportOpt, NewRecorderOpt(rec))
 
 	return hc, func() {
 		if err := rec.Stop(); err != nil {
 			t.Errorf("failed to update test data: %s", err)
 		}
 	}
+}
+
+// riskyHeaderFilter deletes anything that looks risky in request and response
+// headers.
+func riskyHeaderFilter(i *cassette.Interaction) error {
+	for _, headers := range []http.Header{i.Request.Headers, i.Response.Headers} {
+		for name, values := range headers {
+			if httpcli.IsRiskyHeader(name, values) {
+				delete(headers, name)
+			}
+		}
+	}
+	return nil
 }

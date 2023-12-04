@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
@@ -23,7 +25,8 @@ func TestTemporarySettingsStore(t *testing.T) {
 
 func testGetEmpty(t *testing.T) {
 	t.Parallel()
-	temporarySettingsStore := NewDB(dbtest.NewDB(t)).TemporarySettings()
+	logger := logtest.Scoped(t)
+	temporarySettingsStore := NewDB(logger, dbtest.NewDB(t)).TemporarySettings()
 
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -37,8 +40,9 @@ func testGetEmpty(t *testing.T) {
 
 func testInsertAndGet(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
-	usersStore := Users(db)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	usersStore := db.Users()
 	temporarySettingsStore := db.TemporarySettings()
 
 	ctx := actor.WithInternalActor(context.Background())
@@ -60,8 +64,9 @@ func testInsertAndGet(t *testing.T) {
 
 func testUpdateAndGet(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
-	usersStore := Users(db)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	usersStore := db.Users()
 	temporarySettingsStore := db.TemporarySettings()
 
 	ctx := actor.WithInternalActor(context.Background())
@@ -88,8 +93,9 @@ func testUpdateAndGet(t *testing.T) {
 
 func testInsertWithInvalidData(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
-	usersStore := Users(db)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	usersStore := db.Users()
 	temporarySettingsStore := db.TemporarySettings()
 
 	ctx := actor.WithInternalActor(context.Background())
@@ -105,8 +111,9 @@ func testInsertWithInvalidData(t *testing.T) {
 
 func testEdit(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
-	usersStore := Users(db)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	usersStore := db.Users()
 	temporarySettingsStore := db.TemporarySettings()
 
 	ctx := actor.WithInternalActor(context.Background())

@@ -2,29 +2,121 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var timeNow = time.Now
 
-func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
-	// 🚨 SECURITY: Only the authenticated user and site admins can list user's
-	// emails.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return nil, err
+func (r *UserResolver) HasVerifiedEmail(ctx context.Context) (bool, error) {
+	if deploy.IsApp() {
+		return r.hasVerifiedEmailOnDotcom(ctx)
 	}
 
-	userEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
+	return r.hasVerifiedEmail(ctx)
+}
+
+func (r *UserResolver) hasVerifiedEmail(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: In the UserEmailsService we check that only the
+	// authenticated user and site admins can check
+	// whether the user has a verified email.
+	return backend.NewUserEmailsService(r.db, r.logger).HasVerifiedEmail(ctx, r.user.ID)
+}
+
+// hasVerifiedEmailOnDotcom - checks with sourcegraph.com to ensure the app user has verified email.
+func (r *UserResolver) hasVerifiedEmailOnDotcom(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: This resolves HasVerifiedEmail only for App by
+	// sending the request to dotcom to check if a verified email exists for the user.
+	// Dotcom will ensure that only the authenticated user and site admins can check
+	if !deploy.IsApp() {
+		return false, errors.New("attempt to check dotcom email verified outside of sourcegraph app")
+	}
+
+	if envvar.SourcegraphDotComMode() {
+		return false, errors.New("attempt to check dotcom email verified outside of sourcegraph app")
+	}
+
+	// If app isn't configured with dotcom auth return false immediately
+	appConfig := conf.Get().App
+	if appConfig == nil {
+		return false, nil
+	}
+	if len(appConfig.DotcomAuthToken) <= 0 {
+		return false, nil
+	}
+
+	// If we have an app user with a dotcom authtoken ask dotcom if the user has a verified email
+	url := "https://sourcegraph.com/.api/graphql?AppHasVerifiedEmailCheck"
+	cli := httpcli.ExternalDoer
+	payload := strings.NewReader(`{"query":"query AppHasVerifiedEmailCheck{ currentUser { hasVerifiedEmail } }","variables":{}}`)
+
+	// Send GraphQL request to sourcegraph.com to check if email is verified
+	req, err := http.NewRequestWithContext(ctx, "POST", url, payload)
+	if err != nil {
+		r.logger.Warn("failed creating email verification request ", log.Error(err))
+		return false, nil
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("token %s", appConfig.DotcomAuthToken))
+
+	resp, err := cli.Do(req)
+	if err != nil {
+		r.logger.Warn("email verification request failed", log.Error(err))
+		return false, nil
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		r.logger.Warn("email verification failed", log.Int("status", resp.StatusCode))
+		return false, nil
+	}
+
+	// Get the response
+	type Response struct {
+		Data struct {
+			CurrentUser struct{ HasVerifiedEmail bool }
+		}
+	}
+	var result Response
+	b, err := io.ReadAll(io.LimitReader(resp.Body, 1024))
+	if err != nil {
+		r.logger.Warn("unable to read verified email response", log.Error(err))
+		return false, nil
+	}
+	if err := json.Unmarshal(b, &result); err != nil {
+		r.logger.Warn("unable to unmarshal verified email response", log.Error(err))
+		return false, nil
+	}
+
+	return result.Data.CurrentUser.HasVerifiedEmail, nil
+}
+
+func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
+	// 🚨 SECURITY: Only the authenticated user and site admins can list user's
+	// emails on Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+			return nil, err
+		}
+	}
+
+	userEmails, err := r.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 		UserID: r.user.ID,
 	})
 	if err != nil {
@@ -42,6 +134,34 @@ func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error)
 	return rs, nil
 }
 
+func (r *UserResolver) PrimaryEmail(ctx context.Context) (*userEmailResolver, error) {
+	// 🚨 SECURITY: Only the authenticated user and site admins can list user's
+	// emails on Sourcegraph.com. We don't return an error, but not showing the email
+	// either.
+	if envvar.SourcegraphDotComMode() {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+			return nil, nil
+		}
+	}
+	ms, err := r.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
+		UserID:       r.user.ID,
+		OnlyVerified: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, m := range ms {
+		if m.Primary {
+			return &userEmailResolver{
+				db:        r.db,
+				userEmail: *m,
+				user:      r,
+			}, nil
+		}
+	}
+	return nil, nil
+}
+
 type userEmailResolver struct {
 	db        database.DB
 	userEmail database.UserEmail
@@ -50,13 +170,7 @@ type userEmailResolver struct {
 
 func (r *userEmailResolver) Email() string { return r.userEmail.Email }
 
-func (r *userEmailResolver) IsPrimary(ctx context.Context) (bool, error) {
-	email, _, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, r.user.user.ID)
-	if err != nil {
-		return false, err
-	}
-	return email == r.userEmail.Email, nil
-}
+func (r *userEmailResolver) IsPrimary() bool { return r.userEmail.Primary }
 
 func (r *userEmailResolver) Verified() bool { return r.userEmail.VerifiedAt != nil }
 func (r *userEmailResolver) VerificationPending() bool {
@@ -65,12 +179,7 @@ func (r *userEmailResolver) VerificationPending() bool {
 func (r *userEmailResolver) User() *UserResolver { return r.user }
 
 func (r *userEmailResolver) ViewerCanManuallyVerify(ctx context.Context) (bool, error) {
-	// 🚨 SECURITY: No one can manually verify user's email on Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		return false, nil
-	}
-
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err == backend.ErrNotAuthenticated || err == backend.ErrMustBeSiteAdmin {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err == auth.ErrNotAuthenticated || err == auth.ErrMustBeSiteAdmin {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -89,27 +198,17 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *addUserEmailArg
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the authenticated user can add new email to their accounts
-	// on Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckSameUser(ctx, userID); err != nil {
-			return nil, err
-		}
-	} else {
-		// 🚨 SECURITY: Only the authenticated user or site admins can add new email to
-		// users' accounts.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-			return nil, err
-		}
-	}
+	logger := r.logger.Scoped("AddUserEmail").
+		With(log.Int32("userID", userID))
 
-	if err := backend.UserEmails.Add(ctx, r.db, userID, args.Email); err != nil {
+	userEmails := backend.NewUserEmailsService(r.db, logger)
+	if err := userEmails.Add(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, userID, "added an email"); err != nil {
-			log15.Warn("Failed to send email to inform user of email addition", "error", err)
+		if err := userEmails.SendUserEmailOnFieldUpdate(ctx, userID, "added an email"); err != nil {
+			logger.Warn("Failed to send email to inform user of email addition", log.Error(err))
 		}
 	}
 
@@ -127,33 +226,9 @@ func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *removeUserEm
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the authenticated user can remove email from their accounts
-	// on Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckSameUser(ctx, userID); err != nil {
-			return nil, err
-		}
-	} else {
-		// 🚨 SECURITY: Only the authenticated user and site admins can remove email
-		// from users' accounts.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-			return nil, err
-		}
-	}
-
-	if err := r.db.UserEmails().Remove(ctx, userID, args.Email); err != nil {
+	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	if err := userEmails.Remove(ctx, userID, args.Email); err != nil {
 		return nil, err
-	}
-
-	// 🚨 SECURITY: If an email is removed, invalidate any existing password reset tokens that may have been sent to that email.
-	if err := r.db.Users().DeletePasswordResetCode(ctx, userID); err != nil {
-		return nil, err
-	}
-
-	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, userID, "removed an email"); err != nil {
-			log15.Warn("Failed to send email to inform user of email removal", "error", err)
-		}
 	}
 
 	return &EmptyResponse{}, nil
@@ -170,28 +245,9 @@ func (r *schemaResolver) SetUserEmailPrimary(ctx context.Context, args *setUserE
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the authenticated user can set the primary email for their
-	// accounts on Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckSameUser(ctx, userID); err != nil {
-			return nil, err
-		}
-	} else {
-		// 🚨 SECURITY: Only the authenticated user and site admins can set the primary
-		// email for users' accounts.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-			return nil, err
-		}
-	}
-
-	if err := database.UserEmails(r.db).SetPrimaryEmail(ctx, userID, args.Email); err != nil {
+	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	if err := userEmails.SetPrimaryEmail(ctx, userID, args.Email); err != nil {
 		return nil, err
-	}
-
-	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, userID, "changed primary email"); err != nil {
-			log15.Warn("Failed to send email to inform user of primary address change", "error", err)
-		}
 	}
 
 	return &EmptyResponse{}, nil
@@ -204,37 +260,14 @@ type setUserEmailVerifiedArgs struct {
 }
 
 func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *setUserEmailVerifiedArgs) (*EmptyResponse, error) {
-	// 🚨 SECURITY: No one can manually verify user's email on Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("manually verify user email is disabled")
-	}
-
-	// 🚨 SECURITY: Only site admins (NOT users themselves) can manually set email verification
-	// status. Users themselves must go through the normal email verification process.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}
-	if err := r.db.UserEmails().SetVerified(ctx, userID, args.Email, args.Verified); err != nil {
-		return nil, err
-	}
 
-	// Avoid unnecessary calls if the email is set to unverified.
-	if args.Verified {
-		if err = r.db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
-			UserID: userID,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
-		}); err != nil {
-			log15.Error("schemaResolver.SetUserEmailVerified: failed to grant user pending permissions",
-				"userID", userID,
-				"error", err,
-			)
-		}
+	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	if err := userEmails.SetVerified(ctx, userID, args.Email, args.Verified); err != nil {
+		return nil, err
 	}
 
 	return &EmptyResponse{}, nil
@@ -251,56 +284,8 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *rese
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the authenticated user can resend verification email for
-	// their accounts on Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckSameUser(ctx, userID); err != nil {
-			return nil, err
-		}
-	} else {
-		// 🚨 SECURITY: Only the authenticated user and site admins can resend
-		// verification email for their accounts.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-			return nil, err
-		}
-	}
-
-	user, err := r.db.Users().GetByID(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	userEmails := r.db.UserEmails()
-	lastSent, err := userEmails.GetLatestVerificationSentEmail(ctx, args.Email)
-	if err != nil {
-		return nil, err
-	}
-	if lastSent != nil &&
-		lastSent.LastVerificationSentAt != nil &&
-		timeNow().Sub(*lastSent.LastVerificationSentAt) < 1*time.Minute {
-		return nil, errors.New("Last verification email sent too recently")
-	}
-
-	email, verified, err := userEmails.Get(ctx, userID, args.Email)
-	if err != nil {
-		return nil, err
-	}
-	if verified {
-		return &EmptyResponse{}, nil
-	}
-
-	code, err := backend.MakeEmailVerificationCode()
-	if err != nil {
-		return nil, err
-	}
-
-	err = userEmails.SetLastVerification(ctx, userID, email, code)
-	if err != nil {
-		return nil, err
-	}
-
-	err = backend.SendUserEmailVerificationEmail(ctx, user.Username, email, code)
-	if err != nil {
+	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	if err := userEmails.ResendVerificationEmail(ctx, userID, args.Email, timeNow()); err != nil {
 		return nil, err
 	}
 

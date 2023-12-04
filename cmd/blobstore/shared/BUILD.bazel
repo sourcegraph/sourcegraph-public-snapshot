@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = [
+        "service.go",
+        "shared.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/blobstore/shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/blobstore/internal/blobstore",
+        "//internal/actor",
+        "//internal/conf",
+        "//internal/conf/deploy",
+        "//internal/debugserver",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/instrumentation",
+        "//internal/observation",
+        "//internal/service",
+        "//internal/trace",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_sync//errgroup",
+    ],
+)

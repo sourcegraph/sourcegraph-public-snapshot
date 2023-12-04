@@ -8,10 +8,10 @@ import (
 // wrapper type for interface{} slice that marshals to a plain string
 // in which values are comma separated and strings are unquoted aka
 // []string{"asdf", "fdsa"} would render as the JSON string "asdf, fdsa".
-type sliceWrapper []interface{}
+type sliceWrapper []any
 
 func (s sliceWrapper) MarshalJSON() ([]byte, error) {
-	if s == nil || len(s) == 0 {
+	if len(s) == 0 {
 		return nil, nil
 	}
 

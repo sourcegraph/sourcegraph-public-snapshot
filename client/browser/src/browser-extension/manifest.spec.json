@@ -18,7 +18,7 @@
     "128": "img/icon-128.png"
   },
   "background": {
-    "scripts": ["js/background.bundle.js"]
+    "scripts": ["js/backgroundPage.main.bundle.js"]
   },
   "options_ui": {
     "page": "options.html",
@@ -49,7 +49,7 @@
       "https://sourcegraph.com/*",
       "http://localhost:32773/*"
     ],
-    "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvyGmcOkw4cTnhO0bgl3fQLAdv1jZp8T1ZHYI+4d8FgwwVKLYWE+pAuJ/0LrI69ibed4Nnnw5YleB1xCpI+mzB56xfXWboKp6lljevKqWJ5TpJk/Vam3kSSoZwpmJRXnzmcM3qKpL6viUhTfwGmQO6WVTsN4YCx+KWXv97IyF6yDTgd6hwFsvCZY2n1ADgurrQkE6AcJ3kK4xZ14jaHllXEdFcqwh0+Am5qLcIJ1cNo5iFD35exXsjwdQbmpt8sEk5f95pK5FEEbJFmOTguu2fOZycqIoTgoDrbbhT5k9TUogZaN5Lup0Iwh0Cv60i4C1f7IdPrxHuaYmYCfoUezXnQIDAQAB"
+    "key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCl2X/axNHMbP0K/NCpMzGo/pgBSsHB2xKx6tfohORKtEv2wUMBPmkK3++kirrwYO2f8Ficyq6pjlXV8LjwPSjSw9KZj6bkDn8QNoSdCp6x9i8ZOWPw6UTQ6s54b3rGQNyvrvfD7S6LphxGEx8rNlkjpWKcrvY3+DyoFKHP/hax7wIDAQAB"
   },
   "prod": {
     "permissions": ["activeTab", "storage", "contextMenus", "https://github.com/*", "https://sourcegraph.com/*"]

@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,52 +11,28 @@ import (
 	"path"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
+	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
 	// The metric generated here will be named as "src_gitlab_requests_total".
 	requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
-
-	// Whether debug logging is turned on
-	traceEnabled int32 = 0
 )
-
-func init() {
-	go func() {
-		conf.Watch(func() {
-			exp := conf.Get().ExperimentalFeatures
-			if exp == nil {
-				atomic.StoreInt32(&traceEnabled, 0)
-				return
-			}
-			if debugLog := exp.DebugLog; debugLog == nil || !debugLog.ExtsvcGitlab {
-				atomic.StoreInt32(&traceEnabled, 0)
-				return
-			}
-			atomic.StoreInt32(&traceEnabled, 1)
-		})
-	}()
-}
-
-func trace(msg string, ctx ...interface{}) {
-	if atomic.LoadInt32(&traceEnabled) == 1 {
-		log15.Info(fmt.Sprintf("TRACE %s", msg), ctx...)
-	}
-}
 
 // TokenType is the type of an access token.
 type TokenType string
@@ -69,10 +46,13 @@ const (
 // separate cache, but they share an underlying HTTP client and rate limiter. Callers who want a simple
 // unauthenticated API client should use `NewClientProvider(baseURL, transport).GetClient()`.
 type ClientProvider struct {
+	// The URN of the external service that the client is derived from.
+	urn string
+
 	// baseURL is the base URL of GitLab; e.g., https://gitlab.com or https://gitlab.example.com
 	baseURL *url.URL
 
-	// httpClient is the underlying the HTTP client to use
+	// httpClient is the underlying the HTTP client to use.
 	httpClient httpcli.Doer
 
 	gitlabClients   map[string]*Client
@@ -84,7 +64,7 @@ type CommonOp struct {
 	NoCache bool
 }
 
-func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
+func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	if cli == nil {
 		cli = httpcli.ExternalDoer
 	}
@@ -99,6 +79,7 @@ func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	})
 
 	return &ClientProvider{
+		urn:           urn,
 		baseURL:       baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
 		httpClient:    cli,
 		gitlabClients: make(map[string]*Client),
@@ -144,7 +125,7 @@ func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
 		return c
 	}
 
-	c := p.newClient(p.baseURL, a, p.httpClient)
+	c := p.NewClient(a)
 	p.gitlabClients[key] = c
 	return c
 }
@@ -163,24 +144,30 @@ func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
 // same cache. However, two Client instances sharing the exact same values for
 // those fields WILL share a cache.
 type Client struct {
-	baseURL          *url.URL
-	httpClient       httpcli.Doer
-	projCache        *rcache.Cache
-	Auth             auth.Authenticator
-	rateLimitMonitor *ratelimit.Monitor
-	rateLimiter      *rate.Limiter // Our internal rate limiter
+	// The URN of the external service that the client is derived from.
+	urn string
+	log log.Logger
+
+	baseURL             *url.URL
+	httpClient          httpcli.Doer
+	projCache           *rcache.Cache
+	Auth                auth.Authenticator
+	externalRateLimiter *ratelimit.Monitor
+	internalRateLimiter *ratelimit.InstrumentedLimiter
+	waitForRateLimit    bool
+	maxRateLimitRetries int
 }
 
-// newClient creates a new GitLab API client with an optional personal access token to authenticate requests.
+// NewClient creates a new GitLab API client with an optional personal access token to authenticate requests.
 //
 // The URL must point to the base URL of the GitLab instance. This is https://gitlab.com for GitLab.com and
 // http[s]://[gitlab-hostname] for self-hosted GitLab instances.
 //
 // See the docstring of Client for the meaning of the parameters.
-func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpClient httpcli.Doer) *Client {
+func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
-	if isGitLabDotComURL(baseURL) && a == nil {
+	if isGitLabDotComURL(p.baseURL) && a == nil {
 		cacheTTL = 10 * time.Minute // cache for longer when unauthenticated
 	} else {
 		cacheTTL = 30 * time.Second
@@ -193,16 +180,20 @@ func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpC
 	}
 	projCache := rcache.NewWithTTL(key, int(cacheTTL/time.Second))
 
-	rl := ratelimit.DefaultRegistry.Get(baseURL.String())
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
+	rl := ratelimit.NewInstrumentedLimiter(p.urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitLabClient"), p.urn))
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(p.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 
 	return &Client{
-		baseURL:          baseURL,
-		httpClient:       httpClient,
-		projCache:        projCache,
-		Auth:             a,
-		rateLimiter:      rl,
-		rateLimitMonitor: rlm,
+		urn:                 p.urn,
+		log:                 log.Scoped("gitlabAPIClient"),
+		baseURL:             p.baseURL,
+		httpClient:          p.httpClient,
+		projCache:           projCache,
+		Auth:                a,
+		internalRateLimiter: rl,
+		externalRateLimiter: rlm,
+		waitForRateLimit:    true,
+		maxRateLimitRetries: 2,
 	}
 }
 
@@ -211,73 +202,106 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 	return hostname == "gitlab.com" || hostname == "www.gitlab.com"
 }
 
-// do is the default method for making API requests and will prepare the correct
-// base path.
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (responseHeader http.Header, responseCode int, err error) {
-	req.URL = c.baseURL.ResolveReference(req.URL)
-	return c.doWithBaseURL(ctx, req, result)
+func (c *Client) Urn() string {
+	return c.urn
 }
 
-// doWithBaseURL will not amend the request URL.
-func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result interface{}) (responseHeader http.Header, responseCode int, err error) {
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if c.Auth != nil {
-		if err := c.Auth.Authenticate(req); err != nil {
-			return nil, 0, errors.Wrap(err, "authenticating request")
-		}
-	}
-	var resp *http.Response
-
-	span, ctx := ot.StartSpanFromContext(ctx, "GitLab")
-	span.SetTag("URL", req.URL.String())
-	defer func() {
-		if err != nil {
-			span.SetTag("error", err.Error())
-		}
-		if resp != nil {
-			span.SetTag("status", resp.Status)
-		}
-		span.Finish()
-	}()
-
-	if c.rateLimiter != nil {
-		err = c.rateLimiter.Wait(ctx)
+// do is the default method for making API requests and will prepare the correct
+// base path.
+func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
+	if c.internalRateLimiter != nil {
+		err = c.internalRateLimiter.Wait(ctx)
 		if err != nil {
 			return nil, 0, errors.Wrap(err, "rate limit")
 		}
 	}
 
-	resp, err = c.httpClient.Do(req.WithContext(ctx))
+	if c.waitForRateLimit {
+		// We don't care whether this happens or not as it is a preventative measure.
+		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
+	}
+
+	var reqBody []byte
+	if req.Body != nil {
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+	req.Body = io.NopCloser(bytes.NewReader(reqBody))
+	req.URL = c.baseURL.ResolveReference(req.URL)
+	respHeader, respCode, err := c.doWithBaseURL(ctx, req, result)
+
+	// GitLab responds with a 429 Too Many Requests if rate limits are exceeded
+	numRetries := 0
+	for c.waitForRateLimit && numRetries < c.maxRateLimitRetries && respCode == http.StatusTooManyRequests {
+		// We always retry since we got a StatusTooManyRequests. This is safe
+		// since we bound retries by maxRateLimitRetries.
+		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
+
+		req.Body = io.NopCloser(bytes.NewReader(reqBody))
+		respHeader, respCode, err = c.doWithBaseURL(ctx, req, result)
+		numRetries += 1
+	}
+
+	return respHeader, respCode, err
+}
+
+// doWithBaseURL doesn't amend the request URL. When an OAuth Bearer token is
+// used for authentication, it will try to refresh the token and retry the same
+// request when the token has expired.
+func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
+	var resp *http.Response
+
+	tr, ctx := trace.New(ctx, "GitLab",
+		attribute.Stringer("url", req.URL))
+	defer func() {
+		if resp != nil {
+			tr.SetAttributes(attribute.String("status", resp.Status))
+		}
+		tr.EndWithErr(&err)
+	}()
+	req = req.WithContext(ctx)
+
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	// Prevent the CachedTransportOpt from caching client side, but still use ETags
+	// to cache server-side
+	req.Header.Set("Cache-Control", "max-age=0")
+
+	resp, err = oauthutil.DoRequest(ctx, log.Scoped("gitlab client"), c.httpClient, req, c.Auth)
+	if resp != nil {
+		c.externalRateLimiter.Update(resp.Header)
+	}
 	if err != nil {
-		trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
-		return nil, 0, err
+		c.log.Debug("GitLab API error", log.String("method", req.Method), log.String("url", req.URL.String()), log.Error(err))
+		return nil, 0, errors.Wrap(err, "request failed")
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, errors.Wrap(err, "read response body")
 	}
 	defer resp.Body.Close()
-	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", resp.StatusCode)
 
-	c.rateLimitMonitor.Update(resp.Header)
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		// We swallow the error here, because we don't want to fail. Parsing the body
-		// is just optional to provide some more context.
-		body, _ := io.ReadAll(resp.Body)
 		err := NewHTTPError(resp.StatusCode, body)
 		return nil, resp.StatusCode, errors.Wrap(err, fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
 	}
 
-	return resp.Header, resp.StatusCode, json.NewDecoder(resp.Body).Decode(result)
+	return resp.Header, resp.StatusCode, json.Unmarshal(body, result)
 }
 
-// RateLimitMonitor exposes the rate limit monitor.
-func (c *Client) RateLimitMonitor() *ratelimit.Monitor {
-	return c.rateLimitMonitor
+// ExternalRateLimiter exposes the rate limit monitor.
+func (c *Client) ExternalRateLimiter() *ratelimit.Monitor {
+	return c.externalRateLimiter
 }
 
 func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	tokenHash := a.Hash()
 
 	cc := *c
-	cc.rateLimiter = ratelimit.DefaultRegistry.Get(cc.baseURL.String())
-	cc.rateLimitMonitor = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
+	cc.internalRateLimiter = ratelimit.NewInstrumentedLimiter(c.urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitLabClient"), c.urn))
+	cc.externalRateLimiter = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 	cc.Auth = a
 
 	return &cc
@@ -306,6 +330,7 @@ func (c *Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string,
 	v := struct {
 		Scopes []string `json:"scopes,omitempty"`
 	}{}
+
 	_, _, err = c.doWithBaseURL(ctx, req, &v)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting oauth scopes")
@@ -365,9 +390,6 @@ func HTTPErrorCode(err error) int {
 	return 0
 }
 
-// ErrMergeRequestNotFound is when the requested GitLab merge request is not found.
-var ErrMergeRequestNotFound = errors.New("GitLab merge request not found")
-
 // IsNotFound reports whether err is a GitLab API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
@@ -375,6 +397,9 @@ func IsNotFound(err error) bool {
 		errors.Is(err, ErrMergeRequestNotFound) ||
 		HTTPErrorCode(err) == http.StatusNotFound
 }
+
+// ErrMergeRequestNotFound is when the requested GitLab merge request is not found.
+var ErrMergeRequestNotFound = errors.New("GitLab merge request not found")
 
 // ErrProjectNotFound is when the requested GitLab project is not found.
 var ErrProjectNotFound = &ProjectNotFoundError{}
@@ -392,3 +417,49 @@ func (e ProjectNotFoundError) Error() string {
 }
 
 func (e ProjectNotFoundError) NotFound() bool { return true }
+
+var MockGetOAuthContext func() *oauthutil.OAuthContext
+
+// GetOAuthContext matches the corresponding auth provider using the given
+// baseURL and returns the oauthutil.OAuthContext of it.
+func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
+	if MockGetOAuthContext != nil {
+		return MockGetOAuthContext()
+	}
+
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Gitlab != nil {
+			p := authProvider.Gitlab
+			glURL := strings.TrimSuffix(p.Url, "/")
+			if !strings.HasPrefix(baseURL, glURL) {
+				continue
+			}
+
+			return &oauthutil.OAuthContext{
+				ClientID:     p.ClientID,
+				ClientSecret: p.ClientSecret,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  glURL + "/oauth/authorize",
+					TokenURL: glURL + "/oauth/token",
+				},
+				Scopes: RequestedOAuthScopes(p.ApiScope),
+			}
+		}
+	}
+	return nil
+}
+
+// ProjectArchivedError is returned when a request cannot be performed due to the
+// GitLab project being archived.
+type ProjectArchivedError struct{ Name string }
+
+func (ProjectArchivedError) Archived() bool { return true }
+
+func (e ProjectArchivedError) Error() string {
+	if e.Name == "" {
+		return "GitLab project is archived"
+	}
+	return fmt.Sprintf("GitLab project %q is archived", e.Name)
+}
+
+func (ProjectArchivedError) NonRetryable() bool { return true }

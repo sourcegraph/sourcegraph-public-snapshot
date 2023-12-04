@@ -1,0 +1,39 @@
+name: many-comby
+description: |
+  Apply many comby match patterns
+on:
+  - repositoriesMatchingQuery: <<CHANGE_ME>>
+
+# comby can take a configuration file listing patterns to apply
+# https://comby.dev/docs/configuration
+steps:
+  - run: |
+      comby -in-place -config  /tmp/patterns.toml -exclude-dir .,vendor;
+    container: comby/comby
+    # files to mount on the container can be directly included in the spec file
+    # for other options, see https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#steps-mount
+    files:
+      /tmp/patterns.toml: |
+        [my-first-pattern]
+        match="Array.prototype.slice.call(:[arguments]);"
+        rewrite="Array.from(:[arguments])"
+
+        [my-second-pattern-multiline]
+        match='''
+        function :[[fn]](:[1], :[2]) {
+          :[body]
+        };'''
+
+        rewrite='''
+        function :[[fn]](:[2], :[1]) {
+          :[body]
+        };'''
+
+
+# Describe the changeset (e.g., GitHub pull request) you want for each repository.
+changesetTemplate:
+  title: Apply many comby match patterns
+  body: Apply many comby match patterns
+  branch: batches/many-comby
+  commit:
+    message: many comby

@@ -1,14 +1,15 @@
 import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import React from 'react'
 import sinon from 'sinon'
+import { describe, expect, test } from 'vitest'
 
-import { ActionEditor, ActionEditorProps } from './ActionEditor'
+import { assertAriaDisabled } from '@sourcegraph/testing'
+
+import { ActionEditor, type ActionEditorProps } from './ActionEditor'
 
 describe('ActionEditor', () => {
     const props: ActionEditorProps = {
         title: 'Send email notifications',
-        label: 'Send email notifications',
         subtitle: 'Send notifications to specified recipients.',
         disabled: false,
         completed: false,
@@ -16,11 +17,17 @@ describe('ActionEditor', () => {
         idName: 'email',
         actionEnabled: true,
         toggleActionEnabled: sinon.fake(),
+        includeResults: true,
+        toggleIncludeResults: sinon.fake(),
         canSubmit: true,
         onSubmit: sinon.fake(),
         onCancel: sinon.fake(),
         canDelete: true,
         onDelete: sinon.fake(),
+        testButtonText: 'Send test email',
+        onTest: sinon.fake(),
+        testAgainButtonText: 'Send again',
+        testState: undefined,
     }
 
     test('expand and collapse with cancel button', () => {
@@ -80,7 +87,7 @@ describe('ActionEditor', () => {
         userEvent.click(getByTestId('form-action-toggle-email'))
 
         expect(queryByTestId('delete-action-email')).not.toBeInTheDocument()
-        expect(getByTestId('submit-action-email')).toBeDisabled()
+        assertAriaDisabled(getByTestId('submit-action-email'))
     })
 
     test('toggle disable when collapsed', () => {
@@ -96,7 +103,7 @@ describe('ActionEditor', () => {
         expect(getByTestId('enable-action-toggle-collapsed-email')).toBeChecked()
 
         userEvent.click(getByTestId('enable-action-toggle-collapsed-email'))
-        sinon.assert.calledWithExactly(toggleActionEnabledSpy, false)
+        sinon.assert.calledWithExactly(toggleActionEnabledSpy, false, true)
     })
 
     test('toggle disable when expanded', () => {
@@ -113,6 +120,6 @@ describe('ActionEditor', () => {
         expect(getByTestId('enable-action-toggle-expanded-email')).not.toBeChecked()
 
         userEvent.click(getByTestId('enable-action-toggle-expanded-email'))
-        sinon.assert.calledWithExactly(toggleActionEnabledSpy, true)
+        sinon.assert.calledWithExactly(toggleActionEnabledSpy, true, false)
     })
 })

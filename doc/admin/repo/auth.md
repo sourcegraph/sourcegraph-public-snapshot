@@ -2,14 +2,15 @@
 
 If authentication (HTTP(S) or SSH) is required to `git clone` a repository then you must provide credentials to the container.
 
-First, ensure your **Site admin > Manage repositories** code host configuration is configured to use SSH. For example, by setting the `gitURLType` field to "ssh". Alternatively, you may use the "Generic Git host" code host type, which allows you to directly specify Git repository URLs for cloning.
+First, ensure your **Site admin > Manage code hosts** code host configuration is configured to use SSH. For example, by setting the `gitURLType` field to "ssh". Alternatively, you may use the "Generic Git host" code host type, which allows you to directly specify Git repository URLs for cloning.
 
 Then, follow the directions below depending on your deployment type:
 
-- [Sourcegraph with Docker Compose](../install/docker-compose/index.md): See [the Docker Compose git configuration guide](../install/docker-compose/operations.md#git-configuration-and-authentication).
-- [Sourcegraph with Kubernetes](../install/docker-compose/index.md): See [Configure repository cloning via SSH](../install/kubernetes/configure.md#configure-repository-cloning-via-ssh).
-- [Single-container Sourcegraph](../install/docker-compose/index.md): See [the single-container git configuration guide](../install/docker/operations.md#git-configuration-and-authentication).
-- [Pure-docker Sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/pure-docker): See [Configuring SSH cloning](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/pure-docker/README.md#configuring-ssh-cloning).
+- [Sourcegraph with Docker Compose](../deploy/docker-compose/index.md): See [the Docker Compose git configuration guide](../deploy/docker-compose/index.md#git-configuration).
+- [Sourcegraph with Kubernetes](../deploy/kubernetes/index.md): See [Configure repository cloning via SSH](../deploy/kubernetes/configure.md#ssh-for-cloning).
+- [Single-container Sourcegraph](../deploy/docker-single-container/index.md): See [the single-container git configuration guide](../deploy/docker-single-container/index.md#git-configuration-and-authentication).
+
+>NOTE: Repository access over SSH is not yet supported on [Sourcegraph Cloud](../../cloud/index.md).
 
 ## Troubleshooting
 
@@ -24,6 +25,14 @@ Host *
 ```
 
 See [git configuration](./git_config.md) for more details.
+
+### Error: `sign_and_send_pubkey: no mutual signature supported`
+
+In Sourcegraph 5.1.0 and later, the insecure SSH rsa-sha1 signature algorithm is no longer supported when fetching data from code hosts.
+
+If you use an RSA SSH key to authenticate to your code host, you should ensure that your code host runs OpenSSL 7.2 or newer.
+
+If it is not possible to update the code host, you should generate a new ed25519 SSH key to use for authentication. This can be achieved by running `ssh-keygen -t ed25519`, and [configuring Sourcegraph](https://docs.sourcegraph.com/admin/repo/git_config) to use this new key.
 
 ### Error: `Host key verification failed`
 

@@ -1,0 +1,230 @@
+{
+  "links": {
+   "activity": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/1/activity"
+   },
+   "approve": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/1/approve"
+   },
+   "comments": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/1/comments"
+   },
+   "commits": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/1/commits"
+   },
+   "decline": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/1/decline"
+   },
+   "diff": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/diff/sourcegraph-testing/src-cli:8bbb22dda4e7%0D12fba599d6b6?from_pullrequest_id=1"
+   },
+   "diffstat": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/diffstat/sourcegraph-testing/src-cli:8bbb22dda4e7%0D12fba599d6b6?from_pullrequest_id=1"
+   },
+   "html": {
+    "href": "https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/1"
+   },
+   "merge": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/1/merge"
+   },
+   "request-changes": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/1/request-changes"
+   },
+   "self": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/1"
+   },
+   "statuses": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/1/statuses"
+   }
+  },
+  "id": 1,
+  "title": "Always open PR",
+  "rendered": {
+   "title": {
+    "raw": "Always open PR",
+    "markup": "markdown",
+    "html": "\u003cp\u003eAlways open PR\u003c/p\u003e",
+    "type": "rendered"
+   },
+   "description": {
+    "raw": "This PR is _always_ open.\n\nUpdated by the Sourcegraph test suite at 2022-04-01T16:44:30-07:00",
+    "markup": "markdown",
+    "html": "\u003cp\u003eThis PR is \u003cem\u003ealways\u003c/em\u003e open.\u003c/p\u003e\n\u003cp\u003eUpdated by the Sourcegraph test suite at 2022-04-01T16:44:30-07:00\u003c/p\u003e",
+    "type": "rendered"
+   },
+   "reason": {
+    "raw": "",
+    "markup": "",
+    "html": ""
+   }
+  },
+  "summary": {
+   "raw": "This PR is _always_ open.\n\nUpdated by the Sourcegraph test suite at 2022-04-01T16:44:30-07:00",
+   "markup": "markdown",
+   "html": "\u003cp\u003eThis PR is \u003cem\u003ealways\u003c/em\u003e open.\u003c/p\u003e\n\u003cp\u003eUpdated by the Sourcegraph test suite at 2022-04-01T16:44:30-07:00\u003c/p\u003e",
+   "type": "rendered"
+  },
+  "state": "OPEN",
+  "author": {
+   "links": {
+    "avatar": {
+     "href": "https://secure.gravatar.com/avatar/94883264abf62a96cbe120877ab0f087?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-2.png"
+    },
+    "html": {
+     "href": "https://bitbucket.org/%7B39a35a46-ae0c-4017-91ec-1562988daa73%7D/"
+    },
+    "self": {
+     "href": "https://api.bitbucket.org/2.0/users/%7B39a35a46-ae0c-4017-91ec-1562988daa73%7D"
+    }
+   },
+   "username": "",
+   "nickname": "Adam Harvey",
+   "account_status": "",
+   "display_name": "Adam Harvey",
+   "website": "",
+   "created_on": "0001-01-01T00:00:00Z",
+   "uuid": "{39a35a46-ae0c-4017-91ec-1562988daa73}"
+  },
+  "source": {
+   "repository": {
+    "slug": "",
+    "name": "src-cli",
+    "full_name": "sourcegraph-testing/src-cli",
+    "uuid": "{b090a669-ac7b-44cd-9610-02d027cb39f3}",
+    "scm": "",
+    "description": "",
+    "parent": null,
+    "is_private": false,
+    "links": {
+     "clone": null,
+     "html": {
+      "href": "https://bitbucket.org/sourcegraph-testing/src-cli"
+     }
+    },
+    "fork_policy": "",
+    "owner": null
+   },
+   "branch": {
+    "name": "always-open",
+    "merge_strategies": null,
+    "default_merge_strategy": ""
+   },
+   "commit": {
+    "hash": "8bbb22dda4e7"
+   }
+  },
+  "destination": {
+   "repository": {
+    "slug": "",
+    "name": "src-cli",
+    "full_name": "sourcegraph-testing/src-cli",
+    "uuid": "{b090a669-ac7b-44cd-9610-02d027cb39f3}",
+    "scm": "",
+    "description": "",
+    "parent": null,
+    "is_private": false,
+    "links": {
+     "clone": null,
+     "html": {
+      "href": "https://bitbucket.org/sourcegraph-testing/src-cli"
+     }
+    },
+    "fork_policy": "",
+    "owner": null
+   },
+   "branch": {
+    "name": "master",
+    "merge_strategies": null,
+    "default_merge_strategy": ""
+   },
+   "commit": {
+    "hash": "12fba599d6b6"
+   }
+  },
+  "comment_count": 1,
+  "task_count": 0,
+  "close_source_branch": false,
+  "reason": "",
+  "created_on": "2022-03-21T05:51:36.10372Z",
+  "updated_on": "2022-04-01T23:44:30.908335Z",
+  "reviewers": [
+   {
+    "links": {
+     "avatar": {
+      "href": "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"
+     },
+     "html": {
+      "href": "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"
+     },
+     "self": {
+      "href": "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"
+     }
+    },
+    "username": "",
+    "nickname": "Sourcegraph Testing",
+    "account_status": "",
+    "display_name": "Sourcegraph Testing",
+    "website": "",
+    "created_on": "0001-01-01T00:00:00Z",
+    "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}"
+   }
+  ],
+  "participants": [
+   {
+    "user": {
+     "links": {
+      "avatar": {
+       "href": "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"
+      },
+      "html": {
+       "href": "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"
+      },
+      "self": {
+       "href": "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"
+      }
+     },
+     "username": "",
+     "nickname": "Sourcegraph Testing",
+     "account_status": "",
+     "display_name": "Sourcegraph Testing",
+     "website": "",
+     "created_on": "0001-01-01T00:00:00Z",
+     "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}",
+     "is_staff": false,
+     "account_id": "623316f53fbb880068413f6b"
+    },
+    "role": "REVIEWER",
+    "approved": true,
+    "state": "approved",
+    "participated_on": "2022-03-21T07:21:23.091036Z"
+   },
+   {
+    "user": {
+     "links": {
+      "avatar": {
+       "href": "https://secure.gravatar.com/avatar/94883264abf62a96cbe120877ab0f087?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-2.png"
+      },
+      "html": {
+       "href": "https://bitbucket.org/%7B39a35a46-ae0c-4017-91ec-1562988daa73%7D/"
+      },
+      "self": {
+       "href": "https://api.bitbucket.org/2.0/users/%7B39a35a46-ae0c-4017-91ec-1562988daa73%7D"
+      }
+     },
+     "username": "",
+     "nickname": "Adam Harvey",
+     "account_status": "",
+     "display_name": "Adam Harvey",
+     "website": "",
+     "created_on": "0001-01-01T00:00:00Z",
+     "uuid": "{39a35a46-ae0c-4017-91ec-1562988daa73}",
+     "is_staff": false,
+     "account_id": "70121:96070aaa-b19c-4c9e-82fe-cfdd7dca533e"
+    },
+    "role": "PARTICIPANT",
+    "approved": false,
+    "state": "",
+    "participated_on": "2022-03-21T07:21:05.585737Z"
+   }
+  ]
+ }

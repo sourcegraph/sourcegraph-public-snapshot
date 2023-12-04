@@ -1,52 +1,77 @@
-import React, { Suspense, useEffect } from 'react'
-import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom'
+import { type FC, Suspense, useEffect, useLayoutEffect, useMemo } from 'react'
 
+import { ApolloProvider } from '@apollo/client'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+
+import type { GraphQLClient } from '@sourcegraph/http-client'
+import { SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
+import { useTheme, Theme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import {
     Alert,
-    AnchorLink,
     LoadingSpinner,
     setLinkComponent,
-    WildcardTheme,
+    type WildcardTheme,
     WildcardThemeContext,
 } from '@sourcegraph/wildcard'
 
 import '../../SourcegraphWebApp.scss'
 
-import { ThemePreference } from '../../stores/themeState'
-import { useTheme } from '../../theme'
+import { createPlatformContext } from '../../platform/context'
+import { TelemetryRecorderProvider } from '../../telemetry'
+
+import { OpenNewTabAnchorLink } from './OpenNewTabAnchorLink'
 
 import styles from './EmbeddedWebApp.module.scss'
 
-setLinkComponent(AnchorLink)
+// Since we intend to embed the EmbeddedWebApp component within an iframe,
+// we want to open all links in a new tab instead of the current iframe window.
+// Otherwise, we would get an error that we tried to access a non-embed route from within the iframe.
+setLinkComponent(OpenNewTabAnchorLink)
 
 const WILDCARD_THEME: WildcardTheme = {
     isBranded: true,
 }
 
 const EmbeddedNotebookPage = lazyComponent(
-    () => import('../../search/notebook/EmbeddedNotebookPage'),
+    () => import('../../notebooks/notebookPage/EmbeddedNotebookPage'),
     'EmbeddedNotebookPage'
 )
 
 const EMPTY_SETTINGS_CASCADE = { final: {}, subjects: [] }
 
-export const EmbeddedWebApp: React.FunctionComponent = () => {
-    const { enhancedThemePreference, setThemePreference } = useTheme()
-    const isLightTheme = enhancedThemePreference === ThemePreference.Light
+interface Props {
+    graphqlClient: GraphQLClient
+}
+export const EmbeddedWebApp: FC<Props> = ({ graphqlClient }) => {
+    const { theme, setThemeSetting } = useTheme()
+
+    useLayoutEffect(() => {
+        const isLightTheme = theme === Theme.Light
+
+        document.documentElement.classList.add('theme')
+        document.documentElement.classList.toggle('theme-light', isLightTheme)
+        document.documentElement.classList.toggle('theme-dark', !isLightTheme)
+    }, [theme])
 
     useEffect(() => {
         const query = new URLSearchParams(window.location.search)
         const theme = query.get('theme')
-        setThemePreference(
-            theme === 'dark' ? ThemePreference.Dark : theme === 'light' ? ThemePreference.Light : ThemePreference.System
+        setThemeSetting(
+            theme === 'dark' ? ThemeSetting.Dark : theme === 'light' ? ThemeSetting.Light : ThemeSetting.System
         )
-    }, [setThemePreference])
+    }, [setThemeSetting])
 
-    useEffect(() => {
-        document.documentElement.classList.toggle('theme-light', isLightTheme)
-        document.documentElement.classList.toggle('theme-dark', !isLightTheme)
-    }, [isLightTheme])
+    const telemetryRecorderProvider = useMemo(
+        () => new TelemetryRecorderProvider(graphqlClient, { enableBuffering: true }),
+        [graphqlClient]
+    )
+    useEffect(() => telemetryRecorderProvider.unsubscribe, [telemetryRecorderProvider]) // unsubscribe on unmount
+
+    const platformContext = useMemo(
+        () => createPlatformContext({ telemetryRecorderProvider }),
+        [telemetryRecorderProvider]
+    )
 
     // 🚨 SECURITY: The `EmbeddedWebApp` is intended to be embedded into 3rd party sites where we do not have total control.
     // That is why it is essential to be mindful when adding new routes that may be vulnerable to clickjacking or similar exploits.
@@ -56,42 +81,46 @@ export const EmbeddedWebApp: React.FunctionComponent = () => {
     // IMPORTANT: Please consult with the security team if you are unsure whether your changes could introduce security exploits.
     return (
         <BrowserRouter>
-            <WildcardThemeContext.Provider value={WILDCARD_THEME}>
-                <div className={styles.body}>
-                    <Suspense
-                        fallback={
-                            <div className="d-flex justify-content-center p-3">
-                                <LoadingSpinner />
-                            </div>
-                        }
-                    >
-                        <Switch>
-                            <Route
-                                path="/embed/notebooks/:notebookId"
-                                render={(props: RouteComponentProps<{ notebookId: string }>) => (
-                                    <EmbeddedNotebookPage
-                                        notebookId={props.match.params.notebookId}
-                                        searchContextsEnabled={true}
-                                        showSearchContext={true}
-                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                        authenticatedUser={null}
-                                        isLightTheme={isLightTheme}
-                                        settingsCascade={EMPTY_SETTINGS_CASCADE}
+            <ApolloProvider client={graphqlClient}>
+                <WildcardThemeContext.Provider value={WILDCARD_THEME}>
+                    <SettingsProvider settingsCascade={EMPTY_SETTINGS_CASCADE}>
+                        <div className={styles.body}>
+                            <Suspense
+                                fallback={
+                                    <div className="d-flex justify-content-center p-3">
+                                        <LoadingSpinner />
+                                    </div>
+                                }
+                            >
+                                <Routes>
+                                    <Route
+                                        path="/embed/notebooks/:notebookId"
+                                        element={
+                                            <EmbeddedNotebookPage
+                                                searchContextsEnabled={true}
+                                                ownEnabled={false}
+                                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                                authenticatedUser={null}
+                                                settingsCascade={EMPTY_SETTINGS_CASCADE}
+                                                platformContext={platformContext}
+                                            />
+                                        }
                                     />
-                                )}
-                            />
-                            <Route
-                                path="*"
-                                render={() => (
-                                    <Alert variant="danger">
-                                        Invalid embedding route, please check the embedding URL.
-                                    </Alert>
-                                )}
-                            />
-                        </Switch>
-                    </Suspense>
-                </div>
-            </WildcardThemeContext.Provider>
+                                    Ï
+                                    <Route
+                                        path="*"
+                                        element={
+                                            <Alert variant="danger">
+                                                Invalid embedding route, please check the embedding URL.
+                                            </Alert>
+                                        }
+                                    />
+                                </Routes>
+                            </Suspense>
+                        </div>
+                    </SettingsProvider>
+                </WildcardThemeContext.Provider>
+            </ApolloProvider>
         </BrowserRouter>
     )
 }

@@ -5,18 +5,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
-	"github.com/google/zoekt/query"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/rpc"
-	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegraph/zoekt/query"
+	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
@@ -29,12 +28,14 @@ type meteredSearcher struct {
 	zoekt.Streamer
 
 	hostname string
+	log      sglog.Logger
 }
 
 func NewMeteredSearcher(hostname string, z zoekt.Streamer) zoekt.Streamer {
 	return &meteredSearcher{
 		Streamer: z,
 		hostname: hostname,
+		log:      sglog.Scoped("meteredSearcher"),
 	}
 }
 
@@ -47,61 +48,54 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	isLeaf := m.hostname != ""
 
 	var cat string
-	var tags []trace.Tag
+	attrs := []attribute.KeyValue{
+		attribute.String("query", queryString(q)),
+	}
 	if !isLeaf {
 		cat = "SearchAll"
 	} else {
 		cat = "Search"
-		tags = []trace.Tag{
-			{Key: "span.kind", Value: "client"},
-			{Key: "peer.address", Value: m.hostname},
-			{Key: "peer.service", Value: "zoekt"},
-		}
+		attrs = append(attrs,
+			attribute.String("span.kind", "client"),
+			attribute.String("peer.address", m.hostname),
+			attribute.String("peer.service", "zoekt"),
+		)
 	}
-
-	qStr := queryString(q)
 
 	event := honey.NoopEvent()
 	if honey.Enabled() && cat == "SearchAll" {
 		event = honey.NewEvent("search-zoekt")
 		event.AddField("category", cat)
-		event.AddField("query", qStr)
-		for _, t := range tags {
-			event.AddField(t.Key, t.Value)
-		}
+		event.AddField("actor", actor.FromContext(ctx).UIDString())
+		event.AddAttributes(attrs)
 	}
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
+	tr, ctx := trace.New(ctx, "zoekt."+cat, attrs...)
 	defer func() {
 		tr.SetErrorIfNotContext(err)
-		tr.Finish()
+		tr.End()
 	}()
 	if opts != nil {
-		fields := []log.Field{
-			log.Bool("opts.estimate_doc_count", opts.EstimateDocCount),
-			log.Bool("opts.whole", opts.Whole),
-			log.Int("opts.shard_max_match_count", opts.ShardMaxMatchCount),
-			log.Int("opts.shard_repo_max_match_count", opts.ShardRepoMaxMatchCount),
-			log.Int("opts.total_max_match_count", opts.TotalMaxMatchCount),
-			log.Int("opts.shard_max_important_match", opts.ShardMaxImportantMatch),
-			log.Int("opts.total_max_important_match", opts.TotalMaxImportantMatch),
-			log.Int64("opts.max_wall_time_ms", opts.MaxWallTime.Milliseconds()),
-			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
+		fields := []attribute.KeyValue{
+			attribute.Bool("opts.estimate_doc_count", opts.EstimateDocCount),
+			attribute.Bool("opts.whole", opts.Whole),
+			attribute.Int("opts.shard_max_match_count", opts.ShardMaxMatchCount),
+			attribute.Int("opts.shard_repo_max_match_count", opts.ShardRepoMaxMatchCount),
+			attribute.Int("opts.total_max_match_count", opts.TotalMaxMatchCount),
+			attribute.Int64("opts.max_wall_time_ms", opts.MaxWallTime.Milliseconds()),
+			attribute.Int64("opts.flush_wall_time_ms", opts.FlushWallTime.Milliseconds()),
+			attribute.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
 		}
-		tr.LogFields(fields...)
-		event.AddLogFields(fields)
+		tr.AddEvent("begin", fields...)
+		event.AddAttributes(fields)
 	}
 
-	if isLeaf && opts != nil && ot.ShouldTrace(ctx) {
-		// Replace any existing spanContext with a new one, given we've done additional tracing
-		spanContext := make(map[string]string)
-		if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil {
-			newOpts := *opts
-			newOpts.SpanContext = spanContext
-			opts = &newOpts
-		} else {
-			log15.Warn("meteredSearcher: Error injecting new span context into map: %s", err)
-		}
+	// We wrap our queries in GobCache, this gives us a convenient way to find
+	// out the marshalled size of the query.
+	if gobCache, ok := q.(*query.GobCache); ok {
+		b, _ := gobCache.GobEncode()
+		tr.SetAttributes(attribute.Int("query.size", len(b)))
+		event.AddField("query.size", len(b))
 	}
 
 	// Instrument the RPC layer
@@ -109,16 +103,16 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	if isLeaf {
 		ctx = rpc.WithClientTrace(ctx, &rpc.ClientTrace{
 			WriteRequestStart: func() {
-				tr.LogFields(log.String("event", "rpc.write_request_start"))
+				tr.SetAttributes(attribute.String("event", "rpc.write_request_start"))
 				writeRequestStart = time.Now()
 			},
 
 			WriteRequestDone: func(err error) {
-				fields := []log.Field{log.String("event", "rpc.write_request_done")}
+				fields := []attribute.KeyValue{}
 				if err != nil {
-					fields = append(fields, log.String("rpc.write_request.error", err.Error()))
+					fields = append(fields, attribute.String("rpc.write_request.error", err.Error()))
 				}
-				tr.LogFields(fields...)
+				tr.AddEvent("rpc.write_request_done", fields...)
 				writeRequestDone = time.Now()
 			},
 		})
@@ -139,13 +133,13 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		first.Do(func() {
 			if isLeaf {
 				if !writeRequestStart.IsZero() {
-					tr.LogFields(
-						log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
-						log.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
+					tr.SetAttributes(
+						attribute.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
+						attribute.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
 					)
 				}
-				tr.LogFields(
-					log.Int64("stream.latency_ms", time.Since(start).Milliseconds()),
+				tr.SetAttributes(
+					attribute.Int64("stream.latency_ms", time.Since(start).Milliseconds()),
 				)
 			}
 		})
@@ -171,34 +165,38 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		code = "error"
 	}
 
-	fields := []log.Field{
-		log.Int("filematches", nFilesMatches),
-		log.Int("events", nEvents),
-		log.Int64("stream.total_send_time_ms", totalSendTimeMs),
+	fields := []attribute.KeyValue{
+		attribute.Int("filematches", nFilesMatches),
+		attribute.Int("events", nEvents),
+		attribute.Int64("stream.total_send_time_ms", totalSendTimeMs),
 
 		// Zoekt stats.
-		log.Int64("stats.content_bytes_loaded", statsAgg.ContentBytesLoaded),
-		log.Int64("stats.index_bytes_loaded", statsAgg.IndexBytesLoaded),
-		log.Int("stats.crashes", statsAgg.Crashes),
-		log.Int("stats.file_count", statsAgg.FileCount),
-		log.Int("stats.files_considered", statsAgg.FilesConsidered),
-		log.Int("stats.files_loaded", statsAgg.FilesLoaded),
-		log.Int("stats.files_skipped", statsAgg.FilesSkipped),
-		log.Int("stats.match_count", statsAgg.MatchCount),
-		log.Int("stats.ngram_matches", statsAgg.NgramMatches),
-		log.Int("stats.shard_files_considered", statsAgg.ShardFilesConsidered),
-		log.Int("stats.shards_scanned", statsAgg.ShardsScanned),
-		log.Int("stats.shards_skipped", statsAgg.ShardsSkipped),
-		log.Int("stats.shards_skipped_filter", statsAgg.ShardsSkippedFilter),
-		log.Int64("stats.wait_ms", statsAgg.Wait.Milliseconds()),
-		log.Int("stats.regexps_considered", statsAgg.RegexpsConsidered),
+		attribute.Int64("stats.content_bytes_loaded", statsAgg.ContentBytesLoaded),
+		attribute.Int64("stats.index_bytes_loaded", statsAgg.IndexBytesLoaded),
+		attribute.Int("stats.crashes", statsAgg.Crashes),
+		attribute.Int("stats.file_count", statsAgg.FileCount),
+		attribute.Int("stats.files_considered", statsAgg.FilesConsidered),
+		attribute.Int("stats.files_loaded", statsAgg.FilesLoaded),
+		attribute.Int("stats.files_skipped", statsAgg.FilesSkipped),
+		attribute.Int("stats.match_count", statsAgg.MatchCount),
+		attribute.Int("stats.ngram_lookups", statsAgg.NgramLookups),
+		attribute.Int("stats.ngram_matches", statsAgg.NgramMatches),
+		attribute.Int("stats.shard_files_considered", statsAgg.ShardFilesConsidered),
+		attribute.Int("stats.shards_scanned", statsAgg.ShardsScanned),
+		attribute.Int("stats.shards_skipped", statsAgg.ShardsSkipped),
+		attribute.Int("stats.shards_skipped_filter", statsAgg.ShardsSkippedFilter),
+		attribute.Int64("stats.wait_ms", statsAgg.Wait.Milliseconds()),
+		attribute.Int64("stats.match_tree_construction_ms", statsAgg.MatchTreeConstruction.Milliseconds()),
+		attribute.Int64("stats.match_tree_search_ms", statsAgg.MatchTreeSearch.Milliseconds()),
+		attribute.Int("stats.regexps_considered", statsAgg.RegexpsConsidered),
+		attribute.String("stats.flush_reason", statsAgg.FlushReason.String()),
 	}
-	tr.LogFields(fields...)
+	tr.AddEvent("done", fields...)
 	event.AddField("duration_ms", time.Since(start).Milliseconds())
 	if err != nil {
-		event.AddField("error", err)
+		event.AddField("error", err.Error())
 	}
-	event.AddLogFields(fields)
+	event.AddAttributes(fields)
 	event.Send()
 
 	// Record total duration of stream
@@ -211,41 +209,38 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 	return AggregateStreamSearch(ctx, m.StreamSearch, q, opts)
 }
 
-func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
+func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (_ *zoekt.RepoList, err error) {
 	start := time.Now()
 
 	var cat string
-	var tags []trace.Tag
+	var attrs []attribute.KeyValue
 
 	if m.hostname == "" {
 		cat = "ListAll"
 	} else {
-		if opts == nil || !opts.Minimal {
-			cat = "List"
-		} else {
-			cat = "ListMinimal"
-		}
-		tags = []trace.Tag{
-			{Key: "span.kind", Value: "client"},
-			{Key: "peer.address", Value: m.hostname},
-			{Key: "peer.service", Value: "zoekt"},
+		cat = listCategory(opts)
+		attrs = []attribute.KeyValue{
+			attribute.String("span.kind", "client"),
+			attribute.String("peer.address", m.hostname),
+			attribute.String("peer.service", "zoekt"),
 		}
 	}
 
 	qStr := queryString(q)
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
-	tr.LogFields(trace.Stringer("opts", opts))
+	tr, ctx := trace.New(ctx, "zoekt."+cat, attrs...)
+	tr.SetAttributes(
+		attribute.Stringer("opts", opts),
+		attribute.String("query", qStr),
+	)
+	defer tr.EndWithErr(&err)
 
 	event := honey.NoopEvent()
 	if honey.Enabled() && cat == "ListAll" {
 		event = honey.NewEvent("search-zoekt")
 		event.AddField("category", cat)
 		event.AddField("query", qStr)
-		event.AddField("opts.minimal", opts != nil && opts.Minimal)
-		for _, t := range tags {
-			event.AddField(t.Key, t.Value)
-		}
+		event.AddAttributes(attrs)
 	}
 
 	zsl, err := m.Streamer.List(ctx, q, opts)
@@ -257,21 +252,20 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 
 	event.AddField("duration_ms", time.Since(start).Milliseconds())
 	if zsl != nil {
-		event.AddField("repos", len(zsl.Repos))
-		event.AddField("minimal_repos", len(zsl.Minimal))
+		// the fields are mutually exclusive so we can just add them
+		event.AddField("repos", len(zsl.Repos)+len(zsl.ReposMap))
+		event.AddField("stats.crashes", zsl.Crashes)
 	}
 	if err != nil {
-		event.AddField("error", err)
+		event.AddField("error", err.Error())
 	}
 	event.Send()
 
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
 
-	tr.SetError(err)
 	if zsl != nil {
-		tr.LogFields(log.Int("repos", len(zsl.Repos)))
+		tr.SetAttributes(attribute.Int("repos", len(zsl.Repos)))
 	}
-	tr.Finish()
 
 	return zsl, err
 }
@@ -285,4 +279,20 @@ func queryString(q query.Q) string {
 		return "<nil>"
 	}
 	return q.String()
+}
+
+func listCategory(opts *zoekt.ListOptions) string {
+	field, err := opts.GetField()
+	if err != nil {
+		return "ListMisconfigured"
+	}
+
+	switch field {
+	case zoekt.RepoListFieldRepos:
+		return "List"
+	case zoekt.RepoListFieldReposMap:
+		return "ListReposMap"
+	default:
+		return "ListUnknown"
+	}
 }

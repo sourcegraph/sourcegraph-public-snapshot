@@ -13,15 +13,15 @@ interactions:
     url: https://api.github.com/user/orgs?per_page=100&page=1
     method: GET
   response:
-    body: '[{"login":"sourcegraph-vcr-repos","id":65169595,"node_id":"MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1","url":"https://api.github.com/orgs/sourcegraph-vcr-repos","repos_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/repos","events_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/events","hooks_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/hooks","issues_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/issues","members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/65169595?v=4","description":null}]'
+    body: '[{"login":"sgtest","id":5858054,"node_id":"MDEyOk9yZ2FuaXphdGlvbjU4NTgwNTQ=","url":"https://api.github.com/orgs/sgtest","repos_url":"https://api.github.com/orgs/sgtest/repos","events_url":"https://api.github.com/orgs/sgtest/events","hooks_url":"https://api.github.com/orgs/sgtest/hooks","issues_url":"https://api.github.com/orgs/sgtest/issues","members_url":"https://api.github.com/orgs/sgtest/members{/member}","public_members_url":"https://api.github.com/orgs/sgtest/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/5858054?v=4","description":null},{"login":"sourcegraph-vcr-repos","id":65169595,"node_id":"MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1","url":"https://api.github.com/orgs/sourcegraph-vcr-repos","repos_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/repos","events_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/events","hooks_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/hooks","issues_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/issues","members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/65169595?v=4","description":null}]'
     headers:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Cache-Control:
       - private, max-age=60, s-maxage=60
       Content-Security-Policy:
@@ -29,9 +29,11 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 25 Aug 2021 14:52:59 GMT
+      - Sat, 12 Mar 2022 04:02:55 GMT
       Etag:
-      - W/"19387c0635b352f1318b0233897813c9c1cded546f3ca171e9b91b4078f36f76"
+      - W/"a68debe1eca2c4d713ad05cdb022245fe5808f74b9f8ad65df72deefbee9a86d"
+      Github-Authentication-Token-Expiration:
+      - 2022-03-17 18:41:55 UTC
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -51,21 +53,19 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - F098:0D7B:E8788:1F6C85:6126594B
+      - 825C:0EB6:E1BC4:13686F:622C1B6F
       X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - read:org, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4979"
+      - "4999"
       X-Ratelimit-Reset:
-      - "1629906603"
+      - "1647061375"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "21"
+      - "1"
       X-Xss-Protection:
       - "0"
     status: 200 OK

@@ -1,0 +1,529 @@
+@import './breakpoints';
+
+:root {
+    --form-group-margin-bottom: 1rem;
+    --form-text-margin-top: 0.25rem;
+    --form-check-input-gutter: 1.25rem;
+    --form-check-input-margin-x: 0.25rem;
+    --label-margin-bottom: 0.5rem;
+}
+
+.theme-light {
+    --input-bg: var(--white);
+    --input-disabled-bg: var(--gray-04);
+    --input-border-color: var(--gray-04);
+    --input-color: var(--gray-09);
+    --input-label-hover-color: var(--gray-12);
+    --input-placeholder-color: var(--gray-07);
+    --input-focus-border-color: var(--border-active-color);
+    --input-focus-box-shadow: var(--focus-box-shadow);
+    --input-focus-box-shadow-valid: 0 0 0 2px var(--success-2);
+    --input-focus-box-shadow-invalid: 0 0 0 2px var(--danger-2);
+
+    // Checkbox margins
+    --form-check-input-margin-y: 0.2rem;
+}
+
+.theme-dark {
+    --input-bg: var(--gray-10);
+    --input-disabled-bg: var(--gray-08);
+    --input-border-color: var(--gray-08);
+    --input-color: var(--gray-04);
+    --input-label-hover-color: var(--gray-01);
+    --input-placeholder-color: var(--gray-05);
+    --input-focus-border-color: var(--border-active-color);
+    --input-focus-box-shadow: var(--focus-box-shadow);
+    --input-focus-box-shadow-valid: 0 0 0 2px var(--success-3);
+    --input-focus-box-shadow-invalid: 0 0 0 2px var(--danger-3);
+
+    // Checkbox margins
+    --form-check-input-margin-y: 0.2rem;
+}
+
+// ------------------- Start reboot.scss styles imported from Bootstrap ----------------------
+
+label {
+    // Allow labels to use `margin` for spacing.
+    display: inline-block;
+    margin-bottom: var(--label-margin-bottom);
+}
+
+// Remove the inheritance of word-wrap in Safari.
+// Details at https://github.com/twbs/bootstrap/issues/24990
+select {
+    word-wrap: normal;
+}
+
+// Remove the default `border-radius` that macOS Chrome adds.
+//
+// Details at https://github.com/twbs/bootstrap/issues/24093
+button {
+    // stylelint-disable-next-line property-blacklist
+    border-radius: 0;
+}
+
+input,
+button,
+select,
+optgroup,
+textarea {
+    margin: 0; // Remove the margin in Firefox and Safari
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+button,
+input {
+    overflow: visible; // Show the overflow in Edge
+}
+
+button,
+select {
+    text-transform: none; // Remove the inheritance of text transform in Firefox
+}
+
+// Set the cursor for non-`<button>` buttons
+//
+// Details at https://github.com/twbs/bootstrap/pull/30562
+[role='button'] {
+    cursor: pointer;
+}
+
+// 1. Prevent a WebKit bug where (2) destroys native `audio` and `video`
+//    controls in Android 4.
+// 2. Correct the inability to style clickable types in iOS and Safari.
+// Opinionated: add "hand" cursor to non-disabled button elements.
+button,
+[type='button'],// 1
+[type='reset'],
+[type='submit'] {
+    -webkit-appearance: button; // 2
+    &:not(:disabled) {
+        cursor: pointer;
+    }
+}
+
+// Remove inner border and padding from Firefox, but don't restore the outline like Normalize.
+button::-moz-focus-inner,
+[type='button']::-moz-focus-inner,
+[type='reset']::-moz-focus-inner,
+[type='submit']::-moz-focus-inner {
+    padding: 0;
+    border-style: none;
+}
+
+input[type='radio'],
+input[type='checkbox'] {
+    box-sizing: border-box; // 1. Add the correct box sizing in IE 10-
+    padding: 0; // 2. Remove the padding in IE 10-
+}
+
+textarea {
+    overflow: auto; // Remove the default vertical scrollbar in IE.
+    // Textareas should really only resize vertically so they don't break their (horizontal) containers.
+    resize: vertical;
+}
+
+fieldset {
+    // Browsers set a default `min-width: min-content;` on fieldsets,
+    // unlike e.g. `<div>`s, which have `min-width: 0;` by default.
+    // So we reset that to ensure fieldsets behave more like a standard block element.
+    // See https://github.com/twbs/bootstrap/issues/12359
+    // and https://html.spec.whatwg.org/multipage/#the-fieldset-and-legend-elements
+    min-width: 0;
+    // Reset the default outline behavior of fieldsets so they don't affect page layout.
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+
+progress {
+    vertical-align: baseline; // Add the correct vertical alignment in Chrome, Firefox, and Opera.
+}
+
+// Correct the cursor style of increment and decrement buttons in Chrome.
+[type='number']::-webkit-inner-spin-button,
+[type='number']::-webkit-outer-spin-button {
+    height: auto;
+}
+
+[type='search'] {
+    // This overrides the extra rounded corners on search inputs in iOS so that our
+    // `.form-control` class can properly style them. Note that this cannot simply
+    // be added to `.form-control` as it's not specific enough. For details, see
+    // https://github.com/twbs/bootstrap/issues/11586.
+    outline-offset: -2px; // 2. Correct the outline style in Safari.
+    -webkit-appearance: none;
+}
+
+// Remove the inner padding in Chrome and Safari on macOS.
+[type='search']::-webkit-search-decoration {
+    -webkit-appearance: none;
+}
+
+// 1. Correct the inability to style clickable types in iOS and Safari.
+// 2. Change font properties to `inherit` in Safari.
+::-webkit-file-upload-button {
+    font: inherit; // 2
+    -webkit-appearance: button; // 1
+}
+
+// ------------------- End reboot.scss styles imported from Bootstrap ----------------------
+
+.form-control {
+    display: block;
+    width: 100%;
+    height: var(--input-height);
+    padding: var(--input-padding-y) var(--input-padding-x);
+    font-size: var(--input-font-size);
+    font-weight: var(--input-font-weight);
+    line-height: var(--input-line-height);
+    color: var(--input-color);
+    background-color: var(--input-bg);
+    background-clip: padding-box;
+    border: var(--input-border-width) solid var(--input-border-color);
+    border-radius: var(--border-radius);
+    transition: none;
+
+    // Placeholder
+    &::placeholder {
+        color: var(--input-placeholder-color);
+        opacity: 1;
+    }
+
+    // Disabled and read-only inputs
+    //
+    // HTML5 says that controls under a fieldset > legend:first-child won't be
+    // disabled if the fieldset is disabled. Due to implementation difficulty, we
+    // don't honor that edge case; we style them as disabled anyway.
+    &:disabled,
+    &[readonly] {
+        background-color: var(--input-disabled-bg);
+        // iOS fix for unreadable disabled content; see https://github.com/twbs/bootstrap/issues/11655.
+        opacity: 1;
+    }
+
+    &.focus-visible {
+        border-color: var(--input-focus-border-color);
+        box-shadow: var(--input-focus-box-shadow);
+    }
+}
+
+input[type='date'],
+input[type='time'],
+input[type='datetime-local'],
+input[type='month'] {
+    &.form-control {
+        appearance: none; // Fix appearance for date inputs in Safari
+    }
+}
+
+select.form-control {
+    &:focus::-ms-value {
+        // Suppress the nested default white text on blue background highlight given to
+        // the selected option text when the (still closed) <select> receives focus
+        // in IE and (under certain conditions) Edge, as it looks bad and cannot be made to
+        // match the appearance of the native widget.
+        // See https://github.com/twbs/bootstrap/issues/19398.
+        color: var(--input-color);
+        background-color: var(--input-bg);
+    }
+}
+
+// Form control sizing
+//
+// Build on `.form-control` with modifier classes to decrease or increase the
+// height and font-size of form controls.
+//
+// Repeated in `_input_group.scss` to avoid Sass extend issues.
+
+.form-control-sm {
+    height: var(--input-height-sm);
+    padding: var(--input-padding-y-sm) var(--input-padding-x-sm);
+    font-size: var(--input-font-size-sm);
+    line-height: 1rem;
+}
+
+.form-control-lg {
+    height: var(--input-height-lg);
+    padding: var(--input-padding-y-lg) var(--input-padding-x-lg);
+    font-size: 1.25rem;
+    line-height: var(--input-line-height);
+    border-radius: 0.3rem;
+}
+
+// stylelint-disable-next-line no-duplicate-selectors
+select.form-control {
+    &[size],
+    &[multiple] {
+        height: auto;
+    }
+}
+
+textarea.form-control {
+    height: auto;
+}
+
+textarea.form-control.is-valid {
+    padding-right: var(--input-height-inner);
+    background-position: top var(--input-height-inner-quarter) right var(--input-height-inner-quarter);
+}
+
+// Form groups
+//
+// Designed to help with the organization and spacing of vertical forms. For
+// horizontal forms, use the predefined grid classes.
+
+.form-group {
+    margin-bottom: var(--form-group-margin-bottom);
+}
+
+.form-text {
+    display: block;
+    margin-top: var(--form-text-margin-top);
+}
+
+.form-check-label {
+    margin-bottom: 0; // Override default `<label>` bottom margin
+}
+
+.form-inline {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center; // Prevent shorter elements from growing to same height as others (e.g., small buttons growing to normal sized button height)
+
+    // Because we use flex, the initial sizing of checkboxes is collapsed and
+    // doesn't occupy the full-width (which is what we want for xs grid tier),
+    // so we force that here.
+    .form-check {
+        width: 100%;
+    }
+
+    @media (--sm-breakpoint-up) {
+        label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0;
+        }
+
+        // Inline-block all the things for "inline"
+        .form-group {
+            display: flex;
+            flex: 0 0 auto;
+            flex-flow: row wrap;
+            align-items: center;
+            margin-bottom: 0;
+        }
+
+        // Allow folks to *not* use `.form-group`
+        .form-control {
+            display: inline-block;
+            width: auto; // Prevent labels from stacking above inputs in `.form-group`
+            vertical-align: middle;
+        }
+
+        .input-group,
+        .custom-select {
+            width: auto;
+        }
+
+        // Remove default margin on radios/checkboxes that were used for stacking, and
+        // then undo the floating of radios and checkboxes to match.
+        .form-check {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: auto;
+            padding-left: 0;
+        }
+        .form-check-input {
+            position: relative;
+            flex-shrink: 0;
+            margin-top: 0;
+            margin-right: var(--form-check-input-margin-x);
+            margin-left: 0;
+        }
+    }
+}
+
+// Prevent Firefox's default red outline for inputs
+:not(output):-moz-ui-invalid:not(:focus) {
+    box-shadow: none;
+}
+:not(output):-moz-ui-invalid:-moz-focusring:not(:focus) {
+    box-shadow: none;
+}
+
+.was-validated :valid.form-control,
+.was-validated :invalid.form-control,
+.is-valid.form-control,
+.is-invalid.form-control,
+.custom-select {
+    // Adjust icon padding
+    background-position: right 0.75rem center;
+
+    &-sm {
+        background-position: right 0.5rem center;
+    }
+}
+
+// Input feedback messages
+.valid-feedback {
+    display: none;
+    color: var(--text-muted);
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+}
+
+.invalid-feedback {
+    display: none;
+    color: var(--danger);
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+}
+
+// Add an additional feedback class to add context to form controls without requiring a valid state
+.field-message {
+    @extend .valid-feedback;
+    display: block;
+}
+
+.was-validated :valid ~ .valid-feedback,
+.was-validated :invalid ~ .invalid-feedback,
+.is-valid ~ .valid-feedback,
+.is-invalid ~ .invalid-feedback {
+    display: block;
+}
+
+// Checkboxes and radios
+//
+// Indent the labels to position radios/checkboxes as hanging controls.
+
+// Valid Radio/checkbox labels
+.was-validated .form-check-input:valid,
+.form-check-input.is-valid {
+    ~ .form-check-label {
+        color: var(--success);
+    }
+}
+
+// Invalid Radio/checkbox labels
+.was-validated .form-check-input:invalid,
+.form-check-input.is-invalid {
+    ~ .form-check-label {
+        color: var(--danger);
+    }
+}
+
+.form-check {
+    position: relative;
+    display: block;
+    padding-left: var(--form-check-input-gutter);
+    > label,
+    > input:not(:disabled) {
+        cursor: pointer;
+    }
+
+    .form-check-input[disabled] ~ .form-check-label,
+    .form-check-input:disabled ~ .form-check-label {
+        cursor: default;
+    }
+}
+
+.form-check-input {
+    position: absolute;
+    margin-top: var(--form-check-input-margin-y);
+    margin-left: calc(var(--form-check-input-gutter) * -1);
+
+    // Use [disabled] and :disabled for workaround https://github.com/twbs/bootstrap/issues/28247
+    &[disabled] ~ .form-check-label,
+    &:disabled ~ .form-check-label {
+        color: var(--text-muted);
+    }
+    ~ .field-message,
+    ~ .valid-feedback,
+    ~ .invalid-feedback {
+        // Adjust spacing for radio/checkboxes
+        margin-top: 0;
+    }
+}
+
+// Update text color to better indicate disabled fields
+.form-control,
+.custom-select {
+    &:disabled {
+        color: var(--text-disabled);
+
+        &::placeholder {
+            color: var(--text-disabled);
+        }
+    }
+}
+
+.form-control.is-valid {
+    padding-right: var(--input-height-inner);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3e%3cpath fill='%2337b24d' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-size: var(--input-height-inner-half) var(--input-height-inner-half);
+}
+
+.form-control.is-invalid {
+    padding-right: var(--input-height-inner);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23c92a2a' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23c92a2a' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-size: var(--input-height-inner-half) var(--input-height-inner-half);
+}
+
+// Valid form inputs and selects
+.was-validated .form-control:valid,
+.was-validated .custom-select:valid,
+.form-control.is-valid,
+.custom-select.is-valid {
+    border-color: var(--success);
+
+    &:focus {
+        @at-root #{selector-append('.theme-light')} & {
+            box-shadow: var(--input-focus-box-shadow-valid);
+        }
+        @at-root #{selector-append('.theme-dark')} & {
+            box-shadow: var(--input-focus-box-shadow-valid);
+        }
+    }
+}
+
+// Invalid form inputs and selects
+.was-validated .form-control:invalid,
+.was-validated .custom-select:invalid,
+.form-control.is-invalid,
+.custom-select.is-invalid {
+    border-color: var(--danger);
+
+    &:focus {
+        @at-root #{selector-append('.theme-light')} & {
+            box-shadow: var(--input-focus-box-shadow-invalid);
+        }
+        @at-root #{selector-append('.theme-dark')} & {
+            box-shadow: var(--input-focus-box-shadow-invalid);
+        }
+    }
+}
+
+// Remove feedback icon for <select> and <textarea>
+select.form-control,
+textarea.form-control:not(.with-invalid-icon) {
+    background-image: none;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:hover {
+    // To improve visual styles for autofill state of all inputs
+    // we have to set box-shadow we huge size to override native styles
+
+    // See https://css-tricks.com/snippets/css/change-autocomplete-styles-webkit-browsers/
+    box-shadow: 0 0 0 1000px var(--secondary) inset !important;
+}

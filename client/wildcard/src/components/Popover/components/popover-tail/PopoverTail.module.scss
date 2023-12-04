@@ -1,0 +1,75 @@
+.tail {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--tail-width);
+    height: calc(var(--tail-width) / 2);
+    overflow: hidden;
+    pointer-events: none;
+
+    &--size-sm {
+        --tail-width: 16px;
+    }
+
+    &--size-md {
+        --tail-width: 24px;
+    }
+
+    &--size-lg {
+        --tail-width: 36px;
+    }
+
+    /*
+     Shift tail in order to compensate border width of the popover content element
+
+     Example for the tail "right" position
+                   Border                        Border
+            ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+            ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+        Content▒▒▒▒░░▓                 Content▒▒▒▓░
+            ▒▒▒▒▒▒▒░░▓▓  Tail             ▒▒▒▒▒▒▒▓▓  Tail
+            ▒▒▒▒▒▒▒░░▓▓▓                  ▒▒▒▒▒▒▒▓▓▓
+            ▒▒▒▒▒▒▒░░▓▓▓▓      ───────▶   ▒▒▒▒▒▒▒▓▓▓▓
+            ▒▒▒▒▒▒▒░░▓▓▓                  ▒▒▒▒▒▒▒▓▓▓
+            ▒▒▒▒▒▒▒░░▓▓                   ▒▒▒▒▒▒▒▓▓
+            ▒▒▒▒▒▒▒░░▓                    ▒▒▒▒▒▒▒▓░
+            ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+            ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+            ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+     */
+
+    &[data-side='top'] {
+        top: -1px;
+    }
+
+    &[data-side='left'] {
+        left: -1px;
+    }
+
+    &[data-side='right'] {
+        left: 1px;
+    }
+
+    &[data-side='bottom'] {
+        top: 1px;
+    }
+}
+
+.tail-inner {
+    width: var(--tail-width);
+    height: var(--tail-width);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+
+    &::before {
+        content: '';
+        width: 70%;
+        height: 70%;
+        transform: translate(0%, -70%) rotate(45deg);
+
+        background-color: var(--tail-background, var(--dropdown-bg));
+        border: var(--tail-border, 1px solid var(--dropdown-border-color));
+    }
+}

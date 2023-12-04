@@ -1,0 +1,34 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+    - mailcap
+
+    # redis packages
+    - redis-6.2
+
+accounts:
+  groups:
+    - groupname: redis
+      gid: 1000
+  users:
+    - username: redis
+      uid: 999
+      gid: 1000
+  run-as: redis
+
+paths:
+  - path: /redis-data
+    type: directory
+    uid: 999
+    gid: 1000
+    permissions: 0o755
+
+work-dir: /redis-data
+
+entrypoint:
+  command: redis-server
+
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

@@ -1,0 +1,65 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "state",
+    srcs = [
+        "changeset_events.go",
+        "changeset_history.go",
+        "counts.go",
+        "state.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/batches/state",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/api",
+        "//internal/batches/sources/azuredevops",
+        "//internal/batches/sources/bitbucketcloud",
+        "//internal/batches/sources/gerrit",
+        "//internal/batches/types",
+        "//internal/database",
+        "//internal/extsvc",
+        "//internal/extsvc/azuredevops",
+        "//internal/extsvc/bitbucketcloud",
+        "//internal/extsvc/bitbucketserver",
+        "//internal/extsvc/gerrit",
+        "//internal/extsvc/github",
+        "//internal/extsvc/gitlab",
+        "//internal/gitserver",
+        "//internal/perforce",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_sourcegraph_go_diff//diff",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "state_test",
+    timeout = "short",
+    srcs = [
+        "counts_test.go",
+        "main_test.go",
+        "state_test.go",
+    ],
+    embed = [":state"],
+    deps = [
+        "//internal/batches/sources/azuredevops",
+        "//internal/batches/types",
+        "//internal/extsvc",
+        "//internal/extsvc/azuredevops",
+        "//internal/extsvc/bitbucketserver",
+        "//internal/extsvc/github",
+        "//internal/extsvc/gitlab",
+        "//internal/perforce",
+        "//internal/timeutil",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

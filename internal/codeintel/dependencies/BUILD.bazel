@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dependencies",
+    srcs = [
+        "consts.go",
+        "init.go",
+        "observability.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies",
+    tags = [
+        # requires localhost database
+        "requires-network",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/dependencies/internal/background",
+        "//internal/codeintel/dependencies/internal/store",
+        "//internal/codeintel/dependencies/shared",
+        "//internal/conf/reposource",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/goroutine",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/packagefilters",
+        "//lib/errors",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)

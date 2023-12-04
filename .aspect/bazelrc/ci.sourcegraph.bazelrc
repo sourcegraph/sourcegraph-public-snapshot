@@ -1,0 +1,51 @@
+# Provides secrets like GH_TOKEN and PERCY_TOKEN via --define flag.
+# Generated via the `.buildkite/hooks/post-checkout` hook.
+try-import %workspace%/.aspect/bazelrc/ci.generated.bazelrc
+
+# Use repo caching for building and testing.
+# Article: https://buildkite.com/blog/how-bazel-built-its-ci-system-on-top-of-buildkite
+# Docs: https://bazel.build/reference/command-line-reference#flag--repository_cache
+common --repository_cache=/home/buildkite/repocache-sourcegraph
+
+# We need /usr/local/bin
+# TODO(DevX) we should be narrower here.
+common --test_env=PATH
+
+# Needed for DB in CI
+common --test_env=PGUSER=postgres
+common --test_env=PGPASSWORD=postgres
+common --test_env=PGSSLMODE=disable
+common --test_env=PGDATABASE=postgres
+
+# Allow tests to understand they're running in CI, which forces dbtest to drop database even in case of failures.
+# TODO(JH) we should instead wipe all templates after a job finishes.
+common --test_env=CI
+
+# Ensure we're not exhausting database connections.
+common --test_env=GOMAXPROCS=10
+common --test_env=TESTDB_MAXOPENCONNS=15
+
+# Needed for E2E
+common --test_env=BUILDKITE
+
+# Needed for mocha tests
+# We have to use the `--define` flag here instead of `--test_env` because
+# the mocha tests target is the build target and it's tested with `build_test`.
+common --define=E2E_HEADLESS=false
+# if we set this to localhost, chrome will refuse to conenct since local host is in its HTTP Strict Transport Security
+# by setting the loopback address we get passed that
+common --define=E2E_SOURCEGRAPH_BASE_URL="http://127.0.0.1:7080"
+common --define=DISPLAY=:99
+
+# Provides git commit, branch information to build targets like Percy via status file.
+# https://bazel.build/docs/user-manual#workspace-status
+common --workspace_status_command=./dev/bazel_buildkite_stamp_vars.sh
+
+# temp
+common --test_env=INCLUDE_ADMIN_ONBOARDING=false
+
+# Used for container_structure_tests
+common --test_env=DOCKER_HOST
+
+# Used by migration rules
+common --action_env=PGUSER=postgres

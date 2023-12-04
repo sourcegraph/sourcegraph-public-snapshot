@@ -1,0 +1,40 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+    - mailcap
+
+accounts:
+  run-as: sourcegraph
+  groups:
+    - groupname: sourcegraph
+      gid: 101
+  users:
+    - username: sourcegraph
+      uid: 100
+      gid: 101
+
+# Set up directories needed by base images
+paths:
+  # Used by frontend
+  - path: /mnt/cache/frontend
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+  # Used by indexed-searcher
+  - path: /data
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+  # Used by indexed-searcher
+  - path: /data/index
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

@@ -3,7 +3,7 @@
  * depended on by other modules is not included here.
  */
 export interface Config {
-    browser: 'firefox' | 'chrome'
+    browser: 'chrome'
     sudoToken: string
     sudoUsername: string
     gitHubClientID: string
@@ -29,7 +29,11 @@ export interface Config {
     devtools: boolean
     headless: boolean
     keepBrowser: boolean
+    disableAppAssetsMocking: boolean
     bitbucketCloudUserBobAppPassword: string
+    gitHubDotComToken: string
+    windowWidth: number
+    windowHeight: number
 }
 
 interface Field<T = string> {
@@ -65,8 +69,8 @@ const configFields: ConfigFields = {
         description: 'The browser to use.',
         defaultValue: 'chrome',
         parser: (value: string) => {
-            if (!['firefox', 'chrome'].includes(value)) {
-                throw new Error('BROWSER must be "chrome" or "firefox"')
+            if (value !== 'chrome') {
+                throw new Error('BROWSER must be "chrome"')
             }
             return value
         },
@@ -90,6 +94,10 @@ const configFields: ConfigFields = {
         envVar: 'GITHUB_CLIENT_SECRET',
         description:
             'Cilent secret of the GitHub app to use to authenticate to Sourcegraph. Follow these instructions to obtain: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/',
+    },
+    gitHubDotComToken: {
+        envVar: 'GH_TOKEN',
+        description: 'A Github personal token with access to private repos used for e2e tests.',
     },
     gitHubToken: {
         envVar: 'GITHUB_TOKEN',
@@ -164,6 +172,7 @@ const configFields: ConfigFields = {
         parser: parseBool,
         description:
             "If true, regression tests will not clean up users, external services, or other resources they create. Set this to true if running against a dev instance (as it'll make test runs faster). Set to false if running against production.",
+        defaultValue: false,
     },
     keepBrowser: {
         envVar: 'KEEP_BROWSER',
@@ -182,6 +191,7 @@ const configFields: ConfigFields = {
         parser: parseBool,
         description:
             'If true, logs status messages to console. This does not log the browser console (use LOG_BROWSER_CONSOLE for that).',
+        defaultValue: true,
     },
     slowMo: {
         envVar: 'SLOWMO',
@@ -206,12 +216,30 @@ const configFields: ConfigFields = {
         description:
             'A Bitbucket Cloud app password associated with the Bitbucket Cloud user sg-e2e-regression-test-bob, that will be used to sync Bitbucket Cloud repositories.',
     },
+    disableAppAssetsMocking: {
+        envVar: 'DISABLE_APP_ASSETS_MOCKING',
+        parser: parseBool,
+        description: 'Disable index.html and client assets mocking.',
+        defaultValue: false,
+    },
+    windowWidth: {
+        envVar: 'WINDOW_WIDTH',
+        parser: parseInt,
+        description: 'Browser window width.',
+        defaultValue: 1280,
+    },
+    windowHeight: {
+        envVar: 'WINDOW_HEIGHT',
+        parser: parseInt,
+        description: 'Browser window height.',
+        defaultValue: 1024,
+    },
 }
 
 /**
  * Reads e2e config from environment variables. The caller should specify the config fields that it
  * depends on. This should NOT be called from helper packages. Instead, call it near the start of
- * "test main" function (i.e., Jest `test` blocks). Doing this ensures that all the necessary
+ * "test main" function (i.e., vitest `test` blocks). Doing this ensures that all the necessary
  * environment variables necessary for a test are presented to the user in one go.
  */
 export function getConfig<T extends keyof Config>(...required: T[]): Partial<Config> & Pick<Config, T> {

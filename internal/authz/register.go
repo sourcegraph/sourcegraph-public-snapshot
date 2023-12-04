@@ -1,12 +1,10 @@
 package authz
 
 import (
-	"os"
-	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 var (
@@ -14,10 +12,7 @@ var (
 	// not matched by any authz provider. The default value is true. It is only set to false in
 	// error modes (when the configuration is in a state where interpreting it literally could lead
 	// to leakage of private repositories).
-	//
-	// 🚨 SECURITY: We do not want to allow access by default by any means on
-	// dotcom.
-	allowAccessByDefault = !envvar.SourcegraphDotComMode()
+	allowAccessByDefault = true
 
 	// authzProvidersReady and authzProvidersReadyOnce together indicate when
 	// GetProviders should no longer block. It should block until SetProviders
@@ -55,7 +50,7 @@ func SetProviders(authzAllowByDefault bool, z []Provider) {
 //
 // It blocks until SetProviders has been called at least once.
 func GetProviders() (authzAllowByDefault bool, providers []Provider) {
-	if !isTest {
+	if !testutil.IsTest {
 		<-authzProvidersReady
 	}
 	authzMu.Lock()
@@ -68,9 +63,3 @@ func GetProviders() (authzAllowByDefault bool, providers []Provider) {
 	copy(providers, authzProviders)
 	return allowAccessByDefault, providers
 }
-
-var isTest = (func() bool {
-	path, _ := os.Executable()
-	return filepath.Ext(path) == ".test" ||
-		strings.Contains(path, "/T/___") // Test path used by GoLand
-})()

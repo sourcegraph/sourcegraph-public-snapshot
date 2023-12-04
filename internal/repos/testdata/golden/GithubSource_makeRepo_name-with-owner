@@ -1,0 +1,80 @@
+[
+  {
+   "ID": 0,
+   "Name": "tsenart/vegeta",
+   "URI": "github.com/tsenart/vegeta",
+   "Description": "HTTP load testing tool and library. It''s over 9000!",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMjA4MDU1MQ==",
+    "ServiceType": "github",
+    "ServiceID": "https://github.com/"
+   },
+   "Sources": {
+    "extsvc:github:1": {
+     "ID": "extsvc:github:1",
+     "CloneURL": "https://github.com/tsenart/vegeta"
+    }
+   },
+   "Metadata": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMjA4MDU1MQ==",
+    "DatabaseID": 12080551,
+    "NameWithOwner": "tsenart/vegeta",
+    "Description": "HTTP load testing tool and library. It''s over 9000!",
+    "URL": "https://github.com/tsenart/vegeta",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "",
+    "RepositoryTopics": {
+     "Nodes": null
+    }
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "sourcegraph/secret-vegeta",
+   "URI": "github.com/sourcegraph/secret-vegeta",
+   "Description": "This vegeta is made with secret sauce from Sourcegraph.",
+   "Fork": false,
+   "Archived": false,
+   "Private": true,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMjA4MDU1Mg==",
+    "ServiceType": "github",
+    "ServiceID": "https://github.com/"
+   },
+   "Sources": {
+    "extsvc:github:1": {
+     "ID": "extsvc:github:1",
+     "CloneURL": "https://github.com/sourcegraph/secret-vegeta"
+    }
+   },
+   "Metadata": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMjA4MDU1Mg==",
+    "DatabaseID": 12080552,
+    "NameWithOwner": "sourcegraph/secret-vegeta",
+    "Description": "This vegeta is made with secret sauce from Sourcegraph.",
+    "URL": "https://github.com/sourcegraph/secret-vegeta",
+    "IsPrivate": true,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "",
+    "RepositoryTopics": {
+     "Nodes": null
+    }
+   }
+  }
+ ]

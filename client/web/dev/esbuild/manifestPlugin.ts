@@ -1,36 +1,50 @@
 import fs from 'fs'
 import path from 'path'
 
-import * as esbuild from 'esbuild'
+import type * as esbuild from 'esbuild'
 
-import { STATIC_ASSETS_PATH } from '../utils'
-import { WebpackManifest } from '../webpack/get-html-webpack-plugins'
-
-export const assetPathPrefix = '/.assets'
-
-export const getManifest = (): WebpackManifest => ({
-    'app.js': path.join(assetPathPrefix, 'scripts/app.js'),
-    'app.css': path.join(assetPathPrefix, 'scripts/app.css'),
-    isModule: true,
-})
-
-const writeManifest = async (manifest: WebpackManifest): Promise<void> => {
-    const manifestPath = path.join(STATIC_ASSETS_PATH, 'webpack.manifest.json')
-    await fs.promises.writeFile(manifestPath, JSON.stringify(manifest, null, 2))
-}
+import { WEB_BUILD_MANIFEST_FILENAME, createManifestFromBuildResult } from './manifest'
 
 /**
- * An esbuild plugin to write a webpack.manifest.json file (just as Webpack does), for compatibility
- * with our current Webpack build.
+ * An esbuild plugin to write a web.manifest.json file.
  */
 export const manifestPlugin: esbuild.Plugin = {
     name: 'manifest',
     setup: build => {
-        build.onStart(async () => {
-            // The bug https://github.com/evanw/esbuild/issues/1384 means that onEnd isn't called in
-            // serve mode, so write it here instead of waiting for onEnd. This is OK because we
-            // don't actually need any information that's only available in onEnd.
-            await writeManifest(getManifest())
+        const origMetafile = build.initialOptions.metafile
+        build.initialOptions.metafile = true
+
+        build.onEnd(async result => {
+            const { entryPoints } = build.initialOptions
+            const outputs = result?.metafile?.outputs
+
+            if (!origMetafile) {
+                // If we were the only consumers of the metafile, then delete it from the result to
+                // avoid unexpected behavior from other downstream consumers relying on the metafile
+                // despite not actually enabling it in the config.
+                delete result.metafile
+            }
+
+            if (!checkEntryPoints(entryPoints)) {
+                throw new Error('[manifestPlugin] Unexpected entryPoints format')
+            }
+
+            const { outdir } = build.initialOptions
+            if (!outdir) {
+                throw new Error('[manifestPlugin] No outdir found')
+            }
+
+            if (!outputs) {
+                throw new Error('[manifestPlugin] No outputs found')
+            }
+
+            const manifest = createManifestFromBuildResult({ entryPoints, outdir }, outputs)
+            const manifestPath = path.join(outdir, WEB_BUILD_MANIFEST_FILENAME)
+            await fs.promises.writeFile(manifestPath, JSON.stringify(manifest, null, 2))
         })
     },
+}
+
+function checkEntryPoints(entryPoints: esbuild.BuildOptions['entryPoints']): entryPoints is string[] {
+    return Array.isArray(entryPoints) && typeof entryPoints[0] === 'string'
 }

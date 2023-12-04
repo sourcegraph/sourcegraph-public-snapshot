@@ -1,0 +1,17 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "version",
+    srcs = ["version.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/version",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/errors"],
+)
+
+go_test(
+    name = "version_test",
+    timeout = "short",
+    srcs = ["version_test.go"],
+    embed = [":version"],
+)

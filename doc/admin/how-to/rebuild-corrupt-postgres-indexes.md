@@ -21,7 +21,7 @@ psql -U sg -d sg -h localhost -p 3333
 In docker compose, you will need to scale down all the other services to prevent new connections from being established.
 You must run these commands from the machine where sourcegraph is running. 
 
-> NOTE: You can refer to the following instructions for accessing databases on your deployment type: [Docker Compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations#access-the-database), [Kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/operations#access-the-database).
+> NOTE: You can refer to the following instructions for accessing databases on your deployment type: [Docker Compose](../deploy/docker-compose/index.md#access-the-database), [Kubernetes](../deploy/kubernetes/operations.md#access-the-database).
 
 ```shell
 export DB=pgsql # change for other databases
@@ -48,6 +48,22 @@ Then we rebuild the database indexes.
 
 ```sql
 reindex (verbose) database sg;
+```
+
+
+In docker, you can fix the indexes while the server is running. It is not required to stop the single server image.
+The only risk here is that connections and every other process might be slow.
+
+Using the following commands you can re-index the database: 
+
+```sql
+reindex (verbose) system sourcegraph;
+```
+
+Then we rebuild the database indexes.
+
+```sql
+reindex (verbose) database sourcegraph;
 ```
 
 If any duplicate errors are reported, we must delete some rows by adapting and running the [duplicate deletion query](#duplicate-deletion-query) for each of the errors found.

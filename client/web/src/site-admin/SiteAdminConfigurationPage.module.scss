@@ -20,23 +20,3 @@
         justify-content: space-between;
     }
 }
-
-.action-groups {
-    background-color: var(--color-bg-2);
-    padding-bottom: 0.5rem;
-    padding-left: 0.5rem;
-}
-
-.action-group-header {
-    font-weight: bold;
-}
-
-.actions {
-    display: flex;
-    flex-wrap: wrap;
-}
-
-.action {
-    margin: 0.5rem 0.5rem 0 0;
-    flex: 0 auto;
-}

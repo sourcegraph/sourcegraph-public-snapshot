@@ -1,8 +1,8 @@
-import { ErrorLike } from '@sourcegraph/common'
-import { Position, Range } from '@sourcegraph/extension-api-types'
+import type { ErrorLike } from '@sourcegraph/common'
+import type { Position, Range } from '@sourcegraph/extension-api-types'
 
-import { LOADING } from './loading'
-import { HoveredToken } from './tokenPosition'
+import type { LOADING } from './loading'
+import type { HoveredToken } from './tokenPosition'
 
 /**
  * @template C Extra context for the hovered token.
@@ -14,7 +14,7 @@ export interface HoverOverlayProps<C extends object, D, A> {
     hoverOrError?: typeof LOADING | (HoverAttachment & D) | null | ErrorLike
 
     /** The position of the tooltip (assigned to `style`) */
-    overlayPosition?: { left: number; top: number }
+    overlayPosition?: { left: number } & ({ top: number } | { bottom: number })
 
     /**
      * The hovered token (position and word).

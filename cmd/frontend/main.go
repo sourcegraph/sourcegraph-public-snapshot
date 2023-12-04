@@ -1,22 +1,28 @@
+// Command frontend is a service that serves the web frontend and API.
 package main
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"os"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
+	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
+	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/ui/assets"
+
+	_ "github.com/sourcegraph/sourcegraph/client/web/dist" // use assets
 )
 
-// Note: All frontend code should be added to shared.Main, not here. See that
-// function for details.
-
 func main() {
-	// Set dummy authz provider to unblock channel for checking permissions in GraphQL APIs.
-	// See https://github.com/sourcegraph/sourcegraph/issues/3847 for details.
-	authz.SetProviders(true, []authz.Provider{})
-
-	shared.Main(func(db database.DB, c conftypes.UnifiedWatchable) enterprise.Services {
-		return enterprise.DefaultServices()
+	sanitycheck.Pass()
+	if os.Getenv("WEB_BUILDER_DEV_SERVER") == "1" {
+		assets.UseDevAssetsProvider()
+	}
+	svcmain.SingleServiceMainWithoutConf(shared.Service, svcmain.OutOfBandConfiguration{
+		// use a switchable config here so we can switch it out for a proper conf client
+		// once we can use it after autoupgrading
+		Logging: conf.NewLogsSinksSource(shared.SwitchableSiteConfig()),
+		Tracing: tracer.ConfConfigurationSource{WatchableSiteConfig: shared.SwitchableSiteConfig()},
 	})
 }

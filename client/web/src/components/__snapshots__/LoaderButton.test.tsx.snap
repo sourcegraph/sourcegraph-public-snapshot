@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`LoaderButton should not render a loading spinner when loading prop is false 1`] = `
+exports[`LoaderButton > should not render a loading spinner when loading prop is false 1`] = `
 <DocumentFragment>
   <button
     class="btn d-flex justify-content-center align-items-center"
@@ -11,14 +11,18 @@ exports[`LoaderButton should not render a loading spinner when loading prop is f
 </DocumentFragment>
 `;
 
-exports[`LoaderButton should render a loading spinner when loading prop is true 1`] = `
+exports[`LoaderButton > should render a loading spinner when loading prop is true 1`] = `
 <DocumentFragment>
   <button
     class="btn d-flex justify-content-center align-items-center"
     type="button"
   >
     <div
-      class="loadingSpinner icon-inline"
+      aria-label="Loading"
+      aria-live="polite"
+      class="mdi-icon iconInline loadingSpinner"
+      data-loading-spinner="true"
+      role="img"
     />
   </button>
 </DocumentFragment>

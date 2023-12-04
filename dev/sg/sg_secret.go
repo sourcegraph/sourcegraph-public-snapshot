@@ -1,63 +1,70 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
-	"flag"
 	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var (
-	secretFlagSet      = flag.NewFlagSet("sg secret", flag.ExitOnError)
-	secretResetFlagSet = flag.NewFlagSet("sg secret reset", flag.ExitOnError)
+	secretListViewFlag bool
 
-	secretListFlagSet  = flag.NewFlagSet("sg secret list", flag.ExitOnError)
-	secretListViewFlag = secretListFlagSet.Bool("view", false, "Display configured secrets when listing")
+	secretCommand = &cli.Command{
+		Name:  "secret",
+		Usage: "Manipulate secrets stored in memory and in file",
+		UsageText: `
+# List all secrets stored in your local configuration.
+sg secret list
 
-	secretCommand = &ffcli.Command{
-		Name:       "secret",
-		ShortUsage: "sg secret <subcommand>...",
-		ShortHelp:  "Manipulate secrets stored in memory and in file",
-		FlagSet:    secretFlagSet,
-		Subcommands: []*ffcli.Command{
+# Remove the secrets associated with buildkite (sg ci build) - supports autocompletion for
+# ease of use
+sg secret reset buildkite
+`,
+		Category: category.Env,
+		Subcommands: []*cli.Command{
 			{
-				Name:       "reset",
-				ShortUsage: "sg secret reset <key>...",
-				ShortHelp:  "Remove a specific secret from secrets file",
-				FlagSet:    secretResetFlagSet,
-				Exec:       resetSecretExec,
+				Name:         "reset",
+				ArgsUsage:    "<...key>",
+				Usage:        "Remove a specific secret from secrets file",
+				Action:       resetSecretExec,
+				BashComplete: completions.CompleteArgs(bashCompleteSecrets),
 			},
 			{
-				Name:       "list",
-				ShortUsage: "sg secret list",
-				ShortHelp:  "List all stored secrets",
-				FlagSet:    secretListFlagSet,
-				Exec:       listSecretExec,
+				Name:  "list",
+				Usage: "List all stored secrets",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:        "view",
+						Aliases:     []string{"v"},
+						Usage:       "Display configured secrets when listing",
+						Value:       false,
+						Destination: &secretListViewFlag,
+					},
+				},
+				Action: listSecretExec,
 			},
 		},
-		Exec: secretExec,
 	}
 )
 
-func secretExec(ctx context.Context, args []string) error {
-	return flag.ErrHelp
-}
-
-func resetSecretExec(ctx context.Context, args []string) error {
+func resetSecretExec(ctx *cli.Context) error {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		return errors.New("no key provided to reset")
 	}
 
-	if err := loadSecrets(); err != nil {
+	secretsStore, err := secrets.FromContext(ctx.Context)
+	if err != nil {
 		return err
 	}
-
 	for _, arg := range args {
 		if err := secretsStore.Remove(arg); err != nil {
 			return err
@@ -67,30 +74,44 @@ func resetSecretExec(ctx context.Context, args []string) error {
 		return err
 	}
 
+	std.Out.WriteSuccessf("Removed secret(s) %s.", strings.Join(args, ", "))
+
 	return nil
 }
 
-func listSecretExec(ctx context.Context, args []string) error {
-	if err := loadSecrets(); err != nil {
+func listSecretExec(ctx *cli.Context) error {
+	secretsStore, err := secrets.FromContext(ctx.Context)
+	if err != nil {
 		return err
 	}
-	stdout.Out.WriteLine(output.Linef("", output.StyleBold, "Secrets:"))
+	std.Out.WriteLine(output.Styled(output.StyleBold, "Secrets:"))
 	keys := secretsStore.Keys()
-	if *secretListViewFlag {
-		for _, key := range keys {
-			var val map[string]interface{}
-			if err := secretsStore.Get(key, &val); err != nil {
-				return errors.Newf("Get %q: %w", key, err)
-			}
-			data, err := json.MarshalIndent(val, "  ", "  ")
-			if err != nil {
-				return errors.Newf("Marshal %q: %w", key, err)
-			}
-			stdout.Out.WriteLine(output.Linef("", output.StyleYellow, "- %s:", key))
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "  %s", string(data)))
+	for _, key := range keys {
+		std.Out.WriteLine(output.Styledf(output.StyleYellow, "- %s", key))
+
+		// If we are just rendering the secret name, we are done
+		if !secretListViewFlag {
+			continue
 		}
-	} else {
-		stdout.Out.WriteLine(output.Linef("", output.StyleYellow, strings.Join(keys, ", ")))
+
+		// Otherwise render value
+		var val map[string]any
+		if err := secretsStore.Get(key, &val); err != nil {
+			return errors.Newf("Get %q: %w", key, err)
+		}
+		data, err := json.MarshalIndent(val, "  ", "  ")
+		if err != nil {
+			return errors.Newf("Marshal %q: %w", key, err)
+		}
+		std.Out.WriteCode("json", "  "+string(data))
 	}
 	return nil
+}
+
+func bashCompleteSecrets() (options []string) {
+	allSecrets, err := loadSecrets()
+	if err != nil {
+		return nil
+	}
+	return allSecrets.Keys()
 }

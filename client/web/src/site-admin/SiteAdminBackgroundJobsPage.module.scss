@@ -1,0 +1,27 @@
+.table-header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 125px);
+    grid-gap: 0.25rem;
+    align-items: center;
+}
+
+.filter-select {
+    margin-bottom: 0;
+    width: auto;
+}
+
+.routine {
+    display: grid;
+    margin-bottom: 1rem;
+    grid-template-columns: auto minmax(0, 125px);
+    grid-gap: 0.25rem;
+    align-items: center;
+}
+
+.name-and-description {
+    overflow-wrap: anywhere;
+}
+
+.link-color {
+    color: var(--link-color);
+}

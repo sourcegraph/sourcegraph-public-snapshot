@@ -1,0 +1,61 @@
+.form {
+    // Since this form is rendered within container with padding
+    // but we want to render some element without this padding we stretch
+    // the form and control padding on form level instead.
+    margin: -1rem;
+    display: flex;
+    flex-direction: column;
+    height: calc(100% + 2rem);
+    background-color: inherit;
+}
+
+.tab-list {
+    padding: 0.25rem 0.5rem 0 1rem;
+}
+
+.tab {
+    padding: 0.2rem 0.5rem;
+}
+
+.tab-panels {
+    padding: 1rem;
+}
+
+.form-view {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.repositories-fields {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    &--disabled {
+        filter: grayscale(100%) opacity(0.4);
+        pointer-events: none;
+    }
+}
+
+.configuration-group {
+    &-label {
+        font-weight: 500;
+    }
+
+    &-instruction-button {
+        margin-left: -0.5rem;
+    }
+
+    &-instructions {
+        padding-left: 1.5rem;
+        margin-top: 0.25rem;
+        font-size: 0.8rem;
+        color: var(--body-color);
+    }
+
+    &-editor {
+        margin-top: -0.5rem;
+    }
+}

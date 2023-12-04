@@ -1,27 +1,31 @@
-import classNames from 'classnames'
 import React, { useCallback } from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
+import classNames from 'classnames'
+
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { Input, Label } from '@sourcegraph/wildcard'
 
 import { USER_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { UsernameInput } from '../../../auth/SignInSignUpCommon'
-import { UserAvatar } from '../../UserAvatar'
+import type { EditUserProfilePage } from '../../../graphql-operations'
 
 import styles from './UserProfileFormFields.module.scss'
 
-export type UserProfileFormFieldsValue = Pick<GQL.IUser, 'username' | 'displayName' | 'avatarURL'>
+export type UserProfileFormFieldsValue = Pick<EditUserProfilePage, 'username' | 'displayName' | 'avatarURL'>
 
 interface Props {
     value: UserProfileFormFieldsValue
     onChange: (newValue: UserProfileFormFieldsValue) => void
     usernameFieldDisabled?: boolean
+    displayNameFieldDisabled?: boolean
     disabled?: boolean
 }
 
-export const UserProfileFormFields: React.FunctionComponent<Props> = ({
+export const UserProfileFormFields: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     value,
     onChange,
     usernameFieldDisabled,
+    displayNameFieldDisabled,
     disabled,
 }) => {
     const onUsernameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
@@ -40,7 +44,7 @@ export const UserProfileFormFields: React.FunctionComponent<Props> = ({
     return (
         <div data-testid="user-profile-form-fields">
             <div className="form-group">
-                <label htmlFor="UserProfileFormFields__username">Username</label>
+                <Label htmlFor="UserProfileFormFields__username">Username</Label>
                 <UsernameInput
                     id="UserProfileFormFields__username"
                     className="test-UserProfileFormFields-username"
@@ -51,38 +55,35 @@ export const UserProfileFormFields: React.FunctionComponent<Props> = ({
                     aria-describedby="UserProfileFormFields__username-help"
                 />
                 <small id="UserProfileFormFields__username-help" className="form-text text-muted">
-                    A username consists of letters, numbers, hyphens (-), dots (.) and may not begin or end with a dot,
-                    nor begin with a hyphen.
+                    A username consists of letters, numbers, hyphens (-), dots (.), underscore (_) and may not begin or
+                    end with a dot, nor begin with a hyphen.
                 </small>
             </div>
-            <div className="form-group">
-                <label htmlFor="UserProfileFormFields__displayName">Display name</label>
-                <input
-                    id="UserProfileFormFields__displayName"
-                    type="text"
-                    className="form-control test-UserProfileFormFields__displayName"
-                    value={value.displayName || ''}
-                    onChange={onDisplayNameChange}
+            <Input
+                id="UserProfileFormFields__displayName"
+                data-testid="test-UserProfileFormFields__displayName"
+                value={value.displayName || ''}
+                onChange={onDisplayNameChange}
+                disabled={displayNameFieldDisabled || disabled}
+                spellCheck={false}
+                placeholder="Display name"
+                maxLength={USER_DISPLAY_NAME_MAX_LENGTH}
+                className="form-group"
+                label="Display name"
+            />
+
+            <div className="d-flex align-items-center">
+                <Input
+                    id="UserProfileFormFields__avatarURL"
+                    type="url"
+                    value={value.avatarURL || ''}
+                    onChange={onAvatarURLChange}
                     disabled={disabled}
                     spellCheck={false}
-                    placeholder="Display name"
-                    maxLength={USER_DISPLAY_NAME_MAX_LENGTH}
+                    placeholder="URL to avatar photo"
+                    className="form-group w-100"
+                    label="Avatar URL"
                 />
-            </div>
-            <div className="d-flex align-items-center">
-                <div className="form-group w-100">
-                    <label htmlFor="UserProfileFormFields__avatarURL">Avatar URL</label>
-                    <input
-                        id="UserProfileFormFields__avatarURL"
-                        type="url"
-                        className="form-control test-UserProfileFormFields__avatarURL"
-                        value={value.avatarURL || ''}
-                        onChange={onAvatarURLChange}
-                        disabled={disabled}
-                        spellCheck={false}
-                        placeholder="URL to avatar photo"
-                    />
-                </div>
                 {value.avatarURL && <UserAvatar user={value} className={classNames('ml-2', styles.avatar)} />}
             </div>
         </div>

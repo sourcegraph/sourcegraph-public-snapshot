@@ -1,8 +1,8 @@
-import * as React from 'react'
+import type { RouteObject } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { LayoutRouteProps } from '../routes'
+import { LegacyRoute } from '../LegacyRouteContext'
 
 const KubernetesCommunitySearchContextPage = lazyComponent(
     () => import('./Kubernetes'),
@@ -26,42 +26,93 @@ const StanfordCommunitySearchContextPage = lazyComponent(
     'StanfordCommunitySearchContextPage'
 )
 const CncfCommunitySearchContextPage = lazyComponent(() => import('./cncf'), 'CncfCommunitySearchContextPage')
+const JuliaCommunitySearchContextPage = lazyComponent(() => import('./Julia'), 'JuliaCommunitySearchContextPage')
+const BackstageCommunitySearchContextPage = lazyComponent(
+    () => import('./Backstage'),
+    'BackstageCommunitySearchContextPage'
+)
 
 // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
-export const communitySearchContextsRoutes: readonly LayoutRouteProps<any>[] = [
+export const communitySearchContextsRoutes: readonly RouteObject[] = [
     {
         path: '/kubernetes',
-        render: props => <KubernetesCommunitySearchContextPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+        element: (
+            <LegacyRoute
+                render={props => <KubernetesCommunitySearchContextPage {...props} />}
+                condition={({ isSourcegraphDotCom }) => isSourcegraphDotCom}
+            />
+        ),
     },
     {
         path: '/stackstorm',
-        render: props => <StackstormCommunitySearchContextPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+        element: (
+            <LegacyRoute
+                render={props => <StackstormCommunitySearchContextPage {...props} />}
+                condition={({ isSourcegraphDotCom }) => isSourcegraphDotCom}
+            />
+        ),
     },
     {
         path: '/temporal',
-        render: props => <TemporalCommunitySearchContextPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+        element: (
+            <LegacyRoute
+                render={props => <TemporalCommunitySearchContextPage {...props} />}
+                condition={({ isSourcegraphDotCom }) => isSourcegraphDotCom}
+            />
+        ),
     },
     {
         path: '/o3de',
-        render: props => <O3deCommunitySearchContextPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+        element: (
+            <LegacyRoute
+                render={props => <O3deCommunitySearchContextPage {...props} />}
+                condition={({ isSourcegraphDotCom }) => isSourcegraphDotCom}
+            />
+        ),
     },
     {
         path: '/chakraui',
-        render: props => <ChakraUICommunitySearchContextPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+        element: (
+            <LegacyRoute
+                render={props => <ChakraUICommunitySearchContextPage {...props} />}
+                condition={({ isSourcegraphDotCom }) => isSourcegraphDotCom}
+            />
+        ),
     },
     {
         path: '/stanford',
-        render: props => <StanfordCommunitySearchContextPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+        element: (
+            <LegacyRoute
+                render={props => <StanfordCommunitySearchContextPage {...props} />}
+                condition={({ isSourcegraphDotCom }) => isSourcegraphDotCom}
+            />
+        ),
     },
     {
         path: '/cncf',
-        render: props => <CncfCommunitySearchContextPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+        element: (
+            <LegacyRoute
+                render={props => <CncfCommunitySearchContextPage {...props} />}
+                condition={({ isSourcegraphDotCom }) => isSourcegraphDotCom}
+            />
+        ),
+    },
+    {
+        path: '/julia',
+        element: (
+            <LegacyRoute
+                render={props => <JuliaCommunitySearchContextPage {...props} />}
+                condition={({ isSourcegraphDotCom }) => isSourcegraphDotCom}
+            />
+        ),
+    },
+    {
+        path: '/backstage',
+        element: (
+            <LegacyRoute
+                render={props => <BackstageCommunitySearchContextPage {...props} />}
+                condition={({ isSourcegraphDotCom }) => isSourcegraphDotCom}
+            />
+        ),
     },
 ]

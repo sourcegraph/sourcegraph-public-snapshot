@@ -1,0 +1,29 @@
+---
+source: crates/scip-syntax/src/lib.rs
+expression: "String::from_utf8_lossy(buf_writer.buffer())"
+---
+{"_type":"tag","name":"Bruh","path":"globals.py","language":"python","line":6,"kind":"class","scope":null}
+{"_type":"tag","name":"dab","path":"globals.py","language":"python","line":11,"kind":"method","scope":"Bruh"}
+{"_type":"tag","name":"__init__","path":"globals.py","language":"python","line":8,"kind":"method","scope":"Bruh"}
+{"_type":"tag","name":"a","path":"globals.py","language":"python","line":6,"kind":"variable","scope":"Bruh"}
+{"_type":"tag","name":"SomeAsyncStuffs","path":"globals.py","language":"python","line":37,"kind":"class","scope":null}
+{"_type":"tag","name":"__anext__","path":"globals.py","language":"python","line":43,"kind":"method","scope":"SomeAsyncStuffs"}
+{"_type":"tag","name":"__aiter__","path":"globals.py","language":"python","line":40,"kind":"method","scope":"SomeAsyncStuffs"}
+{"_type":"tag","name":"__init__","path":"globals.py","language":"python","line":37,"kind":"method","scope":"SomeAsyncStuffs"}
+{"_type":"tag","name":"ClassWithDecorators","path":"globals.py","language":"python","line":61,"kind":"class","scope":null}
+{"_type":"tag","name":"prints_something","path":"globals.py","language":"python","line":73,"kind":"method","scope":"ClassWithDecorators"}
+{"_type":"tag","name":"class_method","path":"globals.py","language":"python","line":66,"kind":"method","scope":"ClassWithDecorators"}
+{"_type":"tag","name":"static_method","path":"globals.py","language":"python","line":62,"kind":"method","scope":"ClassWithDecorators"}
+{"_type":"tag","name":"bar","path":"globals.py","language":"python","line":80,"kind":"variable","scope":null}
+{"_type":"tag","name":"foo","path":"globals.py","language":"python","line":80,"kind":"variable","scope":null}
+{"_type":"tag","name":"baz","path":"globals.py","language":"python","line":77,"kind":"variable","scope":null}
+{"_type":"tag","name":"bar","path":"globals.py","language":"python","line":77,"kind":"variable","scope":null}
+{"_type":"tag","name":"foo","path":"globals.py","language":"python","line":77,"kind":"variable","scope":null}
+{"_type":"tag","name":"func02","path":"globals.py","language":"python","line":57,"kind":"function","scope":null}
+{"_type":"tag","name":"has_a_name","path":"globals.py","language":"python","line":53,"kind":"function","scope":null}
+{"_type":"tag","name":"does_nothingwrapper","path":"globals.py","language":"python","line":49,"kind":"function","scope":null}
+{"_type":"tag","name":"does_nothing","path":"globals.py","language":"python","line":46,"kind":"function","scope":null}
+{"_type":"tag","name":"my_function","path":"globals.py","language":"python","line":32,"kind":"function","scope":null}
+{"_type":"tag","name":"should_show_ifs","path":"globals.py","language":"python","line":19,"kind":"variable","scope":null}
+{"_type":"tag","name":"bruh","path":"globals.py","language":"python","line":3,"kind":"variable","scope":null}
+

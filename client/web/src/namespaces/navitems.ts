@@ -1,6 +1,12 @@
-import { NavItemWithIconDescriptor } from '../util/contributions'
+import { BatchChangesIconNamespaceNav } from '../batches/icons'
 
-export const namespaceAreaHeaderNavItems: readonly Pick<
-    NavItemWithIconDescriptor,
-    Exclude<keyof NavItemWithIconDescriptor, 'condition'>
->[] = []
+import type { NamespaceAreaNavItem } from './NamespaceArea'
+
+export const namespaceAreaHeaderNavItems: readonly NamespaceAreaNavItem[] = [
+    {
+        to: '/batch-changes',
+        label: 'Batch Changes',
+        icon: BatchChangesIconNamespaceNav,
+        condition: ({ batchChangesEnabled, isCodyApp }) => batchChangesEnabled && !isCodyApp,
+    },
+]

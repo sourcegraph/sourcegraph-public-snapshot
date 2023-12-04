@@ -1,25 +1,71 @@
-import { EMPTY, Observable, Subject } from 'rxjs'
+import { EMPTY, type Observable, Subject } from 'rxjs'
 import { bufferTime, catchError, concatMap, map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { UserEvent, EventSource, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { EventSource, type Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 import { requestGraphQL } from '../../backend/graphql'
-import {
-    LogUserEventResult,
-    LogUserEventVariables,
+import type {
     SetUserEmailVerifiedResult,
     SetUserEmailVerifiedVariables,
     UpdatePasswordResult,
     UpdatePasswordVariables,
-    CreatePasswordResult,
-    CreatePasswordVariables,
     LogEventsResult,
     LogEventsVariables,
     Event,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+
+export const UPDATE_PASSWORD = gql`
+    mutation UpdatePassword($oldPassword: String!, $newPassword: String!) {
+        updatePassword(oldPassword: $oldPassword, newPassword: $newPassword) {
+            alwaysNil
+        }
+    }
+`
+
+export const CREATE_PASSWORD = gql`
+    mutation CreatePassword($newPassword: String!) {
+        createPassword(newPassword: $newPassword) {
+            alwaysNil
+        }
+    }
+`
+
+export const userExternalAccountFragment = gql`
+    fragment UserExternalAccountFields on ExternalAccount {
+        id
+        serviceID
+        serviceType
+        clientID
+        publicAccountData {
+            displayName
+            login
+            url
+        }
+    }
+`
+
+export const USER_EXTERNAL_ACCOUNTS = gql`
+    query UserExternalAccountsWithAccountData($username: String!) {
+        user(username: $username) {
+            externalAccounts {
+                nodes {
+                    id
+                    serviceID
+                    serviceType
+                    clientID
+                    publicAccountData {
+                        displayName
+                        login
+                        url
+                    }
+                }
+            }
+        }
+    }
+`
 
 export function updatePassword(args: UpdatePasswordVariables): Observable<void> {
     return requestGraphQL<UpdatePasswordResult, UpdatePasswordVariables>(
@@ -33,32 +79,11 @@ export function updatePassword(args: UpdatePasswordVariables): Observable<void> 
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.updatePassword) {
+            if (!data?.updatePassword) {
                 eventLogger.log('UpdatePasswordFailed')
                 throw createAggregateError(errors)
             }
             eventLogger.log('PasswordUpdated')
-        })
-    )
-}
-
-export function createPassword(args: CreatePasswordVariables): Observable<void> {
-    return requestGraphQL<CreatePasswordResult, CreatePasswordVariables>(
-        gql`
-            mutation CreatePassword($newPassword: String!) {
-                createPassword(newPassword: $newPassword) {
-                    alwaysNil
-                }
-            }
-        `,
-        args
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.createPassword) {
-                eventLogger.log('CreatePasswordFailed')
-                throw createAggregateError(errors)
-            }
-            eventLogger.log('PasswordCreated')
         })
     )
 }
@@ -89,40 +114,8 @@ export function setUserEmailVerified(user: Scalars['ID'], email: string, verifie
     )
 }
 
-/**
- * Log a user action (used to allow site admins on a Sourcegraph instance
- * to see a count of unique users on a daily, weekly, and monthly basis).
- *
- * Not used at all for public/sourcegraph.com usage.
- *
- * @deprecated Use logEvent
- */
-export function logUserEvent(event: UserEvent): void {
-    requestGraphQL<LogUserEventResult, LogUserEventVariables>(
-        gql`
-            mutation LogUserEvent($event: UserEvent!, $userCookieID: String!) {
-                logUserEvent(event: $event, userCookieID: $userCookieID) {
-                    alwaysNil
-                }
-            }
-        `,
-        { event, userCookieID: eventLogger.getAnonymousUserID() }
-    )
-        .pipe(
-            map(({ data, errors }) => {
-                if (!data || (errors && errors.length > 0)) {
-                    throw createAggregateError(errors)
-                }
-                return
-            })
-        )
-        // Event logs are best-effort and non-blocking
-        // eslint-disable-next-line rxjs/no-ignored-subscription
-        .subscribe()
-}
-
 // Log events in batches.
-const events = new Subject<Event>()
+const batchedEvents = new Subject<Event>()
 
 export const logEventsMutation = gql`
     mutation LogEvents($events: [Event!]) {
@@ -132,21 +125,30 @@ export const logEventsMutation = gql`
     }
 `
 
-events
+function sendEvents(events: Event[]): Promise<void> {
+    return requestGraphQL<LogEventsResult, LogEventsVariables>(logEventsMutation, {
+        events,
+    })
+        .toPromise()
+        .then(dataOrThrowErrors)
+        .then(() => {})
+}
+
+function sendEvent(event: Event): Promise<void> {
+    return sendEvents([event])
+}
+
+batchedEvents
     .pipe(
         bufferTime(1000),
         concatMap(events => {
             if (events.length > 0) {
-                return requestGraphQL<LogEventsResult, LogEventsVariables>(logEventsMutation, {
-                    events,
-                }).pipe(map(dataOrThrowErrors))
+                return sendEvents(events)
             }
             return EMPTY
         }),
-        catchError(error => {
-            console.error('Error logging events:', error)
-            return []
-        })
+        // TODO: log errors to Sentry
+        catchError(() => [])
     )
     // eslint-disable-next-line rxjs/no-ignored-subscription
     .subscribe()
@@ -157,21 +159,53 @@ events
  *
  * When invoked on a non-Sourcegraph.com instance, this data is stored in the
  * instance's database, and not sent to Sourcegraph.com.
+ *
+ * @deprecated Use a TelemetryRecorder or TelemetryRecorderProvider from
+ * src/telemetry instead.
  */
 export function logEvent(event: string, eventProperties?: unknown, publicArgument?: unknown): void {
-    events.next({
+    batchedEvents.next(createEvent(event, eventProperties, publicArgument))
+}
+
+/**
+ * Log a raw user action and return a promise that resolves once the event has
+ * been sent. This method will not attempt to batch requests, so it should be
+ * used only when low event latency is necessary (e.g., on an external link).
+ *
+ * See logEvent for additional details.
+ *
+ * @deprecated Use a TelemetryRecorder or TelemetryRecorderProvider from
+ * src/telemetry instead.
+ */
+export function logEventSynchronously(
+    event: string,
+    eventProperties?: unknown,
+    publicArgument?: unknown
+): Promise<void> {
+    return sendEvent(createEvent(event, eventProperties, publicArgument))
+}
+
+function createEvent(event: string, eventProperties?: unknown, publicArgument?: unknown): Event {
+    return {
         event,
-        userCookieID: eventLogger.getAnonymousUserID(),
-        cohortID: eventLogger.getCohortID() || null,
-        firstSourceURL: eventLogger.getFirstSourceURL(),
-        lastSourceURL: eventLogger.getLastSourceURL(),
-        referrer: eventLogger.getReferrer(),
+        userCookieID: eventLogger.user.anonymousUserID,
+        cohortID: eventLogger.user.cohortID || null,
+        firstSourceURL: eventLogger.session.getFirstSourceURL(),
+        lastSourceURL: eventLogger.session.getLastSourceURL(),
+        referrer: eventLogger.session.getReferrer(),
+        originalReferrer: eventLogger.session.getOriginalReferrer(),
+        sessionReferrer: eventLogger.session.getSessionReferrer(),
+        sessionFirstURL: eventLogger.session.getSessionFirstURL(),
+        deviceSessionID: eventLogger.user.deviceSessionID,
         url: window.location.href,
         source: EventSource.WEB,
         argument: eventProperties ? JSON.stringify(eventProperties) : null,
         publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
-        deviceID: window.context.sourcegraphDotComMode ? eventLogger.getDeviceID() : null,
-        eventID: window.context.sourcegraphDotComMode ? eventLogger.getEventID() : null,
-        insertID: window.context.sourcegraphDotComMode ? eventLogger.getInsertID() : null,
-    })
+        deviceID: eventLogger.user.deviceID,
+        eventID: eventLogger.getEventID(),
+        insertID: eventLogger.getInsertID(),
+        client: eventLogger.getClient(),
+        connectedSiteID: window.context?.siteID,
+        hashedLicenseKey: window.context?.hashedLicenseKey,
+    }
 }

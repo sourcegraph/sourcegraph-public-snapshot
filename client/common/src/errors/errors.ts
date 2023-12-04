@@ -1,5 +1,5 @@
 import { AGGREGATE_ERROR_NAME } from './constants'
-import { AggregateError, ErrorLike } from './types'
+import type { ErrorLike } from './types'
 import { isErrorLike } from './utils'
 
 /**
@@ -18,12 +18,6 @@ export const asError = (value: unknown): Error => {
 }
 
 /**
- * A type guard checking whether the given value is an {@link AggregateError}
- */
-export const isAggregateError = (value: unknown): value is AggregateError =>
-    isErrorLike(value) && value.name === AGGREGATE_ERROR_NAME
-
-/**
  * DEPRECATED: use dataOrThrowErrors instead
  * Creates an aggregate error out of multiple provided error likes
  *
@@ -36,3 +30,8 @@ export const createAggregateError = (errors: readonly ErrorLike[] = []): Error =
               name: AGGREGATE_ERROR_NAME,
               errors: errors.map(asError),
           })
+
+export class AbortError extends Error {
+    public readonly name = 'AbortError'
+    public readonly message = 'Aborted'
+}

@@ -3,20 +3,20 @@ import { SearchPatternType } from '../../graphql-operations'
 import { filterTypeKeysWithAliases } from './filters'
 import { scanPredicate } from './predicates'
 import {
-    Token,
-    Whitespace,
-    OpeningParen,
-    ClosingParen,
-    Keyword,
-    Comment,
-    Literal,
-    Pattern,
-    Filter,
+    type Token,
+    type Whitespace,
+    type OpeningParen,
+    type ClosingParen,
+    type Keyword,
+    type Comment,
+    type Literal,
+    type Pattern,
+    type Filter,
     KeywordKind,
     PatternKind,
-    CharacterRange,
+    type CharacterRange,
     createLiteral,
-    Separator,
+    type Separator,
 } from './token'
 
 /**
@@ -65,69 +65,75 @@ type Scanner<T = Term> = (input: string, start: number) => ScanResult<T>
  * Returns a {@link Scanner} that succeeds if zero or more tokens are scanned
  * by the given `scanToken` scanners.
  */
-const zeroOrMore = (scanToken: Scanner<Term>): Scanner<Token[]> => (input, start) => {
-    const tokens: Token[] = []
-    let adjustedStart = start
-    let end = start + 1
-    while (input[adjustedStart] !== undefined) {
-        const result = scanToken(input, adjustedStart)
-        if (result.type === 'error') {
-            return result
-        }
-        if (Array.isArray(result.term)) {
-            for (const token of result.term) {
-                tokens.push(token)
-                end = token.range.end
+const zeroOrMore =
+    (scanToken: Scanner<Term>): Scanner<Token[]> =>
+    (input, start) => {
+        const tokens: Token[] = []
+        let adjustedStart = start
+        let end = start + 1
+        while (input[adjustedStart] !== undefined) {
+            const result = scanToken(input, adjustedStart)
+            if (result.type === 'error') {
+                return result
             }
-        } else {
-            tokens.push(result.term)
-            end = result.term.range.end
+            if (Array.isArray(result.term)) {
+                for (const token of result.term) {
+                    tokens.push(token)
+                    end = token.range.end
+                }
+            } else {
+                tokens.push(result.term)
+                end = result.term.range.end
+            }
+            adjustedStart = end
         }
-        adjustedStart = end
+        return { type: 'success', term: tokens }
     }
-    return { type: 'success', term: tokens }
-}
 
 /**
  * Returns a {@link Scanner} that succeeds if any of the given scanner succeeds.
  */
-const oneOf = <T>(...scanners: Scanner<T>[]): Scanner<T> => (input, start) => {
-    const expected: string[] = []
-    for (const scanner of scanners) {
-        const result = scanner(input, start)
-        if (result.type === 'success') {
-            return result
+const oneOf =
+    <T>(...scanners: Scanner<T>[]): Scanner<T> =>
+    (input, start) => {
+        const expected: string[] = []
+        for (const scanner of scanners) {
+            const result = scanner(input, start)
+            if (result.type === 'success') {
+                return result
+            }
+            expected.push(result.expected)
         }
-        expected.push(result.expected)
+        return {
+            type: 'error',
+            expected: `One of: ${expected.join(', ')}`,
+            at: start,
+        }
     }
-    return {
-        type: 'error',
-        expected: `One of: ${expected.join(', ')}`,
-        at: start,
-    }
-}
 
 /**
  * A {@link Scanner} that will attempt to scan delimited strings for an arbitrary
  * delimiter. `\` is treated as an escape character for the delimited string.
  */
-const quoted = (delimiter: string): Scanner<Literal> => (input, start) => {
-    if (input[start] !== delimiter) {
-        return { type: 'error', expected: delimiter, at: start }
+const quoted =
+    (delimiter: string): Scanner<Literal> =>
+    (input, start) => {
+        if (input[start] !== delimiter) {
+            return { type: 'error', expected: delimiter, at: start }
+        }
+        let end = start + 1
+        while (input[end] && (input[end] !== delimiter || input[end - 1] === '\\')) {
+            end = end + 1
+        }
+        if (!input[end]) {
+            return { type: 'error', expected: delimiter, at: end }
+        }
+        return {
+            type: 'success',
+            // end + 1 as `end` is currently the index of the quote in the string.
+            term: createLiteral(input.slice(start + 1, end), { start, end: end + 1 }, true),
+        }
     }
-    let end = start + 1
-    while (input[end] && (input[end] !== delimiter || input[end - 1] === '\\')) {
-        end = end + 1
-    }
-    if (!input[end]) {
-        return { type: 'error', expected: delimiter, at: end }
-    }
-    return {
-        type: 'success',
-        // end + 1 as `end` is currently the index of the quote in the string.
-        term: createLiteral(input.slice(start + 1, end), { start, end: end + 1 }, true),
-    }
-}
 
 /**
  * A {@link Scanner} that scans a ':' separator for fields.
@@ -279,7 +285,7 @@ export const scanBalancedLiteral: Scanner<Literal> = (input, start) => {
 }
 
 /**
- * Scan predicate syntax like repo:contains(file:README.md). Predicate scanning
+ * Scan predicate syntax like repo:contains.file(path:README.md). Predicate scanning
  * takes precedence over other value scanners like scanBalancedLiteral.
  */
 export const scanPredicateValue = (input: string, start: number, field: Literal): ScanResult<Literal> => {
@@ -345,36 +351,38 @@ const closingParen = scanToken(/\)/, (_input, range): ClosingParen => ({ type: '
  * Returns a {@link Scanner} that succeeds if `scanTerm` succeeds,
  * followed by `scanNext`.
  */
-const followedBy = (scanTerm: Scanner<Term>, scanNext: Scanner<Token>): Scanner<Token[]> => (input, start) => {
-    const result = scanTerm(input, start)
-    if (result.type === 'error') {
-        return result
-    }
-    let end: number | undefined
-    const tokens: Token[] = []
-    if (Array.isArray(result.term)) {
-        for (const token of result.term) {
-            tokens.push(token)
-            end = token.range.end
+const followedBy =
+    (scanTerm: Scanner<Term>, scanNext: Scanner<Token>): Scanner<Token[]> =>
+    (input, start) => {
+        const result = scanTerm(input, start)
+        if (result.type === 'error') {
+            return result
         }
-    } else {
-        tokens.push(result.term)
-        end = result.term.range.end
-    }
-    // Invariant: end is defined.
-    if (end && input[end] !== undefined) {
-        const next = scanNext(input, end)
-        if (next.type === 'error') {
-            return next
+        let end: number | undefined
+        const tokens: Token[] = []
+        if (Array.isArray(result.term)) {
+            for (const token of result.term) {
+                tokens.push(token)
+                end = token.range.end
+            }
+        } else {
+            tokens.push(result.term)
+            end = result.term.range.end
         }
-        tokens.push(next.term)
-        end = next.term.range.end
+        // Invariant: end is defined.
+        if (end && input[end] !== undefined) {
+            const next = scanNext(input, end)
+            if (next.type === 'error') {
+                return next
+            }
+            tokens.push(next.term)
+            end = next.term.range.end
+        }
+        return {
+            type: 'success',
+            term: tokens,
+        }
     }
-    return {
-        type: 'success',
-        term: tokens,
-    }
-}
 
 /**
  * A {@link Scanner} that will attempt to scan {@link Filter} tokens
@@ -412,13 +420,19 @@ const filter: Scanner<Filter> = (input, start) => {
     }
 }
 
-const createPattern = (value: string, range: CharacterRange, kind: PatternKind): ScanSuccess<Pattern> => ({
+const createPattern = (
+    value: string,
+    range: CharacterRange,
+    kind: PatternKind,
+    delimited?: boolean
+): ScanSuccess<Pattern> => ({
     type: 'success',
     term: {
         type: 'pattern',
         range,
         kind,
         value,
+        delimited,
     },
 })
 
@@ -431,13 +445,15 @@ const keepScanning = (input: string, start: number): boolean => scanFilterOrKeyw
  * @param scanner The literal scanner.
  * @param kind The {@link PatternKind} label to apply to the resulting pattern scanner.
  */
-export const toPatternResult = (scanner: Scanner<Literal>, kind: PatternKind): Scanner<Pattern> => (input, start) => {
-    const result = scanner(input, start)
-    if (result.type === 'success') {
-        return createPattern(result.term.value, result.term.range, kind)
+export const toPatternResult =
+    (scanner: Scanner<Literal>, kind: PatternKind, delimited = false): Scanner<Pattern> =>
+    (input, start) => {
+        const result = scanner(input, start)
+        if (result.type === 'success') {
+            return createPattern(result.term.value, result.term.range, kind, result.term.quoted)
+        }
+        return result
     }
-    return result
-}
 
 const scanPattern = (kind: PatternKind): Scanner<Pattern> =>
     toPatternResult(oneOf<Literal>(scanBalancedLiteral, literal), kind)
@@ -470,6 +486,45 @@ const createScanner = (kind: PatternKind, interpretComments?: boolean): Scanner<
     )
 }
 
+const scanStandard = (query: string): ScanResult<Token[]> => {
+    const tokenScanner = [
+        keyword,
+        filter,
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        scanPattern(PatternKind.Literal),
+    ]
+    const earlyPatternScanner = [
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        toPatternResult(scanBalancedLiteral, PatternKind.Literal),
+    ]
+
+    const scan = zeroOrMore(
+        oneOf<Term>(
+            whitespace,
+            ...earlyPatternScanner.map(token => followedBy(token, whitespaceOrClosingParen)),
+            openingParen,
+            closingParen,
+            ...tokenScanner.map(token => followedBy(token, whitespaceOrClosingParen))
+        )
+    )
+
+    return scan(query, 0)
+}
+
+export function detectPatternType(query: string): SearchPatternType | undefined {
+    const result = scanStandard(query)
+    const tokens =
+        result.type === 'success'
+            ? result.term.filter(
+                  token => !!(token.type === 'filter' && token.field.value.toLowerCase() === 'patterntype')
+              )
+            : undefined
+    if (tokens && tokens.length > 0) {
+        return (tokens[0] as Filter).value?.value as SearchPatternType
+    }
+    return undefined
+}
+
 /**
  * Scans a search query string.
  */
@@ -478,17 +533,27 @@ export const scanSearchQuery = (
     interpretComments?: boolean,
     searchPatternType = SearchPatternType.literal
 ): ScanResult<Token[]> => {
+    const patternType = detectPatternType(query) || searchPatternType
     let patternKind
-    switch (searchPatternType) {
-        case SearchPatternType.literal:
+    switch (patternType) {
+        case SearchPatternType.standard:
+        case SearchPatternType.lucky:
+        case SearchPatternType.newStandardRC1:
+        case SearchPatternType.keyword: {
+            return scanStandard(query)
+        }
+        case SearchPatternType.literal: {
             patternKind = PatternKind.Literal
             break
-        case SearchPatternType.regexp:
+        }
+        case SearchPatternType.regexp: {
             patternKind = PatternKind.Regexp
             break
-        case SearchPatternType.structural:
+        }
+        case SearchPatternType.structural: {
             patternKind = PatternKind.Structural
             break
+        }
     }
     const scanner = createScanner(patternKind, interpretComments)
     return scanner(query, 0)

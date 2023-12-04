@@ -1,0 +1,27 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dbcache",
+    srcs = ["cached_indexable_repos.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/dbcache",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "dbcache_test",
+    timeout = "short",
+    srcs = ["cached_indexable_repos_test.go"],
+    embed = [":dbcache"],
+    deps = [
+        "//internal/database",
+        "//internal/database/dbtest",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

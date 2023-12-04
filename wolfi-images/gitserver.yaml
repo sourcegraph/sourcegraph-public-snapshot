@@ -1,0 +1,30 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+    - mailcap
+
+    ## gitserver packages
+    - git
+    - git-lfs
+    - git-p4
+    - openssh-client
+    - python3
+    - bash
+
+    - coursier@sourcegraph
+    - p4cli@sourcegraph
+    - p4-fusion-sg@sourcegraph
+
+paths:
+  - path: /data/repos
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+
+work-dir: /
+
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

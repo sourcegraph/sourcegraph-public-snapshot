@@ -1,29 +1,35 @@
+import { type ChangeEvent, forwardRef, type InputHTMLAttributes } from 'react'
+
 import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
-import React, { ChangeEvent, forwardRef, Ref, useImperativeHandle, useRef } from 'react'
 
-import { FlexTextArea } from '@sourcegraph/wildcard'
-
-import { getSanitizedRepositories } from '../../creation-ui-kit'
+import { FlexTextArea, useDebounce } from '@sourcegraph/wildcard'
 
 import { SuggestionsPanel } from './components/suggestion-panel/SuggestionPanel'
 import { useRepoSuggestions } from './hooks/use-repo-suggestions'
+
 import styles from './RepositoriesField.module.scss'
-import { RepositoryFieldProps } from './types'
+
+interface RepositoryFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
+    value: string
+
+    /**
+     * Change handler runs when user changed input value or picked element
+     * from the suggestion panel.
+     */
+    onChange: (value: string) => void
+}
 
 /**
  * Renders single repository field with suggestions.
  */
-export const RepositoryField = forwardRef((props: RepositoryFieldProps, reference: Ref<HTMLInputElement | null>) => {
+export const RepositoryField = forwardRef<HTMLInputElement, RepositoryFieldProps>((props, reference) => {
     const { value, onChange, onBlur, ...otherProps } = props
 
-    const inputReference = useRef<HTMLInputElement>(null)
-
-    const { searchValue, suggestions } = useRepoSuggestions({
-        search: getSanitizedRepositories(value)[0],
+    const debouncedSearchTerm = useDebounce(value, 500)
+    const suggestions = useRepoSuggestions({
+        search: debouncedSearchTerm,
+        selectedRepositories: [],
     })
-
-    // Support top level reference prop
-    useImperativeHandle(reference, () => inputReference.current)
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>): void => {
         onChange(event.target.value)
@@ -34,13 +40,17 @@ export const RepositoryField = forwardRef((props: RepositoryFieldProps, referenc
             <ComboboxInput
                 {...otherProps}
                 as={FlexTextArea}
-                ref={inputReference}
+                ref={reference}
                 value={value}
                 onChange={handleInputChange}
             />
 
-            <ComboboxPopover className={styles.comboboxPopover}>
-                <SuggestionsPanel value={searchValue} suggestions={suggestions} />
+            <ComboboxPopover className={styles.comboboxReachPopover}>
+                <SuggestionsPanel
+                    value={debouncedSearchTerm}
+                    suggestions={suggestions.suggestions}
+                    className={styles.popover}
+                />
             </ComboboxPopover>
         </Combobox>
     )

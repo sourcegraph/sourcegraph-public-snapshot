@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "qa",
+    srcs = ["eval.go"],
+    embedsrcs = ["context_data.tsv"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/embeddings/qa",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/api",
+        "//internal/embeddings",
+        "//lib/errors",
+    ],
+)

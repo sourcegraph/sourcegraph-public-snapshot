@@ -2,7 +2,8 @@
 import '../../shared/polyfills'
 
 import React from 'react'
-import { render } from 'react-dom'
+
+import { createRoot } from 'react-dom/client'
 
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
@@ -12,7 +13,7 @@ import { ThemeWrapper } from '../ThemeWrapper'
 
 setLinkComponent(AnchorLink)
 
-const AfterInstallPage: React.FunctionComponent = () => (
+const AfterInstallPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <ThemeWrapper>
         {({ isLightTheme }) => (
             <WildcardThemeProvider isBranded={true}>
@@ -22,4 +23,6 @@ const AfterInstallPage: React.FunctionComponent = () => (
     </ThemeWrapper>
 )
 
-render(<AfterInstallPage />, document.querySelector('#root'))
+const root = createRoot(document.querySelector('#root')!)
+
+root.render(<AfterInstallPage />)

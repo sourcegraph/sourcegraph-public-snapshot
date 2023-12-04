@@ -30,6 +30,14 @@
       "enum": ["pat", "oauth"],
       "default": "pat"
     },
+    "token.oauth.refresh": {
+      "description": "The OAuth refresh token",
+      "type": "string"
+    },
+    "token.oauth.expiry": {
+      "description": "The OAuth token expiry (Unix timestamp in seconds)",
+      "type": "integer"
+    },
     "rateLimit": {
       "description": "Rate limit applied when making background API requests to GitLab.",
       "title": "GitLabRateLimit",
@@ -98,7 +106,12 @@
         "type": "object",
         "title": "ExcludedGitLabProject",
         "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
+        "anyOf": [
+          { "required": ["name"] },
+          { "required": ["id"] },
+          { "required": ["emptyRepos"] },
+          { "required": ["pattern"] }
+        ],
         "properties": {
           "name": {
             "description": "The name of a GitLab project (\"group/name\") to exclude from mirroring.",
@@ -108,11 +121,20 @@
           "id": {
             "description": "The ID of a GitLab project (as returned by the GitLab instance's API) to exclude from mirroring.",
             "type": "integer"
+          },
+          "emptyRepos": {
+            "description": "Whether to exclude empty repositories.",
+            "type": "boolean"
+          },
+          "pattern": {
+            "description": "Regular expression which matches against the name of a GitLab project (\"group/name\").",
+            "type": "string",
+            "format": "regex"
           }
         }
       },
       "examples": [
-        [{ "name": "group/name" }, { "id": 42 }],
+        [{ "name": "group/name" }, { "id": 42 }, { "emptyRepos": true }],
         [{ "name": "gitlab-org/gitlab-ee" }, { "name": "gitlab-com/www-gitlab-com" }]
       ]
     },
@@ -155,6 +177,11 @@
       "description": "Deprecated and ignored field which will be removed entirely in the next release. GitLab repositories can no longer be enabled or disabled explicitly.",
       "type": "boolean"
     },
+    "markInternalReposAsPublic": {
+      "description": "If true, internal repositories will be accessible to all users on Sourcegraph as if they were public, and user permission syncs will no longer check for public repositories. This overrides repository permissions but allows easier discovery and access to internal repositories, and may be desirable if all users on the Sourcegraph instance should have access to all internal repositories anyways. Defaults to false.",
+      "type": "boolean",
+      "default": false
+    },
     "authorization": {
       "title": "GitLabAuthorization",
       "description": "If non-null, enforces GitLab repository permissions. This requires that there be an item in the `auth.providers` field of type \"gitlab\" with the same `url` field as specified in this `GitLabConnection`.",
@@ -185,6 +212,7 @@
     },
     "webhooks": {
       "description": "An array of webhook configurations",
+      "deprecationMessage": "Deprecated in favour of first class webhooks. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice",
       "type": "array",
       "items": {
         "type": "object",

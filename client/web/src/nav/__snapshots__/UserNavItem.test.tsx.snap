@@ -1,13 +1,15 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`UserNavItem simple 1`] = `
+exports[`UserNavItem > simple 1`] = `
 <DocumentFragment>
   <button
-    aria-controls="menu--1"
+    aria-controls=""
     aria-haspopup="true"
-    class="d-flex align-items-center text-decoration-none test-user-nav-item-toggle menuButton"
+    aria-label="Open user profile menu"
+    class="d-flex align-items-center text-decoration-none menuButton"
     data-reach-menu-button=""
-    id="menu-button--menu"
+    data-testid="user-nav-item-toggle"
+    id="menu-button-test-id"
     type="button"
   >
     <div
@@ -17,15 +19,20 @@ exports[`UserNavItem simple 1`] = `
         class="align-items-center d-flex"
       >
         <div
-          class="userAvatar icon-inline avatar"
-          id="target-user-avatar"
+          class="userAvatar avatar"
         >
-          ad
+          <span
+            class="initials"
+          >
+            ad
+          </span>
         </div>
         <svg
-          class="mdi-icon icon-inline"
+          aria-hidden="true"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >

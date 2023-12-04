@@ -2,7 +2,7 @@
 
 package schema
 
-// BatchSpecJSON is the content of the file "../../../schema/batch_spec.schema.json".
+// BatchSpecJSON is the content of the file "schema/batch_spec.schema.json".
 const BatchSpecJSON = `{
   "$id": "batch_spec.schema.json#",
   "$schema": "http://json-schema.org/draft-07/schema#",
@@ -216,6 +216,27 @@ const BatchSpecJSON = `{
               "${{ outputs.goModFileExists }}",
               "${{ eq previous_step.stdout \"success\" }}"
             ]
+          },
+          "mount": {
+            "description": "Files that are mounted to the Docker container.",
+            "type": ["array", "null"],
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "mountpoint"],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "The path on the local machine to mount. The path must be in the same directory or a subdirectory of the batch spec.",
+                  "examples": ["local/path/to/file.text", "local/path/to/directory"]
+                },
+                "mountpoint": {
+                  "type": "string",
+                  "description": "The path in the container to mount the path on the local machine to.",
+                  "examples": ["path/to/file.txt", "path/to/directory"]
+                }
+              }
+            }
           }
         }
       }
@@ -302,6 +323,10 @@ const BatchSpecJSON = `{
         "branch": {
           "type": "string",
           "description": "The name of the Git branch to create or update on each repository with the changes."
+        },
+        "fork": {
+          "type": "boolean",
+          "description": "Whether to publish the changeset to a fork of the target repository. If omitted, the changeset will be published to a branch directly on the target repository, unless the global ` + "`" + `batches.enforceFork` + "`" + ` setting is enabled. If set, this property will override any global setting."
         },
         "commit": {
           "title": "ExpandedGitCommitDescription",

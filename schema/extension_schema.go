@@ -2,20 +2,17 @@ package schema
 
 import "github.com/sourcegraph/go-jsonschema/jsonschema"
 
-// TODO: This file is manually updated and must remain in sync with extension.schema.json. It does
-// not need to contain all fields, only those used by Go code.
-
 // SourcegraphExtensionManifest description: The Sourcegraph extension manifest describes the extension and the features it provides.
 type SourcegraphExtensionManifest struct {
-	ActivationEvents []string                `json:"activationEvents"`
-	Args             *map[string]interface{} `json:"args,omitempty"`
-	Contributes      *Contributions          `json:"contributes,omitempty"`
-	Description      string                  `json:"description,omitempty"`
-	Icon             string                  `json:"icon,omitempty"`
-	Readme           string                  `json:"readme,omitempty"`
-	Repository       *ExtensionRepository    `json:"repository,omitempty"`
-	Wip              bool                    `json:"wip,omitempty"`
-	Url              string                  `json:"url"`
+	ActivationEvents []string             `json:"activationEvents"`
+	Args             *map[string]any      `json:"args,omitempty"`
+	Contributes      *Contributions       `json:"contributes,omitempty"`
+	Description      string               `json:"description,omitempty"`
+	Icon             string               `json:"icon,omitempty"`
+	Readme           string               `json:"readme,omitempty"`
+	Repository       *ExtensionRepository `json:"repository,omitempty"`
+	Wip              bool                 `json:"wip,omitempty"`
+	Url              string               `json:"url"`
 }
 
 // ExtensionRepository description: The location of the version control repository for this extension.
@@ -25,13 +22,13 @@ type ExtensionRepository struct {
 }
 
 type Action struct {
-	ActionItem       *ActionItem   `json:"actionItem,omitempty"`
-	Category         string        `json:"category,omitempty"`
-	Command          string        `json:"command,omitempty"`
-	CommandArguments []interface{} `json:"commandArguments,omitempty"`
-	IconURL          string        `json:"iconURL,omitempty"`
-	Id               string        `json:"id,omitempty"`
-	Title            string        `json:"title,omitempty"`
+	ActionItem       *ActionItem `json:"actionItem,omitempty"`
+	Category         string      `json:"category,omitempty"`
+	Command          string      `json:"command,omitempty"`
+	CommandArguments []any       `json:"commandArguments,omitempty"`
+	IconURL          string      `json:"iconURL,omitempty"`
+	Id               string      `json:"id,omitempty"`
+	Title            string      `json:"title,omitempty"`
 }
 
 // ActionItem description: The action item.

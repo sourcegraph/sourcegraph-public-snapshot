@@ -1,5 +1,6 @@
-import { noop } from 'lodash'
 import React, { useCallback, useState } from 'react'
+
+import { noop } from 'lodash'
 
 /**
  * The current selection state: either a set of IDs or "all", in which case all
@@ -37,7 +38,7 @@ export interface MultiSelectContextState {
     // aggregating the existing state from visible if required (for example, if
     // pagination is being performed by appending to the existing list in an
     // infinite scrolling style approach).
-    setVisible: (ids: string[]) => void
+    setVisible: (reset: boolean, ids: string[]) => void
 }
 
 // eslint-disable @typescript-eslint/no-unused-vars
@@ -74,15 +75,21 @@ export const MultiSelectContext = React.createContext<MultiSelectContextState>(d
  * that has the correct state handling for normal use, including providing the
  * various callbacks that are used by consumers.
  */
-export const MultiSelectContextProvider: React.FunctionComponent<{
-    // These props are only for testing purposes.
-    initialSelected?: MultiSelectContextSelected | string[]
-    initialVisible?: string[]
-}> = ({ children, initialSelected, initialVisible }) => {
+export const MultiSelectContextProvider: React.FunctionComponent<
+    React.PropsWithChildren<{
+        // These props are only for testing purposes.
+        initialSelected?: MultiSelectContextSelected | string[]
+        initialVisible?: string[]
+    }>
+> = ({ children, initialSelected, initialVisible }) => {
     // Set up state and callbacks for the visible items.
     const [visible, setVisibleInternal] = useState<Set<string>>(new Set(initialVisible ?? []))
-    const setVisible = useCallback((ids: string[]) => {
-        setVisibleInternal(new Set(ids))
+    const setVisible = useCallback((reset: boolean, ids: string[]) => {
+        if (reset) {
+            setVisibleInternal(new Set(ids))
+        } else {
+            setVisibleInternal(previousIds => new Set([...previousIds, ...ids]))
+        }
     }, [])
 
     // Now for selected items.
@@ -91,11 +98,10 @@ export const MultiSelectContextProvider: React.FunctionComponent<{
     )
     const selectAll = useCallback(() => setSelected('all'), [setSelected])
     const deselectAll = useCallback(() => setSelected(new Set()), [setSelected])
-    const toggleAll = useCallback(() => (selected === 'all' ? deselectAll() : selectAll()), [
-        deselectAll,
-        selectAll,
-        selected,
-    ])
+    const toggleAll = useCallback(
+        () => (selected === 'all' ? deselectAll() : selectAll()),
+        [deselectAll, selectAll, selected]
+    )
 
     // Callbacks to select and deselect items.
     const selectVisible = useCallback(() => {

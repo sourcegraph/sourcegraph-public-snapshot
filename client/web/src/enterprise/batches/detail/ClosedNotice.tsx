@@ -2,14 +2,17 @@ import React from 'react'
 
 import { Alert } from '@sourcegraph/wildcard'
 
-import { BatchChangeFields } from '../../../graphql-operations'
+import type { BatchChangeFields } from '../../../graphql-operations'
 
 interface ClosedNoticeProps {
     closedAt: BatchChangeFields['closedAt']
     className?: string
 }
 
-export const ClosedNotice: React.FunctionComponent<ClosedNoticeProps> = ({ closedAt, className }) => {
+export const ClosedNotice: React.FunctionComponent<React.PropsWithChildren<ClosedNoticeProps>> = ({
+    closedAt,
+    className,
+}) => {
     if (!closedAt) {
         return null
     }

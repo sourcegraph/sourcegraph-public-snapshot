@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"time"
 
@@ -10,25 +11,28 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatisticsResolver, error) {
 	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 			return nil, err
 		}
 	}
 
-	stats, err := usagestatsdeprecated.GetByUserID(r.user.ID)
+	stats, err := usagestats.GetByUserID(ctx, r.db, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -69,29 +73,39 @@ func (s *userUsageStatisticsResolver) LastActiveCodeHostIntegrationTime() *strin
 	return nil
 }
 
+// LogUserEvent is no longer used, only here for backwards compatibility with IDE and browser extensions.
+// Functionality removed in https://github.com/sourcegraph/sourcegraph/pull/38826.
 func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	Event        string
 	UserCookieID string
 }) (*EmptyResponse, error) {
-	actor := actor.FromContext(ctx)
-	return nil, usagestatsdeprecated.LogActivity(actor.IsAuthenticated(), actor.UID, args.UserCookieID, args.Event)
+	return nil, nil
 }
 
 type Event struct {
-	Event          string
-	UserCookieID   string
-	FirstSourceURL *string
-	LastSourceURL  *string
-	URL            string
-	Source         string
-	Argument       *string
-	CohortID       *string
-	Referrer       *string
-	PublicArgument *string
-	UserProperties *string
-	DeviceID       *string
-	InsertID       *string
-	EventID        *int32
+	Event                  string
+	UserCookieID           string
+	FirstSourceURL         *string
+	LastSourceURL          *string
+	URL                    string
+	Source                 string
+	Argument               *string
+	CohortID               *string
+	Referrer               *string
+	OriginalReferrer       *string
+	SessionReferrer        *string
+	SessionFirstURL        *string
+	DeviceSessionID        *string
+	PublicArgument         *string
+	UserProperties         *string
+	DeviceID               *string
+	InsertID               *string
+	EventID                *int32
+	Client                 *string
+	BillingProductCategory *string
+	BillingEventID         *string
+	ConnectedSiteID        *string
+	HashedLicenseKey       *string
 }
 
 type EventBatch struct {
@@ -111,14 +125,10 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		return nil, nil
 	}
 
-	decode := func(v *string) (payload json.RawMessage, _ error) {
-		if v != nil {
-			if err := json.Unmarshal([]byte(*v), &payload); err != nil {
-				return nil, err
-			}
-		}
-
-		return payload, nil
+	userID := actor.FromContext(ctx).UID
+	userPrimaryEmail := ""
+	if envvar.SourcegraphDotComMode() {
+		userPrimaryEmail, _, _ = r.db.UserEmails().GetPrimaryEmail(ctx, userID)
 	}
 
 	events := make([]usagestats.Event, 0, len(*args.Events))
@@ -148,6 +158,38 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			continue
 		}
 
+		// On Sourcegraph.com only, log a HubSpot event indicating when the user installed a Cody client.
+		// if envvar.SourcegraphDotComMode() && args.Event == "CodyInstalled" && userID != 0 && userPrimaryEmail != "" {
+		if envvar.SourcegraphDotComMode() && args.Event == "CodyInstalled" {
+			emailsEnabled := false
+
+			ide := getIdeFromEvent(&args)
+
+			if strings.ToLower(ide) == "vscode" {
+				if ffs := featureflag.FromContext(ctx); ffs != nil {
+					emailsEnabled = ffs.GetBoolOr("vscodeCodyEmailsEnabled", false)
+				}
+			}
+
+			hubspotutil.SyncUser(userPrimaryEmail, hubspotutil.CodyClientInstalledEventID, &hubspot.ContactProperties{
+				DatabaseID: userID,
+			})
+
+			hubspotutil.SyncUserWithV3Event(userPrimaryEmail, hubspotutil.CodyClientInstalledV3EventID,
+				&hubspot.ContactProperties{
+					DatabaseID: userID,
+				},
+				&hubspot.CodyInstallV3EventProperties{
+					Ide:           ide,
+					EmailsEnabled: strconv.FormatBool(emailsEnabled),
+				})
+		}
+
+		// On Sourcegraph.com only, log a HubSpot event indicating when the user clicks button to downloads Cody App.
+		if envvar.SourcegraphDotComMode() && args.Event == "DownloadApp" && userID != 0 && userPrimaryEmail != "" {
+			hubspotutil.SyncUser(userPrimaryEmail, hubspotutil.AppDownloadButtonClickedEventID, &hubspot.ContactProperties{})
+		}
+
 		argumentPayload, err := decode(args.Argument)
 		if err != nil {
 			return nil, err
@@ -164,22 +206,31 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		}
 
 		events = append(events, usagestats.Event{
-			EventName:      args.Event,
-			URL:            args.URL,
-			UserID:         actor.FromContext(ctx).UID,
-			UserCookieID:   args.UserCookieID,
-			FirstSourceURL: args.FirstSourceURL,
-			LastSourceURL:  args.LastSourceURL,
-			Source:         args.Source,
-			Argument:       argumentPayload,
-			FeatureFlags:   featureflag.FromContext(ctx),
-			CohortID:       args.CohortID,
-			Referrer:       args.Referrer,
-			PublicArgument: publicArgumentPayload,
-			UserProperties: userPropertiesPayload,
-			DeviceID:       args.DeviceID,
-			EventID:        args.EventID,
-			InsertID:       args.InsertID,
+			EventName:              args.Event,
+			URL:                    args.URL,
+			UserID:                 userID,
+			UserCookieID:           args.UserCookieID,
+			FirstSourceURL:         args.FirstSourceURL,
+			LastSourceURL:          args.LastSourceURL,
+			Source:                 args.Source,
+			Argument:               argumentPayload,
+			EvaluatedFlagSet:       featureflag.GetEvaluatedFlagSet(ctx),
+			CohortID:               args.CohortID,
+			Referrer:               args.Referrer,
+			OriginalReferrer:       args.OriginalReferrer,
+			SessionReferrer:        args.SessionReferrer,
+			SessionFirstURL:        args.SessionFirstURL,
+			PublicArgument:         publicArgumentPayload,
+			UserProperties:         userPropertiesPayload,
+			DeviceID:               args.DeviceID,
+			EventID:                args.EventID,
+			InsertID:               args.InsertID,
+			DeviceSessionID:        args.DeviceSessionID,
+			Client:                 args.Client,
+			BillingProductCategory: args.BillingProductCategory,
+			BillingEventID:         args.BillingEventID,
+			ConnectedSiteID:        args.ConnectedSiteID,
+			HashedLicenseKey:       args.HashedLicenseKey,
 		})
 	}
 
@@ -188,6 +239,39 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 	}
 
 	return nil, nil
+}
+
+func decode(v *string) (payload json.RawMessage, _ error) {
+	if v != nil {
+		if err := json.Unmarshal([]byte(*v), &payload); err != nil {
+			return nil, err
+		}
+	}
+
+	return payload, nil
+}
+
+type VSCodeEventExtensionDetails struct {
+	Ide string `json:"ide"`
+}
+
+type VSCodeEventPublicArgument struct {
+	ExtensionDetails VSCodeEventExtensionDetails `json:"extensionDetails"`
+}
+
+func getIdeFromEvent(args *Event) string {
+	payload, err := decode(args.PublicArgument)
+	if err != nil {
+		return ""
+	}
+
+	var argument VSCodeEventPublicArgument
+
+	if err := json.Unmarshal(payload, &argument); err != nil {
+		return ""
+	}
+
+	return argument.ExtensionDetails.Ide
 }
 
 var (
@@ -209,7 +293,7 @@ func exportPrometheusSearchLatencies(event string, payload json.RawMessage) erro
 	var v struct {
 		DurationMS float64 `json:"durationMs"`
 	}
-	if err := json.Unmarshal([]byte(payload), &v); err != nil {
+	if err := json.Unmarshal(payload, &v); err != nil {
 		return err
 	}
 	if event == "search.latencies.frontend.code-load" {
@@ -226,16 +310,68 @@ var searchRankingResultClicked = promauto.NewHistogramVec(prometheus.HistogramOp
 	Name:    "src_search_ranking_result_clicked",
 	Help:    "the index of the search result which was clicked on by the user",
 	Buckets: prometheus.LinearBuckets(1, 1, 10),
-}, []string{"type"})
+}, []string{"type", "resultsLength", "ranked"})
 
 func exportPrometheusSearchRanking(payload json.RawMessage) error {
 	var v struct {
-		Index float64 `json:"index"`
-		Type  string  `json:"type"`
+		Index         float64 `json:"index"`
+		Type          string  `json:"type"`
+		ResultsLength int     `json:"resultsLength"`
+		Ranked        bool    `json:"ranked"`
 	}
-	if err := json.Unmarshal([]byte(payload), &v); err != nil {
+
+	if err := json.Unmarshal(payload, &v); err != nil {
 		return err
 	}
-	searchRankingResultClicked.WithLabelValues(v.Type).Observe(v.Index)
+
+	var resultsLength string
+	switch {
+	case v.ResultsLength <= 3:
+		resultsLength = "<=3"
+	default:
+		resultsLength = ">3"
+	}
+
+	ranked := strconv.FormatBool(v.Ranked)
+
+	searchRankingResultClicked.WithLabelValues(v.Type, resultsLength, ranked).Observe(v.Index)
 	return nil
+}
+
+type codySurveySubmissionForHubSpot struct {
+	Email         string `url:"email"`
+	IsForWork     bool   `url:"using_cody_for_work"`
+	IsForPersonal bool   `url:"using_cody_for_personal"`
+}
+
+func (r *schemaResolver) SubmitCodySurvey(ctx context.Context, args *struct {
+	IsForWork     bool
+	IsForPersonal bool
+}) (*EmptyResponse, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("Cody survey is not supported outside sourcegraph.com")
+	}
+
+	// If user is authenticated, use their uid and overwrite the optional email field.
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("user must be authenticated to submit a Cody survey")
+	}
+
+	email, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, actor.UID)
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, err
+	}
+
+	// Submit form to HubSpot
+	if err := hubspotutil.Client().SubmitForm(hubspotutil.CodySurveyFormID, &codySurveySubmissionForHubSpot{
+		Email:         email,
+		IsForWork:     args.IsForWork,
+		IsForPersonal: args.IsForPersonal,
+	}); err != nil {
+		// Log an error, but don't return one if the only failure was in submitting survey results to HubSpot.
+		log15.Error("Unable to submit cody survey results to Sourcegraph remote", "error", err)
+	}
+
+	return &EmptyResponse{}, nil
 }

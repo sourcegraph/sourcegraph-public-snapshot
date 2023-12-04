@@ -3,35 +3,47 @@
 # This script runs the codeintel-qa tests against a running server.
 # This script is invoked by ./dev/ci/integration/run-integration.sh after running an instance.
 
+set -eux
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 root_dir=$(pwd)
-set -ex
 
-export SOURCEGRAPH_BASE_URL="${1:-"http://localhost:7080"}"
+SOURCEGRAPH_BASE_URL="${1:-"http://localhost:7080"}"
+export SOURCEGRAPH_BASE_URL
 
-echo '--- initializing Sourcegraph instance'
+echo '--- :go: Building init-sg'
+bazel build //internal/cmd/init-sg
+out=$(bazel cquery //internal/cmd/init-sg --output=files)
+cp "$out" "$root_dir/"
 
-pushd internal/cmd/init-sg || exit 1
-go build -o "${root_dir}/init-sg"
-popd || exit 1
+echo '--- Initializing instance'
+"$root_dir/init-sg" initSG
 
-pushd dev/ci/integration/code-intel || exit 1
-"${root_dir}/init-sg" initSG
-# Disable `-x` to avoid printing secrets
-set +x
+echo '--- Loading secrets'
+set +x # Avoid printing secrets
 # shellcheck disable=SC1091
 source /root/.sg_envrc
 set -x
-"${root_dir}/init-sg" addRepos -config repos.json
-popd || exit 1
 
-pushd dev/codeintel-qa || exit 1
-echo '--- downloading test data from GCS'
-./scripts/download.sh
-echo '--- integration test ./dev/codeintel-qa/cmd/upload'
-go build ./cmd/upload
-./upload --timeout=5m
-echo '--- integration test ./dev/codeintel-qa/cmd/query'
-go build ./cmd/query
-./query
-popd || exit 1
+echo '--- :horse: Running init-sg addRepos'
+"${root_dir}/init-sg" addRepos -config ./dev/ci/integration/code-intel/repos.json
+
+echo '--- Installing local src-cli'
+./dev/ci/integration/code-intel/install-src.sh
+which src
+src version
+
+echo '--- :brain: Running the test suite'
+pushd dev/codeintel-qa
+
+echo '--- :zero: downloading test data from GCS'
+bazel run //dev/codeintel-qa/cmd/download
+
+echo '--- :one: clearing existing state'
+bazel run //dev/codeintel-qa/cmd/clear
+
+echo '--- :two: integration test ./dev/codeintel-qa/cmd/upload'
+bazel run //dev/codeintel-qa/cmd/upload -- --timeout=5m --index-dir="$root_dir/dev/codeintel-qa/testdata/indexes"
+
+echo '--- :three: integration test ./dev/codeintel-qa/cmd/query'
+bazel run //dev/codeintel-qa/cmd/query -- --index-dir="$root_dir/dev/codeintel-qa/testdata/indexes"
+popd

@@ -1,6 +1,14 @@
-import { ApolloLink, FetchResult, NextLink, Operation, Observable, Observer } from '@apollo/client'
+import {
+    ApolloLink,
+    type FetchResult,
+    type NextLink,
+    type Operation,
+    Observable,
+    type Observer,
+    type ObservableSubscription,
+} from '@apollo/client'
 
-import { ApolloContext } from '../types'
+import type { ApolloContext } from '../types'
 
 const DEFAULT_PARALLEL_CONCURRENT_REQUESTS = 3
 
@@ -11,7 +19,7 @@ interface OperationQueueEntry {
     limit: number
     observable: Observable<FetchResult>
     observers: Observer<unknown>[]
-    currentSubscription?: ZenObservable.Subscription
+    currentSubscription?: ObservableSubscription
 }
 
 interface RequestGroupQueues {

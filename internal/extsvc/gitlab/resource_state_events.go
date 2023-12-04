@@ -30,17 +30,15 @@ func (c *Client) GetMergeRequestResourceStateEvents(ctx context.Context, project
 			return page, nil
 		}
 
-		time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
-
-		url, err := url.Parse(baseURL)
+		parsedUrl, err := url.Parse(baseURL)
 		if err != nil {
 			return nil, err
 		}
-		q := url.Query()
+		q := parsedUrl.Query()
 		q.Add("page", currentPage)
-		url.RawQuery = q.Encode()
+		parsedUrl.RawQuery = q.Encode()
 
-		req, err := http.NewRequest("GET", url.String(), nil)
+		req, err := http.NewRequest("GET", parsedUrl.String(), nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating rse request")
 		}
@@ -104,7 +102,7 @@ func (e *MergeRequestMergedEvent) Key() string {
 
 // ToEvent returns a pointer to a more specific struct, or
 // nil if the ResourceStateEvent is not of a known kind.
-func (rse *ResourceStateEvent) ToEvent() interface{} {
+func (rse *ResourceStateEvent) ToEvent() any {
 	switch rse.State {
 	case ResourceStateEventStateClosed:
 		return &MergeRequestClosedEvent{rse}

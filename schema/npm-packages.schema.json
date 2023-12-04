@@ -1,28 +1,28 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "npm-packages.schema.json#",
-  "title": "NPMPackagesConnection",
-  "description": "Configuration for a connection to an NPM packages repository.",
+  "title": "NpmPackagesConnection",
+  "description": "Configuration for a connection to an npm packages repository.",
   "allowComments": true,
   "type": "object",
   "additionalProperties": false,
   "required": ["registry"],
   "properties": {
     "credentials": {
-      "description": "Access token for logging into the NPM registry.",
+      "description": "Access token for logging into the npm registry.",
       "type": "string",
       "default": "",
       "examples": ["CRs5VaTVbR7pBPcVpaxwQeafrYOId7IdVUiZCkFCqnw="]
     },
     "registry": {
-      "description": "The URL at which the NPM registry can be found.",
+      "description": "The URL at which the npm registry can be found.",
       "type": "string",
       "default": "https://registry.npmjs.org",
       "examples": ["https://npm-registry.mycompany.com"]
     },
     "rateLimit": {
-      "description": "Rate limit applied when making background API requests to the NPM registry.",
-      "title": "NPMRateLimit",
+      "description": "Rate limit applied when making background API requests to the npm registry.",
+      "title": "NpmRateLimit",
       "type": "object",
       "required": ["enabled", "requestsPerHour"],
       "properties": {
@@ -34,17 +34,17 @@
         "requestsPerHour": {
           "description": "Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.",
           "type": "number",
-          "default": 3000,
+          "default": 6000,
           "minimum": 0
         }
       },
       "default": {
         "enabled": true,
-        "requestsPerHour": 3000
+        "requestsPerHour": 6000
       }
     },
     "dependencies": {
-      "description": "An array of \"(@scope/)?packageName@version\" strings specifying which NPM packages to mirror on Sourcegraph.",
+      "description": "An array of \"(@scope/)?packageName@version\" strings specifying which npm packages to mirror on Sourcegraph.",
       "type": "array",
       "items": {
         "type": "string",

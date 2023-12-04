@@ -1,0 +1,36 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "oneclickexport",
+    srcs = [
+        "db_processor.go",
+        "export.go",
+        "processor.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/conf",
+        "//internal/database",
+        "//internal/types",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "oneclickexport_test",
+    timeout = "short",
+    srcs = ["export_test.go"],
+    embed = [":oneclickexport"],
+    deps = [
+        "//internal/conf",
+        "//internal/database/dbmocks",
+        "//internal/extsvc",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

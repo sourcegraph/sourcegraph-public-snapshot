@@ -1,0 +1,49 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "workerutil",
+    srcs = [
+        "handler.go",
+        "idset.go",
+        "observability.go",
+        "store.go",
+        "worker.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/workerutil",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/errcode",
+        "//internal/goroutine/recorder",
+        "//internal/hostname",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/trace",
+        "//internal/trace/policy",
+        "//lib/errors",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "workerutil_test",
+    timeout = "short",
+    srcs = [
+        "idset_test.go",
+        "main_test.go",
+        "mocks_test.go",
+        "worker_test.go",
+    ],
+    embed = [":workerutil"],
+    deps = [
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

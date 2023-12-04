@@ -1,0 +1,17 @@
+.item {
+    padding: 0.125rem 0.25rem;
+    &,
+    &:active,
+    &:focus,
+    &:hover {
+        background-color: var(--oc-blue-1);
+
+        :global(.theme-dark) & {
+            background-color: var(--oc-blue-7);
+        }
+    }
+
+    &:hover {
+        text-decoration: underline;
+    }
+}

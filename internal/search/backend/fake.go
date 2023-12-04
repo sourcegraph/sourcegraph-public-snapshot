@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
-// FakeSearcher is a zoekt.Searcher that returns a predefined search Result.
-type FakeSearcher struct {
-	Result      *zoekt.SearchResult
+// FakeStreamer is a zoekt.Streamer that returns predefined search results
+type FakeStreamer struct {
+	Results     []*zoekt.SearchResult
 	SearchError error
 
 	Repos     []*zoekt.RepoListEntry
@@ -21,42 +22,63 @@ type FakeSearcher struct {
 	zoekt.Searcher
 }
 
-func (ss *FakeSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+// Search returns a single search result. If there is more than one predefined result, it concatenates
+// their file lists together.
+func (ss *FakeStreamer) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
 	if ss.SearchError != nil {
 		return nil, ss.SearchError
 	}
-	res := ss.Result
-	if res == nil {
-		res = &zoekt.SearchResult{}
-	}
 
-	// Copy since downstream could mutate
-	sr := *res
-	sr.Files = append([]zoekt.FileMatch{}, sr.Files...)
-	res = &sr
+	res := &zoekt.SearchResult{}
+	for _, result := range ss.Results {
+		res.Files = append(res.Files, result.Files...)
+		res.Stats.Add(result.Stats)
+	}
 
 	return res, nil
 }
 
-func (ss *FakeSearcher) StreamSearch(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions, z zoekt.Sender) error {
-	sr, err := ss.Search(ctx, q, opts)
-	if err != nil {
-		return err
+func (ss *FakeStreamer) StreamSearch(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions, z zoekt.Sender) error {
+	if ss.SearchError != nil {
+		return ss.SearchError
 	}
-	z.Send(sr)
+
+	// Send out a stats-only event, to mimic a common approach in Zoekt
+	z.Send(&zoekt.SearchResult{
+		Stats: zoekt.Stats{
+			Crashes: 0,
+			Wait:    2 * time.Millisecond,
+		},
+		Progress: zoekt.Progress{
+			MaxPendingPriority: 0,
+		},
+	})
+
+	for _, r := range ss.Results {
+		// Make sure to copy results before sending
+		res := &zoekt.SearchResult{}
+		res.Files = append(res.Files, r.Files...)
+		res.Stats.Add(r.Stats)
+
+		z.Send(res)
+	}
 	return nil
 }
 
-func (ss *FakeSearcher) List(ctx context.Context, q zoektquery.Q, opt *zoekt.ListOptions) (*zoekt.RepoList, error) {
+func (ss *FakeStreamer) List(ctx context.Context, q zoektquery.Q, opt *zoekt.ListOptions) (*zoekt.RepoList, error) {
 	if ss.ListError != nil {
 		return nil, ss.ListError
 	}
 
+	if opt == nil {
+		opt = &zoekt.ListOptions{}
+	}
+
 	list := &zoekt.RepoList{}
-	if opt != nil && opt.Minimal {
-		list.Minimal = make(map[uint32]*zoekt.MinimalRepoListEntry, len(ss.Repos))
+	if opt.Field == zoekt.RepoListFieldReposMap {
+		list.ReposMap = make(zoekt.ReposMap)
 		for _, r := range ss.Repos {
-			list.Minimal[r.Repository.ID] = &zoekt.MinimalRepoListEntry{
+			list.ReposMap[r.Repository.ID] = zoekt.MinimalRepoListEntry{
 				HasSymbols: r.Repository.HasSymbols,
 				Branches:   r.Repository.Branches,
 			}
@@ -65,15 +87,20 @@ func (ss *FakeSearcher) List(ctx context.Context, q zoektquery.Q, opt *zoekt.Lis
 		list.Repos = ss.Repos
 	}
 
+	for _, r := range ss.Repos {
+		list.Stats.Add(&r.Stats)
+	}
+	list.Stats.Repos = len(ss.Repos)
+
 	return list, nil
 }
 
-func (ss *FakeSearcher) Close() {}
+func (ss *FakeStreamer) Close() {}
 
-func (ss *FakeSearcher) String() string {
+func (ss *FakeStreamer) Streamer() string {
 	var parts []string
-	if ss.Result != nil {
-		parts = append(parts, fmt.Sprintf("Result = %v", ss.Result))
+	if ss.Results != nil {
+		parts = append(parts, fmt.Sprintf("Results = %v", ss.Results))
 	}
 	if ss.Repos != nil {
 		parts = append(parts, fmt.Sprintf("Repos = %v", ss.Repos))
@@ -84,5 +111,5 @@ func (ss *FakeSearcher) String() string {
 	if ss.ListError != nil {
 		parts = append(parts, fmt.Sprintf("ListError = %v", ss.ListError))
 	}
-	return fmt.Sprintf("FakeSearcher(%s)", strings.Join(parts, ", "))
+	return fmt.Sprintf("FakeStreamer(%s)", strings.Join(parts, ", "))
 }

@@ -1,0 +1,62 @@
+:global(.theme-dark) {
+    --header-gradient: radial-gradient(
+        130.33% 541.14% at 48.47% 231.96%,
+        var(--violet-06) 0%,
+        var(--violet-07) 42.62%,
+        var(--violet-08) 68.83%
+    );
+}
+:global(.theme-light) {
+    --header-gradient: radial-gradient(
+        113.96% 113.96% at 50% -8.21%,
+        var(--violet-06) 0%,
+        var(--violet-07) 57.81%,
+        var(--violet-08) 100%
+    );
+}
+
+.root {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.steps {
+    margin-top: -1.5rem;
+}
+
+.content-container {
+    max-width: 55rem;
+    padding: 0 0.5rem 0.5rem;
+}
+
+.content {
+    flex-grow: 1;
+    overflow: auto;
+}
+
+.footer {
+    flex-shrink: 0;
+}
+
+.header {
+    background: var(--header-gradient);
+    background: radial-gradient(
+        130.33% 541.14% at 48.47% 231.96%,
+        var(--violet-06) 17.19%,
+        var(--violet-07) 43.23%,
+        var(--violet-07) 73.44%
+    );
+
+    width: 100%;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.logo {
+    align-self: center;
+    width: 12rem;
+}

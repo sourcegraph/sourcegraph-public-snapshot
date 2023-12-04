@@ -1,0 +1,67 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "licensing",
+    srcs = [
+        "codygateway.go",
+        "conf.go",
+        "constants.go",
+        "data.go",
+        "doc.go",
+        "features.go",
+        "licensing.go",
+        "plans.go",
+        "tags.go",
+        "telemetryexport.go",
+        "types.go",
+        "user_count.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/licensing",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/env",
+        "//internal/errcode",
+        "//internal/license",
+        "//internal/redispool",
+        "//lib/errors",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_crypto//ssh",
+        "@org_golang_x_exp//slices",
+        "@org_uber_go_atomic//:atomic",
+    ],
+)
+
+go_test(
+    name = "licensing_test",
+    timeout = "short",
+    srcs = [
+        "codygateway_test.go",
+        "features_test.go",
+        "licensing_test.go",
+        "plans_test.go",
+        "tags_test.go",
+        "telemetryexport_test.go",
+    ],
+    embed = [":licensing"],
+    tags = [
+        "requires-network",
+    ],
+    deps = [
+        "//internal/conf",
+        "//internal/license",
+        "//internal/license/licensetest",
+        "//internal/redispool",
+        "//lib/pointers",
+        "//schema",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

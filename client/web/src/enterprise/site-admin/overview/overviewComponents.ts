@@ -1,10 +1,7 @@
-import React from 'react'
+import type React from 'react'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { siteAdminOverviewComponents } from '../../../site-admin/overview/overviewComponents'
-
-export const enterpriseSiteAdminOverviewComponents: readonly React.ComponentType<any>[] = [
-    ...siteAdminOverviewComponents,
+export const siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<any>>[] = [
     lazyComponent(() => import('../productSubscription/ProductSubscriptionStatus'), 'ProductSubscriptionStatus'),
 ]

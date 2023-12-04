@@ -9,18 +9,20 @@ import (
 )
 
 // Issue represents an existing GitHub Issue.
+//
+// 🚨 SECURITY: Issues may carry potentially sensitive data - log with care.
 type Issue struct {
-	ID                  string
-	Title               string
-	Body                string
-	Number              int
-	URL                 string
-	State               string
-	Repository          string
-	Private             bool
-	Labels              []string
-	Assignees           []string
-	Milestone           string
+	ID         string
+	Number     int
+	URL        string
+	State      string
+	Repository string
+	Assignees  []string
+
+	// 🚨 SECURITY: Private issues may carry potentially sensitive data - log with care,
+	// and check this field where relevant (e.g. SafeTitle, SafeLabels, etc)
+	Private bool
+
 	MilestoneNumber     int
 	Author              string
 	CreatedAt           time.Time
@@ -34,6 +36,11 @@ type Issue struct {
 	// Populate and get with .IdentifyingLabels()
 	identifyingLabels     []string
 	identifyingLabelsOnce sync.Once
+
+	// 🚨 SECURITY: Title, Body, Milestone, and Labels are potentially sensitive fields -
+	// log with care, and use SafeTitle, SafeLabels etc instead when rendering data.
+	Title, Body, Milestone string
+	Labels                 []string
 }
 
 func (issue *Issue) Closed() bool {

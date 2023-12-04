@@ -1,23 +1,24 @@
-import classNames from 'classnames'
-import * as H from 'history'
 import React, { useState } from 'react'
-import { useLocation } from 'react-router'
+
+import type * as H from 'history'
+import { useLocation } from 'react-router-dom'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
-import { ConnectionSummary } from '@sourcegraph/web/src/components/FilteredConnection/ui'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Badge, useDebounce } from '@sourcegraph/wildcard'
 
-import {
+import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
+import { ConnectionSummary } from '../../components/FilteredConnection/ui'
+import type {
     GitCommitAncestorFields,
     RepositoryGitCommitResult,
     RepositoryGitCommitVariables,
 } from '../../graphql-operations'
 
 import { ConnectionPopoverNode, ConnectionPopoverNodeLink } from './components'
-import styles from './RevisionsPopoverCommits.module.scss'
 import { RevisionsPopoverTab } from './RevisionsPopoverTab'
+
+import styles from './RevisionsPopoverCommits.module.scss'
 
 export const REPOSITORY_GIT_COMMIT = gql`
     query RepositoryGitCommit($repo: ID!, $first: Int, $revision: String!, $query: String) {
@@ -72,7 +73,7 @@ interface GitCommitNodeProps {
     onClick?: React.MouseEventHandler<HTMLAnchorElement>
 }
 
-const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
+const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitCommitNodeProps>> = ({
     node,
     currentCommitID,
     location,
@@ -81,14 +82,13 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
 }) => {
     const isCurrent = currentCommitID === node.oid
     return (
-        <ConnectionPopoverNode key={node.oid} className={classNames(styles.link, styles.message)}>
+        <ConnectionPopoverNode key={node.oid}>
             <ConnectionPopoverNodeLink
                 to={getPathFromRevision(location.pathname + location.search + location.hash, node.oid)}
                 active={isCurrent}
-                className={styles.link}
                 onClick={onClick}
             >
-                <Badge title={node.oid} as="code">
+                <Badge title={node.oid} className="px-1 py-0" as="code">
                     {node.abbreviatedOID}
                 </Badge>
                 <small title={node.author.date} className={styles.message}>
@@ -113,11 +113,15 @@ interface RevisionsPopoverCommitsProps {
     currentCommitID?: string
 
     onSelect?: (node: GitCommitAncestorFields) => void
+
+    tabLabel: string
 }
 
 const BATCH_COUNT = 15
 
-export const RevisionsPopoverCommits: React.FunctionComponent<RevisionsPopoverCommitsProps> = ({
+export const RevisionsPopoverCommits: React.FunctionComponent<
+    React.PropsWithChildren<RevisionsPopoverCommitsProps>
+> = ({
     repo,
     defaultBranch,
     getPathFromRevision,
@@ -126,12 +130,17 @@ export const RevisionsPopoverCommits: React.FunctionComponent<RevisionsPopoverCo
     pluralNoun,
     currentCommitID,
     onSelect,
+    tabLabel,
 }) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
     const location = useLocation()
 
-    const response = useConnection<RepositoryGitCommitResult, RepositoryGitCommitVariables, GitCommitAncestorFields>({
+    const response = useShowMorePagination<
+        RepositoryGitCommitResult,
+        RepositoryGitCommitVariables,
+        GitCommitAncestorFields
+    >({
         query: REPOSITORY_GIT_COMMIT,
         variables: {
             query,
@@ -188,6 +197,7 @@ export const RevisionsPopoverCommits: React.FunctionComponent<RevisionsPopoverCo
             summary={summary}
             inputValue={searchValue}
             onInputChange={setSearchValue}
+            inputAriaLabel={tabLabel}
         >
             {response.connection?.nodes?.map((node, index) => (
                 <GitCommitNode

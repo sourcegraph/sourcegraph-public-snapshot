@@ -1,0 +1,42 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "npm",
+    srcs = [
+        "npm.go",
+        "observability.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/npm",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf/reposource",
+        "//internal/httpcli",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/ratelimit",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "npm_test",
+    timeout = "short",
+    srcs = ["npm_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":npm"],
+    deps = [
+        "//internal/conf/reposource",
+        "//internal/httpcli",
+        "//internal/httptestutil",
+        "//internal/ratelimit",
+        "//internal/unpack",
+        "//lib/errors",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_x_time//rate",
+    ],
+)

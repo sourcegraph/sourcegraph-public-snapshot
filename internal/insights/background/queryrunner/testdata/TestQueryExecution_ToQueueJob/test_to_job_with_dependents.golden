@@ -1,0 +1,14 @@
+&queryrunner.Job{
+	SearchJob: queryrunner.SearchJob{
+		SeriesID:    "series1",
+		SearchQuery: "sourcegraphquery1",
+		RecordTime:  &time.Time{ext: 63713433600},
+		PersistMode: "record",
+		DependentFrames: []time.Time{{
+			ext: 63713520000,
+		}},
+	},
+	Cost:     500,
+	Priority: 1000,
+	State:    "queued",
+}

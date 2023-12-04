@@ -1,0 +1,54 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "ratelimit",
+    srcs = [
+        "handler.go",
+        "job.go",
+        "syncer.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/ratelimit",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/env",
+        "//internal/extsvc",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//internal/ratelimit",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_time//rate",
+    ],
+)
+
+go_test(
+    name = "ratelimit_test",
+    srcs = ["handler_test.go"],
+    embed = [":ratelimit"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/extsvc",
+        "//internal/ratelimit",
+        "//internal/redispool",
+        "//internal/types",
+        "//lib/pointers",
+        "//schema",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

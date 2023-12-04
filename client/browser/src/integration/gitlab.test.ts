@@ -1,13 +1,14 @@
 import assert from 'assert'
 
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { afterEach, beforeEach, describe, it } from 'mocha'
+
+import type { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-import { retry } from '@sourcegraph/shared/src/testing/utils'
-import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
+import { readEnvironmentString, retry } from '@sourcegraph/shared/src/testing/utils'
 
-import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
+import { type BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
 import { closeInstallPageTab } from './shared'
 
 describe('GitLab', () => {
@@ -41,11 +42,20 @@ describe('GitLab', () => {
             response.sendStatus(200).send(JSON.stringify({ visibility: 'public' }))
         })
 
+        testContext.server.any('https://sentry.gitlab.net/*').intercept((request, response) => {
+            response.sendStatus(200)
+        })
+
         testContext.overrideGraphQL({
             ViewerConfiguration: () => ({
                 viewerConfiguration: {
                     subjects: [],
                     merged: { contents: '', messages: [] },
+                },
+            }),
+            ResolveRepoName: () => ({
+                repository: {
+                    name: 'gitlab.com/SourcegraphCody/jsonrpc2',
                 },
             }),
             ResolveRev: () => ({
@@ -76,6 +86,13 @@ describe('GitLab', () => {
                     },
                 },
             }),
+            SiteProductVersion: () => ({
+                site: {
+                    productVersion: '129819_2022-02-08_baac612f829f',
+                    buildVersion: '129819_2022-02-08_baac612f829f',
+                    hasCodeIntelligence: true,
+                },
+            }),
         })
 
         // Ensure that the same assets are requested in all environments.
@@ -85,9 +102,23 @@ describe('GitLab', () => {
     afterEach(() => testContext?.dispose())
 
     it('adds "view on Sourcegraph" buttons to files', async () => {
-        const repoName = 'gitlab.com/sourcegraph/jsonrpc2'
+        if (readEnvironmentString({ variable: 'POLLYJS_MODE', defaultValue: 'replay' }) === 'replay') {
+            // mock Sourcegraph icon and bootstrap.js loaded by the extension
+            // TODO: double-check it after we update tests snapshots
+            for (const url of [
+                'https://gitlab.com/uploads/-/system/group/avatar/*',
+                'https://gitlab.com/assets/webpack/164.0d16728f.chunk.js',
+            ]) {
+                testContext.server.get(url).intercept((request, response) => {
+                    response.sendStatus(200)
+                })
+            }
+        }
 
-        const url = 'https://gitlab.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
+        const repoName = 'gitlab.com/SourcegraphCody/jsonrpc2'
+
+        const url =
+            'https://gitlab.com/SourcegraphCody/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
         await driver.page.goto(url)
 
         await driver.page.waitForSelector('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]', {
@@ -106,21 +137,16 @@ describe('GitLab', () => {
                             '[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]'
                         )?.href
                 ),
-                createURLWithUTM(
-                    new URL(
-                        `${driver.sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
-                    ),
-                    { utm_source: `${driver.browserType}-extension`, utm_campaign: 'open-on-sourcegraph' }
+                new URL(
+                    `${driver.sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
                 ).href
             )
         })
     })
 
-    it('shows hover tooltips when hovering a token', async () => {
-        const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
-            pollyServer: testContext.server,
-            sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
-        })
+    // TODO(sqs): skipped because these have not been reimplemented after the extension API deprecation
+    it.skip('shows hover tooltips when hovering a token', async () => {
+        const { mockExtension, extensionSettings } = setupExtensionMocking()
 
         const userSettings: Settings = {
             extensions: extensionSettings,
@@ -145,7 +171,6 @@ describe('GitLab', () => {
                     merged: { contents: JSON.stringify(userSettings), messages: [] },
                 },
             }),
-            Extensions,
         })
 
         // Serve a mock extension with a simple hover provider
@@ -155,25 +180,23 @@ describe('GitLab', () => {
         })
 
         await driver.page.goto(
-            'https://gitlab.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
+            'https://gitlab.com/SourcegraphCody/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
         )
         await driver.page.waitForSelector('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')
 
-        // Pause to give codeintellify time to register listeners for
-        // tokenization (only necessary in CI, not sure why).
-        await driver.page.waitForTimeout(1000)
-
-        const lineSelector = '.line'
-
         // Trigger tokenization of the line.
         const lineNumber = 16
-        const line = await driver.page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`, {
+        const line = await driver.page.waitForSelector(`#LC${lineNumber}`, {
             timeout: 10000,
         })
 
         if (!line) {
             throw new Error(`Found no line with number ${lineNumber}`)
         }
+
+        // Hover line to give codeintellify time to register listeners for
+        // tokenization (only necessary in CI, not sure why).
+        await line.hover()
 
         const [token] = await line.$x('.//span[text()="CallOption"]')
         await token.hover()
@@ -184,5 +207,8 @@ describe('GitLab', () => {
                 timeout: 6000,
             },
         })
+
+        // disable flaky snapshot
+        // await percySnapshot(driver.page, 'Browser extension: GitLab - blob view with code intel popup')
     })
 })

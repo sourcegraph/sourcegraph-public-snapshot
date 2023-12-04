@@ -1,7 +1,8 @@
-import classNames from 'classnames'
-import React, { forwardRef, InputHTMLAttributes, Ref, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, type InputHTMLAttributes, type Ref, useEffect, useImperativeHandle, useRef, useState } from 'react'
 
-import { TextArea, TextAreaProps } from '../TextArea'
+import classNames from 'classnames'
+
+import { TextArea, type TextAreaProps } from '../TextArea'
 
 import styles from './FlexTextArea.module.scss'
 
@@ -17,6 +18,7 @@ export type FlexTextAreaProps = {
     maxRows?: number
     className?: string
     containerClassName?: string
+    label?: React.ReactNode
 } & InputHTMLAttributes<HTMLInputElement>
 
 /**
@@ -41,7 +43,7 @@ export const FlexTextArea = forwardRef((props: FlexTextAreaProps, reference: Ref
     const innerReference = useRef<HTMLTextAreaElement>(null)
 
     // Casting ref from textarea to input element for top level (consumer) ref support
-    useImperativeHandle(reference, () => (innerReference.current as unknown) as HTMLInputElement)
+    useImperativeHandle(reference, () => innerReference.current as unknown as HTMLInputElement)
 
     useEffect(() => {
         const target = innerReference.current

@@ -1,14 +1,14 @@
-import { ProxyMarked, proxyMarker } from 'comlink'
-import * as sourcegraph from 'sourcegraph'
+import { type ProxyMarked, proxyMarker } from 'comlink'
 
-import { DirectoryViewerData, ViewerId } from '../../viewerTypes'
+import type { Directory } from '../../../codeintel/legacy-extensions/api'
+import type { DirectoryViewerData, ViewerId } from '../../viewerTypes'
 
-export class ExtensionDirectoryViewer implements sourcegraph.DirectoryViewer, ProxyMarked {
+export class ExtensionDirectoryViewer implements ProxyMarked {
     public readonly [proxyMarker] = true
     public readonly viewerId: string
     public readonly type = 'DirectoryViewer'
     public isActive: boolean
-    public directory: sourcegraph.Directory
+    public directory: Directory
     public resource: string
     constructor(data: DirectoryViewerData & ViewerId) {
         this.isActive = data.isActive

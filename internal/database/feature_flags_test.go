@@ -7,7 +7,10 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -29,29 +32,47 @@ func TestFeatureFlagStore(t *testing.T) {
 	t.Run("AnonymousUserFlags", testAnonymousUserFlags)
 	t.Run("UserlessFeatureFlags", testUserlessFeatureFlags)
 	t.Run("OrganizationFeatureFlag", testOrgFeatureFlag)
+	t.Run("GetFeatureFlag", testGetFeatureFlag)
+	t.Run("UpdateFeatureFlag", testUpdateFeatureFlag)
 }
 
 func errorContains(s string) require.ErrorAssertionFunc {
-	return func(t require.TestingT, err error, msg ...interface{}) {
+	return func(t require.TestingT, err error, msg ...any) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), s, msg)
 	}
 }
 
-func cleanup(t *testing.T, db *sql.DB) func() {
+func cleanup(t *testing.T, db DB) func() {
 	return func() {
 		if t.Failed() {
 			// Retain content on failed tests
 			return
 		}
-		_, err := db.Exec(`truncate feature_flags, feature_flag_overrides, users, orgs, org_members cascade;`)
+		_, err := db.Handle().ExecContext(
+			context.Background(),
+			`truncate feature_flags, feature_flag_overrides, users, orgs, org_members cascade;`,
+		)
 		require.NoError(t, err)
 	}
 }
 
+func setupClearRedisCacheTest(t *testing.T, expectedFlagName string) *bool {
+	clearRedisCacheCalled := false
+	oldClearRedisCache := clearRedisCache
+	clearRedisCache = func(flagName string) {
+		if flagName == expectedFlagName {
+			clearRedisCacheCalled = true
+		}
+	}
+	t.Cleanup(func() { clearRedisCache = oldClearRedisCache })
+	return &clearRedisCacheCalled
+}
+
 func testNewFeatureFlagRoundtrip(t *testing.T) {
 	t.Parallel()
-	flagStore := FeatureFlags(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	flagStore := NewDB(logger, dbtest.NewDB(t)).FeatureFlags()
 	ctx := actor.WithInternalActor(context.Background())
 
 	cases := []struct {
@@ -107,7 +128,9 @@ func testNewFeatureFlagRoundtrip(t *testing.T) {
 
 func testListFeatureFlags(t *testing.T) {
 	t.Parallel()
-	flagStore := &featureFlagStore{Store: basestore.NewWithDB(dbtest.NewDB(t), sql.TxOptions{})}
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := actor.WithInternalActor(context.Background())
 
 	flag1 := &ff.FeatureFlag{Name: "bool_true", Bool: &ff.FeatureFlagBool{Value: true}}
@@ -141,9 +164,10 @@ func testListFeatureFlags(t *testing.T) {
 
 func testNewOverrideRoundtrip(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
-	flagStore := FeatureFlags(db)
-	users := Users(db)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	flagStore := db.FeatureFlags()
+	users := db.Users()
 	ctx := actor.WithInternalActor(context.Background())
 
 	ff1, err := flagStore.CreateBool(ctx, "t", true)
@@ -190,9 +214,10 @@ func testNewOverrideRoundtrip(t *testing.T) {
 
 func testListUserOverrides(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
-	flagStore := &featureFlagStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-	users := Users(db)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
+	users := db.Users()
 	ctx := actor.WithInternalActor(context.Background())
 
 	mkUser := func(name string) *types.User {
@@ -269,11 +294,12 @@ func testListUserOverrides(t *testing.T) {
 
 func testListOrgOverrides(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
-	flagStore := &featureFlagStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-	users := Users(db)
-	orgs := Orgs(db)
-	orgMembers := OrgMembers(db)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
+	users := db.Users()
+	orgs := db.Orgs()
+	orgMembers := db.OrgMembers()
 	ctx := actor.WithInternalActor(context.Background())
 
 	mkUser := func(name string, orgIDs ...int32) *types.User {
@@ -354,11 +380,12 @@ func testListOrgOverrides(t *testing.T) {
 
 func testUserFlags(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
-	flagStore := FeatureFlags(db)
-	users := Users(db)
-	orgs := Orgs(db)
-	orgMembers := OrgMembers(db)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	flagStore := db.FeatureFlags()
+	users := db.Users()
+	orgs := db.Orgs()
+	orgMembers := db.OrgMembers()
 	ctx := actor.WithInternalActor(context.Background())
 
 	mkUser := func(name string, orgIDs ...int32) *types.User {
@@ -493,12 +520,46 @@ func testUserFlags(t *testing.T) {
 		expected := map[string]bool{"f1": true, "f2": false}
 		require.Equal(t, expected, got)
 	})
+
+	t.Run("newer org override beats older org override", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		o1 := mkOrg("o1")
+		o2 := mkOrg("o2")
+		u1 := mkUser("u", o1.ID, o2.ID)
+		mkFFBoolVar("f1", 10000)
+		mkFFBoolVar("f2", 0)
+		mkOrgOverride(o1.ID, "f2", true)
+		mkOrgOverride(o2.ID, "f2", false)
+
+		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		require.NoError(t, err)
+		expected := map[string]bool{"f1": true, "f2": false}
+		require.Equal(t, expected, got)
+	})
+
+	t.Run("delete flag with override", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		o1 := mkOrg("o1")
+		u1 := mkUser("u", o1.ID)
+		f1 := mkFFBool("f1", true)
+		mkUserOverride(u1.ID, "f1", false)
+		clearRedisCacheCalled := setupClearRedisCacheTest(t, f1.Name)
+
+		err := flagStore.DeleteFeatureFlag(ctx, f1.Name)
+		require.NoError(t, err)
+		require.True(t, *clearRedisCacheCalled)
+
+		flags, err := flagStore.GetFeatureFlags(ctx)
+		require.NoError(t, err)
+		require.Len(t, flags, 0)
+	})
 }
 
 func testAnonymousUserFlags(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
-	flagStore := FeatureFlags(db)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	flagStore := db.FeatureFlags()
 	ctx := actor.WithInternalActor(context.Background())
 
 	mkFFBool := func(name string, val bool) *ff.FeatureFlag {
@@ -541,8 +602,9 @@ func testAnonymousUserFlags(t *testing.T) {
 
 func testUserlessFeatureFlags(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
-	flagStore := FeatureFlags(db)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	flagStore := db.FeatureFlags()
 	ctx := actor.WithInternalActor(context.Background())
 
 	mkFFBool := func(name string, val bool) *ff.FeatureFlag {
@@ -589,9 +651,10 @@ func testUserlessFeatureFlags(t *testing.T) {
 
 func testOrgFeatureFlag(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
-	flagStore := FeatureFlags(db)
-	orgs := Orgs(db)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	flagStore := db.FeatureFlags()
+	orgs := db.Orgs()
 	ctx := actor.WithInternalActor(context.Background())
 
 	mkFFBool := func(name string, val bool) *ff.FeatureFlag {
@@ -622,10 +685,8 @@ func testOrgFeatureFlag(t *testing.T) {
 		got2, err2 := flagStore.GetOrgFeatureFlag(ctx, org.ID, "f2")
 		require.NoError(t, err1)
 		require.NoError(t, err2)
-		expected1 := true
-		expected2 := false
-		require.Equal(t, expected1, got1)
-		require.Equal(t, expected2, got2)
+		require.True(t, got1)
+		require.False(t, got2)
 	})
 
 	t.Run("bool vals with org override", func(t *testing.T) {
@@ -661,5 +722,68 @@ func testOrgFeatureFlag(t *testing.T) {
 		got, err := flagStore.GetOrgFeatureFlag(ctx, org.ID, "f1")
 		require.NoError(t, err)
 		require.Equal(t, false, got)
+	})
+}
+
+func testGetFeatureFlag(t *testing.T) {
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	flagStore := db.FeatureFlags()
+	ctx := context.Background()
+	t.Run("no value", func(t *testing.T) {
+		flag, err := flagStore.GetFeatureFlag(ctx, "does-not-exist")
+		require.Equal(t, err, sql.ErrNoRows)
+		require.Nil(t, flag)
+	})
+	t.Run("true value", func(t *testing.T) {
+		_, err := flagStore.CreateBool(ctx, "is-true", true)
+		require.NoError(t, err)
+		flag, err := flagStore.GetFeatureFlag(ctx, "is-true")
+		require.NoError(t, err)
+		require.True(t, flag.Bool.Value)
+	})
+	t.Run("false value", func(t *testing.T) {
+		_, err := flagStore.CreateBool(ctx, "is-false", true)
+		require.NoError(t, err)
+		flag, err := flagStore.GetFeatureFlag(ctx, "is-false")
+		require.NoError(t, err)
+		require.True(t, flag.Bool.Value)
+	})
+}
+
+func testUpdateFeatureFlag(t *testing.T) {
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	flagStore := db.FeatureFlags()
+	ctx := context.Background()
+	t.Run("invalid input", func(t *testing.T) {
+		updatedFf, err := flagStore.UpdateFeatureFlag(ctx, &ff.FeatureFlag{Name: "invalid"})
+		require.EqualError(t, err, "feature flag must have exactly one type")
+		require.Nil(t, updatedFf)
+	})
+	t.Run("boolean flag successful update", func(t *testing.T) {
+		boolFlag, err := flagStore.CreateBool(ctx, "update-test-true-flag", true)
+		require.NoError(t, err)
+		boolFlag.Bool.Value = false
+		clearRedisCacheCalled := setupClearRedisCacheTest(t, boolFlag.Name)
+		updatedFlag, err := flagStore.UpdateFeatureFlag(ctx, boolFlag)
+		require.NoError(t, err)
+		require.True(t, *clearRedisCacheCalled)
+		assert.False(t, updatedFlag.Bool.Value)
+		assert.Greater(t, updatedFlag.UpdatedAt, boolFlag.UpdatedAt)
+	})
+	t.Run("rollout flag successful update", func(t *testing.T) {
+		rolloutFlag, err := flagStore.CreateRollout(ctx, "update-test-rollout-flag", 42)
+		require.NoError(t, err)
+		const expectedValue = int32(1337)
+		rolloutFlag.Rollout.Rollout = expectedValue
+		clearRedisCacheCalled := setupClearRedisCacheTest(t, rolloutFlag.Name)
+		updatedFlag, err := flagStore.UpdateFeatureFlag(ctx, rolloutFlag)
+		require.NoError(t, err)
+		require.True(t, *clearRedisCacheCalled)
+		assert.Equal(t, expectedValue, updatedFlag.Rollout.Rollout)
+		assert.Greater(t, updatedFlag.UpdatedAt, rolloutFlag.UpdatedAt)
 	})
 }

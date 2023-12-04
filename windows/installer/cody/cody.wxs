@@ -1,0 +1,55 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Fragment>
+        <?define RegistryKeyPath = "SOFTWARE\Sourcegraph" ?>
+
+        <Feature Id="Cody" Title="Cody App" AllowAbsent="no" AllowAdvertise="no"
+                 Description="!(loc.CodyDescription)">
+            <ComponentGroupRef Id="Cody"/>
+            <ComponentRef Id="AppStartMenu" />
+            <ComponentRef Id="DesktopIcon" />
+        </Feature>
+
+        <ComponentGroup Id="Cody" Directory="INSTALLDIR">
+            <Component>
+                <File Id="CodyApp" Source="bin/$(var.Platform)/signed/Cody.exe" />
+            </Component>
+        </ComponentGroup>
+
+        <DirectoryRef Id="ApplicationProgramsFolder">
+            <Component Id="AppStartMenu" Guid="{4C99A1B7-FFB2-4801-8C26-5734DE392CB4}">
+                <RegistryValue Root="HKCU"
+                       Key="$(var.RegistryKeyPath)\Components"
+                       Name="AppStartMenuShortcuts"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes"/>
+
+                <Shortcut Id="CodyShortcut"
+                          Name="Cody"
+                          Target="[INSTALLDIR]cody.exe"
+                          Show="normal"
+                          WorkingDirectory="INSTALLDIR"/>
+
+                <RemoveFolder Id="RemoveApplicationProgramsFolder"
+                              On="uninstall"/>
+            </Component>
+        </DirectoryRef>
+
+        <StandardDirectory Id="DesktopFolder">
+            <Component Id="DesktopIcon" Guid="{665E0344-222B-4F04-86F4-559BACFFD160}">
+                <RegistryValue Root="HKCU"
+                       Key="$(var.RegistryKeyPath)\Components"
+                       Name="AppDesktopShortcuts"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes"/>
+
+                <Shortcut Id="CodyDesktopShortcut"
+                          Name="Cody"
+                          Target="[INSTALLDIR]cody.exe"
+                          Show="normal"
+                          WorkingDirectory="INSTALLDIR"/>
+            </Component>
+        </StandardDirectory>
+    </Fragment>
+</Wix>

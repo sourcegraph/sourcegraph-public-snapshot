@@ -2,19 +2,19 @@ import React, { useEffect, useState } from 'react'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useDebounce } from '@sourcegraph/wildcard'
+
+import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionError,
     ConnectionLoading,
     ConnectionSummary,
     ShowMoreButton,
     SummaryContainer,
-} from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { useDebounce } from '@sourcegraph/wildcard'
-
-import {
+} from '../../components/FilteredConnection/ui'
+import type {
     RepositoriesForPopoverResult,
     RepositoriesForPopoverVariables,
     RepositoryPopoverFields,
@@ -61,7 +61,7 @@ export const BATCH_COUNT = 10
 /**
  * A popover that displays a searchable list of repositories.
  */
-export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverProps> = ({
+export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildren<RepositoriesPopoverProps>> = ({
     currentRepo,
     telemetryService,
 }) => {
@@ -73,7 +73,7 @@ export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverPro
         telemetryService.log('RepositoriesPopover')
     }, [telemetryService])
 
-    const { connection, loading, error, hasNextPage, fetchMore } = useConnection<
+    const { connection, loading, error, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoriesForPopoverResult,
         RepositoriesForPopoverVariables,
         RepositoryPopoverFields
@@ -81,7 +81,7 @@ export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverPro
         query: REPOSITORIES_FOR_POPOVER,
         variables: { first: BATCH_COUNT, after: null, query },
         getConnection: ({ data, errors }) => {
-            if (!data || !data.repositories) {
+            if (!data?.repositories) {
                 throw createAggregateError(errors)
             }
             return data.repositories

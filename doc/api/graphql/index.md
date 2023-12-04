@@ -47,7 +47,7 @@ If you have not yet set up a Sourcegraph server, you can also test out the API o
 
 ### Documentation
 
-Sourcegraph's GraphQL API documentation is available directly in the API console itself. To access the documentation, click **Docs** on the right-hand side of the API console page.
+Sourcegraph's GraphQL API documentation is available on the [API Docs](api-docs.md) page, as well as directly in the API console itself. To access the documentation, click **Docs** on the right-hand side of the API console page.
 
 ### Search
 
@@ -75,7 +75,7 @@ A command line interface to Sourcegraph's API is available. Today, it is roughly
 - Pipe multi-line GraphQL queries into it easily.
 - Get any API query written using the CLI as a `curl` command using the `src api -get-curl` flag.
 
-To learn more, see [github.com/sourcegraph/src-cli](https://github.com/sourcegraph/src-cli)
+To learn more, see [sourcegraph/src-cli](https://sourcegraph.com/github.com/sourcegraph/src-cli)
 
 ### Using the API via curl
 
@@ -86,10 +86,34 @@ The entire API can be used via `curl` (or any HTTP library), just the same as an
   We want line breaks for readability, but backslashes to escape them do not work cross-platform.
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
-<pre class="pre-wrap"><code>curl<span class="virtual-br"></span> -H 'Authorization: token YOUR_TOKEN'<span class="virtual-br"></span> -d '{"query":"query($query: String!) { search(query: $query) { results { resultCount } } }","variables":{"query":"Router"}}'<span class="virtual-br"></span> https://sourcegraph.com/.api/graphql</code></pre>
+<pre class="pre-wrap"><code>curl<span class="virtual-br"></span> -H 'Authorization: token YOUR_TOKEN'<span class="virtual-br"></span> -d '{"query":"query($query: String!) { search(query: $query) { results { matchCount } } }","variables":{"query":"Router"}}'<span class="virtual-br"></span> https://sourcegraph.com/.api/graphql</code></pre>
 
 i.e. you just need to send the `Authorization` header and a JSON object like `{"query": "my query string", "variables": {"var1": "val1"}}`.
 
 ## Examples
 
 See "[Sourcegraph GraphQL API examples](examples.md)".
+
+## Cost Limits
+
+To ensure system performance and stability, configurable GraphQL query cost limitations have been implemented. This feature is crucial for preventing resource exhaustion due to extensive or overly complex queries. The default configuration looks as follows, and can be modified in site configuration:
+
+```
+  "rateLimits": {
+    "graphQLMaxAliases": 500,
+    "graphQLMaxDepth": 30,
+    "graphQLMaxFieldCount": 500000
+  },
+```
+
+### GraphQLMaxDepth
+- **Default Value**: 30
+- Limits the maximum depth of nested objects in GraphQL queries, preventing deep queries that consume excessive resources.
+
+### GraphQLMaxFieldCount
+- **Default Value**: 500,000
+- Restricts the number of fields in a GraphQL response to avoid overly broad queries. Use pagination where available to manage large data sets effectively.
+
+### GraphQLMaxAliases
+- **Default Value**: 500
+- Sets a cap on the number of aliases in a single GraphQL query, mitigating the risk of resource-intensive queries due to excessive aliasing.

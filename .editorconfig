@@ -11,7 +11,7 @@ indent_size = 4
 [*.go]
 indent_style = tab
 
-[{*.js,*.jsx,*.json,*.yml,*.yaml,*.md,.babelrc,.stylelintrc}]
+[{*.kt,*.java,*.kts,*.lua,*.js,*.jsx,*.json,*.yml,*.yaml,*.md,.babelrc,.stylelintrc,*.proto}]
 indent_size = 2
 
 [*.md]
@@ -28,3 +28,6 @@ ignore = true
 # shfmt shouldn't format third-party script codecov.sh
 [dev/ci/codecov.sh]
 ignore = true
+
+[*.nix]
+indent_size = 2

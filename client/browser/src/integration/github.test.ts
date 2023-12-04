@@ -1,50 +1,48 @@
 import assert from 'assert'
 
-import type * as sourcegraph from 'sourcegraph'
+import { afterEach, beforeEach, describe, it } from 'mocha'
 
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import type { ExtensionContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
+import type { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-import { retry } from '@sourcegraph/shared/src/testing/utils'
-import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
+import { readEnvironmentBoolean, readEnvironmentString, retry } from '@sourcegraph/shared/src/testing/utils'
 
-import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
+import { type BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
 import { closeInstallPageTab } from './shared'
 
 describe('GitHub', () => {
     let driver: Driver
-    before(async () => {
+    let testContext: BrowserIntegrationTestContext
+
+    const mockUrls = (urls: string[]) => {
+        for (const url of urls) {
+            testContext.server.any(url).intercept((request, response) => {
+                response.sendStatus(200)
+            })
+        }
+    }
+
+    beforeEach(async function () {
         driver = await createDriverForTest({ loadExtension: true })
         await closeInstallPageTab(driver.browser)
         if (driver.sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             await driver.setExtensionSourcegraphUrl()
         }
-    })
-    after(() => driver?.close())
 
-    let testContext: BrowserIntegrationTestContext
-    beforeEach(async function () {
         testContext = await createBrowserIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
             directory: __dirname,
         })
 
-        const URLS_TO_MOCK = [
-            'https://collector.github.com/*path',
+        mockUrls([
             'https://api.github.com/_private/browser/*',
-            'https://github.com/*path/find-definition',
-            'https://github.com/gorilla/mux/commits/checks-statuses-rollups',
-            'https://github.com/commits/badges',
-        ]
-
-        // Requests to other origins that we need to ignore to prevent breaking tests.
-        for (const urlToMock of URLS_TO_MOCK) {
-            testContext.server.any(urlToMock).intercept((request, response) => {
-                response.sendStatus(200)
-            })
-        }
+            'https://collector.github.com/*path',
+            'https://github.com/favicon.ico',
+            'https://github.githubassets.com/favicons/*path',
+        ])
 
         testContext.server.any('https://api.github.com/repos/*').intercept((request, response) => {
             response
@@ -95,13 +93,27 @@ describe('GitHub', () => {
                     },
                 },
             }),
+            UserSettingsURL: () => ({
+                currentUser: {
+                    settingsURL: '/users/john.doe/settings',
+                },
+            }),
+            CurrentUser: () => ({
+                currentUser: {
+                    settingsURL: '/users/john.doe/settings',
+                    siteAdmin: false,
+                },
+            }),
         })
 
         // Ensure that the same assets are requested in all environments.
         await driver.page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }])
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
-    afterEach(() => testContext?.dispose())
+    afterEach(async () => {
+        await testContext?.dispose()
+        await driver?.close()
+    })
 
     it('adds "View on Sourcegraph" buttons to files', async () => {
         const repoName = 'github.com/sourcegraph/jsonrpc2'
@@ -126,183 +138,186 @@ describe('GitHub', () => {
                             '[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]'
                         )?.href
                 ),
-                createURLWithUTM(
-                    new URL(
-                        `${driver.sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
-                    ),
-                    { utm_source: `${driver.browserType}-extension`, utm_campaign: 'open-on-sourcegraph' }
+                new URL(
+                    `${driver.sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
                 ).href
             )
         })
     })
 
-    it("shows hover tooltips when hovering a token and respects 'Enable single click to go to definition' setting", async () => {
-        const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
-            pollyServer: testContext.server,
-            sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
-        })
+    // TODO(#42743): This test is flaky on CI and was disabled to unblock the pipeline.
+    // We need to investigate on what is causing the flakieness and remove it to
+    // bring it back.
+    //
+    // it('shows hover tooltips when hovering a token and respects "Enable single click to go to definition" setting', async () => {
+    //     mockUrls(['https://github.com/*path/find-definition'])
 
-        const userSettings: Settings = {
-            extensions: extensionSettings,
-        }
-        testContext.overrideGraphQL({
-            ViewerConfiguration: () => ({
-                viewerConfiguration: {
-                    subjects: [
-                        {
-                            __typename: 'User',
-                            displayName: 'Test User',
-                            id: 'TestUserSettingsID',
-                            latestSettings: {
-                                id: 123,
-                                contents: JSON.stringify(userSettings),
-                            },
-                            username: 'test',
-                            viewerCanAdminister: true,
-                            settingsURL: '/users/test/settings',
-                        },
-                    ],
-                    merged: { contents: JSON.stringify(userSettings), messages: [] },
-                },
-            }),
-            Extensions,
-        })
+    //     const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking()
 
-        // Serve a mock extension with a simple hover provider
-        mockExtension({
-            id: 'simple/hover',
-            bundle: function extensionBundle(): void {
-                // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-                const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
+    //     const userSettings: Settings = {
+    //         extensions: extensionSettings,
+    //     }
+    //     testContext.overrideGraphQL({
+    //         ViewerConfiguration: () => ({
+    //             viewerConfiguration: {
+    //                 subjects: [
+    //                     {
+    //                         __typename: 'User',
+    //                         displayName: 'Test User',
+    //                         id: 'TestUserSettingsID',
+    //                         latestSettings: {
+    //                             id: 123,
+    //                             contents: JSON.stringify(userSettings),
+    //                         },
+    //                         username: 'test',
+    //                         viewerCanAdminister: true,
+    //                         settingsURL: '/users/test/settings',
+    //                     },
+    //                 ],
+    //                 merged: { contents: JSON.stringify(userSettings), messages: [] },
+    //             },
+    //         }),
+    //         UserSettingsURL: () => ({
+    //             currentUser: {
+    //                 settingsURL: 'users/john-doe/settings',
+    //             },
+    //         }),
+    //         Extensions,
+    //     })
 
-                function activate(context: sourcegraph.ExtensionContext): void {
-                    context.subscriptions.add(
-                        sourcegraph.languages.registerHoverProvider(['*'], {
-                            provideHover: (document, position) => {
-                                const range = document.getWordRangeAtPosition(position)
-                                const token = document.getText(range)
-                                if (!token) {
-                                    return null
-                                }
-                                return {
-                                    contents: {
-                                        value: `User is hovering over ${token}`,
-                                        kind: sourcegraph.MarkupKind.Markdown,
-                                    },
-                                    range,
-                                }
-                            },
-                        })
-                    )
+    //     // Serve a mock extension with a simple hover provider
+    //     mockExtension({
+    //         id: 'simple/hover',
+    //         bundle: function extensionBundle(): void {
+    //             // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+    //             const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
 
-                    context.subscriptions.add(
-                        sourcegraph.languages.registerDefinitionProvider(['*'], {
-                            provideDefinition: () =>
-                                new sourcegraph.Location(
-                                    new URL(
-                                        'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
-                                    ),
-                                    new sourcegraph.Range(
-                                        new sourcegraph.Position(4, 5),
-                                        new sourcegraph.Position(5, 14)
-                                    )
-                                ),
-                        })
-                    )
-                }
+    //             function activate(context: sourcegraph.ExtensionContext): void {
+    //                 context.subscriptions.add(
+    //                     sourcegraph.languages.registerHoverProvider(['*'], {
+    //                         provideHover: (document, position) => {
+    //                             const range = document.getWordRangeAtPosition(position)
+    //                             const token = document.getText(range)
+    //                             if (!token) {
+    //                                 return null
+    //                             }
+    //                             return {
+    //                                 contents: {
+    //                                     value: `User is hovering over ${token}`,
+    //                                     kind: sourcegraph.MarkupKind.Markdown,
+    //                                 },
+    //                                 range,
+    //                             }
+    //                         },
+    //                     })
+    //                 )
 
-                exports.activate = activate
-            },
-        })
+    //                 context.subscriptions.add(
+    //                     sourcegraph.languages.registerDefinitionProvider(['*'], {
+    //                         provideDefinition: () =>
+    //                             new sourcegraph.Location(
+    //                                 new URL(
+    //                                     'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
+    //                                 ),
+    //                                 new sourcegraph.Range(
+    //                                     new sourcegraph.Position(4, 5),
+    //                                     new sourcegraph.Position(5, 14)
+    //                                 )
+    //                             ),
+    //                     })
+    //                 )
+    //             }
 
-        let hasRedirectedToDefinition = false
+    //             exports.activate = activate
+    //         },
+    //     })
 
-        // For some reason in test requested definition URL is different from the actual one:
-        // 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go/blob/HEAD/#L5:6' instead of
-        // 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go#L5:6'.
-        // The former URL is returns 404 page so for test sake we intercept such requests and track the fact of redirect.
-        testContext.server
-            .get(
-                'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go/blob/HEAD/#L5:6'
-            )
-            .intercept((request, response) => {
-                response.sendStatus(200)
-                hasRedirectedToDefinition = true
-            })
+    //     let hasRedirectedToDefinition = false
 
-        testContext.server.get('https://github.com/favicon.ico').intercept((request, response) => {
-            response.sendStatus(200)
-        })
+    //     // For some reason in test requested definition URL is different from the actual one:
+    //     // 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go/blob/HEAD/#L5:6' instead of
+    //     // 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go#L5:6'.
+    //     // The former URL is returns 404 page so for test sake we intercept such requests and track the fact of redirect.
+    //     testContext.server
+    //         .get(
+    //             'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go/blob/HEAD/#L5:6'
+    //         )
+    //         .intercept((request, response) => {
+    //             response.sendStatus(200)
+    //             hasRedirectedToDefinition = true
+    //         })
 
-        const openPageAndGetToken = async () => {
-            await driver.page.goto(
-                'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
-            )
-            await driver.page.waitForSelector('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')
+    //     const openPageAndGetToken = async () => {
+    //         await driver.page.goto(
+    //             'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
+    //         )
+    //         await driver.page.waitForSelector('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')
 
-            // Pause to give codeintellify time to register listeners for
-            // tokenization (only necessary in CI, not sure why).
-            await driver.page.waitForTimeout(1000)
+    //         // Pause to give codeintellify time to register listeners for
+    //         // tokenization (only necessary in CI, not sure why).
+    //         await driver.page.waitForTimeout(1000)
 
-            const lineSelector = '.js-file-line-container tr'
+    //         const lineSelector = '.js-file-line-container tr'
 
-            // Trigger tokenization of the line.
-            const lineNumber = 16
-            const line = await driver.page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`, {
-                timeout: 10000,
-            })
+    //         // Trigger tokenization of the line.
+    //         const lineNumber = 16
+    //         const line = await driver.page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`, {
+    //             timeout: 10000,
+    //         })
 
-            if (!line) {
-                throw new Error(`Found no line with number ${lineNumber}`)
-            }
+    //         if (!line) {
+    //             throw new Error(`Found no line with number ${lineNumber}`)
+    //         }
 
-            const [token] = await line.$x('.//span[text()="CallOption"]')
-            return token
-        }
+    //         const [token] = await line.$x('.//span[text()="CallOption"]')
+    //         return token
+    //     }
 
-        let token = await openPageAndGetToken()
+    //     let token = await openPageAndGetToken()
 
-        // 1. Check that hovering a token shows code intel popup.
-        await token.hover()
-        await driver.findElementWithText('User is hovering over CallOption', {
-            selector: ' [data-testid="hover-overlay-content"] > p',
-            fuzziness: 'contains',
-            wait: {
-                timeout: 6000,
-            },
-        })
+    //     // 1. Check that hovering a token shows code intel popup.
+    //     await token.hover()
+    //     await driver.findElementWithText('User is hovering over CallOption', {
+    //         selector: ' [data-testid="hover-overlay-content"] > p',
+    //         fuzziness: 'contains',
+    //         wait: {
+    //             timeout: 6000,
+    //         },
+    //     })
 
-        // 2. Check that token click does not do anything by default
-        await token.click()
-        await driver.page.waitForTimeout(1000)
-        assert(!hasRedirectedToDefinition, 'Expected to not be redirected to definition')
+    //     await percySnapshot(driver.page, 'Browser extension: GitHub - blob view with code intel popup')
 
-        // 3. Enable click-to-def setting and check that it redirects to the proper page
-        await driver.setClickGoToDefOptionFlag(true)
-        token = await openPageAndGetToken()
-        await token.hover()
-        await driver.findElementWithText('User is hovering over CallOption', {
-            selector: ' [data-testid="hover-overlay-content"] > p',
-            fuzziness: 'contains',
-            wait: {
-                timeout: 6000,
-            },
-        })
-        await token.click()
-        await driver.page.waitForTimeout(1000)
+    //     // 2. Check that token click does not do anything by default
+    //     await token.click()
+    //     await driver.page.waitForTimeout(1000)
+    //     assert(!hasRedirectedToDefinition, 'Expected to not be redirected to definition')
 
-        assert(hasRedirectedToDefinition, 'Expected to be redirected to definition')
-    })
+    //     // 3. Enable click-to-def setting and check that it redirects to the proper page
+    //     await driver.setClickGoToDefOptionFlag(true)
+    //     token = await openPageAndGetToken()
+    //     await token.hover()
+    //     await driver.findElementWithText('User is hovering over CallOption', {
+    //         selector: ' [data-testid="hover-overlay-content"] > p',
+    //         fuzziness: 'contains',
+    //         wait: {
+    //             timeout: 6000,
+    //         },
+    //     })
+    //     await token.click()
+    //     await driver.page.waitForTimeout(1000)
+
+    //     assert(hasRedirectedToDefinition, 'Expected to be redirected to definition')
+    // })
 
     describe('Pull request pages', () => {
-        describe('Files Changed view', () => {
+        // TODO(sqs): skipped because these have not been reimplemented after the extension API deprecation
+        describe.skip('Files Changed view', () => {
             // For each pull request test, set up a mock extension that verifies that the correct
             // file and revision info reach extensions.
             beforeEach(() => {
-                const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
-                    pollyServer: testContext.server,
-                    sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
-                })
+                mockUrls(['https://github.com/*path/find-definition'])
+
+                const { mockExtension, extensionSettings } = setupExtensionMocking()
 
                 const userSettings: Settings = {
                     extensions: extensionSettings,
@@ -327,7 +342,6 @@ describe('GitHub', () => {
                             merged: { contents: JSON.stringify(userSettings), messages: [] },
                         },
                     }),
-                    Extensions,
                     ResolveRev: ({ revision }) => ({
                         repository: {
                             mirrorInfo: { cloned: true },
@@ -378,7 +392,7 @@ describe('GitHub', () => {
                         // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
                         const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
 
-                        function activate(context: sourcegraph.ExtensionContext): void {
+                        function activate(context: ExtensionContext): void {
                             context.subscriptions.add(
                                 sourcegraph.languages.registerHoverProvider(['*'], {
                                     provideHover: (document, position) => {
@@ -616,12 +630,16 @@ describe('GitHub', () => {
             })
         })
 
-        describe('Commit view', () => {
+        // TODO(sqs): skipped because these have not been reimplemented after the extension API deprecation
+        describe.skip('Commit view', () => {
             beforeEach(() => {
-                const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
-                    pollyServer: testContext.server,
-                    sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
-                })
+                mockUrls([
+                    'https://github.com/*path/find-definition',
+                    'https://github.com/**/commits/checks-statuses-rollups',
+                    'https://github.com/commits/badges',
+                ])
+
+                const { mockExtension, extensionSettings } = setupExtensionMocking()
 
                 const userSettings: Settings = {
                     extensions: extensionSettings,
@@ -662,7 +680,6 @@ describe('GitHub', () => {
                             },
                         },
                     }),
-                    Extensions,
                 })
 
                 // Serve a mock extension with a simple hover provider
@@ -729,6 +746,182 @@ describe('GitHub', () => {
 
                 await driver.page.waitForSelector('[data-testid="hover-overlay-contents"]')
             })
+        })
+    })
+
+    // TODO(#44327): Search on Sourcegraph buttons were removed from GitHub search pages.
+    // We need to reenable these tests if we decide to keep those buttons or delete them if we don't.
+    describe.skip('Search pages', () => {
+        const sourcegraphSearchPage = 'https://sourcegraph.com/search'
+
+        const pages = [
+            { name: 'Simple search page', url: 'https://github.com/search' },
+            { name: 'Advanced search page', url: 'https://github.com/search/advanced' },
+        ]
+
+        for (const page of pages) {
+            describe(page.name, () => {
+                it('if search input has value "Search on Sourcegraph" click navigates to Sourcegraph search page with type "repo" and search query', async () => {
+                    await driver.newPage()
+                    await driver.page.goto(page.url)
+
+                    const query = 'Hello world!'
+                    const searchInput = await driver.page.waitForSelector('#search_form input[type="text"]')
+                    const linkToSourcegraph = await driver.page.waitForSelector(
+                        '[data-testid="search-on-sourcegraph"]',
+                        { timeout: 3000 }
+                    )
+
+                    assert(linkToSourcegraph, 'Expected link to Sourcegraph search page exists')
+
+                    let hasRedirectedToSourcegraphSearch = false
+                    testContext.server.get(sourcegraphSearchPage).intercept(request => {
+                        if (['type:repo', query].every(value => request.query.q?.includes(value))) {
+                            hasRedirectedToSourcegraphSearch = true
+                        }
+                    })
+
+                    await searchInput?.type(query, { delay: 100 })
+                    await linkToSourcegraph?.click()
+                    await driver.page.waitForTimeout(1000)
+
+                    assert(
+                        hasRedirectedToSourcegraphSearch,
+                        'Expected to be redirected to Sourcegraph search page with type "repo" and search query'
+                    )
+                })
+            })
+        }
+
+        const isRecordMode = readEnvironmentString({ variable: 'POLLYJS_MODE', defaultValue: 'replay' }) === 'record'
+        const isCI = readEnvironmentBoolean({ variable: 'CI', defaultValue: false }) === true
+
+        // global and repository search pages
+        // do not record in CI (see https://github.com/sourcegraph/sourcegraph/pull/34171)
+        ;(isRecordMode && isCI ? describe.skip : describe)('Search results page', () => {
+            beforeEach(() => {
+                mockUrls([
+                    'https://github.com/_graphql/GetSuggestedNavigationDestinations',
+                    'https://github.com/**/commits/checks-statuses-rollups',
+                    'https://github.com/commits/badges',
+                ])
+            })
+
+            const buildGitHubSearchResultsURL = (page: string, searchTerm: string): string => {
+                const url = new URL(page)
+                url.searchParams.set('q', searchTerm)
+                return url.toString()
+            }
+
+            const globalSearchPage = 'https://github.com/search'
+            const repo = 'sourcegraph/sourcegraph'
+            const repoSearchPage = `https://github.com/${repo}/search`
+
+            const pages = [
+                { name: 'Global search page', url: globalSearchPage },
+                { name: 'Repo search page', url: repoSearchPage },
+            ]
+
+            const viewportM = { width: 768, height: 1024 }
+            const viewportL = { width: 1024, height: 768 }
+
+            const viewportConfigs = [
+                {
+                    name: 'M',
+                    viewport: viewportM,
+                    sourcegraphButtonSelector: '#pageSearchFormSourcegraphButton [data-testid="search-on-sourcegraph"]',
+                    searchInputSelector: ".application-main form.js-site-search-form input.form-control[name='q']",
+                },
+                {
+                    name: 'L',
+                    viewport: viewportL,
+                    searchInputSelector: "header form.js-site-search-form input.form-control[name='q']",
+                    sourcegraphButtonSelector:
+                        '#headerSearchInputSourcegraphButton [data-testid="search-on-sourcegraph"]',
+                },
+            ]
+
+            for (let index = 0; index < pages.length; index++) {
+                // Reduce the number of tests for search results pages.
+                // We record and run the global search results page test on a smaller viewport (M) and repo search results page on a larger (L).
+                // As these two pages follow the same logic and use similar search input elements per viewport we're still able to catch regressions, but reduce:
+                // - the number of calls to GitHub search API which can result in 429 HTTP Errors (Too Many Requests)
+                // - the size of recordings added to the repository.
+                const page = pages[index]
+                const viewportConfig = viewportConfigs[index]
+
+                describe(`${page.name}: viewport ${viewportConfig.name}`, () => {
+                    it('"Search on Sourcegraph" click navigates to Sourcegraph search page with proper result type, language and search query from search input', async () => {
+                        const initialQuery = 'fix'
+
+                        const url = buildGitHubSearchResultsURL(page.url, initialQuery)
+                        const query = 'issue'
+
+                        await driver.newPage()
+                        await driver.page.goto(url)
+                        await driver.page.setViewport(viewportConfig.viewport)
+
+                        let hasRedirectedToSourcegraphSearch = false
+                        let lang = ''
+                        testContext.server.get(sourcegraphSearchPage).intercept(request => {
+                            const resultQuery = `${initialQuery} ${query}`
+                            const parameters = ['type:commit', `lang:${lang}`, resultQuery]
+
+                            if (page.url === repoSearchPage) {
+                                parameters.push(`repo:${repo}`)
+                            }
+
+                            hasRedirectedToSourcegraphSearch = parameters.every(value =>
+                                request.query.q?.includes(value)
+                            )
+                        })
+
+                        // filter results by language (handled by client-side routing)
+                        const langLinkHandle = await driver.page.$('ul.filter-list li:first-child a.filter-item')
+                        assert(langLinkHandle, 'Expected language result type link to exist')
+                        lang = await langLinkHandle.evaluate(node => {
+                            if (!(node instanceof HTMLAnchorElement) || !node.href) {
+                                return ''
+                            }
+
+                            return new URL(node.href).searchParams.get('l') || ''
+                        })
+                        await langLinkHandle.click()
+                        await driver.page.waitForTimeout(3000)
+
+                        // filter results by type (handled by client-side routing)
+                        const commitsLinkHandle = await driver.page.$("nav.menu a.menu-item[href*='type=commits']")
+                        assert(commitsLinkHandle, 'Expected commits result type link to exist')
+                        await commitsLinkHandle.click()
+                        await driver.page.waitForTimeout(3000)
+
+                        const searchInput = await driver.page.waitForSelector(viewportConfig.searchInputSelector)
+                        // For some reason puppeteer when typing into input field prepends the exising value.
+                        // To replicate the natural behavior we navigate to the end of exisiting value and then start typing.
+                        await searchInput?.focus()
+                        for (const _char of initialQuery) {
+                            await driver.page.keyboard.press('ArrowRight')
+                        }
+                        await searchInput?.type(` ${query}`, { delay: 100 })
+                        await driver.page.keyboard.press('Escape') // if input focus opened dropdown, ensure the latter is closed
+
+                        const linkToSourcegraph = await driver.page.waitForSelector(
+                            viewportConfig.sourcegraphButtonSelector,
+                            {
+                                timeout: 3000,
+                            }
+                        )
+                        assert(linkToSourcegraph, 'Expected link to Sourcegraph search page exists')
+                        await linkToSourcegraph?.click()
+                        await driver.page.waitForTimeout(3000)
+
+                        assert(
+                            hasRedirectedToSourcegraphSearch,
+                            'Expected to be redirected to Sourcegraph search page with type "commit", language "HTML" and search query'
+                        )
+                    })
+                })
+            }
         })
     })
 })

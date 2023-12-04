@@ -1,6 +1,7 @@
-import { WorkspaceRoot } from 'sourcegraph'
+import { describe, expect, test } from 'vitest'
 
-import { collectSubscribableValues, integrationTestContext } from './testHelpers'
+import type { WorkspaceRoot } from '../../codeintel/legacy-extensions/api'
+import { collectSubscribableValues, integrationTestContext } from '../../testing/testHelpers'
 
 describe('Workspace roots (integration)', () => {
     describe('workspace.roots', () => {

@@ -1,13 +1,30 @@
-/* eslint-disable id-length */
-import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
+import { fetchEventSource } from '@microsoft/fetch-event-source'
+import {
+    Observable,
+    fromEvent,
+    Subscription,
+    type OperatorFunction,
+    pipe,
+    type Subscriber,
+    type Notification,
+} from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
-import { AggregableBadge } from 'sourcegraph'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 
-import { displayRepoName } from '../components/RepoFileLink'
-import { SearchPatternType } from '../graphql-operations'
-import { SymbolKind } from '../schema'
+import type { AggregableBadge } from '../codeintel/legacy-extensions/api'
+import type { SearchPatternType, SymbolKind } from '../graphql-operations'
+
+import { SearchMode } from './searchQueryState'
+
+// The latest supported version of our search syntax. Users should never be able to determine the search version.
+// The version is set based on the release tag of the instance.
+// History:
+// V3 - default to standard interpretation (RFC 675): Interpret patterns enclosed by /.../ as regular expressions. Interpret patterns literally otherwise.
+// V2 - default to interpreting patterns literally only.
+// V1 - default to interpreting patterns as regular expressions.
+// None - Anything before 3.9.0 will not pass a version parameter and defaults to V1.
+export const LATEST_VERSION = 'V3'
 
 /** All values that are valid for the `type:` filter. `null` represents default code search. */
 export type SearchType = 'file' | 'repo' | 'path' | 'symbol' | 'diff' | 'commit' | null
@@ -20,28 +37,33 @@ export type SearchEvent =
     | { type: 'error'; data: ErrorLike }
     | { type: 'done'; data: {} }
 
-export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch
+export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch | OwnerMatch
 
 export interface PathMatch {
     type: 'path'
     path: string
+    pathMatches?: Range[]
     repository: string
     repoStars?: number
     repoLastFetched?: string
     branches?: string[]
     commit?: string
+    debug?: string
 }
 
 export interface ContentMatch {
     type: 'content'
     path: string
+    pathMatches?: Range[]
     repository: string
     repoStars?: number
     repoLastFetched?: string
     branches?: string[]
     commit?: string
-    lineMatches: LineMatch[]
+    lineMatches?: LineMatch[]
+    chunkMatches?: ChunkMatch[]
     hunks?: DecoratedHunk[]
+    debug?: string
 }
 
 export interface DecoratedHunk {
@@ -67,10 +89,17 @@ export interface Location {
     column: number
 }
 
-interface LineMatch {
+export interface LineMatch {
     line: string
     lineNumber: number
     offsetAndLengths: number[][]
+    aggregableBadges?: AggregableBadge[]
+}
+
+interface ChunkMatch {
+    content: string
+    contentStart: Location
+    ranges: Range[]
     aggregableBadges?: AggregableBadge[]
 }
 
@@ -83,6 +112,7 @@ export interface SymbolMatch {
     branches?: string[]
     commit?: string
     symbols: MatchedSymbol[]
+    debug?: string
 }
 
 export interface MatchedSymbol {
@@ -90,6 +120,7 @@ export interface MatchedSymbol {
     name: string
     containerName: string
     kind: SymbolKind
+    line: number
 }
 
 type MarkdownText = string
@@ -102,20 +133,26 @@ type MarkdownText = string
  */
 export interface CommitMatch {
     type: 'commit'
-    label: MarkdownText
     url: string
-    detail: MarkdownText
     repository: string
+    oid: string
+    message: string
+    authorName: string
+    authorDate: string
+    committerName: string
+    committerDate: string
     repoStars?: number
     repoLastFetched?: string
 
     content: MarkdownText
+    // Array of [line, character, length] triplets
     ranges: number[][]
 }
 
 export interface RepositoryMatch {
     type: 'repo'
     repository: string
+    repositoryMatches?: Range[]
     repoStars?: number
     repoLastFetched?: string
     description?: string
@@ -123,6 +160,34 @@ export interface RepositoryMatch {
     archived?: boolean
     private?: boolean
     branches?: string[]
+    descriptionMatches?: Range[]
+    metadata?: Record<string, string | undefined>
+}
+
+export type OwnerMatch = PersonMatch | TeamMatch
+
+export interface BaseOwnerMatch {
+    handle?: string
+    email?: string
+}
+
+export interface PersonMatch extends BaseOwnerMatch {
+    type: 'person'
+    handle?: string
+    email?: string
+    user?: {
+        username: string
+        displayName?: string
+        avatarURL?: string
+    }
+}
+
+export interface TeamMatch extends BaseOwnerMatch {
+    type: 'team'
+    name: string
+    displayName?: string
+    handle?: string
+    email?: string
 }
 
 /**
@@ -166,6 +231,7 @@ export interface Skipped {
      * - shard-timeout :: we ran out of time before searching a shard/repository.
      * - repository-cloning :: we could not search a repository because it is not cloned.
      * - repository-missing :: we could not search a repository because it is not cloned and we failed to find it on the remote code host.
+     * - backend-missing :: we may be missing results due to a backend being transiently down.
      * - excluded-fork :: we did not search a repository because it is a fork.
      * - excluded-archive :: we did not search a repository because it is archived.
      * - display :: we hit the display limit, so we stopped sending results from the backend.
@@ -177,6 +243,7 @@ export interface Skipped {
         | 'shard-timedout'
         | 'repository-cloning'
         | 'repository-missing'
+        | 'backend-missing'
         | 'excluded-fork'
         | 'excluded-archive'
         | 'display'
@@ -205,17 +272,25 @@ export interface Filter {
     label: string
     count: number
     limitHit: boolean
-    kind: string
+    kind: 'file' | 'repo' | 'lang' | 'utility'
 }
+
+export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
+export type AlertKind = SmartSearchAlertKind | 'unowned-results'
 
 interface Alert {
     title: string
     description?: string | null
+    kind?: AlertKind | null
     proposedQueries: ProposedQuery[] | null
 }
 
-interface ProposedQuery {
+// Same key values from internal/search/alert.go
+export type AnnotationName = 'ResultCount'
+
+export interface ProposedQuery {
     description?: string | null
+    annotations?: { name: AnnotationName; value: string }[]
     query: string
 }
 
@@ -264,35 +339,40 @@ export const switchAggregateSearchResults: OperatorFunction<SearchEvent, Aggrega
             switch (newEvent.kind) {
                 case 'N': {
                     switch (newEvent.value?.type) {
-                        case 'matches':
+                        case 'matches': {
                             return {
                                 ...results,
                                 // Matches are additive
                                 results: results.results.concat(newEvent.value.data),
                             }
+                        }
 
-                        case 'progress':
+                        case 'progress': {
                             return {
                                 ...results,
                                 // Progress updates replace
                                 progress: newEvent.value.data,
                             }
+                        }
 
-                        case 'filters':
+                        case 'filters': {
                             return {
                                 ...results,
                                 // New filter results replace all previous ones
                                 filters: newEvent.value.data,
                             }
+                        }
 
-                        case 'alert':
+                        case 'alert': {
                             return {
                                 ...results,
                                 alert: newEvent.value.data,
                             }
+                        }
 
-                        default:
+                        default: {
                             return results
+                        }
                     }
                 }
                 case 'E': {
@@ -314,13 +394,15 @@ export const switchAggregateSearchResults: OperatorFunction<SearchEvent, Aggrega
                         state: 'error',
                     }
                 }
-                case 'C':
+                case 'C': {
                     return {
                         ...results,
                         state: 'complete',
                     }
-                default:
+                }
+                default: {
                     return results
+                }
             }
         },
         emptyAggregateResults
@@ -402,9 +484,13 @@ export interface StreamSearchOptions {
     patternType: SearchPatternType
     caseSensitive: boolean
     trace: string | undefined
+    featureOverrides?: string[]
+    searchMode?: SearchMode
     sourcegraphURL?: string
-    decorationKinds?: string[]
-    decorationContextLines?: number
+    displayLimit?: number
+    chunkMatches?: boolean
+    enableRepositoryMetadata?: boolean
+    zoektSearchOptions?: string
 }
 
 function initiateSearchStream(
@@ -414,9 +500,12 @@ function initiateSearchStream(
         patternType,
         caseSensitive,
         trace,
-        decorationKinds,
-        decorationContextLines,
+        zoektSearchOptions,
+        featureOverrides,
+        searchMode = SearchMode.Precise,
+        displayLimit = 1500,
         sourcegraphURL = '',
+        chunkMatches = false,
     }: StreamSearchOptions,
     messageHandlers: MessageHandlers
 ): Observable<SearchEvent> {
@@ -427,15 +516,21 @@ function initiateSearchStream(
             ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
             ['v', version],
             ['t', patternType as string],
-            ['dl', '0'],
-            ['dk', (decorationKinds || ['html']).join('|')],
-            ['dc', (decorationContextLines || '1').toString()],
-            ['display', '1500'],
+            ['sm', searchMode.toString()],
+            ['display', displayLimit.toString()],
+            ['cm', chunkMatches ? 't' : 'f'],
         ]
         if (trace) {
             parameters.push(['trace', trace])
         }
-        const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
+        for (const value of featureOverrides || []) {
+            parameters.push(['feat', value])
+        }
+
+        if (zoektSearchOptions) {
+            parameters.push(['zoekt-search-opts', zoektSearchOptions])
+        }
+        const parameterEncoded = parameters.map(([key, value]) => key + '=' + encodeURIComponent(value)).join('&')
 
         const eventSource = new EventSource(`${sourcegraphURL}/search/stream?${parameterEncoded}`)
         subscriptions.add(() => eventSource.close())
@@ -484,22 +579,21 @@ export function getRepositoryUrl(repository: string, branches?: string[]): strin
 }
 
 export function getRevision(branches?: string[], version?: string): string {
-    let revision = ''
-    if (branches) {
-        const branch = branches[0]
-        if (branch !== '') {
-            revision = branch
-        }
-    } else if (version) {
-        revision = version
+    if (branches && branches.length > 0) {
+        return branches[0]
     }
-
-    return revision
+    if (version) {
+        return version
+    }
+    return ''
 }
 
 export function getFileMatchUrl(fileMatch: ContentMatch | SymbolMatch | PathMatch): string {
-    const revision = getRevision(fileMatch.branches, fileMatch.commit)
-    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.path}`
+    // We are not using getRevision here, because we want to flip the logic from
+    // "branches first" to "revsion first"
+    const revision = fileMatch.commit ?? fileMatch.branches?.[0]
+    const encodedFilePath = fileMatch.path.split('/').map(encodeURIComponent).join('/')
+    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${encodedFilePath}`
 }
 
 export function getRepoMatchLabel(repoMatch: RepositoryMatch): string {
@@ -513,23 +607,81 @@ export function getRepoMatchUrl(repoMatch: RepositoryMatch): string {
     return '/' + encodeURI(label)
 }
 
+export function getCommitMatchUrl(commitMatch: CommitMatch): string {
+    return '/' + encodeURI(commitMatch.repository) + '/-/commit/' + commitMatch.oid
+}
+
+export function getOwnerMatchUrl(ownerMatch: OwnerMatch, ignoreUnknownPerson: boolean = false): string {
+    if (ownerMatch.type === 'person' && ownerMatch.user) {
+        return '/users/' + encodeURI(ownerMatch.user.username)
+    }
+    if (ownerMatch.type === 'team') {
+        return '/teams/' + encodeURI(ownerMatch.name)
+    }
+    if (ownerMatch.email) {
+        return `mailto:${ownerMatch.email}`
+    }
+
+    if (ignoreUnknownPerson) {
+        return ''
+    }
+    // Unknown person with only a handle.
+    // We can't ignore this person and return an empty string, we
+    // need some unique dummy data here because this is used
+    // as the key in the virtual list. We can't use the index.
+    // In the future we may be able to link to the
+    // person's profile page in the external code host.
+    return '/unknown-person/' + encodeURI(ownerMatch.handle || 'unknown')
+}
+
 export function getMatchUrl(match: SearchMatch): string {
     switch (match.type) {
         case 'path':
         case 'content':
-        case 'symbol':
+        case 'symbol': {
             return getFileMatchUrl(match)
-        case 'commit':
-            return match.url
-        case 'repo':
+        }
+        case 'commit': {
+            return getCommitMatchUrl(match)
+        }
+        case 'repo': {
             return getRepoMatchUrl(match)
+        }
+        case 'person':
+        case 'team': {
+            return getOwnerMatchUrl(match)
+        }
     }
 }
 
-export function getMatchTitle(match: RepositoryMatch | CommitMatch): MarkdownText {
-    if (match.type === 'commit') {
-        return match.label
-    }
+export type SearchMatchOfType<T extends SearchMatch['type']> = Extract<SearchMatch, { type: T }>
 
-    return `[${displayRepoName(getRepoMatchLabel(match))}](${getRepoMatchUrl(match)})`
+export function isSearchMatchOfType<T extends SearchMatch['type']>(
+    type: T
+): (match: SearchMatch) => match is SearchMatchOfType<T> {
+    return (match): match is SearchMatchOfType<T> => match.type === type
+}
+
+// Call the compute endpoint with the given query
+const computeStreamUrl = '/.api/compute/stream'
+export function streamComputeQuery(query: string): Observable<string[]> {
+    const allData: string[] = []
+    return new Observable<string[]>(observer => {
+        fetchEventSource(`${computeStreamUrl}?q=${encodeURIComponent(query)}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'Sourcegraph',
+            },
+            onmessage(event) {
+                allData.push(event.data)
+                observer.next(allData)
+            },
+            onerror(event) {
+                observer.error(event)
+            },
+        }).then(
+            () => observer.complete(),
+            error => observer.error(error)
+        )
+    })
 }

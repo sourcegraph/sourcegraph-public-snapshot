@@ -21,13 +21,24 @@ import (
 // that actor propagation is enabled on both ends of the request.
 //
 // To learn more about actor propagation, see: https://sourcegraph.com/notebooks/Tm90ZWJvb2s6OTI=
+//
+// At most one of UID, AnonymousUID, or Internal must be set.
 type Actor struct {
-	// UID is the unique ID of the authenticated user, or 0 for anonymous actors.
+	// UID is the unique ID of the authenticated user.
+	// Only set if the current actor is an authenticated user.
 	UID int32 `json:",omitempty"`
+
+	// AnonymousUID is the user's semi-stable anonymousID from the request cookie
+	// or the 'X-Sourcegraph-Actor-Anonymous-UID' request header.
+	// Only set if the user is unauthenticated and the request contains an anonymousID.
+	AnonymousUID string `json:",omitempty"`
 
 	// Internal is true if the actor represents an internal Sourcegraph service (and is therefore
 	// not tied to a specific user).
 	Internal bool `json:",omitempty"`
+
+	// SourcegraphOperator indicates whether the actor is a Sourcegraph operator user account.
+	SourcegraphOperator bool `json:",omitempty"`
 
 	// FromSessionCookie is whether a session cookie was used to authenticate the actor. It is used
 	// to selectively display a logout link. (If the actor wasn't authenticated with a session
@@ -43,8 +54,18 @@ type Actor struct {
 	mockUser bool
 }
 
-// FromUser returns an actor corresponding to a user
+// FromUser returns an actor corresponding to the user with the given ID
 func FromUser(uid int32) *Actor { return &Actor{UID: uid} }
+
+// FromActualUser returns an actor corresponding to the user with the given ID
+func FromActualUser(user *types.User) *Actor {
+	a := &Actor{UID: user.ID, user: user, userErr: nil}
+	a.userOnce.Do(func() {})
+	return a
+}
+
+// FromAnonymousUser returns an actor corresponding to an unauthenticated user with the given anonymous ID
+func FromAnonymousUser(anonymousUID string) *Actor { return &Actor{AnonymousUID: anonymousUID} }
 
 // FromMockUser returns an actor corresponding to a test user. Do not use outside of tests.
 func FromMockUser(uid int32) *Actor { return &Actor{UID: uid, mockUser: true} }
@@ -91,7 +112,8 @@ type contextKey int
 
 const actorKey contextKey = iota
 
-// FromContext returns a new Actor instance from a given context.
+// FromContext returns a new Actor instance from a given context. It always returns a
+// non-nil actor.
 func FromContext(ctx context.Context) *Actor {
 	a, ok := ctx.Value(actorKey).(*Actor)
 	if !ok || a == nil {

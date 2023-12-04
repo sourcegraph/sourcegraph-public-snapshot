@@ -12,7 +12,7 @@ mutation CreateAccessToken($user: ID!, $scopes: [String!]!, $note: String!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"user":   c.userID,
 		"scopes": scopes,
 		"note":   note,
@@ -40,7 +40,7 @@ mutation DeleteAccessToken($token: String!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"token": token,
 	}
 	err := c.GraphQL("", query, variables, nil)

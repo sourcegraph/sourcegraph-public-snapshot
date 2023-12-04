@@ -1,11 +1,10 @@
 import React, { useCallback, useState } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
+import { Button, Checkbox, Modal, H3, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
-import { Scalars } from '../../../../graphql-operations'
+import { LoaderButton } from '../../../../components/LoaderButton'
+import type { Scalars } from '../../../../graphql-operations'
 import { mergeChangesets as _mergeChangesets } from '../backend'
 
 export interface MergeChangesetsModalProps {
@@ -18,7 +17,7 @@ export interface MergeChangesetsModalProps {
     mergeChangesets?: typeof _mergeChangesets
 }
 
-export const MergeChangesetsModal: React.FunctionComponent<MergeChangesetsModalProps> = ({
+export const MergeChangesetsModal: React.FunctionComponent<React.PropsWithChildren<MergeChangesetsModalProps>> = ({
     onCancel,
     afterCreate,
     batchChangeID,
@@ -44,23 +43,17 @@ export const MergeChangesetsModal: React.FunctionComponent<MergeChangesetsModalP
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID}>
-            <h3 id={MODAL_LABEL_ID}>Merge changesets</h3>
-            <p className="mb-4">Are you sure you want to attempt to merge all the selected changesets?</p>
+            <H3 id={MODAL_LABEL_ID}>Merge changesets</H3>
+            <Text className="mb-4">Are you sure you want to attempt to merge all the selected changesets?</Text>
             <Form>
                 <div className="form-group">
-                    <div className="form-check">
-                        <input
-                            id={CHECKBOX_ID}
-                            type="checkbox"
-                            checked={squash}
-                            onChange={onToggleSquash}
-                            className="form-check-input"
-                            disabled={isLoading === true}
-                        />
-                        <label className="form-check-label" htmlFor={CHECKBOX_ID}>
-                            Squash merge all selected changesets.
-                        </label>
-                    </div>
+                    <Checkbox
+                        id={CHECKBOX_ID}
+                        checked={squash}
+                        onChange={onToggleSquash}
+                        disabled={isLoading === true}
+                        label="Squash merge all selected changesets."
+                    />
                 </div>
             </Form>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
@@ -74,10 +67,14 @@ export const MergeChangesetsModal: React.FunctionComponent<MergeChangesetsModalP
                 >
                     Cancel
                 </Button>
-                <Button onClick={onSubmit} disabled={isLoading === true} variant="primary">
-                    {isLoading === true && <LoadingSpinner />}
-                    Merge
-                </Button>
+                <LoaderButton
+                    onClick={onSubmit}
+                    disabled={isLoading === true}
+                    variant="primary"
+                    loading={isLoading === true}
+                    alwaysShowLabel={true}
+                    label="Merge"
+                />
             </div>
         </Modal>
     )

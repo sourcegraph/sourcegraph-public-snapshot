@@ -1,45 +1,30 @@
-import * as H from 'history'
 import React from 'react'
 
-import { Hoverifier } from '@sourcegraph/codeintellify'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+import type { ChangesetFields } from '../../../graphql-operations'
+import type { queryExternalChangesetWithFileDiffs } from '../detail/backend'
 
-import { ChangesetFields } from '../../../graphql-operations'
-import { queryExternalChangesetWithFileDiffs } from '../detail/backend'
-
-import styles from './ChangesetCloseNode.module.scss'
 import { ExternalChangesetCloseNode } from './ExternalChangesetCloseNode'
 import { HiddenExternalChangesetCloseNode } from './HiddenExternalChangesetCloseNode'
 
-export interface ChangesetCloseNodeProps extends ThemeProps {
+import styles from './ChangesetCloseNode.module.scss'
+
+export interface ChangesetCloseNodeProps {
     node: ChangesetFields
     viewerCanAdminister: boolean
-    history: H.History
-    location: H.Location
-    extensionInfo?: {
-        hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
-    } & ExtensionsControllerProps
     queryExternalChangesetWithFileDiffs?: typeof queryExternalChangesetWithFileDiffs
     willClose: boolean
 }
 
-export const ChangesetCloseNode: React.FunctionComponent<ChangesetCloseNodeProps> = ({ node, ...props }) => {
-    if (node.__typename === 'ExternalChangeset') {
-        return (
-            <>
-                <span className={styles.changesetCloseNodeSeparator} />
-                <ExternalChangesetCloseNode node={node} {...props} />
-            </>
-        )
-    }
-    return (
-        <>
-            <span className={styles.changesetCloseNodeSeparator} />
+export const ChangesetCloseNode: React.FunctionComponent<React.PropsWithChildren<ChangesetCloseNodeProps>> = ({
+    node,
+    ...props
+}) => (
+    <li className={styles.changesetCloseNode}>
+        <span className={styles.changesetCloseNodeSeparator} />
+        {node.__typename === 'ExternalChangeset' ? (
+            <ExternalChangesetCloseNode node={node} {...props} />
+        ) : (
             <HiddenExternalChangesetCloseNode node={node} {...props} />
-        </>
-    )
-}
+        )}
+    </li>
+)

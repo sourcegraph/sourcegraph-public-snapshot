@@ -4,6 +4,10 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCache_namespace(t *testing.T) {
@@ -90,61 +94,8 @@ func TestCache_simple(t *testing.T) {
 	}
 }
 
-func TestCache_multi(t *testing.T) {
+func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 	SetupForTest(t)
-
-	c := New("some_prefix")
-	vals := c.GetMulti("k0", "k1", "k2")
-	if got, exp := vals, [][]byte{nil, nil, nil}; !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v on initial fetch, got %v", exp, got)
-	}
-
-	c.Set("k0", []byte("b"))
-	if got, exp := c.GetMulti("k0"), bytes("b"); !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-
-	c.SetMulti([2]string{"k0", "a"})
-	if got, exp := c.GetMulti("k0"), bytes("a"); !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-
-	c.SetMulti([2]string{"k0", "a"}, [2]string{"k1", "b"})
-	if got, exp := c.GetMulti("k0"), bytes("a"); !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-	if got, exp := c.GetMulti("k1"), bytes("b"); !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-	if got, exp := c.GetMulti("k0", "k1"), bytes("a", "b"); !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-	if got, exp := c.GetMulti("k1", "k0"), bytes("b", "a"); !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-
-	c.SetMulti([2]string{"k0", "x"}, [2]string{"k1", "y"}, [2]string{"k2", "z"})
-	if got, exp := c.GetMulti("k0", "k1", "k2"), bytes("x", "y", "z"); !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-	got, exist := c.Get("k0")
-	if exp := "x"; !exist || string(got) != exp {
-		t.Errorf("Expected %v, but got %v", exp, string(got))
-	}
-
-	c.Delete("k0")
-	if got, exp := c.GetMulti("k0", "k1", "k2"), [][]byte{nil, []byte("y"), []byte("z")}; !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-}
-
-func TestCache_deleteKeysWithPrefix(t *testing.T) {
-	SetupForTest(t)
-
-	// decrease the deleteBatchSize
-	oldV := deleteBatchSize
-	deleteBatchSize = 2
-	defer func() { deleteBatchSize = oldV }()
 
 	c := New("some_prefix")
 	var aKeys, bKeys []string
@@ -158,32 +109,175 @@ func TestCache_deleteKeysWithPrefix(t *testing.T) {
 			bKeys = append(bKeys, key)
 		}
 
-		c.SetMulti([2]string{key, strconv.Itoa(i)})
+		c.Set(key, []byte(strconv.Itoa(i)))
+	}
+
+	pool, ok := kv().Pool()
+	if !ok {
+		t.Fatal("need redis connection")
 	}
 
 	conn := pool.Get()
 	defer conn.Close()
 
-	err := deleteKeysWithPrefix(conn, c.rkeyPrefix()+"a")
+	err := redispool.DeleteAllKeysWithPrefix(conn, c.rkeyPrefix()+"a")
 	if err != nil {
 		t.Error(err)
 	}
 
-	vals := c.GetMulti(aKeys...)
+	getMulti := func(keys ...string) [][]byte {
+		t.Helper()
+		var vals [][]byte
+		for _, k := range keys {
+			v, _ := c.Get(k)
+			vals = append(vals, v)
+		}
+		return vals
+	}
+
+	vals := getMulti(aKeys...)
 	if got, exp := vals, [][]byte{nil, nil, nil, nil, nil}; !reflect.DeepEqual(exp, got) {
 		t.Errorf("Expected %v, but got %v", exp, got)
 	}
 
-	vals = c.GetMulti(bKeys...)
+	vals = getMulti(bKeys...)
 	if got, exp := vals, bytes("1", "3", "5", "7", "9"); !reflect.DeepEqual(exp, got) {
 		t.Errorf("Expected %v, but got %v", exp, got)
 	}
 }
 
-func bytes(s ...string) [][]byte {
-	if s == nil {
-		return nil
+func TestCache_Increase(t *testing.T) {
+	SetupForTest(t)
+
+	c := NewWithTTL("some_prefix", 1)
+	c.Increase("a")
+
+	got, ok := c.Get("a")
+	assert.True(t, ok)
+	assert.Equal(t, []byte("1"), got)
+
+	time.Sleep(time.Second)
+
+	// now wait upto another 5s. We do this because timing is hard.
+	assert.Eventually(t, func() bool {
+		_, ok = c.Get("a")
+		return !ok
+	}, 5*time.Second, 50*time.Millisecond, "rcache.increase did not respect expiration")
+}
+
+func TestCache_KeyTTL(t *testing.T) {
+	SetupForTest(t)
+
+	c := NewWithTTL("some_prefix", 1)
+	c.Set("a", []byte("b"))
+
+	ttl, ok := c.KeyTTL("a")
+	assert.True(t, ok)
+	assert.Equal(t, 1, ttl)
+
+	time.Sleep(time.Second)
+
+	// now wait upto another 5s. We do this because timing is hard.
+	assert.Eventually(t, func() bool {
+		_, ok = c.KeyTTL("a")
+		return !ok
+	}, 5*time.Second, 50*time.Millisecond, "rcache.ketttl did not respect expiration")
+
+	c.SetWithTTL("c", []byte("d"), 0) // invalid TTL
+	_, ok = c.KeyTTL("c")
+	if ok {
+		t.Fatal("KeyTTL after setting invalid ttl should have found nothing")
 	}
+}
+
+func TestCache_SetWithTTL(t *testing.T) {
+	SetupForTest(t)
+
+	c := NewWithTTL("some_prefix", 60)
+	c.SetWithTTL("a", []byte("b"), 30)
+	b, ok := c.Get("a")
+	if !ok {
+		t.Fatal("Expect to get a after setting")
+	}
+	if string(b) != "b" {
+		t.Fatalf("got %v, want %v", string(b), "b")
+	}
+	ttl, ok := c.KeyTTL("a")
+	if !ok {
+		t.Fatal("Expect to be able to read ttl after setting")
+	}
+	if ttl > 30 {
+		t.Fatalf("ttl got %v, want %v", ttl, 30)
+	}
+
+	c.Delete("a")
+	_, ok = c.Get("a")
+	if ok {
+		t.Fatal("Get after delete should have found nothing")
+	}
+
+	c.SetWithTTL("c", []byte("d"), 0) // invalid operation
+	_, ok = c.Get("c")
+	if ok {
+		t.Fatal("SetWithTTL should not create a key with invalid expiry")
+	}
+}
+
+func TestCache_Hashes(t *testing.T) {
+	SetupForTest(t)
+
+	// Test SetHashItem
+	c := NewWithTTL("simple_hash", 1)
+	err := c.SetHashItem("key", "hashKey1", "value1")
+	assert.NoError(t, err)
+	err = c.SetHashItem("key", "hashKey2", "value2")
+	assert.NoError(t, err)
+
+	// Test GetHashItem
+	val1, err := c.GetHashItem("key", "hashKey1")
+	assert.NoError(t, err)
+	assert.Equal(t, "value1", val1)
+	val2, err := c.GetHashItem("key", "hashKey2")
+	assert.NoError(t, err)
+	assert.Equal(t, "value2", val2)
+	val3, err := c.GetHashItem("key", "hashKey3")
+	assert.Error(t, err)
+	assert.Equal(t, "", val3)
+
+	// Test GetHashAll
+	all, err := c.GetHashAll("key")
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]string{"hashKey1": "value1", "hashKey2": "value2"}, all)
+
+	// Test DeleteHashItem
+	// Bit redundant, but double check that the key still exists
+	val1, err = c.GetHashItem("key", "hashKey1")
+	assert.NoError(t, err)
+	assert.Equal(t, "value1", val1)
+	del1, err := c.DeleteHashItem("key", "hashKey1")
+	assert.NoError(t, err)
+	assert.Equal(t, 1, del1)
+	// Verify that it no longer exists
+	val1, err = c.GetHashItem("key", "hashKey1")
+	assert.Error(t, err)
+	assert.Equal(t, "", val1)
+	// Delete nonexistent field: should return 0 (represents deleted items)
+	val3, err = c.GetHashItem("key", "hashKey3")
+	assert.Error(t, err)
+	assert.Equal(t, "", val3)
+	del3, err := c.DeleteHashItem("key", "hashKey3")
+	assert.NoError(t, err)
+	assert.Equal(t, 0, del3)
+	// Delete nonexistent key: should return 0 (represents deleted items)
+	val4, err := c.GetHashItem("nonexistentkey", "nonexistenthashkey")
+	assert.Error(t, err)
+	assert.Equal(t, "", val4)
+	del4, err := c.DeleteHashItem("nonexistentkey", "nonexistenthashkey")
+	assert.NoError(t, err)
+	assert.Equal(t, 0, del4)
+}
+
+func bytes(s ...string) [][]byte {
 	t := make([][]byte, len(s))
 	for i, v := range s {
 		t[i] = []byte(v)

@@ -1,16 +1,17 @@
-import { Remote } from 'comlink'
-import { asyncScheduler, Observable, of } from 'rxjs'
+import type { Remote } from 'comlink'
+import { asyncScheduler, type Observable, of, type Unsubscribable } from 'rxjs'
 import { observeOn, take, toArray, map, first } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
+import type * as sourcegraph from 'sourcegraph'
+import { describe, expect, it } from 'vitest'
 
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import type { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { Location } from '@sourcegraph/extension-api-types'
+import type { Location } from '@sourcegraph/extension-api-types'
+import { createBarrier } from '@sourcegraph/testing'
 
+import { assertToJSON, integrationTestContext } from '../../testing/testHelpers'
 import { wrapRemoteObservable } from '../client/api/common'
-import { FlatExtensionHostAPI } from '../contract'
-
-import { assertToJSON, createBarrier, integrationTestContext } from './testHelpers'
+import type { FlatExtensionHostAPI } from '../contract'
 
 describe('LanguageFeatures (integration)', () => {
     testLocationProvider<sourcegraph.HoverProvider>({
@@ -25,7 +26,6 @@ describe('LanguageFeatures (integration)', () => {
         }),
         labeledProviderResults: labels => ({
             contents: labels.map(label => ({ value: label, kind: MarkupKind.PlainText })),
-            alerts: [],
             aggregatedBadges: [],
         }),
         providerWithImplementation: run => ({ provideHover: run } as sourcegraph.HoverProvider),
@@ -128,7 +128,7 @@ function testLocationProvider<P>({
     name: keyof typeof sourcegraph.languages
     registerProvider: (
         extensionAPI: typeof sourcegraph
-    ) => (selector: sourcegraph.DocumentSelector, provider: P) => sourcegraph.Unsubscribable
+    ) => (selector: sourcegraph.DocumentSelector, provider: P) => Unsubscribable
     labeledProvider: (label: string) => P
     labeledProviderResults: (labels: string[]) => any
     providerWithImplementation: (

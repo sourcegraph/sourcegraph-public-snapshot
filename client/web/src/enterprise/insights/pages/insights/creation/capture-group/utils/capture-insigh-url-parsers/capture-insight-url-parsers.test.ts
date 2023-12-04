@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { encodeCaptureInsightURL, decodeCaptureInsightURL } from './capture-insight-url-parsers'
 
 describe('decodeCaptureInsightURL', () => {
@@ -11,20 +13,17 @@ describe('decodeCaptureInsightURL', () => {
 describe('encodeSearchInsightUrl', () => {
     test('should encode search insight values in a way that they could be decoded with decodeUrlSearchInsight', () => {
         const encodedSearchInsightParameters = encodeCaptureInsightURL({
-            repositories: 'github.com/sourcegraph/sourcegraph, github.com/example/example',
+            repositories: ['github.com/sourcegraph/sourcegraph', 'github.com/example/example'],
             title: 'Insight title',
-            allRepos: true,
             groupSearchQuery: 'file:go\\.mod$ go\\s*(\\d\\.\\d+) patterntype:regexp',
         })
 
         expect(decodeCaptureInsightURL(encodedSearchInsightParameters)).toStrictEqual({
-            repositories: 'github.com/sourcegraph/sourcegraph, github.com/example/example',
+            repositories: ['github.com/sourcegraph/sourcegraph', 'github.com/example/example'],
+            repoMode: 'urls-list',
+            repoQuery: { query: '' },
             title: 'Insight title',
-            allRepos: true,
             groupSearchQuery: 'file:go\\.mod$ go\\s*(\\d\\.\\d+) patterntype:regexp',
-            step: 'days',
-            stepValue: '8',
-            dashboardReferenceCount: 0,
         })
     })
 })

@@ -2,8 +2,8 @@ import React from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
-import { CommunitySearchContextMetadata } from './types'
+import { CommunitySearchContextPage, type CommunitySearchContextPageProps } from './CommunitySearchContextPage'
+import type { CommunitySearchContextMetadata } from './types'
 
 export const stackStorm: CommunitySearchContextMetadata = {
     title: 'StackStorm',
@@ -13,17 +13,17 @@ export const stackStorm: CommunitySearchContextMetadata = {
     examples: [
         {
             title: 'Passive sensor examples',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'from st2reactor.sensor.base import Sensor',
         },
         {
             title: 'Polling sensor examples',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'from st2reactor.sensor.base import PollingSensor',
         },
         {
             title: 'Trigger examples in rules',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'repo:Exchange trigger: file:.yaml$',
         },
         {
@@ -42,5 +42,5 @@ export const stackStorm: CommunitySearchContextMetadata = {
 }
 
 export const StackStormCommunitySearchContextPage: React.FunctionComponent<
-    Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>
+    React.PropsWithChildren<Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>>
 > = props => <CommunitySearchContextPage {...props} communitySearchContextMetadata={stackStorm} />

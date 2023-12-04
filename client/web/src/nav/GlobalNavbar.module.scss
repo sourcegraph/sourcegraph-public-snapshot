@@ -8,13 +8,35 @@
     border-radius: var(--border-radius);
 }
 
-.sign-up {
-    border: 1px solid transparent;
-    background-color: var(--brand-secondary);
-    color: var(--white);
+.feedback-trigger {
+    border: 1px solid var(--border-color);
+    white-space: normal;
 
     &:hover {
-        background-color: var(--brand-secondary-3);
-        color: var(--white);
+        border: 1px solid var(--header-icon-color);
     }
+}
+
+.fuzzy-finder-item {
+    border-width: 1px;
+    border-color: var(--brand-secondary);
+}
+
+.fuzzy-finder-shortcut {
+    position: relative;
+    right: 2rem;
+}
+
+.search-nav-bar {
+    // It has level 2 because of repo container page elements operate with
+    // first level of z-indexes
+    z-index: 2;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.list {
+    width: 100%;
+    overflow: hidden;
 }

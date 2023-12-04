@@ -1,0 +1,27 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "fastwalk",
+    srcs = [
+        "fastwalk.go",
+        "fastwalk_darwin.go",
+        "fastwalk_dirent_fileno.go",
+        "fastwalk_dirent_ino.go",
+        "fastwalk_dirent_namlen_bsd.go",
+        "fastwalk_dirent_namlen_linux.go",
+        "fastwalk_portable.go",
+        "fastwalk_unix.go",
+    ],
+    cgo = True,
+    importpath = "github.com/sourcegraph/sourcegraph/internal/fastwalk",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/errors"],
+)
+
+go_test(
+    name = "fastwalk_test",
+    timeout = "short",
+    srcs = ["fastwalk_test.go"],
+    deps = [":fastwalk"],
+)

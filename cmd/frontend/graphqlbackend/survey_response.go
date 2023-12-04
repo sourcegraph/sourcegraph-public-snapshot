@@ -7,13 +7,13 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -56,8 +56,12 @@ func (s *surveyResponseResolver) Better() *string {
 	return s.surveyResponse.Better
 }
 
-func (s *surveyResponseResolver) CreatedAt() DateTime {
-	return DateTime{Time: s.surveyResponse.CreatedAt}
+func (s *surveyResponseResolver) OtherUseCase() *string {
+	return s.surveyResponse.OtherUseCase
+}
+
+func (s *surveyResponseResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: s.surveyResponse.CreatedAt}
 }
 
 // SurveySubmissionInput contains a satisfaction (NPS) survey response.
@@ -67,8 +71,8 @@ type SurveySubmissionInput struct {
 	Email *string
 	// Score is the user's likelihood of recommending Sourcegraph to a friend, from 0-10.
 	Score int32
-	// Reason is the answer to "What is the most important reason for the score you gave".
-	Reason *string
+	// OtherUseCase is the answer to "What do you use Sourcegraph for?".
+	OtherUseCase *string
 	// Better is the answer to "What can Sourcegraph do to provide a better product"
 	Better *string
 }
@@ -76,7 +80,7 @@ type SurveySubmissionInput struct {
 type surveySubmissionForHubSpot struct {
 	Email           *string `url:"email"`
 	Score           int32   `url:"nps_score"`
-	Reason          *string `url:"nps_reason"`
+	OtherUseCase    *string `url:"nps_other_use_case"`
 	Better          *string `url:"nps_improvement"`
 	IsAuthenticated bool    `url:"user_is_authenticated"`
 	SiteID          string  `url:"site_id"`
@@ -90,11 +94,15 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	var uid *int32
 	email := input.Email
 
+	if args.Input.Score < 0 || args.Input.Score > 10 {
+		return nil, errors.New("Score must be a value between 0 and 10")
+	}
+
 	// If user is authenticated, use their uid and overwrite the optional email field.
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	if actor.IsAuthenticated() {
 		uid = &actor.UID
-		e, _, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, actor.UID)
+		e, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, actor.UID)
 		if err != nil && !errcode.IsNotFound(err) {
 			return nil, err
 		}
@@ -103,7 +111,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 		}
 	}
 
-	_, err := database.SurveyResponses(r.db).Create(ctx, uid, email, int(input.Score), input.Reason, input.Better)
+	_, err := database.SurveyResponses(r.db).Create(ctx, uid, email, int(input.Score), input.OtherUseCase, input.Better)
 	if err != nil {
 		return nil, err
 	}
@@ -112,10 +120,10 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	if err := hubspotutil.Client().SubmitForm(hubspotutil.SurveyFormID, &surveySubmissionForHubSpot{
 		Email:           email,
 		Score:           args.Input.Score,
-		Reason:          args.Input.Reason,
+		OtherUseCase:    args.Input.OtherUseCase,
 		Better:          args.Input.Better,
 		IsAuthenticated: actor.IsAuthenticated(),
-		SiteID:          siteid.Get(),
+		SiteID:          siteid.Get(r.db),
 	}); err != nil {
 		// Log an error, but don't return one if the only failure was in submitting survey results to HubSpot.
 		log15.Error("Unable to submit survey results to Sourcegraph remote", "error", err)
@@ -124,11 +132,11 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-// FeedbackSubmissionInput contains a happiness feedback response.
+// HappinessFeedbackSubmissionInput contains a happiness feedback response.
 type HappinessFeedbackSubmissionInput struct {
 	// Score is the user's happiness rating, from 1-4.
 	Score int32
-	// Feedback is the answer to "What's going well? What could be better?".
+	// Feedback is the feedback text from the user.
 	Feedback *string
 	// The path that the happiness feedback was submitted from
 	CurrentPath *string
@@ -136,7 +144,7 @@ type HappinessFeedbackSubmissionInput struct {
 
 type happinessFeedbackSubmissionForHubSpot struct {
 	Email       *string `url:"email"`
-	Score       int32   `url:"happiness_score"`
+	Username    *string `url:"happiness_username"`
 	Feedback    *string `url:"happiness_feedback"`
 	CurrentPath *string `url:"happiness_current_url"`
 	IsTest      bool    `url:"happiness_is_test"`
@@ -147,37 +155,33 @@ type happinessFeedbackSubmissionForHubSpot struct {
 func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *struct {
 	Input *HappinessFeedbackSubmissionInput
 }) (*EmptyResponse, error) {
-	var email *string
-
-	if args.Input.Score < 1 || args.Input.Score > 4 {
-		return nil, errors.New("Score must be a value between 1 and 4")
+	data := happinessFeedbackSubmissionForHubSpot{
+		Feedback:    args.Input.Feedback,
+		CurrentPath: args.Input.CurrentPath,
+		IsTest:      env.InsecureDev,
+		SiteID:      siteid.Get(r.db),
 	}
 
-	// If we are on Sourcegraph.com, we want to capture the email of the user
-	if envvar.SourcegraphDotComMode() {
-		actor := actor.FromContext(ctx)
+	// We include the username and email address of the user (if signed in). For signed-in users,
+	// the UI indicates that the username and email address will be sent to Sourcegraph.
+	if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
+		currentUser, err := r.db.Users().GetByID(ctx, actor.UID)
+		if err != nil {
+			return nil, err
+		}
+		data.Username = &currentUser.Username
 
-		// If user is authenticated, use their uid and set the email field.
-		if actor.IsAuthenticated() {
-			e, _, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, actor.UID)
-			if err != nil && !errcode.IsNotFound(err) {
-				return nil, err
-			}
-			if e != "" {
-				email = &e
-			}
+		email, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, actor.UID)
+		if err != nil && !errcode.IsNotFound(err) {
+			return nil, err
+		}
+		if email != "" {
+			data.Email = &email
 		}
 	}
 
 	// Submit form to HubSpot
-	if err := hubspotutil.Client().SubmitForm(hubspotutil.HappinessFeedbackFormID, &happinessFeedbackSubmissionForHubSpot{
-		Email:       email,
-		Score:       args.Input.Score,
-		Feedback:    args.Input.Feedback,
-		CurrentPath: args.Input.CurrentPath,
-		IsTest:      env.InsecureDev,
-		SiteID:      siteid.Get(),
-	}); err != nil {
+	if err := hubspotutil.Client().SubmitForm(hubspotutil.HappinessFeedbackFormID, &data); err != nil {
 		// Log an error, but don't return one if the only failure was in submitting feedback results to HubSpot.
 		log15.Error("Unable to submit happiness feedback results to Sourcegraph remote", "error", err)
 	}

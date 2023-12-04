@@ -1,36 +1,141 @@
 /** Component exports */
-export { Button, ButtonGroup } from './Button'
-export type { ButtonGroupProps } from './Button'
+export { BeforeUnloadPrompt } from './BeforeUnloadPrompt'
+export { Button, ButtonGroup, BUTTON_SIZES } from './Button'
+export { Breadcrumbs } from './Breadcrumbs'
 export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
-export { Checkbox, FlexTextArea, Input, RadioButton, Select, TextArea } from './Form'
+export { ErrorAlert } from './ErrorAlert'
+export { ErrorMessage, renderError } from './ErrorMessage'
+export {
+    LineChart,
+    BarChart,
+    PieChart,
+    StackedMeter,
+    LegendList,
+    LegendItem,
+    LegendItemPoint,
+    ScrollBox,
+    ParentSize,
+} from './Charts'
+export {
+    Form,
+    FormGroup,
+    useForm,
+    useField,
+    useCheckboxes,
+    useControlledField,
+    getDefaultInputProps,
+    getDefaultInputError,
+    getDefaultInputStatus,
+    composeValidators,
+    createRequiredValidator,
+    FORM_ERROR,
+    Input,
+    LoaderInput,
+    InputStatus,
+    InputElement,
+    InputDescription,
+    InputErrorMessage,
+    getInputStatus,
+    Select,
+    Checkbox,
+    RadioButton,
+    TextArea,
+    FlexTextArea,
+} from './Form'
 export { Grid } from './Grid'
 export { LoadingSpinner } from './LoadingSpinner'
 export { PageHeader } from './PageHeader'
 export { PageSelector } from './PageSelector'
+export { PageSwitcher } from './PageSwitcher'
 export { Tabs, Tab, TabList, TabPanel, TabPanels, useTabsContext } from './Tabs'
 export { SourcegraphIcon } from './SourcegraphIcon'
-export { Badge, ProductStatusBadge } from './Badge'
+export { Badge, ProductStatusBadge, BADGE_VARIANTS, PRODUCT_STATUSES } from './Badge'
 export { Panel } from './Panel'
-export { Tooltip, TooltipController } from './Tooltip'
+export { Tooltip, TooltipOpenChangeReason } from './Tooltip'
+export { Tree, flattenTree } from './Tree'
 export { Card, CardBody, CardHeader, CardList, CardSubtitle, CardText, CardTitle, CardFooter } from './Card'
 export { Icon } from './Icon'
 export { ButtonLink } from './ButtonLink'
-export { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink, MenuList } from './Menu'
-export { Code, H1, H2, H3, H4, H5, H6, Label, Text } from './Typography'
-export * as Typography from './Typography'
-export { AnchorLink, RouterLink, setLinkComponent, Link } from './Link'
+export { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink, MenuList, MenuText } from './Menu'
+export { NavMenu } from './NavMenu'
+export { Text, Code, Heading, Label, H1, H2, H3, H4, H5, H6 } from './Typography'
+export { AnchorLink, RouterLink, setLinkComponent, Link, LinkOrSpan, createLinkUrl } from './Link'
+export { Markdown } from './Markdown'
 export { Modal } from './Modal'
-export { FeedbackBadge, FeedbackText } from './Feedback'
-export { Popover, PopoverTrigger, PopoverContent, Position, PopoverOpenEventReason } from './Popover'
+export { FeedbackBadge, FeedbackText, FeedbackPrompt } from './Feedback'
+export {
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    Position,
+    PopoverTail,
+    PopoverRoot,
+    PopoverOpenEventReason,
+    EMPTY_RECTANGLE,
+    createRectangle,
+    usePopoverContext,
+    Flipping,
+    Strategy,
+    Overlapping,
+} from './Popover'
+export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
+export {
+    Combobox,
+    ComboboxInput,
+    ComboboxPopover,
+    ComboboxList,
+    ComboboxOptionGroup,
+    ComboboxOption,
+    ComboboxOptionText,
+    MultiCombobox,
+    MultiComboboxInput,
+    MultiComboboxPopover,
+    MultiComboboxList,
+    MultiComboboxEmptyList,
+    MultiComboboxOptionGroup,
+    MultiComboboxOption,
+    MultiComboboxOptionText,
+} from './Combobox'
 
 /**
  * Type Exports
- * `export type` is required to avoid Webpack warnings.
  */
+export type { ButtonGroupProps } from './Button'
+export type { FeedbackPromptSubmitEventHandler } from './Feedback'
 export type { AlertProps, AlertLinkProps } from './Alert'
 export type { ButtonProps } from './Button'
 export type { ButtonLinkProps } from './ButtonLink'
+export type { SelectProps, InputProps } from './Form'
+export type { Series, SeriesLikeChart, CategoricalLikeChart, LineChartProps, BarChartProps } from './Charts'
 export type { LinkProps } from './Link'
-export type { PopoverOpenEvent } from './Popover'
-export type { TabsProps } from './Tabs'
+export type { PopoverOpenEvent, Rectangle, TetherInstanceAPI } from './Popover'
+export type { MenuLinkProps, MenuItemProps } from './Menu'
+export type { TabsProps, TabListProps, TabProps, TabPanelProps, TabPanelsProps } from './Tabs'
+export type { IconProps, IconType } from './Icon'
+export type { Point } from './Popover'
+export type { TreeNode, TreeProps, TreeRef } from './Tree'
+export type { TooltipProps, TooltipOpenEvent } from './Tooltip'
+export type { HeadingProps, HeadingElement } from './Typography'
+export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
+export type { ModalProps } from './Modal'
+export type { MultiComboboxProps } from './Combobox'
+export type { RadioButtonProps } from './Form/RadioButton'
+export type {
+    useFieldAPI,
+    FormInstance,
+    FormAPI,
+    FormChangeEvent,
+    SubmissionErrors,
+    SubmissionResult,
+    Validator,
+    AsyncValidator,
+    ValidationResult,
+} from './Form/Form'
+
+/**
+ * Class name helpers to be used with plain DOM nodes.
+ * NOTE: Prefer using the React components is possible.
+ */
+export { getButtonClassName } from './Button/utils'
+export { getLabelClassName } from './Typography/Label/utils'

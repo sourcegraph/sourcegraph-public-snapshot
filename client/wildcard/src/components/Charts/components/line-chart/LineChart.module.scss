@@ -1,0 +1,6 @@
+.root {
+    &:focus,
+    &:focus-within {
+        box-shadow: var(--focus-box-shadow);
+    }
+}

@@ -44,7 +44,7 @@ func TestGetDSN(t *testing.T) {
 			for k, v := range tc.Env {
 				t.Setenv(k, v)
 			}
-			u, err := getDSN()
+			u, err := GetDSN()
 			if err != nil {
 				t.Fatal(err)
 			}

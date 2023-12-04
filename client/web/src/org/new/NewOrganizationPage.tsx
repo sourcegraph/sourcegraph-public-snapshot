@@ -1,10 +1,9 @@
-import * as H from 'history'
 import React, { useCallback, useEffect, useState } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
+import { useNavigate } from 'react-router-dom'
+
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, Container, PageHeader, LoadingSpinner, Link } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 import { Page } from '../../components/Page'
@@ -12,13 +11,12 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createOrganization } from '../backend'
 
-import styles from './NewOrgPage.module.scss'
+import styles from './NewOrganizationPage.module.scss'
 
-interface Props {
-    history: H.History
-}
+interface Props {}
 
-export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history }) => {
+export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
+    const navigate = useNavigate()
     useEffect(() => {
         eventLogger.logViewEvent('NewOrg')
     }, [])
@@ -27,7 +25,7 @@ export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history })
     const [displayName, setDisplayName] = useState<string>('')
 
     const onNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        const hyphenatedName = event.currentTarget.value.replace(/\s/g, '-')
+        const hyphenatedName = event.currentTarget.value.replaceAll(/\s/g, '-')
         setName(hyphenatedName)
     }
 
@@ -46,12 +44,12 @@ export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history })
             try {
                 const org = await createOrganization({ name, displayName })
                 setLoading(false)
-                history.push(org.settingsURL!)
+                navigate(org.settingsURL!)
             } catch (error) {
                 setLoading(asError(error))
             }
         },
-        [displayName, history, name]
+        [displayName, navigate, name]
     )
 
     return (
@@ -71,43 +69,37 @@ export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history })
             <Form className="settings-form" onSubmit={onSubmit}>
                 <Container className="mb-3">
                     {isErrorLike(loading) && <ErrorAlert className="mb-3" error={loading} />}
-                    <div className="form-group">
-                        <label htmlFor="new-org-page__form-name">Organization name</label>
-                        <input
-                            id="new-org-page__form-name"
-                            type="text"
-                            className="form-control test-new-org-name-input"
-                            placeholder="acme-corp"
-                            pattern={VALID_ORG_NAME_REGEXP}
-                            maxLength={ORG_NAME_MAX_LENGTH}
-                            required={true}
-                            autoCorrect="off"
-                            autoComplete="off"
-                            autoFocus={true}
-                            value={name}
-                            onChange={onNameChange}
-                            disabled={loading === true}
-                            aria-describedby="new-org-page__form-name-help"
-                        />
-                        <small id="new-org-page__form-name-help" className="form-text text-muted">
-                            An organization name consists of letters, numbers, hyphens (-), dots (.) and may not begin
-                            or end with a dot, nor begin with a hyphen.
-                        </small>
-                    </div>
+                    <Input
+                        id="new-org-page__form-name"
+                        data-testid="test-new-org-name-input"
+                        placeholder="acme-corp"
+                        pattern={VALID_ORG_NAME_REGEXP}
+                        maxLength={ORG_NAME_MAX_LENGTH}
+                        required={true}
+                        autoCorrect="off"
+                        autoComplete="off"
+                        autoFocus={true}
+                        value={name}
+                        onChange={onNameChange}
+                        disabled={loading === true}
+                        aria-describedby="new-org-page__form-name-help"
+                        label="Organization name"
+                        message="An organization name consists of letters, numbers, hyphens (-), dots (.) and may not begin
+                            or end with a dot, nor begin with a hyphen."
+                        className="form-group"
+                    />
 
-                    <div className="form-group mb-0">
-                        <label htmlFor="new-org-page__form-display-name">Display name</label>
-                        <input
-                            id="new-org-page__form-display-name"
-                            type="text"
-                            className="form-control test-new-org-display-name-input"
-                            placeholder="ACME Corporation"
-                            autoCorrect="off"
-                            value={displayName}
-                            onChange={onDisplayNameChange}
-                            disabled={loading === true}
-                        />
-                    </div>
+                    <Input
+                        id="new-org-page__form-display-name"
+                        data-testid="test-new-org-display-name-input"
+                        placeholder="ACME Corporation"
+                        autoCorrect="off"
+                        value={displayName}
+                        onChange={onDisplayNameChange}
+                        disabled={loading === true}
+                        label="Display name"
+                        className="mb-0"
+                    />
                 </Container>
 
                 <Button

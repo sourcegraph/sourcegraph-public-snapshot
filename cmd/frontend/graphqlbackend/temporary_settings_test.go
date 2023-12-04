@@ -8,7 +8,7 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -16,8 +16,8 @@ import (
 func TestTemporarySettingsNotSignedIn(t *testing.T) {
 	t.Parallel()
 
-	db := database.NewMockDB()
-	tss := database.NewMockTemporarySettingsStore()
+	db := dbmocks.NewMockDB()
+	tss := dbmocks.NewMockTemporarySettingsStore()
 	db.TemporarySettingsFunc.SetDefaultReturn(tss)
 
 	wantErr := errors.New("not authenticated")
@@ -37,7 +37,7 @@ func TestTemporarySettingsNotSignedIn(t *testing.T) {
 			ExpectedResult: "null",
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []interface{}{"temporarySettings"},
+					Path:          []any{"temporarySettings"},
 					Message:       wantErr.Error(),
 					ResolverError: wantErr,
 				},
@@ -51,14 +51,14 @@ func TestTemporarySettingsNotSignedIn(t *testing.T) {
 func TestTemporarySettings(t *testing.T) {
 	t.Parallel()
 
-	tss := database.NewMockTemporarySettingsStore()
+	tss := dbmocks.NewMockTemporarySettingsStore()
 	tss.GetTemporarySettingsFunc.SetDefaultHook(func(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
 		if userID != 1 {
 			t.Fatalf("should call GetTemporarySettings with userID=1, got=%d", userID)
 		}
 		return &ts.TemporarySettings{Contents: "{\"search.collapsedSidebarSections\": {\"types\": false}}"}, nil
 	})
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.TemporarySettingsFunc.SetDefaultReturn(tss)
 
 	RunTests(t, []*Test{
@@ -88,8 +88,8 @@ func TestTemporarySettings(t *testing.T) {
 func TestOverwriteTemporarySettingsNotSignedIn(t *testing.T) {
 	t.Parallel()
 
-	db := database.NewMockDB()
-	tss := database.NewMockTemporarySettingsStore()
+	db := dbmocks.NewMockDB()
+	tss := dbmocks.NewMockTemporarySettingsStore()
 	db.TemporarySettingsFunc.SetDefaultReturn(tss)
 
 	wantErr := errors.New("not authenticated")
@@ -111,7 +111,7 @@ func TestOverwriteTemporarySettingsNotSignedIn(t *testing.T) {
 			ExpectedResult: "null",
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []interface{}{"overwriteTemporarySettings"},
+					Path:          []any{"overwriteTemporarySettings"},
 					Message:       wantErr.Error(),
 					ResolverError: wantErr,
 				},
@@ -125,8 +125,8 @@ func TestOverwriteTemporarySettingsNotSignedIn(t *testing.T) {
 func TestOverwriteTemporarySettings(t *testing.T) {
 	t.Parallel()
 
-	db := database.NewMockDB()
-	tss := database.NewMockTemporarySettingsStore()
+	db := dbmocks.NewMockDB()
+	tss := dbmocks.NewMockTemporarySettingsStore()
 	tss.OverwriteTemporarySettingsFunc.SetDefaultHook(func(ctx context.Context, userID int32, contents string) error {
 		if userID != 1 {
 			t.Fatalf("should call OverwriteTemporarySettings with userID=1, got=%d", userID)
@@ -158,8 +158,8 @@ func TestOverwriteTemporarySettings(t *testing.T) {
 func TestEditTemporarySettings(t *testing.T) {
 	t.Parallel()
 
-	db := database.NewMockDB()
-	tss := database.NewMockTemporarySettingsStore()
+	db := dbmocks.NewMockDB()
+	tss := dbmocks.NewMockTemporarySettingsStore()
 	tss.EditTemporarySettingsFunc.SetDefaultHook(func(ctx context.Context, userID int32, settingsToEdit string) error {
 		if userID != 1 {
 			t.Fatalf("should call OverwriteTemporarySettings with userID=1, got=%d", userID)

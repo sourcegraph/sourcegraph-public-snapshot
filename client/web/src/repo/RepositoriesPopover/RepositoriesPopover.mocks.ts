@@ -1,8 +1,8 @@
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
-import { RepositoriesForPopoverResult, RepositoryPopoverFields } from '../../graphql-operations'
+import type { RepositoriesForPopoverResult, RepositoryPopoverFields } from '../../graphql-operations'
 
 import { REPOSITORIES_FOR_POPOVER, BATCH_COUNT } from './RepositoriesPopover'
 

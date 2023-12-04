@@ -29,10 +29,39 @@ read/written please use atomic filesystem patterns. This usually involves
 heavy use of `os.Rename`. Search for existing uses of `os.Rename` to see
 examples.
 
-#### Scaling
+## Scaling
 
 gitserver's memory usage consists of short lived git subprocesses.
 
 This is an IO and compute heavy service since most Sourcegraph requests will trigger 1 or more git commands. As such we shard requests for a repo to a specific replica. This allows us to horizontally scale out the service.
 
 The service is stateful (maintaining git clones). However, it only contains data mirrored from upstream code hosts.
+
+## Perforce depots
+
+Syncing of Perforce depots is accomplished by either `p4-fusion` or `git p4` (deprecated), both of which clone Perforce depots into Git repositories in `gitserver`.
+
+### p4-fusion in development
+
+To use `p4-fusion` while developing Sourcegraph, there are a couple of options.
+
+#### Docker
+
+[Run `gitserver` in a Docker container](https://docs.sourcegraph.com/dev/background-information/sg#run-gitserver-in-a-docker-container). This is the option that gives an experience closest to a deployed Sourcegraph instance, and will work for any platform/OS on which you're developing (running `sg start`).
+
+#### Native binary executable
+
+The `p4-fusion` native binary has been built on Linux and macOS, but is untested on Windows.
+
+Read the [comprehensive instructions](https://docs.sourcegraph.com/dev/background-information/build_p4_fusion).
+
+If you do go the native binary route, you may also want to enable using the wrapper shell script that detects when the process has been killed and outputs an error so that the calling process can handle it.
+
+That wrapper shell script is `p4-fusion-wrapper-detect-kill.sh`, and in order to use it:
+
+1. Rename the `p4-fusion` binary executable to `p4-fusion-binary` and move it to a location in the `PATH`.
+1. Copy the shell script `p4-fusion-wrapper-detect-kill.sh` to a location in the `PATH`, renaming it `p4-fusion`.
+1. Copy the shell script `process-stats-watcher.sh` to a location in the `PATH`.
+1. Ensure all three of those are executable.
+
+After those steps, when a native `gitserver` process runs `p4-fusion`, it will run the wrapper shell script, which will itself run the `p4-fusion-binary` executable, and the `process-stats-watcher.sh` executable.

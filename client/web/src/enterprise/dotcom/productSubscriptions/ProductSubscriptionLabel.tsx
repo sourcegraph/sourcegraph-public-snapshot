@@ -1,33 +1,20 @@
 import React from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
-
+import type { ProductSubscriptionFields, SiteAdminProductSubscriptionFields } from '../../../graphql-operations'
 import { formatUserCount } from '../../../productSubscription/helpers'
 
 /**
  * Displays a text label with the product name (e.g., "Sourcegraph Enterprise") and user count for the
  * subscription.
  */
-export const ProductSubscriptionLabel: React.FunctionComponent<{
-    productSubscription: {
-        invoiceItem?:
-            | ({
-                  plan: Pick<GQL.IProductPlan, 'name' | 'nameWithBrand'>
-              } & Pick<GQL.IProductSubscriptionInvoiceItem, 'userCount'>)
-            | null
-    } & Pick<GQL.IProductSubscription, 'activeLicense'>
-
-    planField?: 'name' | 'nameWithBrand'
-
-    className?: string
-}> = ({ productSubscription, planField, className = '' }) => (
+export const ProductSubscriptionLabel: React.FunctionComponent<
+    React.PropsWithChildren<{
+        productSubscription: ProductSubscriptionFields | SiteAdminProductSubscriptionFields
+        className?: string
+    }>
+> = ({ productSubscription, className = '' }) => (
     <span className={className}>
-        {productSubscription.invoiceItem ? (
-            <>
-                {productSubscription.invoiceItem.plan[planField || 'nameWithBrand']} (
-                {formatUserCount(productSubscription.invoiceItem.userCount)})
-            </>
-        ) : productSubscription.activeLicense?.info ? (
+        {productSubscription.activeLicense?.info ? (
             <>
                 {productSubscription.activeLicense.info.productNameWithBrand} (
                 {formatUserCount(productSubscription.activeLicense.info.userCount)})

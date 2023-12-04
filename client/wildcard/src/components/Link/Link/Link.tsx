@@ -1,6 +1,6 @@
-import * as H from 'history'
 import React from 'react'
 
+import type { ForwardReferenceExoticComponent } from '../../../types'
 import { AnchorLink } from '../AnchorLink'
 
 export interface LinkProps
@@ -8,9 +8,11 @@ export interface LinkProps
         React.AnchorHTMLAttributes<HTMLAnchorElement>,
         Exclude<keyof React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>
     > {
-    to: string | H.LocationDescriptor<any>
+    to: string
     ref?: React.Ref<HTMLAnchorElement>
 }
+
+export interface Link extends ForwardReferenceExoticComponent<'a', LinkProps> {}
 
 /**
  * The component used to render a link. All shared code must use this component for links—not <a>, <Link>, etc.
@@ -31,7 +33,7 @@ export interface LinkProps
  *
  * @see setLinkComponent
  */
-export let Link: typeof AnchorLink
+export let Link: Link
 
 if (process.env.NODE_ENV !== 'production') {
     // Fail with helpful message if setLinkComponent has not been called when the <Link> component is used.
@@ -41,11 +43,18 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 /**
+ * Set link component for tests.
+ */
+if (globalThis.process !== undefined && process.env.VITEST_WORKER_ID !== undefined) {
+    setLinkComponent(AnchorLink)
+}
+
+/**
  * Sets (globally) the component to use for links. This must be set at initialization time.
  *
  * @see Link
  * @see AnchorLink
  */
-export function setLinkComponent(component: typeof Link): void {
+export function setLinkComponent(component: Link): void {
     Link = component
 }

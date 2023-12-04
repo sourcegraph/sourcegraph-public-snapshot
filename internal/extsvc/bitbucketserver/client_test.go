@@ -10,6 +10,8 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"reflect"
@@ -21,9 +23,12 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -68,6 +73,31 @@ func TestParseQueryStrings(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestClientKeepsBaseURLPath(t *testing.T) {
+	ctx := context.Background()
+
+	succeeded := false
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, "/testpath") {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		succeeded = true
+	}))
+	defer srv.Close()
+
+	srvURL, err := url.JoinPath(srv.URL, "/testpath")
+	require.NoError(t, err)
+	bbConf := &schema.BitbucketServerConnection{Url: srvURL}
+	client, err := NewClient("test", bbConf, httpcli.TestExternalDoer)
+	require.NoError(t, err)
+	client.rateLimit = ratelimit.NewInstrumentedLimiter("bitbucket", rate.NewLimiter(100, 10))
+
+	_, _ = client.AuthenticatedUsername(ctx)
+	assert.Equal(t, true, succeeded)
 }
 
 func TestUserFilters(t *testing.T) {
@@ -132,8 +162,7 @@ func TestUserFilters(t *testing.T) {
 }
 
 func TestClient_Users(t *testing.T) {
-	cli, save := NewTestClient(t, "Users", *update)
-	defer save()
+	cli := NewTestClient(t, "Users", *update)
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer cancel()
@@ -309,8 +338,7 @@ func TestClient_Users(t *testing.T) {
 }
 
 func TestClient_LabeledRepos(t *testing.T) {
-	cli, save := NewTestClient(t, "LabeledRepos", *update)
-	defer save()
+	cli := NewTestClient(t, "LabeledRepos", *update)
 
 	// We have archived label on bitbucket.sgdev.org with a repo in it.
 	repos, _, err := cli.LabeledRepos(context.Background(), nil, "archived")
@@ -396,8 +424,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			name := "PullRequests-" + strings.ReplaceAll(tc.name, " ", "-")
-			cli, save := NewTestClient(t, name, *update)
-			defer save()
+			cli := NewTestClient(t, name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -540,9 +567,7 @@ func TestClient_CreatePullRequest(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			name := "CreatePullRequest-" + strings.ReplaceAll(tc.name, " ", "-")
-
-			cli, save := NewTestClient(t, name, *update)
-			defer save()
+			cli := NewTestClient(t, name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -685,9 +710,7 @@ func TestClient_FetchDefaultReviewers(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			name := "FetchDefaultReviewers-" + strings.ReplaceAll(tc.name, " ", "-")
-
-			cli, save := NewTestClient(t, name, *update)
-			defer save()
+			cli := NewTestClient(t, name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -769,9 +792,7 @@ func TestClient_DeclinePullRequest(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			name := "DeclinePullRequest-" + strings.ReplaceAll(tc.name, " ", "-")
-
-			cli, save := NewTestClient(t, name, *update)
-			defer save()
+			cli := NewTestClient(t, name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -803,8 +824,7 @@ func TestClient_LoadPullRequestActivities(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	cli, save := NewTestClient(t, "PullRequestActivities", *update)
-	defer save()
+	cli := NewTestClient(t, "PullRequestActivities", *update)
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer cancel()
@@ -926,9 +946,7 @@ func TestClient_CreatePullRequestComment(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			name := "CreatePullRequestComment-" + strings.ReplaceAll(tc.name, " ", "-")
-
-			cli, save := NewTestClient(t, name, *update)
-			defer save()
+			cli := NewTestClient(t, name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -1015,8 +1033,7 @@ func TestClient_MergePullRequest(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			name := "MergePullRequest-" + strings.ReplaceAll(tc.name, " ", "-")
 
-			cli, save := NewTestClient(t, name, *update)
-			defer save()
+			cli := NewTestClient(t, name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -1047,8 +1064,7 @@ func TestClient_MergePullRequest(t *testing.T) {
 // dependent on the user token supplied. The current golden files are generated
 // from using the account zoom@sourcegraph.com on bitbucket.sgdev.org.
 func TestClient_RepoIDs(t *testing.T) {
-	cli, save := NewTestClient(t, "RepoIDs", *update)
-	defer save()
+	cli := NewTestClient(t, "RepoIDs", *update)
 
 	ids, err := cli.RepoIDs(context.Background(), "READ")
 	if err != nil {
@@ -1058,7 +1074,7 @@ func TestClient_RepoIDs(t *testing.T) {
 	checkGolden(t, "RepoIDs", ids)
 }
 
-func checkGolden(t *testing.T, name string, got interface{}) {
+func checkGolden(t *testing.T, name string, got any) {
 	t.Helper()
 
 	data, err := json.MarshalIndent(got, " ", " ")
@@ -1090,7 +1106,7 @@ func TestAuth(t *testing.T) {
 		// Ensure that the different configuration types create the right
 		// implicit Authenticator.
 		t.Run("bearer token", func(t *testing.T) {
-			client, err := NewClient(&schema.BitbucketServerConnection{
+			client, err := NewClient("urn", &schema.BitbucketServerConnection{
 				Url:   "http://example.com/",
 				Token: "foo",
 			}, nil)
@@ -1107,7 +1123,7 @@ func TestAuth(t *testing.T) {
 		})
 
 		t.Run("basic auth", func(t *testing.T) {
-			client, err := NewClient(&schema.BitbucketServerConnection{
+			client, err := NewClient("urn", &schema.BitbucketServerConnection{
 				Url:      "http://example.com/",
 				Username: "foo",
 				Password: "bar",
@@ -1125,7 +1141,7 @@ func TestAuth(t *testing.T) {
 		})
 
 		t.Run("OAuth 1 error", func(t *testing.T) {
-			if _, err := NewClient(&schema.BitbucketServerConnection{
+			if _, err := NewClient("urn", &schema.BitbucketServerConnection{
 				Url: "http://example.com/",
 				Authorization: &schema.BitbucketServerAuthorization{
 					Oauth: schema.BitbucketServerOAuth{
@@ -1150,7 +1166,7 @@ func TestAuth(t *testing.T) {
 			pemKey := pem.EncodeToMemory(&pem.Block{Bytes: block})
 			signingKey := base64.StdEncoding.EncodeToString(pemKey)
 
-			client, err := NewClient(&schema.BitbucketServerConnection{
+			client, err := NewClient("urn", &schema.BitbucketServerConnection{
 				Url: "http://example.com/",
 				Authorization: &schema.BitbucketServerAuthorization{
 					Oauth: schema.BitbucketServerOAuth{
@@ -1168,7 +1184,7 @@ func TestAuth(t *testing.T) {
 			} else if have.Client.Client.Credentials.Token != "foo" {
 				t.Errorf("unexpected token: have=%q want=%q", have.Client.Client.Credentials.Token, "foo")
 			} else if !key.Equal(have.Client.Client.PrivateKey) {
-				t.Errorf("unexpected key: have=%q want=%q", have.Client.Client.PrivateKey, key)
+				t.Errorf("unexpected key: have=%v want=%v", have.Client.Client.PrivateKey, key)
 			}
 		})
 	})
@@ -1229,7 +1245,7 @@ func TestClient_WithAuthenticator(t *testing.T) {
 
 	old := &Client{
 		URL:       uri,
-		RateLimit: rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst),
+		rateLimit: &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(10, 10)},
 		Auth:      &auth.BasicAuth{Username: "johnsson", Password: "mothersmaidenname"},
 	}
 
@@ -1240,22 +1256,21 @@ func TestClient_WithAuthenticator(t *testing.T) {
 	}
 
 	if newClient.Auth != newToken {
-		t.Fatalf("auth: want %q but got %q", newToken, newClient.Auth)
+		t.Fatalf("auth: want %p but got %p", newToken, newClient.Auth)
 	}
 
 	if newClient.URL != old.URL {
 		t.Fatalf("url: want %q but got %q", old.URL, newClient.URL)
 	}
 
-	if newClient.RateLimit != old.RateLimit {
-		t.Fatalf("RateLimit: want %#v but got %#v", old.RateLimit, newClient.RateLimit)
+	if newClient.rateLimit != old.rateLimit {
+		t.Fatalf("RateLimit: want %#v but got %#v", old.rateLimit, newClient.rateLimit)
 	}
 }
 
 func TestClient_GetVersion(t *testing.T) {
 	fixture := "GetVersion"
-	cli, save := NewTestClient(t, fixture, *update)
-	defer save()
+	cli := NewTestClient(t, fixture, *update)
 
 	have, err := cli.GetVersion(context.Background())
 	if err != nil {
@@ -1271,8 +1286,7 @@ func TestClient_CreateFork(t *testing.T) {
 	ctx := context.Background()
 
 	fixture := "CreateFork"
-	cli, save := NewTestClient(t, fixture, *update)
-	defer save()
+	cli := NewTestClient(t, fixture, *update)
 
 	have, err := cli.Fork(ctx, "SGDEMO", "go", CreateForkInput{})
 	assert.Nil(t, err)
@@ -1281,6 +1295,23 @@ func TestClient_CreateFork(t *testing.T) {
 	assert.NotEqual(t, "SGDEMO", have.Project.Key)
 
 	checkGolden(t, fixture, have)
+}
+
+func TestClient_ProjectRepos(t *testing.T) {
+	cli := NewTestClient(t, "ProjectRepos", *update)
+
+	// Empty project key should cause an error
+	_, err := cli.ProjectRepos(context.Background(), "")
+	if err == nil {
+		t.Fatal("Empty projectKey should cause an error", err)
+	}
+
+	repos, err := cli.ProjectRepos(context.Background(), "SGDEMO")
+	if err != nil {
+		t.Fatal("Error during getting SGDEMO project repos", err)
+	}
+
+	checkGolden(t, "ProjectRepos", repos)
 }
 
 func TestMain(m *testing.M) {

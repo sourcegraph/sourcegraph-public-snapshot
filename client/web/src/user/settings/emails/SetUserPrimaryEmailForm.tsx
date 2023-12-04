@@ -1,20 +1,27 @@
-import classNames from 'classnames'
-import React, { useState, FunctionComponent, useCallback } from 'react'
+import React, { useState, type FunctionComponent, useCallback } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import classNames from 'classnames'
+
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { Select, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { LoaderButton } from '../../../components/LoaderButton'
-import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables, UserEmailsResult } from '../../../graphql-operations'
+import type {
+    SetUserEmailPrimaryResult,
+    SetUserEmailPrimaryVariables,
+    UserEmailsResult,
+    UserSettingsAreaUserFields,
+} from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+
+import styles from './SetUserPrimaryEmailForm.module.scss'
 
 type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
 
 interface Props {
-    user: string
+    user: Pick<UserSettingsAreaUserFields, 'id' | 'scimControlled'>
     emails: UserEmail[]
     onDidSet: () => void
 
@@ -25,8 +32,14 @@ type Status = undefined | 'loading' | ErrorLike
 
 const findPrimaryEmail = (emails: UserEmail[]): string | undefined => emails.find(email => email.isPrimary)?.email
 
-export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails, onDidSet, className }) => {
-    const [primaryEmail, setPrimaryEmail] = useState<string | undefined>(findPrimaryEmail(emails))
+export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<Props>> = ({
+    user,
+    emails,
+    onDidSet,
+    className,
+}) => {
+    const currentPrimaryEmail = findPrimaryEmail(emails)
+    const [primaryEmail, setPrimaryEmail] = useState<string | undefined>(currentPrimaryEmail)
     const [statusOrError, setStatusOrError] = useState<Status>()
 
     // options should include all verified emails + a primary one
@@ -53,7 +66,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
                                 }
                             }
                         `,
-                        { user, email: primaryEmail }
+                        { user: user.id, email: primaryEmail }
                     ).toPromise()
                 )
 
@@ -72,29 +85,50 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
 
     return (
         <div className={classNames('add-user-email-form', className)}>
-            <label htmlFor="setUserPrimaryEmailForm-email">Primary email address</label>
-            <Form className="form-inline" onSubmit={onSubmit}>
-                <select
-                    id="setUserPrimaryEmailForm-email"
-                    className="custom-select form-control-lg mr-sm-2"
-                    value={primaryEmail}
-                    onChange={onPrimaryEmailSelect}
-                    required={true}
-                    disabled={options.length === 1 || statusOrError === 'loading'}
-                >
-                    {options.map(email => (
-                        <option key={email} value={email}>
-                            {email}
-                        </option>
-                    ))}
-                </select>
-                <LoaderButton
-                    loading={statusOrError === 'loading'}
-                    label="Save"
-                    type="submit"
-                    disabled={options.length === 1 || statusOrError === 'loading'}
-                    variant="primary"
-                />
+            <Form onSubmit={onSubmit}>
+                <div className={styles.formLine}>
+                    <div className={styles.formSelect}>
+                        <Select
+                            label="Primary email address"
+                            labelVariant="block"
+                            id="setUserPrimaryEmailForm-email"
+                            isCustomStyle={true}
+                            selectClassName="mr-sm-2"
+                            value={primaryEmail}
+                            onChange={onPrimaryEmailSelect}
+                            required={true}
+                            disabled={
+                                (options.length === 1 && !!currentPrimaryEmail) ||
+                                statusOrError === 'loading' ||
+                                user.scimControlled
+                            }
+                        >
+                            {/* If no primary email is selected yet, we add an empty option to indicate nothing was selected. */}
+                            {!currentPrimaryEmail && <option key="" />}
+                            {options.map(email => (
+                                <option key={email} value={email}>
+                                    {email}
+                                </option>
+                            ))}
+                        </Select>
+                    </div>
+                    <div className={styles.formButton}>
+                        <LoaderButton
+                            loading={statusOrError === 'loading'}
+                            label="Save"
+                            type="submit"
+                            disabled={
+                                // In case no email is marked primary yet, and none
+                                // has been selected from the dropdown yet.
+                                !primaryEmail ||
+                                (options.length === 1 && !!currentPrimaryEmail) ||
+                                statusOrError === 'loading' ||
+                                user.scimControlled
+                            }
+                            variant="primary"
+                        />
+                    </div>
+                </div>
             </Form>
             {isErrorLike(statusOrError) && <ErrorAlert className="mt-2" error={statusOrError} />}
         </div>

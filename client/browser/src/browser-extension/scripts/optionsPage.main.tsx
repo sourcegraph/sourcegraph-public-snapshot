@@ -1,18 +1,23 @@
-// We want to polyfill first.
+// Set globals first before any imports.
+import '../../config/extension.entry'
+import '../../config/options.entry'
+// Polyfill before other imports.
 import '../../shared/polyfills'
 
-import { trimEnd, uniq } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { render } from 'react-dom'
-import { from, noop, Observable } from 'rxjs'
-import { catchError, distinctUntilChanged, map, mapTo } from 'rxjs/operators'
-import { Optional } from 'utility-types'
 
-import { asError } from '@sourcegraph/common'
-import { GraphQLResult } from '@sourcegraph/http-client'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { trimEnd, uniq } from 'lodash'
+import { createRoot } from 'react-dom/client'
+import { from, noop, type Observable, of } from 'rxjs'
+import { catchError, distinctUntilChanged, filter, map, mapTo } from 'rxjs/operators'
+import type { Optional } from 'utility-types'
+
+import { asError, isDefined } from '@sourcegraph/common'
+import { gql, type GraphQLResult } from '@sourcegraph/http-client'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { setLinkComponent, AnchorLink, useObservable } from '@sourcegraph/wildcard'
 
+import type { CurrentUserResult } from '../../graphql-operations'
 import { fetchSite } from '../../shared/backend/server'
 import { WildcardThemeProvider } from '../../shared/components/WildcardThemeProvider'
 import { initSentry } from '../../shared/sentry'
@@ -20,13 +25,13 @@ import { ConditionalTelemetryService, EventLogger } from '../../shared/tracking/
 import { observeSourcegraphURL, getExtensionVersion, isDefaultSourcegraphUrl } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 import {
-    OptionFlagKey,
+    type OptionFlagKey,
     optionFlagDefinitions,
     observeSendTelemetry,
     observeOptionFlagsWithValues,
 } from '../../shared/util/optionFlags'
 import { assertEnvironment } from '../environmentAssertion'
-import { KnownCodeHost, knownCodeHosts } from '../knownCodeHosts'
+import { type KnownCodeHost, knownCodeHosts } from '../knownCodeHosts'
 import { OptionsPage, URL_AUTH_ERROR, URL_FETCH_ERROR } from '../options-menu/OptionsPage'
 import { ThemeWrapper } from '../ThemeWrapper'
 import { checkUrlPermissions } from '../util'
@@ -37,7 +42,7 @@ interface TabStatus {
     host: string
     protocol: string
     hasPermissions: boolean
-    hasPrivateCloudError: boolean
+    hasRepoSyncError: boolean
 }
 
 assertEnvironment('OPTIONS')
@@ -56,7 +61,7 @@ setLinkComponent(AnchorLink)
 const isOptionFlagKey = (key: string): key is OptionFlagKey =>
     !!optionFlagDefinitions.find(definition => definition.key === key)
 
-const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
+const fetchCurrentTabStatus = async (sourcegraphURL: string): Promise<TabStatus> => {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true })
     if (tabs.length > 1) {
         throw new Error('Querying for the currently active tab returned more than one result')
@@ -68,20 +73,17 @@ const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
     if (!id) {
         throw new Error('Currently active tab has no ID')
     }
-    const hasPrivateCloudError = await background.checkPrivateCloudError(id)
+    const hasRepoSyncError = await background.checkRepoSyncError({ tabId: id, sourcegraphURL })
     const { host, protocol } = new URL(url)
     const hasPermissions = await checkUrlPermissions(url)
-    return { hasPrivateCloudError, host, protocol, hasPermissions }
+    return { hasRepoSyncError, host, protocol, hasPermissions }
 }
 
 // Make GraphQL requests from background page
-const createRequestGraphQL = (sourcegraphURL: string) => <T, V = object>(options: {
-    request: string
-    variables: V
-}): Observable<GraphQLResult<T>> =>
-    from(
-        background.requestGraphQL<T, V>({ ...options, sourcegraphURL })
-    )
+const createRequestGraphQL =
+    (sourcegraphURL: string) =>
+    <T, V = object>(options: { request: string; variables: V }): Observable<GraphQLResult<T>> =>
+        from(background.requestGraphQL<T, V>({ ...options, sourcegraphURL }))
 
 const version = getExtensionVersion()
 const isFullPage = !new URLSearchParams(window.location.search).get('popup')
@@ -109,10 +111,6 @@ const observingPreviouslyUsedUrls = observeStorageKey('sync', 'previouslyUsedURL
 const observingSourcegraphUrl = observeSourcegraphURL(true).pipe(distinctUntilChanged())
 const observingOptionFlagsWithValues = observeOptionFlagsWithValues(IS_EXTENSION)
 const observingSendTelemetry = observeSendTelemetry(IS_EXTENSION)
-
-function handleToggleActivated(isActivated: boolean): void {
-    storage.sync.set({ disableExtension: !isActivated }).catch(console.error)
-}
 
 function handleChangeOptionFlag(key: string, value: boolean): void {
     if (isOptionFlagKey(key)) {
@@ -143,36 +141,68 @@ function useTelemetryService(sourcegraphUrl: string | undefined): TelemetryServi
     return telemetryService
 }
 
+const fetchCurrentUser = (
+    sourcegraphURL: string
+): Observable<Pick<NonNullable<CurrentUserResult['currentUser']>, 'settingsURL' | 'siteAdmin'>> => {
+    const requestGraphQL = createRequestGraphQL(sourcegraphURL)
+
+    return requestGraphQL<CurrentUserResult>({
+        request: gql`
+            query CurrentUser {
+                currentUser {
+                    settingsURL
+                    siteAdmin
+                }
+            }
+        `,
+        variables: {},
+    }).pipe(
+        map(({ data }) => data?.currentUser),
+        filter(isDefined),
+        map(({ settingsURL, siteAdmin }) => ({ settingsURL, siteAdmin }))
+    )
+}
+
 /**
  * Returns unique URLs
  */
 const uniqURLs = (urls: (string | undefined)[]): string[] =>
     uniq(urls.filter(value => !!value).map(value => trimEnd(value, '/')))
 
-const Options: React.FunctionComponent = () => {
+const Options: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const sourcegraphUrl = useObservable(observingSourcegraphUrl)
     const [previousSourcegraphUrl, setPreviousSourcegraphUrl] = useState(sourcegraphUrl)
     const telemetryService = useTelemetryService(sourcegraphUrl)
     const previouslyUsedUrls = useObservable(observingPreviouslyUsedUrls)
     const isActivated = useObservable(observingIsActivated)
     const optionFlagsWithValues = useObservable(observingOptionFlagsWithValues)
-    const [currentTabStatus, setCurrentTabStatus] = useState<
-        { status: TabStatus; handler: React.MouseEventHandler } | undefined
-    >()
+    const currentTabStatus = useObservable(
+        useMemo(
+            () =>
+                sourcegraphUrl
+                    ? from(fetchCurrentTabStatus(sourcegraphUrl)).pipe(
+                          catchError(() => of(undefined)),
+                          filter(isDefined),
+                          map(tabStatus => ({ status: tabStatus, handler: buildRequestPermissionsHandler(tabStatus) }))
+                      )
+                    : of(undefined),
+            [sourcegraphUrl]
+        )
+    )
+    const currentUser = useObservable(
+        useMemo(
+            () => (currentTabStatus?.status.hasRepoSyncError ? fetchCurrentUser(sourcegraphUrl!) : of(undefined)),
+            [currentTabStatus, sourcegraphUrl]
+        )
+    )
 
-    useEffect(() => {
-        fetchCurrentTabStatus().then(tabStatus => {
-            setCurrentTabStatus({ status: tabStatus, handler: buildRequestPermissionsHandler(tabStatus) })
-        }, noop)
-    }, [])
-
-    const showSourcegraphCloudAlert = currentTabStatus?.status.host.endsWith('sourcegraph.com')
+    const showSourcegraphComAlert = currentTabStatus?.status.host.endsWith('sourcegraph.com')
 
     let permissionAlert: Optional<KnownCodeHost, 'host' | 'icon'> | undefined
     if (
         currentTabStatus &&
         !currentTabStatus?.status.hasPermissions &&
-        !showSourcegraphCloudAlert &&
+        !showSourcegraphComAlert &&
         !PERMISSIONS_PROTOCOL_BLOCKLIST.has(currentTabStatus.status.protocol)
     ) {
         const knownCodeHost = knownCodeHosts.find(({ host }) => host === currentTabStatus.status.host)
@@ -213,6 +243,28 @@ const Options: React.FunctionComponent = () => {
         }
     }, [sourcegraphUrl, telemetryService, previouslyUsedUrls, previousSourcegraphUrl])
 
+    const handleToggleActivated = useCallback(
+        (isActivated: boolean): void => {
+            telemetryService.log(isActivated ? 'BrowserExtensionEnabled' : 'BrowserExtensionDisabled')
+            storage.sync.set({ disableExtension: !isActivated }).catch(console.error)
+        },
+        [telemetryService]
+    )
+
+    const handleRemovePreviousSourcegraphUrl = useCallback(
+        (url: string): void => {
+            if (!url || previouslyUsedUrls?.length === 0) {
+                return
+            }
+            storage.sync
+                .set({
+                    previouslyUsedURLs: previouslyUsedUrls?.filter(previouslyUsedUrl => previouslyUsedUrl !== url),
+                })
+                .catch(console.error)
+        },
+        [previouslyUsedUrls]
+    )
+
     return (
         <ThemeWrapper>
             <WildcardThemeProvider isBranded={true}>
@@ -220,6 +272,7 @@ const Options: React.FunctionComponent = () => {
                     isFullPage={isFullPage}
                     sourcegraphUrl={sourcegraphUrl || ''}
                     suggestedSourcegraphUrls={uniqURLs(previouslyUsedUrls || [])}
+                    onSuggestedSourcegraphUrlDelete={handleRemovePreviousSourcegraphUrl}
                     onChangeSourcegraphUrl={handleChangeSourcegraphUrl}
                     version={version}
                     validateSourcegraphUrl={validateSourcegraphUrl}
@@ -227,10 +280,9 @@ const Options: React.FunctionComponent = () => {
                     onToggleActivated={handleToggleActivated}
                     optionFlags={optionFlagsWithValues || []}
                     onChangeOptionFlag={handleChangeOptionFlag}
-                    showPrivateRepositoryAlert={
-                        currentTabStatus?.status.hasPrivateCloudError && isDefaultSourcegraphUrl(sourcegraphUrl)
-                    }
-                    showSourcegraphCloudAlert={showSourcegraphCloudAlert}
+                    hasRepoSyncError={currentTabStatus?.status.hasRepoSyncError}
+                    currentUser={currentUser}
+                    showSourcegraphComAlert={showSourcegraphComAlert}
                     permissionAlert={permissionAlert}
                     requestPermissionsHandler={currentTabStatus?.handler}
                 />
@@ -240,7 +292,9 @@ const Options: React.FunctionComponent = () => {
 }
 
 const inject = (): void => {
-    render(<Options />, document.body)
+    const root = createRoot(document.body)
+
+    root.render(<Options />)
 }
 
 document.addEventListener('DOMContentLoaded', inject)

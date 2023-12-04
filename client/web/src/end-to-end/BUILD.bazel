@@ -1,0 +1,83 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("//dev:defs.bzl", "ts_project")
+load("//dev:mocha.bzl", "mocha_test")
+
+# end-to-end/ does not contain a src/
+# gazelle:js_files **/*.{ts,tsx}
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:node_modules/@types/mocha",
+        "//:node_modules/@types/node",
+        "//client/shared/src/testing:tsconfig",
+        "//client/web:tsconfig",
+        "//schema:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "end-to-end",
+    srcs = [
+        "utils/cloneRepos.ts",
+        "utils/initEndToEndTest.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        "//:node_modules/@types/mocha",
+        "//:node_modules/@types/mockdate",
+        "//:node_modules/mocha",
+        "//:node_modules/mockdate",
+        "//client/web:node_modules/@sourcegraph/shared",
+    ],
+)
+
+ts_project(
+    name = "end-to-end_tests",
+    testonly = True,
+    srcs = [
+        "code-intel/repository-component.test.ts",
+        "frontend-platform/site-admin.test.ts",
+        "frontend-platform/theme-switcher.test.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":end-to-end",
+        "//:node_modules/@types/lodash",
+        "//:node_modules/@types/mocha",
+        "//:node_modules/expect",
+        "//:node_modules/lodash",
+        "//:node_modules/mocha",
+        "//client/shared/src/testing",  # keep
+        "//client/web:node_modules/@sourcegraph/shared",
+    ],
+)
+
+mocha_test(
+    name = "e2e",
+    timeout = "moderate",
+    env = {
+        "INCLUDE_ADMIN_ONBOARDING": "false",
+    },
+    node_toolchain = select({
+        "//:darwin_docker_e2e_go": "@nodejs_darwin_arm64//:node_toolchain",
+        "//conditions:default": None,
+    }),
+    tags = [
+        "manual",
+        "requires-network",
+    ],
+    tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
+    visibility = ["//testing:__pkg__"],
+    deps = [":end-to-end_tests"],
+)
+
+# For some reason, we can't explicitly set a visibility on the target itself,
+# it seems the esbuild rule doesn't pass along the visibility attribute properly.
+alias(
+    name = "testing_e2e_bundle",
+    actual = ":e2e_bundle",
+    visibility = ["//testing:__pkg__"],
+)

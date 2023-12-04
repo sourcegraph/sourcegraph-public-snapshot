@@ -1,0 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "hashutil",
+    srcs = ["sha256.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/hashutil",
+    visibility = ["//:__subpackages__"],
+)

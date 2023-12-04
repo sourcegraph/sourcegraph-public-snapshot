@@ -1,0 +1,28 @@
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+
+exports_files(srcs = ["eslint-report-test.sh"])
+
+write_source_files(
+    name = "write_all_generated",
+    additional_update_targets = [
+        "//client/web/src/rbac:write_generated",
+        "//cmd/cody-gateway/internal/dotcom:write_genql_yaml",
+        "//cmd/frontend/internal/guardrails/dotcom:write_genql_yaml",
+        "//doc/admin/observability:write_monitoring_docs",
+        "//doc/cli/references:write_doc_files",
+        "//doc/dev/background-information/telemetry:write_telemetrygateway_doc",
+        "//internal/batches/search/syntax:write_token_type",
+        "//internal/database:write_schemas",
+        "//internal/rbac/types:write_generated_action",
+        "//internal/rbac/types:write_generated_namespace",
+        "//internal/rbac:write_generated",
+        "//lib/batches/schema:write_generated_batch_spec",
+        "//lib/batches/schema:write_generated_changeset_spec",
+        "//lib/codeintel/lsif/protocol:write_symbol_kind",
+        "//lib/codeintel/lsif/protocol:write_symbol_tag",
+        "//migrations/codeinsights:write_squashed",
+        "//migrations/codeintel:write_squashed",
+        "//migrations/frontend:write_squashed",
+        "//schema:write_generated_schema",
+    ],
+)

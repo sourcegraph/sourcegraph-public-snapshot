@@ -1,77 +1,62 @@
+import { type FC, useContext, useMemo } from 'react'
+
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useContext, useMemo } from 'react'
-import { useHistory } from 'react-router'
+import { useParams, useNavigate } from 'react-router-dom'
 
-import { asError } from '@sourcegraph/common'
-import { Badge, Button, Container, LoadingSpinner, PageHeader, useObservable, Link } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Container,
+    LoadingSpinner,
+    PageHeader,
+    useObservable,
+    Link,
+    type SubmissionErrors,
+} from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { LoaderButton } from '../../../../../components/LoaderButton'
-import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
-import { CodeInsightsIcon } from '../../../components'
-import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { CustomInsightDashboard, isVirtualDashboard } from '../../../core/types'
-import { isBuiltInInsightDashboard } from '../../../core/types/dashboard/real-dashboard'
-import { isGlobalSubject, SupportedInsightSubject } from '../../../core/types/subjects'
+import { CodeInsightsIcon, CodeInsightsPage } from '../../../components'
 import {
-    DashboardCreationFields,
+    CodeInsightsBackendContext,
+    type CustomInsightDashboard,
+    type InsightsDashboardOwner,
+    InsightsDashboardOwnerType,
+    isGlobalOwner,
+    isPersonalOwner,
+    isVirtualDashboard,
+    useInsightDashboard,
+} from '../../../core'
+import {
+    type DashboardCreationFields,
     InsightsDashboardCreationContent,
 } from '../creation/components/InsightsDashboardCreationContent'
 
 import styles from './EditDashboardPage.module.scss'
 
-interface EditDashboardPageProps {
-    dashboardId: string
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'>
-}
-
 /**
  * Displays the edit (configure) dashboard page.
  */
-export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> = props => {
-    const { dashboardId, authenticatedUser } = props
-    const history = useHistory()
+export const EditDashboardPage: FC = props => {
+    const navigate = useNavigate()
+    const { dashboardId } = useParams()
 
-    const { getDashboardById, getDashboardSubjects, updateDashboard } = useContext(CodeInsightsBackendContext)
+    const { getDashboardOwners, updateDashboard } = useContext(CodeInsightsBackendContext)
 
     // Load edit dashboard information
-    const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
+    const owners = useObservable(useMemo(() => getDashboardOwners(), [getDashboardOwners]))
 
-    const dashboard = useObservable(
-        useMemo(
-            () => getDashboardById({ dashboardId }),
-            // Load only on first render to avoid UI flashing after settings update
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-            [dashboardId]
-        )
-    )
+    const { dashboard, loading } = useInsightDashboard({ id: dashboardId })
 
     // Loading state
-    if (subjects === undefined || dashboard === undefined) {
+    if (owners === undefined || dashboard === undefined || loading) {
         return <LoadingSpinner />
     }
 
     // In case if we got null that means we couldn't find this dashboard
-    if (dashboard === null || isVirtualDashboard(dashboard) || isBuiltInInsightDashboard(dashboard)) {
-        return (
-            <HeroPage
-                icon={MapSearchIcon}
-                title="Oops, we couldn't find the dashboard"
-                subtitle={
-                    <span>
-                        We couldn't find that dashboard. Try to find the dashboard with ID:
-                        <Badge variant="secondary" as="code">
-                            {dashboardId}
-                        </Badge>{' '}
-                        in your <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
-                    </span>
-                }
-            />
-        )
+    if (dashboard === null || isVirtualDashboard(dashboard)) {
+        return <HeroPage icon={MapSearchIcon} title="Oops, we couldn't find the dashboard" />
     }
 
     const handleSubmit = async (dashboardValues: DashboardCreationFields): Promise<SubmissionErrors> => {
@@ -79,30 +64,28 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
             return
         }
 
-        const { name, visibility, type } = dashboardValues
+        const { name, owner } = dashboardValues
 
-        try {
-            const updatedDashboard = await updateDashboard({
-                previousDashboard: dashboard,
-                nextDashboardInput: {
-                    name,
-                    visibility,
-                    type,
-                },
-            }).toPromise()
-
-            history.push(`/insights/dashboards/${updatedDashboard.id}`)
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
+        if (!owner) {
+            throw new Error('You have to specify a dashboard visibility')
         }
 
-        return
+        const updatedDashboard = await updateDashboard({
+            id: dashboard.id,
+            nextDashboardInput: {
+                name,
+                owners: [owner],
+            },
+        }).toPromise()
+
+        navigate(`/insights/dashboards/${updatedDashboard.id}`)
     }
-    const handleCancel = (): void => history.goBack()
+
+    const handleCancel = (): void => navigate(-1)
 
     return (
-        <Page className={classNames('col-8', styles.page)}>
-            <PageTitle title="Configure dashboard" />
+        <CodeInsightsPage className={classNames('col-8', styles.page)}>
+            <PageTitle title={`Configure ${dashboard.title} - Code Insights`} />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Configure dashboard' }]} />
 
@@ -115,8 +98,8 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
 
             <Container className="mt-4">
                 <InsightsDashboardCreationContent
-                    initialValues={getDashboardInitialValues(dashboard, subjects)}
-                    subjects={subjects}
+                    initialValues={getDashboardInitialValues(dashboard, owners)}
+                    owners={owners}
                     onSubmit={handleSubmit}
                 >
                     {formAPI => (
@@ -145,31 +128,33 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                     )}
                 </InsightsDashboardCreationContent>
             </Container>
-        </Page>
+        </CodeInsightsPage>
     )
 }
 
 function getDashboardInitialValues(
     dashboard: CustomInsightDashboard,
-    subjects: SupportedInsightSubject[]
+    availableOwners: InsightsDashboardOwner[]
 ): DashboardCreationFields | undefined {
-    if (dashboard.owner) {
-        return { name: dashboard.title, visibility: dashboard.owner.id }
-    }
+    const { title } = dashboard
 
-    if (dashboard.grants) {
-        const { users, organizations, global } = dashboard.grants
-        const globalSubject = subjects.find(isGlobalSubject)
+    const isGlobal = dashboard.owners.some(isGlobalOwner)
+    const availableGlobalOwner = availableOwners.find(
+        availableOwner => availableOwner.type === InsightsDashboardOwnerType.Global
+    )
 
-        if (global && globalSubject) {
-            return { name: dashboard.title, visibility: globalSubject.id }
-        }
-
+    if (isGlobal && availableGlobalOwner) {
+        // Pick any global owner from the list
         return {
-            name: dashboard.title,
-            visibility: users[0] ?? organizations[0] ?? 'unkown',
+            name: title,
+            owner: availableGlobalOwner,
         }
     }
 
-    return
+    const owner = dashboard.owners.find(owner => availableOwners.some(availableOwner => availableOwner.id === owner.id))
+
+    return {
+        name: title,
+        owner: owner ?? availableOwners.find(isPersonalOwner)!,
+    }
 }

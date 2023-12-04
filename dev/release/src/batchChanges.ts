@@ -3,11 +3,11 @@ import execa from 'execa'
 import fetch from 'node-fetch'
 import YAML from 'yaml'
 
-import { CreatedChangeset } from './github'
+import type { CreatedChangeset } from './github'
 import { readLine, cacheFolder } from './util'
 
-// https://handbook.sourcegraph.com/engineering/deployments/instances#k8s-sgdev-org
-const DEFAULT_SRC_ENDPOINT = 'https://k8s.sgdev.org'
+// https://handbook.sourcegraph.com/departments/engineering/dev/process/deployments/instances/#sourcegraphsourcegraphcom-s2
+const DEFAULT_SRC_ENDPOINT = 'https://sourcegraph.sourcegraph.com'
 
 interface SourcegraphCLIConfig {
     SRC_ENDPOINT: string
@@ -22,7 +22,9 @@ export async function sourcegraphCLIConfig(): Promise<SourcegraphCLIConfig> {
     await commandExists('src') // CLI must be present for batch change interactions
     return {
         SRC_ENDPOINT: DEFAULT_SRC_ENDPOINT,
-        SRC_ACCESS_TOKEN: await readLine('k8s.sgdev.org src-cli token: ', `${cacheFolder}/src-cli.txt`),
+        // I updated the file name here to avoid a situation where folks with existing s2 token
+        // cached will get a 403 because it's not valid for S2.
+        SRC_ACCESS_TOKEN: await readLine('s2 src-cli token: ', `${cacheFolder}/src-cli-s2.txt`),
     }
 }
 
@@ -71,6 +73,7 @@ export async function createBatchChange(
         externalIDs: [change.pullRequestNumber],
     }))
     // apply batch change
+    // eslint-disable-next-line @typescript-eslint/return-await
     return await applyBatchChange(
         {
             name: options.name,

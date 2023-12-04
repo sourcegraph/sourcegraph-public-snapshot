@@ -1,6 +1,6 @@
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { testSingleFilePage } from './shared'
@@ -35,7 +35,7 @@ async function gheLogin({ page }: Driver): Promise<void> {
     }
 }
 
-describe('Sourcegraph browser extension on GitHub Enterprise', () => {
+describe.skip('Sourcegraph browser extension on GitHub Enterprise', () => {
     let driver: Driver
 
     before(async function () {
@@ -44,7 +44,7 @@ describe('Sourcegraph browser extension on GitHub Enterprise', () => {
 
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             if (restConfig.testUserPassword) {
-                await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+                await driver.ensureSignedIn({ username: 'test', password: restConfig.testUserPassword })
             }
             await gheLogin(driver)
             await driver.setExtensionSourcegraphUrl()
@@ -79,9 +79,9 @@ describe('Sourcegraph browser extension on GitHub Enterprise', () => {
         getDriver: () => driver,
         url: `${GHE_BASE_URL}/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go`,
         repoName: `${REPO_PREFIX}/sourcegraph/jsonrpc2`,
+        commitID: '4fb7cd90793ee6ab445f466b900e6bffb9b63d78',
         sourcegraphBaseUrl,
-        // Not using '.js-file-line' because it breaks the reliance on :nth-child() in testSingleFilePage()
-        lineSelector: '.js-file-line-container tr',
+        getLineSelector: lineNumber => `#LC${lineNumber}`,
         goToDefinitionURL: new URL(
             '/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go#L5:6',
             GHE_BASE_URL

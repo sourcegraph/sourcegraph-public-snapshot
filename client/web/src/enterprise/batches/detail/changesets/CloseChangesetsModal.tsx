@@ -1,10 +1,10 @@
 import React, { useCallback, useState } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, H3, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { Scalars } from '../../../../graphql-operations'
+import { LoaderButton } from '../../../../components/LoaderButton'
+import type { Scalars } from '../../../../graphql-operations'
 import { closeChangesets as _closeChangesets } from '../backend'
 
 export interface CloseChangesetsModalProps {
@@ -17,7 +17,7 @@ export interface CloseChangesetsModalProps {
     closeChangesets?: typeof _closeChangesets
 }
 
-export const CloseChangesetsModal: React.FunctionComponent<CloseChangesetsModalProps> = ({
+export const CloseChangesetsModal: React.FunctionComponent<React.PropsWithChildren<CloseChangesetsModalProps>> = ({
     onCancel,
     afterCreate,
     batchChangeID,
@@ -38,8 +38,8 @@ export const CloseChangesetsModal: React.FunctionComponent<CloseChangesetsModalP
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID}>
-            <h3 id={MODAL_LABEL_ID}>Close changesets</h3>
-            <p className="mb-4">Are you sure you want to close all the selected changesets on the code hosts?</p>
+            <H3 id={MODAL_LABEL_ID}>Close changesets</H3>
+            <Text className="mb-4">Are you sure you want to close all the selected changesets on the code hosts?</Text>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <div className="d-flex justify-content-end">
                 <Button
@@ -51,10 +51,14 @@ export const CloseChangesetsModal: React.FunctionComponent<CloseChangesetsModalP
                 >
                     Cancel
                 </Button>
-                <Button onClick={onSubmit} disabled={isLoading === true} variant="primary">
-                    {isLoading === true && <LoadingSpinner />}
-                    Close
-                </Button>
+                <LoaderButton
+                    onClick={onSubmit}
+                    disabled={isLoading === true}
+                    variant="primary"
+                    loading={isLoading === true}
+                    alwaysShowLabel={true}
+                    label="Close"
+                />
             </div>
         </Modal>
     )

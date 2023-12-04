@@ -1,0 +1,128 @@
+.wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 0.875rem;
+}
+
+.footer {
+    padding: 0.625rem;
+    border-top: 1px solid var(--border-color-2);
+    margin-top: auto;
+}
+
+.repository-names-text {
+    display: flex;
+    min-width: 0;
+    font-size: 0.75rem;
+
+    &:focus {
+        border-color: var(--primary-2) !important;
+        box-shadow: none !important;
+    }
+
+    svg {
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
+    }
+}
+
+.tinted-search {
+    background-color: var(--mark-bg);
+}
+
+.clear-button {
+    position: absolute;
+    top: 1.25rem;
+    right: 0.75rem;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    color: var(--input-focus-border-color);
+}
+
+.input-container {
+    position: relative;
+
+    input {
+        padding-right: 2rem;
+    }
+}
+
+.repository-selector-content {
+    width: 20rem;
+    max-width: 20rem;
+    height: 20rem;
+}
+
+.context-items-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.visibility-hidden {
+    visibility: hidden;
+}
+
+.header {
+    font-size: 0.625rem;
+    line-height: 1rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.repository-list-item {
+    all: unset;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    line-height: 1rem;
+    display: block;
+
+    svg {
+        min-width: 1rem;
+        min-height: 1rem;
+    }
+
+    .remove-repo-icon {
+        visibility: hidden;
+    }
+    &:hover {
+        background-color: var(--body-bg);
+
+        .remove-repo-icon {
+            visibility: visible;
+        }
+    }
+}
+
+.sub-header {
+    font-size: 0.8rem;
+    line-height: 1rem;
+}
+
+.disabled-search-result {
+    opacity: 0.5;
+}
+
+.not-included-in-context {
+    &,
+    .repo-icon {
+        color: var(--text-disabled);
+    }
+    .embedding-icon-no-embeddings {
+        color: var(--gray-07);
+    }
+}
+
+.not-included-in-context:hover {
+    opacity: 1;
+}
+
+.icon {
+    fill: currentColor !important;
+}

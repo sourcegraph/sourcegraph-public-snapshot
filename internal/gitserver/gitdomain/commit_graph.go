@@ -1,6 +1,8 @@
 package gitdomain
 
-import "strings"
+import (
+	"strings"
+)
 
 type CommitGraph struct {
 	graph map[string][]string

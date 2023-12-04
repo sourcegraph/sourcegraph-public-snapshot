@@ -3,32 +3,19 @@
 .navbar {
     display: flex;
     position: relative;
-    height: 2.5rem;
+    height: var(--navbar-height);
     min-height: 40px;
     width: 100%;
     border-bottom: 1px solid var(--border-color-2);
     background: var(--color-bg-1);
     padding: 0 1rem;
     align-items: center;
+    white-space: nowrap;
 }
 
 .menu {
     display: flex;
     align-self: stretch;
-}
-
-.menu-close {
-    @media (--sm-breakpoint-down) {
-        display: none !important;
-    }
-}
-.menu-button {
-    color: var(--icon-color);
-    display: none;
-    padding: 0;
-    @media (--sm-breakpoint-down) {
-        display: block;
-    }
 }
 
 .logo {
@@ -41,8 +28,8 @@
     margin: 0 1rem;
     height: 50%;
     border-left: 1px solid var(--border-color-2);
-    @media (--sm-breakpoint-down) {
-        margin: 0 0.25rem;
+    @media (--xs-breakpoint-down) {
+        margin: 0 0.5rem;
     }
 }
 
@@ -54,18 +41,4 @@
     margin: 0;
     padding: 0;
     gap: 1rem;
-    @media (--sm-breakpoint-down) {
-        border-radius: var(--border-radius);
-        border: 1px solid var(--border-color-2);
-        overflow: hidden;
-        width: 9.5rem;
-        height: auto;
-        flex-direction: column;
-        top: 0;
-        left: 0;
-        background: var(--color-bg-1);
-        z-index: 1;
-        position: absolute;
-        transform: translate3d(46px, 40px, 0);
-    }
 }

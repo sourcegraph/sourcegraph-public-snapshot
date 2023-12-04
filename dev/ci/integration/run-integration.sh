@@ -59,13 +59,13 @@ function cleanup() {
     # This command will fail, so our last step will be expanded. We don't want
     # to expand "docker cleanup" so we add in a dummy section.
     echo "--- integration test failed"
-    echo "See integration test section for test runner logs, and uploaded artefacts for server logs."
+    echo "See integration test section for test runner logs, and uploaded artifacts for server logs."
   fi
 }
 trap cleanup EXIT
 
 echo "--- Running a daemonized $IMAGE as the test subject..."
-CLEAN="true" "${root_dir}"/dev/run-server-image.sh -d --name "$CONTAINER"
+CLEAN="true" ALLOW_SINGLE_DOCKER_CODE_INSIGHTS="true" "${root_dir}"/dev/run-server-image.sh -d --name "$CONTAINER"
 
 echo "--- Waiting for $URL to be up"
 set +e

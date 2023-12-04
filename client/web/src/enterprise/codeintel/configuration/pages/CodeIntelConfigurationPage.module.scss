@@ -1,6 +1,6 @@
 .grid {
     display: grid;
-    grid-template-columns: [info] minmax(auto, 1fr) [state] min-content [caret] min-content [end];
+    grid-template-columns: [info] minmax(auto, 1fr) [edit] min-content [delete] min-content [end];
     row-gap: 1rem;
     column-gap: 1rem;
     align-items: center;
@@ -20,9 +20,14 @@
     }
 }
 
-.name,
-.button {
+.name {
     @media (--xs-breakpoint-down) {
         grid-column: 1 / -1;
     }
+}
+
+.policy-description {
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
 }

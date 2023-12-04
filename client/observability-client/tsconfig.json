@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "jsx": "react-jsx",
+    "rootDir": ".",
+    "outDir": "out",
+  },
+  "include": ["src"],
+  "exclude": ["out", "node_modules"],
+  "references": [
+    {
+      "path": "../common",
+    },
+  ],
+}

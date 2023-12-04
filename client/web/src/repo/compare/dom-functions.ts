@@ -1,4 +1,4 @@
-import { DiffPart, DOMFunctions } from '@sourcegraph/codeintellify'
+import type { DiffPart, DOMFunctions } from '@sourcegraph/codeintellify'
 
 import { DiffHunkLineType } from '../../graphql-operations'
 
@@ -19,12 +19,18 @@ export const diffDomFunctions: DOMFunctions = {
     },
 
     getLineNumberFromCodeElement: (codeCell: HTMLElement): number => {
-        let cell = codeCell.closest('td')!.previousElementSibling as HTMLTableCellElement
-        while (cell) {
-            if (cell.dataset.line) {
+        // Find all line number cells in this row
+        const lineNumberCells = codeCell
+            .closest('tr')
+            ?.querySelectorAll('td[data-line]') as NodeListOf<HTMLTableCellElement>
+        // If there are line numbers...
+        if (lineNumberCells?.length) {
+            // Pick the second (last, using `pop`) line number cell, since code-intel will
+            // position the popover on the second line number cell
+            const cell = [...lineNumberCells].pop()
+            if (cell?.dataset.line) {
                 return parseInt(cell.dataset.line, 10)
             }
-            cell = cell.previousElementSibling as HTMLTableCellElement
         }
         throw new Error('Could not find a line number in any cell')
     },
@@ -32,7 +38,7 @@ export const diffDomFunctions: DOMFunctions = {
     getDiffCodePart: (codeElement: HTMLElement): DiffPart => {
         const tableCell = codeElement.closest('td') as HTMLTableCellElement
         const tableRow = codeElement.parentElement as HTMLTableRowElement
-        const isSplitMode = tableRow.getAttribute('data-diff-mode') === 'split'
+        const isSplitMode = tableRow.getAttribute('data-split-mode') === 'split'
         const lineKind = tableRow.getAttribute('data-hunk-line-kind')
 
         if (lineKind === DiffHunkLineType.ADDED) {

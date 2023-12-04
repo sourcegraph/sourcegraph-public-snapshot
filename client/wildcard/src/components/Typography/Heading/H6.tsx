@@ -1,16 +1,13 @@
-import classNames from 'classnames'
 import React from 'react'
 
-import { ForwardReferenceComponent } from '../../../types'
+import type { ForwardReferenceComponent } from '../../../types'
 
-import { Heading, HeadingProps } from './Heading'
-import styles from './Heading.module.scss'
+import { Heading, type HeadingProps } from './Heading'
 
 type H6Props = HeadingProps
 
-// eslint-disable-next-line id-length
-export const H6 = React.forwardRef(({ children, as = 'h6', className, ...props }, reference) => (
-    <Heading as={as} className={classNames(styles.h6, className)} {...props} ref={reference}>
+export const H6 = React.forwardRef(({ children, as = 'h6', ...props }, reference) => (
+    <Heading as={as} styleAs="h6" {...props} ref={reference}>
         {children}
     </Heading>
 )) as ForwardReferenceComponent<'h6', H6Props>

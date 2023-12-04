@@ -1,32 +1,24 @@
-import { Meta } from '@storybook/react'
 import React, { useCallback } from 'react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import type { Meta, StoryFn } from '@storybook/react'
 
+import { H1, H2 } from '../..'
+import { BrandedStory } from '../../../stories/BrandedStory'
 import { Grid } from '../../Grid/Grid'
 
-import { Select, SelectProps } from './Select'
+import { Select, type SelectProps } from './Select'
 
 const config: Meta = {
     title: 'wildcard/Select',
 
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
 
     parameters: {
         component: Select,
-        chromatic: {
-            enableDarkMode: true,
-        },
         design: {
             type: 'figma',
             name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A1353',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=854%3A1630',
         },
     },
 }
@@ -44,6 +36,7 @@ const BaseSelect = (props: { id: string } & Pick<SelectProps, 'isCustomStyle' | 
         <Select
             label="What is your favorite fruit?"
             message="I am a message"
+            description="I am a description"
             value={selected}
             onChange={handleChange}
             {...props}
@@ -61,31 +54,38 @@ const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) =
     return (
         <Grid columnCount={4}>
             <div>
-                <h2>Standard</h2>
+                <H2>Standard</H2>
                 <BaseSelect id={`${idPrefix}-standard`} isCustomStyle={isCustomStyle} />
             </div>
             <div>
-                <h2>Valid</h2>
+                <H2>Valid</H2>
                 <BaseSelect id={`${idPrefix}-valid`} isCustomStyle={isCustomStyle} isValid={true} />
             </div>
             <div>
-                <h2>Invalid</h2>
+                <H2>Invalid</H2>
                 <BaseSelect id={`${idPrefix}-invalid`} isCustomStyle={isCustomStyle} isValid={false} />
             </div>
             <div>
-                <h2>Disabled</h2>
+                <H2>Disabled</H2>
                 <BaseSelect id={`${idPrefix}-disabled`} isCustomStyle={isCustomStyle} disabled={true} />
             </div>
         </Grid>
     )
 }
 
-export const SelectExamples: React.FunctionComponent = () => (
+export const SelectExamples: StoryFn = () => (
     <>
-        <h1>Select</h1>
-        <h2>Native</h2>
+        <H1>Select</H1>
+        <H2>Native</H2>
         <SelectVariants />
-        <h2>Custom</h2>
+        <H2>Custom</H2>
         <SelectVariants isCustomStyle={true} />
     </>
 )
+
+SelectExamples.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}

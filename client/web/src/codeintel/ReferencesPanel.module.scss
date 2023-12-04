@@ -1,0 +1,292 @@
+:root {
+    --filter-input-height: 2.5rem;
+    --filter-input-padding-y: 0.25rem;
+    --group-header-font-size: 0.875rem;
+    --group-divider-height: 0.25rem;
+    --card-header-height: 1.5rem;
+}
+
+.filter {
+    height: var(--filter-input-height);
+    padding-left: 1rem;
+    padding-top: var(--filter-input-padding-y);
+    padding-bottom: var(--filter-input-padding-y);
+    padding-right: 1rem;
+
+    input {
+        height: 2rem;
+        font-size: 0.75rem;
+        padding-left: 0.5rem;
+        padding-top: 0;
+        padding-bottom: 0;
+        border: none;
+        border: 1px solid var(--border-color-2);
+    }
+
+    input::placeholder {
+        font-size: 0.75rem;
+        color: var(--gray-07);
+    }
+
+    &--icon {
+        color: var(--icon-muted);
+    }
+
+    small {
+        display: flex;
+        align-items: center;
+        padding-right: 0.5rem;
+    }
+}
+
+.repo-location-group {
+    margin-bottom: var(--group-divider-height);
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+
+    &--header {
+        padding-top: 0.2rem;
+        padding-bottom: 0.2rem;
+        padding-left: 2.3rem;
+        width: 100%;
+        text-align: left;
+
+        font-weight: 400;
+
+        &--repo-name {
+            padding-left: 0.6rem;
+            font-size: var(--group-header-font-size);
+        }
+    }
+}
+
+.location-group {
+    margin-bottom: var(--group-divider-height);
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+
+    &--header {
+        padding-left: 3.75rem;
+        padding-top: 0.2rem;
+        padding-bottom: 0.2rem;
+        padding-right: 1rem;
+        width: 100%;
+        text-align: left;
+
+        transition: none !important;
+
+        &--filename {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+
+            font-weight: 400;
+            font-size: var(--group-header-font-size);
+
+            mark {
+                padding-left: 0;
+                padding-right: 0;
+                font-weight: bold;
+            }
+        }
+    }
+}
+
+.location {
+    display: flex;
+    flex-direction: column;
+    min-height: 18px;
+    position: relative;
+
+    &:not(:last-child) > &--link {
+        border-bottom: 1px solid var(--body-bg);
+    }
+
+    &--link {
+        all: unset;
+
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        color: inherit;
+
+        padding-top: 0;
+        padding-bottom: 0;
+        width: 100%;
+        text-align: left;
+
+        transition: none !important;
+
+        // Avoid line number and filename getting put on different lines
+        white-space: nowrap;
+        padding-left: 0;
+        font-family: var(--code-font-family);
+
+        border: none;
+
+        &--code-excerpt {
+            flex: 1;
+            width: 100%;
+
+            :global(.line) {
+                min-width: 2.5rem;
+            }
+        }
+    }
+
+    &--active {
+        background-color: var(--color-bg-3);
+    }
+
+    &--active-icon {
+        width: 1.35rem;
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
+        height: calc(100% - 1px);
+        position: absolute;
+        right: 0;
+        top: 0;
+        background-color: var(--color-bg-3);
+        padding-left: 0.25rem;
+        padding-right: 0.1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    &--link:hover {
+        all: unset;
+
+        background-color: var(--color-bg-2);
+        cursor: pointer;
+    }
+
+    &--active:hover {
+        // Needed to override `&--link:hover`
+        background-color: var(--color-bg-3);
+    }
+
+    &--link:focus-visible {
+        box-shadow: var(--focus-box-shadow);
+    }
+
+    code {
+        font-family: var(--code-font-family);
+        overflow: hidden;
+        color: var(--body-color);
+        font-weight: 400;
+        font-size: 0.75rem;
+    }
+
+    mark {
+        font-family: var(--code-font-family);
+        font-weight: 400;
+        font-size: 0.75rem;
+    }
+}
+
+.location-container {
+    padding-left: 3.9rem;
+    padding-right: 1rem;
+
+    ul {
+        border: 1px solid var(--border-color-2);
+        padding: 0.5rem 0;
+        border-radius: 3px;
+        background-color: var(--color-bg-1);
+        overflow: scroll;
+        -ms-overflow-style: none;
+    }
+
+    ul::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+// The nested selector is required to bump the selector specificity and resolve the issue
+// with different selector-order in the production bundle.
+// See https://github.com/sourcegraph/sourcegraph/issues/46081.
+//
+// It's not possible to use the `:where()` selector in the `CardHeader` CSS module because the
+// `typed-scss-modules` package that generates Typescript type definitions for CSS modules
+// relies on the outdated PostCSS version, which doesn't generate `:exports` statements for pseudo selectors correctly.
+// See related issues:
+// - https://github.com/skovy/typed-scss-modules/pull/166
+// - https://github.com/css-modules/css-modules-loader-core/pull/231
+/* stylelint-disable-next-line selector-max-compound-selectors */
+.panel .card-header {
+    padding-top: 0.1rem;
+    padding-bottom: 0.1rem;
+    padding-left: 1rem;
+
+    border: none;
+
+    height: var(--card-header-height);
+
+    background-color: var(--body-bg);
+
+    &--big {
+        padding-top: 0.3rem;
+        padding-bottom: 0.3rem;
+        padding-left: 1rem;
+
+        border: none;
+
+        background-color: var(--body-bg);
+
+        h4 {
+            padding-left: 0.6rem;
+        }
+    }
+
+    &--small-text {
+        font-weight: 400;
+    }
+}
+
+// Complete panel
+.panel {
+    display: flex;
+    // Ensure panel spans entire height of enclosing panel
+    height: 100%;
+}
+
+// Left side of the panel, including token name, filter, list of locations
+.left-sub-panel {
+    flex: 1;
+    overflow: hidden;
+    height: 100%;
+    background-color: var(--body-bg);
+}
+
+// Right side of the panel
+.right-sub-panel {
+    flex: 1;
+    overflow: auto;
+}
+
+// Lists of locations (definitions, references, implementations) on the left
+.location-lists {
+    height: calc(100% - var(--filter-input-height) - 2 * var(--filter-input-padding-y));
+    overflow: auto;
+}
+
+.side-blob {
+    &--filename {
+        height: 1rem;
+        vertical-align: middle;
+    }
+
+    &--collapse-button {
+        margin-right: 0.5rem;
+    }
+
+    &--code {
+        // The code view needs to be scrollable.
+        // Its height needs to be "100% - <size-of-header-that-has-filename>"
+        height: calc(100% - var(--card-header-height));
+    }
+}

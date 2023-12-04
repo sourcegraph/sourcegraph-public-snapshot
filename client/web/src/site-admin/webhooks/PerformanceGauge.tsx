@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
 
@@ -19,7 +20,7 @@ export interface Props {
  * A performance gauge is a component that renders a numeric value with a label
  * in a way that focuses attention on the numeric value.
  */
-export const PerformanceGauge: React.FunctionComponent<Props> = ({
+export const PerformanceGauge: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     count,
     className,
     countClassName,

@@ -1,0 +1,16 @@
+.table {
+    table-layout: auto;
+    max-width: 100%;
+    vertical-align: center;
+
+    th,
+    td {
+        border: none;
+    }
+}
+
+.table-header {
+    width: 1%;
+    white-space: nowrap;
+    vertical-align: baseline !important;
+}

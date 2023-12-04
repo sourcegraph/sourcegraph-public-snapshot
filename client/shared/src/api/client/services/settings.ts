@@ -1,16 +1,10 @@
 import { from } from 'rxjs'
 import { first } from 'rxjs/operators'
 
-import { PlatformContext } from '../../../platform/context'
-import { isSettingsValid } from '../../../settings/settings'
+import type { KeyPath } from '@sourcegraph/client-api'
 
-/**
- * A key path that refers to a location in a JSON document.
- *
- * Each successive array element specifies an index in an object or array to descend into. For example, in the
- * object `{"a": ["x", "y"]}`, the key path `["a", 1]` refers to the value `"y"`.
- */
-export type KeyPath = (string | number)[]
+import type { PlatformContext } from '../../../platform/context'
+import { isSettingsValid } from '../../../settings/settings'
 
 /**
  * An edit to apply to settings.
@@ -38,6 +32,6 @@ export async function updateSettings(
     if (!isSettingsValid(settings)) {
         throw new Error('invalid settings (internal error)')
     }
-    const subject = settings.subjects[settings.subjects.length - 1]
+    const subject = settings.subjects.at(-1)!
     await update(subject.subject.id, edit)
 }

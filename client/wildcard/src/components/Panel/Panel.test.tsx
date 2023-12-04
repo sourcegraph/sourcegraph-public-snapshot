@@ -1,10 +1,10 @@
 import { render } from '@testing-library/react'
-import React from 'react'
+import { describe, expect, it } from 'vitest'
 
 import { Panel } from './Panel'
 
 describe('Panel', () => {
     it('renders correctly positioned at page bottom', () => {
-        expect(render(<Panel />).asFragment()).toMatchSnapshot()
+        expect(render(<Panel ariaLabel="Test panel" />).asFragment()).toMatchSnapshot()
     })
 })

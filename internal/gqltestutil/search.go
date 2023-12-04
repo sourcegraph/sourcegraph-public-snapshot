@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -14,35 +15,29 @@ import (
 
 type SearchRepositoryResult struct {
 	Name string `json:"name"`
+	URL  string `json:"url"`
 }
 
 type SearchRepositoryResults []*SearchRepositoryResult
 
 // Exists returns the list of missing repositories from given names that do not exist
-// in search results. If all of given names are found, it returns empty list.
+// in search results. If all given names are found, it returns empty list.
 func (rs SearchRepositoryResults) Exists(names ...string) []string {
-	set := make(map[string]struct{}, len(names))
-	for _, name := range names {
-		set[name] = struct{}{}
-	}
-	for _, r := range rs {
-		delete(set, r.Name)
-	}
-
-	missing := make([]string, 0, len(set))
-	for name := range set {
-		missing = append(missing, name)
-	}
-	return missing
+	set := collections.NewSet[string](names...)
+	return set.Difference(collections.NewSet[string](rs.Names()...)).Values()
 }
 
-func (rs SearchRepositoryResults) String() string {
+func (rs SearchRepositoryResults) Names() []string {
 	var names []string
 	for _, r := range rs {
 		names = append(names, r.Name)
 	}
 	sort.Strings(names)
-	return fmt.Sprintf("%q", names)
+	return names
+}
+
+func (rs SearchRepositoryResults) String() string {
+	return fmt.Sprintf("%q", rs.Names())
 }
 
 // SearchRepositories search repositories with given query.
@@ -54,13 +49,14 @@ query Search($query: String!) {
 			results {
 				... on Repository {
 					name
+					url
 				}
 			}
 		}
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"query": query,
 	}
 	var resp struct {
@@ -98,16 +94,22 @@ type SearchFileResult struct {
 	} `json:"revSpec"`
 }
 
-type ProposedQuery struct {
-	Description string `json:"description"`
-	Query       string `json:"query"`
+type QueryDescription struct {
+	Description string       `json:"description"`
+	Query       string       `json:"query"`
+	Annotations []Annotation `json:"annotations"`
+}
+
+type Annotation struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 // SearchAlert is an alert specific to searches (i.e. not site alert).
 type SearchAlert struct {
-	Title           string          `json:"title"`
-	Description     string          `json:"description"`
-	ProposedQueries []ProposedQuery `json:"proposedQueries"`
+	Title           string             `json:"title"`
+	Description     string             `json:"description"`
+	ProposedQueries []QueryDescription `json:"proposedQueries"`
 }
 
 // SearchFiles searches files with given query. It returns the match count and
@@ -152,7 +154,7 @@ query Search($query: String!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"query": query,
 	}
 	var resp struct {
@@ -196,7 +198,7 @@ query Search($query: String!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"query": query,
 	}
 	var resp struct {
@@ -217,7 +219,7 @@ query Search($query: String!) {
 }
 
 type AnyResult struct {
-	Inner interface{}
+	Inner any
 }
 
 func (r *AnyResult) UnmarshalJSON(b []byte) error {
@@ -262,7 +264,7 @@ type FileResult struct {
 	LineMatches []struct {
 		OffsetAndLengths [][2]int32 `json:"offsetAndLengths"`
 	} `json:"lineMatches"`
-	Symbols []interface{} `json:"symbols"`
+	Symbols []any `json:"symbols"`
 }
 
 type CommitResult struct {
@@ -307,7 +309,7 @@ query Search($query: String!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"query": query,
 	}
 	var resp struct {
@@ -348,7 +350,7 @@ query SearchResultsStats($query: String!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"query": query,
 	}
 	var resp struct {
@@ -367,7 +369,7 @@ query SearchResultsStats($query: String!) {
 }
 
 type SearchSuggestionsResult struct {
-	inner interface{}
+	inner any
 }
 
 func (srr *SearchSuggestionsResult) UnmarshalJSON(data []byte) error {
@@ -519,7 +521,7 @@ query SearchSuggestions($query: String!) {
 	}
 }`
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"query": query,
 	}
 
@@ -551,10 +553,18 @@ func (s *SearchStreamClient) SearchRepositories(query string) (SearchRepositoryR
 				if !ok {
 					continue
 				}
-				results = append(results, &SearchRepositoryResult{
-					Name: r.Repository,
-				})
+
+				result := &SearchRepositoryResult{Name: r.Repository}
+
+				if len(r.Branches) > 0 {
+					result.URL = "/" + r.Repository + "@" + r.Branches[0]
+				}
+
+				results = append(results, result)
 			}
+		},
+		OnError: func(e *streamhttp.EventError) {
+			panic(e.Message)
 		},
 	})
 	return results, err
@@ -613,9 +623,15 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 				Description: alert.Description,
 			}
 			for _, pq := range alert.ProposedQueries {
-				results.Alert.ProposedQueries = append(results.Alert.ProposedQueries, ProposedQuery{
+				annotations := make([]Annotation, 0, len(pq.Annotations))
+				for _, a := range pq.Annotations {
+					annotations = append(annotations, Annotation{Name: a.Name, Value: a.Value})
+				}
+
+				results.Alert.ProposedQueries = append(results.Alert.ProposedQueries, QueryDescription{
 					Description: pq.Description,
 					Query:       pq.Query,
+					Annotations: annotations,
 				})
 			}
 		},
@@ -623,7 +639,7 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 	return &results, err
 }
 func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
-	var results []interface{}
+	var results []any
 	err := s.search(query, streamhttp.FrontendStreamDecoder{
 		OnMatches: func(matches []streamhttp.EventMatch) {
 			for _, m := range matches {
@@ -656,7 +672,7 @@ func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
 					var r FileResult
 					r.File.Path = v.Path
 					r.Repository.Name = v.Repository
-					r.Symbols = make([]interface{}, len(v.Symbols))
+					r.Symbols = make([]any, len(v.Symbols))
 					results = append(results, &r)
 
 				case *streamhttp.EventCommitMatch:

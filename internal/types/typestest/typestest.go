@@ -1,7 +1,7 @@
 package typestest
 
 import (
-	"sort"
+	"encoding/json"
 	"strconv"
 	"testing"
 	"time"
@@ -105,7 +105,33 @@ func GenerateRepos(n int, base ...*types.Repo) types.Repos {
 	return rs
 }
 
-// Maketypes.ExternalServices creates one configured external service per kind and returns the list.
+func MakeGitLabExternalService() *types.ExternalService {
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+	return &types.ExternalService{
+		Kind:        extsvc.KindGitLab,
+		DisplayName: "GitLab - Test",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+}
+
+func MakeExternalService(t *testing.T, variant extsvc.Variant, config any) *types.ExternalService {
+	t.Helper()
+
+	bs, err := json.Marshal(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return &types.ExternalService{
+		Kind:   variant.AsKind(),
+		Config: extsvc.NewUnencryptedConfig(string(bs)),
+	}
+}
+
+// MakeExternalServices creates one configured external service per kind and returns the list.
 func MakeExternalServices() types.ExternalServices {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
@@ -113,23 +139,19 @@ func MakeExternalServices() types.ExternalServices {
 	githubSvc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
-		Config:      `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
 
-	gitlabSvc := types.ExternalService{
-		Kind:        extsvc.KindGitLab,
-		DisplayName: "GitLab - Test",
-		Config:      `{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
+	gitlabSvc := MakeGitLabExternalService()
+	gitlabSvc.CreatedAt = now
+	gitlabSvc.UpdatedAt = now
 
 	bitbucketServerSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server - Test",
-		Config:      `{"url": "https://bitbucket.com", "username": "foo", "token": "abc", "repositoryQuery": ["none"]}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.sgdev.org", "username": "foo", "token": "abc", "repositoryQuery": ["none"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -137,7 +159,7 @@ func MakeExternalServices() types.ExternalServices {
 	bitbucketCloudSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketCloud,
 		DisplayName: "Bitbucket Cloud - Test",
-		Config:      `{"url": "https://bitbucket.com", "username": "foo", "appPassword": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org", "username": "foo", "appPassword": "abc"}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -145,7 +167,7 @@ func MakeExternalServices() types.ExternalServices {
 	awsSvc := types.ExternalService{
 		Kind:        extsvc.KindAWSCodeCommit,
 		DisplayName: "AWS Code - Test",
-		Config:      `{"region": "eu-west-1", "accessKeyID": "key", "secretAccessKey": "secret", "gitCredentials": {"username": "foo", "password": "bar"}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"region": "eu-west-1", "accessKeyID": "key", "secretAccessKey": "secret", "gitCredentials": {"username": "foo", "password": "bar"}}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -153,7 +175,7 @@ func MakeExternalServices() types.ExternalServices {
 	otherSvc := types.ExternalService{
 		Kind:        extsvc.KindOther,
 		DisplayName: "Other - Test",
-		Config:      `{"url": "https://other.com", "repos": ["none"]}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://other.com", "repos": ["none"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -161,14 +183,14 @@ func MakeExternalServices() types.ExternalServices {
 	gitoliteSvc := types.ExternalService{
 		Kind:        extsvc.KindGitolite,
 		DisplayName: "Gitolite - Test",
-		Config:      `{"prefix": "foo", "host": "bar"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"prefix": "foo", "host": "bar"}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
 
 	return []*types.ExternalService{
 		&githubSvc,
-		&gitlabSvc,
+		gitlabSvc,
 		&bitbucketServerSvc,
 		&bitbucketCloudSvc,
 		&awsSvc,
@@ -177,52 +199,7 @@ func MakeExternalServices() types.ExternalServices {
 	}
 }
 
-// MakeNamespacedExternalServices creates one configured external service per kind, per user or org.
-func MakeNamespacedExternalServices(userID int32, orgID int32) types.ExternalServices {
-	clock := timeutil.NewFakeClock(time.Now(), 0)
-	now := clock.Now()
-
-	services := []*types.ExternalService{}
-
-	if userID > 0 {
-		services = append(services, &types.ExternalService{
-			Kind:            extsvc.KindGitHub,
-			DisplayName:     "Github - User",
-			Config:          `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`,
-			CreatedAt:       now,
-			UpdatedAt:       now,
-			NamespaceUserID: userID,
-		}, &types.ExternalService{
-			Kind:            extsvc.KindGitLab,
-			DisplayName:     "GitLab - User",
-			Config:          `{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`,
-			CreatedAt:       now,
-			UpdatedAt:       now,
-			NamespaceUserID: userID,
-		})
-	}
-	if orgID > 0 {
-		services = append(services, &types.ExternalService{
-			Kind:           extsvc.KindGitHub,
-			DisplayName:    "Github - Org",
-			Config:         `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`,
-			CreatedAt:      now,
-			UpdatedAt:      now,
-			NamespaceOrgID: orgID,
-		}, &types.ExternalService{
-			Kind:           extsvc.KindGitLab,
-			DisplayName:    "GitLab - Org",
-			Config:         `{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`,
-			CreatedAt:      now,
-			UpdatedAt:      now,
-			NamespaceOrgID: orgID,
-		})
-	}
-
-	return services
-}
-
-// Generatetypes.ExternalServices takes a list of base external services and generates n ones with different names.
+// GenerateExternalServices takes a list of base external services and generates n ones with different names.
 func GenerateExternalServices(n int, base ...*types.ExternalService) types.ExternalServices {
 	if len(base) == 0 {
 		return nil
@@ -255,35 +232,15 @@ func ExternalServicesToMap(es types.ExternalServices) map[string]*types.External
 
 // Opt contains functional options to be used in tests.
 var Opt = struct {
-	ExternalServiceID         func(int64) func(*types.ExternalService)
-	ExternalServiceModifiedAt func(time.Time) func(*types.ExternalService)
-	ExternalServiceDeletedAt  func(time.Time) func(*types.ExternalService)
-	RepoID                    func(api.RepoID) func(*types.Repo)
-	RepoName                  func(api.RepoName) func(*types.Repo)
-	RepoCreatedAt             func(time.Time) func(*types.Repo)
-	RepoModifiedAt            func(time.Time) func(*types.Repo)
-	RepoDeletedAt             func(time.Time) func(*types.Repo)
-	RepoSources               func(...string) func(*types.Repo)
-	RepoMetadata              func(interface{}) func(*types.Repo)
-	RepoExternalID            func(string) func(*types.Repo)
+	RepoID         func(api.RepoID) func(*types.Repo)
+	RepoName       func(api.RepoName) func(*types.Repo)
+	RepoCreatedAt  func(time.Time) func(*types.Repo)
+	RepoModifiedAt func(time.Time) func(*types.Repo)
+	RepoDeletedAt  func(time.Time) func(*types.Repo)
+	RepoSources    func(...string) func(*types.Repo)
+	RepoArchived   func(bool) func(*types.Repo)
+	RepoExternalID func(string) func(*types.Repo)
 }{
-	ExternalServiceID: func(n int64) func(*types.ExternalService) {
-		return func(e *types.ExternalService) {
-			e.ID = n
-		}
-	},
-	ExternalServiceModifiedAt: func(ts time.Time) func(*types.ExternalService) {
-		return func(e *types.ExternalService) {
-			e.UpdatedAt = ts
-			e.DeletedAt = time.Time{}
-		}
-	},
-	ExternalServiceDeletedAt: func(ts time.Time) func(*types.ExternalService) {
-		return func(e *types.ExternalService) {
-			e.UpdatedAt = ts
-			e.DeletedAt = ts
-		}
-	},
 	RepoID: func(n api.RepoID) func(*types.Repo) {
 		return func(r *types.Repo) {
 			r.ID = n
@@ -322,9 +279,9 @@ var Opt = struct {
 			}
 		}
 	},
-	RepoMetadata: func(md interface{}) func(*types.Repo) {
+	RepoArchived: func(b bool) func(*types.Repo) {
 		return func(r *types.Repo) {
-			r.Metadata = md
+			r.Archived = b
 		}
 	},
 	RepoExternalID: func(id string) func(*types.Repo) {
@@ -341,61 +298,14 @@ var Opt = struct {
 // A ReposAssertion performs an assertion on the given Repos.
 type ReposAssertion func(testing.TB, types.Repos)
 
-// An ExternalServicesAssertion performs an assertion on the given
-// types.ExternalServices.
-type ExternalServicesAssertion func(testing.TB, types.ExternalServices)
-
-// Assert contains assertion functions to be used in tests.
-var Assert = struct {
-	ReposEqual                func(...*types.Repo) ReposAssertion
-	ReposOrderedBy            func(func(a, b *types.Repo) bool) ReposAssertion
-	ExternalServicesEqual     func(...*types.ExternalService) ExternalServicesAssertion
-	ExternalServicesOrderedBy func(func(a, b *types.ExternalService) bool) ExternalServicesAssertion
-}{
-	ReposEqual: func(rs ...*types.Repo) ReposAssertion {
-		want := append(types.Repos{}, rs...).With(Opt.RepoID(0))
-		return func(t testing.TB, have types.Repos) {
-			t.Helper()
-			// Exclude auto-generated IDs from equality tests
-			have = append(types.Repos{}, have...).With(Opt.RepoID(0))
-			if diff := cmp.Diff(want, have, cmpopts.IgnoreFields(types.Repo{}, "CreatedAt", "UpdatedAt")); diff != "" {
-				t.Errorf("repos (-want +got): %s", diff)
-			}
+func AssertReposEqual(rs ...*types.Repo) ReposAssertion {
+	want := types.Repos(rs)
+	return func(t testing.TB, have types.Repos) {
+		t.Helper()
+		// Exclude auto-generated IDs from equality tests
+		opts := cmpopts.IgnoreFields(types.Repo{}, "ID", "CreatedAt", "UpdatedAt")
+		if diff := cmp.Diff(want, have, opts); diff != "" {
+			t.Errorf("repos (-want +got): %s", diff)
 		}
-	},
-	ReposOrderedBy: func(ord func(a, b *types.Repo) bool) ReposAssertion {
-		return func(t testing.TB, have types.Repos) {
-			t.Helper()
-			want := have.Clone()
-			sort.Slice(want, func(i, j int) bool {
-				return ord(want[i], want[j])
-			})
-			if diff := cmp.Diff(want, have); diff != "" {
-				t.Errorf("repos (-want +got): %s", cmp.Diff(want, have))
-			}
-		}
-	},
-	ExternalServicesEqual: func(es ...*types.ExternalService) ExternalServicesAssertion {
-		want := append(types.ExternalServices{}, es...).With(Opt.ExternalServiceID(0))
-		return func(t testing.TB, have types.ExternalServices) {
-			t.Helper()
-			// Exclude auto-generated IDs from equality tests
-			have = append(types.ExternalServices{}, have...).With(Opt.ExternalServiceID(0))
-			if diff := cmp.Diff(want, have); diff != "" {
-				t.Errorf("external services (-want +got): %s", cmp.Diff(want, have))
-			}
-		}
-	},
-	ExternalServicesOrderedBy: func(ord func(a, b *types.ExternalService) bool) ExternalServicesAssertion {
-		return func(t testing.TB, have types.ExternalServices) {
-			t.Helper()
-			want := have.Clone()
-			sort.Slice(want, func(i, j int) bool {
-				return ord(want[i], want[j])
-			})
-			if diff := cmp.Diff(want, have); diff != "" {
-				t.Errorf("external services (-want +got): %s", cmp.Diff(want, have))
-			}
-		}
-	},
+	}
 }

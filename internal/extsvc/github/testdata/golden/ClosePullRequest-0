@@ -9,6 +9,7 @@
   "HeadRefName": "sourcegraph/campaign-17",
   "BaseRefName": "master",
   "Number": 29,
+  "ReviewDecision": "REVIEW_REQUIRED",
   "Author": {
    "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
    "Login": "eseliger",
@@ -16,12 +17,14 @@
   },
   "BaseRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Name": "automation-testing",
    "Owner": {
     "Login": "sourcegraph"
    }
   },
   "HeadRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Name": "automation-testing",
    "Owner": {
     "Login": "sourcegraph"
    }
@@ -46,6 +49,11 @@
     "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
     "Login": "LawnGnome",
     "URL": "https://github.com/LawnGnome"
+   },
+   {
+    "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+    "Login": "davejrt",
+    "URL": "https://github.com/davejrt"
    }
   ],
   "Labels": {
@@ -146,7 +154,7 @@
       "URL": "https://github.com/sourcegraph-vcr"
      },
      "Editor": null,
-     "AuthorAssociation": "NONE",
+     "AuthorAssociation": "MEMBER",
      "Body": "test-comment",
      "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-904624986",
      "CreatedAt": "2021-08-24T13:06:53Z",
@@ -164,7 +172,7 @@
       "URL": "https://github.com/LawnGnome"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "test-comment",
      "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1003202997",
      "CreatedAt": "2021-12-30T22:42:21Z",
@@ -182,11 +190,335 @@
       "URL": "https://github.com/LawnGnome"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "test-comment",
      "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1003203232",
      "CreatedAt": "2021-12-30T22:43:32Z",
      "UpdatedAt": "2021-12-30T22:43:32Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1420333566,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/63290851?v=4",
+      "Login": "sourcegraph-vcr",
+      "URL": "https://github.com/sourcegraph-vcr"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1420333566",
+     "CreatedAt": "2023-02-07T07:46:54Z",
+     "UpdatedAt": "2023-02-07T07:46:54Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1420334378,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/63290851?v=4",
+      "Login": "sourcegraph-vcr",
+      "URL": "https://github.com/sourcegraph-vcr"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1420334378",
+     "CreatedAt": "2023-02-07T07:47:45Z",
+     "UpdatedAt": "2023-02-07T07:47:45Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604486868,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604486868",
+     "CreatedAt": "2023-06-23T15:59:59Z",
+     "UpdatedAt": "2023-06-23T15:59:59Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604490155,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604490155",
+     "CreatedAt": "2023-06-23T16:01:55Z",
+     "UpdatedAt": "2023-06-23T16:01:55Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604504782,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604504782",
+     "CreatedAt": "2023-06-23T16:14:27Z",
+     "UpdatedAt": "2023-06-23T16:14:27Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604505194,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604505194",
+     "CreatedAt": "2023-06-23T16:14:50Z",
+     "UpdatedAt": "2023-06-23T16:14:50Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604506294,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604506294",
+     "CreatedAt": "2023-06-23T16:15:59Z",
+     "UpdatedAt": "2023-06-23T16:15:59Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604506993,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604506993",
+     "CreatedAt": "2023-06-23T16:16:38Z",
+     "UpdatedAt": "2023-06-23T16:16:38Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604508438,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604508438",
+     "CreatedAt": "2023-06-23T16:18:05Z",
+     "UpdatedAt": "2023-06-23T16:18:05Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604512641,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604512641",
+     "CreatedAt": "2023-06-23T16:22:01Z",
+     "UpdatedAt": "2023-06-23T16:22:01Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604513081,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604513081",
+     "CreatedAt": "2023-06-23T16:22:25Z",
+     "UpdatedAt": "2023-06-23T16:22:25Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604519249,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604519249",
+     "CreatedAt": "2023-06-23T16:28:25Z",
+     "UpdatedAt": "2023-06-23T16:28:25Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604760374,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604760374",
+     "CreatedAt": "2023-06-23T19:17:06Z",
+     "UpdatedAt": "2023-06-23T19:17:06Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604766191,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604766191",
+     "CreatedAt": "2023-06-23T19:22:07Z",
+     "UpdatedAt": "2023-06-23T19:22:07Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604766619,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604766619",
+     "CreatedAt": "2023-06-23T19:22:37Z",
+     "UpdatedAt": "2023-06-23T19:22:37Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604767118,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604767118",
+     "CreatedAt": "2023-06-23T19:23:07Z",
+     "UpdatedAt": "2023-06-23T19:23:07Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604767497,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604767497",
+     "CreatedAt": "2023-06-23T19:23:32Z",
+     "UpdatedAt": "2023-06-23T19:23:32Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 1604768869,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "test-comment",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#issuecomment-1604768869",
+     "CreatedAt": "2023-06-23T19:25:01Z",
+     "UpdatedAt": "2023-06-23T19:25:01Z",
      "IncludesCreatedEdit": false
     }
    }
@@ -197,26 +529,7 @@
      "Commit": {
       "OID": "fe4605a6811c0d62a78ec150332bbdbe34ddd6cc",
       "CheckSuites": {
-       "Nodes": [
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUzMTEyMjk4MDU=",
-         "Status": "COMPLETED",
-         "Conclusion": "STALE",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        },
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUzMTEyMjk4MDk=",
-         "Status": "COMPLETED",
-         "Conclusion": "STALE",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        }
-       ]
+       "Nodes": []
       },
       "Status": {
        "State": "",
@@ -229,5 +542,5 @@
   },
   "IsDraft": false,
   "CreatedAt": "2019-11-14T16:18:25Z",
-  "UpdatedAt": "2021-12-30T22:43:33Z"
+  "UpdatedAt": "2023-06-23T19:25:01Z"
  }

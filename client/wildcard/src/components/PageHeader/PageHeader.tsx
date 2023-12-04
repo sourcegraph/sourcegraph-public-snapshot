@@ -1,17 +1,20 @@
-import classNames from 'classnames'
 import React from 'react'
 
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import classNames from 'classnames'
+
+import { Text, type HeadingElement } from '../Typography'
+
+import { Breadcrumb, type BreadcrumbIcon, type BreadcrumbProps, type BreadcrumbText } from './Breadcrumb'
+import { Heading } from './Heading'
 
 import styles from './PageHeader.module.scss'
 
-type BreadcrumbIcon = React.ComponentType<{ className?: string }>
-type BreadcrumbText = React.ReactNode
-type Breadcrumb = {
+export type BreadcrumbItem = {
     /** Use a valid path to render this Breadcrumb as a Link */
     to?: string
     icon?: BreadcrumbIcon
     text?: React.ReactNode
+    ariaLabel?: string
 } & (
     | {
           icon: BreadcrumbIcon
@@ -21,11 +24,9 @@ type Breadcrumb = {
       }
 )
 
-interface Props {
+type PageHeaderProps = {
     /** Renders small print above the heading */
     annotation?: React.ReactNode
-    /** Heading content */
-    path: Breadcrumb[]
     /** Renders small print below the heading */
     byline?: React.ReactNode
     /** Renders description text below the heading */
@@ -33,42 +34,56 @@ interface Props {
     /** Align additional content (e.g. buttons) alongside the heading */
     actions?: React.ReactNode
     /** Heading element to use, defaults to h1 */
-    headingElement?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
+    headingElement?: HeadingElement
     className?: string
-}
+    children?: React.ReactNode
+} & (
+    | {
+          /** Heading content powered by the configuration object. */
+          path: BreadcrumbItem[]
+      }
+    | {
+          /** Heading content with fine-grain control. */
+          children?: React.ReactNode
+      }
+)
 
-export const PageHeader: React.FunctionComponent<Props> = ({
-    annotation,
-    path,
-    byline,
-    description,
-    actions,
-    className,
-    headingElement: HeadingX = 'h1',
-}) => {
-    if (path.length === 0) {
+export const PageHeader: React.FunctionComponent<React.PropsWithChildren<PageHeaderProps>> & {
+    Breadcrumb: typeof Breadcrumb
+    Heading: typeof Heading
+} = props => {
+    const { annotation, byline, description, actions, className, children, headingElement = 'h1' } = props
+    const path: BreadcrumbItem[] = 'path' in props ? props.path : []
+
+    if (path.length === 0 && !children) {
         return null
     }
 
+    const heading = (
+        <Heading as={headingElement}>
+            {path.map(({ to, text, icon, ariaLabel }, index) => (
+                <PageHeader.Breadcrumb key={index} to={to} icon={icon} aria-label={ariaLabel}>
+                    {text}
+                </PageHeader.Breadcrumb>
+            ))}
+        </Heading>
+    )
+
     return (
-        <header className={classNames(styles.container, className)}>
+        <div className={classNames(styles.container, className)}>
             <div>
                 {annotation && <small className={styles.annotation}>{annotation}</small>}
-                <HeadingX className={styles.heading}>
-                    {path.map(({ to, text, icon: Icon }, index) => (
-                        <React.Fragment key={index}>
-                            {index !== 0 && <span className={styles.divider}>/</span>}
-                            <LinkOrSpan to={to} className={styles.path}>
-                                {Icon && <Icon className={styles.pathIcon} />}
-                                {text && <span className={styles.pathText}>{text}</span>}
-                            </LinkOrSpan>
-                        </React.Fragment>
-                    ))}
-                </HeadingX>
+                {children || heading}
                 {byline && <small className={styles.byline}>{byline}</small>}
-                {description && <p className={styles.description}>{description}</p>}
+                {description && <Text className={styles.description}>{description}</Text>}
             </div>
-            {actions && <div className={styles.actions}>{actions}</div>}
-        </header>
+            {actions && <div>{actions}</div>}
+        </div>
     )
 }
+
+PageHeader.Breadcrumb = (props: BreadcrumbProps) => (
+    <Breadcrumb {...props} className={classNames(props.className, styles.breadcrumb)} />
+)
+PageHeader.Breadcrumb.displayName = 'PageHeader.Breadcrumb'
+PageHeader.Heading = Heading

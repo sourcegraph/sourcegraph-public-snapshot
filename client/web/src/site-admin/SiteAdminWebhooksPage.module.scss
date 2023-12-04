@@ -1,0 +1,14 @@
+.grid {
+    display: grid;
+    grid-template-columns: max-content max-content;
+    column-gap: 1rem;
+    row-gap: 1rem;
+
+    > * {
+        grid-row: 1 / 2;
+    }
+
+    @media (--sm-breakpoint-down) {
+        grid-template-columns: 1fr max-content;
+    }
+}

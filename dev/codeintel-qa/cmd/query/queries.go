@@ -18,23 +18,9 @@ func buildQueries() <-chan queryFunc {
 	go func() {
 		defer close(fns)
 
-		for _, testCase := range testCases {
-			// Definition returns defintion
-			fns <- makeTestFunc("def -> def", queryDefinitions, testCase.Definition, []Location{testCase.Definition})
-
-			// References return definition
-			for _, reference := range testCase.References {
-				fns <- makeTestFunc("refs -> def", queryDefinitions, reference, []Location{testCase.Definition})
-			}
-
-			// Definition returns references
-			fns <- makeTestFunc("def -> refs", queryReferences, testCase.Definition, testCase.References)
-
-			// References return references
-			if queryReferencesOfReferences {
-				for _, reference := range testCase.References {
-					fns <- makeTestFunc("refs -> refs", queryReferences, reference, testCase.References)
-				}
+		for _, generator := range testCaseGenerators {
+			for _, testCase := range generator() {
+				fns <- testCase
 			}
 		}
 	}()
@@ -57,6 +43,27 @@ func makeTestFunc(name string, f testFunc, source Location, expectedLocations []
 
 		if checkQueryResult {
 			sortLocations(locations)
+			sortLocations(expectedLocations)
+
+			if allowDirtyInstance {
+				// We allow other upload records to exist on the instance, so we might have
+				// additional locations. Here, we trim down the set of returned locations
+				// to only include the expected values, and check only that the instance gave
+				// us a superset of the expected output.
+
+				filteredLocations := locations[:0]
+			outer:
+				for _, location := range locations {
+					for _, expectedLocation := range expectedLocations {
+						if expectedLocation == location {
+							filteredLocations = append(filteredLocations, location)
+							continue outer
+						}
+					}
+				}
+
+				locations = filteredLocations
+			}
 
 			if diff := cmp.Diff(expectedLocations, locations); diff != "" {
 				collectRepositoryToResults := func(locations []Location) map[string]int {
@@ -82,7 +89,7 @@ func makeTestFunc(name string, f testFunc, source Location, expectedLocations []
 				repositoryToGottenResults := collectRepositoryToResults(locations)
 				repositoryToWantedResults := collectRepositoryToResults(expectedLocations)
 				for repo := range allRepos {
-					e += fmt.Sprintf("    - %s: want %d got %d locations\n", repo, repositoryToWantedResults[repo], repositoryToGottenResults[repo])
+					e += fmt.Sprintf("    - %s: want %d locations, got %d locations\n", repo, repositoryToWantedResults[repo], repositoryToGottenResults[repo])
 				}
 				e += "\n"
 

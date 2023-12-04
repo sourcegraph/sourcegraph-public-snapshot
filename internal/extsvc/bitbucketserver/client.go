@@ -14,21 +14,20 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/segmentio/fasthash/fnv1"
-	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -36,34 +35,8 @@ import (
 // The metric generated here will be named as "src_bitbucket_requests_total".
 var requestCounter = metrics.NewRequestMeter("bitbucket", "Total number of requests sent to the Bitbucket API.")
 
-// These fields define the self-imposed Bitbucket rate limit (since Bitbucket Server does
-// not have a concept of rate limiting in HTTP response headers).
-//
-// See https://godoc.org/golang.org/x/time/rate#Limiter for an explanation of these fields.
-//
-// We chose the limits here based on the fact that Sourcegraph is a heavy consumer of the Bitbucket
-// Server API and that a large customer had reported to us their Bitbucket instance receives
-// ~100 req/s so it seems reasonable for us to (at max) consume ~8 req/s.
-//
-// Note that, for comparison, Bitbucket Cloud restricts "List all repositories" requests (which are
-// a good portion of our requests) to 1,000/hr, and they restrict "List a user or team's repositories"
-// requests (which are roughly equal to our repository lookup requests) to 1,000/hr. We perform a list
-// repositories request for every 1000 repositories on Bitbucket every 1m by default, so for someone
-// with 20,000 Bitbucket repositories we need 20,000/1000 requests per minute (1200/hr) + overhead for
-// repository lookup requests by users, and requests for identifying which repositories a user has
-// access to (if authorization is in use) and requests for changeset synchronization if it is in use.
-//
-// These are our default values, they can be changed in configuration
-const (
-	defaultRateLimit      = rate.Limit(8) // 480/min or 28,800/hr
-	defaultRateLimitBurst = 500
-)
-
 // Client access a Bitbucket Server via the REST API.
 type Client struct {
-	// HTTP Client used to communicate with the API
-	httpClient httpcli.Doer
-
 	// URL is the base URL of Bitbucket Server.
 	URL *url.URL
 
@@ -78,16 +51,20 @@ type Client struct {
 	//   This is generally set using SetOAuth.
 	Auth auth.Authenticator
 
-	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
-	// of rate limiting in HTTP response headers).
-	RateLimit *rate.Limiter
+	// HTTP Client used to communicate with the API
+	httpClient httpcli.Doer
+
+	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a
+	// concept of rate limiting in HTTP response headers). Default limits are defined
+	// in extsvc.GetLimitFromConfig
+	rateLimit *ratelimit.InstrumentedLimiter
 }
 
 // NewClient returns an authenticated Bitbucket Server API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
-	client, err := newClient(config, httpClient)
+func NewClient(urn string, config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+	client, err := newClient(urn, config, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +91,7 @@ func NewClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer
 	return client, nil
 }
 
-func newClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+func newClient(urn string, config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
 	u, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -125,16 +102,11 @@ func newClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer
 	}
 	httpClient = requestCounter.Doer(httpClient, categorize)
 
-	// Normally our registry will return a default infinite limiter when nothing has been
-	// synced from config. However, we always want to ensure there is at least some form of rate
-	// limiting for Bitbucket.
-	defaultLimiter := rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
-	l := ratelimit.DefaultRegistry.GetOrSet(u.String(), defaultLimiter)
-
 	return &Client{
 		httpClient: httpClient,
 		URL:        u,
-		RateLimit:  l,
+		// Default limits are defined in extsvc.GetLimitFromConfig
+		rateLimit: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("BitbucketServerClient"), urn)),
 	}, nil
 }
 
@@ -145,7 +117,7 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	return &Client{
 		httpClient: c.httpClient,
 		URL:        c.URL,
-		RateLimit:  c.RateLimit,
+		rateLimit:  c.rateLimit,
 		Auth:       a,
 	}
 }
@@ -503,9 +475,10 @@ type UpdatePullRequestInput struct {
 	PullRequestID string `json:"-"`
 	Version       int    `json:"version"`
 
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	ToRef       Ref    `json:"toRef"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	ToRef       Ref        `json:"toRef"`
+	Reviewers   []Reviewer `json:"reviewers"`
 }
 
 func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
@@ -608,8 +581,13 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 		pr.ToRef.Repository.Slug,
 	)
 
-	_, err = c.send(ctx, "POST", path, nil, payload, pr)
+	resp, err := c.send(ctx, "POST", path, nil, payload, pr)
+
 	if err != nil {
+		var code int
+		if resp != nil {
+			code = resp.StatusCode
+		}
 		if IsDuplicatePullRequest(err) {
 			pr, extractErr := ExtractExistingPullRequest(err)
 			if extractErr != nil {
@@ -619,7 +597,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 				Existing: pr,
 			}
 		}
-		return err
+		return errcode.MaybeMakeNonRetryable(code, err)
 	}
 	return nil
 }
@@ -717,6 +695,33 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
 
 	_, err := c.send(ctx, "POST", path, qry, nil, pr)
+	return err
+}
+
+type DeleteBranchInput struct {
+	// Don't actually delete the ref name, just do a dry run
+	DryRun bool `json:"dryRun,omitempty"`
+	// Commit ID that the provided ref name is expected to point to. Should the ref point
+	// to a different commit ID, a 400 response will be returned with appropriate error
+	// details.
+	EndPoint *string `json:"endPoint,omitempty"`
+	// Name of the ref to be deleted
+	Name string `json:"name,omitempty"`
+}
+
+// DeleteBranch deletes a branch on the given repo.
+func (c *Client) DeleteBranch(ctx context.Context, projectKey, repoSlug string, input DeleteBranchInput) error {
+	path := fmt.Sprintf(
+		"rest/branch-utils/latest/projects/%s/repos/%s/branches",
+		projectKey,
+		repoSlug,
+	)
+
+	resp, err := c.send(ctx, "DELETE", path, nil, input, nil)
+	if resp != nil && resp.StatusCode != http.StatusNoContent {
+		return errors.Newf("unexpected status code: %d", resp.StatusCode)
+	}
+
 	return err
 }
 
@@ -819,6 +824,27 @@ func (c *Client) LoadPullRequestBuildStatuses(ctx context.Context, pr *PullReque
 	return nil
 }
 
+// ProjectRepos returns all repos of a project with a given projectKey
+func (c *Client) ProjectRepos(ctx context.Context, projectKey string) (repos []*Repo, err error) {
+	if projectKey == "" {
+		return nil, errors.New("project key empty")
+	}
+
+	path := fmt.Sprintf("rest/api/1.0/projects/%s/repos", projectKey)
+
+	pageToken := &PageToken{Limit: 1000}
+
+	for pageToken.HasMore() {
+		var page []*Repo
+		if pageToken, err = c.page(ctx, path, nil, pageToken, &page); err != nil {
+			return nil, err
+		}
+		repos = append(repos, page...)
+	}
+
+	return repos, nil
+}
+
 func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, error) {
 	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
 	req, err := http.NewRequest("GET", u, nil)
@@ -897,7 +923,7 @@ func (c *Client) Fork(ctx context.Context, projectKey, repoSlug string, input Cr
 	return &resp, err
 }
 
-func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
+func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results any) (*PageToken, error) {
 	if qry == nil {
 		qry = make(url.Values)
 	}
@@ -915,7 +941,7 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	var next PageToken
 	_, err = c.do(ctx, req, &struct {
 		*PageToken
-		Values interface{} `json:"values"`
+		Values any `json:"values"`
 	}{
 		PageToken: &next,
 		Values:    results,
@@ -928,7 +954,7 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	return &next, nil
 }
 
-func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result interface{}) (*http.Response, error) {
+func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result any) (*http.Response, error) {
 	if qry == nil {
 		qry = make(url.Values)
 	}
@@ -950,45 +976,43 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 	return c.do(ctx, req, result)
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (*http.Response, error) {
+func (c *Client) do(ctx context.Context, req *http.Request, result any) (_ *http.Response, err error) {
+	tr, ctx := trace.New(ctx, "BitbucketServer.do")
+	defer tr.EndWithErr(&err)
+	req = req.WithContext(ctx)
+
+	req.URL.Path, err = url.JoinPath(c.URL.Path, req.URL.Path) // First join paths so that base path is kept
+	if err != nil {
+		return nil, err
+	}
 	req.URL = c.URL.ResolveReference(req.URL)
+
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	}
-
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
-		req.WithContext(ctx),
-		nethttp.OperationName("Bitbucket Server"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
 
 	if err := c.Auth.Authenticate(req); err != nil {
 		return nil, err
 	}
 
-	startWait := time.Now()
-	if err := c.RateLimit.Wait(ctx); err != nil {
+	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
-	}
-
-	if d := time.Since(startWait); d > 200*time.Millisecond {
-		log15.Warn("Bitbucket self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	defer resp.Body.Close()
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, errors.WithStack(&httpError{
+		return resp, errors.WithStack(&httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
 			Body:       bs,
@@ -999,7 +1023,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	if s, ok := result.(*[]byte); ok {
 		*s = bs
 	} else if result != nil {
-		return resp, json.Unmarshal(bs, result)
+		return resp, errors.Wrap(json.Unmarshal(bs, result), "failed to unmarshal response to JSON")
 	}
 
 	return resp, nil
@@ -1155,26 +1179,31 @@ type GroupProjectPermission struct {
 	Project *Project
 }
 
+type Link struct {
+	Href string `json:"href"`
+	Name string `json:"name"`
+}
+
+type RepoLinks struct {
+	Clone []Link `json:"clone"`
+	Self  []struct {
+		Href string `json:"href"`
+	} `json:"self"`
+}
+
 type Repo struct {
-	Slug          string   `json:"slug"`
-	ID            int      `json:"id"`
-	Name          string   `json:"name"`
-	SCMID         string   `json:"scmId"`
-	State         string   `json:"state"`
-	StatusMessage string   `json:"statusMessage"`
-	Forkable      bool     `json:"forkable"`
-	Origin        *Repo    `json:"origin"`
-	Project       *Project `json:"project"`
-	Public        bool     `json:"public"`
-	Links         struct {
-		Clone []struct {
-			Href string `json:"href"`
-			Name string `json:"name"`
-		} `json:"clone"`
-		Self []struct {
-			Href string `json:"href"`
-		} `json:"self"`
-	} `json:"links"`
+	Slug          string    `json:"slug"`
+	ID            int       `json:"id"`
+	Name          string    `json:"name"`
+	Description   string    `json:"description"`
+	SCMID         string    `json:"scmId"`
+	State         string    `json:"state"`
+	StatusMessage string    `json:"statusMessage"`
+	Forkable      bool      `json:"forkable"`
+	Origin        *Repo     `json:"origin"`
+	Project       *Project  `json:"project"`
+	Public        bool      `json:"public"`
+	Links         RepoLinks `json:"links"`
 }
 
 // IsPersonalRepository tells if the repository is a personal one.
@@ -1566,7 +1595,7 @@ func (c *Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest, 
 
 	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"text": body,
 	}
 

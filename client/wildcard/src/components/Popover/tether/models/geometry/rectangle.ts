@@ -1,4 +1,4 @@
-import { Point } from './point'
+import type { Point } from './point'
 
 export interface Rectangle {
     left: number

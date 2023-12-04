@@ -1,0 +1,44 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.requests-grid {
+    display: grid;
+    grid-template-columns: max-content max-content max-content minmax(0, auto) max-content max-content;
+    row-gap: 0.2rem;
+    column-gap: 0.5rem;
+    align-items: center;
+    @media (--sm-breakpoint-down) {
+        row-gap: 0.5rem;
+        column-gap: 0.5rem;
+    }
+}
+
+.url-column {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.successful {
+    color: var(--success);
+}
+
+.failed {
+    color: var(--danger);
+}
+
+.separator {
+    /* Make it full width in the current row. */
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--border-color-2);
+    @media (--xs-breakpoint-down) {
+        margin-top: 1rem;
+        padding-bottom: 1rem;
+    }
+}
+
+.more-info {
+    overflow-wrap: break-word;
+
+    strong {
+        color: var(--primary);
+    }
+}

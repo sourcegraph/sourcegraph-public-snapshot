@@ -4,7 +4,7 @@ Some teams require Sourcegraph configuration to be stored in version control as 
 UI.
 
 As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.md)
-, [code host configuration](../external_service/index.md), and global settings. As of Sourcegraph v3.34+, Sourcegraph
+, [code host configuration](../external_service/index.md), and [global settings](settings.md). As of Sourcegraph v3.34+, Sourcegraph
 supports merging multiple site config files.
 
 ## Benefits
@@ -27,11 +27,11 @@ Loading configuration in this manner has two significant drawbacks:
 
 ## Site configuration
 
-Set `SITE_CONFIG_FILE=site.json` on:
+Set `SITE_CONFIG_FILE=site.json` and mount the config on:
 
-- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend`
+- [Docker Compose](../deploy/docker-compose/index.md) and [Kubernetes](../deploy/kubernetes/index.md): all `frontend`
   containers
-- [Single-container](../install/docker/index.md): the `sourcegraph/server` container
+- [Single-container](../deploy/docker-single-container/index.md): the `sourcegraph/server` container
 
 Where `site.json` is a file that contains the [site configuration](site_config.md), which you would otherwise edit
 through the in-app site configuration editor.
@@ -50,11 +50,11 @@ This will merge both files. Sourcegraph will need access both files.
 
 ## Code host configuration
 
-Set `EXTSVC_CONFIG_FILE=extsvc.json` on:
+Set `EXTSVC_CONFIG_FILE=extsvc.json` and mount the config on:
 
-- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend`
+- [Docker Compose](../deploy/docker-compose/index.md) and [Kubernetes](../deploy/kubernetes/index.md): all `frontend`
   containers
-- [Single-container](../install/docker/index.md): the `sourcegraph/server` container
+- [Single-container](../deploy/docker-single-container/index.md): the `sourcegraph/server` container
 
 Where `extsvc.json` contains a JSON object that specifies _all_ of your code hosts in a single JSONC file:
 
@@ -96,10 +96,10 @@ If you want to _allow_ edits to be made through the web UI (which will be overwr
 
 ## Global settings
 
-Set `GLOBAL_SETTINGS_FILE=global-settings.json` on:
+Set `GLOBAL_SETTINGS_FILE=global-settings.json` and mount the config on:
 
-- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend` containers
-- [Single-container](../install/docker/index.md): the `sourcegraph/server` container
+- [Docker Compose](../deploy/docker-compose/index.md) and [Kubernetes](../deploy/kubernetes/index.md): all `frontend` containers
+- [Single-container](../deploy/docker-single-container/index.md): the `sourcegraph/server` container
 
 Where `global-settings.json` contains the global settings, which you would otherwise edit through the in-app global settings editor.
 
@@ -222,5 +222,57 @@ site.json
 ```
 
 Similarly, because we set the environment variables to use those configuration files, the frontend should have loaded them into the database upon startup. You should now see Sourcegraph configured!
+
+## Transitioning to configuration via the file system
+
+Transitioning from a UI based configuration to file system based configuration can be accomplished following the steps above but there are some things to be considered.
+
+Sourcegraph reads from the new `extsvc.json` file and creates a new entry in the database for any _new_ code host config it finds there. **This will not cause a reclone of the repositories synced via the UI based configs**. However it is still advised that admins prevent the generation of duplicate code host configurations.
+
+As Sourcegraph reads from an `extsvc.json` file it reads from the top level schema and creates a new config with display name `<codehost type> #<position in json>` For example in the `extsvc.config` below GITHUB #1, GITHUB #2, GITHUB #3, and GITLAB #1 external service configs will be generated.
+
+```json
+    {
+      "GITHUB": [
+        {
+          "url": "https://github.com",
+          "token": "secret",
+          "repos": [
+            "latveria/doombot",
+            "latveria/darkhold",
+            "latveria/timemachine"
+          ]
+        },
+        {
+          "url": "https://github.com",
+          "token": "secret",
+          "orgs": ["sourcegraph"]
+        },
+        {
+          "url": "https://github.com",
+          "token": "secret",
+          "orgs": [],
+          "repos": [
+            "grafana/grafana",
+            "sourcegraph/deploy-sourcegraph-twit-test",
+            "kubernetes/kubernetes",
+          ]
+        }
+      ],
+      "GITLAB": [
+        {
+          "url": "https://gitlab.com",
+          "token": "secret",
+          "projectQuery": [
+            "projects?membership=true&archived=no"
+          ]
+        }
+      ]
+    } 
+```
+
+You can avoid generation of a new config by changing the display name of your UI based config to match the relative display name which will be generated by the new `extsvc.json` file. For Sourcegraph to view a codehost config as already present its `display_name`, `kind`, and `config` **must not** change. You can take a look at these values in the database by running the following SQL query:
+
+`sg=# select id, display_name, kind, config from external_services order by id;`
 
 If you encounter any issues, please [contact us](mailto:support@sourcegraph.com).

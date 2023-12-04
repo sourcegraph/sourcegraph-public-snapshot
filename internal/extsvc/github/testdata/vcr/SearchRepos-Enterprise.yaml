@@ -9,6 +9,8 @@ interactions:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       - application/vnd.github.machine-man-preview+json
       - application/vnd.github.nebula-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://ghe.sgdev.org/api/v3
@@ -30,9 +32,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 14 Dec 2021 21:43:31 GMT
+      - Wed, 15 Feb 2023 23:39:52 GMT
       Etag:
-      - W/"82aeb589183fce7ad6278980b9599e7a038700eebdefa0253cb01346ebe8d663"
+      - W/"3655a2daf648ac10287c0e0631ddb3e455fa4a95af8f40f34f9cb86b5da7a60c"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -41,30 +43,29 @@ interactions:
       - max-age=31536000; includeSubdomains
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
       X-Github-Enterprise-Version:
-      - 3.3.0
+      - 3.3.16
       X-Github-Media-Type:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview.nebula-preview;
         format=json
       X-Github-Request-Id:
-      - a8bc4323-105d-4607-9824-5f21d566c629
-      X-Oauth-Scopes:
-      - repo
+      - fdf8d6ed-de71-4e51-ae5a-778248d50ed6
       X-Runtime-Rack:
-      - "0.021005"
+      - "0.020509"
+      X-Varied-Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
       - "0"
     status: 200 OK
     code: 200
     duration: ""
 - request:
-    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tforkCount\n\tstargazerCount\n\tvisibility\n}\n\t\nquery($query:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tforkCount\n\trepositoryTopics(first:100)
+      {\n\t\tnodes {\n\t\t\ttopic {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n\tstargazerCount\n\tvisibility\n}\n\t\nquery($query:
       String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
       $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
       { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
@@ -73,13 +74,15 @@ interactions:
     headers:
       Accept:
       - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://ghe.sgdev.org/api/graphql
     method: POST
   response:
     body: '{"data":{"search":{"repositoryCount":1,"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOjE="},"nodes":[{"id":"MDEwOlJlcG9zaXRvcnk0NDIyODU=","databaseId":442285,"nameWithOwner":"admiring-austin-120/fluffy-enigma","description":"Internal
-      repo used in tests in sourcegraph code.","url":"https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma","isPrivate":true,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"forkCount":0,"stargazerCount":0,"visibility":"INTERNAL"}]}}}'
+      repo used in tests in sourcegraph code.","url":"https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma","isPrivate":true,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"forkCount":0,"repositoryTopics":{"nodes":[{"topic":{"name":"fluff"}}]},"stargazerCount":0,"visibility":"INTERNAL"}]}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -93,39 +96,35 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 14 Dec 2021 21:43:31 GMT
+      - Wed, 15 Feb 2023 23:39:52 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
       - GitHub.com
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
       X-Github-Enterprise-Version:
-      - 3.3.0
+      - 3.3.16
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 73b5772f-5667-4616-adb0-abd13e419faf
-      X-Oauth-Scopes:
-      - repo
+      - c3cc469e-95fd-4cd3-933f-51cf3119f8c7
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
       - "5000"
       X-Ratelimit-Reset:
-      - "1639521811"
+      - "1676507992"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
       - "0"
       X-Runtime-Rack:
-      - "0.548244"
+      - "0.355271"
       X-Xss-Protection:
       - "0"
     status: 200 OK

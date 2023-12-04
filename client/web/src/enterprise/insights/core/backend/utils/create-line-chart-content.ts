@@ -1,151 +1,64 @@
-import { formatISO } from 'date-fns'
-import { LineChartContent } from 'sourcegraph'
-
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
+import { type InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
 import { PageRoutes } from '../../../../../routes.constants'
-import { SearchBasedBackendFilters, SearchBasedInsightSeries } from '../../types/insight/search-insight'
+import type { BackendInsight, SearchBasedInsightSeries } from '../../types'
+import type { BackendInsightDatum, BackendInsightSeries } from '../code-insights-backend-types'
 
-interface SeriesDataset {
-    dateTime: number
+import { getParsedSeriesMetadata } from './parse-series-metadata'
 
-    [seriesKey: string]: number
+type SeriesDefinition = Record<string, SearchBasedInsightSeries>
+
+interface LineChartContentInput {
+    insight: BackendInsight
+    seriesData: InsightDataSeries[]
+    showError: boolean
 }
-
-export interface InsightData {
-    series: {
-        label: string
-        points: { dateTime: string; value: number }[]
-    }[]
-}
-
-export function createLineChartContent(
-    seriesData: InsightData,
-    seriesDefinition: SearchBasedInsightSeries[] = []
-): LineChartContent<SeriesDataset, 'dateTime'> {
-    // Immutable sort is required to avoid breaking useCallback memoziation in BackendInsight component
-    const sortedSeriesSettings = [...seriesDefinition].sort((a, b) => a.query.localeCompare(b.query))
-    const dataByXValue = new Map<string, SeriesDataset>()
-
-    for (const [seriesIndex, series] of seriesData.series.entries()) {
-        for (const point of series.points) {
-            let dataObject = dataByXValue.get(point.dateTime)
-            if (!dataObject) {
-                dataObject = {
-                    dateTime: Date.parse(point.dateTime),
-                    // Initialize all series to null (empty chart) value
-                    ...Object.fromEntries(seriesData.series.map((series, index) => [`series${index}`, null])),
-                }
-                dataByXValue.set(point.dateTime, dataObject)
-            }
-            dataObject[`series${seriesIndex}`] = point.value
-        }
-    }
-
-    return {
-        chart: 'line',
-        data: [...dataByXValue.values()],
-        series: seriesData.series.map((series, index) => ({
-            name: sortedSeriesSettings[index]?.name ?? series.label,
-            dataKey: `series${index}`,
-            stroke: sortedSeriesSettings[index]?.stroke,
-        })),
-        xAxis: {
-            dataKey: 'dateTime',
-            scale: 'time',
-            type: 'number',
-        },
-    }
-}
-
-/**
- * Minimal input type model for {@link createLineChartContentFromIndexedSeries} function
- */
-export type InsightDataSeriesData = Pick<InsightDataSeries, 'seriesId' | 'label' | 'points'>
 
 /**
  * Generates line chart content for visx chart. Note that this function relies on the fact that
- * all series are indexed. This generator is used only for GQL api, only there we have indexed series
- * for setting-based api see {@link createLineChartContent}
- *
- * @param series - insight series with points data
- * @param seriesDefinition - insight definition with line settings (color, name, query)
- * @param filters - insight drill-down filters
+ * all series are indexed.
  */
-export function createLineChartContentFromIndexedSeries(
-    series: InsightDataSeriesData[],
-    seriesDefinition: SearchBasedInsightSeries[] = [],
-    filters?: SearchBasedBackendFilters
-): LineChartContent<SeriesDataset, 'dateTime'> {
-    const definitionMap = Object.fromEntries<SearchBasedInsightSeries>(
-        seriesDefinition.map(definition => [definition.id ?? '', definition])
+export function createLineChartContent(input: LineChartContentInput): BackendInsightSeries<BackendInsightDatum>[] {
+    const { insight, seriesData, showError } = input
+    const seriesDefinition = getParsedSeriesMetadata(insight, seriesData)
+    const seriesDefinitionMap: SeriesDefinition = Object.fromEntries<SearchBasedInsightSeries>(
+        seriesDefinition.map(definition => [definition.id, definition])
     )
 
-    const { includeRepoRegexp = '', excludeRepoRegexp = '' } = filters ?? {}
-
-    return {
-        chart: 'line',
-        data: getDataPoints(series),
-        series: series.map(line => ({
-            name: definitionMap[line.seriesId]?.name ?? line.label,
-            dataKey: line.seriesId,
-            stroke: definitionMap[line.seriesId]?.stroke,
-            linkURLs: Object.fromEntries(
-                [...line.points]
-                    .sort((a, b) => Date.parse(a.dateTime) - Date.parse(b.dateTime))
-                    .map((point, index, points) => {
-                        const previousPoint = points[index - 1]
-                        const date = Date.parse(point.dateTime)
-
-                        // Use formatISO instead of toISOString(), because toISOString() always outputs UTC.
-                        // They mark the same point in time, but using the user's timezone makes the date string
-                        // easier to read (else the date component may be off by one day)
-                        const after = previousPoint ? formatISO(Date.parse(previousPoint.dateTime)) : ''
-                        const before = formatISO(date)
-
-                        const includeRepoFilter = includeRepoRegexp ? `repo:${includeRepoRegexp}` : ''
-                        const excludeRepoFilter = excludeRepoRegexp ? `-repo:${excludeRepoRegexp}` : ''
-
-                        const repoFilter = `${includeRepoFilter} ${excludeRepoFilter}`
-                        const afterFilter = after ? `after:${after}` : ''
-                        const beforeFilter = `before:${before}`
-                        const dateFilters = `${afterFilter} ${beforeFilter}`
-                        const diffQuery = `${repoFilter} type:diff ${dateFilters} ${definitionMap[line.seriesId].query}`
-                        const searchQueryParameter = buildSearchURLQuery(diffQuery, SearchPatternType.literal, false)
-
-                        return [date, `${window.location.origin}${PageRoutes.Search}?${searchQueryParameter}`]
-                    })
-            ),
+    return seriesData.map<BackendInsightSeries<BackendInsightDatum>>(line => ({
+        id: line.seriesId,
+        alerts: showError ? line.status.incompleteDatapoints : [],
+        data: line.points.map(point => ({
+            dateTime: new Date(point.dateTime),
+            value: point.value,
+            link: generateLinkURL({
+                diffQuery: point.diffQuery,
+            }),
         })),
-        xAxis: {
-            dataKey: 'dateTime',
-            scale: 'time',
-            type: 'number',
-        },
-    }
+        name: seriesDefinitionMap[line.seriesId]?.name ?? line.label,
+        color: seriesDefinitionMap[line.seriesId]?.stroke,
+        getYValue: datum => datum.value,
+        getXValue: datum => datum.dateTime,
+        getLinkURL: datum => datum.link,
+    }))
 }
 
 /**
- * Groups data series by dateTime (x axis) of each series
+ * Minimal input type model for {@link createLineChartContent} function
  */
-export function getDataPoints(series: InsightDataSeriesData[]): SeriesDataset[] {
-    const dataByXValue = new Map<string, SeriesDataset>()
+export type InsightDataSeriesData = Pick<InsightDataSeries, 'seriesId' | 'label' | 'points'>
 
-    for (const line of series) {
-        for (const point of line.points) {
-            let dataObject = dataByXValue.get(point.dateTime)
-            if (!dataObject) {
-                dataObject = {
-                    dateTime: Date.parse(point.dateTime),
-                    // Initialize all series to null (empty chart) value
-                    ...Object.fromEntries(series.map(line => [line.seriesId, null])),
-                }
-                dataByXValue.set(point.dateTime, dataObject)
-            }
-            dataObject[line.seriesId] = point.value
-        }
+interface GenerateLinkInput {
+    diffQuery: string | null
+}
+
+export function generateLinkURL(input: GenerateLinkInput): string | undefined {
+    const { diffQuery } = input
+    if (diffQuery) {
+        const searchQueryParameter = buildSearchURLQuery(diffQuery, SearchPatternType.literal, false)
+        return `${window.location.origin}${PageRoutes.Search}?${searchQueryParameter}`
     }
 
-    return [...dataByXValue.values()]
+    return undefined
 }

@@ -1,6 +1,5 @@
-.command-list-popover {
-    // The navbar has z-index 1000
-    z-index: 1001 !important;
+:root {
+    --gray-10: #fafafa; // override value to avoid style conflics: https://github.com/sourcegraph/sourcegraph/pull/32548
 }
 
 .btn-icon {
@@ -30,6 +29,8 @@
         background: none;
         color: inherit;
     }
+
+    margin-bottom: 0;
 
     // highlight.js styles
 
@@ -121,20 +122,5 @@
 
     :global(.hljs-strong) {
         font-weight: bold;
-    }
-}
-
-.code-view-toolbar {
-    display: flex;
-
-    // Same style as for Gitlab's svg icons
-    img {
-        vertical-align: baseline;
-    }
-    :global(.btn) img {
-        height: 15px;
-        width: 15px;
-        position: relative;
-        top: 2px;
     }
 }

@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "anonymous",
+    srcs = ["anonymous.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/anonymous",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//cmd/cody-gateway/internal/actor",
+        "//cmd/cody-gateway/internal/httpapi/embeddings",
+        "//internal/codygateway",
+    ],
+)

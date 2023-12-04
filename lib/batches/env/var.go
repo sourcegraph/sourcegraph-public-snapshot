@@ -51,13 +51,14 @@ func (v *variable) UnmarshalJSON(data []byte) error {
 
 	for k, value := range kv {
 		v.name = k
+		//nolint:exportloopref // There should only be one iteration, so the value of `value` should not change
 		v.value = &value
 	}
 
 	return nil
 }
 
-func (v *variable) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (v *variable) UnmarshalYAML(unmarshal func(any) error) error {
 	// This can be a string or an object with one property. Let's try the string
 	// case first.
 	var k string
@@ -77,6 +78,7 @@ func (v *variable) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 	for k, value := range kv {
 		v.name = k
+		//nolint:exportloopref // There should only be one iteration, so the value of `value` should not change
 		v.value = &value
 	}
 

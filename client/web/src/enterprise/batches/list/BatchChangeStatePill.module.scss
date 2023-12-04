@@ -1,0 +1,40 @@
+.pill-group {
+    display: flex;
+    border-radius: calc(var(--badge-border-radius) * 1.5);
+    border-style: solid;
+    overflow: hidden;
+
+    &.open {
+        background-color: var(--success);
+        border-color: var(--success);
+    }
+
+    &.draft {
+        background-color: var(--secondary);
+        border-color: var(--secondary);
+    }
+
+    &.closed {
+        background-color: var(--danger);
+        border-color: var(--danger);
+    }
+
+    .state-pill {
+        padding: 0.125rem 0.375rem;
+        text-transform: uppercase;
+        border-radius: 0;
+        border: none;
+    }
+
+    .execution-pill {
+        display: flex;
+        align-items: center;
+        border: none;
+        border-radius: 0;
+        padding: 0 0.125rem;
+
+        .execution-icon {
+            height: 1rem;
+        }
+    }
+}

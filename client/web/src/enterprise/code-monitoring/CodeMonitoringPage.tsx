@@ -1,48 +1,88 @@
+import React, { useMemo, useEffect, useState, useLayoutEffect, useCallback } from 'react'
+
+import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useMemo, useEffect, useState } from 'react'
+import { type Location, useNavigate, useLocation, type NavigateFunction } from 'react-router-dom'
 import { of } from 'rxjs'
-import { catchError, map, startWith } from 'rxjs/operators'
+import { catchError, map } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageHeader, LoadingSpinner, useObservable, Button, Link } from '@sourcegraph/wildcard'
+import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import {
+    PageHeader,
+    LoadingSpinner,
+    useObservable,
+    Button,
+    Link,
+    ProductStatusBadge,
+    Icon,
+    ButtonLink,
+} from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import {
     fetchUserCodeMonitors as _fetchUserCodeMonitors,
+    fetchCodeMonitors as _fetchCodeMonitors,
     toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled,
 } from './backend'
 import { CodeMonitoringGettingStarted } from './CodeMonitoringGettingStarted'
+import { CodeMonitoringLogs } from './CodeMonitoringLogs'
 import { CodeMonitorList } from './CodeMonitorList'
 
-export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
-    authenticatedUser: AuthenticatedUser | null
-    fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
-    toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
+type MonitorsTab = 'list' | 'getting-started' | 'logs'
+type Tabs = { tab: MonitorsTab; title: string; isActive: boolean }[]
 
-    // For testing purposes only
-    testForceTab?: 'list' | 'getting-started'
+function getSelectedTabFromLocation(
+    locationSearch: string,
+    userHasCodeMonitors: boolean | Error | undefined
+): MonitorsTab {
+    const urlParameters = new URLSearchParams(locationSearch)
+    switch (urlParameters.get('tab')) {
+        case 'list': {
+            return 'list'
+        }
+        case 'getting-started': {
+            return 'getting-started'
+        }
+        case 'logs': {
+            return 'logs'
+        }
+    }
+
+    return userHasCodeMonitors ? 'list' : 'getting-started'
 }
 
-export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps> = ({
-    settingsCascade,
+function setSelectedLocationTab(location: Location, navigate: NavigateFunction, selectedTab: MonitorsTab): void {
+    const urlParameters = new URLSearchParams(location.search)
+    urlParameters.set('tab', selectedTab)
+    if (location.search !== urlParameters.toString()) {
+        navigate({ ...location, search: urlParameters.toString() }, { replace: true })
+    }
+}
+
+export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings> {
+    authenticatedUser: AuthenticatedUser | null
+    fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
+    fetchCodeMonitors?: typeof _fetchCodeMonitors
+    toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
+    isCodyApp: boolean
+    // For testing purposes only
+    testForceTab?: 'list' | 'getting-started' | 'logs'
+}
+
+export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren<CodeMonitoringPageProps>> = ({
     authenticatedUser,
     fetchUserCodeMonitors = _fetchUserCodeMonitors,
+    fetchCodeMonitors = _fetchCodeMonitors,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
-    isLightTheme,
     testForceTab,
+    isCodyApp,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('CodeMonitoringPage'), [])
-
-    const LOADING = 'loading' as const
-
     const userHasCodeMonitors = useObservable(
         useMemo(
             () =>
@@ -53,7 +93,6 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                           after: null,
                       }).pipe(
                           map(monitors => monitors.nodes.length > 0),
-                          startWith(LOADING),
                           catchError(error => [asError(error)])
                       )
                     : of(false),
@@ -61,107 +100,130 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         )
     )
 
-    const [currentTab, setCurrentTab] = useState<'list' | 'getting-started'>('list')
+    const navigate = useNavigate()
+    const location = useLocation()
 
-    // If user has no code monitors, default to the getting started tab after loading
-    useEffect(() => {
-        if (userHasCodeMonitors === false) {
-            setCurrentTab('getting-started')
-        }
-    }, [userHasCodeMonitors])
+    const [currentTab, setCurrentTab] = useState<MonitorsTab>(() =>
+        getSelectedTabFromLocation(location.search, userHasCodeMonitors)
+    )
+
+    const onSelectTab = useCallback(
+        (tab: MonitorsTab) => {
+            setCurrentTab(tab)
+            setSelectedLocationTab(location, navigate, tab)
+        },
+        [navigate, location, setCurrentTab]
+    )
 
     // Force tab for testing
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (testForceTab && testForceTab !== currentTab) {
             setCurrentTab(testForceTab)
         }
     }, [currentTab, testForceTab])
 
-    const showList = userHasCodeMonitors !== 'loading' && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
+    // Log page view of selected tab
+    useEffect(() => {
+        if (userHasCodeMonitors !== undefined) {
+            switch (currentTab) {
+                case 'getting-started': {
+                    eventLogger.logPageView('CodeMonitoringGettingStartedPage')
+                    break
+                }
+                case 'logs': {
+                    eventLogger.logPageView('CodeMonitoringLogsPage')
+                    break
+                }
+                case 'list': {
+                    eventLogger.logPageView('CodeMonitoringPage')
+                }
+            }
+        }
+    }, [currentTab, userHasCodeMonitors])
+
+    const showList = userHasCodeMonitors !== undefined && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
+
+    const tabs: Tabs = useMemo(
+        () => [
+            {
+                tab: 'list',
+                title: 'Code monitors',
+                isActive: currentTab === 'list',
+            },
+            {
+                tab: 'getting-started',
+                title: 'Getting started',
+                isActive: currentTab === 'getting-started',
+            },
+            {
+                tab: 'logs',
+                title: 'Logs',
+                isActive: currentTab === 'logs',
+            },
+        ],
+        [currentTab]
+    )
 
     return (
         <div className="code-monitoring-page" data-testid="code-monitoring-page">
             <PageTitle title="Code Monitoring" />
             <PageHeader
-                path={[
-                    {
-                        icon: CodeMonitoringLogo,
-                        text: 'Code monitoring',
-                    },
-                ]}
                 actions={
-                    userHasCodeMonitors &&
-                    userHasCodeMonitors !== 'loading' &&
-                    !isErrorLike(userHasCodeMonitors) &&
-                    authenticatedUser && (
+                    authenticatedUser &&
+                    !isCodyApp && (
                         <Button to="/code-monitoring/new" variant="primary" as={Link}>
-                            <PlusIcon className="icon-inline" />
-                            Create
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create a code monitor
                         </Button>
                     )
                 }
                 description={
-                    userHasCodeMonitors &&
-                    userHasCodeMonitors !== 'loading' &&
-                    !isErrorLike(userHasCodeMonitors) && (
-                        <>
-                            Watch your code for changes and trigger actions to get notifications, send webhooks, and
-                            more.
-                        </>
-                    )
+                    <>Watch your code for changes and trigger actions to get notifications, send webhooks, and more.</>
                 }
                 className="mb-3"
-            />
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb icon={CodeMonitoringLogo}>Code monitoring</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
 
-            {userHasCodeMonitors === 'loading' ? (
+            {userHasCodeMonitors === undefined ? (
                 <LoadingSpinner inline={false} />
             ) : (
                 <div className="d-flex flex-column">
                     <div className="code-monitoring-page-tabs mb-4">
                         <div className="nav nav-tabs">
-                            <div className="nav-item">
-                                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                                <Link
-                                    to=""
-                                    onClick={event => {
-                                        event.preventDefault()
-                                        setCurrentTab('list')
-                                    }}
-                                    className={classNames('nav-link', currentTab === 'list' && 'active')}
-                                    role="button"
-                                >
-                                    <span className="text-content" data-tab-content="Code monitors">
-                                        Code monitors
-                                    </span>
-                                </Link>
-                            </div>
-                            <div className="nav-item">
-                                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                                <Link
-                                    to=""
-                                    onClick={event => {
-                                        event.preventDefault()
-                                        setCurrentTab('getting-started')
-                                    }}
-                                    className={classNames('nav-link', currentTab === 'getting-started' && 'active')}
-                                    role="button"
-                                >
-                                    <span className="text-content" data-tab-content="Getting started">
-                                        Getting started
-                                    </span>
-                                </Link>
-                            </div>
+                            {tabs.map(({ tab, title, isActive }) => (
+                                <div className="nav-item" key={tab}>
+                                    <ButtonLink
+                                        to=""
+                                        role="button"
+                                        onSelect={event => {
+                                            event.preventDefault()
+                                            onSelectTab(tab)
+                                        }}
+                                        className={classNames('nav-link', isActive && 'active')}
+                                    >
+                                        <span>
+                                            {title}
+                                            {tab === 'logs' && <ProductStatusBadge status="beta" className="ml-2" />}
+                                        </span>
+                                    </ButtonLink>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
                     {currentTab === 'getting-started' && (
-                        <CodeMonitoringGettingStarted isLightTheme={isLightTheme} isSignedIn={!!authenticatedUser} />
+                        <CodeMonitoringGettingStarted authenticatedUser={authenticatedUser} isCodyApp={isCodyApp} />
                     )}
+
+                    {currentTab === 'logs' && <CodeMonitoringLogs />}
 
                     {showList && (
                         <CodeMonitorList
                             authenticatedUser={authenticatedUser}
                             fetchUserCodeMonitors={fetchUserCodeMonitors}
+                            fetchCodeMonitors={fetchCodeMonitors}
                             toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
                         />
                     )}

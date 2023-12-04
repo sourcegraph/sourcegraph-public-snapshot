@@ -1,0 +1,46 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "rubygems",
+    srcs = ["client.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf/reposource",
+        "//internal/httpcli",
+        "//internal/ratelimit",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "client_test",
+    timeout = "short",
+    srcs = ["client_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":rubygems"],
+    deps = [
+        "//internal/conf/reposource",
+        "//internal/httptestutil",
+        "//internal/unpack",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_x_time//rate",
+    ],
+)
+
+go_test(
+    name = "rubygems_test",
+    srcs = ["client_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":rubygems"],
+    deps = [
+        "//internal/conf/reposource",
+        "//internal/httptestutil",
+        "//internal/ratelimit",
+        "//internal/unpack",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_x_time//rate",
+    ],
+)

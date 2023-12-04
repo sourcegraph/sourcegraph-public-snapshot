@@ -1,0 +1,122 @@
+## queries just for dogfood (k8s.sgdev.org)
+
+## These are our monorepo queries, but targetting the gigarepo instead which
+## is much larger scale and only exists on dogfood. We keep the regular
+## monorepo queries so we can compare performance between cloud and dogfood.
+
+# giga_regex_small
+repo:^gigarepo$ patterntype:regexp se[arc]{3}hZoekt
+
+# giga_rev_regex_small
+repo:^gigarepo$ patterntype:regexp se[arc]{3}hZoekt rev:main
+
+# giga_structural_small
+repo:^gigarepo$ patterntype:structural strings.ToUpper(...)
+
+# giga_rev_structural_small
+repo:^gigarepo$ patterntype:structural strings.ToUpper(...) rev:main
+
+# giga_symbol_small
+repo:^gigarepo$ type:symbol IndexFormatVersion
+
+# giga_rev_symbol_small
+repo:^gigarepo$ type:symbol IndexFormatVersion rev:main
+
+# giga_diff_small
+repo:^gigarepo$ type:diff   author:camden before:"february 1 2021"
+
+# giga_commit_small
+repo:^gigarepo$ type:commit author:camden before:"february 1 2021"
+
+# giga_literal_small
+repo:^gigarepo$ patterntype:literal --exclude-task=test
+
+# giga_rev_literal_small
+repo:^gigarepo$ patterntype:literal --exclude-task=test rev:main
+
+# giga_literal_large
+repo:^gigarepo$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir
+
+# giga_rev_literal_large
+repo:^gigarepo$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir rev:main
+
+## mega_incremental_ queries consist of standard queries that run against two versions of
+## github.com/sgtest/megarepo that use different indexing strategies:
+##
+## - mega_incremental_delta_  queries run against a fork of sgtest/megarepo uses the experimental delta
+##                            indexing strategy
+##
+## - mega_incremental_normal_ queries run against a fork of the sgtest/megarepo repository that uses the "normal"
+##                            (non-delta) indexing strategy
+
+# mega_incremental_delta_regex_small
+repo:^megarepo-incremental-indexing-fork$ patterntype:regexp se[arc]{3}hZoekt
+
+# mega_incremental_delta_rev_regex_small
+repo:^megarepo-incremental-indexing-fork$ patterntype:regexp se[arc]{3}hZoekt rev:main
+
+# mega_incremental_delta_structural_small
+repo:^megarepo-incremental-indexing-fork$ patterntype:structural strings.ToUpper(...)
+
+# mega_incremental_delta_rev_structural_small
+repo:^megarepo-incremental-indexing-fork$ patterntype:structural strings.ToUpper(...) rev:main
+
+# mega_incremental_delta_symbol_small
+repo:^megarepo-incremental-indexing-fork$ type:symbol IndexFormatVersion
+
+# mega_incremental_delta_rev_symbol_small
+repo:^megarepo-incremental-indexing-fork$ type:symbol IndexFormatVersion rev:main
+
+# mega_incremental_delta_diff_small
+repo:^megarepo-incremental-indexing-fork$ type:diff   author:camden before:"february 1 2021"
+
+# mega_incremental_delta_commit_small
+repo:^megarepo-incremental-indexing-fork$ type:commit author:camden before:"february 1 2021"
+
+# mega_incremental_delta_literal_small
+repo:^megarepo-incremental-indexing-fork$ patterntype:literal --exclude-task=test
+
+# mega_incremental_delta_rev_literal_small
+repo:^megarepo-incremental-indexing-fork$ patterntype:literal --exclude-task=test rev:main
+
+# mega_incremental_delta_literal_large
+repo:^megarepo-incremental-indexing-fork$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir
+
+# mega_incremental_delta_rev_literal_large
+repo:^megarepo-incremental-indexing-fork$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir rev:main
+
+# mega_incremental_normal_regex_small
+repo:^megarepo-normal-indexing$ patterntype:regexp se[arc]{3}hZoekt
+
+# mega_incremental_normal_rev_regex_small
+repo:^megarepo-normal-indexing$ patterntype:regexp se[arc]{3}hZoekt rev:main
+
+# mega_incremental_normal_structural_small
+repo:^megarepo-normal-indexing$ patterntype:structural strings.ToUpper(...)
+
+# mega_incremental_normal_rev_structural_small
+repo:^megarepo-normal-indexing$ patterntype:structural strings.ToUpper(...) rev:main
+
+# mega_incremental_normal_symbol_small
+repo:^megarepo-normal-indexing$ type:symbol IndexFormatVersion
+
+# mega_incremental_normal_rev_symbol_small
+repo:^megarepo-normal-indexing$ type:symbol IndexFormatVersion rev:main
+
+# mega_incremental_normal_diff_small
+repo:^megarepo-normal-indexing$ type:diff   author:camden before:"february 1 2021"
+
+# mega_incremental_normal_commit_small
+repo:^megarepo-normal-indexing$ type:commit author:camden before:"february 1 2021"
+
+# mega_incremental_normal_literal_small
+repo:^megarepo-normal-indexing$ patterntype:literal --exclude-task=test
+
+# mega_incremental_normal_rev_literal_small
+repo:^megarepo-normal-indexing$ patterntype:literal --exclude-task=test rev:main
+
+# mega_incremental_normal_literal_large
+repo:^megarepo-normal-indexing$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir
+
+# mega_incremental_normal_rev_literal_large
+repo:^megarepo-normal-indexing$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir rev:main

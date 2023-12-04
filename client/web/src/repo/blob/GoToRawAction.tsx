@@ -1,11 +1,13 @@
-import FileDownloadOutlineIcon from 'mdi-react/FileDownloadOutlineIcon'
 import * as React from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { encodeRepoRevision, RepoSpec, RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
+import { mdiFileDownloadOutline } from '@mdi/js'
 
-import { RepoHeaderActionAnchor } from '../components/RepoHeaderActions'
-import { RepoHeaderContext } from '../RepoHeader'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { encodeRepoRevision, type RepoSpec, type RevisionSpec, type FileSpec } from '@sourcegraph/shared/src/util/url'
+import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
+
+import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
+import type { RepoHeaderContext } from '../RepoHeader'
 
 interface Props extends RepoSpec, Partial<RevisionSpec>, FileSpec, RepoHeaderContext, TelemetryProps {}
 
@@ -26,24 +28,32 @@ export class GoToRawAction extends React.PureComponent<Props> {
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <RepoHeaderActionAnchor to={to} onClick={this.onClick.bind(this)} download={true}>
-                    <FileDownloadOutlineIcon className="icon-inline" />
+                <RepoHeaderActionMenuLink
+                    as={Link}
+                    to={to}
+                    target="_blank"
+                    file={true}
+                    onSelect={this.onClick.bind(this)}
+                    download={true}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiFileDownloadOutline} />
                     <span>{descriptiveText}</span>
-                </RepoHeaderActionAnchor>
+                </RepoHeaderActionMenuLink>
             )
         }
 
         return (
-            <RepoHeaderActionAnchor
-                to={to}
-                onClick={this.onClick.bind(this)}
-                className="btn-icon"
-                data-tooltip={descriptiveText}
-                aria-label={descriptiveText}
-                download={true}
-            >
-                <FileDownloadOutlineIcon className="icon-inline" />
-            </RepoHeaderActionAnchor>
+            <Tooltip content={descriptiveText}>
+                <RepoHeaderActionAnchor
+                    aria-label={descriptiveText}
+                    to={to}
+                    target="_blank"
+                    onClick={this.onClick.bind(this)}
+                    download={true}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiFileDownloadOutline} />
+                </RepoHeaderActionAnchor>
+            </Tooltip>
         )
     }
 }

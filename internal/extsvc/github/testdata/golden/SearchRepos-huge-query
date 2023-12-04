@@ -12,23 +12,93 @@
     "IsLocked": false,
     "IsDisabled": false,
     "ViewerPermission": "READ",
-    "StargazerCount": 326274,
-    "ForkCount": 26133
-   },
-   {
-    "ID": "MDEwOlJlcG9zaXRvcnkxNzc3MzY1MzM=",
-    "DatabaseID": 177736533,
-    "NameWithOwner": "996icu/996.ICU",
-    "Description": "Repo for counting stars and contributing. Press F to pay respect to glorious developers.",
-    "URL": "https://github.com/996icu/996.ICU",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "StargazerCount": 257953,
-    "ForkCount": 21341
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "learn-to-code"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "nonprofits"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "programming"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "nodejs"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "react"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "d3"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "careers"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "education"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "teachers"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "javascript"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "certification"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "curriculum"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "math"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "community"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "freecodecamp"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "hacktoberfest"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 378065,
+    "ForkCount": 34811,
+    "DiskUsage": 398421
    },
    {
     "ID": "MDEwOlJlcG9zaXRvcnkxMzQ5MTg5NQ==",
@@ -42,40 +112,189 @@
     "IsLocked": false,
     "IsDisabled": false,
     "ViewerPermission": "READ",
-    "StargazerCount": 196925,
-    "ForkCount": 43345
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "education"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "books"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "list"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "resource"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "hacktoberfest"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 303257,
+    "ForkCount": 58520,
+    "DiskUsage": 17796
    },
    {
-    "ID": "MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg==",
-    "DatabaseID": 11730342,
-    "NameWithOwner": "vuejs/vue",
-    "Description": "🖖 Vue.js is a progressive, incrementally-adoptable JavaScript framework for building UI on the web.",
-    "URL": "https://github.com/vuejs/vue",
+    "ID": "MDEwOlJlcG9zaXRvcnkyMTczNzQ2NQ==",
+    "DatabaseID": 21737465,
+    "NameWithOwner": "sindresorhus/awesome",
+    "Description": "😎 Awesome lists about all kinds of interesting topics",
+    "URL": "https://github.com/sindresorhus/awesome",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
     "ViewerPermission": "READ",
-    "StargazerCount": 185828,
-    "ForkCount": 29655
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "awesome"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "awesome-list"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "unicorns"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "lists"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "resources"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 277707,
+    "ForkCount": 26720,
+    "DiskUsage": 1475
    },
    {
-    "ID": "MDEwOlJlcG9zaXRvcnk2MDQ5MzEwMQ==",
-    "DatabaseID": 60493101,
-    "NameWithOwner": "jwasham/coding-interview-university",
-    "Description": "A complete computer science study plan to become a software engineer.",
-    "URL": "https://github.com/jwasham/coding-interview-university",
+    "ID": "MDEwOlJlcG9zaXRvcnk1NDM0Njc5OQ==",
+    "DatabaseID": 54346799,
+    "NameWithOwner": "public-apis/public-apis",
+    "Description": "A collective list of free APIs",
+    "URL": "https://github.com/public-apis/public-apis",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
     "ViewerPermission": "READ",
-    "StargazerCount": 184411,
-    "ForkCount": 50216
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "api"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "public-apis"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "free"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "apis"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "list"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "development"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "software"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "public"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "resources"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dataset"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "open-source"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "public-api"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "lists"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 268744,
+    "ForkCount": 30233,
+    "DiskUsage": 5088
+   },
+   {
+    "ID": "MDEwOlJlcG9zaXRvcnkxNzc3MzY1MzM=",
+    "DatabaseID": 177736533,
+    "NameWithOwner": "996icu/996.ICU",
+    "Description": "Repo for counting stars and contributing. Press F to pay respect to glorious developers.",
+    "URL": "https://github.com/996icu/996.ICU",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 268154,
+    "ForkCount": 21476,
+    "DiskUsage": 187836
    }
   ],
-  "TotalCount": 2284861,
+  "TotalCount": 3396424,
   "EndCursor": "Y3Vyc29yOjU="
  }

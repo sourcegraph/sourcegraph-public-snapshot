@@ -2,18 +2,18 @@ package database
 
 import (
 	"context"
-	"database/sql"
+	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GlobalStateStore interface {
-	Get(context.Context) (*GlobalState, error)
+	Get(context.Context) (GlobalState, error)
 	SiteInitialized(context.Context) (bool, error)
 
 	// EnsureInitialized ensures the site is marked as having been initialized. If the site was already
@@ -38,99 +38,137 @@ type GlobalState struct {
 	Initialized bool // whether the initial site admin account has been created
 }
 
+func scanGlobalState(s dbutil.Scanner) (value GlobalState, err error) {
+	err = s.Scan(&value.SiteID, &value.Initialized)
+	return
+}
+
+var scanFirstGlobalState = basestore.NewFirstScanner(scanGlobalState)
+
 type globalStateStore struct {
 	*basestore.Store
 }
 
-func (g *globalStateStore) Get(ctx context.Context) (*GlobalState, error) {
-	configuration, err := g.getConfiguration(ctx)
-	if err == nil {
-		return configuration, nil
-	}
-
-	if err != sql.ErrNoRows {
-		return nil, errors.Wrap(err, "getConfiguration")
-	}
-
-	err = g.tryInsertNew(ctx)
+func (g *globalStateStore) Transact(ctx context.Context) (*globalStateStore, error) {
+	tx, err := g.Store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return g.getConfiguration(ctx)
+
+	return &globalStateStore{Store: tx}, nil
 }
 
-func (g *globalStateStore) SiteInitialized(ctx context.Context) (bool, error) {
-	var alreadyInitialized bool
-	q := sqlf.Sprintf(`SELECT initialized FROM global_state LIMIT 1`)
-	err := g.QueryRow(ctx, q).Scan(&alreadyInitialized)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		return false, nil
+func (g *globalStateStore) Get(ctx context.Context) (GlobalState, error) {
+	if err := g.initializeDBState(ctx); err != nil {
+		return GlobalState{}, err
 	}
+
+	state, found, err := scanFirstGlobalState(g.Query(ctx, sqlf.Sprintf(globalStateGetQuery)))
+	if err != nil {
+		return GlobalState{}, err
+	}
+	if !found {
+		return GlobalState{}, errors.New("expected global_state to be initialized - no rows found")
+	}
+
+	return state, nil
+}
+
+var globalStateSiteIDFragment = `
+SELECT site_id FROM global_state ORDER BY ctid LIMIT 1
+`
+
+var globalStateInitializedFragment = `
+SELECT coalesce(bool_or(gs.initialized), false) FROM global_state gs
+`
+
+var globalStateGetQuery = fmt.Sprintf(`
+SELECT (%s) AS site_id, (%s) AS initialized
+`,
+	globalStateSiteIDFragment,
+	globalStateInitializedFragment,
+)
+
+func (g *globalStateStore) SiteInitialized(ctx context.Context) (bool, error) {
+	alreadyInitialized, _, err := basestore.ScanFirstBool(g.Query(ctx, sqlf.Sprintf(globalStateSiteInitializedQuery)))
 	return alreadyInitialized, err
 }
 
-func (g *globalStateStore) EnsureInitialized(ctx context.Context) (bool, error) {
-	if err := g.tryInsertNew(ctx); err != nil {
+var globalStateSiteInitializedQuery = globalStateInitializedFragment
+
+func (g *globalStateStore) EnsureInitialized(ctx context.Context) (_ bool, err error) {
+	if err := g.initializeDBState(ctx); err != nil {
 		return false, err
 	}
 
-	// The "SELECT ... FOR UPDATE" prevents a race condition where two calls,
-	// each in their own transaction, would see this initialized value as false
-	// and then set it to true below.
-	var alreadyInitialized bool
-	q := sqlf.Sprintf(`SELECT initialized FROM global_state FOR UPDATE LIMIT 1`)
-	err := g.QueryRow(ctx, q).Scan(&alreadyInitialized)
+	tx, err := g.Transact(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	alreadyInitialized, err := tx.SiteInitialized(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	if !alreadyInitialized {
-		err = g.Exec(ctx, sqlf.Sprintf("UPDATE global_state SET initialized=true"))
+	if err := tx.Exec(ctx, sqlf.Sprintf(globalStateEnsureInitializedQuery)); err != nil {
+		return false, err
 	}
 
-	return alreadyInitialized, err
+	return alreadyInitialized, nil
 }
 
-func (g *globalStateStore) getConfiguration(ctx context.Context) (*GlobalState, error) {
-	var s GlobalState
-	q := sqlf.Sprintf("SELECT site_id, initialized FROM global_state LIMIT 1")
-	err := g.QueryRow(ctx, q).Scan(
-		&s.SiteID,
-		&s.Initialized,
-	)
-	return &s, err
-}
+var globalStateEnsureInitializedQuery = `
+UPDATE global_state SET initialized = true
+`
 
-func (g *globalStateStore) tryInsertNew(ctx context.Context) error {
+func (g *globalStateStore) initializeDBState(ctx context.Context) (err error) {
+	tx, err := g.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+	if err := tx.Exec(ctx, sqlf.Sprintf(globalStateInitializeDBStateUpdateQuery)); err != nil {
+		return err
+	}
+	if err := tx.Exec(ctx, sqlf.Sprintf(globalStateInitializeDBStatePruneQuery)); err != nil {
+		return err
+	}
+
 	siteID, err := uuid.NewRandom()
 	if err != nil {
 		return err
 	}
-
-	// In the normal case (when no users exist yet because the instance is brand new), create the row
-	// with initialized=false.
-	//
-	// If any users exist, then set the site as initialized so that the init screen doesn't show
-	// up. (It would not let the visitor initialize the site anyway, because other users exist.) The
-	// most likely reason the instance would get into this state (uninitialized but has users) is
-	// because previously global state had a siteID and now we ignore that (or someone ran `DELETE
-	// FROM global_state;` in the PostgreSQL database). In either case, it's safe to generate a new
-	// site ID and set the site as initialized.
-	err = g.Exec(ctx, sqlf.Sprintf(`
-	INSERT INTO global_state(
-		site_id,
-		initialized
-	) values(
-		%s,
-		EXISTS (SELECT 1 FROM users WHERE deleted_at IS NULL)
-	);`, siteID))
-	if err != nil {
-		var e *pgconn.PgError
-		if errors.As(err, &e) && e.ConstraintName == "global_state_pkey" {
-			// The row we were trying to insert already exists.
-			// Don't treat this as an error.
-			err = nil
-		}
-	}
-	return err
+	return tx.Exec(ctx, sqlf.Sprintf(globalStateInitializeDBStateInsertIfNotExistsQuery, siteID))
 }
+
+var globalStateInitializeDBStateUpdateQuery = fmt.Sprintf(`
+UPDATE global_state SET initialized = (%s)
+`,
+	globalStateInitializedFragment,
+)
+
+var globalStateInitializeDBStatePruneQuery = fmt.Sprintf(`
+DELETE FROM global_state WHERE site_id NOT IN (%s)
+`,
+	globalStateSiteIDFragment,
+)
+
+var globalStateInitializeDBStateInsertIfNotExistsQuery = `
+INSERT INTO global_state(
+	site_id,
+	initialized
+)
+SELECT
+	%s AS site_id,
+	EXISTS (
+		SELECT 1
+		FROM users
+		WHERE deleted_at IS NULL
+	) AS initialized
+WHERE
+	NOT EXISTS (
+		SELECT 1 FROM global_state
+	)
+`

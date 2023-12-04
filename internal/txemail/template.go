@@ -2,15 +2,13 @@ package txemail
 
 import (
 	"bytes"
-	"html"
 	htmltemplate "html/template"
 	"io"
 	"strings"
 	texttemplate "text/template"
 
 	"github.com/jordan-wright/email"
-	"github.com/microcosm-cc/bluemonday"
-	gfm "github.com/shurcooL/github_flavored_markdown"
+	"github.com/k3a/html2text"
 
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
@@ -33,20 +31,23 @@ func MustValidate(input txtypes.Templates) txtypes.Templates {
 }
 
 // ParseTemplate is a helper func for parsing the text/template and html/template
-// templates together. In the future it will also provide common template funcs
-// and a common footer.
+// templates together.
 func ParseTemplate(input txtypes.Templates) (*txtypes.ParsedTemplates, error) {
-	st, err := texttemplate.New("").Funcs(textFuncMap).Parse(strings.TrimSpace(input.Subject))
+	if input.Text == "" {
+		input.Text = html2text.HTML2Text(input.HTML)
+	}
+
+	st, err := texttemplate.New("").Parse(strings.TrimSpace(input.Subject))
 	if err != nil {
 		return nil, err
 	}
 
-	tt, err := texttemplate.New("").Funcs(textFuncMap).Parse(strings.TrimSpace(input.Text))
+	tt, err := texttemplate.New("").Parse(strings.TrimSpace(input.Text))
 	if err != nil {
 		return nil, err
 	}
 
-	ht, err := htmltemplate.New("").Funcs(htmlFuncMap).Parse(strings.TrimSpace(input.HTML))
+	ht, err := htmltemplate.New("").Parse(strings.TrimSpace(input.HTML))
 	if err != nil {
 		return nil, err
 	}
@@ -54,9 +55,9 @@ func ParseTemplate(input txtypes.Templates) (*txtypes.ParsedTemplates, error) {
 	return &txtypes.ParsedTemplates{Subj: st, Text: tt, Html: ht}, nil
 }
 
-func renderTemplate(t *txtypes.ParsedTemplates, data interface{}, m *email.Email) error {
+func renderTemplate(t *txtypes.ParsedTemplates, data any, m *email.Email) error {
 	render := func(tmpl interface {
-		Execute(io.Writer, interface{}) error
+		Execute(io.Writer, any) error
 	}) ([]byte, error) {
 		var buf bytes.Buffer
 		if err := tmpl.Execute(&buf, data); err != nil {
@@ -79,25 +80,3 @@ func renderTemplate(t *txtypes.ParsedTemplates, data interface{}, m *email.Email
 	m.HTML, err = render(t.Html)
 	return err
 }
-
-var (
-	textFuncMap = map[string]interface{}{
-		// Removes HTML tags (which are valid Markdown) from the source, for display in a text-only
-		// setting.
-		"markdownToText": func(markdownSource string) string {
-			p := bluemonday.StrictPolicy()
-			return html.UnescapeString(p.Sanitize(markdownSource))
-		},
-	}
-
-	htmlFuncMap = map[string]interface{}{
-		// Renders Markdown for display in an HTML email.
-		"markdownToSafeHTML": func(markdownSource string) htmltemplate.HTML {
-			unsafeHTML := gfm.Markdown([]byte(markdownSource))
-
-			// The recommended policy at https://github.com/russross/blackfriday#extensions
-			p := bluemonday.UGCPolicy()
-			return htmltemplate.HTML(p.SanitizeBytes(unsafeHTML))
-		},
-	}
-)

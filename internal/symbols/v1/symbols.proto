@@ -1,0 +1,192 @@
+syntax = "proto3";
+
+package symbols.v1;
+
+import "google/protobuf/duration.proto";
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/symbols/v1";
+
+service SymbolsService {
+  rpc Search(SearchRequest) returns (SearchResponse) {}
+  rpc LocalCodeIntel(LocalCodeIntelRequest) returns (stream LocalCodeIntelResponse) {}
+  rpc SymbolInfo(SymbolInfoRequest) returns (SymbolInfoResponse) {}
+  rpc Healthz(HealthzRequest) returns (HealthzResponse) {}
+}
+
+message SearchRequest {
+  // repo is the name of the repository to search in
+  string repo = 1;
+
+  // commit id is the commit to search in
+  string commit_id = 2;
+
+  // query is the search query
+  string query = 3;
+
+  // is_reg_exp, if true, will treat the Pattern as a regular expression
+  bool is_reg_exp = 4;
+
+  // is_case_sensitive, if false, will ignore the case of query and file pattern
+  // when finding matches
+  bool is_case_sensitive = 5;
+
+  // include_patterns is a list of regexes that symbol's file paths
+  // need to match to get included in the result
+  //
+  // The patterns are ANDed together; a file's path must match all patterns
+  // for it to be kept. That is also why it is a list (unlike the singular
+  // ExcludePattern); it is not possible in general to construct a single
+  // glob or Go regexp that represents multiple such patterns ANDed together.
+  repeated string include_patterns = 6;
+
+  // exclude_pattern is an optional regex that symbol's file paths
+  // need to match to get included in the result
+  string exclude_pattern = 7;
+
+  // first indicates that only the first n symbols should be returned.
+  int32 first = 8;
+
+  // timeout is the maximum amount of time the symbols search should take.
+  //
+  // If timeout isn't specified, a default timeout of 60 seconds is used.
+  google.protobuf.Duration timeout = 9;
+}
+
+message SearchResponse {
+  // Symbol is a code symbol
+  message Symbol {
+    // name is the name of the symbol
+    string name = 1;
+
+    // path is the file path that the symbol occurs in
+    string path = 2;
+    // line is the line number in the file that the symbol occurs on
+    int32 line = 3;
+    // character is the character offset in the line that the symbol occurs at
+    int32 character = 4;
+
+    // kind is the kind of symbol
+    string kind = 5;
+    // language is the language (e.g. Go, TypeScript, Python) of the symbol
+    string language = 6;
+
+    // parent is the name of the symbol's parent
+    string parent = 7;
+    // parent_kind is the kind of the symbol's parent
+    string parent_kind = 8;
+
+    // signature is the signature of the symbol (TODO@ggilmore - what is this?)
+    string signature = 9;
+
+    // file_limited indicates that the search ran into the limit set by "first"
+    // in the request, and so the result set may be incomplete.
+    bool file_limited = 10;
+  }
+
+  // symbols is the list of symbols that matched the search query
+  repeated Symbol symbols = 1;
+
+  // error is the error message if the search failed
+  optional string error = 2; // TODO@ggilmore: Custom error type?
+}
+
+// LocalCodeIntelRequest is the request to the LocalCodeIntel method.
+message LocalCodeIntelRequest {
+  // repo_commit_path is the
+  RepoCommitPath repo_commit_path = 1;
+}
+
+message LocalCodeIntelResponse {
+  message Symbol {
+    // name is the name of the symbol
+    string name = 1;
+
+    // hover is the hover text of the symbol
+    string hover = 2;
+
+    // def is the location of the symbol's definition
+    Range def = 3;
+
+    // refs is the list of locations of references for the given symbol
+    repeated Range refs = 4;
+  }
+
+  repeated Symbol symbols = 1;
+}
+
+message SymbolInfoRequest {
+  // repo_commit_path is the repo, commit, and path to the file to get symbol
+  // information for
+  RepoCommitPath repo_commit_path = 1;
+
+  // point is the point in the file to get symbol information for
+  Point point = 2;
+}
+
+// SymbolInfoResponse is the response from the SymbolInfo method.
+message SymbolInfoResponse {
+  message Definition {
+    // repo_commit_path is the repository name, commit, and file path for the
+    // symbol's definition.
+    RepoCommitPath repo_commit_path = 1;
+
+    // range is the range of the symbol's definition, if it is known.
+    optional Range range = 2;
+  }
+
+  message DefinitionResult {
+    // definition is the information associated with the location of the
+    // symbol's definition.
+    Definition definition = 1;
+
+    // hover is the hover text associated with the symbol
+    optional string hover = 2;
+  }
+
+  // result is the definition / hover information  for the symbol at the given
+  // point in the file, if available.
+  optional DefinitionResult result = 1;
+}
+
+// RepoCommitPath is an identifier that is  combination of a repository's name,
+// git commit SHA, and a file path.
+message RepoCommitPath {
+  // repo is the repository's name
+  string repo = 1;
+
+  // commit is the git commit SHA
+  string commit = 2;
+
+  // path is the file path
+  string path = 3;
+}
+
+// Range describes the location and length of text associated with a symbol.
+message Range {
+  // row is the line number of the range
+  int32 row = 1;
+  // col is the character offset of the range
+  int32 column = 2;
+  // length is the length (in number of characters) of the range
+  int32 length = 3;
+}
+
+// Point describes a cursor's location within a file.
+message Point {
+  // row is the line number of the point
+  int32 row = 1;
+  // col is the character offset of the point
+  int32 column = 2;
+}
+
+// TODO@ggilmore: Note - GRPC has its own healthchecking protocol that we should
+// use instead of this. See
+// https://github.com/grpc/grpc/blob/master/doc/health-checking.md for more
+// information.
+message HealthzRequest {}
+
+// TODO@ggilmore: Note - GRPC has its own healthchecking protocol that we should
+// use instead of this. See
+// https://github.com/grpc/grpc/blob/master/doc/health-checking.md for more
+// information.
+message HealthzResponse {}

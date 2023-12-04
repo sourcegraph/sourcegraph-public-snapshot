@@ -1,10 +1,12 @@
-import classNames from 'classnames'
 import React from 'react'
 
-import { ForwardReferenceComponent } from '../..'
+import classNames from 'classnames'
+
+import type { ForwardReferenceComponent } from '../..'
+
+import type { BUTTON_GROUP_DIRECTION } from './constants'
 
 import styles from './Button.module.scss'
-import { BUTTON_GROUP_DIRECTION } from './constants'
 
 export interface ButtonGroupProps {
     /**

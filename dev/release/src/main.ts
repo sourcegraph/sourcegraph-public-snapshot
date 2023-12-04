@@ -1,12 +1,12 @@
-import { loadConfig } from './config'
-import { runStep, StepID } from './release'
+import { loadReleaseConfig } from './config'
+import { runStep, type StepID } from './release'
 import { ensureMainBranchUpToDate } from './util'
 
 /**
  * Release captain automation
  */
 async function main(): Promise<void> {
-    const config = loadConfig()
+    const config = loadReleaseConfig()
     const args = process.argv.slice(2)
     if (args.length === 0) {
         await runStep(config, 'help')

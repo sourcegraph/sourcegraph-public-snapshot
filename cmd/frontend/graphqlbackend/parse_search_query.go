@@ -2,77 +2,51 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/printer"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func toJSON(node query.Node) interface{} {
-	switch n := node.(type) {
-	case query.Operator:
-		var jsons []interface{}
-		for _, o := range n.Operands {
-			jsons = append(jsons, toJSON(o))
-		}
+// Refer to SearchQueryOutputPhase in GQL definitions.
+const (
+	ParseTree = "PARSE_TREE"
+	JobTree   = "JOB_TREE"
+)
 
-		switch n.Kind {
-		case query.And:
-			return struct {
-				And []interface{} `json:"and"`
-			}{
-				And: jsons,
-			}
-		case query.Or:
-			return struct {
-				Or []interface{} `json:"or"`
-			}{
-				Or: jsons,
-			}
-		case query.Concat:
-			// Concat should already be processed at this point, or
-			// the original query expresses something that is not
-			// supported. We just return the parse tree anyway.
-			return struct {
-				Concat []interface{} `json:"concat"`
-			}{
-				Concat: jsons,
-			}
-		}
-	case query.Parameter:
-		return struct {
-			Field   string      `json:"field"`
-			Value   string      `json:"value"`
-			Negated bool        `json:"negated"`
-			Labels  []string    `json:"labels"`
-			Range   query.Range `json:"range"`
-		}{
-			Field:   n.Field,
-			Value:   n.Value,
-			Negated: n.Negated,
-			Labels:  n.Annotation.Labels.String(),
-			Range:   n.Annotation.Range,
-		}
-	case query.Pattern:
-		return struct {
-			Value   string      `json:"value"`
-			Negated bool        `json:"negated"`
-			Labels  []string    `json:"labels"`
-			Range   query.Range `json:"range"`
-		}{
-			Value:   n.Value,
-			Negated: n.Negated,
-			Labels:  n.Annotation.Labels.String(),
-			Range:   n.Annotation.Range,
-		}
-	}
-	// unreachable.
-	return struct{}{}
+// Refer to SearchQueryOutputFormat in GQL definitions.
+const (
+	Json    = "JSON"
+	Sexp    = "SEXP"
+	Mermaid = "MERMAID"
+)
+
+// Refer to SearchQueryOutputVerbosity in GQL definitions.
+const (
+	Minimal = "MINIMAL"
+	Basic   = "BASIC"
+	Maximal = "MAXIMAL"
+)
+
+type args struct {
+	Query           string
+	PatternType     string
+	OutputPhase     string
+	OutputFormat    string
+	OutputVerbosity string
 }
 
-func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
-	Query       string
-	PatternType string
-}) (*JSONValue, error) {
+func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *args) (string, error) {
 	var searchType query.SearchType
 	switch args.PatternType {
 	case "literal":
@@ -85,18 +59,80 @@ func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
 		searchType = query.SearchTypeLiteral
 	}
 
+	switch args.OutputPhase {
+	case ParseTree:
+		return outputParseTree(searchType, args)
+	case JobTree:
+		return outputJobTree(ctx, searchType, args, r.db, r.logger)
+	}
+	return "", nil
+}
+
+func outputParseTree(searchType query.SearchType, args *args) (string, error) {
 	plan, err := query.Pipeline(query.Init(args.Query, searchType))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	var jsons []interface{}
-	for _, node := range plan.ToParseTree() {
-		jsons = append(jsons, toJSON(node))
+	if args.OutputFormat != Json || args.OutputVerbosity != Basic {
+		return "", errors.New("unsupported output options for PARSE_TREE, only JSON output with BASIC verbosity is supported")
 	}
-	json, err := json.Marshal(jsons)
+	jsonString, err := query.ToJSON(plan.ToQ())
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return &JSONValue{Value: string(json)}, nil
+	return jsonString, nil
+}
+
+func outputJobTree(
+	ctx context.Context,
+	searchType query.SearchType,
+	args *args,
+	db database.DB,
+	logger log.Logger,
+) (string, error) {
+	plan, err := query.Pipeline(query.Init(args.Query, searchType))
+	if err != nil {
+		return "", err
+	}
+
+	settings, err := settings.CurrentUserFinal(ctx, db)
+	if err != nil {
+		return "", err
+	}
+
+	inputs := &search.Inputs{
+		UserSettings:        settings,
+		PatternType:         searchType,
+		Protocol:            search.Streaming,
+		Features:            client.ToFeatures(featureflag.FromContext(ctx), logger),
+		OnSourcegraphDotCom: envvar.SourcegraphDotComMode(),
+	}
+	j, err := jobutil.NewPlanJob(inputs, plan)
+	if err != nil {
+		return "", err
+	}
+
+	var verbosity job.Verbosity
+	switch args.OutputVerbosity {
+	case Minimal:
+		verbosity = job.VerbosityNone
+	case Basic:
+		verbosity = job.VerbosityBasic
+	case Maximal:
+		verbosity = job.VerbosityMax
+	}
+
+	switch args.OutputFormat {
+	case Json:
+		jsonString := printer.JSONVerbose(j, verbosity)
+		return jsonString, nil
+	case Sexp:
+		sexpString := printer.SexpVerbose(j, verbosity, true)
+		return sexpString, nil
+	case Mermaid:
+		mermaidString := printer.MermaidVerbose(j, verbosity)
+		return mermaidString, nil
+	}
+	return "", nil
 }

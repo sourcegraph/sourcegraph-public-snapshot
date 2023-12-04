@@ -1,0 +1,72 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "ts_project", "vitest_test")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
+
+npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root()
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/build-config:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "observability-server",
+    srcs = [
+        "src/constants.ts",
+        "src/honeycomb/clone-boards.ts",
+        "src/libhoney.d.ts",
+        "src/sdk.ts",
+        "src/webBundleSize/getBundleSizeStats.ts",
+        "src/webBundleSize/index.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":node_modules/@sourcegraph/build-config",
+        "//:node_modules/@opentelemetry/semantic-conventions",
+        "//:node_modules/@types/glob",
+        "//:node_modules/@types/lodash",
+        "//:node_modules/@types/node",
+        "//:node_modules/@types/node-fetch",
+        "//:node_modules/@types/signale",
+        "//:node_modules/envalid",
+        "//:node_modules/glob",
+        "//:node_modules/libhoney",
+        "//:node_modules/lodash",
+        "//:node_modules/node-fetch",
+        "//:node_modules/signale",
+        "//client/observability-client:observability-client_lib",
+    ],
+)
+
+ts_project(
+    name = "observability-server_tests",
+    testonly = True,
+    srcs = ["src/webBundleSize/getBundleSizeStats.test.ts"],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":observability-server",
+        "//:node_modules/@types/node",
+        "//:node_modules/vitest",
+    ],
+)
+
+vitest_test(
+    name = "test",
+    data = [
+        "src/webBundleSize/__mocks__/assets/scripts/main.js",
+        "src/webBundleSize/__mocks__/assets/styles/main.css",
+        "src/webBundleSize/__mocks__/bundlesize.config.js",
+        "src/webBundleSize/__mocks__/web.manifest.json",
+        ":observability-server_tests",
+    ],
+    # TODO(bazel): requires dev server setup for testing
+    tags = ["manual"],
+)

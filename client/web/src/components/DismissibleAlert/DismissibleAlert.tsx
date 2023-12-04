@@ -1,8 +1,9 @@
-import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 
-import { Button, Alert, AlertProps } from '@sourcegraph/wildcard'
+import { mdiClose } from '@mdi/js'
+import classNames from 'classnames'
+
+import { Button, Alert, type AlertProps, Icon } from '@sourcegraph/wildcard'
 
 import styles from './DismissibleAlert.module.scss'
 
@@ -21,7 +22,7 @@ export interface DismissibleAlertProps extends AlertProps {
  * alert will never be shown again after it is dismissed. Otherwise, it will be shown
  * whenever unmounted and remounted.
  */
-export const DismissibleAlert: React.FunctionComponent<DismissibleAlertProps> = ({
+export const DismissibleAlert: React.FunctionComponent<React.PropsWithChildren<DismissibleAlertProps>> = ({
     partialStorageKey,
     className,
     testId,
@@ -46,8 +47,8 @@ export const DismissibleAlert: React.FunctionComponent<DismissibleAlertProps> = 
     return (
         <Alert data-testid={testId} className={classNames(styles.container, className)} variant={variant}>
             <div className={styles.content}>{children}</div>
-            <Button aria-label="Close alert" variant="icon" className={styles.closeButton} onClick={onDismiss}>
-                <CloseIcon className="icon-inline" />
+            <Button aria-label="Dismiss alert" variant="icon" className={styles.closeButton} onClick={onDismiss}>
+                <Icon aria-hidden={true} svgPath={mdiClose} />
             </Button>
         </Alert>
     )

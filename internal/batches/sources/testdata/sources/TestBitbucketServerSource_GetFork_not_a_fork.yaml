@@ -1,0 +1,42 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/~milton/repos/vcr-fork-test-repo
+    method: GET
+  response:
+    body: '{"slug":"vcr-fork-test-repo","id":24380,"name":"vcr-fork-test-repo","hierarchyId":"31f2e559a45d455b93ba","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"~MILTON","id":2,"name":"milton
+      woof","type":"PERSONAL","owner":{"name":"milton","emailAddress":"dev@sourcegraph.com","id":1,"displayName":"milton
+      woof","active":true,"slug":"milton","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/~milton/vcr-fork-test-repo.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/~milton/vcr-fork-test-repo.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/users/milton/repos/vcr-fork-test-repo/browse"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 03 Feb 2023 19:48:28 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@ILDZGBx1188x13024894x3'
+      X-Asessionid:
+      - 1sk4c4o
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""

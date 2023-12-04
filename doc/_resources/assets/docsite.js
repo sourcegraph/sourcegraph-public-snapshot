@@ -1,7 +1,7 @@
 // Theme
 const currentThemePreference = () => localStorage.getItem('theme-preference') || 'auto'
 const themePreferenceButtons = () => document.querySelectorAll('body > #sidebar #theme button[data-theme-preference]')
-const currentTheme = (pref=currentThemePreference()) => pref === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light' : pref
+const currentTheme = (pref = currentThemePreference()) => pref === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light' : pref
 const applyThemePreference = (pref) => {
   localStorage.setItem('theme-preference', pref)
   applyTheme()
@@ -38,14 +38,28 @@ const pagePath = location.pathname
 const quote = str => JSON.stringify(str.replace(/[^a-zA-Z0-9._\/-]/g, ''))
 document.addEventListener('DOMContentLoaded', () => {
   const style = document.createElement('style')
+  let currentElement = null;
   for (const link of document.querySelectorAll('body > #sidebar .nav-section.tree a')) {
     const current = link.pathname === pagePath
-    const expand = pagePath === link.pathname || pagePath.startsWith(link.pathname + '/')
+
+    // Store the current element, so we can scroll it into view later
+    if (current && !currentElement) {
+      currentElement = link;
+    }
+
+    const expand = current || pagePath.startsWith(link.pathname + '/')
+    const subsection = link.pathname.split('/').length >= 3
 
     const item = link.parentNode
     item.classList.toggle('current', current)
     item.classList.toggle('expand', expand)
+    item.classList.toggle('active-subsection', subsection && expand)
     item.classList.toggle('collapse', !expand)
+  }
+
+  // Scroll matching sidebar item into view
+  if (currentElement) {
+    currentElement.scrollIntoView({ block: 'center' })
   }
 })
 
@@ -100,5 +114,97 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (startSourcegraphCommand) {
     startSourcegraphCommand.addEventListener('click', gaConversionOnStartSourcegraphCommands)
+  }
+})
+
+// Cloud CTA clicks
+document.addEventListener('DOMContentLoaded', () => {
+  const cloudCTAs = document.querySelectorAll('.cloud-cta')
+
+  cloudCTAs.forEach(cloudCTA => {
+    cloudCTA.addEventListener('click', () => {
+      if (window && window.plausible) {
+        window.plausible('ClickedOnFreeTrialCTA')
+      }
+    })
+  })
+})
+
+// Promise to wait on for DOMContentLoaded
+const domContentLoadedPromise = new Promise(resolve => {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', resolve)
+  } else {
+    resolve()
+  }
+})
+
+// Import Sourcegraph's EventLogger
+const importEventLoggerPromise = import('https://cdn.skypack.dev/@sourcegraph/event-logger')
+
+Promise.all([domContentLoadedPromise, importEventLoggerPromise]).then(([_, { EventLogger }]) => {
+  const eventLogger = new EventLogger('https://sourcegraph.com')
+
+  // Log a Docs page view event
+  const eventArguments = { path: window.location.pathname }
+  eventLogger.log('ViewStaticPage', eventArguments, eventArguments)
+
+  // Log download links which have a "data-download-name" attribute
+  // This is used to track Cody App download links
+  document.addEventListener('click', event => {
+    if (event.target.matches('a[data-download-name]')) {
+      const downloadName = event.target.getAttribute('data-download-name')
+      const eventArguments = {
+        path: window.location.pathname,
+        downloadSource: 'docs',
+        downloadName,
+        downloadLinkUrl: event.target.href,
+      }
+
+      eventLogger.log('DownloadClick', eventArguments, eventArguments)
+    }
+  })
+})
+
+// Add a "Copy" button to code blocks
+document.addEventListener('DOMContentLoaded', () => {
+  let copyButtonLabel = new DOMParser().parseFromString(
+    '<svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 0 24 24" width="18px" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>',
+    'application/xml'
+  );
+
+  // use a class selector if available
+  let blocks = document.querySelectorAll("pre.chroma.sgquery, pre.chroma.js");
+
+  blocks.forEach((block) => {
+    // only add button if browser supports Clipboard API
+    if (navigator.clipboard) {
+      let button = document.createElement("button");
+
+      button.appendChild(
+        button.ownerDocument.importNode(copyButtonLabel.documentElement, true)
+      );
+      block.appendChild(button);
+
+      button.addEventListener("click", async () => {
+        await copyCode(block, button);
+      });
+    }
+  });
+
+  async function copyCode(block, button) {
+    let text = block.innerText;
+
+    await navigator.clipboard.writeText(text);
+
+    // visual feedback that task is completed
+    button.innerText = "Copied!";
+
+    setTimeout(() => {
+      button.replaceChild(
+        button.ownerDocument.importNode(copyButtonLabel.documentElement, true),
+        button.childNodes[0]
+      );
+    }, 900);
   }
 })

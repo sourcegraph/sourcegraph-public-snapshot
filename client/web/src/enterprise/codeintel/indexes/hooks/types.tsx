@@ -1,12 +1,17 @@
 import { gql } from '@sourcegraph/http-client'
 
-export const lsifIndexFieldsFragment = gql`
-    fragment LsifIndexFields on LSIFIndex {
+export const codeIntelIndexerFieldsFragment = gql`
+    fragment CodeIntelIndexerFields on CodeIntelIndexer {
+        key
+        name
+        url
+    }
+`
+
+export const preciseIndexFieldsFragment = gql`
+    fragment PreciseIndexFields on PreciseIndex {
         __typename
         id
-        inputCommit
-        inputRoot
-        inputIndexer
         projectRoot {
             url
             path
@@ -20,22 +25,30 @@ export const lsifIndexFieldsFragment = gql`
                 abbreviatedOID
             }
         }
+        inputCommit
+        tags
+        inputRoot
+        inputIndexer
+        indexer {
+            ...CodeIntelIndexerFields
+        }
+        state
+        queuedAt
+        uploadedAt
+        indexingStartedAt
+        indexingFinishedAt
+        processingStartedAt
+        processingFinishedAt
         steps {
             ...LsifIndexStepsFields
         }
-        state
         failure
-        queuedAt
-        startedAt
-        finishedAt
         placeInQueue
-        associatedUpload {
-            id
-            state
-            uploadedAt
-            startedAt
-            finishedAt
-            placeInQueue
+        shouldReindex
+        isLatestForRepo
+
+        auditLogs {
+            ...PreciseIndexAuditLogFields
         }
     }
 
@@ -74,4 +87,32 @@ export const lsifIndexFieldsFragment = gql`
         out
         durationMilliseconds
     }
+
+    fragment PreciseIndexAuditLogFields on LSIFUploadAuditLog {
+        logTimestamp
+        reason
+        changedColumns {
+            column
+            old
+            new
+        }
+        operation
+    }
+
+    ${codeIntelIndexerFieldsFragment}
+`
+
+export const preciseIndexConnectionFieldsFragment = gql`
+    fragment PreciseIndexConnectionFields on PreciseIndexConnection {
+        nodes {
+            ...PreciseIndexFields
+        }
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+    }
+
+    ${preciseIndexFieldsFragment}
 `

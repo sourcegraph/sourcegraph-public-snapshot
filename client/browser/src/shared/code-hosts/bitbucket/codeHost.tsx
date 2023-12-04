@@ -1,18 +1,17 @@
 import classNames from 'classnames'
-import { of } from 'rxjs'
-import { Omit } from 'utility-types'
+import { fromEvent, of } from 'rxjs'
+import { map, startWith } from 'rxjs/operators'
+import type { Omit } from 'utility-types'
 
-import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
-import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { AdjustmentDirection, type PositionAdjuster } from '@sourcegraph/codeintellify'
+import type { LineOrPositionOrRange } from '@sourcegraph/common'
+import type { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { querySelectorOrSelf } from '../../util/dom'
-import { CodeHost, MountGetter } from '../shared/codeHost'
-import { CodeView, DOMFunctions } from '../shared/codeViews'
-import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
-import { ViewResolver } from '../shared/views'
+import type { CodeHost } from '../shared/codeHost'
+import type { CodeView, DOMFunctions } from '../shared/codeViews'
+import type { ViewResolver } from '../shared/views'
 
-import styles from './codeHost.module.scss'
 import { getContext } from './context'
 import { diffDOMFunctions, newDiffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import {
@@ -23,6 +22,8 @@ import {
     resolveSingleFileDiffFileInfo,
 } from './fileInfo'
 import { isCommitsView, isCompareView, isPullRequestView, isSingleFileView } from './scrape'
+
+import styles from './codeHost.module.scss'
 
 /**
  * Gets or creates the toolbar mount for allcode views.
@@ -55,35 +56,31 @@ export const getToolbarMount = (
  * Sometimes tabs are converted to spaces so we need to adjust. Luckily, there
  * is an attribute `cm-text` that contains the real text.
  */
-const createPositionAdjuster = (
-    dom: DOMFunctions
-): PositionAdjuster<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> => ({
-    direction,
-    codeView,
-    position,
-}) => {
-    const codeElement = dom.getCodeElementFromLineNumber(codeView, position.line, position.part)
-    if (!codeElement) {
-        throw new Error('(adjustPosition) could not find code element for line provided')
+const createPositionAdjuster =
+    (dom: DOMFunctions): PositionAdjuster<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> =>
+    ({ direction, codeView, position }) => {
+        const codeElement = dom.getCodeElementFromLineNumber(codeView, position.line, position.part)
+        if (!codeElement) {
+            throw new Error('(adjustPosition) could not find code element for line provided')
+        }
+
+        let delta = 0
+        for (const modifiedTextElement of codeElement.querySelectorAll('[cm-text]')) {
+            const actualText = modifiedTextElement.getAttribute('cm-text') || ''
+            const adjustedText = modifiedTextElement.textContent || ''
+
+            delta += actualText.length - adjustedText.length
+        }
+
+        const modifier = direction === AdjustmentDirection.ActualToCodeView ? -1 : 1
+
+        const newPosition = {
+            line: position.line,
+            character: position.character + modifier * delta,
+        }
+
+        return of(newPosition)
     }
-
-    let delta = 0
-    for (const modifiedTextElement of codeElement.querySelectorAll('[cm-text]')) {
-        const actualText = modifiedTextElement.getAttribute('cm-text') || ''
-        const adjustedText = modifiedTextElement.textContent || ''
-
-        delta += actualText.length - adjustedText.length
-    }
-
-    const modifier = direction === AdjustmentDirection.ActualToCodeView ? -1 : 1
-
-    const newPosition = {
-        line: position.line,
-        character: position.character + modifier * delta,
-    }
-
-    return of(newPosition)
-}
 
 /**
  * A code view spec for single file code view in the "source" view (not diff).
@@ -184,22 +181,6 @@ const newDiffCodeView: Omit<CodeView, 'element'> = {
     dom: newDiffDOMFunctions,
 }
 
-const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
-    const headerElement = querySelectorOrSelf(container, '.aui-header-primary .aui-nav')
-    if (!headerElement) {
-        return null
-    }
-    const classNames = ['command-palette-button', styles.commandPaletteButton]
-    const create = (): HTMLElement => {
-        const mount = document.createElement('li')
-        mount.className = classNames.join(' ')
-        headerElement.append(mount)
-        return mount
-    }
-    const preexisting = headerElement.querySelector<HTMLElement>(classNames.map(className => `.${className}`).join(''))
-    return preexisting || create()
-}
-
 function getViewContextOnSourcegraphMount(container: HTMLElement): HTMLElement | null {
     const branchSelectorButtons = querySelectorOrSelf(container, '.branch-selector-toolbar .aui-buttons')
     if (!branchSelectorButtons) {
@@ -222,12 +203,24 @@ export const checkIsBitbucket = (): boolean =>
 
 const iconClassName = 'aui-icon'
 
-const notificationClassNames = {
-    [NotificationType.Log]: 'aui-message aui-message-info',
-    [NotificationType.Success]: 'aui-message aui-message-success',
-    [NotificationType.Info]: 'aui-message aui-message-info',
-    [NotificationType.Warning]: 'aui-message aui-message-warning',
-    [NotificationType.Error]: 'aui-message aui-message-error',
+export const parseHash = (hash: string): LineOrPositionOrRange => {
+    if (hash.startsWith('#')) {
+        hash = hash.slice(1)
+    }
+
+    if (!/^\d+(-\d+)?$/.test(hash)) {
+        return {}
+    }
+
+    const lpr = {} as LineOrPositionOrRange
+    const [startString, endString] = hash.split('-')
+
+    lpr.line = parseInt(startString, 10)
+    if (endString) {
+        lpr.endLine = parseInt(endString, 10)
+    }
+
+    return lpr
 }
 
 export const bitbucketServerCodeHost: CodeHost = {
@@ -235,30 +228,6 @@ export const bitbucketServerCodeHost: CodeHost = {
     name: 'Bitbucket Server',
     check: checkIsBitbucket,
     codeViewResolvers: [codeViewResolver, diffCodeViewResolver],
-    getCommandPaletteMount,
-    notificationClassNames,
-    commandPaletteClassProps: {
-        buttonClassName: classNames(
-            styles.commandListPopoverButton,
-            'aui-alignment-target aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left'
-        ),
-        buttonElement: 'a',
-        buttonOpenClassName: 'aui-dropdown2-active active aui-alignment-enabled',
-        showCaret: false,
-        popoverClassName: classNames(
-            styles.commandPalettePopover,
-            'aui-dropdown2 aui-style-default aui-layer aui-dropdown2-in-header aui-alignment-element aui-alignment-side-bottom aui-alignment-snap-left aui-alignment-enabled aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left'
-        ),
-        popoverInnerClassName: 'aui-dropdown2-section',
-        formClassName: 'aui',
-        inputClassName: 'text',
-        resultsContainerClassName: 'results',
-        listClassName: 'results-list',
-        listItemClassName: 'result',
-        selectedListItemClassName: 'focused',
-        noResultsClassName: styles.noResults,
-        iconClassName,
-    },
     codeViewToolbarClassProps: {
         className: classNames(styles.codeViewToolbar, 'aui-buttons'),
         actionItemClass: 'aui-button',
@@ -267,9 +236,9 @@ export const bitbucketServerCodeHost: CodeHost = {
         listItemClass: styles.actionNavItem,
     },
     hoverOverlayClassProps: {
-        className: 'aui-dialog',
+        className: classNames('aui-dialog', styles.hoverOverlay),
+        actionsClassName: styles.hoverActions,
         actionItemClassName: classNames('aui-button', styles.hoverActionItem),
-        getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
         iconClassName,
     },
     getViewContextOnSourcegraphMount,
@@ -279,4 +248,8 @@ export const bitbucketServerCodeHost: CodeHost = {
         iconClassName,
     },
     codeViewsRequireTokenization: false,
+    observeLineSelection: fromEvent(window, 'hashchange').pipe(
+        startWith(undefined), // capture intital value
+        map(() => parseHash(window.location.hash))
+    ),
 }

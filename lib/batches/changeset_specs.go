@@ -4,15 +4,13 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-var errOptionalPublishedUnsupported = NewValidationError(errors.New(`This Sourcegraph version requires the "published" field to be specified in the batch spec; upgrade to version 3.30.0 or later to be able to omit the published field and control publication from the UI.`))
 
 // Repository is a repository in which the steps of a batch spec are executed.
 //
@@ -32,21 +30,22 @@ type ChangesetSpecInput struct {
 	BatchChangeAttributes *template.BatchChangeAttributes `json:"-"`
 	Template              *ChangesetTemplate              `json:"-"`
 	TransformChanges      *TransformChanges               `json:"-"`
+	Path                  string
 
-	Result execution.Result
+	Result execution.AfterStepResult
 }
 
-type ChangesetSpecFeatureFlags struct {
-	IncludeAutoAuthorDetails bool
-	AllowOptionalPublished   bool
+type ChangesetSpecAuthor struct {
+	Name  string
+	Email string
 }
 
-func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatureFlags) ([]*ChangesetSpec, error) {
+func BuildChangesetSpecs(input *ChangesetSpecInput, binaryDiffs bool, fallbackAuthor *ChangesetSpecAuthor) ([]*ChangesetSpec, error) {
 	tmplCtx := &template.ChangesetTemplateContext{
 		BatchChangeAttributes: *input.BatchChangeAttributes,
 		Steps: template.StepsContext{
 			Changes: input.Result.ChangedFiles,
-			Path:    input.Result.Path,
+			Path:    input.Path,
 		},
 		Outputs: input.Result.Outputs,
 		Repository: template.Repository{
@@ -56,22 +55,25 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 		},
 	}
 
-	var authorName string
-	var authorEmail string
+	var author ChangesetSpecAuthor
 
 	if input.Template.Commit.Author == nil {
-		if features.IncludeAutoAuthorDetails {
+		if fallbackAuthor != nil {
+			author = *fallbackAuthor
+		} else {
 			// user did not provide author info, so use defaults
-			authorName = "Sourcegraph"
-			authorEmail = "batch-changes@sourcegraph.com"
+			author = ChangesetSpecAuthor{
+				Name:  "Sourcegraph",
+				Email: "batch-changes@sourcegraph.com",
+			}
 		}
 	} else {
 		var err error
-		authorName, err = template.RenderChangesetTemplateField("authorName", input.Template.Commit.Author.Name, tmplCtx)
+		author.Name, err = template.RenderChangesetTemplateField("authorName", input.Template.Commit.Author.Name, tmplCtx)
 		if err != nil {
 			return nil, err
 		}
-		authorEmail, err = template.RenderChangesetTemplateField("authorEmail", input.Template.Commit.Author.Email, tmplCtx)
+		author.Email, err = template.RenderChangesetTemplateField("authorEmail", input.Template.Commit.Author.Email, tmplCtx)
 		if err != nil {
 			return nil, err
 		}
@@ -100,19 +102,17 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 		return nil, err
 	}
 
-	newSpec := func(branch, diff string) (*ChangesetSpec, error) {
-		var published interface{} = nil
+	newSpec := func(branch string, diff []byte) *ChangesetSpec {
+		var published any = nil
 		if input.Template.Published != nil {
 			published = input.Template.Published.ValueWithSuffix(input.Repository.Name, branch)
+		}
 
-			// Backward compatibility: before optional published fields were
-			// allowed, ValueWithSuffix() would fall back to false, not nil. We
-			// need to replicate this behaviour here.
-			if published == nil && !features.AllowOptionalPublished {
-				published = false
-			}
-		} else if !features.AllowOptionalPublished {
-			return nil, errOptionalPublishedUnsupported
+		fork := input.Template.Fork
+
+		version := 1
+		if binaryDiffs {
+			version = 2
 		}
 
 		return &ChangesetSpec{
@@ -124,16 +124,18 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 			HeadRef: git.EnsureRefPrefix(branch),
 			Title:   title,
 			Body:    body,
+			Fork:    fork,
 			Commits: []GitCommitDescription{
 				{
+					Version:     version,
 					Message:     message,
-					AuthorName:  authorName,
-					AuthorEmail: authorEmail,
+					AuthorName:  author.Name,
+					AuthorEmail: author.Email,
 					Diff:        diff,
 				},
 			},
 			Published: PublishedValue{Val: published},
-		}, nil
+		}
 	}
 
 	var specs []*ChangesetSpec
@@ -152,17 +154,11 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 		}
 
 		for branch, diff := range diffsByBranch {
-			spec, err := newSpec(branch, diff)
-			if err != nil {
-				return nil, err
-			}
+			spec := newSpec(branch, diff)
 			specs = append(specs, spec)
 		}
 	} else {
-		spec, err := newSpec(defaultBranch, input.Result.Diff)
-		if err != nil {
-			return nil, err
-		}
+		spec := newSpec(defaultBranch, input.Result.Diff)
 		specs = append(specs, spec)
 	}
 
@@ -246,8 +242,8 @@ func validateGroups(repoName, defaultBranch string, groups []Group) error {
 	return nil
 }
 
-func groupFileDiffs(completeDiff, defaultBranch string, groups []Group) (map[string]string, error) {
-	fileDiffs, err := diff.ParseMultiFileDiff([]byte(completeDiff))
+func groupFileDiffs(completeDiff []byte, defaultBranch string, groups []Group) (map[string][]byte, error) {
+	fileDiffs, err := godiff.ParseMultiFileDiff(completeDiff)
 	if err != nil {
 		return nil, err
 	}
@@ -262,8 +258,8 @@ func groupFileDiffs(completeDiff, defaultBranch string, groups []Group) (map[str
 		dirs = append(dirs, g.Directory)
 	}
 
-	byBranch := make(map[string][]*diff.FileDiff, len(groups))
-	byBranch[defaultBranch] = []*diff.FileDiff{}
+	byBranch := make(map[string][]*godiff.FileDiff, len(groups))
+	byBranch[defaultBranch] = []*godiff.FileDiff{}
 
 	// For each file diff...
 	for _, f := range fileDiffs {
@@ -297,13 +293,13 @@ func groupFileDiffs(completeDiff, defaultBranch string, groups []Group) (map[str
 		byBranch[branch] = append(byBranch[branch], f)
 	}
 
-	finalDiffsByBranch := make(map[string]string, len(byBranch))
+	finalDiffsByBranch := make(map[string][]byte, len(byBranch))
 	for branch, diffs := range byBranch {
-		printed, err := diff.PrintMultiFileDiff(diffs)
+		printed, err := godiff.PrintMultiFileDiff(diffs)
 		if err != nil {
 			return nil, errors.Wrap(err, "printing multi file diff failed")
 		}
-		finalDiffsByBranch[branch] = string(printed)
+		finalDiffsByBranch[branch] = printed
 	}
 	return finalDiffsByBranch, nil
 }

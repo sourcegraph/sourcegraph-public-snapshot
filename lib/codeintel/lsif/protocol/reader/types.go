@@ -6,7 +6,7 @@ type Element struct {
 	ID      int
 	Type    string
 	Label   string
-	Payload interface{}
+	Payload any
 }
 
 type Edge struct {
@@ -16,9 +16,16 @@ type Edge struct {
 	Document int
 }
 
+type ToolInfo struct {
+	Name    string
+	Version string
+}
+
 type MetaData struct {
-	Version     string
-	ProjectRoot string
+	Version          string
+	ProjectRoot      string
+	PositionEncoding string
+	ToolInfo         ToolInfo
 }
 
 type Range struct {
@@ -37,6 +44,7 @@ type Moniker struct {
 type PackageInformation struct {
 	Name    string
 	Version string
+	Manager string
 }
 
 type Diagnostic struct {

@@ -2,15 +2,19 @@ package comby
 
 import (
 	"archive/zip"
-	"bufio"
 	"bytes"
 	"context"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"syscall"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
+
+	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestMatchesUnmarshalling(t *testing.T) {
@@ -51,7 +55,7 @@ func main() {
 	}
 
 	for _, test := range cases {
-		m, err := Matches(ctx, test.args)
+		m, err := Matches(ctx, logtest.Scoped(t), test.args)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -107,12 +111,12 @@ func main() {
 	}
 
 	for _, test := range cases {
-		b := new(bytes.Buffer)
-		w := bufio.NewWriter(b)
-		err := PipeTo(ctx, test.args, w)
+		var b bytes.Buffer
+		err := runWithoutPipes(ctx, test.args, &b)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		got := b.String()
 		if got != test.want {
 			t.Errorf("got %v, want %v", got, test.want)
@@ -130,16 +134,17 @@ func Test_stdin(t *testing.T) {
 	test := func(args Args) string {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		b := new(bytes.Buffer)
-		w := bufio.NewWriter(b)
-		err := PipeTo(ctx, args, w)
+
+		var b bytes.Buffer
+		err := runWithoutPipes(ctx, args, &b)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		return b.String()
 	}
 
-	autogold.Want("stdin", `{"uri":null,"diff":"--- /dev/null\n+++ /dev/null\n@@ -1,1 +1,1 @@\n-yes\n+no"}
+	autogold.Expect(`{"uri":null,"diff":"--- /dev/null\n+++ /dev/null\n@@ -1,1 +1,1 @@\n-yes\n+no"}
 `).
 		Equal(t, test(Args{
 			Input:           FileContent("yes\n"),
@@ -184,7 +189,7 @@ func TestReplacements(t *testing.T) {
 	}
 
 	for _, test := range cases {
-		r, err := Replacements(ctx, test.args)
+		r, err := Replacements(ctx, logtest.Scoped(t), test.args)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -225,4 +230,27 @@ func tempZipFromFiles(t *testing.T, files map[string]string) string {
 	}
 
 	return path
+}
+
+func runWithoutPipes(ctx context.Context, args Args, b *bytes.Buffer) (err error) {
+	if !Exists() {
+		return errors.New("comby is not installed")
+	}
+
+	rawArgs := rawArgs(args)
+	cmd := exec.CommandContext(ctx, combyPath, rawArgs...)
+	// Ensure forked child processes are killed
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
+	if content, ok := args.Input.(FileContent); ok {
+		cmd.Stdin = bytes.NewReader(content)
+	}
+	cmd.Stdout = b
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
+
+	if err := cmd.Run(); err != nil {
+		return errors.Wrapf(err, "failed with stdout %s", stderrBuf.String())
+	}
+	return nil
 }

@@ -1,9 +1,6 @@
-import { action } from '@storybook/addon-actions'
-import { storiesOf } from '@storybook/react'
-import React from 'react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { registerHighlightContributions } from '@sourcegraph/common'
-import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import {
     commonProps,
     FIXTURE_ACTIONS,
@@ -19,32 +16,36 @@ import {
     FIXTURE_CONTENT_LONG_TEXT_ONLY,
     FIXTURE_CONTENT_MARKDOWN,
     FIXTURE_PARTIAL_BADGE,
-    FIXTURE_SMALL_TEXT_MARKDOWN_ALERT,
-    FIXTURE_WARNING_MARKDOWN_ALERT,
 } from './WebHoverOverlay.fixtures'
+
+import styles from './WebHoverOverlay.story.module.scss'
 
 registerHighlightContributions()
 
-const { add } = storiesOf('web/WebHoverOverlay', module)
-    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
-    .addParameters({
+const decorator: Decorator = story => <WebStory>{() => story()}</WebStory>
+
+const config: Meta = {
+    title: 'web/WebHoverOverlay',
+    parameters: {
         design: {
             type: 'figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=2877%3A35469',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=2877%3A35469',
         },
-    })
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
+        },
+    },
+    decorators: [decorator],
+}
 
-add('Loading', () => (
-    <WebHoverOverlay
-        {...commonProps()}
-        hoverOrError="loading"
-        actionsOrError={FIXTURE_ACTIONS}
-        coolCodeIntelEnabled={false}
-    />
-))
+export default config
 
-add('Error', () => (
+export const Loading: StoryFn = () => (
+    <WebHoverOverlay {...commonProps()} hoverOrError="loading" actionsOrError={FIXTURE_ACTIONS} />
+)
+
+export const _Error: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={
@@ -53,35 +54,36 @@ add('Error', () => (
             )
         }
         actionsOrError={FIXTURE_ACTIONS}
-        coolCodeIntelEnabled={false}
     />
-))
+)
 
-add('No hover information', () => (
-    <WebHoverOverlay
-        {...commonProps()}
-        hoverOrError={null}
-        actionsOrError={FIXTURE_ACTIONS}
-        coolCodeIntelEnabled={false}
-    />
-))
+_Error.storyName = 'Error'
 
-add('Common content without actions', () => (
-    <WebHoverOverlay {...commonProps()} hoverOrError={{ contents: [FIXTURE_CONTENT] }} coolCodeIntelEnabled={false} />
-))
+export const NoHoverInformation: StoryFn = () => (
+    <WebHoverOverlay {...commonProps()} hoverOrError={null} actionsOrError={FIXTURE_ACTIONS} />
+)
 
-add('Common content with actions', () => (
+NoHoverInformation.storyName = 'No hover information'
+
+export const CommonContentWithoutActions: StoryFn = () => (
+    <WebHoverOverlay {...commonProps()} hoverOrError={{ contents: [FIXTURE_CONTENT] }} />
+)
+
+CommonContentWithoutActions.storyName = 'Common content without actions'
+
+export const CommonContentWithActions: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
             contents: [FIXTURE_CONTENT],
         }}
         actionsOrError={FIXTURE_ACTIONS}
-        coolCodeIntelEnabled={false}
     />
-))
+)
 
-add('Aggregated Badges', () => (
+CommonContentWithActions.storyName = 'Common content with actions'
+
+export const AggregatedBadges: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -89,11 +91,10 @@ add('Aggregated Badges', () => (
             aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
         }}
         actionsOrError={FIXTURE_ACTIONS}
-        coolCodeIntelEnabled={false}
     />
-))
+)
 
-add('Long code', () => (
+export const LongCode: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -101,33 +102,36 @@ add('Long code', () => (
             aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
         }}
         actionsOrError={FIXTURE_ACTIONS}
-        coolCodeIntelEnabled={false}
     />
-))
+)
 
-add('Long text only', () => (
+LongCode.storyName = 'Long code'
+
+export const LongTextOnly: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
             contents: [FIXTURE_CONTENT_LONG_TEXT_ONLY],
         }}
         actionsOrError={FIXTURE_ACTIONS}
-        coolCodeIntelEnabled={false}
     />
-))
+)
 
-add('Long markdown with <div>', () => (
+LongTextOnly.storyName = 'Long text only'
+
+export const LongMarkdownWithDiv: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
             contents: [FIXTURE_CONTENT_MARKDOWN],
         }}
         actionsOrError={FIXTURE_ACTIONS}
-        coolCodeIntelEnabled={false}
     />
-))
+)
 
-add('Multiple MarkupContents', () => (
+LongMarkdownWithDiv.storyName = 'Long markdown with <div>'
+
+export const MultipleMarkupContents: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -135,111 +139,49 @@ add('Multiple MarkupContents', () => (
             aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
         }}
         actionsOrError={FIXTURE_ACTIONS}
-        coolCodeIntelEnabled={false}
     />
-))
+)
 
-add('With small-text alert', () => (
+MultipleMarkupContents.storyName = 'Multiple MarkupContents'
+
+export const WithLongMarkdownTextIcon: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
             contents: [FIXTURE_CONTENT],
-            alerts: [FIXTURE_SMALL_TEXT_MARKDOWN_ALERT],
-        }}
-        actionsOrError={FIXTURE_ACTIONS}
-        onAlertDismissed={action('onAlertDismissed')}
-        coolCodeIntelEnabled={false}
-    />
-))
-
-add('With one-line alert', () => (
-    <WebHoverOverlay
-        {...commonProps()}
-        hoverOrError={{
-            contents: [FIXTURE_CONTENT],
-            alerts: [
-                {
-                    summary: {
-                        kind: MarkupKind.PlainText,
-                        value: 'This is a test alert.',
-                    },
-                },
-            ],
-        }}
-        actionsOrError={FIXTURE_ACTIONS}
-        onAlertDismissed={action('onAlertDismissed')}
-        coolCodeIntelEnabled={false}
-    />
-))
-
-add('With alert with warning icon', () => (
-    <WebHoverOverlay
-        {...commonProps()}
-        hoverOrError={{
-            contents: [FIXTURE_CONTENT],
-            alerts: [
-                {
-                    summary: {
-                        kind: MarkupKind.PlainText,
-                        value: 'This is a warning alert.',
-                    },
-                    iconKind: 'warning',
-                },
-            ],
-        }}
-        actionsOrError={FIXTURE_ACTIONS}
-        onAlertDismissed={action('onAlertDismissed')}
-        coolCodeIntelEnabled={false}
-    />
-))
-
-add('With dismissible alert with icon', () => (
-    <WebHoverOverlay
-        {...commonProps()}
-        hoverOrError={{
-            contents: [FIXTURE_CONTENT],
-            alerts: [
-                {
-                    summary: {
-                        kind: MarkupKind.Markdown,
-                        value:
-                            'Search based result.<br /> [Learn more about precise code intelligence](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions/-/blob/shared/indicators.ts#L67)',
-                    },
-                    type: 'test-alert-type',
-                    iconKind: 'info',
-                },
-            ],
-        }}
-        actionsOrError={FIXTURE_ACTIONS}
-        onAlertDismissed={action('onAlertDismissed')}
-        coolCodeIntelEnabled={false}
-    />
-))
-
-add('With long markdown text and dismissible alert with icon.', () => (
-    <WebHoverOverlay
-        {...commonProps()}
-        hoverOrError={{
-            contents: [FIXTURE_CONTENT],
-            alerts: [FIXTURE_WARNING_MARKDOWN_ALERT],
             aggregatedBadges: [FIXTURE_PARTIAL_BADGE, FIXTURE_SEMANTIC_BADGE],
         }}
         actionsOrError={FIXTURE_ACTIONS}
-        onAlertDismissed={action('onAlertDismissed')}
-        coolCodeIntelEnabled={false}
     />
-))
+)
 
-add('Multiple MarkupContents with badges and alerts', () => (
+WithLongMarkdownTextIcon.storyName = 'With long markdown text and icon.'
+
+export const MultipleMarkupContentsWithBadges: StoryFn = () => (
+    <div className={styles.container}>
+        <WebHoverOverlay
+            {...commonProps()}
+            hoverOrError={{
+                contents: [FIXTURE_CONTENT, FIXTURE_CONTENT, FIXTURE_CONTENT],
+                aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
+            }}
+            actionsOrError={FIXTURE_ACTIONS}
+        />
+    </div>
+)
+
+MultipleMarkupContentsWithBadges.storyName = 'Multiple MarkupContents with badges'
+
+export const WithCloseButton: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
             contents: [FIXTURE_CONTENT, FIXTURE_CONTENT, FIXTURE_CONTENT],
             aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
-            alerts: [FIXTURE_SMALL_TEXT_MARKDOWN_ALERT, FIXTURE_WARNING_MARKDOWN_ALERT],
         }}
         actionsOrError={FIXTURE_ACTIONS}
-        onAlertDismissed={action('onAlertDismissed')}
-        coolCodeIntelEnabled={false}
+        pinOptions={{ showCloseButton: true }}
     />
-))
+)
+
+WithCloseButton.storyName = 'With close button'

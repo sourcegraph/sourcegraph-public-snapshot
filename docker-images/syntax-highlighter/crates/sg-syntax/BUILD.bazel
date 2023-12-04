@@ -1,0 +1,53 @@
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "sg-syntax",
+    srcs = glob(["src/*.rs"]),
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ) + [
+        "//docker-images/syntax-highlighter/crates/scip-macros:scip-macros",
+    ],
+    visibility = ["//docker-images/syntax-highlighter:__subpackages__"],
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        "//docker-images/syntax-highlighter/crates/scip-syntax",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
+    ],
+)
+
+# This prevents bazel configure for generating buildfiles because it sees
+# some go files in that folder.
+# gazelle:exclude src/snapshots
+rust_test(
+    name = "unit_test",
+    size = "small",
+    aliases = aliases(
+        normal_dev = True,
+        proc_macro_dev = True,
+    ),
+    crate = ":sg-syntax",
+    data = glob(
+        ["src/snapshots/**"],
+        allow_empty = False,
+    ),
+    env = {
+        "RUST_BACKTRACE": "1",
+        # NOTE: Outside of Bazel, insta relies on invoking `cargo` (via PATH)
+        # to locate the workspace root.
+        # https://sourcegraph.com/github.com/mitsuhiko/insta@1.14.0/-/blob/src/env.rs?L106-128
+        # Adding this environment variable skips that invocation,
+        # so tests don't need `cargo` access at runtime.
+        "INSTA_WORKSPACE_ROOT": ".",
+    },
+    proc_macro_deps = all_crate_deps(
+        proc_macro_dev = True,
+    ),
+    deps = all_crate_deps(
+        normal_dev = True,
+    ),
+)

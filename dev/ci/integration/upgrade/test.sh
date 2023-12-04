@@ -4,7 +4,7 @@
 source /root/.profile
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 root_dir=$(pwd)
-set -ex
+set -e
 
 URL="${1:-"http://localhost:7080"}"
 
@@ -31,11 +31,12 @@ pushd internal/cmd/init-sg
 go build
 ./init-sg initSG
 popd
-# Load variables set up by init-server, disabling `-x` to avoid printing variables
-set +x
 # shellcheck disable=SC1091
 source /root/.sg_envrc
-set -x
+
+SOURCEGRAPH_REPORTED_VERSION_OLD=$(curl -fs "$URL/__version")
+echo
+echo "--- Sourcegraph instance (before upgrade) is reporting version: '$SOURCEGRAPH_REPORTED_VERSION_OLD'"
 
 # Stop old Sourcegraph release
 docker container stop "$CONTAINER"
@@ -71,14 +72,24 @@ fi
 # Upgrade to current candidate image. Capture logs for the attempted upgrade.
 echo "--- start candidate"
 CONTAINER="sourcegraph-new-${IDENT}"
-IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION CLEAN="false" ./dev/run-server-image.sh -d --name "$CONTAINER"
+IMAGE=us.gcr.io/sourcegraph-dev/server:bazel-${CANDIDATE_VERSION} CLEAN="false" ./dev/run-server-image.sh -d --name "$CONTAINER"
 sleep 15
 
 # Run tests
 echo "--- TEST: Checking Sourcegraph instance is accessible"
 curl -f "$URL"
 curl -f "$URL"/healthz
+
+SOURCEGRAPH_REPORTED_VERSION_NEW=$(curl -fs "$URL/__version")
+echo
+echo "--- Sourcegraph instance (after upgrade) is reporting version: '$SOURCEGRAPH_REPORTED_VERSION_NEW'"
+
+if [ "$SOURCEGRAPH_REPORTED_VERSION_NEW" == "$SOURCEGRAPH_REPORTED_VERSION_OLD" ]; then
+  echo "Error: Instance version unchanged after upgrade" 1>&2
+  exit 1
+fi
+
 echo "--- TEST: Running tests"
 pushd client/web
-yarn run test:regression:core
+pnpm run test:regression:core
 popd

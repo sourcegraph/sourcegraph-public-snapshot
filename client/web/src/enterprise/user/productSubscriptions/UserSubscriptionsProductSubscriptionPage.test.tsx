@@ -1,33 +1,38 @@
-import { act } from '@testing-library/react'
-import { createMemoryHistory } from 'history'
-import React from 'react'
-import { of } from 'rxjs'
+import { describe, expect, test } from 'vitest'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { getDocumentNode } from '@sourcegraph/http-client'
+import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
+import { USER_PRODUCT_SUBSCRIPTION } from './backend'
 import { UserSubscriptionsProductSubscriptionPage } from './UserSubscriptionsProductSubscriptionPage'
 
-jest.mock('./ProductSubscriptionHistory', () => ({
-    ProductSubscriptionHistory: 'ProductSubscriptionHistory',
-}))
+const uuid = '43002662-f627-4550-9af6-d621d2a878de'
+
 describe('UserSubscriptionsProductSubscriptionPage', () => {
-    test('renders', () => {
-        const history = createMemoryHistory()
+    test('renders', async () => {
         const component = renderWithBrandedContext(
-            <UserSubscriptionsProductSubscriptionPage
-                user={{ settingsURL: '/u' }}
-                match={{ isExact: true, params: { subscriptionUUID: 's' }, path: '/p', url: '/p' }}
-                _queryProductSubscription={() =>
-                    of<GQL.IProductSubscription>({
-                        __typename: 'ProductSubscription',
-                    } as GQL.IProductSubscription)
-                }
-                history={history}
-            />,
-            { history }
+            <MockedTestProvider
+                mocks={[
+                    {
+                        request: { query: getDocumentNode(USER_PRODUCT_SUBSCRIPTION), variables: { uuid } },
+                        result: {
+                            data: {
+                                dotcom: {
+                                    productSubscription: {
+                                        __typename: 'ProductSubscription',
+                                    },
+                                },
+                            },
+                        },
+                    },
+                ]}
+            >
+                <UserSubscriptionsProductSubscriptionPage user={{ settingsURL: '/u' }} />
+            </MockedTestProvider>,
+            { path: '/:subscriptionUUID', route: `/${uuid}` }
         )
-        act(() => undefined)
+        await waitForNextApolloResponse()
         expect(component.asFragment()).toMatchSnapshot()
     })
 })

@@ -1,50 +1,63 @@
 package main
 
 import (
-	"context"
-	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var (
-	versionFlagSet = flag.NewFlagSet("sg version", flag.ExitOnError)
+	versionChangelogNext    bool
+	versionChangelogEntries int
 
-	versionChangelogFlagSet = flag.NewFlagSet("sg version changelog", flag.ExitOnError)
-	versionChangelogNext    = versionChangelogFlagSet.Bool("next", false, "Show changelog for changes you would get if you upgrade.")
-	versionChangelogEntries = versionChangelogFlagSet.Int("limit", 20, "Number of changelog entries to show.")
-
-	versionCommand = &ffcli.Command{
-		Name:       "version",
-		ShortUsage: "sg version",
-		ShortHelp:  "Prints the sg version",
-		FlagSet:    versionFlagSet,
-		Exec:       versionExec,
-		Subcommands: []*ffcli.Command{
+	versionCommand = &cli.Command{
+		Name:     "version",
+		Usage:    "View details for this installation of sg",
+		Action:   versionExec,
+		Category: category.Util,
+		Subcommands: []*cli.Command{
 			{
-				Name:      "changelog",
-				ShortHelp: "See what's changed in or since this version of sg",
-				FlagSet:   versionChangelogFlagSet,
-				Exec:      changelogExec,
+				Name:    "changelog",
+				Aliases: []string{"c"},
+				Usage:   "See what's changed in or since this version of sg",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:        "next",
+						Usage:       "Show changelog for changes you would get if you upgrade.",
+						Destination: &versionChangelogNext,
+					},
+					&cli.IntFlag{
+						Name:        "limit",
+						Usage:       "Number of changelog entries to show.",
+						Value:       5,
+						Destination: &versionChangelogEntries,
+					},
+				},
+				Action: changelogExec,
 			},
 		},
 	}
 )
 
-func versionExec(ctx context.Context, args []string) error {
-	stdout.Out.Write(BuildCommit)
+func versionExec(ctx *cli.Context) error {
+	std.Out.Write(BuildCommit)
 	return nil
 }
 
-func changelogExec(ctx context.Context, args []string) error {
+func changelogExec(ctx *cli.Context) error {
+	if _, err := run.GitCmd("fetch", "origin", "main"); err != nil {
+		return errors.Newf("failed to update main: %s", err)
+	}
+
 	logArgs := []string{
 		// Format nicely
 		"log", "--pretty=%C(reset)%s %C(dim)%h by %an, %ar",
@@ -52,20 +65,20 @@ func changelogExec(ctx context.Context, args []string) error {
 		// Filter out stuff we don't want
 		"--no-merges",
 		// Limit entries
-		fmt.Sprintf("--max-count=%d", *versionChangelogEntries),
+		fmt.Sprintf("--max-count=%d", versionChangelogEntries),
 	}
 	var title string
 	if BuildCommit != "dev" {
-		current := strings.TrimLeft(BuildCommit, "dev-")
-		if *versionChangelogNext {
-			logArgs = append(logArgs, current+"..")
+		current := strings.TrimPrefix(BuildCommit, "dev-")
+		if versionChangelogNext {
+			logArgs = append(logArgs, current+"..origin/main")
 			title = fmt.Sprintf("Changes since sg release %s", BuildCommit)
 		} else {
 			logArgs = append(logArgs, current)
 			title = fmt.Sprintf("Changes in sg release %s", BuildCommit)
 		}
 	} else {
-		writeWarningLinef("Dev version detected - just showing recent changes.")
+		std.Out.WriteWarningf("Dev version detected - just showing recent changes.")
 		title = "Recent sg changes"
 	}
 
@@ -76,7 +89,7 @@ func changelogExec(ctx context.Context, args []string) error {
 		return err
 	}
 
-	block := stdout.Out.Block(output.Linef("", output.StyleSearchQuery, title))
+	block := std.Out.Block(output.Styled(output.StyleSearchQuery, title))
 	if len(out) == 0 {
 		block.Write("No changes found.")
 	} else {
@@ -84,6 +97,7 @@ func changelogExec(ctx context.Context, args []string) error {
 	}
 	block.Close()
 
-	stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Only showing %d entries - configure with 'sg version changelog -limit=50'", *versionChangelogEntries))
+	std.Out.WriteLine(output.Styledf(output.StyleSuggestion,
+		"Only showing %d entries - configure with 'sg version changelog -limit=50'", versionChangelogEntries))
 	return nil
 }

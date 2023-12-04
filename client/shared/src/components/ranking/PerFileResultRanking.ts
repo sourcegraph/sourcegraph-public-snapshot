@@ -1,4 +1,4 @@
-import { AggregableBadge, Badge as ExtensionBadgeType } from 'sourcegraph'
+import type { AggregableBadge, Badge as ExtensionBadgeType } from '../../codeintel/legacy-extensions/api'
 
 /**
  * Interface for different ranking algorithms that determine how to display search results in the client.
@@ -23,14 +23,23 @@ export interface RankingResult {
 
 export interface MatchItem extends ExtensionBadgeType {
     highlightRanges: {
-        start: number
-        highlightLength: number
+        startLine: number
+        startCharacter: number
+        endLine: number
+        endCharacter: number
     }[]
-    preview: string
     /**
-     * The 0-based line number of this match.
+     * The matched content, which contains all matched ranges in highlightRanges.
      */
-    line: number
+    content: string
+    /**
+     * The 0-based line number where the matched content begins.
+     */
+    startLine: number
+    /**
+     * The 0-based line number where the matched content ends.
+     */
+    endLine: number
     aggregableBadges?: AggregableBadge[]
 }
 
@@ -57,8 +66,8 @@ export interface MatchGroup {
 }
 
 export interface MatchGroupMatch {
-    line: number
-    character: number
-    highlightLength: number
-    isInContext: boolean
+    startLine: number
+    startCharacter: number
+    endLine: number
+    endCharacter: number
 }

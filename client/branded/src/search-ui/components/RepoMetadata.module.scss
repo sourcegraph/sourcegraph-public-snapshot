@@ -1,0 +1,14 @@
+.container {
+    gap: 0.5rem;
+}
+
+.highlight {
+    color: var(--search-filter-keyword-color);
+}
+
+.badge-button {
+    &:focus-visible,
+    &:hover {
+        background-color: var(--badge-dark);
+    }
+}

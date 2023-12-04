@@ -1,0 +1,21 @@
+.diffblock {
+    display: block;
+    background-color: var(--color-bg-2);
+    border-radius: var(--border-radius);
+    border: solid var(--border-color);
+    font-size: 0.7rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.diffmeta {
+    display: flex;
+    align-items: center;
+}
+
+svg.fileicon {
+    width: 2rem;
+    height: 2rem;
+    vertical-align: top;
+    color: var(--text-muted);
+}

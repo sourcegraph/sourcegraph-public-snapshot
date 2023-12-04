@@ -1,13 +1,16 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Panel renders correctly positioned at page bottom 1`] = `
+exports[`Panel > renders correctly positioned at page bottom 1`] = `
 <DocumentFragment>
   <div
-    class="panel panelBottom"
+    aria-label="Test panel"
+    class="panel panelBottom panelRelative"
+    role="region"
     style="height: 200px;"
   >
     <div
       class="handle handleBottom"
+      role="presentation"
     />
   </div>
 </DocumentFragment>

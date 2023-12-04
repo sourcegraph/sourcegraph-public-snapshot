@@ -1,28 +1,29 @@
 package backend
 
 import (
-	"bytes"
-	"encoding/json"
-	"sort"
-
-	"github.com/google/zoekt"
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/zoekt"
+	"golang.org/x/exp/slices"
 
+	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// zoektIndexOptions are options which change what we index for a
+// ZoektIndexOptions are options which change what we index for a
 // repository. Everytime a repository is indexed by zoekt this structure is
 // fetched. See getIndexOptions in the zoekt codebase.
 //
-// We only specify a subset of the fields.
-type zoektIndexOptions struct {
+// We only specify a subset of the fields from zoekt.IndexOptions.
+type ZoektIndexOptions struct {
 	// Name is the Repository Name.
 	Name string
 
 	// RepoID is the Sourcegraph Repository ID.
-	RepoID int32
+	RepoID api.RepoID
 
 	// Public is true if the repository is public and does not require auth
 	// filtering.
@@ -48,8 +49,78 @@ type zoektIndexOptions struct {
 	// Priority indicates ranking in results, higher first.
 	Priority float64 `json:",omitempty"`
 
+	// DocumentRanksVersion when non-empty will lead to indexing using offline
+	// ranking. When the string changes this will also cause us to re-index
+	// with new ranks.
+	DocumentRanksVersion string `json:",omitempty"`
+
 	// Error if non-empty indicates the request failed for the repo.
 	Error string `json:",omitempty"`
+
+	LanguageMap map[string]ctags_config.ParserType
+
+	ShardConcurrency int32 `json:",omitempty"`
+}
+
+func (o *ZoektIndexOptions) FromProto(p *proto.ZoektIndexOptions) {
+	o.Name = p.GetName()
+	o.RepoID = api.RepoID(p.GetRepoId())
+	o.Public = p.GetPublic()
+	o.Fork = p.GetFork()
+	o.Archived = p.GetArchived()
+	o.LargeFiles = p.GetLargeFiles()
+	o.Symbols = p.GetSymbols()
+	o.Priority = p.GetPriority()
+	o.DocumentRanksVersion = p.GetDocumentRanksVersion()
+	o.Error = p.GetError()
+
+	branches := make([]zoekt.RepositoryBranch, 0, len(p.GetBranches()))
+	for _, b := range p.GetBranches() {
+		branches = append(branches, zoekt.RepositoryBranch{
+			Name:    b.GetName(),
+			Version: b.GetVersion(),
+		})
+	}
+
+	o.Branches = branches
+
+	languageMap := make(map[string]ctags_config.ParserType)
+	for _, entry := range p.GetLanguageMap() {
+		languageMap[entry.Language] = uint8(entry.Ctags.Number())
+	}
+	o.LanguageMap = languageMap
+	o.ShardConcurrency = p.GetShardConcurrency()
+}
+
+func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
+	branches := make([]*proto.ZoektRepositoryBranch, 0, len(o.Branches))
+	for _, b := range o.Branches {
+		branches = append(branches, &proto.ZoektRepositoryBranch{
+			Name:    b.Name,
+			Version: b.Version,
+		})
+	}
+
+	languageMap := make([]*proto.LanguageMapping, 0)
+	for language, engine := range o.LanguageMap {
+		languageMap = append(languageMap, &proto.LanguageMapping{Language: language, Ctags: proto.CTagsParserType(engine)})
+	}
+
+	return &proto.ZoektIndexOptions{
+		Name:                 o.Name,
+		RepoId:               int32(o.RepoID),
+		Public:               o.Public,
+		Fork:                 o.Fork,
+		Archived:             o.Archived,
+		LargeFiles:           o.LargeFiles,
+		Symbols:              o.Symbols,
+		Branches:             branches,
+		Priority:             o.Priority,
+		DocumentRanksVersion: o.DocumentRanksVersion,
+		Error:                o.Error,
+		LanguageMap:          languageMap,
+		ShardConcurrency:     o.ShardConcurrency,
+	}
 }
 
 // RepoIndexOptions are the options used by GetIndexOptions for a specific
@@ -59,7 +130,7 @@ type RepoIndexOptions struct {
 	Name string
 
 	// RepoID is the Sourcegraph Repository ID.
-	RepoID int32
+	RepoID api.RepoID
 
 	// Public is true if the repository is public and does not require auth
 	// filtering.
@@ -67,6 +138,11 @@ type RepoIndexOptions struct {
 
 	// Priority indicates ranking in results, higher first.
 	Priority float64
+
+	// DocumentRanksVersion when non-empty will lead to indexing using offline
+	// ranking. When the string changes this will also cause us to re-index
+	// with new ranks.
+	DocumentRanksVersion string
 
 	// Fork is true if the repository is a fork.
 	Fork bool
@@ -80,19 +156,21 @@ type RepoIndexOptions struct {
 	GetVersion func(branch string) (string, error)
 }
 
+type getRepoIndexOptsFn func(repoID api.RepoID) (*RepoIndexOptions, error)
+
 // GetIndexOptions returns a json blob for consumption by
 // sourcegraph-zoekt-indexserver. It is for repos based on site settings c.
 func GetIndexOptions(
 	c *schema.SiteConfiguration,
-	getRepoIndexOptions func(repoID int32) (*RepoIndexOptions, error),
-	getSearchContextRevisions func(repoID int32) ([]string, error),
-	repos ...int32,
-) []byte {
+	getRepoIndexOptions getRepoIndexOptsFn,
+	getSearchContextRevisions func(repoID api.RepoID) ([]string, error),
+	repos ...api.RepoID,
+) []ZoektIndexOptions {
 	// Limit concurrency to 32 to avoid too many active network requests and
 	// strain on gitserver (as ported from zoekt-sourcegraph-indexserver). In
-	// future we want a more intelligent global limit based on scale.
+	// the future we want a more intelligent global limit based on scale.
 	sema := make(chan struct{}, 32)
-	results := make([][]byte, len(repos))
+	results := make([]ZoektIndexOptions, len(repos))
 	getSiteConfigRevisions := siteConfigRevisionsRuleFunc(c)
 
 	for i := range repos {
@@ -108,22 +186,25 @@ func GetIndexOptions(
 		sema <- struct{}{}
 	}
 
-	return bytes.Join(results, []byte{'\n'})
+	return results
 }
 
 func getIndexOptions(
 	c *schema.SiteConfiguration,
-	repoID int32,
-	getRepoIndexOptions func(repoID int32) (*RepoIndexOptions, error),
-	getSearchContextRevisions func(repoID int32) ([]string, error),
+	repoID api.RepoID,
+	getRepoIndexOptions func(repoID api.RepoID) (*RepoIndexOptions, error),
+	getSearchContextRevisions func(repoID api.RepoID) ([]string, error),
 	getSiteConfigRevisions revsRuleFunc,
-) []byte {
+) ZoektIndexOptions {
 	opts, err := getRepoIndexOptions(repoID)
 	if err != nil {
-		return marshal(&zoektIndexOptions{Error: err.Error()})
+		return ZoektIndexOptions{
+			RepoID: repoID,
+			Error:  err.Error(),
+		}
 	}
 
-	o := &zoektIndexOptions{
+	o := ZoektIndexOptions{
 		Name:       opts.Name,
 		RepoID:     opts.RepoID,
 		Public:     opts.Public,
@@ -132,6 +213,10 @@ func getIndexOptions(
 		Archived:   opts.Archived,
 		LargeFiles: c.SearchLargeFiles,
 		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
+
+		DocumentRanksVersion: opts.DocumentRanksVersion,
+		LanguageMap:          ctags_config.CreateEngineMap(*c),
+		ShardConcurrency:     int32(c.SearchIndexShardConcurrency),
 	}
 
 	// Set of branch names. Always index HEAD
@@ -147,7 +232,10 @@ func getIndexOptions(
 	// Add all branches that are referenced by search contexts
 	revs, err := getSearchContextRevisions(opts.RepoID)
 	if err != nil {
-		return marshal(&zoektIndexOptions{Error: err.Error()})
+		return ZoektIndexOptions{
+			RepoID: opts.RepoID,
+			Error:  err.Error(),
+		}
 	}
 	for _, rev := range revs {
 		branches[rev] = struct{}{}
@@ -160,7 +248,10 @@ func getIndexOptions(
 	for branch := range branches {
 		v, err := opts.GetVersion(branch)
 		if err != nil {
-			return marshal(&zoektIndexOptions{Error: err.Error()})
+			return ZoektIndexOptions{
+				RepoID: opts.RepoID,
+				Error:  err.Error(),
+			}
 		}
 
 		// If we failed to resolve a branch, skip it
@@ -174,13 +265,12 @@ func getIndexOptions(
 		})
 	}
 
-	sort.Slice(o.Branches, func(i, j int) bool {
-		a, b := o.Branches[i].Name, o.Branches[j].Name
+	slices.SortFunc(o.Branches, func(a, b zoekt.RepositoryBranch) bool {
 		// Zoekt treats first branch as default branch, so put HEAD first
-		if a == "HEAD" || b == "HEAD" {
-			return a == "HEAD"
+		if a.Name == "HEAD" || b.Name == "HEAD" {
+			return a.Name == "HEAD"
 		}
-		return a < b
+		return a.Name < b.Name
 	})
 
 	// If the first branch is not HEAD, do not index anything. This should
@@ -194,7 +284,7 @@ func getIndexOptions(
 		o.Branches = o.Branches[:64]
 	}
 
-	return marshal(o)
+	return o
 }
 
 type revsRuleFunc func(*RepoIndexOptions) (revs []string)
@@ -244,9 +334,4 @@ func getBoolPtr(b *bool, default_ bool) bool {
 		return default_
 	}
 	return *b
-}
-
-func marshal(o *zoektIndexOptions) []byte {
-	b, _ := json.Marshal(o)
-	return b
 }

@@ -1,0 +1,71 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "prom-wrapper_lib",
+    srcs = [
+        "alertmanager.go",
+        "change.go",
+        "cmd.go",
+        "main.go",
+        "receivers.go",
+        "silence.go",
+        "siteconfig.go",
+        "status.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/docker-images/prometheus/cmd/prom-wrapper",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//internal/conf",
+        "//internal/env",
+        "//internal/hostname",
+        "//internal/src-prometheus",
+        "//internal/version",
+        "//lib/errors",
+        "//schema",
+        "@com_github_go_openapi_strfmt//:strfmt",
+        "@com_github_gorilla_mux//:mux",
+        "@com_github_masterminds_semver//:semver",
+        "@com_github_prometheus_alertmanager//api/v2/client",
+        "@com_github_prometheus_alertmanager//api/v2/client/alert",
+        "@com_github_prometheus_alertmanager//api/v2/client/general",
+        "@com_github_prometheus_alertmanager//api/v2/client/silence",
+        "@com_github_prometheus_alertmanager//api/v2/models",
+        "@com_github_prometheus_alertmanager//config",
+        "@com_github_prometheus_common//config",
+        "@com_github_prometheus_common//model",
+        "@com_github_sourcegraph_log//:log",
+        "@in_gopkg_yaml_v2//:yaml_v2",
+    ],
+)
+
+go_binary(
+    name = "prom-wrapper",
+    embed = [":prom-wrapper_lib"],
+    gotags = [
+        "netgo",
+        "dist",
+    ],
+    pure = "on",
+    static = "on",
+    visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
+)
+
+go_test(
+    name = "prom-wrapper_test",
+    timeout = "short",
+    srcs = [
+        "receivers_test.go",
+        "silence_test.go",
+    ],
+    embed = [":prom-wrapper_lib"],
+    deps = [
+        "//internal/version",
+        "//schema",
+        "@com_github_prometheus_alertmanager//config",
+    ],
+)

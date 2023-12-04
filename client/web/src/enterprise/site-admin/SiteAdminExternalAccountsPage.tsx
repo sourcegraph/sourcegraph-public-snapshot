@@ -1,17 +1,17 @@
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
-import { Observable, Subject, Subscription } from 'rxjs'
+
+import { type Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Button, Link } from '@sourcegraph/wildcard'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { Button, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import {
+import type {
     ExternalAccountFields,
     ExternalAccountsConnectionFields,
     ExternalAccountsResult,
@@ -20,11 +20,11 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 import {
     ExternalAccountNode,
-    ExternalAccountNodeProps,
+    type ExternalAccountNodeProps,
     externalAccountsConnectionFragment,
 } from '../user/settings/ExternalAccountNode'
 
-interface Props extends RouteComponentProps<{}> {}
+interface Props {}
 
 interface FilterParameters {
     user?: Scalars['ID']
@@ -58,15 +58,15 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
             <div className="user-settings-external-accounts-page">
                 <PageTitle title="External accounts" />
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h2 className="mb-0">External user accounts</h2>
+                    <H2 className="mb-0">External user accounts</H2>
                     <Button to="/site-admin/auth/providers" variant="secondary" as={Link}>
                         View auth providers
                     </Button>
                 </div>
-                <p>
+                <Text>
                     An external account (on an <Link to="/site-admin/auth/providers">authentication provider</Link>) is
                     linked to a Sourcegraph user when it's used to sign into Sourcegraph.
-                </p>
+                </Text>
                 <FilteredConnection<ExternalAccountFields, Omit<ExternalAccountNodeProps, 'node'>>
                     className="list-group list-group-flush mt-3"
                     noun="external user account"
@@ -76,8 +76,6 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
                     nodeComponentProps={nodeProps}
                     updates={this.externalAccountUpdates}
                     hideSearch={true}
-                    history={this.props.history}
-                    location={this.props.location}
                 />
             </div>
         )
@@ -121,7 +119,7 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
             }
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.site || !data.site.externalAccounts) {
+                if (!data?.site?.externalAccounts) {
                     throw createAggregateError(errors)
                 }
                 return data.site.externalAccounts

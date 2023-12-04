@@ -1,10 +1,11 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Select custom variant renders correctly 1`] = `
+exports[`Select > custom variant > renders correctly 1`] = `
 <div
   class="form-group"
 >
   <label
+    class="label"
     for="test"
   >
     What is your favorite fruit?
@@ -38,11 +39,12 @@ exports[`Select custom variant renders correctly 1`] = `
 </div>
 `;
 
-exports[`Select custom variant renders with correct styles when invalid 1`] = `
+exports[`Select > custom variant > renders with correct styles when invalid 1`] = `
 <div
   class="form-group"
 >
   <label
+    class="label"
     for="test"
   >
     What is your favorite fruit?
@@ -81,11 +83,12 @@ exports[`Select custom variant renders with correct styles when invalid 1`] = `
 </div>
 `;
 
-exports[`Select custom variant renders with correct styles when valid 1`] = `
+exports[`Select > custom variant > renders with correct styles when valid 1`] = `
 <div
   class="form-group"
 >
   <label
+    class="label"
     for="test"
   >
     What is your favorite fruit?
@@ -124,11 +127,12 @@ exports[`Select custom variant renders with correct styles when valid 1`] = `
 </div>
 `;
 
-exports[`Select custom variant renders with message correctly 1`] = `
+exports[`Select > custom variant > renders with message correctly 1`] = `
 <div
   class="form-group"
 >
   <label
+    class="label"
     for="test"
   >
     What is your favorite fruit?
@@ -167,11 +171,12 @@ exports[`Select custom variant renders with message correctly 1`] = `
 </div>
 `;
 
-exports[`Select native variant renders correctly 1`] = `
+exports[`Select > native variant > renders correctly 1`] = `
 <div
   class="form-group"
 >
   <label
+    class="label"
     for="test"
   >
     What is your favorite fruit?
@@ -205,11 +210,12 @@ exports[`Select native variant renders correctly 1`] = `
 </div>
 `;
 
-exports[`Select native variant renders with correct styles when invalid 1`] = `
+exports[`Select > native variant > renders with correct styles when invalid 1`] = `
 <div
   class="form-group"
 >
   <label
+    class="label"
     for="test"
   >
     What is your favorite fruit?
@@ -248,11 +254,12 @@ exports[`Select native variant renders with correct styles when invalid 1`] = `
 </div>
 `;
 
-exports[`Select native variant renders with correct styles when valid 1`] = `
+exports[`Select > native variant > renders with correct styles when valid 1`] = `
 <div
   class="form-group"
 >
   <label
+    class="label"
     for="test"
   >
     What is your favorite fruit?
@@ -291,11 +298,12 @@ exports[`Select native variant renders with correct styles when valid 1`] = `
 </div>
 `;
 
-exports[`Select native variant renders with message correctly 1`] = `
+exports[`Select > native variant > renders with message correctly 1`] = `
 <div
   class="form-group"
 >
   <label
+    class="label"
     for="test"
   >
     What is your favorite fruit?

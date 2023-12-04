@@ -1,8 +1,9 @@
 import { range } from 'lodash'
+import { describe, expect, test } from 'vitest'
 
 import { calculateMatchGroupsSorted, mergeContext } from './LineRanking'
-import { MatchItem } from './PerFileResultRanking'
-import { testDataRealMatches } from './PerFileResultRankingTestHelpers'
+import type { MatchItem } from './PerFileResultRanking'
+import { testDataRealMatchesByLineNumber } from './PerFileResultRankingTestHelpers'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),
@@ -15,16 +16,46 @@ describe('components/FileMatchContext', () => {
             expect(mergeContext(1, [])).toEqual([])
         })
         test('does not merge context when there is only one line', () => {
-            expect(mergeContext(1, [{ line: 5 }])).toEqual([[{ line: 5 }]])
+            expect(mergeContext(1, [{ startLine: 5, startCharacter: 0, endLine: 5, endCharacter: 1 }])).toEqual([
+                [{ startLine: 5, startCharacter: 0, endLine: 5, endCharacter: 1 }],
+            ])
         })
         test('merges overlapping context', () => {
-            expect(mergeContext(1, [{ line: 5 }, { line: 6 }])).toEqual([[{ line: 5 }, { line: 6 }]])
+            expect(
+                mergeContext(1, [
+                    { startLine: 5, startCharacter: 0, endLine: 5, endCharacter: 1 },
+                    { startLine: 6, startCharacter: 0, endLine: 6, endCharacter: 1 },
+                ])
+            ).toEqual([
+                [
+                    { startLine: 5, startCharacter: 0, endLine: 5, endCharacter: 1 },
+                    { startLine: 6, startCharacter: 0, endLine: 6, endCharacter: 1 },
+                ],
+            ])
         })
         test('merges adjacent context', () => {
-            expect(mergeContext(1, [{ line: 5 }, { line: 8 }])).toEqual([[{ line: 5 }, { line: 8 }]])
+            expect(
+                mergeContext(1, [
+                    { startLine: 5, startCharacter: 0, endLine: 5, endCharacter: 1 },
+                    { startLine: 8, startCharacter: 0, endLine: 8, endCharacter: 1 },
+                ])
+            ).toEqual([
+                [
+                    { startLine: 5, startCharacter: 0, endLine: 5, endCharacter: 1 },
+                    { startLine: 8, startCharacter: 0, endLine: 8, endCharacter: 1 },
+                ],
+            ])
         })
         test('does not merge context when far enough apart', () => {
-            expect(mergeContext(1, [{ line: 5 }, { line: 9 }])).toEqual([[{ line: 5 }], [{ line: 9 }]])
+            expect(
+                mergeContext(1, [
+                    { startLine: 5, startCharacter: 0, endLine: 5, endCharacter: 1 },
+                    { startLine: 9, startCharacter: 0, endLine: 9, endCharacter: 1 },
+                ])
+            ).toEqual([
+                [{ startLine: 5, startCharacter: 0, endLine: 5, endCharacter: 1 }],
+                [{ startLine: 9, startCharacter: 0, endLine: 9, endCharacter: 1 }],
+            ])
         })
     })
 
@@ -38,28 +69,28 @@ describe('components/FileMatchContext', () => {
                   {
                     "matches": [
                       {
-                        "line": 0,
-                        "character": 0,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 0,
+                        "startCharacter": 0,
+                        "endLine": 0,
+                        "endCharacter": 5
                       },
                       {
-                        "line": 1,
-                        "character": 0,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 1,
+                        "startCharacter": 0,
+                        "endLine": 1,
+                        "endCharacter": 5
                       },
                       {
-                        "line": 2,
-                        "character": 0,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 2,
+                        "startCharacter": 0,
+                        "endLine": 2,
+                        "endCharacter": 5
                       },
                       {
-                        "line": 3,
-                        "character": 0,
-                        "highlightLength": 5,
-                        "isInContext": true
+                        "startLine": 3,
+                        "startCharacter": 0,
+                        "endLine": 3,
+                        "endCharacter": 5
                       }
                     ],
                     "position": {
@@ -82,22 +113,22 @@ describe('components/FileMatchContext', () => {
                   {
                     "matches": [
                       {
-                        "line": 0,
-                        "character": 0,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 0,
+                        "startCharacter": 0,
+                        "endLine": 0,
+                        "endCharacter": 5
                       },
                       {
-                        "line": 1,
-                        "character": 0,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 1,
+                        "startCharacter": 0,
+                        "endLine": 1,
+                        "endCharacter": 5
                       },
                       {
-                        "line": 2,
-                        "character": 0,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 2,
+                        "startCharacter": 0,
+                        "endLine": 2,
+                        "endCharacter": 5
                       }
                     ],
                     "position": {
@@ -114,40 +145,40 @@ describe('components/FileMatchContext', () => {
         test('complex grouping', () => {
             const maxMatches = 10
             const context = 2
-            const { grouped } = calculateMatchGroupsSorted(testDataRealMatches, maxMatches, context)
+            const { grouped } = calculateMatchGroupsSorted(testDataRealMatchesByLineNumber, maxMatches, context)
             expect(grouped).toMatchInlineSnapshot(`
                 [
                   {
                     "matches": [
                       {
-                        "line": 0,
-                        "character": 51,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 0,
+                        "startCharacter": 51,
+                        "endLine": 0,
+                        "endCharacter": 56
                       },
                       {
-                        "line": 2,
-                        "character": 48,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 2,
+                        "startCharacter": 48,
+                        "endLine": 2,
+                        "endCharacter": 53
                       },
                       {
-                        "line": 3,
-                        "character": 15,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 3,
+                        "startCharacter": 15,
+                        "endLine": 3,
+                        "endCharacter": 20
                       },
                       {
-                        "line": 3,
-                        "character": 39,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 3,
+                        "startCharacter": 39,
+                        "endLine": 3,
+                        "endCharacter": 44
                       },
                       {
-                        "line": 8,
-                        "character": 2,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 8,
+                        "startCharacter": 2,
+                        "endLine": 8,
+                        "endCharacter": 7
                       }
                     ],
                     "position": {
@@ -160,10 +191,10 @@ describe('components/FileMatchContext', () => {
                   {
                     "matches": [
                       {
-                        "line": 14,
-                        "character": 19,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 14,
+                        "startCharacter": 19,
+                        "endLine": 14,
+                        "endCharacter": 24
                       }
                     ],
                     "position": {
@@ -176,40 +207,58 @@ describe('components/FileMatchContext', () => {
                   {
                     "matches": [
                       {
-                        "line": 20,
-                        "character": 11,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 20,
+                        "startCharacter": 11,
+                        "endLine": 20,
+                        "endCharacter": 16
                       },
                       {
-                        "line": 24,
-                        "character": 8,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 24,
+                        "startCharacter": 8,
+                        "endLine": 24,
+                        "endCharacter": 13
                       },
                       {
-                        "line": 24,
-                        "character": 19,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 24,
+                        "startCharacter": 19,
+                        "endLine": 24,
+                        "endCharacter": 24
                       },
                       {
-                        "line": 27,
-                        "character": 53,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "startLine": 27,
+                        "startCharacter": 53,
+                        "endLine": 27,
+                        "endCharacter": 58
                       },
                       {
-                        "line": 28,
-                        "character": 3,
-                        "highlightLength": 5,
-                        "isInContext": true
+                        "startLine": 28,
+                        "startCharacter": 3,
+                        "endLine": 28,
+                        "endCharacter": 8
                       },
                       {
-                        "line": 29,
-                        "character": 13,
-                        "highlightLength": 5,
-                        "isInContext": true
+                        "startLine": 29,
+                        "startCharacter": 13,
+                        "endLine": 29,
+                        "endCharacter": 18
+                      },
+                      {
+                        "startLine": 30,
+                        "startCharacter": 2,
+                        "endLine": 30,
+                        "endCharacter": 7
+                      },
+                      {
+                        "startLine": 31,
+                        "startCharacter": 8,
+                        "endLine": 31,
+                        "endCharacter": 13
+                      },
+                      {
+                        "startLine": 31,
+                        "startCharacter": 31,
+                        "endLine": 31,
+                        "endCharacter": 36
                       }
                     ],
                     "position": {
@@ -217,17 +266,25 @@ describe('components/FileMatchContext', () => {
                       "character": 12
                     },
                     "startLine": 18,
-                    "endLine": 30
+                    "endLine": 32
                   }
                 ]
             `)
+        })
+
+        test('no matches', () => {
+            const maxMatches = 3
+            const context = 1
+            const { grouped } = calculateMatchGroupsSorted([], maxMatches, context)
+            expect(grouped).toMatchInlineSnapshot('[]')
         })
     })
 })
 
 // "error" matched 5 times, once per line.
 const testData6ConsecutiveMatches: MatchItem[] = range(0, 6).map(index => ({
-    highlightRanges: [{ start: 0, highlightLength: 5 }],
-    preview: 'error',
-    line: index,
+    highlightRanges: [{ startLine: index, startCharacter: 0, endLine: index, endCharacter: 5 }],
+    content: 'error',
+    startLine: index,
+    endLine: index,
 }))

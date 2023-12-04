@@ -7,6 +7,8 @@ import (
 	"os"
 	"sync"
 
+	"github.com/sourcegraph/conc/pool"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -63,16 +65,16 @@ func UploadIndex(ctx context.Context, filename string, httpClient Client, opts U
 	}
 
 	if compressedSize <= opts.MaxPayloadSizeBytes {
-		return uploadIndex(ctx, httpClient, opts, compressedReader, compressedSize)
+		return uploadIndex(ctx, httpClient, opts, compressedReader, compressedSize, originalSize)
 	}
 
-	return uploadMultipartIndex(ctx, httpClient, opts, compressedReader, compressedSize)
+	return uploadMultipartIndex(ctx, httpClient, opts, compressedReader, compressedSize, originalSize)
 }
 
 // uploadIndex uploads the index file described by the given options to a Sourcegraph
 // instance via a single HTTP POST request. The identifier of the upload is returned
 // after a successful upload.
-func uploadIndex(ctx context.Context, httpClient Client, opts UploadOptions, r io.ReaderAt, readerLen int64) (id int, err error) {
+func uploadIndex(ctx context.Context, httpClient Client, opts UploadOptions, r io.ReaderAt, readerLen, uncompressedSize int64) (id int, err error) {
 	bars := []output.ProgressBar{{Label: "Upload", Max: 1.0}}
 	progress, retry, complete := logProgress(
 		opts.Output,
@@ -82,14 +84,15 @@ func uploadIndex(ctx context.Context, httpClient Client, opts UploadOptions, r i
 	)
 	defer func() { complete(err) }()
 
-	// Create a function that can re-create our reader for retries
-	readerFactory := func() io.Reader { return newBoundedReader(r, 0, readerLen) }
+	// Create a section reader that can reset our reader view for retries
+	reader := io.NewSectionReader(r, 0, readerLen)
 
 	requestOptions := uploadRequestOptions{
-		UploadOptions: opts,
-		Target:        &id,
+		UploadOptions:    opts,
+		Target:           &id,
+		UncompressedSize: uncompressedSize,
 	}
-	err = uploadIndexFile(ctx, httpClient, opts, readerFactory, readerLen, requestOptions, progress, retry, 0, 1)
+	err = uploadIndexFile(ctx, httpClient, opts, reader, readerLen, requestOptions, progress, retry, 0, 1)
 
 	if progress != nil {
 		// Mark complete in case we debounced our last updates
@@ -99,10 +102,12 @@ func uploadIndex(ctx context.Context, httpClient Client, opts UploadOptions, r i
 	return id, err
 }
 
-// uploadIndexFile uploads the contents available via the given reader factory to a
+// uploadIndexFile uploads the contents available via the given reader to a
 // Sourcegraph instance with the given request options.i
-func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions UploadOptions, readerFactory func() io.Reader, readerLen int64, requestOptions uploadRequestOptions, progress output.Progress, retry func(message string) output.Progress, barIndex int, numParts int) error {
-	return makeRetry(uploadOptions.MaxRetries, uploadOptions.RetryInterval)(func(attempt int) (_ bool, err error) {
+func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions UploadOptions, reader io.ReadSeeker, readerLen int64, requestOptions uploadRequestOptions, progress output.Progress, retry onRetryLogFn, barIndex int, numParts int) error {
+	retrier := makeRetry(uploadOptions.MaxRetries, uploadOptions.RetryInterval)
+
+	return retrier(func(attempt int) (_ bool, err error) {
 		defer func() {
 			if err != nil && !errors.Is(err, ctx.Err()) && progress != nil {
 				progress.SetValue(barIndex, 0)
@@ -122,7 +127,7 @@ func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions Uploa
 		}
 
 		// Create fresh reader on each attempt
-		reader := readerFactory()
+		reader.Seek(0, io.SeekStart)
 
 		// Report upload progress as writes occur
 		requestOptions.Payload = newProgressCallbackReader(reader, readerLen, progress, barIndex)
@@ -135,20 +140,20 @@ func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions Uploa
 // uploadMultipartIndex uploads the index file described by the given options to a
 // Sourcegraph instance over multiple HTTP POST requests. The identifier of the upload
 // is returned after a successful upload.
-func uploadMultipartIndex(ctx context.Context, httpClient Client, opts UploadOptions, r io.ReaderAt, readerLen int64) (_ int, err error) {
-	// Create a slice of functions that can re-create our reader for an
-	// upload part for retries. This allows us to both read concurrently
-	// from the same reader, but also retry reads from arbitrary offsets.
-	readerFactories := splitReader(r, readerLen, opts.MaxPayloadSizeBytes)
+func uploadMultipartIndex(ctx context.Context, httpClient Client, opts UploadOptions, r io.ReaderAt, readerLen, uncompressedSize int64) (_ int, err error) {
+	// Create a slice of section readers for upload part retries.
+	// This allows us to both read concurrently from the same reader,
+	// but also retry reads from arbitrary offsets.
+	readers := splitReader(r, readerLen, opts.MaxPayloadSizeBytes)
 
 	// Perform initial request that gives us our upload identifier
-	id, err := uploadMultipartIndexInit(ctx, httpClient, opts, len(readerFactories))
+	id, err := uploadMultipartIndexInit(ctx, httpClient, opts, len(readers), uncompressedSize)
 	if err != nil {
 		return 0, err
 	}
 
 	// Upload each payload of the multipart index
-	if err := uploadMultipartIndexParts(ctx, httpClient, opts, readerFactories, id, readerLen); err != nil {
+	if err := uploadMultipartIndexParts(ctx, httpClient, opts, readers, id, readerLen); err != nil {
 		return 0, err
 	}
 
@@ -164,7 +169,7 @@ func uploadMultipartIndex(ctx context.Context, httpClient Client, opts UploadOpt
 // parts via additional HTTP requests. This upload will be in a pending state until all upload
 // parts are received and the multipart upload is finalized, or until the record is deleted by
 // a background process after an expiry period.
-func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts UploadOptions, numParts int) (id int, err error) {
+func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts UploadOptions, numParts int, uncompressedSize int64) (id int, err error) {
 	retry, complete := logPending(
 		opts.Output,
 		"Preparing multipart upload",
@@ -179,23 +184,24 @@ func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts Uploa
 		}
 
 		return performUploadRequest(ctx, httpClient, uploadRequestOptions{
-			UploadOptions: opts,
-			Target:        &id,
-			MultiPart:     true,
-			NumParts:      numParts,
+			UploadOptions:    opts,
+			Target:           &id,
+			MultiPart:        true,
+			NumParts:         numParts,
+			UncompressedSize: uncompressedSize,
 		})
 	})
 
 	return id, err
 }
 
-// uploadMultipartIndexParts uploads the contents available via each of the given reader
-// factories to a Sourcegraph instance as part of the same multipart upload as indiciated
+// uploadMultipartIndexParts uploads the contents available via each of the given reader(s)
+// to a Sourcegraph instance as part of the same multipart upload as indiciated
 // by the given identifier.
-func uploadMultipartIndexParts(ctx context.Context, httpClient Client, opts UploadOptions, readerFactories []func() io.Reader, id int, readerLen int64) (err error) {
+func uploadMultipartIndexParts(ctx context.Context, httpClient Client, opts UploadOptions, readers []io.ReadSeeker, id int, readerLen int64) (err error) {
 	var bars []output.ProgressBar
-	for i := range readerFactories {
-		label := fmt.Sprintf("Upload part %d of %d", i+1, len(readerFactories))
+	for i := range readers {
+		label := fmt.Sprintf("Upload part %d of %d", i+1, len(readers))
 		bars = append(bars, output.ProgressBar{Label: label, Max: 1.0})
 	}
 	progress, retry, complete := logProgress(
@@ -206,23 +212,20 @@ func uploadMultipartIndexParts(ctx context.Context, httpClient Client, opts Uplo
 	)
 	defer func() { complete(err) }()
 
-	var wg sync.WaitGroup
-	errs := make(chan error, len(readerFactories))
+	pool := new(pool.ErrorPool).WithFirstError().WithContext(ctx)
+	if opts.MaxConcurrency > 0 {
+		pool.WithMaxGoroutines(opts.MaxConcurrency)
+	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	for i, reader := range readers {
+		i, reader := i, reader
 
-	for i, readerFactory := range readerFactories {
-		wg.Add(1)
-
-		go func(i int, readerFactory func() io.Reader) {
-			defer wg.Done()
-
+		pool.Go(func(ctx context.Context) error {
 			// Determine size of this reader. If we're not the last reader in the slice,
 			// then we're the maximum payload size. Otherwise, we're whatever is left.
 			partReaderLen := opts.MaxPayloadSizeBytes
-			if i == len(readerFactories)-1 {
-				partReaderLen = readerLen - int64(len(readerFactories)-1)*opts.MaxPayloadSizeBytes
+			if i == len(readers)-1 {
+				partReaderLen = readerLen - int64(len(readers)-1)*opts.MaxPayloadSizeBytes
 			}
 
 			requestOptions := uploadRequestOptions{
@@ -231,26 +234,17 @@ func uploadMultipartIndexParts(ctx context.Context, httpClient Client, opts Uplo
 				Index:         i,
 			}
 
-			if err := uploadIndexFile(ctx, httpClient, opts, readerFactory, partReaderLen, requestOptions, progress, retry, i, len(readerFactories)); err != nil {
-				errs <- err
-				cancel()
+			if err := uploadIndexFile(ctx, httpClient, opts, reader, partReaderLen, requestOptions, progress, retry, i, len(readers)); err != nil {
+				return err
 			} else if progress != nil {
 				// Mark complete in case we debounced our last updates
 				progress.SetValue(i, 1)
 			}
-		}(i, readerFactory)
+			return nil
+		})
 	}
 
-	wg.Wait()
-	close(errs)
-
-	for err := range errs {
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return pool.Wait()
 }
 
 // uploadMultipartIndexFinalize performs the request to stitch the uploaded parts together and
@@ -277,29 +271,18 @@ func uploadMultipartIndexFinalize(ctx context.Context, httpClient Client, opts U
 	})
 }
 
-// splitReader returns a slice of functions, each which returns a fresh instance of a reader
-// looking into a slice of the original reader.
+// splitReader returns a slice of read-seekers into the input ReaderAt, each of max size maxPayloadSize.
 //
-// Two readers from the same factory contain the same content that allows retrying reads from
-// the beginning. The sequential concatenation of each reader produces the content of the original
-// reader.
+// The sequential concatenation of each reader produces the content of the original reader.
 //
-// Each reader is safe to use concurrently. The original reader should be closed when all produced
+// Each reader is safe to use concurrently with others. The original reader should be closed when all produced
 // readers are no longer active.
-func splitReader(r io.ReaderAt, n, maxPayloadSize int64) (readerFactories []func() io.Reader) {
-	for i := int64(0); i < n; i += maxPayloadSize {
-		minOffset := i
-		maxOffset := minOffset + maxPayloadSize
-		if maxOffset > n {
-			maxOffset = n
-		}
-
-		readerFactories = append(readerFactories, func() io.Reader {
-			return newBoundedReader(r, minOffset, maxOffset)
-		})
+func splitReader(r io.ReaderAt, n, maxPayloadSize int64) (readers []io.ReadSeeker) {
+	for offset := int64(0); offset < n; offset += maxPayloadSize {
+		readers = append(readers, io.NewSectionReader(r, offset, maxPayloadSize))
 	}
 
-	return readerFactories
+	return readers
 }
 
 // openFileAndGetSize returns an open file handle and the size on disk for the given filename.
@@ -346,13 +329,15 @@ func logPending(out *output.Output, pendingMessage, successMessage, failureMessa
 	return retry, complete
 }
 
+type onRetryLogFn func(message string) output.Progress
+
 // logProgress creates and returns a progress from the given output value and bars configuration.
 // This function also returns a retry function that can be called to print a message then reset the
 // progress bar display, and a complete function that should be called once the work attached to
 // this log call has completed. This complete function takes an error value that determines whether
 // the success or failure message is displayed. If the given output value is nil then a no-op complete
 // function is returned.
-func logProgress(out *output.Output, bars []output.ProgressBar, successMessage, failureMessage string) (output.Progress, func(message string) output.Progress, func(error)) {
+func logProgress(out *output.Output, bars []output.ProgressBar, successMessage, failureMessage string) (output.Progress, onRetryLogFn, func(error)) {
 	if out == nil {
 		return nil, func(message string) output.Progress { return nil }, func(err error) {}
 	}

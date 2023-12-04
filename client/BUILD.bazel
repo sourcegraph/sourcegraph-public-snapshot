@@ -1,0 +1,35 @@
+# Configure gazelle for client/*
+
+# Source files:
+# gazelle:js_files src/**/*.{ts,tsx}
+# gazelle:js_files globals.d.ts
+
+# Test files, snapshots etc:
+# gazelle:js_test_files **/*.test.{ts,tsx}
+# gazelle:js_test_files **/mock*.{ts,tsx}
+# gazelle:js_test_files **/*.{mock,mocks}.{ts,tsx}
+# gazelle:js_test_files **/mocks/**
+# gazelle:js_test_files **/testutils/**
+# gazelle:js_test_files **/tests/**
+# gazelle:js_test_files **/__mocks__/**/*.{ts,tsx}
+# gazelle:js_test_files **/fixtures/**/*.{ts,tsx}
+# gazelle:js_test_files **/WebStory.{ts,tsx}
+# TODO(bazel): sveltekit tests
+# gazelle:exclude **/web-sveltekit/**/*.ts
+# gazelle:exclude **/vitest.config.ts
+
+# Otherwise it gets tripped up on the `declare module 'vitest'` directives to add custom matchers.
+# gazelle:js_resolve vitest //:node_modules/vitest
+
+# TODO(bazel): put fixtures + testutils + ? into own rules
+# js_{fixture}_files **/*.{fixture,fixtures}.{ts,tsx}
+# js_{fixture}_files **/testutils/**
+# js_{fixture}_files **/fixtures.{ts,tsx}
+
+# Rule configuration:
+# gazelle:map_kind ts_project ts_project //dev:defs.bzl
+# gazelle:map_kind npm_package npm_package //dev:defs.bzl
+
+# Enable JS generation throughout client/*
+# gazelle:js enabled
+# gazelle:js_generation_mode none

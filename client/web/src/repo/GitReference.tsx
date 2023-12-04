@@ -1,22 +1,22 @@
-import classNames from 'classnames'
 import * as React from 'react'
-import { Observable } from 'rxjs'
+
+import classNames from 'classnames'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { createAggregateError, numberWithCommas, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, Icon, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
-import { Timestamp } from '../components/time/Timestamp'
 import {
-    GitRefConnectionFields,
-    GitRefFields,
+    type GitRefConnectionFields,
+    type GitRefFields,
     GitRefType,
-    RepositoryGitRefsResult,
-    RepositoryGitRefsVariables,
-    Scalars,
+    type RepositoryGitRefsResult,
+    type RepositoryGitRefsVariables,
+    type Scalars,
 } from '../graphql-operations'
 
 import styles from './GitReference.module.scss'
@@ -37,18 +37,27 @@ export interface GitReferenceNodeProps {
     icon?: React.ComponentType<{ className?: string }>
 
     onClick?: React.MouseEventHandler<HTMLAnchorElement>
+    nodeLinkClassName?: string
+
+    ariaLabel?: string
+
+    isPackageVersion?: boolean
 }
 
-export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = ({
+export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<GitReferenceNodeProps>> = ({
     node,
     url,
     ancestorIsLink,
     children,
     className,
     onClick,
-    icon: Icon,
+    icon: ReferenceIcon,
+    nodeLinkClassName,
+    ariaLabel,
+    isPackageVersion,
 }) => {
     const mostRecentSig =
+        !isPackageVersion &&
         node.target.commit &&
         (node.target.commit.committer && node.target.commit.committer.date > node.target.commit.author.date
             ? node.target.commit.committer
@@ -57,30 +66,39 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
     url = url !== undefined ? url : node.url
 
     return (
-        <LinkOrSpan
-            key={node.id}
-            className={classNames('list-group-item', styles.gitRefNode, className)}
-            to={!ancestorIsLink ? url : undefined}
-            onClick={onClick}
-            data-testid="git-ref-node"
-        >
-            <span className="d-flex align-items-center">
-                {Icon && <Icon className="icon-inline mr-1" />}
-                <Badge as="code">{node.displayName}</Badge>
-                {mostRecentSig && (
-                    <small className="pl-2">
-                        Updated <Timestamp date={mostRecentSig.date} />{' '}
-                        {mostRecentSig.person && <>by {mostRecentSig.person.displayName}</>}
+        <li key={node.id} className={classNames('d-block list-group-item', styles.gitRefNode, className)}>
+            <LinkOrSpan
+                className={classNames(styles.gitRefNodeLink, nodeLinkClassName)}
+                to={!ancestorIsLink ? url : undefined}
+                onClick={onClick}
+                data-testid="git-ref-node"
+                aria-label={ariaLabel}
+            >
+                <span className="d-flex flex-wrap align-items-center">
+                    {ReferenceIcon && <Icon className="mr-1" as={ReferenceIcon} aria-hidden={true} />}
+                    {/*
+                    a11y-ignore
+                    Rule: "color-contrast" (Elements must have sufficient color contrast)
+                    GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                */}
+                    <Badge className="a11y-ignore px-1 py-0 mr-2 text-break text-wrap text-justify" as="code">
+                        {node.displayName}
+                    </Badge>
+                    {mostRecentSig && (
+                        <small>
+                            Updated <Timestamp date={mostRecentSig.date} />{' '}
+                            {mostRecentSig.person && <>by {mostRecentSig.person.displayName}</>}
+                        </small>
+                    )}
+                </span>
+                {behindAhead && (
+                    <small>
+                        {numberWithCommas(behindAhead.behind)} behind, {numberWithCommas(behindAhead.ahead)} ahead
                     </small>
                 )}
-            </span>
-            {behindAhead && (
-                <small>
-                    {numberWithCommas(behindAhead.behind)} behind, {numberWithCommas(behindAhead.ahead)} ahead
-                </small>
-            )}
-            {children}
-        </LinkOrSpan>
+                {children}
+            </LinkOrSpan>
+        </li>
     )
 }
 
@@ -163,7 +181,7 @@ export const queryGitReferences = memoizeObservable(
                 args.withBehindAhead !== undefined ? args.withBehindAhead : args.type === GitRefType.GIT_BRANCH,
         }).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.node || data.node.__typename !== 'Repository' || !data.node.gitRefs) {
+                if (data?.node?.__typename !== 'Repository' || !data?.node?.gitRefs) {
                     throw createAggregateError(errors)
                 }
                 return data.node.gitRefs

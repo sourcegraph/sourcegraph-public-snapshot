@@ -1,0 +1,86 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "npm_package", "ts_project", "vitest_test")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
+
+npm_link_all_packages(name = "node_modules")
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/common:tsconfig",
+        "//client/testing:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "http-client_lib",
+    srcs = [
+        "src/graphql/apollo/client.ts",
+        "src/graphql/apollo/fromObservableQuery.ts",
+        "src/graphql/apollo/hooks.ts",
+        "src/graphql/apollo/index.ts",
+        "src/graphql/constants.ts",
+        "src/graphql/graphql.ts",
+        "src/graphql/links/concurrent-requests-link.ts",
+        "src/graphql/links/index.ts",
+        "src/graphql/types.ts",
+        "src/http-status-error.ts",
+        "src/index.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":node_modules/@sourcegraph/common",
+        "//:node_modules/@apollo/client",
+        "//:node_modules/@types/lodash",
+        "//:node_modules/@types/node-fetch",
+        "//:node_modules/@types/react",
+        "//:node_modules/apollo3-cache-persist",
+        "//:node_modules/graphql",
+        "//:node_modules/lodash",
+        "//:node_modules/node-fetch",
+        "//:node_modules/react",
+        "//:node_modules/rxjs",
+        "//:node_modules/utility-types",
+    ],
+)
+
+ts_project(
+    name = "http-client_tests",
+    testonly = True,
+    srcs = [
+        "src/graphql/apollo/fromObservableQuery.test.ts",
+        "src/graphql/graphql.test.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":http-client_lib",
+        ":node_modules/@sourcegraph/testing",
+        "//:node_modules/@apollo/client",
+        "//:node_modules/@types/sinon",
+        "//:node_modules/delay",
+        "//:node_modules/rxjs",
+        "//:node_modules/sinon",
+        "//:node_modules/vitest",
+    ],
+)
+
+npm_package(
+    name = "http-client_pkg",
+    srcs = [
+        "package.json",
+        ":http-client_lib",
+    ],
+)
+
+vitest_test(
+    name = "test",
+    data = [
+        ":http-client_tests",
+    ],
+)
+
+eslint_config_and_lint_root()

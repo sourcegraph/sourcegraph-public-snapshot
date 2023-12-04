@@ -1,8 +1,10 @@
 import React from 'react'
 
-import { VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { H3, Tooltip } from '@sourcegraph/wildcard'
+
+import type { VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../../../person/PersonLink'
-import { UserAvatar } from '../../../../user/UserAvatar'
 
 import styles from './GitBranchChangesetDescriptionInfo.module.scss'
 
@@ -10,7 +12,9 @@ interface Props {
     node: VisibleChangesetApplyPreviewFields
 }
 
-export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> = ({ node }) => {
+export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    node,
+}) => {
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         return <></>
     }
@@ -40,17 +44,17 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
                             className="text-muted"
                         >
                             <div className="d-flex flex-column align-items-center mr-3">
-                                <UserAvatar
-                                    className="icon-inline mb-1"
-                                    user={previousCommit.author}
-                                    data-tooltip={formatPersonName(previousCommit.author)}
-                                />{' '}
+                                <Tooltip content={formatPersonName(previousCommit.author)}>
+                                    <span>
+                                        <UserAvatar inline={true} className="mb-1" user={previousCommit.author} />
+                                    </span>
+                                </Tooltip>{' '}
                                 <PersonLink person={previousCommit.author} className="font-weight-bold text-nowrap" />
                             </div>
                         </DeletedEntry>
                         <div className="text-muted">
                             <DeletedEntry deleted={node.delta.commitMessageChanged}>
-                                <h3 className="text-muted">{previousCommit.subject}</h3>
+                                <H3 className="text-muted">{previousCommit.subject}</H3>
                             </DeletedEntry>
                             {previousCommit.body && (
                                 <DeletedEntry deleted={node.delta.commitMessageChanged}>
@@ -61,26 +65,24 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
                     </>
                 )}
             <div className="d-flex flex-column align-items-center mr-3">
-                <UserAvatar
-                    className="icon-inline mb-1"
-                    user={commit.author}
-                    data-tooltip={formatPersonName(commit.author)}
-                />{' '}
+                <Tooltip content={formatPersonName(commit.author)}>
+                    <span>
+                        <UserAvatar inline={true} className="mb-1" user={commit.author} />
+                    </span>
+                </Tooltip>{' '}
                 <PersonLink person={commit.author} className="font-weight-bold text-nowrap" />
             </div>
             <div>
-                <h3>{commit.subject}</h3>
+                <H3>{commit.subject}</H3>
                 {commit.body && <pre className="text-wrap">{commit.body}</pre>}
             </div>
         </div>
     )
 }
 
-const DeletedEntry: React.FunctionComponent<{ children: React.ReactNode; deleted: boolean; className?: string }> = ({
-    children,
-    deleted,
-    className,
-}) => {
+const DeletedEntry: React.FunctionComponent<
+    React.PropsWithChildren<{ children: React.ReactNode; deleted: boolean; className?: string }>
+> = ({ children, deleted, className }) => {
     if (deleted) {
         return <del className={className}>{children}</del>
     }

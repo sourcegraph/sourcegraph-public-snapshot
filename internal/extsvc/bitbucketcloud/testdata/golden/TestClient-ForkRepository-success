@@ -1,0 +1,63 @@
+{
+  "slug": "src-cli-fork-00",
+  "name": "src-cli-fork-00",
+  "full_name": "sourcegraph-testing/src-cli-fork-00",
+  "uuid": "{c9514714-1168-4b80-8de1-d3d8359cc293}",
+  "scm": "git",
+  "description": "",
+  "parent": {
+   "slug": "",
+   "name": "src-cli",
+   "full_name": "sourcegraph-testing/src-cli",
+   "uuid": "{b090a669-ac7b-44cd-9610-02d027cb39f3}",
+   "scm": "",
+   "description": "",
+   "parent": null,
+   "is_private": false,
+   "links": {
+    "clone": null,
+    "html": {
+     "href": "https://bitbucket.org/sourcegraph-testing/src-cli"
+    }
+   },
+   "fork_policy": "",
+   "owner": null
+  },
+  "is_private": true,
+  "links": {
+   "clone": [
+    {
+     "href": "https://sourcegraph-testing@bitbucket.org/sourcegraph-testing/src-cli-fork-00.git",
+     "name": "https"
+    },
+    {
+     "href": "git@bitbucket.org:sourcegraph-testing/src-cli-fork-00.git",
+     "name": "ssh"
+    }
+   ],
+   "html": {
+    "href": "https://bitbucket.org/sourcegraph-testing/src-cli-fork-00"
+   }
+  },
+  "fork_policy": "no_public_forks",
+  "owner": {
+   "links": {
+    "avatar": {
+     "href": "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"
+    },
+    "html": {
+     "href": "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"
+    },
+    "self": {
+     "href": "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"
+    }
+   },
+   "username": "",
+   "nickname": "Sourcegraph Testing",
+   "account_status": "",
+   "display_name": "Sourcegraph Testing",
+   "website": "",
+   "created_on": "0001-01-01T00:00:00Z",
+   "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}"
+  }
+ }

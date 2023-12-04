@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
+
 import { useLocation } from 'react-router-dom'
 
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { CaptureGroupFormFields } from '../types'
+import type { CaptureGroupFormFields } from '../types'
 import { decodeCaptureInsightURL } from '../utils/capture-insigh-url-parsers/capture-insight-url-parsers'
 
 type UseCaptureInsightInitialValuesResult = [
@@ -15,8 +16,13 @@ export function useCaptureInsightInitialValues(): UseCaptureInsightInitialValues
     const { search } = useLocation()
 
     const urlValues = useMemo(() => decodeCaptureInsightURL(search), [search])
+
+    // We do not use temporal user settings since form values are not so important to
+    // waste users time for waiting response of yet another network request to just
+    // render creation UI form.
+    // eslint-disable-next-line no-restricted-syntax
     const [localStorageFormValues, setLocalStorageValues] = useLocalStorage<CaptureGroupFormFields | undefined>(
-        'insights.capture-group-creation-ui',
+        'insights.capture-group-creation-ui-v2',
         undefined
     )
 

@@ -1,0 +1,98 @@
+.readme {
+    max-height: 30rem;
+    overflow: hidden;
+    margin-top: 1rem;
+    padding: 0 0.2rem 0 0.2rem;
+
+    // Mimic the header style of a markdown readme
+    &-pre-header {
+        max-width: 50rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.5rem;
+    }
+
+    &-pre {
+        max-width: 50rem;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+
+    &-fader {
+        width: 100%;
+        height: 2.5rem;
+        margin-top: -2.5rem;
+        position: relative;
+        background: linear-gradient(to bottom, transparent, var(--code-bg) 50%);
+    }
+
+    &-more-link {
+        display: block;
+        margin-top: 0.25rem;
+    }
+}
+
+.readme-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    // 30rem for the readme height + 1.5rem for the link that will be rendered
+    // below it and additional margin.
+    height: 31.5rem;
+}
+
+.card-col-header-wrapper {
+    background-color: var(--color-bg-2);
+
+    a {
+        color: var(--link-color-2);
+    }
+}
+
+table.files {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 0;
+    // This is necessary to override the 'display:' property set by
+    // the Card component.
+    display: table;
+
+    th {
+        padding: 0.5rem;
+        font-weight: normal;
+        box-sizing: content-box;
+    }
+
+    td {
+        padding: 0.5rem;
+    }
+
+    .file-name-column {
+        width: 30%;
+    }
+
+    .commit-date-column {
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+        width: 120px;
+    }
+
+    th,
+    .file-name,
+    .commit-message,
+    .commit-date {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+
+    .commit-date,
+    .commit-date-column {
+        text-align: right;
+    }
+
+    tbody td {
+        border-top: 1px solid var(--border-color);
+    }
+}

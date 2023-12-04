@@ -1,26 +1,28 @@
 import React, { useCallback } from 'react'
-import { Observable, throwError } from 'rxjs'
+
+import { useNavigate } from 'react-router-dom'
+import { type Observable, throwError } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useEventObservable, Modal, Alert } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useEventObservable, Modal, Alert, H3, Text } from '@sourcegraph/wildcard'
 
-import { CodeMonitorFormProps } from './CodeMonitorForm'
+import type { CodeMonitorFormProps } from './CodeMonitorForm'
 
-interface DeleteModalProps extends Pick<CodeMonitorFormProps, 'history' | 'codeMonitor'> {
+interface DeleteModalProps extends Pick<CodeMonitorFormProps, 'codeMonitor'> {
     isOpen: boolean
     toggleDeleteModal: () => void
     deleteCodeMonitor: (id: string) => Observable<void>
 }
 
-export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
-    history,
+export const DeleteMonitorModal: React.FunctionComponent<React.PropsWithChildren<DeleteModalProps>> = ({
     isOpen,
     deleteCodeMonitor,
     toggleDeleteModal,
     codeMonitor,
 }) => {
     const LOADING = 'loading' as const
+    const navigate = useNavigate()
 
     const deleteLabelId = 'deleteCodeMonitor'
 
@@ -32,7 +34,7 @@ export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
                         if (codeMonitor) {
                             return deleteCodeMonitor(codeMonitor.id).pipe(
                                 tap(() => {
-                                    history.push('/code-monitoring')
+                                    navigate('/code-monitoring')
                                 }),
                                 startWith(LOADING),
                                 catchError(error => [asError(error)])
@@ -42,7 +44,7 @@ export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
                         return throwError(new Error('Failed to delete: Code monitor ID not provided'))
                     })
                 ),
-            [deleteCodeMonitor, history, codeMonitor]
+            [deleteCodeMonitor, navigate, codeMonitor]
         )
     )
 
@@ -54,14 +56,14 @@ export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
             aria-labelledby={deleteLabelId}
             data-testid="delete-modal"
         >
-            <h3 className="text-danger" id={deleteLabelId}>
+            <H3 className="text-danger" id={deleteLabelId}>
                 Delete code monitor?
-            </h3>
+            </H3>
 
-            <p>
+            <Text>
                 <strong>This action cannot be undone.</strong> Code monitoring will no longer watch for trigger event
                 and all actions will immediately be removed.
-            </p>
+            </Text>
             {(!deleteCompletedOrError || isErrorLike(deleteCompletedOrError)) && (
                 <div className="text-right">
                     <Button className="mr-2" onClick={toggleDeleteModal} outline={true} variant="secondary">
@@ -75,7 +77,11 @@ export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
                     )}
                 </div>
             )}
-            {deleteCompletedOrError && <div>{deleteCompletedOrError === 'loading' && <LoadingSpinner />}</div>}
+            {/*
+             * Issue: This JSX tag's 'children' prop expects a single child of type 'ReactNode', but multiple children were provided
+             * It seems that v18 requires explicit boolean value
+             */}
+            {!!deleteCompletedOrError && <div>{deleteCompletedOrError === 'loading' && <LoadingSpinner />}</div>}
         </Modal>
     )
 }

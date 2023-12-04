@@ -1,5 +1,6 @@
+import React, { type HTMLAttributes } from 'react'
+
 import classNames from 'classnames'
-import React, { HTMLAttributes } from 'react'
 
 import { ConnectionList } from '../../../../components/FilteredConnection/ui'
 
@@ -7,7 +8,7 @@ import styles from './ConnectionPopoverList.module.scss'
 
 type ConnectionPopoverListProps = HTMLAttributes<HTMLDivElement>
 
-export const ConnectionPopoverList: React.FunctionComponent<ConnectionPopoverListProps> = ({
+export const ConnectionPopoverList: React.FunctionComponent<React.PropsWithChildren<ConnectionPopoverListProps>> = ({
     className,
     children,
     ...rest

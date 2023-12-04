@@ -4,30 +4,38 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type Operations struct {
+type operations struct {
+	log.Logger
+
 	fetchSources  *observation.Operation
 	exists        *observation.Operation
 	fetchByteCode *observation.Operation
 	runCommand    *observation.Operation
 }
 
-func NewOperations(observationContext *observation.Context) *Operations {
-	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
-		"codeintel_coursier",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
+var m = new(metrics.SingletonREDMetrics)
+
+func newOperations(observationCtx *observation.Context) *operations {
+	redMetrics := m.Get(func() *metrics.REDMetrics {
+		return metrics.NewREDMetrics(
+			observationCtx.Registerer,
+			"codeintel_coursier",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+	})
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.coursier.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
 				if err != nil && strings.Contains(err.Error(), "not found") {
 					return observation.EmitForMetrics | observation.EmitForTraces
@@ -37,10 +45,12 @@ func NewOperations(observationContext *observation.Context) *Operations {
 		})
 	}
 
-	return &Operations{
+	return &operations{
 		fetchSources:  op("FetchSources"),
 		exists:        op("Exists"),
 		fetchByteCode: op("FetchByteCode"),
 		runCommand:    op("RunCommand"),
+
+		Logger: observationCtx.Logger,
 	}
 }

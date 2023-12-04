@@ -2,30 +2,25 @@ package search
 
 import (
 	"context"
-	"os"
-	"strings"
 	"sync"
-	"time"
 
-	"github.com/google/zoekt"
-	"github.com/google/zoekt/query"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegraph/zoekt/query"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
-	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
-
 	searcherURLsOnce sync.Once
 	searcherURLs     *endpoint.Map
 
-	indexedEndpointsOnce sync.Once
-	indexedEndpoints     *endpoint.Map
+	searcherGRPCConnectionCacheOnce sync.Once
+	searcherGRPCConnectionCache     *defaults.ConnectionCache
 
 	indexedSearchOnce sync.Once
 	indexedSearch     zoekt.Streamer
@@ -33,106 +28,97 @@ var (
 	indexersOnce sync.Once
 	indexers     *backend.Indexers
 
-	indexedListTTL = func() time.Duration {
-		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))
-		if ttl == 0 {
-			if envvar.SourcegraphDotComMode() {
-				ttl = 30 * time.Second
-			} else {
-				ttl = 5 * time.Second
-			}
-		}
-		return ttl
-	}()
-
-	indexedDialer = backend.NewCachedZoektDialer(func(endpoint string) zoekt.Streamer {
-		return backend.NewCachedSearcher(indexedListTTL, backend.ZoektDial(endpoint))
-	})
+	indexedDialerOnce sync.Once
+	indexedDialer     backend.ZoektDialer
 )
 
 func SearcherURLs() *endpoint.Map {
 	searcherURLsOnce.Do(func() {
-		if len(strings.Fields(searcherURL)) == 0 {
-			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
-		} else {
-			searcherURLs = endpoint.New(searcherURL)
-		}
+		searcherURLs = endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+			return conns.Searchers
+		})
 	})
 	return searcherURLs
 }
 
-func IndexedEndpoints() *endpoint.Map {
-	indexedEndpointsOnce.Do(func() {
-		if addr := zoektAddr(os.Environ()); addr != "" {
-			indexedEndpoints = endpoint.New(addr)
-		}
+func SearcherGRPCConnectionCache() *defaults.ConnectionCache {
+	searcherGRPCConnectionCacheOnce.Do(func() {
+		logger := log.Scoped("searcherGRPCConnectionCache")
+		searcherGRPCConnectionCache = defaults.NewConnectionCache(logger)
 	})
-	return indexedEndpoints
+
+	return searcherGRPCConnectionCache
 }
 
 func Indexed() zoekt.Streamer {
-	if !conf.SearchIndexEnabled() {
-		return nil
-	}
-
 	indexedSearchOnce.Do(func() {
-		if eps := IndexedEndpoints(); eps != nil {
-			indexedSearch = backend.NewCachedSearcher(indexedListTTL, backend.NewMeteredSearcher(
-				"", // no hostname means its the aggregator
-				&backend.HorizontalSearcher{
-					Map:  eps,
-					Dial: indexedDialer,
-				}))
-		}
+		indexedSearch = backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.NewMeteredSearcher(
+			"", // no hostname means its the aggregator
+			&backend.HorizontalSearcher{
+				Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+					return conns.Zoekts
+				}),
+				Dial: getIndexedDialer(),
+			}))
 	})
 
 	return indexedSearch
 }
 
+// ZoektAllIndexed is the subset of zoekt.RepoList that we set in
+// ListAllIndexed.
+type ZoektAllIndexed struct {
+	ReposMap zoekt.ReposMap
+	Crashes  int
+	Stats    zoekt.RepoStats
+}
+
+// ListAllIndexed lists all indexed repositories.
+func ListAllIndexed(ctx context.Context, zs zoekt.Searcher) (*ZoektAllIndexed, error) {
+	q := &query.Const{Value: true}
+	opts := &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap}
+
+	repos, err := zs.List(ctx, q, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &ZoektAllIndexed{
+		ReposMap: repos.ReposMap,
+		Crashes:  repos.Crashes,
+		Stats:    repos.Stats,
+	}, nil
+}
+
 func Indexers() *backend.Indexers {
 	indexersOnce.Do(func() {
 		indexers = &backend.Indexers{
-			Map:     IndexedEndpoints(),
-			Indexed: reposAtEndpoint(indexedDialer),
+			Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+				return conns.Zoekts
+			}),
+			Indexed: reposAtEndpoint(getIndexedDialer()),
 		}
 	})
 	return indexers
 }
 
-func zoektAddr(environ []string) string {
-	if addr, ok := getEnv(environ, "INDEXED_SEARCH_SERVERS"); ok {
-		return addr
-	}
-
-	// Backwards compatibility: We used to call this variable ZOEKT_HOST
-	if addr, ok := getEnv(environ, "ZOEKT_HOST"); ok {
-		return addr
-	}
-
-	// Not set, use the default (service discovery on the indexed-search
-	// statefulset)
-	return "k8s+rpc://indexed-search:6070?kind=sts"
-}
-
-func getEnv(environ []string, key string) (string, bool) {
-	key = key + "="
-	for _, env := range environ {
-		if strings.HasPrefix(env, key) {
-			return env[len(key):], true
-		}
-	}
-	return "", false
-}
-
-func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, string) map[uint32]*zoekt.MinimalRepoListEntry {
-	return func(ctx context.Context, endpoint string) map[uint32]*zoekt.MinimalRepoListEntry {
+func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, string) zoekt.ReposMap {
+	return func(ctx context.Context, endpoint string) zoekt.ReposMap {
 		cl := dial(endpoint)
 
-		resp, err := cl.List(ctx, &query.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
+		resp, err := cl.List(ctx, &query.Const{Value: true}, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
 		if err != nil {
-			return map[uint32]*zoekt.MinimalRepoListEntry{}
+			return zoekt.ReposMap{}
 		}
 
-		return resp.Minimal
+		return resp.ReposMap
 	}
+}
+
+func getIndexedDialer() backend.ZoektDialer {
+	indexedDialerOnce.Do(func() {
+		indexedDialer = backend.NewCachedZoektDialer(func(endpoint string) zoekt.Streamer {
+			return backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.ZoektDial(endpoint))
+		})
+	})
+	return indexedDialer
 }

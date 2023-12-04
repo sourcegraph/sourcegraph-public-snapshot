@@ -1,11 +1,8 @@
-import classNames from 'classnames'
 import * as React from 'react'
-import { DecorationAttachmentRenderOptions, ThemableDecorationStyle } from 'sourcegraph'
 
-import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import { decorationAttachmentStyleForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { RouterLink } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
+
+import { createLinkUrl, RouterLink } from '@sourcegraph/wildcard'
 
 import { DiffHunkLineType } from '../../graphql-operations'
 
@@ -26,11 +23,8 @@ interface Line {
     persistLines: boolean
     anchor: string
     html: string
-    lineStyle: ThemableDecorationStyle
-    decorations: (TextDocumentDecoration & Record<'after', DecorationAttachmentRenderOptions>)[]
     className: string
     dataPart: 'head' | 'base'
-    isLightTheme: boolean
 }
 
 interface LineType {
@@ -39,29 +33,32 @@ interface LineType {
 
 const lineType = (kind: DiffHunkLineType): LineType => {
     switch (kind) {
-        case DiffHunkLineType.DELETED:
+        case DiffHunkLineType.DELETED: {
             return {
                 hunkContent: styles.lineDeletion,
             }
-        case DiffHunkLineType.ADDED:
+        }
+        case DiffHunkLineType.ADDED: {
             return {
                 hunkContent: styles.lineAddition,
             }
-        default:
+        }
+        default: {
             return {
                 hunkContent: '',
             }
+        }
     }
 }
 
-export const EmptyLine: React.FunctionComponent = () => (
+export const EmptyLine: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <>
         <td data-hunk-num={true} className={classNames(diffHunkStyles.numEmpty, diffHunkStyles.num)} />
         <td data-hunk-content-empty={true} className={diffHunkStyles.contentEmpty} />
     </>
 )
 
-export const Line: React.FunctionComponent<Line> = ({
+export const Line: React.FunctionComponent<React.PropsWithChildren<Line>> = ({
     persistLines,
     kind,
     lineNumber,
@@ -69,11 +66,8 @@ export const Line: React.FunctionComponent<Line> = ({
     id,
     anchor,
     html,
-    lineStyle,
-    decorations,
     className,
     dataPart,
-    isLightTheme,
 }) => {
     const hunkStyles = lineType(kind)
 
@@ -88,7 +82,7 @@ export const Line: React.FunctionComponent<Line> = ({
                     data-hunk-num=" "
                 >
                     {persistLines && (
-                        <RouterLink className={diffHunkStyles.numLine} to={{ hash: anchor }}>
+                        <RouterLink className={diffHunkStyles.numLine} to={createLinkUrl({ hash: anchor })}>
                             {lineNumber}
                         </RouterLink>
                     )}
@@ -96,8 +90,6 @@ export const Line: React.FunctionComponent<Line> = ({
             )}
             <td
                 className={classNames('align-baseline', diffHunkStyles.content, hunkStyles.hunkContent, className)}
-                // eslint-disable-next-line react/forbid-dom-props
-                style={lineStyle}
                 data-diff-marker={diffHunkTypeIndicators[kind]}
             >
                 <div className={classNames('d-inline', styles.lineCode)}>
@@ -106,22 +98,6 @@ export const Line: React.FunctionComponent<Line> = ({
                         dangerouslySetInnerHTML={{ __html: html }}
                         data-diff-marker={diffHunkTypeIndicators[kind]}
                     />
-                    {decorations.map((decoration, index) => {
-                        const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
-                        return (
-                            <React.Fragment key={index}>
-                                {' '}
-                                <LinkOrSpan
-                                    className="d-inline-block"
-                                    to={decoration.after.linkURL}
-                                    data-tooltip={decoration.after.hoverMessage}
-                                    style={style}
-                                >
-                                    {decoration.after.contentText}
-                                </LinkOrSpan>
-                            </React.Fragment>
-                        )
-                    })}
                 </div>
             </td>
         </>

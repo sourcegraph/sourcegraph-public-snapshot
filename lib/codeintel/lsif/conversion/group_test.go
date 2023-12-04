@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
@@ -293,10 +292,7 @@ func TestGroupBundleData(t *testing.T) {
 		}),
 	}
 
-	actualBundleData, err := groupBundleData(context.Background(), state)
-	if err != nil {
-		t.Fatalf("unexpected error converting correlation state to types: %s", err)
-	}
+	actualBundleData := groupBundleData(context.Background(), state)
 
 	expectedMetaData := precise.MetaData{
 		NumResultChunks: 1,
@@ -316,14 +312,9 @@ func TestGroupBundleData(t *testing.T) {
 		t.Errorf("unexpected packages (-want +got):\n%s", diff)
 	}
 
-	expectedFilter, err := bloomfilter.CreateFilter([]string{"ident A"})
-	if err != nil {
-		t.Fatalf("unexpected error creating bloom filter: %s", err)
-	}
 	expectedPackageReferences := []precise.PackageReference{
 		{
 			Package: precise.Package{Scheme: "scheme A", Name: "pkg A", Version: "0.1.0"},
-			Filter:  expectedFilter,
 		},
 	}
 	sort.Slice(actualBundleData.PackageReferences, func(i, j int) bool {
@@ -711,8 +702,8 @@ func sortDiagnostics(s []precise.DiagnosticData) {
 
 func sortDocumentIDRangeIDs(s []precise.DocumentIDRangeID) {
 	sort.Slice(s, func(i, j int) bool {
-		if cmp := strings.Compare(string(s[i].DocumentID), string(s[j].DocumentID)); cmp != 0 {
-			return cmp < 0
+		if compareResult := strings.Compare(string(s[i].DocumentID), string(s[j].DocumentID)); compareResult != 0 {
+			return compareResult < 0
 		} else {
 			return strings.Compare(string(s[i].RangeID), string(s[j].RangeID)) < 0
 		}
@@ -721,10 +712,10 @@ func sortDocumentIDRangeIDs(s []precise.DocumentIDRangeID) {
 
 func sortMonikerLocations(monikerLocations []precise.MonikerLocations) {
 	sort.Slice(monikerLocations, func(i, j int) bool {
-		if cmp := strings.Compare(monikerLocations[i].Scheme, monikerLocations[j].Scheme); cmp != 0 {
-			return cmp < 0
-		} else if cmp := strings.Compare(monikerLocations[i].Identifier, monikerLocations[j].Identifier); cmp != 0 {
-			return cmp < 0
+		if compareResult := strings.Compare(monikerLocations[i].Scheme, monikerLocations[j].Scheme); compareResult != 0 {
+			return compareResult < 0
+		} else if compareResult := strings.Compare(monikerLocations[i].Identifier, monikerLocations[j].Identifier); compareResult != 0 {
+			return compareResult < 0
 		}
 		return false
 	})
@@ -736,8 +727,8 @@ func sortMonikerLocations(monikerLocations []precise.MonikerLocations) {
 
 func sortLocations(locations []precise.LocationData) {
 	sort.Slice(locations, func(i, j int) bool {
-		if cmp := strings.Compare(locations[i].URI, locations[j].URI); cmp != 0 {
-			return cmp < 0
+		if compareResult := strings.Compare(locations[i].URI, locations[j].URI); compareResult != 0 {
+			return compareResult < 0
 		}
 
 		return locations[i].StartLine < locations[j].StartLine

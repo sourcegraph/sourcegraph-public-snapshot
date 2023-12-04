@@ -1,65 +1,82 @@
-import * as React from 'react'
-import { Redirect, RouteComponentProps } from 'react-router'
+import { useEffect } from 'react'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Navigate, useNavigate, type RouteObject } from 'react-router-dom'
+
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { BatchChangesProps } from './batches'
-import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
-import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
-import { GlobalCoolCodeIntelProps } from './global/CoolCodeIntel'
-import type { LayoutProps } from './Layout'
-import type { ExtensionAlertProps } from './repo/actions/InstallIntegrationsAlert'
+import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
-import { CreateNotebookPage } from './search/notebook/CreateNotebookPage'
-import { SearchNotebooksListPage } from './search/notebook/listPage/SearchNotebooksListPage'
+import { isSearchJobsEnabled } from './search-jobs/utility'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
-import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
-import { ThemePreferenceProps } from './theme'
-import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
-const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
-const SearchNotebookPage = lazyComponent(() => import('./search/notebook/SearchNotebookPage'), 'SearchNotebookPage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
+const RequestAccessPage = lazyComponent(() => import('./auth/RequestAccessPage'), 'RequestAccessPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
-const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
+const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'UnlockAccountPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
+const RedirectToUserSettings = lazyComponent(
+    () => import('./user/settings/RedirectToUserSettings'),
+    'RedirectToUserSettings'
+)
+const RedirectToUserPage = lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage')
+const OrgsArea = lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea')
+const ResetPasswordPage = lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage')
+const ApiConsole = lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole')
+const UserArea = lazyComponent(() => import('./user/area/UserArea'), 'UserArea')
+const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage')
+const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
+const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
+const CodySidebarStoreProvider = lazyComponent(() => import('./cody/sidebar/Provider'), 'CodySidebarStoreProvider')
+const GetCodyPage = lazyComponent(() => import('./get-cody/GetCodyPage'), 'GetCodyPage')
+const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 
-export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
-    extends RouteComponentProps<RouteParameters>,
-        Omit<LayoutProps, 'match'>,
-        ThemeProps,
-        ThemePreferenceProps,
-        BreadcrumbsProps,
-        BreadcrumbSetters,
-        ExtensionAlertProps,
-        CodeIntelligenceProps,
-        BatchChangesProps,
-        UserExternalServicesOrRepositoriesUpdateProps,
-        GlobalCoolCodeIntelProps {
-    isSourcegraphDotCom: boolean
-    isMacPlatform: boolean
-}
-
-export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
-    path: string
-    exact?: boolean
-    render: (props: LayoutRouteComponentProps<Parameters_>) => React.ReactNode
-
-    /**
-     * A condition function that needs to return true if the route should be rendered
-     *
-     * @default () => true
-     */
-    condition?: (props: LayoutRouteComponentProps<Parameters_>) => boolean
-}
+const GlobalNotebooksArea = lazyComponent(() => import('./notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
+const GlobalBatchChangesArea = lazyComponent(
+    () => import('./enterprise/batches/global/GlobalBatchChangesArea'),
+    'GlobalBatchChangesArea'
+)
+const GlobalCodeMonitoringArea = lazyComponent(
+    () => import('./enterprise/code-monitoring/global/GlobalCodeMonitoringArea'),
+    'GlobalCodeMonitoringArea'
+)
+const CodeInsightsRouter = lazyComponent(() => import('./enterprise/insights/CodeInsightsRouter'), 'CodeInsightsRouter')
+const SearchContextsListPage = lazyComponent(
+    () => import('./enterprise/searchContexts/SearchContextsListPage'),
+    'SearchContextsListPage'
+)
+const CreateSearchContextPage = lazyComponent(
+    () => import('./enterprise/searchContexts/CreateSearchContextPage'),
+    'CreateSearchContextPage'
+)
+const EditSearchContextPage = lazyComponent(
+    () => import('./enterprise/searchContexts/EditSearchContextPage'),
+    'EditSearchContextPage'
+)
+const SearchContextPage = lazyComponent(
+    () => import('./enterprise/searchContexts/SearchContextPage'),
+    'SearchContextPage'
+)
+const CodySearchPage = lazyComponent(() => import('./cody/search/CodySearchPage'), 'CodySearchPage')
+const CodyChatPage = lazyComponent(() => import('./cody/chat/CodyChatPage'), 'CodyChatPage')
+const CodyManagementPage = lazyComponent(() => import('./cody/management/CodyManagementPage'), 'CodyManagementPage')
+const CodySubscriptionPage = lazyComponent(
+    () => import('./cody/subscription/CodySubscriptionPage'),
+    'CodySubscriptionPage'
+)
+const OwnPage = lazyComponent(() => import('./enterprise/own/OwnPage'), 'OwnPage')
+const AppAuthCallbackPage = lazyComponent(() => import('./enterprise/app/AppAuthCallbackPage'), 'AppAuthCallbackPage')
+const AppSetup = lazyComponent(() => import('./enterprise/app/setup/AppSetupWizard'), 'AppSetupWizard')
+const SearchJob = lazyComponent(() => import('./enterprise/search-jobs/SearchJobsPage'), 'SearchJobsPage')
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
-function passThroughToServer(): React.ReactNode {
-    window.location.reload()
+const PassThroughToServer: React.FC = () => {
+    useEffect(() => {
+        window.location.reload()
+    })
     return null
 }
 
@@ -69,169 +86,255 @@ function passThroughToServer(): React.ReactNode {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: readonly LayoutRouteProps<any>[] = [
+export const routes: RouteObject[] = [
     {
-        path: PageRoutes.Index,
-        render: () => <Redirect to={PageRoutes.Search} />,
-        exact: true,
+        path: PageRoutes.GetCody,
+        element: <LegacyRoute render={props => <GetCodyPage {...props} context={window.context} />} />,
     },
     {
-        path: PageRoutes.Search,
-        render: props => <SearchPageWrapper {...props} />,
-        exact: true,
+        path: PageRoutes.PostSignUp,
+        element: <LegacyRoute render={props => <PostSignUpPage {...props} />} />,
     },
     {
-        path: PageRoutes.SearchConsole,
-        render: props => {
-            const { showMultilineSearchConsole, showSearchContext } = getExperimentalFeatures()
-
-            return showMultilineSearchConsole ? (
-                <SearchConsolePage {...props} showSearchContext={showSearchContext ?? false} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            )
-        },
-        exact: true,
+        path: `${PageRoutes.AppSetup}/*`,
+        handle: { isFullPage: true },
+        element: (
+            <LegacyRoute
+                render={props => <AppSetup telemetryService={props.telemetryService} />}
+                condition={({ isCodyApp }) => isCodyApp}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.BatchChanges,
+        element: (
+            <LegacyRoute
+                render={props => <GlobalBatchChangesArea {...props} />}
+                // We also render this route on sourcegraph.com as a precaution in case anyone
+                // follows an in-app link to /batch-changes from sourcegraph.com; the component
+                // will just redirect the visitor to the marketing page
+                condition={({ batchChangesEnabled, isSourcegraphDotCom }) => batchChangesEnabled || isSourcegraphDotCom}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.CodeMonitoring,
+        element: (
+            <LegacyRoute
+                render={props => <GlobalCodeMonitoringArea {...props} />}
+                condition={({ isSourcegraphDotCom }) => !isSourcegraphDotCom}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.Insights,
+        element: (
+            <LegacyRoute
+                render={props => <CodeInsightsRouter {...props} />}
+                condition={({ codeInsightsEnabled }) => !!codeInsightsEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.SearchJobs,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <SearchJob
+                        isAdmin={props.authenticatedUser?.siteAdmin ?? false}
+                        telemetryService={props.telemetryService}
+                    />
+                )}
+                condition={isSearchJobsEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.Contexts,
+        element: <LegacyRoute render={props => <SearchContextsListPage {...props} />} />,
+    },
+    {
+        path: PageRoutes.CreateContext,
+        element: <LegacyRoute render={props => <CreateSearchContextPage {...props} />} />,
+    },
+    {
+        path: PageRoutes.EditContext,
+        element: <LegacyRoute render={props => <EditSearchContextPage {...props} />} />,
+    },
+    {
+        path: PageRoutes.Context,
+        element: <LegacyRoute render={props => <SearchContextPage {...props} />} />,
     },
     {
         path: PageRoutes.SearchNotebook,
-        render: () => <Redirect to={PageRoutes.Notebooks} />,
-        exact: true,
+        element: <Navigate to={PageRoutes.Notebooks} replace={true} />,
     },
     {
-        path: PageRoutes.NotebookCreate,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook && props.authenticatedUser ? (
-                <CreateNotebookPage {...props} authenticatedUser={props.authenticatedUser} />
-            ) : (
-                <Redirect to={PageRoutes.Notebooks} />
-            ),
-        exact: true,
+        path: PageRoutes.Notebooks + '/*',
+        element: <LegacyRoute render={props => <GlobalNotebooksArea {...props} />} />,
     },
     {
-        path: PageRoutes.Notebook,
-        render: props => {
-            const { showSearchNotebook, showSearchContext } = useExperimentalFeatures.getState()
+        path: PageRoutes.CodySearch,
+        element: <LegacyRoute render={props => <CodySearchPage {...props} />} />,
+    },
+    // TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
+    {
+        path: '/cody/*',
+        element: (
+            <LegacyRoute
+                render={() => {
+                    const chatID = window.location.pathname.split('/').pop()
+                    const navigate = useNavigate()
 
-            return showSearchNotebook ? (
-                <SearchNotebookPage {...props} showSearchContext={showSearchContext ?? false} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            )
-        },
-        exact: true,
+                    useEffect(() => {
+                        navigate(`/cody/chat/${chatID}`)
+                    }, [navigate, chatID])
+
+                    return <div />
+                }}
+                condition={() => !window.location.pathname.startsWith('/cody/chat')}
+            />
+        ),
     },
     {
-        path: PageRoutes.Notebooks,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook ? (
-                <SearchNotebooksListPage {...props} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            ),
-        exact: true,
+        path: PageRoutes.Cody + '/*',
+        element: <LegacyRoute render={props => <CodyChatPage {...props} context={window.context} />} />,
+    },
+    {
+        path: PageRoutes.CodyManagement,
+        element: <LegacyRoute render={props => <CodyManagementPage {...props} />} />,
+    },
+    {
+        path: PageRoutes.CodySubscription,
+        element: <LegacyRoute render={props => <CodySubscriptionPage {...props} />} />,
+    },
+    {
+        path: PageRoutes.Own,
+        element: <OwnPage />,
+    },
+    {
+        path: PageRoutes.AppAuthCallback,
+        element: <LegacyRoute render={() => <AppAuthCallbackPage />} condition={({ isCodyApp }) => isCodyApp} />,
+    },
+    {
+        path: PageRoutes.Index,
+        element: <Navigate replace={true} to={PageRoutes.Search} />,
+    },
+    {
+        path: PageRoutes.Search,
+        element: <LegacyRoute render={props => <SearchPageWrapper {...props} />} />,
+    },
+    {
+        path: PageRoutes.SearchConsole,
+        element: <LegacyRoute render={props => <SearchConsolePageOrRedirect {...props} />} />,
     },
     {
         path: PageRoutes.SignIn,
-        render: props => <SignInPage {...props} context={window.context} />,
-        exact: true,
+        element: <LegacyRoute render={props => <SignInPage {...props} context={window.context} />} />,
+    },
+    {
+        path: PageRoutes.RequestAccess,
+        element: <RequestAccessPage />,
     },
     {
         path: PageRoutes.SignUp,
-        render: props => <SignUpPage {...props} context={window.context} />,
-        exact: true,
+        element: <LegacyRoute render={props => <SignUpPage {...props} context={window.context} />} />,
+    },
+    {
+        path: PageRoutes.UnlockAccount,
+        element: <LegacyRoute render={props => <UnlockAccountPage {...props} context={window.context} />} />,
     },
     {
         path: PageRoutes.Welcome,
-        render: props =>
-            /**
-             * Welcome flow is allowed when auth'd and ?debug=1 is in the URL, OR:
-             * 1. user is authenticated
-             * 2. it's a DotComMode instance
-             * AND
-             * instance has enabled enablePostSignupFlow experimental feature
-             * OR
-             * user authenticated has a AllowUserViewPostSignup tag
-             */
-
-            !!props.authenticatedUser &&
-            (!!new URLSearchParams(props.location.search).get('debug') ||
-                (window.context.sourcegraphDotComMode && window.context.experimentalFeatures.enablePostSignupFlow) ||
-                props.authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
-                <PostSignUpPage
-                    authenticatedUser={props.authenticatedUser}
-                    telemetryService={props.telemetryService}
-                    context={window.context}
-                    onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
-                    setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
-                />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            ),
-
-        exact: true,
+        // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
+        element: <Navigate replace={true} to={PageRoutes.Search} />,
     },
     {
         path: PageRoutes.Settings,
-        render: lazyComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
+        element: <LegacyRoute render={props => <RedirectToUserSettings {...props} />} />,
     },
     {
         path: PageRoutes.User,
-        render: lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage'),
+        element: <LegacyRoute render={props => <RedirectToUserPage {...props} />} />,
+    },
+    {
+        path: PageRoutes.Teams,
+        element: <LegacyRoute render={props => <TeamsArea {...props} />} />,
     },
     {
         path: PageRoutes.Organizations,
-        render: lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
+        element: <LegacyRoute render={props => <OrgsArea {...props} />} />,
     },
     {
         path: PageRoutes.SiteAdminInit,
-        exact: true,
-        render: props => <SiteInitPage {...props} context={window.context} />,
+        element: <LegacyRoute render={props => <SiteInitPage {...props} context={window.context} />} />,
     },
     {
         path: PageRoutes.SiteAdmin,
-        render: props => (
-            <SiteAdminArea
-                {...props}
-                routes={props.siteAdminAreaRoutes}
-                sideBarGroups={props.siteAdminSideBarGroups}
-                overviewComponents={props.siteAdminOverviewComponents}
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <SiteAdminArea
+                        {...props}
+                        routes={props.siteAdminAreaRoutes}
+                        sideBarGroups={props.siteAdminSideBarGroups}
+                        overviewComponents={props.siteAdminOverviewComponents}
+                        codeInsightsEnabled={window.context.codeInsightsEnabled}
+                    />
+                )}
             />
         ),
     },
     {
         path: PageRoutes.PasswordReset,
-        render: lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage'),
-        exact: true,
+        element: <LegacyRoute render={props => <ResetPasswordPage {...props} context={window.context} />} />,
     },
     {
         path: PageRoutes.ApiConsole,
-        render: lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole'),
-        exact: true,
+        element: <ApiConsole />,
     },
     {
         path: PageRoutes.UserArea,
-        render: lazyComponent(() => import('./user/area/UserArea'), 'UserArea'),
+        element: <LegacyRoute render={props => <UserArea {...props} />} />,
     },
     {
         path: PageRoutes.Survey,
-        render: lazyComponent(() => import('./marketing/SurveyPage'), 'SurveyPage'),
-    },
-    {
-        path: PageRoutes.Extensions,
-        render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
+        element: <LegacyRoute render={props => <SurveyPage {...props} />} />,
     },
     {
         path: PageRoutes.Help,
-        render: passThroughToServer,
+        element: <PassThroughToServer />,
     },
     {
         path: PageRoutes.Debug,
-        render: passThroughToServer,
+        element: <PassThroughToServer />,
     },
     ...communitySearchContextsRoutes,
     {
         path: PageRoutes.RepoContainer,
-        render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <CodySidebarStoreProvider authenticatedUser={props.authenticatedUser}>
+                        <RepoContainer {...props} />
+                    </CodySidebarStoreProvider>
+                )}
+            />
+        ),
+        // In RR6, the useMatches hook will only give you the location that is matched
+        // by the path rule and not the path rule instead. Since we need to be able to
+        // detect if we're inside the repo container reliably inside the Layout, we
+        // expose this information in the handle object instead.
+        handle: { isRepoContainer: true },
     },
 ]
+
+function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Element {
+    const showMultilineSearchConsole = useExperimentalFeatures(features => features.showMultilineSearchConsole)
+
+    return showMultilineSearchConsole ? (
+        <SearchConsolePage {...props} />
+    ) : (
+        <Navigate replace={true} to={PageRoutes.Search} />
+    )
+}

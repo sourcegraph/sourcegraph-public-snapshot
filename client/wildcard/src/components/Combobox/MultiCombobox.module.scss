@@ -1,0 +1,135 @@
+.root {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.25rem 0.375rem;
+    margin: 0;
+    border: 1px solid var(--input-border-color);
+    border-radius: var(--border-radius);
+    background: var(--input-bg);
+
+    &:focus-within {
+        border-color: var(--input-focus-border-color);
+        box-shadow: var(--input-focus-box-shadow);
+    }
+
+    &:has(:global(.is-valid)) {
+        border-color: var(--success);
+
+        :global(.theme-light) &:focus-within {
+            box-shadow: 0 0 0 2px var(--success-2);
+        }
+
+        :global(.theme-dark) &:focus-within {
+            box-shadow: 0 0 0 2px var(--success-3);
+        }
+    }
+
+    &:has(:global(.is-invalid)) {
+        border-color: var(--danger);
+
+        :global(.theme-light) &:focus-within {
+            box-shadow: 0 0 0 2px var(--danger-2);
+        }
+
+        :global(.theme-dark) &:focus-within {
+            box-shadow: 0 0 0 2px var(--danger-3);
+        }
+    }
+
+    &:has(:global(.form-control):disabled) {
+        color: var(--text-disabled);
+        background-color: var(--input-disabled-bg);
+    }
+}
+
+.input-container {
+    flex-grow: 1;
+    min-width: 10rem;
+
+    // override standard spinner position in order to fit it
+    // in non standard input size
+    [data-loading-spinner] {
+        position: absolute;
+        right: calc(0.25rem - 1px);
+        top: calc(0.35rem - 1px);
+    }
+}
+
+// :root selector is needed here in order to override .form-control
+// global CSS class, since we don't have any control over CSS order files
+// we can't ensure wildcard styles prevalence over global css styles.
+// Therefore we have to increase cascade speciality synthetically.
+:root .input {
+    border: none;
+    outline: none;
+    padding: 0 0 0 0.5rem;
+    height: 1.75rem;
+
+    // Override standard input box-shadow styles since root container
+    // already re-implements it.
+    box-shadow: none !important;
+}
+
+.pill {
+    display: flex;
+    border-radius: 0.25rem;
+    min-width: 0;
+
+    :global(.theme-dark) & {
+        background-color: var(--color-bg-3);
+    }
+
+    :global(.theme-light) & {
+        background-color: var(--oc-gray-1);
+    }
+}
+
+.pill-text {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0.25rem 0.5rem;
+}
+
+.remove-pill {
+    border: none;
+    width: 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+
+    :global(.theme-dark) & {
+        &:hover,
+        &:focus {
+            background-color: #2a2f3f !important;
+        }
+    }
+
+    :global(.theme-light) & {
+        &:hover,
+        &:focus {
+            background-color: var(--color-bg-2) !important;
+        }
+    }
+}
+
+.popover {
+    display: flex;
+    border-radius: 0;
+
+    &:empty {
+        display: none;
+    }
+}
+
+.zero-state {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    padding: 0.5rem;
+    display: block;
+}

@@ -1,15 +1,13 @@
-import * as jsonc from '@sqs/jsonc-parser'
-import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
+import * as jsonc from 'jsonc-parser'
 import { first } from 'lodash'
 import { throwError } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
-import { asError } from '@sourcegraph/common'
+import { asError, logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import {
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type {
     GitHubAuthProvider,
     GitLabAuthProvider,
     OpenIDConnectAuthProvider,
@@ -17,9 +15,17 @@ import {
     SiteConfiguration,
 } from '@sourcegraph/shared/src/schema/site.schema'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
-import { Config } from '@sourcegraph/shared/src/testing/config'
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import type { Config } from '@sourcegraph/shared/src/testing/config'
+import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
+
+import type {
+    CreateOrganizationResult,
+    CreateOrganizationVariables,
+    CreateUserResult,
+    CreateUserVariables,
+    Scalars,
+} from '../../graphql-operations'
 
 import {
     deleteUser,
@@ -32,13 +38,13 @@ import {
     fetchSiteConfiguration,
     updateSiteConfiguration,
 } from './api'
-import { GraphQLClient } from './GraphQlClient'
-import { ResourceDestructor } from './TestResourceManager'
+import type { GraphQLClient } from './GraphQlClient'
+import type { ResourceDestructor } from './TestResourceManager'
 
 /**
  * Create the user with the specified password. Returns a destructor that destroys the test user. Assumes basic auth.
  */
-export async function ensureLoggedInOrCreateTestUser(
+export async function ensureSignedInOrCreateTestUser(
     driver: Driver,
     gqlClient: GraphQLClient,
     {
@@ -59,13 +65,13 @@ export async function ensureLoggedInOrCreateTestUser(
     if (deleteIfExists) {
         await deleteUser(gqlClient, username, false)
     } else {
-        // Attempt to log in first
+        // Attempt to sign in first
         try {
-            await driver.ensureLoggedIn({ username, password: testUserPassword })
+            await driver.ensureSignedIn({ username, password: testUserPassword })
             return userDestructor
         } catch (error) {
-            console.log(
-                `Login failed (error: ${asError(error).message}), will attempt to create user ${JSON.stringify(
+            logger.error(
+                `Signing in failed (error: ${asError(error).message}), will attempt to create user ${JSON.stringify(
                     username
                 )}`
             )
@@ -73,7 +79,7 @@ export async function ensureLoggedInOrCreateTestUser(
     }
 
     await createTestUser(driver, gqlClient, { username, testUserPassword })
-    await driver.ensureLoggedIn({ username, password: testUserPassword })
+    await driver.ensureSignedIn({ username, password: testUserPassword })
     return userDestructor
 }
 
@@ -84,7 +90,7 @@ async function createTestUser(
 ): Promise<void> {
     // If there's an error, try to create the user
     const passwordResetURL = await gqlClient
-        .mutateGraphQL(
+        .mutateGraphQL<CreateUserResult, CreateUserVariables>(
             gql`
                 mutation CreateUser($username: String!, $email: String) {
                     createUser(username: $username, email: $email) {
@@ -92,7 +98,7 @@ async function createTestUser(
                     }
                 }
             `,
-            { username }
+            { username, email: null }
         )
         .pipe(
             map(dataOrThrowErrors),
@@ -138,10 +144,12 @@ export async function createAuthProvider(
     }
     const editFns = [
         (contents: string) =>
-            jsoncEdit.setProperty(contents, ['auth.providers', -1], authProvider, {
-                eol: '\n',
-                insertSpaces: true,
-                tabSize: 2,
+            jsonc.modify(contents, ['auth.providers', -1], authProvider, {
+                formattingOptions: {
+                    eol: '\n',
+                    insertSpaces: true,
+                    tabSize: 2,
+                },
             }),
     ]
     const { destroy } = await editSiteConfig(gqlClient, ...editFns)
@@ -154,7 +162,7 @@ export async function createAuthProvider(
 export async function ensureNewUser(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     username: string,
-    email: string | undefined
+    email: string | null
 ): Promise<ResourceDestructor> {
     try {
         const user = await getUser({ requestGraphQL }, username)
@@ -175,13 +183,8 @@ export async function ensureNewUser(
  */
 export async function ensureNewOrganization(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
-    variables: {
-        /** The name of the organization. */
-        name: string
-        /** The new organization's display name (e.g. full name) in the organization profile. */
-        displayName?: string
-    }
-): Promise<{ destroy: ResourceDestructor; result: GQL.IOrg }> {
+    variables: CreateOrganizationVariables
+): Promise<{ destroy: ResourceDestructor; result: CreateOrganizationResult['createOrganization'] }> {
     const matchingOrgs = (await fetchAllOrganizations({ requestGraphQL }, { first: 1000 }).toPromise()).nodes.filter(
         org => org.name === variables.name
     )
@@ -200,7 +203,7 @@ export async function ensureNewOrganization(
 
 export async function getGlobalSettings(
     gqlClient: GraphQLClient
-): Promise<{ subjectID: GQL.ID; settingsID: number | null; contents: string }> {
+): Promise<{ subjectID: Scalars['ID']; settingsID: number | null; contents: string }> {
     const settings = await getViewerSettings(gqlClient)
     const globalSettingsSubject = first(settings.subjects.filter(subject => subject.__typename === 'Site'))
     if (!globalSettingsSubject) {
@@ -219,8 +222,8 @@ export async function editGlobalSettings(
 ): Promise<{ destroy: ResourceDestructor; result: string }> {
     const { subjectID, settingsID, contents: origContents } = await getGlobalSettings(gqlClient)
     let newContents = origContents
-    for (const editFn of edits) {
-        newContents = jsonc.applyEdits(newContents, editFn(newContents))
+    for (const editFunc of edits) {
+        newContents = jsonc.applyEdits(newContents, editFunc(newContents))
     }
     await overwriteSettings(gqlClient, subjectID, settingsID, newContents)
     return {
@@ -238,8 +241,8 @@ export async function editSiteConfig(
 ): Promise<{ destroy: ResourceDestructor; result: boolean }> {
     const origConfig = await fetchSiteConfiguration(gqlClient).toPromise()
     let newContents = origConfig.configuration.effectiveContents
-    for (const editFn of edits) {
-        newContents = jsonc.applyEdits(newContents, editFn(newContents))
+    for (const editFunc of edits) {
+        newContents = jsonc.applyEdits(newContents, editFunc(newContents))
     }
     return {
         result: await updateSiteConfiguration(gqlClient, origConfig.configuration.id, newContents).toPromise(),

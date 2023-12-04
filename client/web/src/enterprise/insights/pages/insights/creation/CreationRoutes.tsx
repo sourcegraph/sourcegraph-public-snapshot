@@ -1,71 +1,72 @@
-import React from 'react'
-import { Switch, Route, useRouteMatch } from 'react-router'
+import type { FC } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Routes, Route } from 'react-router-dom'
+
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-
-import { AuthenticatedUser } from '../../../../../auth'
 
 import { InsightCreationPageType } from './InsightCreationPage'
 
 const IntroCreationLazyPage = lazyComponent(() => import('./intro/IntroCreationPage'), 'IntroCreationPage')
 const InsightCreationLazyPage = lazyComponent(() => import('./InsightCreationPage'), 'InsightCreationPage')
 
-interface CreationRoutesProps extends TelemetryProps {
-    /**
-     * Authenticated user info, Used to decide where code insight will appears
-     * in personal dashboard (private) or in organisation dashboard (public)
-     */
-    authenticatedUser: AuthenticatedUser
-}
+interface CreationRoutesProps extends TelemetryProps {}
 
 /**
  * Code insight sub-router for the creation area/routes.
  * Renders code insights creation routes (insight creation UI pages, creation intro page)
  */
-export const CreationRoutes: React.FunctionComponent<CreationRoutesProps> = props => {
+export const CreationRoutes: FC<CreationRoutesProps> = props => {
     const { telemetryService } = props
 
-    const match = useRouteMatch()
+    const codeInsightsCompute = useExperimentalFeatures(settings => settings.codeInsightsCompute)
 
     return (
-        <Switch>
-            <Route
-                exact={true}
-                path={`${match.url}`}
-                render={() => <IntroCreationLazyPage telemetryService={telemetryService} />}
-            />
+        <Routes>
+            <Route index={true} element={<IntroCreationLazyPage telemetryService={telemetryService} />} />
 
             <Route
-                path={`${match.url}/search`}
-                render={() => (
+                path="search"
+                element={
                     <InsightCreationLazyPage
                         mode={InsightCreationPageType.Search}
                         telemetryService={telemetryService}
                     />
-                )}
+                }
             />
 
             <Route
-                path={`${match.url}/capture-group`}
-                render={() => (
+                path="capture-group"
+                element={
                     <InsightCreationLazyPage
                         mode={InsightCreationPageType.CaptureGroup}
                         telemetryService={telemetryService}
                     />
-                )}
+                }
             />
 
             <Route
-                path={`${match.url}/lang-stats`}
-                exact={true}
-                render={() => (
+                path="lang-stats"
+                element={
                     <InsightCreationLazyPage
                         mode={InsightCreationPageType.LangStats}
                         telemetryService={telemetryService}
                     />
-                )}
+                }
             />
-        </Switch>
+
+            {codeInsightsCompute && (
+                <Route
+                    path="group-results"
+                    element={
+                        <InsightCreationLazyPage
+                            mode={InsightCreationPageType.Compute}
+                            telemetryService={telemetryService}
+                        />
+                    }
+                />
+            )}
+        </Routes>
     )
 }

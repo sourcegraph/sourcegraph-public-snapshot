@@ -1,0 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "genhelper",
+    srcs = ["genhelper.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom/genhelper",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+)

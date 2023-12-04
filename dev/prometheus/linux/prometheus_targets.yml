@@ -7,8 +7,10 @@
 - labels:
     job: gitserver
   targets:
-    # gitserver
-    - 127.0.0.1:6068
+    # gitserver 1
+    - 127.0.0.1:3551
+    # gitserver 2
+    - 127.0.0.1:3552
 - labels:
     job: searcher
   targets:
@@ -47,17 +49,32 @@
     # worker
     - 127.0.0.1:6089
 - labels:
-    job: sourcegraph-code-intel-indexers
+    job: worker-executors
   targets:
-    # sourcegraph-code-intel-indexers
-    - 127.0.0.1:6092
-- labels:
-    job: executor-batches
-  targets:
-    # executor-batches
-    - 127.0.0.1:6093
+    # worker
+    - 127.0.0.1:6996
 - labels:
     job: postgres_exporter
   targets:
     # postgres exporter
     - 127.0.0.1:9187
+- labels:
+    job: otel-collector
+  targets:
+    # opentelemetry collector
+    - host.docker.internal:8888
+- labels:
+    job: embeddings
+  targets:
+    # embeddings
+    - 127.0.0.1:6099
+- labels:
+    job: cody-gateway
+  targets:
+    # cody gateway
+    - 127.0.0.1:6098
+- labels:
+    job: telemetry-gateway
+  targets:
+    # telemetry gateway
+    - 127.0.0.1:6080

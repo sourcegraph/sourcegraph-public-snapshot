@@ -1,0 +1,126 @@
+.root {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    isolation: isolate;
+
+    display: grid;
+    grid-template-areas: 'chart';
+
+    // Hack for generating a proper scoped css nested class
+    // see https://css-tricks.com/using-sass-control-scope-bem-naming/
+    $self: &;
+
+    // stylelint-disable-next-line selector-class-pattern
+    &--withLegend {
+        grid-template-areas:
+            'chart'
+            'legend';
+        gap: 0.75rem;
+
+        // Chart section can grow and take all space if we don't have any legends
+        // Legends section can grow until the chart section is bigger than 12rem.
+        grid-template-rows: minmax(8rem, 2fr) minmax(auto, min-content);
+
+        &#{ $self }--horizontal {
+            grid-template-areas: 'chart legend';
+            grid-template-columns: auto minmax(10rem, 30%);
+
+            .legend-list {
+                flex-wrap: nowrap;
+                flex-direction: column;
+            }
+
+            .legend-list-item {
+                width: 100%;
+            }
+        }
+    }
+}
+
+.responsive-container {
+    grid-area: chart;
+    position: relative;
+
+    // Without overflow hidden parent size container measures sizes
+    // incorrectly within the chart containers.
+    overflow: hidden;
+
+    // Since this container has overflow hidden inner chart block focus ring
+    // styles is cutting off, re-add focus ring styles on this block instead
+    &:focus,
+    &:focus-within {
+        box-shadow: var(--focus-box-shadow);
+    }
+
+    &:hover,
+    &:focus-within {
+        .alert-overlay {
+            display: none;
+        }
+    }
+}
+
+.chart {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+}
+
+.legend-list-container {
+    grid-area: legend;
+    // Visually compensate legend list items padding spacings
+    margin: -0.125rem -0.25rem;
+
+    &::-webkit-scrollbar {
+        width: 0.25rem;
+        height: 0.25rem;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        border-radius: 3px;
+        box-shadow: inset 0 0 6px var(--text-muted);
+    }
+
+    @-moz-document url-prefix('') {
+        scrollbar-width: thin;
+        scrollbar-color: var(--text-muted);
+    }
+}
+
+.legend-list {
+    // Reset standard legend list gaps, list items will handle
+    // x and y spacing themselves.
+    column-gap: 0;
+    row-gap: 0;
+}
+
+.legend-list-item {
+    // Reset wildcard button styles
+    margin: 0;
+    font-weight: normal;
+    font-size: inherit;
+    text-align: left;
+    line-height: inherit;
+    display: flex;
+    border: none;
+    padding: 0.125rem 0.25rem;
+
+    &--interactive {
+        &:hover,
+        &:focus {
+            background-color: var(--secondary-2);
+        }
+    }
+}
+
+.alert-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.legend-incomplete-alert {
+    padding-left: 0;
+}

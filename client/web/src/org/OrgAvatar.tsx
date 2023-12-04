@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import * as React from 'react'
+
+import classNames from 'classnames'
 
 import styles from './OrgAvatar.module.scss'
 
@@ -23,8 +24,17 @@ const avatarSizeClasses: Record<NonNullable<OrgAvatarProps['size']>, string> = {
 /**
  * OrgAvatar displays the avatar of an organization.
  */
-export const OrgAvatar: React.FunctionComponent<OrgAvatarProps> = ({ org, size = 'md', className = '', light }) => (
-    <div className={classNames(styles.orgAvatar, avatarSizeClasses[size], className, light && styles.orgAvatarLight)}>
+export const OrgAvatar: React.FunctionComponent<React.PropsWithChildren<OrgAvatarProps>> = ({
+    org,
+    size = 'md',
+    className = '',
+    light,
+}) => (
+    <div
+        className={classNames(styles.orgAvatar, avatarSizeClasses[size], className, {
+            [styles.orgAvatarLight]: light,
+        })}
+    >
         {org.slice(0, 2).toUpperCase()}
     </div>
 )

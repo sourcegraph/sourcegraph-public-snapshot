@@ -10,10 +10,6 @@ The Code Insights GraphQL API is available on Sourcegraph versions 3.35.1+.
 
 Note: If Code Insights setting storage is enabled, (`ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE:true`) any changes made via the API will be periodically overwritten by insights stored in settings. This is an unlikely scenario.
 
-## General
-
-This API is considered to be in beta. There may be significant changes in the future as we figure out the best way to support more chart types and data sources!
-
 ## Permissions and visibility
 
 Note: there are no separate read/write permissions at this time, so if a user has permission to view an insight they can also edit and delete it.
@@ -24,23 +20,13 @@ See [Managing Dashboards](#managing-dashboards) below for more information.
 
 ## Just-in-time vs persisted insights
 
-Some insights generate and persist time series data, while others calculate their time series data just-in-time on page load. Currently, any insight that is run over all repositories will be persisted, while insights run over a specific set of repositories will be genearted just-in-time.
-
-Common use cases for managing persisted insights with the API:
-
-- Creating insights over large individual repositories (big "monorepos") that won't complete before erroring out without being run on the more robust persisted system 
-- Creating insights over all repositories, to optionally filter later
-- Creating insights with data that you want to be able to export via the GraphQL API
-
-Common use cases for managing just-in-time insights with the API:
-
-- Generating just-in-time insights to be viewed in the Sourcegraph web app
+Some insights generate and persist time series data, while others calculate their data just-in-time on page load. Currently, line chart insights will be persisted, while the language statistics pie charts that run over a single repository will be generated just-in-time.
 
 ## Creating a persisted insight
 
 To create a Code Insight that will generate and persist time series data, use the mutation below.
 
-Important: leave `dataSeries.repositoryScope.repositories` empty to specify that the query should be run across all repositories. Otherwise, no time series data will be persisted.
+Important: Specify the list of repositories that the insight should run over in `repositoryScope.repositories` or leave it empty to specify that the query should be run across all repositories.
 
 ```gql
 mutation CreateLineChartSearchInsight($input: LineChartSearchInsightInput!) {
@@ -96,13 +82,9 @@ Example variables:
 }
 ```
 
-## Creating a just-in-time insight
+## Creating a pie chart insight
 
-There are two chart options for just-in-time insights: Line charts and pie charts.
-
-To create a line chart insight that will calculate its time series data just-in-time, use the `CreateLineChartSearchInsight` mutation above and fill in `dataSeries.repositoryScope.repositories` with a set of repositories.
-
-Pie chart insights show language usage across the specified repositories. Because this type of chart has not yet been generalized to other use cases, the `query` field in the input is not used. To create one, use the mutation below.
+Pie chart insights show language usage across a specified repository. Because this type of chart has not yet been generalized to other use cases, the `query` field in the input is not used. To create one, use the mutation below.
 
 ```gql
 mutation CreatePieChartSearchInsight($input: PieChartSearchInsightInput!) {
@@ -134,6 +116,8 @@ Example variables:
 ## Reading a single Code Insight
 
 Use the query below to read a Code Insight by `id`. `filters` are optional, and if provided will filter the aggregated time series to specific repositories.
+
+You can find an insight's `id` if you visit the edit page for the insight. The edit page URL will be of the form `https://sourcegraph.yourcompany.com/insights/edit/aW5zaWdodF92aWV3OiIyM2hiYzNNclB2bDBtajlLTTZTUlBpWVlhZWQi?dashboardId=all` where the `id` is `aW5zaWdodF92aWV3OiIyM2hiYzNNclB2bDBtajlLTTZTUlBpWVlhZWQi`. Alternatively, you can list all insights using this graphQL API. 
 
 Notes on the return object:
 
@@ -260,28 +244,34 @@ This is an example of updating the Code Insight from the creation mutation examp
 
 ```json
 {
-  "id": "aW5zaWdodF92aWV3OiIyMkVIR2pXOTFkSzNOanpmM2hyWnU3WDJwMlgi",
+  "id": "[INSIGHT_ID]",
   "input": {
-    "options": {
+    "presentationOptions": {
       "title": "Javascript weekly"
     },
-    "dataSeries": [{
-      "seriesId": "23cu2Xs5cGttsdATpbq2dIOhkBd",
-      "query": "lang:javascript",
-      "options": {
-        "label": "javascript",
-        "lineColor": "#6495ED"
-      },
-      "repositoryScope": {
-        "repositories": []
-      },
-      "timeScope": {
-        "stepInterval": {
-          "unit": "WEEK",
-          "value": 1
+    "viewControls": {
+      "seriesDisplayOptions": {},
+      "filters": {}
+    },
+    "dataSeries": [
+      {
+        "seriesId": "[SERIES_ID]",
+        "query": "lang:javascript",
+        "options": {
+          "label": "javascript",
+          "lineColor": "#6495ED"
+        },
+        "repositoryScope": {
+          "repositories": []
+        },
+        "timeScope": {
+          "stepInterval": {
+            "unit": "WEEK",
+            "value": 1
+          }
         }
       }
-    }]
+    ]
   }
 }
 ```

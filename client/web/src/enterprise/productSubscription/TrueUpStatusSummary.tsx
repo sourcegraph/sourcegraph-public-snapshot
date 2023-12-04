@@ -1,10 +1,10 @@
 import * as React from 'react'
 
 import { numberWithCommas } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Link } from '@sourcegraph/wildcard'
 
 import { SingleValueCard } from '../../components/SingleValueCard'
+import type { ProductLicenseInfoResult } from '../../graphql-operations'
 import { formatUserCount } from '../../productSubscription/helpers'
 
 import styles from './TrueUpStatusSummary.module.scss'
@@ -21,12 +21,12 @@ interface Props {
      * no license is in use, returns an empty string.
      */
     actualUserCountDate: string
-    license: GQL.IProductLicenseInfo
+    license: NonNullable<ProductLicenseInfoResult['site']['productSubscription']['license']>
 }
 /**
  * Displays a summary of the site's true-up pricing status.
  */
-export const TrueUpStatusSummary: React.FunctionComponent<Props> = ({
+export const TrueUpStatusSummary: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     actualUserCount,
     actualUserCountDate,
     license,
@@ -63,7 +63,7 @@ export const TrueUpStatusSummary: React.FunctionComponent<Props> = ({
             </div>
             <small>
                 Learn more about{' '}
-                <Link to="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener noreferrer">
+                <Link to="https://sourcegraph.com/pricing" target="_blank" rel="noopener noreferrer">
                     Sourcegraph's true-up pricing model
                 </Link>
                 .

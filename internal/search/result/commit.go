@@ -30,24 +30,33 @@ type CommitMatch struct {
 
 	// MessagePreview and DiffPreview are mutually exclusive. Only one should be set
 	MessagePreview *MatchedString
-	DiffPreview    *MatchedString
+	// DiffPreview is a string representation of the diff along with the matched
+	// ranges of that diff.
+	DiffPreview *MatchedString
+	// Diff is a parsed and structured representation of the information in DiffPreview.
+	// In time, consumers will be migrated to use the structured representation
+	// and DiffPreview will be removed.
+	Diff []DiffFile
 
 	// ModifiedFiles will include the list of files modified in the commit when
-	// sub-repo permissions filtering has been enabled.
+	// explicitly requested via IncludeModifiedFiles. This is disabled by default for performance.
+	// Search requests to include modified files in the following cases:
+	// * when sub-repo permissions filtering has been enabled,
+	// * when ownership filtering clause is used, and search result is commits.
 	ModifiedFiles []string
 }
 
-func (c *CommitMatch) Body() MatchedString {
-	if c.DiffPreview != nil {
+func (cm *CommitMatch) Body() MatchedString {
+	if cm.DiffPreview != nil {
 		return MatchedString{
-			Content:       "```diff\n" + c.DiffPreview.Content + "\n```",
-			MatchedRanges: c.DiffPreview.MatchedRanges.Add(Location{Line: 1, Offset: len("```diff\n")}),
+			Content:       "```diff\n" + cm.DiffPreview.Content + "\n```",
+			MatchedRanges: cm.DiffPreview.MatchedRanges.Add(Location{Line: 1, Offset: len("```diff\n")}),
 		}
 	}
 
 	return MatchedString{
-		Content:       "```COMMIT_EDITMSG\n" + c.MessagePreview.Content + "\n```",
-		MatchedRanges: c.MessagePreview.MatchedRanges.Add(Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}),
+		Content:       "```COMMIT_EDITMSG\n" + cm.MessagePreview.Content + "\n```",
+		MatchedRanges: cm.MessagePreview.MatchedRanges.Add(Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}),
 	}
 }
 
@@ -56,13 +65,13 @@ func (c *CommitMatch) Body() MatchedString {
 // return a more meaningful result count for streaming while maintaining backward
 // compatibility for our GraphQL API. The GraphQL API calls ResultCount on the
 // resolver, while streaming calls ResultCount on CommitSearchResult.
-func (r *CommitMatch) ResultCount() int {
+func (cm *CommitMatch) ResultCount() int {
 	matchCount := 0
 	switch {
-	case r.DiffPreview != nil:
-		matchCount = len(r.DiffPreview.MatchedRanges)
-	case r.MessagePreview != nil:
-		matchCount = len(r.MessagePreview.MatchedRanges)
+	case cm.DiffPreview != nil:
+		matchCount = len(cm.DiffPreview.MatchedRanges)
+	case cm.MessagePreview != nil:
+		matchCount = len(cm.MessagePreview.MatchedRanges)
 	}
 	if matchCount > 0 {
 		return matchCount
@@ -72,11 +81,11 @@ func (r *CommitMatch) ResultCount() int {
 	return 1
 }
 
-func (r *CommitMatch) RepoName() types.MinimalRepo {
-	return r.Repo
+func (cm *CommitMatch) RepoName() types.MinimalRepo {
+	return cm.Repo
 }
 
-func (r *CommitMatch) Limit(limit int) int {
+func (cm *CommitMatch) Limit(limit int) int {
 	limitMatchedString := func(ms *MatchedString) int {
 		if len(ms.MatchedRanges) == 0 {
 			return limit - 1
@@ -88,37 +97,43 @@ func (r *CommitMatch) Limit(limit int) int {
 	}
 
 	switch {
-	case r.DiffPreview != nil:
-		return limitMatchedString(r.DiffPreview)
-	case r.MessagePreview != nil:
-		return limitMatchedString(r.MessagePreview)
+	case cm.DiffPreview != nil:
+		return limitMatchedString(cm.DiffPreview)
+	case cm.MessagePreview != nil:
+		return limitMatchedString(cm.MessagePreview)
 	default:
 		panic("exactly one of DiffPreview or Message must be set")
 	}
 }
 
-func (r *CommitMatch) Select(path filter.SelectPath) Match {
+func (cm *CommitMatch) Select(path filter.SelectPath) Match {
 	switch path.Root() {
 	case filter.Repository:
 		return &RepoMatch{
-			Name: r.Repo.Name,
-			ID:   r.Repo.ID,
+			Name: cm.Repo.Name,
+			ID:   cm.Repo.ID,
 		}
 	case filter.Commit:
 		fields := path[1:]
 		if len(fields) > 0 && fields[0] == "diff" {
-			if r.DiffPreview == nil {
+			if cm.DiffPreview == nil {
 				return nil // Not a diff result.
 			}
 			if len(fields) == 1 {
-				return r
+				return cm
 			}
 			if len(fields) == 2 {
-				return selectCommitDiffKind(r, fields[1])
+				filteredMatch := selectCommitDiffKind(cm.DiffPreview, fields[1])
+				if filteredMatch == nil {
+					// no result after selecting, propagate no result.
+					return nil
+				}
+				cm.DiffPreview = filteredMatch
+				return cm
 			}
 			return nil
 		}
-		return r
+		return cm
 	}
 	return nil
 }
@@ -127,45 +142,45 @@ func (r *CommitMatch) Select(path filter.SelectPath) Match {
 // are not currently supported. TODO(@team/search): Diff highlight information
 // cannot reliably merge this way because of offset issues with markdown
 // rendering.
-func (r *CommitMatch) AppendMatches(src *CommitMatch) {
-	if r.MessagePreview != nil && src.MessagePreview != nil {
-		r.MessagePreview.MatchedRanges = append(r.MessagePreview.MatchedRanges, src.MessagePreview.MatchedRanges...)
+func (cm *CommitMatch) AppendMatches(src *CommitMatch) {
+	if cm.MessagePreview != nil && src.MessagePreview != nil {
+		cm.MessagePreview.MatchedRanges = append(cm.MessagePreview.MatchedRanges, src.MessagePreview.MatchedRanges...)
 	}
 }
 
 // Key implements Match interface's Key() method
-func (r *CommitMatch) Key() Key {
+func (cm *CommitMatch) Key() Key {
 	typeRank := rankCommitMatch
-	if r.DiffPreview != nil {
+	if cm.DiffPreview != nil {
 		typeRank = rankDiffMatch
 	}
 	return Key{
 		TypeRank:   typeRank,
-		Repo:       r.Repo.Name,
-		AuthorDate: r.Commit.Author.Date,
-		Commit:     r.Commit.ID,
+		Repo:       cm.Repo.Name,
+		AuthorDate: cm.Commit.Author.Date,
+		Commit:     cm.Commit.ID,
 	}
 }
 
-func (r *CommitMatch) Label() string {
-	message := r.Commit.Message.Subject()
-	author := r.Commit.Author.Name
-	repoName := displayRepoName(string(r.Repo.Name))
-	repoURL := (&RepoMatch{Name: r.Repo.Name, ID: r.Repo.ID}).URL().String()
-	commitURL := r.URL().String()
+func (cm *CommitMatch) Label() string {
+	message := cm.Commit.Message.Subject()
+	author := cm.Commit.Author.Name
+	repoName := displayRepoName(string(cm.Repo.Name))
+	repoURL := (&RepoMatch{Name: cm.Repo.Name, ID: cm.Repo.ID}).URL().String()
+	commitURL := cm.URL().String()
 
 	return fmt.Sprintf("[%s](%s) › [%s](%s): [%s](%s)", repoName, repoURL, author, commitURL, message, commitURL)
 }
 
-func (r *CommitMatch) Detail() string {
-	commitHash := r.Commit.ID.Short()
+func (cm *CommitMatch) Detail() string {
+	commitHash := cm.Commit.ID.Short()
 	timeagoConfig := timeago.NoMax(timeago.English)
-	return fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(r.Commit.Author.Date), r.URL())
+	return fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(cm.Commit.Author.Date), cm.URL())
 }
 
-func (r *CommitMatch) URL() *url.URL {
-	u := (&RepoMatch{Name: r.Repo.Name, ID: r.Repo.ID}).URL()
-	u.Path = u.Path + "/-/commit/" + string(r.Commit.ID)
+func (cm *CommitMatch) URL() *url.URL {
+	u := (&RepoMatch{Name: cm.Repo.Name, ID: cm.Repo.ID}).URL()
+	u.Path = u.Path + "/-/commit/" + string(cm.Commit.ID)
 	return u
 }
 
@@ -211,11 +226,7 @@ func modifiedLinesExist(lines []string, prefix string) bool {
 // applies to the modified lines selected by `field`. If there are no matches
 // (i.e., no highlight information) coresponding to modified lines, it is
 // removed from the result set (returns nil).
-func selectCommitDiffKind(c *CommitMatch, field string) Match {
-	diff := c.DiffPreview
-	if diff == nil {
-		return nil // Not a diff result.
-	}
+func selectCommitDiffKind(diffPreview *MatchedString, field string) *MatchedString {
 	var prefix string
 	if field == "added" {
 		prefix = "+"
@@ -223,21 +234,39 @@ func selectCommitDiffKind(c *CommitMatch, field string) Match {
 	if field == "removed" {
 		prefix = "-"
 	}
-	if len(diff.MatchedRanges) == 0 {
+	if len(diffPreview.MatchedRanges) == 0 {
 		// No highlights, implying no pattern was specified. Filter by
 		// whether there exists lines corresponding to additions or
 		// removals.
-		if modifiedLinesExist(strings.Split(diff.Content, "\n"), prefix) {
-			return c
+		if modifiedLinesExist(strings.Split(diffPreview.Content, "\n"), prefix) {
+			return diffPreview
 		}
 		return nil
 	}
-	diffHighlights := selectModifiedLines(strings.Split(diff.Content, "\n"), diff.MatchedRanges, prefix)
+	diffHighlights := selectModifiedLines(strings.Split(diffPreview.Content, "\n"), diffPreview.MatchedRanges, prefix)
 	if len(diffHighlights) > 0 {
-		c.DiffPreview.MatchedRanges = diffHighlights
-		return c
+		diffPreview.MatchedRanges = diffHighlights
+		return diffPreview
 	}
 	return nil // No matching lines.
 }
 
 func (r *CommitMatch) searchResultMarker() {}
+
+// CommitToDiffMatches is a helper function to narrow a CommitMatch to a a set of
+// CommitDiffMatch. Callers should validate whether a CommitMatch can be
+// converted. In time, we should directly create CommitDiffMatch and this helper
+// function should not, ideally, exist.
+func (r *CommitMatch) CommitToDiffMatches() []*CommitDiffMatch {
+	matches := make([]*CommitDiffMatch, 0, len(r.Diff))
+	for _, diff := range r.Diff {
+		diff := diff
+		matches = append(matches, &CommitDiffMatch{
+			Commit:   r.Commit,
+			Repo:     r.Repo,
+			Preview:  r.DiffPreview,
+			DiffFile: &diff,
+		})
+	}
+	return matches
+}

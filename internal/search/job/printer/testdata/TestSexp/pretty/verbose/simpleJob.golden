@@ -1,0 +1,7 @@
+(AND
+  (LEAF
+    (life_meaning . 42)
+    (leaf_meaning . 420))
+  (LEAF
+    (life_meaning . 42)
+    (leaf_meaning . 420)))

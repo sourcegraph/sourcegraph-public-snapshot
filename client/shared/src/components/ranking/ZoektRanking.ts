@@ -1,14 +1,23 @@
-import { MatchGroup, MatchGroupMatch, MatchItem, PerFileResultRanking, RankingResult } from './PerFileResultRanking'
+import type {
+    MatchGroup,
+    MatchGroupMatch,
+    MatchItem,
+    PerFileResultRanking,
+    RankingResult,
+} from './PerFileResultRanking'
 
 /**
  * ZoektRanking preserves the original relevance that's computed by Zoekt.
  */
 export class ZoektRanking implements PerFileResultRanking {
+    constructor(private maxResults: number) {}
+
+    public collapsedResults(matches: MatchItem[], context: number): RankingResult {
+        return results(matches, this.maxResults, context)
+    }
+
     public expandedResults(matches: MatchItem[], context: number): RankingResult {
         return results(matches, Number.MAX_VALUE, context)
-    }
-    public collapsedResults(matches: MatchItem[], context: number): RankingResult {
-        return results(matches, 5, context)
     }
 }
 
@@ -24,20 +33,20 @@ function newHunk(): Hunk {
 
 function addHunkItem(hunk: Hunk, item: MatchItem): void {
     hunk.matches.push(item)
-    hunk.startLine = Math.min(item.line, hunk.startLine)
-    hunk.endLine = Math.max(item.line, hunk.endLine)
+    hunk.startLine = Math.min(item.startLine, hunk.startLine)
+    hunk.endLine = Math.max(item.endLine, hunk.endLine)
 }
 
 function sortHunkMatches(hunk: Hunk): void {
     hunk.matches.sort((a, b) => {
-        if (a.line < b.line) {
+        if (a.startLine < b.startLine) {
             return -1
         }
-        if (a.line === b.line) {
-            if (a.highlightRanges[0].start < b.highlightRanges[0].start) {
+        if (a.startLine === b.startLine) {
+            if (a.highlightRanges[0].startCharacter < b.highlightRanges[0].startCharacter) {
                 return -1
             }
-            if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
+            if (a.highlightRanges[0].startCharacter === b.highlightRanges[0].startCharacter) {
                 return 0
             }
         }
@@ -45,8 +54,43 @@ function sortHunkMatches(hunk: Hunk): void {
     })
 }
 
+function mergeHunks(hunks: Hunk[], context: number): void {
+    const hunksSortedByLineNumber = hunks.slice().sort((a, b) => {
+        if (a.startLine < b.startLine) {
+            return -1
+        }
+        if (a.startLine === b.startLine) {
+            return 0
+        }
+        return 1
+    })
+
+    for (let index = 0; index < hunksSortedByLineNumber.length - 1; index++) {
+        const current = hunksSortedByLineNumber[index]
+        const next = hunksSortedByLineNumber[index + 1]
+
+        if (next.startLine - current.startLine <= context) {
+            const originalHunkIndex = hunks.indexOf(current)
+            const nextHunkIndex = hunks.indexOf(next)
+
+            if (originalHunkIndex > -1 && nextHunkIndex > -1) {
+                const originalHunk = hunks[originalHunkIndex]
+                for (const match of next.matches) {
+                    addHunkItem(originalHunk, match)
+                }
+                hunks.splice(nextHunkIndex, 1)
+                index++
+            }
+        }
+    }
+}
+
 function isMatchWithinGroup(group: Hunk, item: MatchItem, context: number): boolean {
-    return item.line + context + 1 >= group.startLine - context && item.line - context - 1 <= group.endLine + context
+    // Return true if item and group have overlapping or adjacent context
+    return (
+        (item.startLine >= group.endLine && item.startLine - group.endLine - 2 * context <= 1) ||
+        (item.endLine <= group.startLine && group.startLine - item.endLine - 2 * context <= 1)
+    )
 }
 
 function results(matches: MatchItem[], maxResults: number, context: number): RankingResult {
@@ -66,6 +110,10 @@ function results(matches: MatchItem[], maxResults: number, context: number): Ran
             hunks.push(hunk)
         }
     }
+
+    // Merge hunks with overlapping or adjacent line ranges
+    mergeHunks(hunks, context)
+
     const groups: MatchGroup[] = []
     const visibleMatches: MatchItem[] = []
     hunks = hunks.slice(0, maxResults)
@@ -76,10 +124,10 @@ function results(matches: MatchItem[], maxResults: number, context: number): Ran
             visibleMatches.push(match)
             for (const range of match.highlightRanges) {
                 groupMatches.push({
-                    line: match.line,
-                    character: range.start,
-                    highlightLength: range.highlightLength,
-                    isInContext: false,
+                    startLine: range.startLine,
+                    startCharacter: range.startCharacter,
+                    endLine: range.endLine,
+                    endCharacter: range.endCharacter,
                 })
             }
         }
@@ -90,7 +138,7 @@ function results(matches: MatchItem[], maxResults: number, context: number): Ran
             startLine: Math.max(0, hunk.startLine - context),
             endLine: hunk.endLine + context + 1,
             // 1-based position describing the starting place of the matches.
-            position: { line: topGroupMatch.line + 1, character: topGroupMatch.character + 1 },
+            position: { line: topGroupMatch.startLine + 1, character: topGroupMatch.startCharacter + 1 },
         }
         groups.push(matchGroup)
     }

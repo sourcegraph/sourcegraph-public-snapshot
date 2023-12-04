@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -32,12 +31,6 @@ func TestS3Init(t *testing.T) {
 	} else if value := *calls[0].Arg1.Bucket; value != "test-bucket" {
 		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
 	}
-
-	if calls := s3Client.PutBucketLifecycleConfigurationFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of PutBucketLifecycleConfiguration calls. want=%d have=%d", 1, len(calls))
-	} else if value := *calls[0].Arg1.Bucket; value != "test-bucket" {
-		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
-	}
 }
 
 func TestS3InitBucketExists(t *testing.T) {
@@ -55,27 +48,18 @@ func TestS3InitBucketExists(t *testing.T) {
 		} else if value := *calls[0].Arg1.Bucket; value != "test-bucket" {
 			t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
 		}
-
-		if calls := s3Client.PutBucketLifecycleConfigurationFunc.History(); len(calls) != 1 {
-			t.Fatalf("unexpected number of PutBucketLifecycleConfiguration calls. want=%d have=%d", 1, len(calls))
-		} else if value := *calls[0].Arg1.Bucket; value != "test-bucket" {
-			t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
-		}
 	}
 }
 
 func TestS3UnmanagedInit(t *testing.T) {
 	s3Client := NewMockS3API()
-	client := newS3WithClients(s3Client, nil, "test-bucket", false, nil, NewOperations(&observation.TestContext, "test", "brittleStore"))
+	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(&observation.TestContext, "test", "brittleStore"))
 	if err := client.Init(context.Background()); err != nil {
 		t.Fatalf("unexpected error initializing client: %s", err)
 	}
 
 	if calls := s3Client.CreateBucketFunc.History(); len(calls) != 0 {
 		t.Fatalf("unexpected number of CreateBucket calls. want=%d have=%d", 0, len(calls))
-	}
-	if calls := s3Client.PutBucketLifecycleConfigurationFunc.History(); len(calls) != 0 {
-		t.Fatalf("unexpected number of PutBucketLifecycleConfiguration calls. want=%d have=%d", 0, len(calls))
 	}
 }
 
@@ -85,7 +69,7 @@ func TestS3Get(t *testing.T) {
 		Body: io.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))),
 	}, nil)
 
-	client := newS3WithClients(s3Client, nil, "test-bucket", false, nil, NewOperations(&observation.TestContext, "test", "brittleStore"))
+	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(&observation.TestContext, "test", "brittleStore"))
 	rc, err := client.Get(context.Background(), "test-key")
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err)
@@ -137,7 +121,7 @@ func TestS3GetTransientErrors(t *testing.T) {
 	}
 
 	s3Client := fullContentsS3API()
-	client := newS3WithClients(s3Client, nil, "test-bucket", false, nil, NewOperations(&observation.TestContext, "test", "brittleStore"))
+	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(&observation.TestContext, "test", "brittleStore"))
 	rc, err := client.Get(context.Background(), "test-key")
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err)
@@ -166,7 +150,7 @@ func TestS3GetReadNothingLoop(t *testing.T) {
 	}
 
 	s3Client := fullContentsS3API()
-	client := newS3WithClients(s3Client, nil, "test-bucket", false, nil, NewOperations(&observation.TestContext, "test", "brittleStore"))
+	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(&observation.TestContext, "test", "brittleStore"))
 	rc, err := client.Get(context.Background(), "test-key")
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err)
@@ -379,36 +363,10 @@ func TestS3Delete(t *testing.T) {
 	}
 }
 
-func TestS3BucketLifecycleConfiguration(t *testing.T) {
-	if lifecycle := s3BucketLifecycleConfiguration("s3", time.Hour*24*3); lifecycle == nil || len(lifecycle.Rules) != 2 {
-		t.Fatalf("unexpected lifecycle rules")
-	} else {
-		var objectExpiration int32
-		for _, rule := range lifecycle.Rules {
-			if rule.Expiration != nil {
-				objectExpiration = rule.Expiration.Days
-			}
-		}
-		if objectExpiration != 3 {
-			t.Errorf("unexpected ttl for object expiration. want=%d have=%d", 3, objectExpiration)
-		}
-
-		var multipartExpiration int32
-		for _, rule := range lifecycle.Rules {
-			if rule.AbortIncompleteMultipartUpload != nil {
-				multipartExpiration = rule.AbortIncompleteMultipartUpload.DaysAfterInitiation
-			}
-		}
-		if multipartExpiration != 3 {
-			t.Errorf("unexpected ttl for multipart upload expiration. want=%d have=%d", 3, multipartExpiration)
-		}
-	}
-}
-
 func testS3Client(client s3API, uploader s3Uploader) Store {
 	return newLazyStore(rawS3Client(client, uploader))
 }
 
 func rawS3Client(client s3API, uploader s3Uploader) *s3Store {
-	return newS3WithClients(client, uploader, "test-bucket", true, nil, NewOperations(&observation.TestContext, "test", "brittleStore"))
+	return newS3WithClients(client, uploader, "test-bucket", true, NewOperations(&observation.TestContext, "test", "brittleStore"))
 }

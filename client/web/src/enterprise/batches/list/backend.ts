@@ -1,19 +1,18 @@
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
-
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-
-import { requestGraphQL } from '../../../backend/graphql'
-import {
-    BatchChangesVariables,
-    BatchChangesResult,
-    BatchChangesByNamespaceResult,
-    BatchChangesByNamespaceVariables,
-    AreBatchChangesLicensedResult,
-    AreBatchChangesLicensedVariables,
-} from '../../../graphql-operations'
+import { gql } from '@sourcegraph/http-client'
 
 const listBatchChangeFragment = gql`
+    fragment BatchChangesFields on BatchChangeConnection {
+        nodes {
+            __typename
+            ...ListBatchChange
+        }
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+        totalCount
+    }
+
     fragment ListBatchChange on BatchChange {
         id
         url
@@ -31,142 +30,83 @@ const listBatchChangeFragment = gql`
             closed
             merged
         }
+        currentSpec {
+            __typename
+            ...ListBatchChangeLatestSpecFields
+        }
+        batchSpecs(first: 1) {
+            nodes {
+                __typename
+                ...ListBatchChangeLatestSpecFields
+            }
+        }
+    }
+
+    fragment ListBatchChangeLatestSpecFields on BatchSpec {
+        id
+        state
+        applyURL
     }
 `
 
-export interface ListBatchChangesResult {
-    batchChanges: BatchChangesResult['batchChanges']
-    totalCount: number
-}
-
-export const queryBatchChanges = ({
-    first,
-    after,
-    state,
-    viewerCanAdminister,
-}: Partial<BatchChangesVariables>): Observable<ListBatchChangesResult> =>
-    requestGraphQL<BatchChangesResult, BatchChangesVariables>(
-        gql`
-            query BatchChanges($first: Int, $after: String, $state: BatchChangeState, $viewerCanAdminister: Boolean) {
-                batchChanges(first: $first, after: $after, state: $state, viewerCanAdminister: $viewerCanAdminister) {
-                    nodes {
-                        ...ListBatchChange
-                    }
-                    pageInfo {
-                        endCursor
-                        hasNextPage
-                    }
-                    totalCount
-                }
-                allBatchChanges: batchChanges(first: 0) {
-                    totalCount
-                }
-            }
-
-            ${listBatchChangeFragment}
-        `,
-        {
-            first: first ?? null,
-            after: after ?? null,
-            state: state ?? null,
-            viewerCanAdminister: viewerCanAdminister ?? null,
+export const BATCH_CHANGES = gql`
+    query BatchChanges($first: Int, $after: String, $states: [BatchChangeState!], $viewerCanAdminister: Boolean) {
+        batchChanges(first: $first, after: $after, states: $states, viewerCanAdminister: $viewerCanAdminister) {
+            __typename
+            ...BatchChangesFields
         }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => ({
-            batchChanges: data.batchChanges,
-            totalCount: data.allBatchChanges.totalCount,
-        }))
-    )
+    }
 
-export const queryBatchChangesByNamespace = ({
-    namespaceID,
-    first,
-    after,
-    state,
-    viewerCanAdminister,
-}: BatchChangesByNamespaceVariables): Observable<ListBatchChangesResult> =>
-    requestGraphQL<BatchChangesByNamespaceResult, BatchChangesByNamespaceVariables>(
-        gql`
-            query BatchChangesByNamespace(
-                $namespaceID: ID!
-                $first: Int
-                $after: String
-                $state: BatchChangeState
-                $viewerCanAdminister: Boolean
-            ) {
-                node(id: $namespaceID) {
+    ${listBatchChangeFragment}
+`
+export const BATCH_CHANGES_BY_NAMESPACE = gql`
+    query BatchChangesByNamespace(
+        $namespaceID: ID!
+        $first: Int
+        $after: String
+        $states: [BatchChangeState!]
+        $viewerCanAdminister: Boolean
+    ) {
+        node(id: $namespaceID) {
+            __typename
+            ... on User {
+                batchChanges(first: $first, after: $after, states: $states, viewerCanAdminister: $viewerCanAdminister) {
                     __typename
-                    ... on User {
-                        batchChanges(
-                            first: $first
-                            after: $after
-                            state: $state
-                            viewerCanAdminister: $viewerCanAdminister
-                        ) {
-                            ...BatchChangesFields
-                        }
-                        allBatchChanges: batchChanges(first: 0) {
-                            totalCount
-                        }
-                    }
-                    ... on Org {
-                        batchChanges(
-                            first: $first
-                            after: $after
-                            state: $state
-                            viewerCanAdminister: $viewerCanAdminister
-                        ) {
-                            ...BatchChangesFields
-                        }
-                        allBatchChanges: batchChanges(first: 0) {
-                            totalCount
-                        }
-                    }
+                    ...BatchChangesFields
                 }
             }
-
-            fragment BatchChangesFields on BatchChangeConnection {
-                nodes {
-                    ...ListBatchChange
+            ... on Org {
+                batchChanges(first: $first, after: $after, states: $states, viewerCanAdminister: $viewerCanAdminister) {
+                    __typename
+                    ...BatchChangesFields
                 }
-                pageInfo {
-                    endCursor
-                    hasNextPage
-                }
-                totalCount
             }
+        }
+    }
 
-            ${listBatchChangeFragment}
-        `,
-        { first, after, state, viewerCanAdminister, namespaceID }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.node) {
-                throw new Error('Namespace not found')
-            }
+    ${listBatchChangeFragment}
+`
 
-            if (data.node.__typename !== 'Org' && data.node.__typename !== 'User') {
-                throw new Error(`Requested node is a ${data.node.__typename}, not a User or Org`)
-            }
-            return {
-                batchChanges: data.node.batchChanges,
-                totalCount: data.node.allBatchChanges.totalCount,
-            }
-        })
-    )
+export const GET_LICENSE_AND_USAGE_INFO = gql`
+    query GetLicenseAndUsageInfo {
+        campaigns: enterpriseLicenseHasFeature(feature: "campaigns")
+        batchChanges: enterpriseLicenseHasFeature(feature: "batch-changes")
+        allBatchChanges: batchChanges(first: 1) {
+            totalCount
+        }
+        maxUnlicensedChangesets
+    }
+`
 
-export function areBatchChangesLicensed(): Observable<boolean> {
-    return requestGraphQL<AreBatchChangesLicensedResult, AreBatchChangesLicensedVariables>(
-        gql`
-            query AreBatchChangesLicensed {
-                campaigns: enterpriseLicenseHasFeature(feature: "campaigns")
-                batchChanges: enterpriseLicenseHasFeature(feature: "batch-changes")
-            }
-        `
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.campaigns || data.batchChanges)
-    )
-}
+export const GLOBAL_CHANGESETS_STATS = gql`
+    query GlobalChangesetsStats {
+        batchChanges {
+            totalCount
+        }
+        globalChangesetsStats {
+            open
+            closed
+            merged
+        }
+    }
+`

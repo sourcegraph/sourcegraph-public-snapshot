@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import styles from './SummaryContainer.module.scss'
 
@@ -14,7 +15,7 @@ interface SummaryContainerProps {
  * Should wrap typically wrap <ConnectionSummary>.
  * May also be used to wrap <ShowMoreButton />.
  */
-export const SummaryContainer: React.FunctionComponent<SummaryContainerProps> = ({
+export const SummaryContainer: React.FunctionComponent<React.PropsWithChildren<SummaryContainerProps>> = ({
     children,
     className,
     centered,

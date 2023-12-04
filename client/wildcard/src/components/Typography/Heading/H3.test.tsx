@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
-import React from 'react'
+import { describe, expect, it } from 'vitest'
 
-import { H3 } from './H3'
+import { H3 } from '../..'
 
 describe('H3', () => {
     it('should render correctly', () => {

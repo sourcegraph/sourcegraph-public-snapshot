@@ -1,0 +1,112 @@
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("//dev:defs.bzl", "ts_project")
+
+# testing/ does not contain a src/
+# gazelle:js_files **/*.{ts,tsx}
+# gazelle:js_test_files make-everything-main-library
+
+# gazelle:js_resolve sourcegraph //client/shared:node_modules/@sourcegraph/client-api
+
+js_library(
+    name = "graphql_operations_files",
+    # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
+    srcs = glob(
+        [
+            "**/*.ts",
+            "**/*.tsx",
+        ],
+    ),
+    visibility = ["//client/shared:__pkg__"],
+)
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:node_modules/@types/mocha",
+        "//:node_modules/@types/node",
+        "//client/shared:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "testing",
+    srcs = [
+        "MockIntersectionObserver.ts",
+        "accessibility.ts",
+        "apollo/index.ts",
+        "apollo/mockedTestProvider.tsx",
+        "batches.ts",
+        "config.ts",
+        "console.ts",
+        "dom-test-helpers.ts",
+        "dom-utils.ts",
+        "driver.ts",
+        "integration/context.ts",
+        "integration/graphQlResults.ts",
+        "integration/mockExtension.ts",
+        "integration/polly/CdpAdapter.ts",
+        "mockReactVisibilitySensor.tsx",
+        "screenshotReporter.ts",
+        "searchContexts/testHelpers.ts",
+        "searchTestHelpers.ts",
+        "simulateMenuItemClick.ts",
+        "testHelpers.ts",
+        "utils.ts",
+    ],
+    tsconfig = "//client/shared:tsconfig",
+    deps = [
+        "//:node_modules/@apollo/client",
+        "//:node_modules/@axe-core/puppeteer",
+        "//:node_modules/@percy/puppeteer",
+        "//:node_modules/@pollyjs/adapter",
+        "//:node_modules/@pollyjs/core",
+        "//:node_modules/@pollyjs/persister-fs",
+        "//:node_modules/@testing-library/react",
+        "//:node_modules/@types/lodash",
+        "//:node_modules/@types/mime-types",
+        "//:node_modules/@types/mocha",
+        "//:node_modules/@types/mz",
+        "//:node_modules/@types/node",
+        "//:node_modules/@types/pollyjs__adapter",
+        "//:node_modules/@types/pollyjs__core",
+        "//:node_modules/@types/pollyjs__persister-fs",
+        "//:node_modules/@types/prettier",
+        "//:node_modules/@types/puppeteer",
+        "//:node_modules/@types/react",
+        "//:node_modules/@types/sinon",
+        "//:node_modules/axe-core",
+        "//:node_modules/chalk",
+        "//:node_modules/comlink",
+        "//:node_modules/date-fns",
+        "//:node_modules/delay",
+        "//:node_modules/expect",
+        "//:node_modules/graphql",
+        "//:node_modules/jsonc-parser",
+        "//:node_modules/lodash",
+        "//:node_modules/mime-types",
+        "//:node_modules/mocha",
+        "//:node_modules/mz",
+        "//:node_modules/p-retry",
+        "//:node_modules/p-timeout",
+        "//:node_modules/prettier",
+        "//:node_modules/puppeteer",
+        "//:node_modules/react",
+        "//:node_modules/react-visibility-sensor",
+        "//:node_modules/rxjs",
+        "//:node_modules/sinon",
+        "//:node_modules/string-width",
+        "//:node_modules/term-size",
+        "//:node_modules/ts-key-enum",
+        "//:node_modules/util",
+        "//:node_modules/vitest",
+        "//client/shared:graphql_operations",
+        "//client/shared:node_modules/@sourcegraph/build-config",
+        "//client/shared:node_modules/@sourcegraph/client-api",
+        "//client/shared:node_modules/@sourcegraph/common",
+        "//client/shared:node_modules/@sourcegraph/http-client",
+        "//client/shared:shared_lib",
+    ],
+)

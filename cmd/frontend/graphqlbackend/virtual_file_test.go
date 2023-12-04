@@ -7,8 +7,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 )
 
 func TestVirtualFile(t *testing.T) {
@@ -18,6 +19,9 @@ func TestVirtualFile(t *testing.T) {
 		CreateFileInfo(fileName, false),
 		func(ctx context.Context) (string, error) {
 			return fileContent, nil
+		},
+		VirtualFileResolverOptions{
+			URL: "/testurl",
 		},
 	)
 	t.Run("Path", func(t *testing.T) {
@@ -36,7 +40,7 @@ func TestVirtualFile(t *testing.T) {
 		}
 	})
 	t.Run("Content", func(t *testing.T) {
-		have, err := vfr.Content(context.Background())
+		have, err := vfr.Content(context.Background(), &GitTreeContentPageArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -54,11 +58,11 @@ func TestVirtualFile(t *testing.T) {
 		}
 	})
 	t.Run("RichHTML", func(t *testing.T) {
-		have, err := vfr.RichHTML(context.Background())
+		have, err := vfr.RichHTML(context.Background(), &GitTreeContentPageArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}
-		renderedMarkdown := `<h1><a name="this-is-content" class="anchor" href="#this-is-content" rel="nofollow" aria-hidden="true"><span></span></a>this is content</h1>
+		renderedMarkdown := `<h1 id="this-is-content"><a href="#this-is-content" class="anchor" rel="nofollow" aria-hidden="true" name="this-is-content"></a>this is content</h1>
 `
 		if diff := cmp.Diff(have, renderedMarkdown); diff != "" {
 			t.Fatalf("wrong RichHTML: %s", diff)
@@ -73,11 +77,19 @@ func TestVirtualFile(t *testing.T) {
 			t.Fatalf("wrong Binary: %t", isBinary)
 		}
 	})
+	t.Run("URL", func(t *testing.T) {
+		url, err := vfr.URL(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Equal(t, "/testurl", url)
+	})
 	t.Run("Highlight", func(t *testing.T) {
 		testHighlight := func(aborted bool) {
 			highlightedContent := template.HTML("highlight of the file")
-			highlight.Mocks.Code = func(p highlight.Params) (template.HTML, bool, error) {
-				return highlightedContent, aborted, nil
+			highlight.Mocks.Code = func(p highlight.Params) (*highlight.HighlightedCode, bool, error) {
+				response := highlight.NewHighlightedCodeWithHTML(highlightedContent)
+				return &response, aborted, nil
 			}
 			t.Cleanup(highlight.ResetMocks)
 			highlightedFile, err := vfr.Highlight(context.Background(), &HighlightArgs{})

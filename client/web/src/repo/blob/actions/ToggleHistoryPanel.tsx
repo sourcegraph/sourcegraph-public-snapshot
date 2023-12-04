@@ -1,6 +1,7 @@
-import * as H from 'history'
-import HistoryIcon from 'mdi-react/HistoryIcon'
 import * as React from 'react'
+
+import { mdiHistory } from '@mdi/js'
+import type { Location, NavigateFunction, To } from 'react-router-dom'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
@@ -12,20 +13,21 @@ import {
     toViewStateHash,
 } from '@sourcegraph/common'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { TooltipController } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
-import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
-import { RepoHeaderContext } from '../../RepoHeader'
-import { BlobPanelTabID } from '../panel/BlobPanel'
+import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
+import type { RepoHeaderContext } from '../../RepoHeader'
+import type { BlobPanelTabID } from '../panel/BlobPanel'
 
 /**
  * A repository header action that toggles the visibility of the history panel.
  */
 export class ToggleHistoryPanel extends React.PureComponent<
     {
-        location: H.Location
-        history: H.History
+        isPackage: boolean
+        location: Location
+        navigate: NavigateFunction
     } & RepoHeaderContext
 > {
     private toggles = new Subject<boolean>()
@@ -34,7 +36,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
     /**
      * Reports the current visibility (derived from the location).
      */
-    public static isVisible(location: H.Location): boolean {
+    public static isVisible(location: Location): boolean {
         return parseQueryAndHash<BlobPanelTabID>(location.search, location.hash).viewState === 'history'
     }
 
@@ -42,7 +44,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
      * Returns the location object (that can be passed to H.History's push/replace methods) that sets visibility to
      * the given value.
      */
-    private static locationWithVisibility(location: H.Location, visible: boolean): H.LocationDescriptorObject {
+    private static locationWithVisibility(location: Location, visible: boolean): To {
         const parsedQuery = parseQueryAndHash<BlobPanelTabID>(location.search, location.hash)
         if (visible) {
             parsedQuery.viewState = 'history' // defaults to last-viewed tab, or first tab
@@ -50,6 +52,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
             delete parsedQuery.viewState
         }
         const lineRangeQueryParameter = toPositionOrRangeQueryParameter({ range: lprToRange(parsedQuery) })
+
         return {
             search: formatSearchParameters(
                 addLineRangeQueryParameter(new URLSearchParams(location.search), lineRangeQueryParameter)
@@ -63,20 +66,23 @@ export class ToggleHistoryPanel extends React.PureComponent<
             this.toggles.subscribe(() => {
                 const visible = ToggleHistoryPanel.isVisible(this.props.location)
                 eventLogger.log(visible ? 'HideHistoryPanel' : 'ShowHistoryPanel')
-                this.props.history.push(ToggleHistoryPanel.locationWithVisibility(this.props.location, !visible))
-                TooltipController.forceUpdate()
+                this.props.navigate(ToggleHistoryPanel.locationWithVisibility(this.props.location, !visible))
             })
         )
 
         // Toggle when the user presses 'alt+h' or 'opt+h'.
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter(event => event.altKey && event.code === 'KeyH'))
+                .pipe(filter(event => !this.isDisabled() && event.altKey && event.code === 'KeyH'))
                 .subscribe(event => {
                     event.preventDefault()
                     this.toggles.next()
                 })
         )
+    }
+
+    private isDisabled(): boolean {
+        return this.props.isPackage
     }
 
     public componentWillUnmount(): void {
@@ -86,23 +92,31 @@ export class ToggleHistoryPanel extends React.PureComponent<
     public render(): JSX.Element | null {
         const visible = ToggleHistoryPanel.isVisible(this.props.location)
 
+        const toggleMessage = `${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`
+        const disabled = this.isDisabled()
+        const message = disabled ? 'Git history is not available when browsing packages' : toggleMessage
+
         if (this.props.actionType === 'dropdown') {
             return (
-                <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
-                    <HistoryIcon className="icon-inline" />
-                    <span>{visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)</span>
-                </RepoHeaderActionButtonLink>
+                <RepoHeaderActionMenuItem disabled={disabled} file={true} onSelect={this.onClick}>
+                    <Icon aria-hidden={true} svgPath={mdiHistory} />
+                    <span>{message}</span>
+                </RepoHeaderActionMenuItem>
             )
         }
         return (
-            <RepoHeaderActionButtonLink
-                className="btn-icon"
-                file={false}
-                onSelect={this.onClick}
-                data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}
-            >
-                <HistoryIcon className="icon-inline" />
-            </RepoHeaderActionButtonLink>
+            <Tooltip content={message}>
+                <RepoHeaderActionButtonLink
+                    aria-label={message}
+                    aria-controls="references-panel"
+                    aria-expanded={visible}
+                    file={false}
+                    onSelect={this.onClick}
+                    disabled={disabled}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiHistory} />
+                </RepoHeaderActionButtonLink>
+            </Tooltip>
         )
     }
 

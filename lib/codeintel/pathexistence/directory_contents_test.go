@@ -17,7 +17,7 @@ func TestDirectoryContents(t *testing.T) {
 	}
 
 	var requests [][]string
-	mockGetChildrenFunc := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
+	mockGetChildrenFunc := func(_ context.Context, dirnames []string) (map[string][]string, error) {
 		out := map[string][]string{}
 		for _, dirname := range dirnames {
 			out[dirname] = gitContentsOracle[dirname]
@@ -88,7 +88,7 @@ func TestDirectoryContentsWithRoot(t *testing.T) {
 	}
 
 	var requests [][]string
-	mockGetChildrenFunc := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
+	mockGetChildrenFunc := func(_ context.Context, dirnames []string) (map[string][]string, error) {
 		out := map[string][]string{}
 		for _, dirname := range dirnames {
 			out[dirname] = gitContentsOracle[dirname]

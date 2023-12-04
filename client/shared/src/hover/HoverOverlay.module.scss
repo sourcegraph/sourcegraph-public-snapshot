@@ -14,7 +14,6 @@
     min-width: 6rem;
     max-width: 34rem; // was 32rem; + 2rem to fit maximum code intel alert text
     z-index: 100;
-    transition: opacity 100ms ease-in-out;
     // Make sure content doesn't leak behind border-radius
     overflow: hidden;
     padding-bottom: var(--hover-overlay-vertical-padding);
@@ -95,9 +94,28 @@
     align-items: center;
     padding-top: 0.75rem;
     padding-bottom: 0.5rem;
-    border-top: 1px solid var(--hover-overlay-separator-color);
     padding-left: var(--hover-overlay-horizontal-padding);
     padding-right: var(--hover-overlay-horizontal-padding);
+}
+
+.actions-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--hover-overlay-separator-color);
+}
+
+.actions-copy-link {
+    margin-right: var(--hover-overlay-horizontal-padding);
+    font-size: 0.75rem;
+    color: var(--link-color);
+    border-style: none;
+    background: transparent;
+    width: 5.1rem;
+
+    > span:last-child {
+        padding-left: 0.2rem;
+    }
 }
 
 .actions-inner {
@@ -108,10 +126,6 @@
 .action {
     flex: 0 1 auto;
     text-align: center;
-}
-
-.action + .action {
-    margin-left: 0.25rem;
 }
 
 .overlay-logo {
@@ -137,4 +151,14 @@
     // Because hover-empty is `<small>` we need bigger margin-top to align it with the close button.
     margin-top: var(--hover-overlay-content-margin-top);
     margin-bottom: 0.5rem;
+}
+
+.buttons {
+    display: flex;
+    align-items: center;
+    margin-top: var(--hover-overlay-content-margin-top);
+}
+
+.buttons > *:first-child {
+    margin-left: 0;
 }

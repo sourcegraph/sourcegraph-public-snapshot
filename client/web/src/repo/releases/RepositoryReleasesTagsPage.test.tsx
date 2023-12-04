@@ -1,30 +1,50 @@
 import { render } from '@testing-library/react'
-import * as H from 'history'
-import React from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import { of } from 'rxjs'
+import { describe, expect, test } from 'vitest'
 
-import { IRepository, IGitRef } from '@sourcegraph/shared/src/schema'
+import type { RepositoryFields } from '../../graphql-operations'
 
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 
 describe('RepositoryReleasesTagsPage', () => {
-    const history = H.createMemoryHistory()
     test('renders', () =>
         expect(
             render(
-                <RepositoryReleasesTagsPage
-                    history={history}
-                    location={history.location}
-                    repo={{ id: '123' } as IRepository}
-                    queryGitReferences={() =>
-                        of({
-                            totalCount: 0,
-                            nodes: [] as IGitRef[],
-                            __typename: 'GitRefConnection',
-                            pageInfo: { __typename: 'PageInfo', endCursor: '', hasNextPage: false },
-                        })
-                    }
-                />
+                <MemoryRouter>
+                    <RepositoryReleasesTagsPage
+                        repo={{ id: '123' } as RepositoryFields}
+                        isPackage={false}
+                        queryGitReferences={() =>
+                            of({
+                                totalCount: 0,
+                                nodes: [],
+                                __typename: 'GitRefConnection',
+                                pageInfo: { __typename: 'PageInfo', endCursor: '', hasNextPage: false },
+                            })
+                        }
+                    />
+                </MemoryRouter>
+            ).asFragment()
+        ).toMatchSnapshot())
+
+    test('renders for packages', () =>
+        expect(
+            render(
+                <MemoryRouter>
+                    <RepositoryReleasesTagsPage
+                        repo={{ id: '123' } as RepositoryFields}
+                        isPackage={true}
+                        queryGitReferences={() =>
+                            of({
+                                totalCount: 0,
+                                nodes: [],
+                                __typename: 'GitRefConnection',
+                                pageInfo: { __typename: 'PageInfo', endCursor: '', hasNextPage: false },
+                            })
+                        }
+                    />
+                </MemoryRouter>
             ).asFragment()
         ).toMatchSnapshot())
 })

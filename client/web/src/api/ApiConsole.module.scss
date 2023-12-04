@@ -1,8 +1,13 @@
+:root {
+    --toolbar-spacer: 0.313rem;
+}
+
 .api-console {
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
 }
+
 .loader {
     align-self: center;
     margin-top: auto;

@@ -1,9 +1,17 @@
 import { BloomFilter } from 'bloomfilter'
 
-import { HighlightedLinkProps, offsetSum, RangePosition } from '../components/fuzzyFinder/HighlightedLink'
+import { type HighlightedLinkProps, offsetSum, type RangePosition } from '../components/fuzzyFinder/HighlightedLink'
 
-import { FuzzySearch, IndexingFSM, FuzzySearchParameters, FuzzySearchResult, SearchValue } from './FuzzySearch'
+import {
+    FuzzySearch,
+    type IndexingFSM,
+    type FuzzySearchParameters,
+    type FuzzySearchResult,
+    type createUrlFunction,
+    type FuzzySearchConstructorParameters,
+} from './FuzzySearch'
 import { Hasher } from './Hasher'
+import type { SearchValue } from './SearchValue'
 
 /**
  * We don't index filenames with length larger than this value.
@@ -15,6 +23,8 @@ const MAX_VALUE_LENGTH = 100
 // works fine and provides the fastest indexing time in large repositories like
 // Chromium.
 const DEFAULT_BLOOM_FILTER_HASH_FUNCTION_COUNT = 1
+
+const DEFAULT_INDEXING_BUCKET_SIZE = 25_000
 // The number of filenames to group together in a single bucket, and the number
 // string prefixes that each bloom can contain.  Currently, every bucket can
 // contain up to 262.144 prefixes (conservatively large number).  With bucket
@@ -66,20 +76,31 @@ export class WordSensitiveFuzzySearch extends FuzzySearch {
         }
     }
 
-    public static fromSearchValuesAsync(files: SearchValue[], bucketSize: number = DEFAULT_BUCKET_SIZE): IndexingFSM {
+    public static fromSearchValuesAsync(
+        files: SearchValue[],
+        params?: FuzzySearchConstructorParameters,
+        bucketSize: number = DEFAULT_BUCKET_SIZE
+    ): IndexingFSM {
         files.sort((a, b) => a.text.length - b.text.length)
-        const indexer = new Indexer(files, bucketSize)
+        const indexer = new Indexer(files, bucketSize, params)
         function loop(): IndexingFSM {
             if (indexer.isDone()) {
                 return { key: 'ready', value: indexer.complete() }
             }
-            indexer.processBuckets(25000)
+            indexer.processBuckets(DEFAULT_INDEXING_BUCKET_SIZE)
+            let indexingPromise: Promise<IndexingFSM> | undefined
             return {
                 key: 'indexing',
                 indexedFileCount: indexer.indexedFileCount(),
                 totalFileCount: indexer.totalFileCount(),
                 partialFuzzy: indexer.complete(),
-                continue: () => new Promise(resolve => resolve(loop())),
+                isIndexing: () => indexingPromise !== undefined,
+                continueIndexing: () => {
+                    if (!indexingPromise) {
+                        indexingPromise = later().then(() => loop())
+                    }
+                    return indexingPromise
+                },
             }
         }
         return loop()
@@ -87,9 +108,10 @@ export class WordSensitiveFuzzySearch extends FuzzySearch {
 
     public static fromSearchValues(
         files: SearchValue[],
+        params?: FuzzySearchConstructorParameters,
         bucketSize: number = DEFAULT_BUCKET_SIZE
     ): WordSensitiveFuzzySearch {
-        const indexer = new Indexer(files, bucketSize)
+        const indexer = new Indexer(files, bucketSize, params)
         while (!indexer.isDone()) {
             indexer.processBuckets(bucketSize)
         }
@@ -148,10 +170,9 @@ export class WordSensitiveFuzzySearch extends FuzzySearch {
             }
             for (const value of bucket.files) {
                 result.push({
-                    text: value.text,
+                    ...value,
                     positions: [],
-                    url: query.createUrl ? query.createUrl(value.text) : undefined,
-                    onClick: query.onClick,
+                    url: value.url || bucket.createUrl?.(value.text),
                 })
                 if (result.length > query.maxResults) {
                     return complete(false)
@@ -214,10 +235,12 @@ function isDelimeter(character: string): boolean {
         case '_':
         case '-':
         case '.':
-        case ' ':
+        case ' ': {
             return true
-        default:
+        }
+        default: {
             return false
+        }
     }
 }
 
@@ -391,15 +414,30 @@ interface BucketResult {
     value: HighlightedLinkProps[]
 }
 
+export function mergedHandler(
+    firstHandler: undefined | (() => void),
+    secondHandler: undefined | (() => void)
+): undefined | (() => void) {
+    // TODO: avoid this weird merging logic
+    if (firstHandler && secondHandler) {
+        return () => {
+            firstHandler()
+            secondHandler()
+        }
+    }
+    return firstHandler || secondHandler
+}
+
 class Bucket {
     constructor(
         public readonly files: SearchValue[],
         public readonly filter: BloomFilter,
-        public readonly id: number
+        public readonly id: number,
+        public readonly createUrl: createUrlFunction
     ) {}
-    public static fromSearchValues(files: SearchValue[]): Bucket {
+    public static fromSearchValues(files: SearchValue[], createUrl: createUrlFunction): Bucket {
         files.sort((a, b) => a.text.length - b.text.length)
-        return new Bucket(files, populateBloomFilter(files), Math.random())
+        return new Bucket(files, populateBloomFilter(files), Math.random(), createUrl)
     }
 
     private matchesMaybe(hashParts: number[]): boolean {
@@ -410,7 +448,7 @@ class Bucket {
         }
         return true
     }
-    public matches(query: FuzzySearchParameters, queryParts: string[], hashParts: number[]): BucketResult {
+    public matches(parameters: FuzzySearchParameters, queryParts: string[], hashParts: number[]): BucketResult {
         const matchesMaybe = this.matchesMaybe(hashParts)
         if (!matchesMaybe) {
             return { skipped: true, value: [] }
@@ -422,8 +460,8 @@ class Bucket {
                 result.push({
                     text: file.text,
                     positions,
-                    url: query.createUrl ? query.createUrl(file.text) : undefined,
-                    onClick: query.onClick,
+                    url: this.createUrl?.(file.text),
+                    onClick: file.onClick,
                 })
             }
         }
@@ -435,7 +473,11 @@ class Indexer {
     private buffer: SearchValue[] = []
     private buckets: Bucket[] = []
     private index = 0
-    constructor(private readonly files: SearchValue[], private readonly bucketSize: number) {
+    constructor(
+        private readonly files: SearchValue[],
+        private readonly bucketSize: number,
+        private readonly params?: FuzzySearchConstructorParameters
+    ) {
         this.files.sort((a, b) => a.text.length - b.text.length)
     }
 
@@ -461,10 +503,14 @@ class Indexer {
                 this.index++
             }
             if (this.buffer) {
-                this.buckets.push(Bucket.fromSearchValues(this.buffer))
+                this.buckets.push(Bucket.fromSearchValues(this.buffer, this?.params?.createURL))
                 this.buffer = []
             }
             bucketCount--
         }
     }
+}
+
+async function later(): Promise<void> {
+    return new Promise(resolve => setTimeout(() => resolve(), 0))
 }

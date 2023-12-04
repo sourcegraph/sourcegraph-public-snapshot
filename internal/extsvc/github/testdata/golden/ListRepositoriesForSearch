@@ -1,0 +1,20 @@
+[
+  {
+   "ID": "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
+   "DatabaseID": 263033761,
+   "NameWithOwner": "sourcegraph-vcr-repos/public-org-repo-1",
+   "Description": "",
+   "URL": "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
+   "IsPrivate": false,
+   "IsFork": false,
+   "IsArchived": false,
+   "IsLocked": false,
+   "IsDisabled": false,
+   "ViewerPermission": "READ",
+   "RepositoryTopics": {
+    "Nodes": []
+   },
+   "visibility": "public",
+   "DiskUsage": 1
+  }
+ ]

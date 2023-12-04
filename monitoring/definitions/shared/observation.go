@@ -69,7 +69,7 @@ type ObservationGroupOptions struct {
 
 // NewGroup creates a group containing panels displaying the total number of operations, operation
 // duration histogram, number of errors, and error rate for the given observable within the given
-// container.
+// container, based on the RED methodology.
 //
 // Requires a:
 //   - counter of the format `src_{options.MetricNameRoot}_total`
@@ -79,6 +79,9 @@ type ObservationGroupOptions struct {
 // These metrics can be created via internal/metrics.NewREDMetrics in the Go backend.
 func (observationConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options ObservationGroupOptions) monitoring.Group {
 	rows := make([]monitoring.Row, 0, 2)
+	if options.JobLabel == "" {
+		options.JobLabel = "job"
+	}
 
 	if len(options.By) == 0 {
 		if options.Aggregate != nil {

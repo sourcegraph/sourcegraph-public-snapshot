@@ -44,7 +44,9 @@
      "html": {
       "href": "https://bitbucket.org/sg/go-langserver"
      }
-    }
+    },
+    "fork_policy": "",
+    "owner": null
    }
   },
   {
@@ -92,7 +94,9 @@
      "html": {
       "href": "https://bitbucket.org/sg/python-langserver"
      }
-    }
+    },
+    "fork_policy": "",
+    "owner": null
    }
   },
   {
@@ -138,7 +142,9 @@
       "html": {
        "href": "https://bitbucket.org/sg/python-langserver"
       }
-     }
+     },
+     "fork_policy": "",
+     "owner": null
     },
     "is_private": false,
     "links": {
@@ -155,7 +161,9 @@
      "html": {
       "href": "https://bitbucket.org/sg/python-langserver-fork"
      }
-    }
+    },
+    "fork_policy": "",
+    "owner": null
    }
   }
  ]

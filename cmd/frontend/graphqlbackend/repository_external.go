@@ -3,8 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -44,9 +44,9 @@ func (r *externalRepositoryResolver) ServiceID(ctx context.Context) (string, err
 
 func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
-}) (*computedExternalServiceConnectionResolver, error) {
+}) (*ComputedExternalServiceConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may read external services (they have secrets).
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -57,7 +57,7 @@ func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct 
 
 	svcIDs := repo.ExternalServiceIDs()
 	if len(svcIDs) == 0 {
-		return &computedExternalServiceConnectionResolver{
+		return &ComputedExternalServiceConnectionResolver{
 			db:               r.db,
 			args:             args.ConnectionArgs,
 			externalServices: []*types.ExternalService{},
@@ -74,7 +74,7 @@ func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	return &computedExternalServiceConnectionResolver{
+	return &ComputedExternalServiceConnectionResolver{
 		db:               r.db,
 		args:             args.ConnectionArgs,
 		externalServices: svcs,

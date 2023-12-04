@@ -1,0 +1,77 @@
+.search-result-layout {
+    flex: 1 1 auto;
+    overflow: hidden;
+    display: flex;
+    height: 1.5rem;
+    align-items: center;
+    white-space: nowrap;
+    padding: 0 4px;
+
+    // The below options are extracted from the native JetBrains find in files
+    // model.
+
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    font-size: 13px;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    line-height: 18px;
+}
+
+.divider {
+    border-right: 1px solid var(--body-color);
+    height: 0.875rem;
+}
+
+.icon-column {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--jb-info-text-color);
+    width: 2.85rem;
+}
+
+.content-column {
+    flex-shrink: 1;
+    display: flex;
+
+    // https://css-tricks.com/flexbox-truncated-text/#aa-the-solution-is-min-width-0-on-the-flex-child
+    min-width: 0;
+}
+
+.info-column {
+    color: var(--jb-info-text-color);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    font-size: 13px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: flex-end;
+    padding-left: 1rem;
+    flex-basis: 7.5rem;
+}
+
+.spacer {
+    flex: 1;
+}
+
+.active {
+    background-color: var(--dropdown-link-active-bg);
+    color: var(--light-text);
+}
+
+.active .icon-column {
+    color: var(--light-text);
+}
+
+.active .info-column {
+    color: var(--light-text);
+}
+
+.active .divider {
+    border-right: 1px solid var(--light-text);
+}
+
+.active :global(.text-muted) {
+    color: var(--light-text) !important;
+}

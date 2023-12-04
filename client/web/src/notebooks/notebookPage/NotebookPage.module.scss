@@ -1,0 +1,44 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.search-notebook-page {
+    background: var(--color-bg-1);
+    height: min-content; // Make background fill height of container
+
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 3fr;
+    gap: 1rem;
+
+    @media (--lg-breakpoint-down) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.auto-save-indicator {
+    font-size: 1rem !important;
+    width: 1rem !important;
+    height: 1rem !important;
+}
+
+.side-column {
+    @media (--lg-breakpoint-down) {
+        display: none;
+    }
+}
+
+.center-column {
+    display: flex;
+    flex-direction: column;
+    min-width: var(--viewport-lg);
+    max-width: var(--viewport-xl);
+
+    @media (--lg-breakpoint-down) {
+        min-width: 0;
+    }
+
+    .content {
+        padding: 0 1rem;
+        // Content should never shrink, but the spacer should take up the
+        // remaining space on the page.
+        flex: none;
+    }
+}

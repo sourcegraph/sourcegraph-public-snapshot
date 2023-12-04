@@ -7,17 +7,21 @@ jobs:
   codenotify:
     runs-on: ubuntu-latest
     name: codenotify
+    if: ${{ !startsWith(github.head_ref, 'contractors/' )}}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - uses: sourcegraph/codenotify@v0.5.1
+      - uses: sourcegraph/codenotify@v0.6.2
         with:
           filename: 'CODENOTIFY'
+          subscriber-threshold: '10'
         env:
           GITHUB_TOKEN: ${{ secrets.CODENOTIFY_GITHUB_TOKEN }}
-      - uses: sourcegraph/codenotify@v0.5.1
+      - uses: sourcegraph/codenotify@v0.6.2
+        continue-on-error: true
         with:
           filename: 'OWNERS'
+          subscriber-threshold: '10'
         env:
           GITHUB_TOKEN: ${{ secrets.CODENOTIFY_GITHUB_TOKEN }}

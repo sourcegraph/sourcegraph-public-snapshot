@@ -1,56 +1,41 @@
 import { proxy } from 'comlink'
-import { castArray, groupBy, identity, isEqual } from 'lodash'
-import { combineLatest, concat, EMPTY, from, Observable, of, Subscribable, throwError } from 'rxjs'
-import {
-    catchError,
-    debounceTime,
-    defaultIfEmpty,
-    distinctUntilChanged,
-    map,
-    mergeMap,
-    switchMap,
-} from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
+import { castArray, isEqual } from 'lodash'
+import { combineLatest, concat, type Observable, of, type Subscribable } from 'rxjs'
+import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import type { ProviderResult } from 'sourcegraph'
 
-import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import {
-    allOf,
-    asError,
-    combineLatestOrDefault,
-    ErrorLike,
-    isDefined,
-    isExactly,
-    isNot,
-    property,
-} from '@sourcegraph/common'
-import * as clientType from '@sourcegraph/extension-api-types'
-import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
-import { Context } from '@sourcegraph/template-parser'
+    fromHoverMerged,
+    type TextDocumentIdentifier,
+    type TextDocumentPositionParameters,
+} from '@sourcegraph/client-api'
+import { LOADING, type MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { combineLatestOrDefault, isDefined, isExactly, isNot, logger } from '@sourcegraph/common'
+import type * as clientType from '@sourcegraph/extension-api-types'
+import type { Context } from '@sourcegraph/template-parser'
 
+import type { ReferenceContext, DocumentSelector } from '../../codeintel/legacy-extensions/api'
 import { getModeFromPath } from '../../languages'
-import { fromHoverMerged } from '../client/types/hover'
-import { match, TextDocumentIdentifier } from '../client/types/textDocument'
-import { FlatExtensionHostAPI } from '../contract'
-import { ContributableViewContainer, TextDocumentPositionParameters } from '../protocol'
-import { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerTypes'
+import { parseRepoURI } from '../../util/url'
+import { match } from '../client/types/textDocument'
+import type { FlatExtensionHostAPI } from '../contract'
+import type { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerTypes'
 
 import { ExtensionCodeEditor } from './api/codeEditor'
-import { providerResultToObservable, ProxySubscribable, proxySubscribable } from './api/common'
-import { computeContext, ContributionScope } from './api/context/context'
+import { providerResultToObservable, proxySubscribable } from './api/common'
+import { computeContext, type ContributionScope } from './api/context/context'
 import {
     evaluateContributions,
     filterContributions,
     mergeContributions,
     parseContributionExpressions,
 } from './api/contribution'
-import { validateFileDecoration } from './api/decorations'
 import { ExtensionDirectoryViewer } from './api/directoryViewer'
-import { getInsightsViews } from './api/getInsightsViews'
 import { ExtensionDocument } from './api/textDocument'
 import { fromLocation, toPosition } from './api/types'
 import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
 import { updateContext } from './extensionHost'
-import { ExtensionHostState } from './extensionHostState'
+import type { ExtensionHostState } from './extensionHostState'
 import { addWithRollback } from './util'
 
 export function createExtensionHostAPI(state: ExtensionHostState): FlatExtensionHostAPI {
@@ -117,29 +102,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             state.searchContextChanges.next(context)
         },
 
-        // Search
-        transformSearchQuery: query =>
-            // TODO (simon) I don't enjoy the dark arts below
-            // we return observable because of potential deferred addition of transformers
-            // in this case we need to reissue the transformation and emit the resulting value
-            // we probably won't need an Observable if we somehow coordinate with extensions activation
-            proxySubscribable(
-                state.queryTransformers.pipe(
-                    switchMap(transformers =>
-                        transformers.reduce(
-                            (currentQuery: Observable<string>, transformer) =>
-                                currentQuery.pipe(
-                                    mergeMap(query => {
-                                        const result = transformer.transformQuery(query)
-                                        return result instanceof Promise ? from(result) : of(result)
-                                    })
-                                ),
-                            of(query)
-                        )
-                    )
-                )
-            ),
-
         // Language
         getHover: (textParameters: TextDocumentPositionParameters) => {
             const document = getTextDocument(textParameters.textDocument.uri)
@@ -180,7 +142,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             )
         },
-        getReferences: (textParameters: TextDocumentPositionParameters, context: sourcegraph.ReferenceContext) => {
+        getReferences: (textParameters: TextDocumentPositionParameters, context: ReferenceContext) => {
             const document = getTextDocument(textParameters.textDocument.uri)
             const position = toPosition(textParameters.position)
 
@@ -221,29 +183,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             )
         },
-
-        // Decorations
-        getFileDecorations: (parameters: sourcegraph.FileDecorationContext) =>
-            proxySubscribable(
-                parameters.files.length === 0
-                    ? EMPTY // Don't call providers when there are no files in the directory
-                    : callProviders(
-                          state.fileDecorationProviders,
-                          identity,
-                          // No need to filter
-                          provider => provider.provideFileDecorations(parameters),
-                          mergeProviderResults
-                      ).pipe(
-                          map(({ result }) =>
-                              groupBy(
-                                  result.filter(validateFileDecoration),
-                                  // Get path from uri to key by path.
-                                  // Path should always exist, but fall back to uri just in case
-                                  ({ uri }) => parseRepoURI(uri).filePath || uri
-                              )
-                          )
-                      )
-            ),
 
         // MODELS
 
@@ -294,11 +233,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             const viewer = getViewer(viewerId)
             assertViewerType(viewer, 'CodeEditor')
             viewer.update({ selections })
-        },
-        getTextDecorations: ({ viewerId }) => {
-            const viewer = getViewer(viewerId)
-            assertViewerType(viewer, 'CodeEditor')
-            return proxySubscribable(viewer.mergedDecorations)
         },
 
         addTextDocumentIfNotExists: textDocumentData => {
@@ -378,8 +312,9 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                                     const { languageId } = getTextDocument(activeEditor.resource)
                                     return Object.assign(activeEditor, { model: { languageId } })
                                 }
-                                case 'DirectoryViewer':
+                                case 'DirectoryViewer': {
                                     return activeEditor
+                                }
                             }
                         })
                     ),
@@ -394,7 +329,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 
                         // TODO(sqs): Observe context so that we update immediately upon changes.
                         const computedContext = computeContext(activeEditor, settings, context, scope)
-
                         return multiContributions.map(contributions => {
                             try {
                                 const evaluatedContributions = evaluateContributions(computedContext, contributions)
@@ -404,7 +338,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                             } catch (error) {
                                 // An error during evaluation causes all of the contributions in the same entry to be
                                 // discarded.
-                                console.log('Discarding contributions: evaluating expressions or templates failed.', {
+                                logger.error('Discarding contributions: evaluating expressions or templates failed.', {
                                     contributions,
                                     error,
                                 })
@@ -417,103 +351,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             ),
 
-        // Notifications
-        getPlainNotifications: () => proxySubscribable(state.plainNotifications.asObservable()),
-        getProgressNotifications: () => proxySubscribable(state.progressNotifications.asObservable()),
-
-        // Views
-        getPanelViews: () =>
-            // Don't need `combineLatestOrDefault` here since each panel view
-            // is a BehaviorSubject, and therefore guaranteed to emit
-            proxySubscribable(
-                state.panelViews.pipe(
-                    switchMap(panelViews => combineLatest([...panelViews])),
-                    debounceTime(0)
-                )
-            ),
-
-        // Insight page
-        getInsightViewById: (id, context) =>
-            proxySubscribable(
-                state.insightsPageViewProviders.pipe(
-                    switchMap(providers => {
-                        const provider = providers.find(provider => {
-                            // Get everything until last dot according to extension id naming convention
-                            // <type>.<name>.<view type = directory|insightPage|homePage>
-                            const providerId = provider.id.split('.').slice(0, -1).join('.')
-
-                            return providerId === id
-                        })
-
-                        if (!provider) {
-                            return throwError(new Error(`Couldn't find view with id ${id}`))
-                        }
-
-                        return providerResultToObservable(provider.viewProvider.provideView(context))
-                    }),
-                    catchError((error: unknown) => {
-                        console.error('View provider errored:', error)
-                        // Pass only primitive copied values because Error object is not
-                        // cloneable in Firefox and Safari
-                        const { message, name, stack } = asError(error)
-                        return of({ message, name, stack } as ErrorLike)
-                    }),
-                    map(view => ({ id, view }))
-                )
-            ),
-
-        getInsightsViews: (context, insightIds) =>
-            getInsightsViews(context, state.insightsPageViewProviders, insightIds),
-
-        getHomepageViews: context => proxySubscribable(callViewProviders(context, state.homepageViewProviders)),
-        getDirectoryViews: context =>
-            proxySubscribable(
-                callViewProviders(
-                    {
-                        viewer: {
-                            ...context.viewer,
-                            directory: {
-                                ...context.viewer.directory,
-                                uri: new URL(context.viewer.directory.uri),
-                            },
-                        },
-                        workspace: { uri: new URL(context.workspace.uri) },
-                    },
-                    state.directoryViewProviders
-                )
-            ),
-
-        getGlobalPageViews: context => proxySubscribable(callViewProviders(context, state.globalPageViewProviders)),
-
-        getStatusBarItems: ({ viewerId }) => {
-            const viewer = getViewer(viewerId)
-            if (viewer.type !== 'CodeEditor') {
-                return proxySubscribable(EMPTY)
-            }
-
-            return proxySubscribable(
-                viewer.mergedStatusBarItems.pipe(
-                    debounceTime(0),
-                    map(statusBarItems =>
-                        statusBarItems.sort(
-                            (a, b) => a.text[0].toLowerCase().charCodeAt(0) - b.text[0].toLowerCase().charCodeAt(0)
-                        )
-                    )
-                )
-            )
-        },
-
-        // Content
-        getLinkPreviews: (url: string) =>
-            proxySubscribable(
-                callProviders(
-                    state.linkPreviewProviders,
-                    entries => entries.filter(entry => url.startsWith(entry.urlMatchPattern)),
-                    ({ provider }) => provider.provideLinkPreview(new URL(url)),
-                    stuffs => mergeLinkPreviews(stuffs)
-                ).pipe(map(result => (result.isLoading ? null : result.result)))
-            ),
-
         getActiveExtensions: () => proxySubscribable(state.activeExtensions),
     }
 
@@ -521,7 +358,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 }
 
 export interface RegisteredProvider<T> {
-    selector: sourcegraph.DocumentSelector
+    selector: DocumentSelector
     provider: T
 }
 
@@ -537,7 +374,7 @@ export interface RegisteredProvider<T> {
 export function providersForDocument<P>(
     document: TextDocumentIdentifier,
     entries: readonly P[],
-    selector: (p: P) => sourcegraph.DocumentSelector
+    selector: (p: P) => DocumentSelector
 ): P[] {
     return entries.filter(provider =>
         match(selector(provider), {
@@ -566,16 +403,16 @@ export function providersForDocument<P>(
 export function callProviders<TRegisteredProvider, TProviderResult, TMergedResult>(
     providersObservable: Observable<readonly TRegisteredProvider[]>,
     filterProviders: (providers: readonly TRegisteredProvider[]) => TRegisteredProvider[],
-    invokeProvider: (provider: TRegisteredProvider) => sourcegraph.ProviderResult<TProviderResult>,
+    invokeProvider: (provider: TRegisteredProvider) => ProviderResult<TProviderResult>,
     mergeResult: (providerResults: readonly (TProviderResult | 'loading' | null | undefined)[]) => TMergedResult,
     logErrors: boolean = true
 ): Observable<MaybeLoadingResult<TMergedResult>> {
     const logError = (...args: any): void => {
         if (logErrors) {
-            console.error('Provider errored:', ...args)
+            logger.error('Provider errored:', ...args)
         }
     }
-    const safeInvokeProvider = (provider: TRegisteredProvider): sourcegraph.ProviderResult<TProviderResult> => {
+    const safeInvokeProvider = (provider: TRegisteredProvider): ProviderResult<TProviderResult> => {
         try {
             return invokeProvider(provider)
         } catch (error) {
@@ -630,9 +467,6 @@ export function mergeProviderResults<TProviderResultElement>(
         .filter(isDefined)
 }
 
-/** Object of array of file decorations keyed by path relative to repo root uri */
-export type FileDecorationsByPath = Record<string, sourcegraph.FileDecoration[] | undefined>
-
 // Viewers + documents
 
 const VIEWER_NOT_FOUND_ERROR_NAME = 'ViewerNotFoundError'
@@ -652,87 +486,6 @@ function assertViewerType<T extends ExtensionViewer['type']>(
     }
 }
 
-// Content
-
-interface MarkupContentPlainTextOnly extends Pick<sourcegraph.MarkupContent, 'value'> {
-    kind: sourcegraph.MarkupKind.PlainText
-}
-
-/**
- * Represents one or more {@link sourcegraph.LinkPreview} values merged together.
- */
-export interface LinkPreviewMerged {
-    /** The content of the merged {@link sourcegraph.LinkPreview} values. */
-    content: sourcegraph.MarkupContent[]
-
-    /** The hover content of the merged {@link sourcegraph.LinkPreview} values. */
-    hover: MarkupContentPlainTextOnly[]
-}
-
-function mergeLinkPreviews(
-    values: readonly (sourcegraph.LinkPreview | 'loading' | null | undefined)[]
-): LinkPreviewMerged | null {
-    const nonemptyValues = values
-        .filter(isDefined)
-        .filter((value): value is Exclude<sourcegraph.LinkPreview | 'loading', 'loading'> => value !== 'loading')
-    const contentValues = nonemptyValues.filter(property('content', isDefined))
-    const hoverValues = nonemptyValues.filter(property('hover', isDefined))
-    if (hoverValues.length === 0 && contentValues.length === 0) {
-        return null
-    }
-    return { content: contentValues.map(({ content }) => content), hover: hoverValues.map(({ hover }) => hover) }
-}
-
-// Views
-
-/**
- * A map from type of container names to the internal type of the context parameter provided by the container.
- */
-export interface ViewContexts {
-    [ContributableViewContainer.Panel]: never
-    [ContributableViewContainer.Homepage]: {}
-    [ContributableViewContainer.InsightsPage]: {}
-    [ContributableViewContainer.GlobalPage]: Record<string, string>
-    [ContributableViewContainer.Directory]: sourcegraph.DirectoryViewContext
-}
-
-export interface RegisteredViewProvider<W extends ContributableViewContainer> {
-    id: string
-    viewProvider: {
-        provideView: (context: ViewContexts[W]) => sourcegraph.ProviderResult<sourcegraph.View>
-    }
-}
-
-function callViewProviders<W extends ContributableViewContainer>(
-    context: ViewContexts[W],
-    providers: Observable<readonly RegisteredViewProvider<W>[]>
-): Observable<ViewProviderResult[]> {
-    return providers.pipe(
-        debounceTime(0),
-        switchMap(providers =>
-            combineLatest([
-                of(null),
-                ...providers.map(({ viewProvider, id }) =>
-                    concat(
-                        [undefined],
-                        providerResultToObservable(viewProvider.provideView(context)).pipe(
-                            defaultIfEmpty<sourcegraph.View | null | undefined>(null),
-                            catchError((error: unknown): [ErrorLike] => {
-                                console.error('View provider errored:', error)
-                                // Pass only primitive copied values because Error object is not
-                                // cloneable in Firefox and Safari
-                                const { message, name, stack } = asError(error)
-                                return [{ message, name, stack } as ErrorLike]
-                            })
-                        )
-                    ).pipe(map(view => ({ id, view })))
-                ),
-            ])
-        ),
-        map(views => views.filter(allOf(isDefined, property('view', isNot(isExactly(null))))))
-    )
-}
-
 /**
  * A workspace root with additional metadata that is not exposed to extensions.
  */
@@ -750,66 +503,6 @@ export interface WorkspaceRootWithMetadata extends clientType.WorkspaceRoot {
      * distinct from undefined. If undefined, the Git commit SHA from {@link WorkspaceRoot#uri} should be used.
      */
     inputRevision?: string
-}
-
-/** @internal */
-export interface PanelViewData extends Omit<sourcegraph.PanelView, 'unsubscribe'> {
-    id: string
-}
-
-/**
- * A notification message to display to the user.
- */
-export type ExtensionNotification = PlainNotification | ProgressNotification
-
-interface BaseNotification {
-    /** The message of the notification. */
-    message?: string
-
-    /**
-     * The type of the message.
-     */
-    type: sourcegraph.NotificationType
-
-    /** The source of the notification.  */
-    source?: string
-}
-
-export interface PlainNotification extends BaseNotification {}
-
-export interface ProgressNotification {
-    // Put all base notification properties in a nested object because
-    // ProgressNotifications are proxied, so it's better to clone this
-    // notification object than to wait for all property access promises
-    // to resolve
-    baseNotification: BaseNotification
-
-    /**
-     * Progress updates to show in this notification (progress bar and status messages).
-     * If this Observable errors, the notification will be changed to an error type.
-     */
-    progress: ProxySubscribable<sourcegraph.Progress>
-}
-
-export interface ViewProviderResult {
-    /** The ID of the view provider. */
-    id: string
-
-    /** The result returned by the provider. */
-    view: sourcegraph.View | undefined | ErrorLike
-}
-
-/**
- * The type of a notification.
- * This is needed because if sourcegraph.NotificationType enum values are referenced,
- * the `sourcegraph` module import at the top of the file is emitted in the generated code.
- */
-export const NotificationType: typeof sourcegraph.NotificationType = {
-    Error: 1,
-    Warning: 2,
-    Info: 3,
-    Log: 4,
-    Success: 5,
 }
 
 // Contributions

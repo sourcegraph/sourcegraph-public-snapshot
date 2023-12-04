@@ -1,87 +1,60 @@
-import { upperFirst, toLower } from 'lodash'
+import React, { useCallback, useMemo } from 'react'
+
+import { toLower, upperFirst } from 'lodash'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { merge, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Position, Range } from '@sourcegraph/extension-api-types'
-import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
-import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable, useLocalStorage } from '@sourcegraph/wildcard'
+import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import type { Position, Range } from '@sourcegraph/extension-api-types'
+import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
+// TODO: Switch mdi icon
+import { HelixSwarmIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
+import type { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { type ButtonLinkProps, Icon, Link, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
-import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
+import { type ExternalLinkFields, ExternalServiceKind, type RepositoryFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
-import { fetchFileExternalLinks } from '../backend'
-import { RepoHeaderActionAnchor } from '../components/RepoHeaderActions'
-import { RepoHeaderContext } from '../RepoHeader'
+import { fetchCommitMessage, fetchFileExternalLinks } from '../backend'
+import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
+import type { RepoHeaderContext } from '../RepoHeader'
 
-import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
-
-interface GoToCodeHostPopoverProps {
-    /**
-     * Whether the GoToCodeHostAction can show a popover to install the browser extension.
-     * It may still not do so if the popover was permanently dismissed.
-     */
-    canShowPopover: boolean
-
-    /**
-     * Called when the popover is dismissed in any way ("No thanks", "Remind me later" or "Install").
-     */
-    onPopoverDismissed: () => void
-}
-
-interface Props extends RevisionSpec, Partial<FileSpec>, GoToCodeHostPopoverProps {
-    repo?: Pick<RepositoryFields, 'name' | 'defaultBranch' | 'externalURLs'> | null
+interface Props extends RevisionSpec, Partial<FileSpec> {
+    repo?: Pick<RepositoryFields, 'name' | 'defaultBranch' | 'externalURLs' | 'externalRepository'> | null
     filePath?: string
     commitRange?: string
-    position?: Position
     range?: Range
+    position?: Position
 
     externalLinks?: ExternalLinkFields[]
+
+    perforceCodeHostUrlToSwarmUrlMap: { [key: string]: string }
 
     fetchFileExternalLinks: typeof fetchFileExternalLinks
 
     actionType?: 'nav' | 'dropdown'
-}
 
-const HAS_PERMANENTLY_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
+    source?: 'repoHeader' | 'actionItemsBar'
+}
 
 /**
  * A repository header action that goes to the corresponding URL on an external code host.
  */
-export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderContext> = props => {
-    const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+export const GoToCodeHostAction: React.FunctionComponent<
+    React.PropsWithChildren<Props & RepoHeaderContext>
+> = props => {
+    const { repo, revision, filePath } = props
 
-    const showPopover = useCallback(() => {
-        eventLogger.log('BrowserExtensionPopupOpened')
-        setIsPopoverOpen(true)
-    }, [])
+    const serviceType = props.repo?.externalRepository?.serviceType
 
-    const closePopover = useCallback(() => {
-        setIsPopoverOpen(false)
-    }, [])
-
-    const { onPopoverDismissed, repo, revision, filePath } = props
-
-    const [hasPermanentlyDismissedPopup, setHasPermanentlyDismissedPopup] = useLocalStorage(
-        HAS_PERMANENTLY_DISMISSED_POPUP_KEY,
-        false
-    )
-
-    // Popover won't work with dropdown
-    const hijackLink = !hasPermanentlyDismissedPopup && props.canShowPopover && props.actionType !== 'dropdown'
-
-    /**
-     * The external links for the current file/dir, or undefined while loading, null while not
-     * needed (because not viewing a file/dir), or an error.
-     */
+    // The external links for the current file/dir, or undefined while loading,
+    // null while not needed (because not viewing a file/dir), or an error.
     const fileExternalLinksOrError = useObservable<ExternalLinkFields[] | null | undefined | ErrorLike>(
         useMemo(() => {
-            if (!repo || !filePath) {
+            if (!repo || !filePath || serviceType === 'perforce') {
                 return of(null)
             }
             return merge(
@@ -90,133 +63,99 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
                     catchError(error => [asError(error)])
                 )
             )
-        }, [repo, revision, filePath])
+        }, [repo, filePath, serviceType, revision])
     )
 
-    /** This is a hard rejection. Never ask the user again. */
-    const onReject = useCallback(() => {
-        setHasPermanentlyDismissedPopup(true)
-        closePopover()
-        onPopoverDismissed()
-
-        eventLogger.log('BrowserExtensionPopupRejected')
-    }, [closePopover, onPopoverDismissed, setHasPermanentlyDismissedPopup])
-
-    /** This is a soft rejection. Called when user clicks 'Remind me later', ESC, or outside of the modal body */
-    const onClose = useCallback(() => {
-        onPopoverDismissed()
-        closePopover()
-
-        eventLogger.log('BrowserExtensionPopupClosed')
-    }, [closePopover, onPopoverDismissed])
-
-    /** The user is likely to install the browser extension at this point, so don't show it again. */
-    const onInstall = useCallback(() => {
-        setHasPermanentlyDismissedPopup(true)
-        closePopover()
-        onPopoverDismissed()
-
-        eventLogger.log('BrowserExtensionPopupClickedInstall')
-    }, [closePopover, onPopoverDismissed, setHasPermanentlyDismissedPopup])
-
-    const onToggle = useCallback(() => {
-        if (isPopoverOpen) {
-            closePopover()
-            return
-        }
-
-        if (hijackLink) {
-            showPopover()
-        }
-    }, [closePopover, hijackLink, isPopoverOpen, showPopover])
-
-    const onClick = useCallback(
-        (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
-            eventLogger.log('GoToCodeHostClicked')
-
-            if (isPopoverOpen) {
-                event.preventDefault()
-                closePopover()
-                return
+    // The commit message, or null if not needed, undefined while loading, also null on error.
+    const perforceCommitMessage = useObservable<string | null | undefined>(
+        useMemo(() => {
+            if (
+                serviceType !== 'perforce' ||
+                !Object.keys(props.perforceCodeHostUrlToSwarmUrlMap).length ||
+                !props.repo
+            ) {
+                return of(null)
             }
-
-            if (hijackLink) {
-                event.preventDefault()
-                showPopover()
-            }
-        },
-        [hijackLink, isPopoverOpen, showPopover, closePopover]
+            return merge(
+                of(undefined),
+                fetchCommitMessage({ repoName: props.repoName, revision: props.revision }).pipe(
+                    catchError(error => {
+                        logger.error('Getting commit message failed', error)
+                        return [null]
+                    })
+                )
+            )
+        }, [serviceType, props.perforceCodeHostUrlToSwarmUrlMap, props.repo, props.repoName, props.revision])
     )
+
+    const onClick = useCallback(() => eventLogger.log('GoToCodeHostClicked'), [])
 
     // If the default branch is undefined, set to HEAD
-    const defaultBranch =
-        (!isErrorLike(props.repo) && props.repo && props.repo.defaultBranch && props.repo.defaultBranch.displayName) ||
-        'HEAD'
+    const defaultBranch = (!isErrorLike(props.repo) && props.repo?.defaultBranch?.displayName) || 'HEAD'
 
-    // If neither repo or file can be loaded, return null, which will hide all code host icons
-    if (!props.repo || isErrorLike(fileExternalLinksOrError)) {
+    // If there's no repo or no file / commit message, return null to hide all code host icons
+    if (!props.repo || (isErrorLike(fileExternalLinksOrError) && !perforceCommitMessage)) {
         return null
     }
 
-    let externalURLs: ExternalLinkFields[]
-    if (props.externalLinks && props.externalLinks.length > 0) {
-        externalURLs = props.externalLinks
-    } else if (
-        fileExternalLinksOrError === null ||
-        fileExternalLinksOrError === undefined ||
-        isErrorLike(fileExternalLinksOrError) ||
-        fileExternalLinksOrError.length === 0
-    ) {
-        // If the external link for the more specific resource within the repository is loading or errored, use the
-        // repository external link.
-        externalURLs = props.repo.externalURLs
-    } else {
-        externalURLs = fileExternalLinksOrError
-    }
-    if (externalURLs.length === 0) {
+    const [serviceKind, url] =
+        serviceType === 'perforce'
+            ? getPerforceServiceKindAndSwarmUrl(
+                  props.perforceCodeHostUrlToSwarmUrlMap,
+                  props.repo.externalRepository.serviceID,
+                  props.repoName,
+                  revision,
+                  perforceCommitMessage,
+                  filePath
+              )
+            : getServiceKindAndGitUrl(
+                  props.externalLinks,
+                  props.repo.externalURLs,
+                  fileExternalLinksOrError,
+                  revision,
+                  defaultBranch,
+                  props.commitRange,
+                  props.range,
+                  props.position
+              )
+    if (!serviceKind || !url) {
         return null
     }
 
-    // Only show the first external link for now.
-    const externalURL = externalURLs[0]
-
-    const { displayName, icon } = serviceKindDisplayNameAndIcon(externalURL.serviceKind)
-    const Icon = icon || ExportIcon
-
-    // Extract url to add branch, line numbers or commit range.
-    let url = externalURL.url
-    if (
-        externalURL.serviceKind === ExternalServiceKind.GITHUB ||
-        externalURL.serviceKind === ExternalServiceKind.GITLAB
-    ) {
-        // If in a branch, add branch path to the code host URL.
-        if (props.revision && props.revision !== defaultBranch && !fileExternalLinksOrError) {
-            url += `/tree/${props.revision}`
-        }
-        // If showing a comparison, add comparison specifier to the code host URL.
-        if (props.commitRange) {
-            url += `/compare/${props.commitRange.replace(/^\.{3}/, 'HEAD...').replace(/\.{3}$/, '...HEAD')}`
-        }
-        // Add range or position path to the code host URL.
-        if (props.range) {
-            const rangeEndPrefix = externalURL.serviceKind === ExternalServiceKind.GITLAB ? '' : 'L'
-            url += `#L${props.range.start.line}-${rangeEndPrefix}${props.range.end.line}`
-        } else if (props.position) {
-            url += `#L${props.position.line}`
-        }
-    }
+    const { displayName, icon } = serviceKindDisplayNameAndIcon(serviceKind)
+    const exportIcon = icon || ExportIcon
 
     const TARGET_ID = 'go-to-code-host'
 
     const descriptiveText = `View on ${displayName}`
 
+    const commonProps: Partial<ButtonLinkProps> = {
+        to: url,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        id: TARGET_ID,
+        onClick,
+        onAuxClick: onClick,
+        className: 'test-go-to-code-host',
+        'aria-label': descriptiveText,
+    }
+
+    if (props.source === 'actionItemsBar') {
+        return (
+            <SimpleActionItem tooltip={descriptiveText} {...commonProps}>
+                <Icon as={exportIcon} aria-hidden={true} />
+            </SimpleActionItem>
+        )
+    }
+
     // Don't show browser extension popover on small screens
     if (props.actionType === 'dropdown') {
         return (
-            <RepoHeaderActionAnchor
+            <RepoHeaderActionMenuLink
+                as={Link}
                 className="test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
-                to={hijackLink ? '' : url}
+                to={url}
                 target="_blank"
                 file={true}
                 rel="noopener noreferrer"
@@ -224,64 +163,153 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
                 onClick={onClick}
                 onAuxClick={onClick}
             >
-                <Icon className="icon-inline" />
+                <Icon as={exportIcon} aria-hidden={true} />
                 <span>{descriptiveText}</span>
-            </RepoHeaderActionAnchor>
+            </RepoHeaderActionMenuLink>
         )
     }
 
     return (
-        <>
-            <RepoHeaderActionAnchor
-                className="btn-icon test-go-to-code-host"
-                // empty href is OK because we always set tabindex=0
-                to={hijackLink ? '' : url}
-                target="_blank"
-                rel="noopener noreferrer"
-                id={TARGET_ID}
-                onClick={onClick}
-                onAuxClick={onClick}
-                data-tooltip={descriptiveText}
-                aria-label={descriptiveText}
-            >
-                <Icon className="icon-inline" />
+        <Tooltip content={descriptiveText}>
+            <RepoHeaderActionAnchor {...commonProps}>
+                <Icon as={exportIcon} aria-hidden={true} />
             </RepoHeaderActionAnchor>
-
-            <InstallBrowserExtensionPopover
-                url={url}
-                onToggle={onToggle}
-                isOpen={isPopoverOpen}
-                serviceKind={externalURL.serviceKind}
-                onClose={onClose}
-                onReject={onReject}
-                onInstall={onInstall}
-                targetID={TARGET_ID}
-            />
-        </>
+        </Tooltip>
     )
 }
 
-export function serviceKindDisplayNameAndIcon(
-    serviceKind: ExternalServiceKind | null
-): { displayName: string; icon?: React.ComponentType<{ className?: string }> } {
+function getServiceKindAndGitUrl(
+    externalLinks: ExternalLinkFields[] | undefined,
+    repoExternalURLs: RepositoryFields['externalURLs'] | undefined,
+    fileExternalLinksOrError: ExternalLinkFields[] | undefined | null | ErrorLike,
+    revision: string,
+    defaultBranch: string,
+    commitRange: string | undefined,
+    range: Range | undefined,
+    position: Position | undefined
+): [ExternalServiceKind | null, string | null] {
+    const externalURLs = getGitExternalURLs(externalLinks, repoExternalURLs, fileExternalLinksOrError)
+
+    if (!externalURLs || externalURLs.length === 0) {
+        return [null, null]
+    }
+
+    // Only show the first external link for now.
+    const serviceKind = externalURLs[0].serviceKind
+
+    let gitUrl = externalURLs[0].url
+    if (serviceKind === ExternalServiceKind.GITHUB || serviceKind === ExternalServiceKind.GITLAB) {
+        // If in a branch, add branch path to the code host URL.
+        if (revision && revision !== defaultBranch && !fileExternalLinksOrError) {
+            gitUrl += `/tree/${revision}`
+        }
+        // If showing a comparison, add comparison specifier to the code host URL.
+        if (commitRange) {
+            gitUrl += `/compare/${commitRange.replace(/^\.{3}/, 'HEAD...').replace(/\.{3}$/, '...HEAD')}`
+        }
+        // Add range or position path to the code host URL.
+        if (range) {
+            const rangeEndPrefix = serviceKind === ExternalServiceKind.GITLAB ? '' : 'L'
+            gitUrl += `#L${range.start.line}-${rangeEndPrefix}${range.end.line}`
+        } else if (position) {
+            gitUrl += `#L${position.line}`
+        }
+    }
+    return [serviceKind, gitUrl]
+}
+
+function getGitExternalURLs(
+    externalLinks: ExternalLinkFields[] | undefined,
+    repoExternalURLs: RepositoryFields['externalURLs'] | undefined,
+    fileExternalLinksOrError: ExternalLinkFields[] | undefined | null | ErrorLike
+): ExternalLinkFields[] | undefined {
+    if (externalLinks && externalLinks.length > 0) {
+        return externalLinks
+    }
+    if (
+        fileExternalLinksOrError === null ||
+        fileExternalLinksOrError === undefined ||
+        isErrorLike(fileExternalLinksOrError) ||
+        fileExternalLinksOrError.length === 0
+    ) {
+        // If the external link for the more specific resource within the repository is loading or errored, use the
+        // repository external link.
+        return repoExternalURLs
+    }
+
+    return fileExternalLinksOrError
+}
+
+/**
+ * @param perforceCodeHostUrlToSwarmUrlMap Keys should have no prefix and should not end with a slash. Like "perforce.company.com:1666"
+ * Values should look like "https://swarm.company.com/", with a slash at the end.
+ * @param serviceID is the Perforce hostname, like "perforce.company.com:1666"
+ * @param repoName is like "some-repo-name", probably always the depot name without the slashes - TODO: Use this once we figure out the URL format
+ * @param revision is the branch name, like "main" - TODO: Use this once we figure out the URL format
+ * @param commitMessage should be like "Test\n[git-p4: depot-paths = \"//some-depot-path/\": change = 91512]". Only the end is used.
+ * @param filePath is like "test/1.js" - TODO: Use this once we figure out the URL format
+ */
+function getPerforceServiceKindAndSwarmUrl(
+    perforceCodeHostUrlToSwarmUrlMap: { [key: string]: string },
+    serviceID: string,
+    repoName: string,
+    revision: string,
+    commitMessage: string | undefined | null,
+    filePath: string | undefined
+): [ExternalServiceKind | null, string | null] {
+    if (!commitMessage) {
+        return [null, null]
+    }
+    if (!Object.keys(perforceCodeHostUrlToSwarmUrlMap).includes(serviceID)) {
+        return [null, null]
+    }
+    const changelistNumber = getPerforceChangelistNumberFromCommitMessage(commitMessage)
+    if (!changelistNumber) {
+        return [null, null]
+    }
+    return [ExternalServiceKind.PERFORCE, perforceCodeHostUrlToSwarmUrlMap[serviceID] + changelistNumber]
+}
+
+function getPerforceChangelistNumberFromCommitMessage(commitMessage: string): string | null {
+    const changeIndex = commitMessage.lastIndexOf('change = ')
+    if (changeIndex === -1) {
+        return null
+    }
+    return commitMessage.slice(changeIndex + 9, -1)
+}
+
+export function serviceKindDisplayNameAndIcon(serviceKind: ExternalServiceKind | null): {
+    displayName: string
+    icon?: React.ComponentType<{ className?: string }>
+} {
     if (!serviceKind) {
         return { displayName: 'code host' }
     }
 
     switch (serviceKind) {
-        case ExternalServiceKind.GITHUB:
+        case ExternalServiceKind.GITHUB: {
             return { displayName: 'GitHub', icon: GithubIcon }
-        case ExternalServiceKind.GITLAB:
+        }
+        case ExternalServiceKind.GITLAB: {
             return { displayName: 'GitLab', icon: GitlabIcon }
-        case ExternalServiceKind.BITBUCKETSERVER:
+        }
+        case ExternalServiceKind.BITBUCKETSERVER: {
             return { displayName: 'Bitbucket Server', icon: BitbucketIcon }
-        case ExternalServiceKind.BITBUCKETCLOUD:
+        }
+        case ExternalServiceKind.BITBUCKETCLOUD: {
             return { displayName: 'Bitbucket Cloud', icon: BitbucketIcon }
-        case ExternalServiceKind.PHABRICATOR:
+        }
+        case ExternalServiceKind.PERFORCE: {
+            return { displayName: 'Swarm', icon: HelixSwarmIcon }
+        }
+        case ExternalServiceKind.PHABRICATOR: {
             return { displayName: 'Phabricator', icon: PhabricatorIcon }
-        case ExternalServiceKind.AWSCODECOMMIT:
+        }
+        case ExternalServiceKind.AWSCODECOMMIT: {
             return { displayName: 'AWS CodeCommit' }
-        default:
+        }
+        default: {
             return { displayName: upperFirst(toLower(serviceKind)) }
+        }
     }
 }

@@ -1,14 +1,15 @@
+import React from 'react'
+
+import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { omit } from 'lodash'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React from 'react'
 import useResizeObserver from 'use-resize-observer'
 
 import { createAggregateError } from '@sourcegraph/common'
 
 import { useOffsetPagination, useDebounce } from '../../hooks'
 import { Button } from '../Button'
+import { Icon } from '../Icon'
 
 import styles from './PageSelector.module.scss'
 
@@ -16,7 +17,11 @@ interface PageButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
     active?: boolean
 }
 
-const PageButton: React.FunctionComponent<PageButtonProps> = ({ children, active, ...props }) => (
+const PageButton: React.FunctionComponent<React.PropsWithChildren<PageButtonProps>> = ({
+    children,
+    active,
+    ...props
+}) => (
     <Button
         className={classNames('mx-1', styles.button)}
         variant={active ? 'primary' : 'link'}
@@ -65,7 +70,7 @@ const validateProps = (props: PageSelectorProps): void => {
  * PageSelector should be used to render offset-pagination controls.
  * It is a controlled-component, the `currentPage` should be controlled by the consumer.
  */
-export const PageSelector: React.FunctionComponent<PageSelectorProps> = props => {
+export const PageSelector: React.FunctionComponent<React.PropsWithChildren<PageSelectorProps>> = props => {
     validateProps(props)
 
     const { totalPages, currentPage, className, onPageChange } = props
@@ -87,13 +92,9 @@ export const PageSelector: React.FunctionComponent<PageSelectorProps> = props =>
                         return (
                             <li key={key}>
                                 <PageButton {...omit(page, 'type')}>
-                                    {page.type === 'previous' && (
-                                        <ChevronLeftIcon className="icon-inline" aria-hidden={true} />
-                                    )}
+                                    {page.type === 'previous' && <Icon aria-hidden={true} svgPath={mdiChevronLeft} />}
                                     <span className={classNames(shouldShrink && 'd-none')}>{page.content}</span>
-                                    {page.type === 'next' && (
-                                        <ChevronRightIcon className="icon-inline" aria-hidden={true} />
-                                    )}
+                                    {page.type === 'next' && <Icon aria-hidden={true} svgPath={mdiChevronRight} />}
                                 </PageButton>
                             </li>
                         )

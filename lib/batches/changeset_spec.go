@@ -35,7 +35,7 @@ func ParseChangesetSpec(rawSpec []byte) (*ChangesetSpec, error) {
 
 // ParseChangesetSpecExternalID attempts to parse the ID of a changeset in the
 // batch spec that should be imported.
-func ParseChangesetSpecExternalID(id interface{}) (string, error) {
+func ParseChangesetSpecExternalID(id any) (string, error) {
 	var sid string
 
 	switch tid := id.(type) {
@@ -76,6 +76,7 @@ type ChangesetSpec struct {
 
 	Title string `json:"title,omitempty"`
 	Body  string `json:"body,omitempty"`
+	Fork  *bool  `json:"fork,omitempty"`
 
 	Commits []GitCommitDescription `json:"commits,omitempty"`
 
@@ -102,6 +103,7 @@ func (c *ChangesetSpec) MarshalJSON() ([]byte, error) {
 		Body           string                 `json:"body,omitempty"`
 		Commits        []GitCommitDescription `json:"commits,omitempty"`
 		Published      *PublishedValue        `json:"published,omitempty"`
+		Fork           *bool                  `json:"fork,omitempty"`
 	}{
 		BaseRepository: c.BaseRepository,
 		ExternalID:     c.ExternalID,
@@ -112,6 +114,7 @@ func (c *ChangesetSpec) MarshalJSON() ([]byte, error) {
 		Title:          c.Title,
 		Body:           c.Body,
 		Commits:        c.Commits,
+		Fork:           c.Fork,
 	}
 	if !c.Published.Nil() {
 		v.Published = &c.Published
@@ -120,6 +123,66 @@ func (c *ChangesetSpec) MarshalJSON() ([]byte, error) {
 }
 
 type GitCommitDescription struct {
+	Version     int    `json:"version,omitempty"`
+	Message     string `json:"message,omitempty"`
+	Diff        []byte `json:"diff,omitempty"`
+	AuthorName  string `json:"authorName,omitempty"`
+	AuthorEmail string `json:"authorEmail,omitempty"`
+}
+
+func (a GitCommitDescription) MarshalJSON() ([]byte, error) {
+	if a.Version == 2 {
+		return json.Marshal(v2GitCommitDescription(a))
+	}
+	return json.Marshal(v1GitCommitDescription{
+		Message:     a.Message,
+		Diff:        string(a.Diff),
+		AuthorName:  a.AuthorName,
+		AuthorEmail: a.AuthorEmail,
+	})
+}
+
+func (a *GitCommitDescription) UnmarshalJSON(data []byte) error {
+	var version versionGitCommitDescription
+	if err := json.Unmarshal(data, &version); err != nil {
+		return err
+	}
+	if version.Version == 2 {
+		var v2 v2GitCommitDescription
+		if err := json.Unmarshal(data, &v2); err != nil {
+			return err
+		}
+		a.Version = v2.Version
+		a.Message = v2.Message
+		a.Diff = v2.Diff
+		a.AuthorName = v2.AuthorName
+		a.AuthorEmail = v2.AuthorEmail
+		return nil
+	}
+	var v1 v1GitCommitDescription
+	if err := json.Unmarshal(data, &v1); err != nil {
+		return err
+	}
+	a.Message = v1.Message
+	a.Diff = []byte(v1.Diff)
+	a.AuthorName = v1.AuthorName
+	a.AuthorEmail = v1.AuthorEmail
+	return nil
+}
+
+type versionGitCommitDescription struct {
+	Version int `json:"version,omitempty"`
+}
+
+type v2GitCommitDescription struct {
+	Version     int    `json:"version,omitempty"`
+	Message     string `json:"message,omitempty"`
+	Diff        []byte `json:"diff,omitempty"`
+	AuthorName  string `json:"authorName,omitempty"`
+	AuthorEmail string `json:"authorEmail,omitempty"`
+}
+
+type v1GitCommitDescription struct {
 	Message     string `json:"message,omitempty"`
 	Diff        string `json:"diff,omitempty"`
 	AuthorName  string `json:"authorName,omitempty"`
@@ -134,7 +197,7 @@ func (d *ChangesetSpec) Type() ChangesetSpecDescriptionType {
 	return ChangesetSpecDescriptionTypeBranch
 }
 
-// IsExisting returns whether the description is of type
+// IsImportingExisting returns whether the description is of type
 // ChangesetSpecDescriptionTypeExisting.
 func (d *ChangesetSpec) IsImportingExisting() bool {
 	return d.Type() == ChangesetSpecDescriptionTypeExisting
@@ -166,9 +229,9 @@ var ErrNoCommits = errors.New("changeset description doesn't contain commit desc
 //
 // We currently only support a single commit in Commits. Once we support more,
 // this method will need to be revisited.
-func (d *ChangesetSpec) Diff() (string, error) {
+func (d *ChangesetSpec) Diff() ([]byte, error) {
 	if len(d.Commits) == 0 {
-		return "", ErrNoCommits
+		return nil, ErrNoCommits
 	}
 	return d.Commits[0].Diff, nil
 }

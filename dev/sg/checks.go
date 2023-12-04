@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"net/url"
 	"os"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -14,16 +17,13 @@ import (
 	"github.com/jackc/pgx/v4"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-// NOTE: These checkFuncs are also used by `sg setup`, so make sure that when
-// you change something here `sg setup` still works as expected.
 var checks = map[string]check.CheckFunc{
 	"sourcegraph-database":  checkSourcegraphDatabase,
 	"postgres":              check.Any(checkSourcegraphDatabase, checkPostgresConnection),
@@ -33,31 +33,24 @@ var checks = map[string]check.CheckFunc{
 	"caddy-trusted":         checkCaddyTrusted,
 	"asdf":                  check.CommandOutputContains("asdf", "version"),
 	"git":                   check.Combine(check.InPath("git"), checkGitVersion(">= 2.34.1")),
-	"yarn":                  check.Combine(check.InPath("yarn"), checkYarnVersion("~> 1.22.4")),
-	"go":                    check.Combine(check.InPath("go"), checkGoVersion("1.17.5")),
+	"pnpm":                  check.Combine(check.InPath("pnpm"), checkPnpmVersion(">= 8.3.0")),
+	"go":                    check.Combine(check.InPath("go"), checkGoVersion("~> 1.21.4")),
 	"node":                  check.Combine(check.InPath("node"), check.CommandOutputContains(`node -e "console.log(\"foobar\")"`, "foobar")),
+	"rust":                  check.Combine(check.InPath("cargo"), check.CommandOutputContains(`cargo version`, "1.58.0")),
 	"docker-installed":      check.WrapErrMessage(check.InPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
 	"docker": check.WrapErrMessage(
 		check.Combine(check.InPath("docker"), check.CommandExitCode("docker info", 0)),
 		"Docker needs to be running",
 	),
-}
-
-func getCheck(name string) check.CheckFunc {
-	return func(ctx context.Context) error {
-		fn, ok := checks[name]
-		if !ok {
-			return errors.Newf("check %q not found", name)
-		}
-		return fn(ctx)
-	}
+	"ibazel":   check.WrapErrMessage(check.InPath("ibazel"), "brew install ibazel"),
+	"bazelisk": check.WrapErrMessage(check.InPath("bazelisk"), "brew install bazelisk"),
 }
 
 func runChecksWithName(ctx context.Context, names []string) error {
 	funcs := make(map[string]check.CheckFunc, len(names))
 	for _, name := range names {
-		if check, ok := checks[name]; ok {
-			funcs[name] = check
+		if c, ok := checks[name]; ok {
+			funcs[name] = c
 		} else {
 			return errors.Newf("check %q not found", name)
 		}
@@ -71,22 +64,32 @@ func runChecks(ctx context.Context, checks map[string]check.CheckFunc) error {
 		return nil
 	}
 
-	stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Running %d checks...", len(checks)))
+	std.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Running %d checks...", len(checks)))
 
 	ctx, err := usershell.Context(ctx)
 	if err != nil {
 		return err
 	}
 
+	// Scripts used in various CheckFuncs are typically written with bash-compatible shells in mind.
+	// Because of this, we throw a warning in non-compatible shells and ask that
+	// users set up environments in both their shell and bash to avoid issues.
+	if !usershell.IsSupportedShell(ctx) {
+		shell := usershell.ShellType(ctx)
+		std.Out.WriteWarningf("You're running on unsupported shell '%s'. "+
+			"If you run into error, you may run 'SHELL=(which bash) sg setup' to setup your environment.",
+			shell)
+	}
+
 	var failed []string
 
-	for name, check := range checks {
-		p := stdout.Out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", name))
+	for name, c := range checks {
+		p := std.Out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", name))
 
-		if err := check(ctx); err != nil {
+		if err := c(ctx); err != nil {
 			p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Check %q failed with the following errors:", name))
 
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "%s", err))
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "%s", err))
 
 			failed = append(failed, name)
 		} else {
@@ -98,47 +101,17 @@ func runChecks(ctx context.Context, checks map[string]check.CheckFunc) error {
 		return nil
 	}
 
-	stdout.Out.Write("")
-	stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleBold, "The following checks failed:"))
+	std.Out.Write("")
+	std.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleBold, "The following checks failed:"))
 	for _, name := range failed {
-		stdout.Out.Writef("- %s", name)
+		std.Out.Writef("- %s", name)
 	}
 
-	stdout.Out.Write("")
-	writeFingerPointingLinef("Run 'sg setup' to make sure your system is setup correctly")
-	stdout.Out.Write("")
+	std.Out.Write("")
+	std.Out.WriteSuggestionf("Run 'sg setup' to make sure your system is setup correctly")
+	std.Out.Write("")
 
 	return errors.Newf("%d failed checks", len(failed))
-}
-
-func checkInMainRepoOrRepoInDirectory(context.Context) error {
-	_, err := root.RepositoryRoot()
-	if err != nil {
-		ok, err := pathExists("sourcegraph")
-		if !ok || err != nil {
-			return errors.New("'sg setup' is not run in sourcegraph and repository is also not found in current directory")
-		}
-		return nil
-	}
-	return nil
-}
-
-func checkDevPrivateInParentOrInCurrentDirectory(context.Context) error {
-	ok, err := pathExists("dev-private")
-	if ok && err == nil {
-		return nil
-	}
-	wd, err := os.Getwd()
-	if err != nil {
-		return errors.Wrap(err, "failed to check for dev-private repository")
-	}
-
-	p := filepath.Join(wd, "..", "dev-private")
-	ok, err = pathExists(p)
-	if ok && err == nil {
-		return nil
-	}
-	return errors.New("could not find dev-private repository either in current directory or one above")
 }
 
 // checkPostgresConnection succeeds connecting to the default user database works, regardless
@@ -219,8 +192,8 @@ func checkSourcegraphDatabase(ctx context.Context) error {
 	// This check runs only in the `sourcegraph/sourcegraph` repository, so
 	// we try to parse the globalConf and use its `Env` to configure the
 	// Postgres connection.
-	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
-	if !ok {
+	config, _ := getConfig()
+	if config == nil {
 		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
 	}
 
@@ -232,13 +205,13 @@ func checkSourcegraphDatabase(ctx context.Context) error {
 			return val
 		}
 		// Otherwise check in globalConf.Env
-		return globalConf.Env[key]
+		return config.Env[key]
 	}
 
 	dsn := postgresdsn.New("", "", getEnv)
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
-		return errors.Wrapf(err, "failed to connect to Soucegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
+		return errors.Wrapf(err, "failed to connect to Sourcegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
 	}
 	defer conn.Close(ctx)
 	return conn.Ping(ctx)
@@ -273,8 +246,8 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 		}
 
 		elems := strings.Split(string(out), " ")
-		if len(elems) != 3 {
-			return errors.Newf("unexpected output from git server: %s", out)
+		if len(elems) != 3 && len(elems) != 5 {
+			return errors.Newf("unexpected output from git: %s", out)
 		}
 
 		trimmed := strings.TrimSpace(elems[2])
@@ -295,15 +268,15 @@ func checkGoVersion(versionConstraint string) func(context.Context) error {
 			return errors.Newf("unexpected output from %q: %s", out)
 		}
 
-		haveVersion := strings.TrimLeft(elems[2], "go")
+		haveVersion := strings.TrimPrefix(elems[2], "go")
 
 		return check.Version("go", haveVersion, versionConstraint)
 	}
 }
 
-func checkYarnVersion(versionConstraint string) func(context.Context) error {
+func checkPnpmVersion(versionConstraint string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		cmd := "yarn --version"
+		cmd := "pnpm --version"
 		out, err := usershell.CombinedExec(ctx, cmd)
 		if err != nil {
 			return errors.Wrapf(err, "failed to run %q", cmd)
@@ -315,6 +288,76 @@ func checkYarnVersion(versionConstraint string) func(context.Context) error {
 		}
 
 		trimmed := strings.TrimSpace(elems[0])
-		return check.Version("yarn", trimmed, versionConstraint)
+		return check.Version("pnpm", trimmed, versionConstraint)
 	}
+}
+
+func checkCaddyTrusted(_ context.Context) error {
+	certPath, err := caddySourcegraphCertificatePath()
+	if err != nil {
+		return errors.Wrap(err, "failed to determine path where proxy stores certificates")
+	}
+
+	ok, err := pathExists(certPath)
+	if !ok || err != nil {
+		return errors.New("sourcegraph.test certificate not found. highly likely it's not trusted by system")
+	}
+
+	rawCert, err := os.ReadFile(certPath)
+	if err != nil {
+		return errors.Wrap(err, "could not read certificate")
+	}
+
+	cert, err := pemDecodeSingleCert(rawCert)
+	if err != nil {
+		return errors.Wrap(err, "decoding cert failed")
+	}
+
+	if trusted(cert) {
+		return nil
+	}
+	return errors.New("doesn't look like certificate is trusted")
+}
+
+// caddyAppDataDir returns the location of the sourcegraph.test certificate
+// that Caddy created or would create.
+//
+// It's copy&pasted&modified from here: https://sourcegraph.com/github.com/caddyserver/caddy@9ee68c1bd57d72e8a969f1da492bd51bfa5ed9a0/-/blob/storage.go?L114
+func caddySourcegraphCertificatePath() (string, error) {
+	if basedir := os.Getenv("XDG_DATA_HOME"); basedir != "" {
+		return filepath.Join(basedir, "caddy"), nil
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	var appDataDir string
+	switch runtime.GOOS {
+	case "darwin":
+		appDataDir = filepath.Join(home, "Library", "Application Support", "Caddy")
+	case "linux":
+		appDataDir = filepath.Join(home, ".local", "share", "caddy")
+	default:
+		return "", errors.Newf("unsupported OS: %s", runtime.GOOS)
+	}
+
+	return filepath.Join(appDataDir, "pki", "authorities", "local", "root.crt"), nil
+}
+
+func trusted(cert *x509.Certificate) bool {
+	chains, err := cert.Verify(x509.VerifyOptions{})
+	return len(chains) > 0 && err == nil
+}
+
+func pemDecodeSingleCert(pemDER []byte) (*x509.Certificate, error) {
+	pemBlock, _ := pem.Decode(pemDER)
+	if pemBlock == nil {
+		return nil, errors.Newf("no PEM block found")
+	}
+	if pemBlock.Type != "CERTIFICATE" {
+		return nil, errors.Newf("expected PEM block type to be CERTIFICATE, but got '%s'", pemBlock.Type)
+	}
+	return x509.ParseCertificate(pemBlock.Bytes)
 }

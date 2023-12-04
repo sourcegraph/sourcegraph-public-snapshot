@@ -15,16 +15,16 @@ type metricHooks struct {
 var _ sqlhooks.Hooks = &metricHooks{}
 var _ sqlhooks.OnErrorer = &metricHooks{}
 
-func (h *metricHooks) Before(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
+func (h *metricHooks) Before(ctx context.Context, query string, args ...any) (context.Context, error) {
 	return ctx, nil
 }
 
-func (h *metricHooks) After(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
+func (h *metricHooks) After(ctx context.Context, query string, args ...any) (context.Context, error) {
 	h.metricSQLSuccessTotal.Inc()
 	return ctx, nil
 }
 
-func (h *metricHooks) OnError(ctx context.Context, err error, query string, args ...interface{}) error {
+func (h *metricHooks) OnError(ctx context.Context, err error, query string, args ...any) error {
 	h.metricSQLErrorTotal.Inc()
 	return err
 }

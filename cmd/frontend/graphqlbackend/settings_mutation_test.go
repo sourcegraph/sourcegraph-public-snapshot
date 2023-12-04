@@ -10,16 +10,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestSettingsMutation_EditSettings(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
 
-	settings := database.NewMockSettingsStore()
+	settings := dbmocks.NewMockSettingsStore()
 	settings.GetLatestFunc.SetDefaultReturn(&api.Settings{ID: 1, Contents: "{}"}, nil)
 	settings.CreateIfUpToDateFunc.SetDefaultHook(func(ctx context.Context, subject api.SettingsSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
 		if want := `{
@@ -32,7 +33,7 @@ func TestSettingsMutation_EditSettings(t *testing.T) {
 		return &api.Settings{ID: 2, Contents: contents}, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SettingsFunc.SetDefaultReturn(settings)
 
@@ -51,7 +52,7 @@ func TestSettingsMutation_EditSettings(t *testing.T) {
 					}
 				}
 			`,
-			Variables: map[string]interface{}{"value": map[string]int{"x": 123}},
+			Variables: map[string]any{"value": map[string]int{"x": 123}},
 			ExpectedResult: `
 				{
 					"settingsMutation": {
@@ -66,11 +67,11 @@ func TestSettingsMutation_EditSettings(t *testing.T) {
 }
 
 func TestSettingsMutation_OverwriteSettings(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
 
-	settings := database.NewMockSettingsStore()
+	settings := dbmocks.NewMockSettingsStore()
 	settings.GetLatestFunc.SetDefaultReturn(&api.Settings{ID: 1, Contents: "{}"}, nil)
 	settings.CreateIfUpToDateFunc.SetDefaultHook(func(ctx context.Context, subject api.SettingsSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
 		if want := `x`; contents != want {
@@ -79,7 +80,7 @@ func TestSettingsMutation_OverwriteSettings(t *testing.T) {
 		return &api.Settings{ID: 2, Contents: contents}, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SettingsFunc.SetDefaultReturn(settings)
 
@@ -98,7 +99,7 @@ func TestSettingsMutation_OverwriteSettings(t *testing.T) {
 					}
 				}
 			`,
-			Variables: map[string]interface{}{"contents": "x"},
+			Variables: map[string]any{"contents": "x"},
 			ExpectedResult: `
 				{
 					"settingsMutation": {
@@ -113,9 +114,9 @@ func TestSettingsMutation_OverwriteSettings(t *testing.T) {
 }
 
 func TestSettingsMutation(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
@@ -157,7 +158,7 @@ func TestSettingsMutation(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db).SettingsMutation(
+				_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).SettingsMutation(
 					test.ctx,
 					&settingsMutationArgs{
 						Input: &settingsMutationGroupInput{

@@ -1,6 +1,6 @@
 import { DiffHunkLineType } from '../../graphql-operations'
 
-import { Hunk } from './DiffSplitHunk'
+import type { Hunk } from './DiffSplitHunk'
 
 export const addLineNumberToHunks = (
     hunks: {

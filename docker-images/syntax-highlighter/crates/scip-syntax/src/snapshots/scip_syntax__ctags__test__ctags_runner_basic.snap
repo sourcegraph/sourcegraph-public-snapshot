@@ -1,0 +1,10 @@
+---
+source: crates/scip-syntax/src/ctags.rs
+expression: output
+---
+{"_type":"program","name":"SCIP Ctags","version":"5.9.0"}
+{"_type":"tag","name":"other","path":"main.rs","language":"rust","line":6,"kind":"function","scope":null}
+{"_type":"tag","name":"something","path":"main.rs","language":"rust","line":5,"kind":"function","scope":null}
+{"_type":"tag","name":"main","path":"main.rs","language":"rust","line":1,"kind":"function","scope":null}
+{"_type":"completed","command":"generate-tags"}
+

@@ -1,4 +1,4 @@
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { isFirefox } from '@sourcegraph/common'

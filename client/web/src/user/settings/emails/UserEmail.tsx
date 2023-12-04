@@ -1,18 +1,18 @@
-import React, { useState, FunctionComponent } from 'react'
+import { type FunctionComponent, useState, useCallback } from 'react'
 
-import { asError, ErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Badge, Button } from '@sourcegraph/wildcard'
+import { Badge, Button, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import {
-    UserEmailsResult,
+import type {
     RemoveUserEmailResult,
     RemoveUserEmailVariables,
-    SetUserEmailVerifiedResult,
-    SetUserEmailVerifiedVariables,
     ResendVerificationEmailResult,
     ResendVerificationEmailVariables,
+    SetUserEmailVerifiedResult,
+    SetUserEmailVerifiedVariables,
+    UserEmailsResult,
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -21,16 +21,44 @@ import styles from './UserEmail.module.scss'
 interface Props {
     user: string
     email: (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
+    disableControls: boolean
     onError: (error: ErrorLike) => void
-
     onDidRemove?: (email: string) => void
     onEmailVerify?: () => void
     onEmailResendVerification?: () => void
 }
 
-export const UserEmail: FunctionComponent<Props> = ({
+export const resendVerificationEmail = async (
+    userID: string,
+    email: string,
+    options?: { onSuccess: () => void; onError: (error: ErrorLike) => void }
+): Promise<void> => {
+    try {
+        dataOrThrowErrors(
+            await requestGraphQL<ResendVerificationEmailResult, ResendVerificationEmailVariables>(
+                gql`
+                    mutation ResendVerificationEmail($userID: ID!, $email: String!) {
+                        resendVerificationEmail(user: $userID, email: $email) {
+                            alwaysNil
+                        }
+                    }
+                `,
+                { userID, email }
+            ).toPromise()
+        )
+
+        eventLogger.log('UserEmailAddressVerificationResent')
+
+        options?.onSuccess?.()
+    } catch (error) {
+        options?.onError?.(error)
+    }
+}
+
+export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
     user,
     email: { email, isPrimary, verified, verificationPending, viewerCanManuallyVerify },
+    disableControls,
     onError,
     onDidRemove,
     onEmailVerify,
@@ -38,10 +66,13 @@ export const UserEmail: FunctionComponent<Props> = ({
 }) => {
     const [isLoading, setIsLoading] = useState(false)
 
-    const handleError = (error: ErrorLike): void => {
-        onError(asError(error))
-        setIsLoading(false)
-    }
+    const handleError = useCallback(
+        (error: ErrorLike): void => {
+            onError(asError(error))
+            setIsLoading(false)
+        },
+        [onError, setIsLoading]
+    )
 
     const removeEmail = async (): Promise<void> => {
         setIsLoading(true)
@@ -62,6 +93,7 @@ export const UserEmail: FunctionComponent<Props> = ({
 
             setIsLoading(false)
             eventLogger.log('UserEmailAddressDeleted')
+            screenReaderAnnounce('Email address removed')
 
             if (onDidRemove) {
                 onDidRemove(email)
@@ -104,39 +136,29 @@ export const UserEmail: FunctionComponent<Props> = ({
         }
     }
 
-    const resendEmailVerification = async (email: string): Promise<void> => {
+    const resendEmail = useCallback(async () => {
         setIsLoading(true)
-
-        try {
-            dataOrThrowErrors(
-                await requestGraphQL<ResendVerificationEmailResult, ResendVerificationEmailVariables>(
-                    gql`
-                        mutation ResendVerificationEmail($user: ID!, $email: String!) {
-                            resendVerificationEmail(user: $user, email: $email) {
-                                alwaysNil
-                            }
-                        }
-                    `,
-                    { user, email }
-                ).toPromise()
-            )
-
-            setIsLoading(false)
-            eventLogger.log('UserEmailAddressVerificationResent')
-
-            onEmailResendVerification?.()
-        } catch (error) {
-            handleError(error)
-        }
-    }
+        await resendVerificationEmail(user, email, {
+            onSuccess: () => {
+                setIsLoading(false)
+                onEmailResendVerification?.()
+            },
+            onError: handleError,
+        })
+    }, [user, email, onEmailResendVerification, handleError])
 
     return (
         <>
             <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex align-items-center">
                     <span className="mr-2">{email}</span>
+                    {/*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */}
                     {verified && (
-                        <Badge variant="success" className="mr-1">
+                        <Badge variant="success" className="mr-1 a11y-ignore">
                             Verified
                         </Badge>
                     )}
@@ -155,8 +177,8 @@ export const UserEmail: FunctionComponent<Props> = ({
                             <span className={styles.dot}>&bull;&nbsp;</span>
                             <Button
                                 className="p-0"
-                                onClick={() => resendEmailVerification(email)}
-                                disabled={isLoading}
+                                onClick={resendEmail}
+                                disabled={isLoading || disableControls}
                                 variant="link"
                             >
                                 Resend verification email
@@ -169,14 +191,19 @@ export const UserEmail: FunctionComponent<Props> = ({
                         <Button
                             className="p-0"
                             onClick={() => updateEmailVerification(!verified)}
-                            disabled={isLoading}
+                            disabled={isLoading || disableControls}
                             variant="link"
                         >
                             {verified ? 'Mark as unverified' : 'Mark as verified'}
                         </Button>
                     )}{' '}
                     {!isPrimary && (
-                        <Button className="text-danger p-0" onClick={removeEmail} disabled={isLoading} variant="link">
+                        <Button
+                            className="text-danger p-0"
+                            onClick={removeEmail}
+                            disabled={isLoading || disableControls}
+                            variant="link"
+                        >
                             Remove
                         </Button>
                     )}

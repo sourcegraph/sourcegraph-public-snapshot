@@ -1,12 +1,16 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useEffect } from 'react'
+
+import { mdiMapSearch } from '@mdi/js'
 
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
+import { Container, Icon } from '@sourcegraph/wildcard'
+
+import { dismissAlert } from '../../../components/DismissibleAlert'
 import {
-    useConnection,
-    UseConnectionResult,
-} from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+    useShowMorePagination,
+    type UseShowMorePaginationResult,
+} from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -15,11 +19,8 @@ import {
     ConnectionSummary,
     ShowMoreButton,
     SummaryContainer,
-} from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { Container } from '@sourcegraph/wildcard'
-
-import { dismissAlert } from '../../../components/DismissibleAlert'
-import {
+} from '../../../components/FilteredConnection/ui'
+import type {
     BatchChangeBulkOperationsResult,
     BatchChangeBulkOperationsVariables,
     BulkOperationFields,
@@ -33,14 +34,16 @@ export interface BulkOperationsTabProps {
     batchChangeID: Scalars['ID']
 }
 
-export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> = ({ batchChangeID }) => {
+export const BulkOperationsTab: React.FunctionComponent<React.PropsWithChildren<BulkOperationsTabProps>> = ({
+    batchChangeID,
+}) => {
     const { connection, error, loading, fetchMore, hasNextPage } = useBulkOperationsListConnection(batchChangeID)
 
     return (
         <Container>
             <ConnectionContainer>
                 {error && <ConnectionError errors={[error.message]} />}
-                <ConnectionList className="list-group list-group-flush">
+                <ConnectionList className="list-group list-group-flush" aria-label="bulk operations">
                     {connection?.nodes?.map(node => (
                         <BulkOperationNode key={node.id} node={node} />
                     ))}
@@ -50,6 +53,7 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
                     <SummaryContainer centered={true}>
                         <ConnectionSummary
                             noSummaryIfAllNodesVisible={true}
+                            centered={true}
                             first={BATCH_COUNT}
                             connection={connection}
                             noun="bulk operation"
@@ -57,7 +61,7 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
                             hasNextPage={hasNextPage}
                             emptyElement={<EmptyBulkOperationsListElement />}
                         />
-                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                        {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                     </SummaryContainer>
                 )}
             </ConnectionContainer>
@@ -65,17 +69,19 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
     )
 }
 
-const EmptyBulkOperationsListElement: React.FunctionComponent<{}> = () => (
+const EmptyBulkOperationsListElement: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className="text-muted text-center mb-3 w-100">
-        <MapSearchIcon className="icon" />
+        <Icon className="icon" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
         <div className="pt-2">No bulk operations have been run on this batch change.</div>
     </div>
 )
 
 const BATCH_COUNT = 15
 
-const useBulkOperationsListConnection = (batchChangeID: Scalars['ID']): UseConnectionResult<BulkOperationFields> => {
-    const { connection, startPolling, stopPolling, ...rest } = useConnection<
+const useBulkOperationsListConnection = (
+    batchChangeID: Scalars['ID']
+): UseShowMorePaginationResult<BatchChangeBulkOperationsResult, BulkOperationFields> => {
+    const { connection, startPolling, stopPolling, ...rest } = useShowMorePagination<
         BatchChangeBulkOperationsResult,
         BatchChangeBulkOperationsVariables,
         BulkOperationFields

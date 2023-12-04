@@ -11,9 +11,34 @@
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "ADMIN",
-    "StargazerCount": 17722,
-    "ForkCount": 1101
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "load-testing"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "go"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "benchmarking"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "http"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 22111,
+    "ForkCount": 1363,
+    "DiskUsage": 2553
    }
   ],
   "TotalCount": 1,

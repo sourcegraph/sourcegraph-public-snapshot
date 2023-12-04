@@ -1,14 +1,15 @@
-import { isErrorLike } from '@sourcegraph/common'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { startCase } from 'lodash'
 
-import { AuthenticatedUser } from '../auth'
-import { LayoutProps } from '../Layout'
-import { parseSearchURLPatternType } from '../search'
+import { isErrorLike } from '@sourcegraph/common'
+import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchMode } from '@sourcegraph/shared/src/search'
+import type { SettingsCascadeOrError, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
+
+import type { AuthenticatedUser } from '../auth'
+import type { LegacyLayoutProps } from '../LegacyLayout'
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
-export function siteSubjectNoAdmin(): Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> {
+export function siteSubjectNoAdmin(): SettingsSubjectCommonFields {
     return {
         id: window.context.siteGQLID,
         viewerCanAdminister: false,
@@ -18,7 +19,7 @@ export function siteSubjectNoAdmin(): Pick<GQL.ISettingsSubject, 'id' | 'viewerC
 export function viewerSubjectFromSettings(
     cascade: SettingsCascadeOrError,
     authenticatedUser?: AuthenticatedUser | null
-): LayoutProps['viewerSubject'] {
+): LegacyLayoutProps['viewerSubject'] {
     if (authenticatedUser) {
         return authenticatedUser
     }
@@ -28,32 +29,58 @@ export function viewerSubjectFromSettings(
     return siteSubjectNoAdmin()
 }
 
-export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeOrError): SearchPatternType | undefined {
-    // When the web app mounts, if the current page does not have a patternType URL
-    // parameter, set the search pattern type to the defaultPatternType from settings
-    // (if it is set), otherwise default to literal.
-    //
-    // For search result URLs that have no patternType= query parameter,
-    // the `SearchResults` component will append &patternType=regexp
-    // to the URL to ensure legacy search links continue to work.
-    if (!parseSearchURLPatternType(window.location.search)) {
-        const defaultPatternType =
-            settingsCascade.final &&
-            !isErrorLike(settingsCascade.final) &&
-            (settingsCascade.final['search.defaultPatternType'] as SearchPatternType.literal)
-        return defaultPatternType || SearchPatternType.literal
+/**
+ * Returns the user-configured default search mode or undefined if not
+ * configured by the user.
+ */
+export function defaultSearchModeFromSettings(settingsCascade: SettingsCascadeOrError): SearchMode | undefined {
+    switch (getFromSettings(settingsCascade, 'search.defaultMode')) {
+        case 'precise': {
+            return SearchMode.Precise
+        }
+        case 'smart': {
+            return SearchMode.SmartSearch
+        }
     }
-    return
+    return undefined
 }
 
-export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascadeOrError): boolean {
-    // Analogous to defaultPatternTypeFromSettings, but for case sensitivity.
-    if (!parseSearchURLPatternType(window.location.search)) {
-        const defaultCaseSensitive =
-            settingsCascade.final &&
-            !isErrorLike(settingsCascade.final) &&
-            (settingsCascade.final['search.defaultCaseSensitive'] as boolean)
-        return defaultCaseSensitive || false
-    }
-    return false
+/**
+ * Returns the user-configured search pattern type or undefined if not
+ * configured by the user.
+ */
+export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeOrError): SearchPatternType | undefined {
+    return getFromSettings(settingsCascade, 'search.defaultPatternType')
 }
+
+/**
+ * Returns the user-configured case sensitivity setting or undefined if not
+ * configured by the user.
+ */
+export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascadeOrError): boolean | undefined {
+    return getFromSettings(settingsCascade, 'search.defaultCaseSensitive')
+}
+
+/**
+ * Returns undefined if the settings cannot be loaded or if the setting doesn't
+ * exist.
+ */
+function getFromSettings<T>(settingsCascade: SettingsCascadeOrError, setting: string): T | undefined {
+    if (!settingsCascade.final) {
+        return undefined
+    }
+    if (isErrorLike(settingsCascade.final)) {
+        return undefined
+    }
+
+    const value = settingsCascade.final[setting]
+    if (value !== undefined) {
+        return value as T
+    }
+
+    return undefined
+}
+
+export const prettifySystemRole = (role: string): string => startCase(role.replaceAll('_', ' ').toLowerCase())
+export const prettifyNamespace = (namespace: string): string => startCase(namespace.replaceAll('_', ' ').toLowerCase())
+export const prettifyAction = (action: string): string => startCase(action.replaceAll('_', ' ').toLowerCase())

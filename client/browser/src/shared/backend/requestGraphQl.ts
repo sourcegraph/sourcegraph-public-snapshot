@@ -1,10 +1,16 @@
 import { print } from 'graphql'
 import { once } from 'lodash'
-import { from, Observable } from 'rxjs'
+import { from, type Observable } from 'rxjs'
 import { switchMap, take } from 'rxjs/operators'
 
-import { GraphQLResult, getGraphQLClient, GraphQLClient, requestGraphQLCommon } from '@sourcegraph/http-client'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import {
+    type GraphQLResult,
+    getGraphQLClient,
+    type GraphQLClient,
+    requestGraphQLCommon,
+} from '@sourcegraph/http-client'
+import { cache } from '@sourcegraph/shared/src/backend/apolloCache'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import { background } from '../../browser-extension/web-extension-api/runtime'
 import { isBackground } from '../context'
@@ -16,7 +22,6 @@ interface RequestGraphQLOptions<V> {
     request: string
     variables: V
     mightContainPrivateInfo: boolean
-    privateCloudErrors?: Observable<boolean>
 }
 
 interface GraphQLHelpers {
@@ -31,7 +36,6 @@ function createMainThreadExtensionGraphQLHelpers(): GraphQLHelpers {
     const requestGraphQLInBackground = <T, V = object>(
         options: RequestGraphQLOptions<V>
         // Keep both helpers inside of the factory function.
-        // eslint-disable-next-line unicorn/consistent-function-scoping
     ): Observable<GraphQLResult<T>> => from(background.requestGraphQL<T, V>(options))
 
     /**
@@ -52,7 +56,7 @@ function createMainThreadExtensionGraphQLHelpers(): GraphQLHelpers {
         const graphqlClient: Pick<GraphQLClient, 'watchQuery'> = {
             watchQuery: ({ variables, query }) =>
                 // Temporary implementation till Apollo-Client is configured in the background script.
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
                 requestGraphQLInBackground({
                     request: print(query),
                     variables,
@@ -82,6 +86,9 @@ export function createGraphQLHelpers(sourcegraphURL: string, isExtension: boolea
         return createMainThreadExtensionGraphQLHelpers()
     }
 
+    /**
+     * @deprecated Prefer using Apollo-Client instead if possible. The migration is in progress.
+     */
     const requestGraphQL = <T, V = object>({
         request,
         variables,
@@ -103,7 +110,12 @@ export function createGraphQLHelpers(sourcegraphURL: string, isExtension: boolea
      * After that, the same instance should be used by all consumers.
      */
     const getBrowserGraphQLClient = once(() =>
-        getGraphQLClient({ headers: getHeaders(), baseUrl: sourcegraphURL, isAuthenticated: false })
+        getGraphQLClient({
+            cache,
+            getHeaders,
+            baseUrl: sourcegraphURL,
+            credentials: 'include',
+        })
     )
 
     return { getBrowserGraphQLClient, requestGraphQL }

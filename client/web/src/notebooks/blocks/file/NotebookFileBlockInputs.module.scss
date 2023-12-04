@@ -1,0 +1,53 @@
+.file-block-inputs {
+    padding: 0 1rem 1rem 1rem;
+}
+
+.repository-name-input:not(:focus):not(:active),
+.file-path-input:not(:focus):not(:active) {
+    border: 1px solid transparent;
+}
+
+.revision-input:not(:focus):not(:active),
+.line-range-input:not(:focus):not(:active) {
+    border: 1px solid var(--border-color);
+}
+
+.separator {
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+    width: 1px;
+    height: 1.125rem;
+    background-color: var(--border-color);
+    margin: 0 0.125rem;
+}
+
+.file-location-input-wrapper {
+    display: flex;
+    align-items: center;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+}
+
+.file-suggestions {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    max-height: 15rem;
+    padding-top: 0.5rem;
+    padding-right: 0.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.file-button {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    font-weight: normal;
+    text-align: left;
+    margin-bottom: 0.25rem;
+    border: 1px solid var(--color-bg-2);
+
+    &:hover {
+        background-color: var(--color-bg-2);
+    }
+}

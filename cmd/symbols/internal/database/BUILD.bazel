@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "database",
+    srcs = [
+        "init.go",
+        "sanity_check.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database",
+    visibility = ["//cmd/symbols:__subpackages__"],
+    deps = [
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_hashicorp_golang_lru_v2//:golang-lru",
+        "@com_github_mattn_go_sqlite3//:go-sqlite3",
+    ],
+)

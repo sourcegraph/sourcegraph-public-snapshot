@@ -1,19 +1,20 @@
 import { noop } from 'lodash'
-import { from, Observable, of, Subject, Subscription, NEVER } from 'rxjs'
+import { from, type Observable, of, Subject, Subscription, NEVER } from 'rxjs'
 import { bufferCount, map, switchMap, toArray } from 'rxjs/operators'
 import * as sinon from 'sinon'
+import { afterAll, beforeEach, describe, expect, test } from 'vitest'
 
-import { createBarrier } from '@sourcegraph/shared/src/api/integration-test/testHelpers'
+import { createBarrier } from '@sourcegraph/testing'
 
-import { MutationRecordLike } from '../../util/dom'
+import type { MutationRecordLike } from '../../util/dom'
 
 import {
     trackViews,
-    ViewResolver,
-    IntersectionObserverCallbackLike,
+    type ViewResolver,
+    type IntersectionObserverCallbackLike,
     delayUntilIntersecting,
-    ViewWithSubscriptions,
-    IntersectionObserverLike,
+    type ViewWithSubscriptions,
+    type IntersectionObserverLike,
 } from './views'
 
 const FIXTURE_HTML = `

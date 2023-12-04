@@ -1,27 +1,3 @@
 # See https://github.com/sourcegraph/codenotify for documentation.
 
-**/CODEOWNERS @nicksnyder
-
-# API docs
-#
-# This is a top-level entry because API docs code is so mixed in with codeintel/LSIF code all over
-# the repository-it's nice to have a complete list/overview of code related to API docs somewhere.
-client/web/src/repo/docs/* @slimsag
-cmd/frontend/graphqlbackend/codeintel_documentation.go @slimsag
-lib/codeintel/lsif/protocol/documentation.go @slimsag
-lib/codeintel/lsif/protocol/reader/unmarshal_documentation.go @slimsag
-lib/codeintel/lsif/protocol/writer/emitter_documentation.go @slimsag
-lib/codeintel/lsif/conversion/group_documentation.go @slimsag
-lib/codeintel/lsif/conversion/correlate_documentation.go @slimsag
-enterprise/internal/codeintel/stores/lsifstore/apidocs/* @slimsag
-enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go @slimsag
-enterprise/internal/codeintel/stores/lsifstore/documentation.go @slimsag
-enterprise/internal/codeintel/stores/lsifstore/serializer_documentation.go @slimsag
-enterprise/internal/codeintel/stores/lsifstore/documentation_janitor.go @slimsag
-enterprise/internal/codeintel/stores/lsifstore/serializer_documentation_test.go @slimsag
-enterprise/cmd/worker/internal/codeintel/janitor/documentation_search_current.go @slimsag
-enterprise/cmd/frontend/internal/codeintel/resolvers/graphql/query_documentation.go @slimsag
-enterprise/cmd/frontend/internal/codeintel/resolvers/query_documentation.go @slimsag
-enterprise/cmd/frontend/internal/codeintel/resolvers/graphql/documentation.go @slimsag
-enterprise/cmd/frontend/internal/codeintel/resolvers/documentation_query_references.go @slimsag
-enterprise/cmd/frontend/internal/codeintel/resolvers/documentation_query_definitions.go @slimsag
+**/*.nix @Strum355

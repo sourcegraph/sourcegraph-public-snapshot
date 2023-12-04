@@ -6,9 +6,7 @@ This page contains information about releasing browser extensions for different 
 Deployment to the Chrome web store happen automatically in CI when the `bext/release` branch is updated.
 
 ## Firefox
-The release process for Firefox is currently semi-automated.
-
-When the `bext/release` branch is updated, our build pipeline will trigger a build for the Firefox extension (take a note of the commit sha, we'll need it later). The build will trigger [this](https://github.com/sourcegraph/sourcegraph/blob/main/client/browser/scripts/release-ff.sh) script which will create a bundle, sign it and upload it to the [Google Cloud Storage](https://console.cloud.google.com/storage/browser/sourcegraph-for-firefox). Once the bundle is created, we upload it to the Mozilla Add-on page. Once the bundle is uploaded, we need to upload the source code as well. On your local copy, navigate to `sourcegraph/client/browser/scripts/create-source-zip.js` and modify the `commitId` variable (use the sha from earlier). Once the variable is modified, run this script. It will generate a `sourcegraph.zip` in the folder. Upload this zip to the Mozilla Add-on page and wait for approval.
+Deployment to the Mozilla store happen automatically in CI when the `bext/release` branch is updated.
 
 ## Safari
 The release process for Safari is currently not automated.
@@ -21,7 +19,7 @@ The release process for Safari is currently not automated.
 
 Steps:
 1. On your terminal navigate to `./sourcegraph/client/browser`.
-1. Run the command `yarn run build`.
+1. Run the command `pnpm run build`.
 1. Build will generate an Xcode project under `./sourcegraph/client/browser/build/Sourcegraph for Safari`.
    1. If you run into Xcode related errors, make sure that you've downloaded Xcode from the app store, opened it and accepted the license/terms agreements.
 1. Open the project using Xcode.

@@ -1,0 +1,19 @@
+.hero-section {
+    display: flex;
+    flex-wrap: wrap;
+    // Override card default styles with flex-direction: column;
+    flex-direction: row;
+    padding: 1.5rem;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.hero-video-block {
+    flex-grow: 10;
+    flex-basis: 30rem;
+}
+
+.hero-description-block {
+    flex-grow: 1;
+    flex-basis: 25rem;
+}

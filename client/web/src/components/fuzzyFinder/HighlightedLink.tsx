@@ -1,5 +1,6 @@
+import React, { useCallback } from 'react'
+
 import classNames from 'classnames'
-import React from 'react'
 
 import { Link } from '@sourcegraph/wildcard'
 
@@ -17,7 +18,12 @@ export interface HighlightedLinkProps {
     text: string
     positions: RangePosition[]
     url?: string
+    icon?: JSX.Element
+    textSuffix?: JSX.Element
     onClick?: () => void
+    // Fuzzy finding score, used to sort aggregated results across different
+    // fuzzy finder tabs.
+    score?: number
 }
 
 export function offsetSum(props: HighlightedLinkProps): number {
@@ -35,7 +41,7 @@ export function offsetSum(props: HighlightedLinkProps): number {
  * we want to highlight 'Doc' and `READ' in the filename
  * 'Documentation/README.md`.
  */
-export const HighlightedLink: React.FunctionComponent<HighlightedLinkProps> = props => {
+export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<HighlightedLinkProps>> = props => {
     const spans: JSX.Element[] = []
     let start = 0
     function pushElement(kind: 'mark' | 'span', startOffset: number, endOffset: number): void {
@@ -46,7 +52,7 @@ export const HighlightedLink: React.FunctionComponent<HighlightedLinkProps> = pr
         const key = `${startOffset}-${endOffset}`
         if (kind === 'mark') {
             spans.push(
-                <mark key={key} className={classNames(styles.mark, 'px-0')}>
+                <mark key={key} className="px-0">
                     {text}
                 </mark>
             )
@@ -54,7 +60,17 @@ export const HighlightedLink: React.FunctionComponent<HighlightedLinkProps> = pr
             spans.push(<span key={key}>{text}</span>)
         }
     }
-    for (const position of props.positions) {
+    for (const [index, position] of props.positions.entries()) {
+        if (index > 0) {
+            const previous = props.positions[index - 1]
+            if (
+                previous.startOffset === position.startOffset &&
+                previous.endOffset === position.endOffset &&
+                previous.isExact === position.isExact
+            ) {
+                continue
+            }
+        }
         if (position.startOffset > start) {
             pushElement('span', start, position.startOffset)
         }
@@ -63,13 +79,28 @@ export const HighlightedLink: React.FunctionComponent<HighlightedLinkProps> = pr
     }
     pushElement('span', start, props.text.length)
 
-    return props.url ? (
-        <code>
-            <Link tabIndex={-1} className={styles.link} to={props.url} onClick={() => props.onClick?.()}>
-                {spans}
-            </Link>
-        </code>
-    ) : (
-        <>{spans}</>
+    const { url, onClick } = props
+    const handleClick = useCallback(
+        (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+            if (!url) {
+                event.preventDefault()
+            }
+            onClick?.()
+        },
+        [url, onClick]
+    )
+
+    return (
+        <Link
+            className={classNames('d-inline-block w-100 h-100 text-decoration-none', styles.link)}
+            to={url || `/commands/${props.text}`}
+            onClick={handleClick}
+        >
+            {props.icon && <span>{props.icon}</span>}
+            {spans}
+            {url ? props.textSuffix : null}
+        </Link>
     )
 }
+
+export const linkStyle = styles.link

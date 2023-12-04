@@ -1,0 +1,881 @@
+extend type Query {
+    """
+    Query precise code intelligence indexes.
+    """
+    preciseIndexes(
+        """
+        If supplied, only precise indexes for the given repository will be returned.
+        """
+        repo: ID
+
+        """
+        If supplied, only precise indexes that match the given terms by their state,
+        repository name, commit, root, and indexer fields will be returned..
+        """
+        query: String
+
+        """
+        If supplied, only precise indexes in one of the provided states are returned.
+        """
+        states: [PreciseIndexState!]
+
+        """
+        If supplied, only precise indexes created by an indexer with the given key are returned.
+        """
+        indexerKey: String
+
+        """
+        If supplied, only precise indexes that are a dependency of the specified index are returned.
+        """
+        dependencyOf: ID
+
+        """
+        If supplied, only precise indexes that are a dependent of the specified index are returned.
+        """
+        dependentOf: ID
+
+        """
+        When specified, merges the list of existing uploads with data from
+        uploads that have been deleted but for which audit logs still exist.
+        Only makes sense when state filter is unset or equal to 'DELETED'.
+        """
+        includeDeleted: Boolean
+
+        """
+        If specified, this limits the number of results per request.
+        """
+        first: Int
+
+        """
+        If specified, this indicates that the request should be paginated and to fetch results starting
+        at this cursor.
+
+        A future request can be made for more results by passing in the 'PreciseIndexConnection.pageInfo.endCursor'
+        that is returned.
+        """
+        after: String
+    ): PreciseIndexConnection!
+
+    """
+    Provides a summary of code intelligence on the instance.
+    """
+    codeIntelSummary: CodeIntelSummary!
+
+    """
+    A list of unique indexer keys queryable via the `preciseIndexes.indexerKey` filter.
+    """
+    indexerKeys(
+        """
+        If supplied, only indexers associated with the given repository will be returned.
+        """
+        repo: ID
+    ): [String!]!
+
+    """
+    Return the currently set auto-indexing job inference script. Does not return
+    the value stored in the environment variable or the default shipped scripts,
+    only the value set via UI/GraphQL.
+    """
+    codeIntelligenceInferenceScript: String!
+
+    """
+    Return (but do not enqueue) descriptions of auto indexing jobs at the current revision.
+    """
+    inferAutoIndexJobsForRepo(repository: ID!, rev: String, script: String): InferAutoIndexJobsResult!
+}
+
+extend type Mutation {
+    """
+    Deletes a precise index.
+    """
+    deletePreciseIndex(id: ID!): EmptyResponse
+
+    """
+    Deletes precise indexes by filter criteria.
+    """
+    deletePreciseIndexes(
+        """
+        An (optional) search query that filters the state, repository name, commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The index state.
+        """
+        states: [PreciseIndexState!]
+
+        """
+        If supplied, only precise indexes created by an indexer with the given key are modified.
+        """
+        indexerKey: String
+
+        """
+        When specified, only deletes indexes that are latest for the given repository.
+        """
+        isLatestForRepo: Boolean
+
+        """
+        The repository.
+        """
+        repository: ID
+    ): EmptyResponse
+
+    """
+    Marks a precise index as replaceable by auto-indexing.
+    """
+    reindexPreciseIndex(id: ID!): EmptyResponse
+
+    """
+    Marks precise indexes by filter criteria as replaceable by auto-indexing.
+    """
+    reindexPreciseIndexes(
+        """
+        An (optional) search query that filters the state, repository name, commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The index state.
+        """
+        states: [PreciseIndexState!]
+
+        """
+        If supplied, only precise indexes created by an indexer with the given key are modified.
+        """
+        indexerKey: String
+
+        """
+        When specified, only modifies indexes that are latest for the given repository.
+        """
+        isLatestForRepo: Boolean
+
+        """
+        The repository.
+        """
+        repository: ID
+    ): EmptyResponse
+
+    """
+    Queues the index jobs for a repository for execution. An optional resolvable revhash
+    (commit, branch name, or tag name) can be specified; by default the tip of the default
+    branch will be used.
+
+    If a configuration is supplied, that configuration is used to determine what jobs to
+    schedule. If no configuration is supplied, it will go through the regular index scheduling
+    rules: first read any in-repo configuration (e.g., sourcegraph.yaml), then look for any
+    existing in-database configuration, finally falling back to the automatically inferred
+    configuration based on the repo contents at the target commit.
+    """
+    queueAutoIndexJobsForRepo(repository: ID!, rev: String, configuration: String): [PreciseIndex!]!
+
+    """
+    Updates the previously set/overrides the default global auto-indexing job inference Lua script
+    with a new override.
+    """
+    updateCodeIntelligenceInferenceScript(script: String!): EmptyResponse
+
+    """
+    Updates the indexing configuration associated with a repository.
+    """
+    updateRepositoryIndexConfiguration(repository: ID!, configuration: String!): EmptyResponse
+}
+
+extend type Repository {
+    """
+    Gets the indexing configuration associated with the repository.
+    """
+    indexConfiguration: IndexConfiguration
+
+    """
+    Provides a summary of the most recent upload and index status.
+    """
+    codeIntelSummary: CodeIntelRepositorySummary!
+}
+
+"""
+The result of running the auto-index inference script over a particular repo.
+"""
+type InferAutoIndexJobsResult {
+    """
+    The list of inferred jobs.
+    """
+    jobs: [AutoIndexJobDescription!]!
+
+    """
+    The output from the inference script.
+    """
+    inferenceOutput: String!
+}
+
+"""
+A list of precise code intelligence indexes.
+"""
+type PreciseIndexConnection {
+    """
+    The current page of indexes.
+    """
+    nodes: [PreciseIndex!]!
+
+    """
+    The total number of results (over all pages) in this list.
+    """
+    totalCount: Int
+
+    """
+    Metadata about the current page of results.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Metadata and status about a precise code intelligence index.
+"""
+type PreciseIndex implements Node {
+    """
+    The ID.
+    """
+    id: ID!
+
+    """
+    The project for which this index provides code intelligence.
+    """
+    projectRoot: CodeIntelGitTree
+
+    """
+    The original 40-character commit commit supplied at creation.
+    """
+    inputCommit: String!
+
+    """
+    The original root supplied at creation.
+    """
+    inputRoot: String!
+
+    """
+    The original indexer name supplied at creation.
+    """
+    inputIndexer: String!
+
+    """
+    The tags, if any, associated with this commit.
+    """
+    tags: [String!]!
+
+    """
+    The indexer used to produce this index.
+    """
+    indexer: CodeIntelIndexer
+
+    """
+    The current state.
+    """
+    state: PreciseIndexState!
+
+    """
+    The time the index was queued for indexing.
+    """
+    queuedAt: DateTime
+
+    """
+    The time the index job started running.
+    """
+    indexingStartedAt: DateTime
+
+    """
+    The time the index job stopped running.
+    """
+    indexingFinishedAt: DateTime
+
+    """
+    The time the index data file was uploaded.
+    """
+    uploadedAt: DateTime
+
+    """
+    The time the upload data file started being processed.
+    """
+    processingStartedAt: DateTime
+
+    """
+    The time the upload data file stopped being processed.
+    """
+    processingFinishedAt: DateTime
+
+    """
+    The indexing or processing error message.
+    """
+    failure: String
+
+    """
+    The rank of this index job or processing job in its respective queue.
+    """
+    placeInQueue: Int
+
+    """
+    The configuration and execution summary (if completed or errored) of this index job.
+    """
+    steps: IndexSteps
+
+    """
+    If set, this index has been marked as replaceable by a new auto-indexing job.
+    """
+    shouldReindex: Boolean!
+
+    """
+    Whether or not this index provides intelligence for the tip of the default branch. Find reference
+    queries will return symbols from remote repositories only when this property is true. This property
+    is updated asynchronously and is eventually consistent with the git data known by the instance.
+    """
+    isLatestForRepo: Boolean!
+
+    """
+    The list of retention policies associated with this index.
+    """
+    retentionPolicyOverview(
+        matchesOnly: Boolean!
+        query: String
+        after: String
+        first: Int
+    ): CodeIntelligenceRetentionPolicyMatchesConnection!
+
+    """
+    Audit logs representing each state change of the upload in order from earliest to latest.
+    """
+    auditLogs: [LSIFUploadAuditLog!]
+}
+
+"""
+Possible states for PreciseIndexes.
+"""
+enum PreciseIndexState {
+    UPLOADING_INDEX
+    QUEUED_FOR_PROCESSING
+    PROCESSING
+    PROCESSING_ERRORED
+    COMPLETED
+    DELETING
+    DELETED
+    QUEUED_FOR_INDEXING
+    INDEXING
+    INDEXING_ERRORED
+    INDEXING_COMPLETED
+}
+
+"""
+Describes a precise code-intel indexer.
+"""
+type CodeIntelIndexer {
+    """
+    The language ecosystem that this indexer supports.
+    """
+    key: String!
+
+    """
+    Name of the precise code-intel indexer.
+    """
+    name: String!
+
+    """
+    URL to the source of the indexer e.g. https://github.com/sourcegraph/lsif-go
+    """
+    url: String!
+
+    """
+    A Docker image name used to distribute the indexer to the executor for via auto-indexing.
+    """
+    imageName: String
+}
+
+"""
+Configuration and execution summary of an index job.
+"""
+type IndexSteps {
+    """
+    Execution log entries related to setting up the indexing workspace.
+    """
+    setup: [ExecutionLogEntry!]!
+
+    """
+    Configuration and execution summary (if completed or errored) of steps to be performed prior to indexing.
+    """
+    preIndex: [PreIndexStep!]!
+
+    """
+    Configuration and execution summary (if completed or errored) of the indexer.
+    """
+    index: IndexStep!
+
+    """
+    Execution log entry related to uploading the dump produced by the indexing step.
+    This field be missing if the upload step had not been executed.
+    """
+    upload: ExecutionLogEntry
+
+    """
+    Execution log entries related to tearing down the indexing workspace.
+    """
+    teardown: [ExecutionLogEntry!]!
+}
+
+"""
+The configuration and execution summary of a step to be performed prior to indexing.
+"""
+type PreIndexStep {
+    """
+    The working directory relative to the cloned repository root.
+    """
+    root: String!
+
+    """
+    The name of the Docker image to run.
+    """
+    image: String!
+
+    """
+    The arguments to supply to the Docker container's entrypoint.
+    """
+    commands: [String!]!
+
+    """
+    The execution summary (if completed or errored) of the docker command.
+    """
+    logEntry: ExecutionLogEntry
+}
+
+"""
+The configuration and execution summary of the indexer.
+"""
+type IndexStep {
+    """
+    Commands to run in the same image as the indexer but before the indexer is invoked.
+    """
+    commands: [String!]!
+
+    """
+    The arguments to supply to the indexer container.
+    """
+    indexerArgs: [String!]!
+
+    """
+    The path to the index file relative to the root directory (dump.lsif by default).
+    """
+    outfile: String
+
+    """
+    A list of environment variables (VAR=VAL) that should be made available to the indexer.
+    """
+    requestedEnvVars: [String!]
+
+    """
+    The execution summary (if completed or errored) of the index command.
+    """
+    logEntry: ExecutionLogEntry
+}
+
+"""
+A list of code intelligence retention policy match candidates.
+"""
+type CodeIntelligenceRetentionPolicyMatchesConnection {
+    """
+    A list of code intelligence retention policies matches.
+    """
+    nodes: [CodeIntelligenceRetentionPolicyMatch!]!
+
+    """
+    The total number of policies in this result set.
+    """
+    totalCount: Int
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A retention policy match candidate.
+"""
+type CodeIntelligenceRetentionPolicyMatch {
+    """
+    The actual retention policy.
+    """
+    configurationPolicy: CodeIntelligenceConfigurationPolicy
+
+    """
+    Whether the retention policy matches the upload or not. False values may be returned
+    if non-matching policies are requested for inclusion.
+    """
+    matches: Boolean!
+
+    """
+    A list of commits that are visible to this upload for which this retention policy applies.
+    It is empty if the policy applies directly to the commit associated with the upload.
+    """
+    protectingCommits: [String!]
+}
+
+"""
+Contains the metadata and upload data for a single state change of an upload.
+"""
+type LSIFUploadAuditLog {
+    """
+    The timestamp the log was emitted at.
+    """
+    logTimestamp: DateTime!
+
+    """
+    The timestamp when the associated upload was deleted at.
+    """
+    uploadDeletedAt: DateTime
+
+    """
+    The reason for this change in data.
+    """
+    reason: String
+
+    """
+    A list of changed columns in the format {"column": "<colname>", "new": "<newval>", "old": "<oldval>"}
+    """
+    changedColumns: [AuditLogColumnChange!]!
+
+    """
+    The ID of the upload.
+    """
+    uploadId: ID!
+
+    """
+    The original 40-character commit commit supplied at upload time.
+    """
+    inputCommit: String!
+
+    """
+    The original root supplied at upload time.
+    """
+    inputRoot: String!
+
+    """
+    The original indexer name supplied at upload time.
+    """
+    inputIndexer: String!
+
+    """
+    The time the upload was uploaded.
+    """
+    uploadedAt: DateTime!
+
+    """
+    The operation denoted by this log.
+    """
+    operation: AuditLogOperation!
+}
+
+"""
+Denotes the type of operation of a given log entry.
+"""
+enum AuditLogOperation {
+    """
+    Denotes this log entry represents an INSERT query.
+    """
+    CREATE
+    """
+    Denotes this log entry represents an UPDATE query.
+    """
+    MODIFY
+}
+
+"""
+Represents a state transition of a single column.
+"""
+type AuditLogColumnChange {
+    """
+    The column that is changing.
+    """
+    column: String!
+
+    """
+    The previous value of the column.
+    """
+    old: String
+
+    """
+    The new value of the column
+    """
+    new: String
+}
+
+"""
+A summary of code intelligence on the instance.
+"""
+type CodeIntelSummary {
+    """
+    The number of repositories with precise index records.
+    """
+    numRepositoriesWithCodeIntelligence: Int!
+
+    """
+    A list of repositories with precise index errors.
+    """
+    repositoriesWithErrors(
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+
+        A future request can be made for more results by passing in the
+        'CodeIntelRepositoryWithErrorConnection.pageInfo.endCursor'
+        that is returned.
+        """
+        after: String
+    ): CodeIntelRepositoryWithErrorConnection!
+
+    """
+    A list of repositories with configurable auto-indexing jobs.
+    """
+    repositoriesWithConfiguration(
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+
+        A future request can be made for more results by passing in the
+        'CodeIntelRepositoryWithErrorConnection.pageInfo.endCursor'
+        that is returned.
+        """
+        after: String
+    ): CodeIntelRepositoryWithConfigurationConnection
+}
+
+"""
+A list of repositories paired with a count of precise indexing errors (used by CodeIntelSummary).
+"""
+type CodeIntelRepositoryWithErrorConnection {
+    """
+    The repository and error count.
+    """
+    nodes: [CodeIntelRepositoryWithError!]!
+
+    """
+    The total number of results (over all pages) in this list.
+    """
+    totalCount: Int
+
+    """
+    Metadata about the current page of results.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A repository paired with a count of precise indexing errors (used by CodeIntelSummary).
+"""
+type CodeIntelRepositoryWithError {
+    """
+    The repository.
+    """
+    repository: CodeIntelRepository!
+
+    """
+    The number of precise indexing errors in the repository.
+    """
+    count: Int!
+}
+
+"""
+A list of repositories paired with a list of precise indexers (used by CodeIntelSummary).
+"""
+type CodeIntelRepositoryWithConfigurationConnection {
+    """
+    The repository and indexer count.
+    """
+    nodes: [CodeIntelRepositoryWithConfiguration!]!
+
+    """
+    The total number of results (over all pages) in this list.
+    """
+    totalCount: Int
+
+    """
+    Metadata about the current page of results.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A repository paired with a list of precise indexers (used by CodeIntelSummary).
+"""
+type CodeIntelRepositoryWithConfiguration {
+    """
+    The repository.
+    """
+    repository: CodeIntelRepository!
+
+    """
+    The precise indexers available for the repository.
+    """
+    indexers: [IndexerWithCount!]!
+}
+
+"""
+A precise indexer paired with a count of indexable projects in the repository (used by CodeIntelSummary).
+"""
+type IndexerWithCount {
+    """
+    The repository.
+    """
+    indexer: CodeIntelIndexer
+
+    """
+    The count of projects that could utilize the indexer in this repository.
+    """
+    count: Int!
+}
+
+"""
+A summary of the most recent upload and index status.
+"""
+type CodeIntelRepositorySummary {
+    """
+    A list of recent precise indexes for a specific repository. This list contains processing,
+    recently queued, and the most recently processed precise indexes for each distinct indexer
+    and root.
+    """
+    recentActivity: [PreciseIndex!]!
+
+    """
+    The last time uploads of this repository were checked against data retention policies.
+    """
+    lastUploadRetentionScan: DateTime
+
+    """
+    The last time this repository was considered for auto-indexing job scheduling.
+    """
+    lastIndexScan: DateTime
+
+    """
+    The additionally available indexers that could be indexed but haven't been indexed.
+    """
+    availableIndexers: [InferredAvailableIndexers!]!
+
+    """
+    If inference of the repository contents hit a limit its error description will available here.
+    """
+    limitError: String
+}
+
+"""
+The additionally available indexers that have been inferred from jobs and job hints that could be indexed but haven't been indexed.
+"""
+type InferredAvailableIndexers {
+    """
+    The indexer.
+    """
+    indexer: CodeIntelIndexer!
+
+    """
+    The list of roots that could be indexed.
+    """
+    roots: [String!]!
+
+    """
+    The list of roots that could be indexed.
+    """
+    rootsWithKeys: [RootWithKey!]!
+}
+
+"""
+Pairs a root directory with comparison key used to match index configurations for the same repository "project".
+"""
+type RootWithKey {
+    """
+    The root.
+    """
+    root: String!
+
+    """
+    A hash of the root and indexer values.
+
+    This value can be used to quickly compare whether or not explicit configuration and inferred configuration
+    refer to the same "project" in a given repository. See `AutoIndexJobDescription.comparisonKey`.
+    """
+    comparisonKey: String!
+}
+
+"""
+A description of an auto-indexing job inferred by the instance.
+"""
+type AutoIndexJobDescription {
+    """
+    The project root.
+    """
+    root: String!
+
+    """
+    The target indexer.
+    """
+    indexer: CodeIntelIndexer
+
+    """
+    A hash of the root and indexer values.
+
+    This value can be used to quickly compare whether or not explicit configuration and inferred configuration
+    refer to the same "project" in a given repository. See `RootWithKey.comparisonKey`.
+    """
+    comparisonKey: String!
+
+    """
+    The particular steps inferred for indexing.
+    """
+    steps: IndexSteps!
+}
+
+"""
+Explicit configuration for indexing a repository.
+"""
+type IndexConfiguration {
+    """
+    The raw JSON-encoded index configuration.
+    """
+    configuration: String
+
+    """
+    The parsed index configuration (decoded from the raw JSON version).
+    """
+    parsedConfiguration: [AutoIndexJobDescription!]
+
+    """
+    The raw JSON-encoded index configuration as inferred by the auto-indexer.
+    """
+    inferredConfiguration: InferredConfiguration
+}
+
+"""
+A wrapper around inferred configuration and a possible limit error.
+"""
+type InferredConfiguration {
+    """
+    The raw JSON-encoded inferred index configuration.
+    """
+    configuration: String!
+
+    """
+    The parsed index configuration (decoded from the raw JSON version).
+    """
+    parsedConfiguration: [AutoIndexJobDescription!]
+
+    """
+    If inference of the repository contents hit a limit its error description will available here.
+    """
+    limitError: String
+}

@@ -1,34 +1,27 @@
-import * as H from 'history'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import React from 'react'
+import React, { useCallback } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Badge, Container } from '@sourcegraph/wildcard'
+import { mdiSourceBranch, mdiFileDocument } from '@mdi/js'
+import { useNavigate, useLocation } from 'react-router-dom'
 
-import { BatchSpecFields } from '../../../graphql-operations'
-import {
-    BatchChangeTab,
-    BatchChangeTabList,
-    BatchChangeTabPanel,
-    BatchChangeTabPanels,
-    BatchChangeTabs,
-} from '../BatchChangeTabs'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Badge, Container, Icon, Tab, TabPanel, TabPanels } from '@sourcegraph/wildcard'
+
+import { resetFilteredConnectionURLQuery } from '../../../components/FilteredConnection'
+import type { BatchSpecFields } from '../../../graphql-operations'
+import { BatchChangeTabList, BatchChangeTabs } from '../BatchChangeTabs'
 import { BatchSpec, BatchSpecDownloadButton } from '../BatchSpec'
 
-import { PreviewPageAuthenticatedUser } from './BatchChangePreviewPage'
-import styles from './BatchChangePreviewTabs.module.scss'
-import {
+import type { PreviewPageAuthenticatedUser } from './BatchChangePreviewPage'
+import type {
     queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs,
     queryChangesetApplyPreview as _queryChangesetApplyPreview,
 } from './list/backend'
 import { PreviewList } from './list/PreviewList'
 
-export interface BatchChangePreviewProps extends ThemeProps, TelemetryProps {
+import styles from './BatchChangePreviewTabs.module.scss'
+
+export interface BatchChangePreviewProps extends TelemetryProps {
     batchSpecID: string
-    history: H.History
-    location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
 
     /** Used for testing. */
@@ -43,69 +36,85 @@ interface BatchChangePreviewTabsProps extends BatchChangePreviewProps {
     spec: BatchSpecFields
 }
 
-export const BatchChangePreviewTabs: React.FunctionComponent<BatchChangePreviewTabsProps> = ({
+const SPEC_TAB_NAME = 'spec'
+
+export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChildren<BatchChangePreviewTabsProps>> = ({
     authenticatedUser,
     batchSpecID,
     expandChangesetDescriptions,
-    history,
-    isLightTheme,
-    location,
     queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
     spec,
-}) => (
-    <BatchChangeTabs history={history} location={location}>
-        <BatchChangeTabList>
-            <BatchChangeTab index={0} name="previewchangesets">
-                <span>
-                    <SourceBranchIcon className="icon-inline text-muted mr-1" />
-                    <span className="text-content" data-tab-content="Preview changesets">
-                        Preview changesets
-                    </span>{' '}
-                    <Badge variant="secondary" pill={true} className="ml-1">
-                        {spec.applyPreview.totalCount}
-                    </Badge>
-                </span>
-            </BatchChangeTab>
-            <BatchChangeTab index={1} name="spec">
-                <span>
-                    <FileDocumentIcon className="icon-inline text-muted mr-1" />{' '}
-                    <span className="text-content" data-tab-content="Spec">
-                        Spec
+}) => {
+    // We track the current tab in a URL parameter so that tabs are easy to navigate to
+    // and share.
+    const navigate = useNavigate()
+    const location = useLocation()
+    const initialTab = new URLSearchParams(location.search).get('tab')
+
+    const onTabChange = useCallback(
+        (index: number) => {
+            const urlParameters = new URLSearchParams(location.search)
+            resetFilteredConnectionURLQuery(urlParameters)
+
+            // The first tab is the default, so it's not necessary to set it in the URL.
+            if (index === 0) {
+                urlParameters.delete('tab')
+            } else {
+                urlParameters.set('tab', SPEC_TAB_NAME)
+            }
+
+            navigate({ search: urlParameters.toString() })
+        },
+        [navigate, location.search]
+    )
+
+    return (
+        <BatchChangeTabs defaultIndex={initialTab === SPEC_TAB_NAME ? 1 : 0} onChange={onTabChange}>
+            <BatchChangeTabList>
+                <Tab>
+                    <span>
+                        <Icon aria-hidden={true} className="text-muted mr-1" svgPath={mdiSourceBranch} />
+                        <span className="text-content" data-tab-content="Preview changesets">
+                            Preview changesets
+                        </span>{' '}
+                        <Badge variant="secondary" pill={true} className="ml-1">
+                            {spec.applyPreview.totalCount}
+                        </Badge>
                     </span>
-                </span>
-            </BatchChangeTab>
-        </BatchChangeTabList>
-        <BatchChangeTabPanels>
-            <BatchChangeTabPanel index={0}>
-                <PreviewList
-                    batchSpecID={batchSpecID}
-                    history={history}
-                    location={location}
-                    authenticatedUser={authenticatedUser}
-                    isLightTheme={isLightTheme}
-                    queryChangesetApplyPreview={queryChangesetApplyPreview}
-                    queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
-                    expandChangesetDescriptions={expandChangesetDescriptions}
-                />
-            </BatchChangeTabPanel>
-            <BatchChangeTabPanel index={1}>
-                <div className="d-flex mb-2 justify-content-end">
-                    <BatchSpecDownloadButton
-                        name={spec.description.name}
-                        originalInput={spec.originalInput}
-                        isLightTheme={isLightTheme}
+                </Tab>
+                <Tab>
+                    <span>
+                        <Icon aria-hidden={true} className="text-muted mr-1" svgPath={mdiFileDocument} />{' '}
+                        <span className="text-content" data-tab-content="Spec">
+                            Spec
+                        </span>
+                    </span>
+                </Tab>
+            </BatchChangeTabList>
+            <TabPanels>
+                <TabPanel>
+                    <PreviewList
+                        batchSpecID={batchSpecID}
+                        authenticatedUser={authenticatedUser}
+                        queryChangesetApplyPreview={queryChangesetApplyPreview}
+                        queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
+                        expandChangesetDescriptions={expandChangesetDescriptions}
                     />
-                </div>
-                <Container>
-                    <BatchSpec
-                        name={spec.description.name}
-                        originalInput={spec.originalInput}
-                        isLightTheme={isLightTheme}
-                        className={styles.batchSpec}
-                    />
-                </Container>
-            </BatchChangeTabPanel>
-        </BatchChangeTabPanels>
-    </BatchChangeTabs>
-)
+                </TabPanel>
+                <TabPanel>
+                    <div className="d-flex mb-2 justify-content-end">
+                        <BatchSpecDownloadButton name={spec.description.name} originalInput={spec.originalInput} />
+                    </div>
+                    <Container>
+                        <BatchSpec
+                            name={spec.description.name}
+                            originalInput={spec.originalInput}
+                            className={styles.batchSpec}
+                        />
+                    </Container>
+                </TabPanel>
+            </TabPanels>
+        </BatchChangeTabs>
+    )
+}

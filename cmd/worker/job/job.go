@@ -5,11 +5,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // Job creates configuration struct and background routine instances to be run
 // as part of the worker process.
 type Job interface {
+	// Description renders a brief overview of what this job does and handles.
+	Description() string
+
 	// Config returns a set of configuration struct pointers that should be loaded
 	// and validated as part of application startup.
 	//
@@ -28,5 +32,5 @@ type Job interface {
 	// passed to a periodic routine should be a fresh context unattached to this,
 	// as the argument to this function will be canceled after all Routine invocations
 	// have exited after application startup.
-	Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error)
+	Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error)
 }

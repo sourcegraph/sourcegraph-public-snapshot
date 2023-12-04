@@ -2,305 +2,178 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func init() {
+	txemail.DisableSilently()
+}
+
 func TestUserEmail_ViewerCanManuallyVerify(t *testing.T) {
-	db := database.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
+	t.Parallel()
+
+	db := dbmocks.NewMockDB()
+	t.Run("only allowed by site admin", func(t *testing.T) {
+		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
-
 		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
+			name    string
+			ctx     context.Context
+			setup   func()
+			allowed bool
 		}{
 			{
 				name: "unauthenticated",
 				ctx:  context.Background(),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-				},
-			},
-			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id}, nil
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return nil, database.ErrNoCurrentUser
 					})
 				},
+				allowed: false,
+			},
+			{
+				name: "non site admin",
+				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				setup: func() {
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return &types.User{
+							ID:        2,
+							SiteAdmin: false,
+						}, nil
+					})
+				},
+				allowed: false,
 			},
 			{
 				name: "site admin",
 				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id, SiteAdmin: true}, nil
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return &types.User{
+							ID:        2,
+							SiteAdmin: true,
+						}, nil
 					})
 				},
+				allowed: true,
 			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				ok, _ := (&userEmailResolver{}).ViewerCanManuallyVerify(test.ctx)
-				assert.False(t, ok, "ViewerCanManuallyVerify")
-			})
-		}
-	})
-}
-
-func TestAddUserEmail(t *testing.T) {
-	db := database.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
-
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
-
-		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
-		}{
-			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-				},
-			},
-			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id}, nil
-					})
-				},
-			},
-			{
-				name: "site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id, SiteAdmin: true}, nil
-					})
-				},
-			},
-		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				test.setup()
-
-				_, err := newSchemaResolver(db).AddUserEmail(
-					test.ctx,
-					&addUserEmailArgs{
-						User: MarshalUserID(1),
-					},
-				)
-				got := fmt.Sprintf("%v", err)
-				want := "must be authenticated as user with id 1"
-				assert.Equal(t, want, got)
-			})
-		}
-	})
-}
-
-func TestRemoveUserEmail(t *testing.T) {
-	db := database.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
-
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
-
-		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
-		}{
-			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-				},
-			},
-			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id}, nil
-					})
-				},
-			},
-			{
-				name: "site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id, SiteAdmin: true}, nil
-					})
-				},
-			},
-		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				test.setup()
-
-				_, err := newSchemaResolver(db).RemoveUserEmail(
-					test.ctx,
-					&removeUserEmailArgs{
-						User: MarshalUserID(1),
-					},
-				)
-				got := fmt.Sprintf("%v", err)
-				want := "must be authenticated as user with id 1"
-				assert.Equal(t, want, got)
-			})
-		}
-	})
-}
-
-func TestSetUserEmailPrimary(t *testing.T) {
-	db := database.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
-
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
-
-		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
-		}{
-			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-				},
-			},
-			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id}, nil
-					})
-				},
-			},
-			{
-				name: "site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id, SiteAdmin: true}, nil
-					})
-				},
-			},
-		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				test.setup()
-
-				_, err := newSchemaResolver(db).SetUserEmailPrimary(
-					test.ctx,
-					&setUserEmailPrimaryArgs{
-						User: MarshalUserID(1),
-					},
-				)
-				got := fmt.Sprintf("%v", err)
-				want := "must be authenticated as user with id 1"
-				assert.Equal(t, want, got)
+				ok, _ := (&userEmailResolver{
+					db: db,
+				}).ViewerCanManuallyVerify(test.ctx)
+				assert.Equal(t, test.allowed, ok, "ViewerCanManuallyVerify")
 			})
 		}
 	})
 }
 
 func TestSetUserEmailVerified(t *testing.T) {
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		db := database.NewMockDB()
-		users := database.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
+	t.Run("only allowed by site admins", func(t *testing.T) {
+		t.Parallel()
 
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
+		db := dbmocks.NewMockDB()
+
+		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+			return f(db)
+		})
+
+		ffs := dbmocks.NewMockFeatureFlagStore()
+		db.FeatureFlagsFunc.SetDefaultReturn(ffs)
+
+		users := dbmocks.NewMockUserStore()
+		db.UsersFunc.SetDefaultReturn(users)
+		userEmails := dbmocks.NewMockUserEmailsStore()
+		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		db.SubRepoPermsFunc.SetDefaultReturn(dbmocks.NewMockSubRepoPermsStore())
 
 		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
+			name    string
+			ctx     context.Context
+			setup   func()
+			wantErr string
 		}{
 			{
 				name: "unauthenticated",
 				ctx:  context.Background(),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return nil, database.ErrNoCurrentUser
+					})
+					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, i int32) (*types.User, error) {
+						return nil, nil
+					})
 				},
+				wantErr: "not authenticated",
 			},
 			{
 				name: "another user",
 				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id}, nil
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return &types.User{
+							ID:        2,
+							SiteAdmin: false,
+						}, nil
 					})
 				},
+				wantErr: "must be site admin",
 			},
 			{
 				name: "site admin",
 				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id, SiteAdmin: true}, nil
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return &types.User{
+							ID:        2,
+							SiteAdmin: true,
+						}, nil
+					})
+					userEmails.SetVerifiedFunc.SetDefaultHook(func(ctx context.Context, i int32, s string, b bool) error {
+						// We just care at this point that we passed user authorization
+						return errors.Errorf("short circuit")
 					})
 				},
+				wantErr: "short circuit",
 			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(database.NewMockDB()).SetUserEmailVerified(
+				_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).SetUserEmailVerified(
 					test.ctx,
 					&setUserEmailVerifiedArgs{
 						User: MarshalUserID(1),
 					},
 				)
 				got := fmt.Sprintf("%v", err)
-				want := "manually verify user email is disabled"
-				assert.Equal(t, want, got)
+				assert.Equal(t, test.wantErr, got)
 			})
 		}
 	})
@@ -359,19 +232,31 @@ func TestSetUserEmailVerified(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			users := database.NewMockUserStore()
+			users := dbmocks.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-			userEmails := database.NewMockUserEmailsStore()
+			userEmails := dbmocks.NewMockUserEmailsStore()
 			userEmails.SetVerifiedFunc.SetDefaultReturn(nil)
 
-			authz := database.NewMockAuthzStore()
+			authz := dbmocks.NewMockAuthzStore()
 			authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
-			db := database.NewMockDB()
+			userExternalAccounts := dbmocks.NewMockUserExternalAccountsStore()
+			userExternalAccounts.DeleteFunc.SetDefaultReturn(nil)
+
+			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ permssync.ScheduleSyncOpts) {}
+			t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
+
+			db := dbmocks.NewMockDB()
+			db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+				return f(db)
+			})
+
 			db.UsersFunc.SetDefaultReturn(users)
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 			db.AuthzFunc.SetDefaultReturn(authz)
+			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccounts)
+			db.SubRepoPermsFunc.SetDefaultReturn(dbmocks.NewMockSubRepoPermsStore())
 
 			RunTests(t, test.gqlTests(db))
 
@@ -384,225 +269,126 @@ func TestSetUserEmailVerified(t *testing.T) {
 	}
 }
 
-func TestResendUserEmailVerification(t *testing.T) {
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		db := database.NewMockDB()
-		users := database.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
-
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
-
-		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
-		}{
-			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-				},
-			},
-			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id}, nil
-					})
-				},
-			},
-			{
-				name: "site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id, SiteAdmin: true}, nil
-					})
-				},
-			},
-		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				test.setup()
-
-				_, err := newSchemaResolver(database.NewMockDB()).ResendVerificationEmail(
-					test.ctx,
-					&resendVerificationEmailArgs{
-						User: MarshalUserID(1),
-					},
-				)
-				got := fmt.Sprintf("%v", err)
-				want := "must be authenticated as user with id 1"
-				assert.Equal(t, want, got)
-			})
-		}
-	})
-
-	users := database.NewMockUserStore()
-	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-		return &types.User{ID: id, SiteAdmin: true}, nil
-	})
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-
-	userEmails := database.NewMockUserEmailsStore()
-	userEmails.SetLastVerificationFunc.SetDefaultReturn(nil)
-
-	db := database.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.UserEmailsFunc.SetDefaultReturn(userEmails)
-
-	knownTime := time.Time{}.Add(1337 * time.Hour)
-	timeNow = func() time.Time {
-		return knownTime
-	}
-
-	tests := []struct {
-		name            string
-		gqlTests        []*Test
-		email           *database.UserEmail
-		expectEmailSent bool
-	}{
-		{
-			name: "resend a verification email",
-			gqlTests: []*Test{
-				{
-					Schema: mustParseGraphQLSchema(t, db),
-					Query: `
-				mutation {
-					resendVerificationEmail(user: "VXNlcjox", email: "alice@example.com") {
-						alwaysNil
-					}
+func TestPrimaryEmail(t *testing.T) {
+	var primaryEmailQuery = `query hasPrimaryEmail($id: ID!){
+		node(id: $id) {
+			... on User {
+				primaryEmail {
+					email
 				}
-			`,
-					ExpectedResult: `
-				{
-					"resendVerificationEmail": {
-						"alwaysNil": null
-    				}
-				}
-			`,
-				},
-			},
-			email: &database.UserEmail{
-				Email:  "alice@example.com",
-				UserID: 1,
-			},
-			expectEmailSent: true,
-		},
-		{
-			name: "email already verified",
-			gqlTests: []*Test{
-				{
-					Schema: mustParseGraphQLSchema(t, db),
-					Query: `
-				mutation {
-					resendVerificationEmail(user: "VXNlcjox", email: "alice@example.com") {
-						alwaysNil
-					}
-				}
-			`,
-					ExpectedResult: `
-				{
-					"resendVerificationEmail": {
-						"alwaysNil": null
-    				}
-				}
-			`,
-				},
-			},
-			email: &database.UserEmail{
-				Email:      "alice@example.com",
-				UserID:     1,
-				VerifiedAt: &knownTime,
-			},
-			expectEmailSent: false,
-		},
-		{
-			name: "invalid email",
-			gqlTests: []*Test{
-				{
-					Schema: mustParseGraphQLSchema(t, db),
-					Query: `
-				mutation {
-					resendVerificationEmail(user: "VXNlcjox", email: "alan@example.com") {
-						alwaysNil
-					}
-				}
-			`,
-					ExpectedResult: "null",
-					ExpectedErrors: []*gqlerrors.QueryError{
-						{
-							Path:          []interface{}{"resendVerificationEmail"},
-							Message:       "oh no!",
-							ResolverError: errors.New("oh no!"),
-						},
-					},
-				},
-			},
-			email: &database.UserEmail{
-				Email:      "alice@example.com",
-				UserID:     1,
-				VerifiedAt: &knownTime,
-			},
-			expectEmailSent: false,
-		},
-		{
-			name: "resend a verification email, too soon",
-			gqlTests: []*Test{
-				{
-					Schema: mustParseGraphQLSchema(t, db),
-					Query: `
-				mutation {
-					resendVerificationEmail(user: "VXNlcjox", email: "alice@example.com") {
-						alwaysNil
-					}
-				}
-			`,
-					ExpectedResult: "null",
-					ExpectedErrors: []*gqlerrors.QueryError{
-						{
-							Message:       "Last verification email sent too recently",
-							Path:          []interface{}{"resendVerificationEmail"},
-							ResolverError: errors.New("Last verification email sent too recently"),
-						},
-					},
-				},
-			},
-			email: &database.UserEmail{
-				Email:  "alice@example.com",
-				UserID: 1,
-				LastVerificationSentAt: func() *time.Time {
-					t := knownTime.Add(-30 * time.Second)
-					return &t
-				}(),
-			},
-			expectEmailSent: false,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var emailSent bool
-			txemail.MockSend = func(ctx context.Context, msg txemail.Message) error {
-				emailSent = true
-				return nil
 			}
+		}
+	}`
+	type primaryEmail struct {
+		Email string
+	}
+	type node struct {
+		PrimaryEmail *primaryEmail
+	}
+	type primaryEmailResponse struct {
+		Node node
+	}
 
-			userEmails.GetFunc.SetDefaultHook(func(ctx context.Context, id int32, email string) (string, bool, error) {
-				if email != test.email.Email {
-					return "", false, errors.New("oh no!")
+	now := time.Now()
+	for name, testCase := range map[string]struct {
+		emails []*database.UserEmail
+		want   primaryEmailResponse
+	}{
+		"no emails": {
+			want: primaryEmailResponse{
+				Node: node{
+					PrimaryEmail: nil,
+				},
+			},
+		},
+		"has primary email": {
+			emails: []*database.UserEmail{
+				{
+					Email:      "primary@example.com",
+					Primary:    true,
+					VerifiedAt: &now,
+				},
+				{
+					Email:      "secondary@example.com",
+					VerifiedAt: &now,
+				},
+			},
+			want: primaryEmailResponse{
+				Node: node{
+					PrimaryEmail: &primaryEmail{
+						Email: "primary@example.com",
+					},
+				},
+			},
+		},
+		"no primary email": {
+			emails: []*database.UserEmail{
+				{
+					Email:      "not-primary@example.com",
+					VerifiedAt: &now,
+				},
+				{
+					Email:      "not-primary-either@example.com",
+					VerifiedAt: &now,
+				},
+			},
+			want: primaryEmailResponse{
+				Node: node{
+					PrimaryEmail: nil,
+				},
+			},
+		},
+		"no verified email": {
+			emails: []*database.UserEmail{
+				{
+					Email:   "primary@example.com",
+					Primary: true,
+				},
+				{
+					Email: "not-primary@example.com",
+				},
+			},
+			want: primaryEmailResponse{
+				Node: node{
+					PrimaryEmail: nil,
+				},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			fs := fakedb.New()
+			db := dbmocks.NewMockDB()
+			emails := dbmocks.NewMockUserEmailsStore()
+			emails.ListByUserFunc.SetDefaultHook(func(_ context.Context, ops database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+				var emails []*database.UserEmail
+				for _, m := range testCase.emails {
+					if ops.OnlyVerified && m.VerifiedAt == nil {
+						continue
+					}
+					copy := *m
+					copy.UserID = ops.UserID
+					emails = append(emails, &copy)
 				}
-				return test.email.Email, test.email.VerifiedAt != nil, nil
+				return emails, nil
 			})
-			userEmails.GetLatestVerificationSentEmailFunc.SetDefaultReturn(test.email, nil)
-
-			RunTests(t, test.gqlTests)
-
-			if emailSent != test.expectEmailSent {
-				t.Errorf("Expected emailSent == %t, got %t", test.expectEmailSent, emailSent)
+			db.UserEmailsFunc.SetDefaultReturn(emails)
+			fs.Wire(db)
+			ctx := actor.WithActor(context.Background(), actor.FromUser(fs.AddUser(types.User{SiteAdmin: true})))
+			userID := fs.AddUser(types.User{
+				Username: "horse",
+			})
+			result := mustParseGraphQLSchema(t, db).Exec(ctx, primaryEmailQuery, "", map[string]any{
+				"id": string(relay.MarshalID("User", userID)),
+			})
+			if len(result.Errors) != 0 {
+				t.Fatal(result.Errors)
+			}
+			var resultData primaryEmailResponse
+			if err := json.Unmarshal(result.Data, &resultData); err != nil {
+				t.Fatalf("cannot unmarshal result data: %s", err)
+			}
+			if diff := cmp.Diff(testCase.want, resultData); diff != "" {
+				t.Errorf("result data, -want+got: %s", diff)
 			}
 		})
 	}

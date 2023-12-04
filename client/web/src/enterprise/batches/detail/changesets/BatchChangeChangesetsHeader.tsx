@@ -1,6 +1,10 @@
 import React from 'react'
 
-import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
+import { H3, H5 } from '@sourcegraph/wildcard'
+
+import { InputTooltip } from '../../../../components/InputTooltip'
+
+import styles from './BatchChangeChangesetsHeader.module.scss'
 
 export interface BatchChangeChangesetsHeaderProps {
     allSelected?: boolean
@@ -8,20 +12,20 @@ export interface BatchChangeChangesetsHeaderProps {
     disabled?: boolean
 }
 
-export const BatchChangeChangesetsHeader: React.FunctionComponent<BatchChangeChangesetsHeaderProps> = ({
-    allSelected,
-    toggleSelectAll,
-    disabled,
-}) => (
-    <>
+export const BatchChangeChangesetsHeader: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangeChangesetsHeaderProps>
+> = ({ allSelected, toggleSelectAll, disabled }) => (
+    <li className={styles.listItem}>
         <span className="d-none d-md-block" />
         {toggleSelectAll && (
+            // eslint-disable-next-line no-restricted-syntax
             <InputTooltip
                 type="checkbox"
                 className="ml-2"
                 checked={allSelected}
                 onChange={toggleSelectAll}
                 disabled={!!disabled}
+                placement="right"
                 tooltip={
                     disabled ? 'You do not have permission to perform this operation' : 'Click to select all changesets'
                 }
@@ -30,10 +34,20 @@ export const BatchChangeChangesetsHeader: React.FunctionComponent<BatchChangeCha
                 }
             />
         )}
-        <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Status</h5>
-        <h5 className="p-2 d-none d-md-block text-uppercase text-nowrap">Changeset information</h5>
-        <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Check state</h5>
-        <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Review state</h5>
-        <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Changes</h5>
-    </>
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap" aria-hidden={true}>
+            Status
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-nowrap" aria-hidden={true}>
+            Changeset information
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap" aria-hidden={true}>
+            Check state
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap" aria-hidden={true}>
+            Review state
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap" aria-hidden={true}>
+            Changes
+        </H5>
+    </li>
 )

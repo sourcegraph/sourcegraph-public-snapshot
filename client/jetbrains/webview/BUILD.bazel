@@ -1,0 +1,139 @@
+load("//dev:defs.bzl", "sass", "ts_project")
+load("//client/shared/dev:tools.bzl", "module_style_typings")
+load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+
+# TODO(bazel): storybook build
+# gazelle:exclude **/*.story.{ts,tsx}
+
+# gazelle:js_resolve **/*.module.scss :module_style_typings
+
+# Bundled [s]css:
+# gazelle:js_resolve **/index.scss :src/index.css
+
+module_style_typings(
+    name = "module_style_typings",
+    deps = ["//client/wildcard:sass-breakpoints"],
+)
+
+sass(
+    name = "module_styles",
+    srcs = glob(["src/**/*.module.scss"]),
+    deps = [
+        "//client/wildcard:sass-breakpoints",
+    ],
+)
+
+sass(
+    name = "package_styles",
+    srcs = glob(
+        ["src/**/*.scss"],
+        exclude = ["src/**/*.module.scss"],
+    ),
+    deps = [
+        "//:node_modules/open-color",
+        "//client/wildcard:global-styles",
+        "//client/wildcard:sass-breakpoints",
+    ],
+)
+
+js_library(
+    name = "graphql_operations_files",
+    # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
+    srcs = glob(
+        [
+            "src/**/*.ts",
+            "src/**/*.tsx",
+        ],
+        # TODO: Ignore legacy build generated file as it conflicts with the Bazel
+        # build. This can be removed after the migration.
+        [
+            "src/graphql-operations.ts",
+            "src/**/*.module.scss.d.ts",
+        ],
+    ),
+    visibility = ["//client/shared:__pkg__"],
+)
+
+generate_graphql_operations(
+    name = "graphql_operations_ts",
+    srcs = [
+        ":graphql_operations_files",
+    ],
+    out = "src/graphql-operations.ts",
+    interface_name = "JetBrainsGraphQlOperations",
+    visibility = ["//client/shared:__pkg__"],
+)
+
+ts_project(
+    name = "graphql_operations",
+    srcs = ["src/graphql-operations.ts"],
+    tsconfig = "//client/jetbrains:tsconfig",
+    deps = [
+        "//client/jetbrains:node_modules/@sourcegraph/shared",
+    ],
+)
+
+ts_project(
+    name = "webview",
+    srcs = [
+        "src/bridge-mock/call-java-mock.ts",
+        "src/bridge-mock/index.ts",
+        "src/bridge-mock/renderColorDebugger.tsx",
+        "src/bridge-mock/theme-snapshots/dark.ts",
+        "src/bridge-mock/theme-snapshots/light.ts",
+        "src/search/App.tsx",
+        "src/search/GlobalKeyboardListeners.ts",
+        "src/search/StatusBar.tsx",
+        "src/search/compat/fetchSearchContexts.ts",
+        "src/search/index.tsx",
+        "src/search/input/JetBrainsSearchBox.tsx",
+        "src/search/input/JetBrainsToggles.tsx",
+        "src/search/java-to-js-bridge.ts",
+        "src/search/jetbrains-icons/Search.tsx",
+        "src/search/js-to-java-bridge.ts",
+        "src/search/lib/ExpirationCache.ts",
+        "src/search/lib/blob.ts",
+        "src/search/lib/requestGraphQl.ts",
+        "src/search/results/CommitSearchResult.tsx",
+        "src/search/results/FileSearchResult.tsx",
+        "src/search/results/InfoDivider.tsx",
+        "src/search/results/PathSearchResult.tsx",
+        "src/search/results/RepoName.tsx",
+        "src/search/results/RepoSearchResult.tsx",
+        "src/search/results/SearchResultHeader.tsx",
+        "src/search/results/SearchResultLayout.tsx",
+        "src/search/results/SearchResultList.tsx",
+        "src/search/results/SelectableSearchResult.tsx",
+        "src/search/results/TrimmedCodeLineWithHighlights.tsx",
+        "src/search/results/utils.ts",
+        "src/search/types.d.ts",
+        "src/sourcegraph-api-access/api-gateway.ts",
+        "src/sourcegraphSettings.ts",
+        "src/telemetry/EventLogger.ts",
+    ],
+    data = [
+        ":package_styles",
+    ],
+    tsconfig = "//client/jetbrains:tsconfig",
+    deps = [
+        ":graphql_operations",
+        ":module_style_typings",
+        "//:node_modules/@mdi/js",
+        "//:node_modules/@types/classnames",
+        "//:node_modules/@types/react",
+        "//:node_modules/@types/react-dom",
+        "//:node_modules/classnames",
+        "//:node_modules/js-base64",
+        "//:node_modules/mdi-react",
+        "//:node_modules/react",
+        "//:node_modules/react-dom",
+        "//:node_modules/react-router-dom",
+        "//:node_modules/rxjs",
+        "//client/jetbrains:node_modules/@sourcegraph/branded",
+        "//client/jetbrains:node_modules/@sourcegraph/common",
+        "//client/jetbrains:node_modules/@sourcegraph/http-client",
+        "//client/jetbrains:node_modules/@sourcegraph/shared",
+        "//client/jetbrains:node_modules/@sourcegraph/wildcard",
+    ],
+)

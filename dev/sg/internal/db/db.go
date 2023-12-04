@@ -7,12 +7,17 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func getFSForPath(path string) func() (fs.FS, error) {
+func GetFSForPath(path string) func() (fs.FS, error) {
 	return func() (fs.FS, error) {
 		repoRoot, err := root.RepositoryRoot()
 		if err != nil {
+			if errors.Is(err, root.ErrNotInsideSourcegraph) {
+				return nil, errors.Newf("sg migration command uses the migrations defined on the local filesystem: %w", err)
+			}
+
 			return nil, err
 		}
 
@@ -24,11 +29,14 @@ type Database struct {
 	// Name of database, used to convert from arguments to Database
 	Name string
 
-	// Table in database for storing information about migrations.
+	// Table in database for storing information about migrations
 	MigrationsTable string
 
 	// Additional data tables for database
 	DataTables []string
+
+	// Additional single-row aggregate ocunt tables for database
+	CountTables []string
 
 	// Used for retrieving the directory where migrations live
 	FS func() (fs.FS, error)
@@ -38,22 +46,25 @@ var (
 	frontendDatabase = Database{
 		Name:            "frontend",
 		MigrationsTable: "schema_migrations",
-		DataTables:      []string{"out_of_band_migrations"},
-		FS:              getFSForPath("frontend"),
+		FS:              GetFSForPath("frontend"),
+		DataTables:      []string{"lsif_configuration_policies", "roles"},
+		CountTables:     nil,
 	}
 
 	codeIntelDatabase = Database{
 		Name:            "codeintel",
 		MigrationsTable: "codeintel_schema_migrations",
+		FS:              GetFSForPath("codeintel"),
 		DataTables:      nil,
-		FS:              getFSForPath("codeintel"),
+		CountTables:     nil,
 	}
 
 	codeInsightsDatabase = Database{
 		Name:            "codeinsights",
 		MigrationsTable: "codeinsights_schema_migrations",
+		FS:              GetFSForPath("codeinsights"),
 		DataTables:      nil,
-		FS:              getFSForPath("codeinsights"),
+		CountTables:     nil,
 	}
 
 	databases = []Database{

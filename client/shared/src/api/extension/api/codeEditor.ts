@@ -1,24 +1,16 @@
-import { ProxyMarked, proxyMarker } from 'comlink'
-import { isEqual, uniqueId } from 'lodash'
-import { BehaviorSubject, Observable } from 'rxjs'
-import * as sourcegraph from 'sourcegraph'
+import { type ProxyMarked, proxyMarker } from 'comlink'
+import { isEqual } from 'lodash'
+import { BehaviorSubject } from 'rxjs'
+import type { CodeEditor } from 'sourcegraph'
 
-import { Range, Selection } from '@sourcegraph/extension-api-classes'
-import * as clientType from '@sourcegraph/extension-api-types'
+import { Selection } from '@sourcegraph/extension-api-classes'
 
-import { CodeEditorData, ViewerId } from '../../viewerTypes'
+import type { CodeEditorData, ViewerId } from '../../viewerTypes'
 
-import { createDecorationType } from './decorations'
-import { ExtensionDocument } from './textDocument'
-
-export const createStatusBarItemType = (): sourcegraph.StatusBarItemType => ({ key: uniqueId('StatusBarItemType') })
-
-export type StatusBarItemWithKey = sourcegraph.StatusBarItem & sourcegraph.StatusBarItemType
-
-const DEFAULT_DECORATION_TYPE = createDecorationType()
+import type { ExtensionDocument } from './textDocument'
 
 /** @internal */
-export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked {
+export class ExtensionCodeEditor implements CodeEditor, ProxyMarked {
     public readonly [proxyMarker] = true
 
     /** The internal ID of this code editor. */
@@ -36,54 +28,16 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
         this.update(data)
     }
 
-    public readonly selectionsChanges = new BehaviorSubject<sourcegraph.Selection[]>([])
+    public readonly selectionsChanges = new BehaviorSubject<Selection[]>([])
 
     public readonly type = 'CodeEditor'
 
-    public get selection(): sourcegraph.Selection | null {
+    public get selection(): Selection | null {
         return this.selectionsChanges.value.length > 0 ? this.selectionsChanges.value[0] : null
     }
 
-    public get selections(): sourcegraph.Selection[] {
+    public get selections(): Selection[] {
         return this.selectionsChanges.value
-    }
-
-    private _decorationsByType = new Map<sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]>()
-
-    private _mergedDecorations = new BehaviorSubject<clientType.TextDocumentDecoration[]>([])
-    public get mergedDecorations(): Observable<clientType.TextDocumentDecoration[]> {
-        return this._mergedDecorations
-    }
-
-    public setDecorations(
-        decorationType: sourcegraph.TextDocumentDecorationType | null,
-        decorations: sourcegraph.TextDocumentDecoration[]
-    ): void {
-        // Backcompat: extensions developed against an older version of the API
-        // may not supply a decorationType
-        decorationType = decorationType || DEFAULT_DECORATION_TYPE
-        // Replace previous decorations for this decorationType
-        this._decorationsByType.set(decorationType, decorations.map(fromTextDocumentDecoration))
-        this._mergedDecorations.next(
-            [...this._decorationsByType.values()].flat().filter(decoration => !isDecorationEmpty(decoration))
-        )
-    }
-
-    private _statusBarItemsByType = new Map<sourcegraph.StatusBarItemType, StatusBarItemWithKey>()
-
-    private _mergedStatusBarItems = new BehaviorSubject<StatusBarItemWithKey[]>([])
-    public get mergedStatusBarItems(): Observable<StatusBarItemWithKey[]> {
-        return this._mergedStatusBarItems
-    }
-
-    public setStatusBarItem(
-        statusBarItemType: sourcegraph.StatusBarItemType,
-        statusBarItem: sourcegraph.StatusBarItem
-    ): void {
-        this._statusBarItemsByType.set(statusBarItemType, { ...statusBarItem, ...statusBarItemType })
-        this._mergedStatusBarItems.next(
-            [...this._statusBarItemsByType.values()].flat().filter(statusBarItem => isValidStatusBarItem(statusBarItem))
-        )
     }
 
     public update(data: Pick<CodeEditorData, 'selections'>): void {
@@ -108,15 +62,3 @@ const isEmptyObjectDeep = (value: any): boolean =>
         : typeof value === 'object' && value !== null
         ? Object.values(value).every(isEmptyObjectDeep)
         : !value
-
-const isDecorationEmpty = ({ range, isWholeLine, ...contents }: clientType.TextDocumentDecoration): boolean =>
-    isEmptyObjectDeep(contents)
-
-const isValidStatusBarItem = ({ key, text }: StatusBarItemWithKey): boolean => !!key && !!text
-
-function fromTextDocumentDecoration(decoration: sourcegraph.TextDocumentDecoration): clientType.TextDocumentDecoration {
-    return {
-        ...decoration,
-        range: (decoration.range as Range).toJSON(),
-    }
-}

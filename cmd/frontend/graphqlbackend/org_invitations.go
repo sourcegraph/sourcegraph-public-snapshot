@@ -7,28 +7,27 @@ import (
 	"math"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var EmailInvitesFeatureFlag = "org-email-invites"
 var SigningKeyMessage = "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
 var DefaultExpiryDuration = 48 * time.Hour
 
@@ -40,14 +39,15 @@ func getUserToInviteToOrganization(ctx context.Context, db database.DB, username
 
 	if conf.CanSendEmail() {
 		// Look up user's email address so we can send them an email (if needed).
-		email, verified, err := database.UserEmails(db).GetPrimaryEmail(ctx, userToInvite.ID)
+		email, verified, err := db.UserEmails().GetPrimaryEmail(ctx, userToInvite.ID)
 		if err != nil && !errcode.IsNotFound(err) {
 			return nil, "", errors.WithMessage(err, "looking up invited user's primary email address")
 		}
-		if verified {
-			// Completely discard unverified emails.
-			userEmailAddress = email
+		if !verified {
+			return nil, "", errors.New("cannot invite user because their primary email address is not verified")
 		}
+
+		userEmailAddress = email
 	}
 
 	if _, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, orgID, userToInvite.ID); err == nil {
@@ -64,7 +64,7 @@ type inviteUserToOrganizationResult struct {
 }
 
 type orgInvitationClaims struct {
-	InvitationID int64 `json:"invite_ID"`
+	InvitationID int64 `json:"invite_id"`
 	SenderID     int32 `json:"sender_id"`
 	jwt.RegisteredClaims
 }
@@ -87,7 +87,7 @@ func checkEmail(ctx context.Context, db database.DB, inviteEmail string) (bool, 
 
 	containsEmail := func(userEmails []*database.UserEmail, email string) *database.UserEmail {
 		for _, userEmail := range userEmails {
-			if email == userEmail.Email {
+			if strings.EqualFold(email, userEmail.Email) {
 				return userEmail
 			}
 		}
@@ -126,7 +126,7 @@ func newExpiryTime() time.Time {
 func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	Token string
 }) (*organizationInvitationResolver, error) {
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
@@ -134,7 +134,7 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 		return nil, errors.Newf("signing key not provided, cannot validate JWT on invitation URL. Please add organizationInvitations signingKey to site configuration.")
 	}
 
-	token, err := jwt.ParseWithClaims(args.Token, &orgInvitationClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(args.Token, &orgInvitationClaims{}, func(token *jwt.Token) (any, error) {
 		return base64.StdEncoding.DecodeString(conf.SiteConfig().OrganizationInvitations.SigningKey)
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Name}))
 
@@ -166,27 +166,16 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 
 func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
-	Username     *string
-	Email        *string
+	Username     string
 }) (*inviteUserToOrganizationResult, error) {
-	if args.Email == nil && args.Username == nil {
-		return nil, errors.New("either username or email must be defined")
-	}
-
 	var orgID int32
 	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
 		return nil, err
 	}
 	// 🚨 SECURITY: Check that the current user is a member of the org that the user is being
 	// invited to.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
-	}
-	// check org has feature flag for email invites enabled, we can ignore errors here as flag value would be false
-	enabled, _ := r.db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, EmailInvitesFeatureFlag)
-	// return error if feature flag is not enabled and we got an email as an argument
-	if ((args.Email != nil && *args.Email != "") || args.Username == nil) && !enabled {
-		return nil, errors.New("inviting by email is not supported for this organization")
 	}
 
 	// Create the invitation.
@@ -202,22 +191,14 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	// sending invitation to user ID or email
 	var recipientID int32
 	var recipientEmail string
-	if args.Username != nil {
-		recipient, userEmail, err := getUserToInviteToOrganization(ctx, r.db, *args.Username, orgID)
-		if err != nil {
-			return nil, err
-		}
-		recipientID = recipient.ID
-		recipientEmail = userEmail
+	var userEmail string
+	var recipient *types.User
+	recipient, userEmail, err = getUserToInviteToOrganization(ctx, r.db, args.Username, orgID)
+	if err != nil {
+		return nil, err
 	}
+	recipientID = recipient.ID
 	hasConfig := orgInvitationConfigDefined()
-	if args.Email != nil {
-		// we only support new URL schema for email invitations
-		if !hasConfig {
-			return nil, errors.New(SigningKeyMessage)
-		}
-		recipientEmail = *args.Email
-	}
 
 	expiryTime := newExpiryTime()
 	invitation, err := r.db.OrgInvitations().Create(ctx, orgID, sender.ID, recipientID, recipientEmail, expiryTime)
@@ -227,7 +208,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 
 	// create invitation URL
 	var invitationURL string
-	if args.Email != nil || hasConfig {
+	if hasConfig {
 		invitationURL, err = orgInvitationURL(*invitation, false)
 	} else { // TODO: remove this fallback once signing key is enforced for on-prem instances
 		invitationURL = orgInvitationURLLegacy(org, false)
@@ -242,8 +223,8 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 
 	// Send a notification to the recipient. If disabled, the frontend will still show the
 	// invitation link.
-	if conf.CanSendEmail() && recipientEmail != "" {
-		if err := sendOrgInvitationNotification(ctx, r.db, org, sender, recipientEmail, invitationURL, *invitation.ExpiresAt); err != nil {
+	if conf.CanSendEmail() && userEmail != "" {
+		if err := sendOrgInvitationNotification(ctx, r.db, org, sender, userEmail, invitationURL, *invitation.ExpiresAt); err != nil {
 			return nil, errors.WithMessage(err, "sending notification to invitation recipient")
 		}
 		result.sentInvitationEmail = true
@@ -255,7 +236,7 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 	OrganizationInvitation graphql.ID
 	ResponseType           string
 }) (*EmptyResponse, error) {
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 	if !a.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
@@ -290,7 +271,7 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 		}
 		if shouldMarkAsVerified && accept {
 			// ignore errors here as this is a best-effort action
-			r.db.UserEmails().SetVerified(ctx, a.UID, invitation.RecipientEmail, shouldMarkAsVerified)
+			_ = r.db.UserEmails().SetVerified(ctx, a.UID, invitation.RecipientEmail, shouldMarkAsVerified)
 		}
 	} else if invitation.RecipientUserID > 0 && invitation.RecipientUserID != a.UID {
 		// 🚨 SECURITY: Fail if the org invitation's recipient is not the one given
@@ -309,107 +290,8 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 			return nil, err
 		}
 
-		// Schedule permission sync for user that accepted the invite
-		err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{a.UID}})
-		if err != nil {
-			log15.Warn("schemaResolver.RespondToOrganizationInvitation.SchedulePermsSync",
-				"userID", a.UID,
-				"error", err,
-			)
-		}
-	}
-	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Context, args *struct {
-	OrganizationInvitation graphql.ID
-}) (*EmptyResponse, error) {
-	id, err := UnmarshalOrgInvitationID(args.OrganizationInvitation)
-	if err != nil {
-		return nil, err
-	}
-
-	orgInvitation, err := r.db.OrgInvitations().GetPendingByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
-		return nil, err
-	}
-
-	// Do not allow to resend for expired invitation
-	if orgInvitation.Expired() {
-		return nil, errors.New("invitation is expired")
-	}
-
-	if !conf.CanSendEmail() {
-		return nil, errors.New("unable to send notification for invitation because sending emails is not enabled")
-	}
-
-	org, err := r.db.Orgs().GetByID(ctx, orgInvitation.OrgID)
-	if err != nil {
-		return nil, err
-	}
-	sender, err := r.db.Users().GetByCurrentAuthUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-	var recipientEmail string
-	if orgInvitation.RecipientEmail != "" {
-		recipientEmail = orgInvitation.RecipientEmail
-	} else {
-		recipientEmailVerified := false
-		recipientEmail, recipientEmailVerified, err = r.db.UserEmails().GetPrimaryEmail(ctx, orgInvitation.RecipientUserID)
-		if err != nil {
-			return nil, err
-		}
-		if !recipientEmailVerified {
-			return nil, errors.New("refusing to send notification because recipient has no verified email address")
-		}
-	}
-
-	expiryTime := newExpiryTime()
-	orgInvitation.ExpiresAt = &expiryTime
-	if err := r.db.OrgInvitations().UpdateExpiryTime(ctx, orgInvitation.ID, expiryTime); err != nil {
-		return nil, err
-	}
-
-	var invitationURL string
-	if orgInvitationConfigDefined() {
-		invitationURL, err = orgInvitationURL(*orgInvitation, false)
-	} else { // TODO: remove this fallback once signing key is enforced for on-prem instances
-		invitationURL = orgInvitationURLLegacy(org, false)
-	}
-	if err != nil {
-		return nil, err
-	}
-	if err := sendOrgInvitationNotification(ctx, r.db, org, sender, recipientEmail, invitationURL, *orgInvitation.ExpiresAt); err != nil {
-		return nil, err
-	}
-	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) RevokeOrganizationInvitation(ctx context.Context, args *struct {
-	OrganizationInvitation graphql.ID
-}) (*EmptyResponse, error) {
-	id, err := UnmarshalOrgInvitationID(args.OrganizationInvitation)
-	if err != nil {
-		return nil, err
-	}
-	orgInvitation, err := r.db.OrgInvitations().GetPendingByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
-		return nil, err
-	}
-
-	if err := r.db.OrgInvitations().Revoke(ctx, orgInvitation.ID); err != nil {
-		return nil, err
+		// Schedule permission sync for user that accepted the invite. Internally it will log an error if enqueuing fails.
+		permssync.SchedulePermsSync(ctx, r.logger, r.db, permssync.ScheduleSyncOpts{UserIDs: []int32{a.UID}, Reason: database.ReasonUserAcceptedOrgInvite})
 	}
 	return &EmptyResponse{}, nil
 }
@@ -477,7 +359,7 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 		// Basic abuse prevention for Sourcegraph.com.
 
 		// Only allow email-verified users to send invites.
-		if _, senderEmailVerified, err := database.UserEmails(db).GetPrimaryEmail(ctx, sender.ID); err != nil {
+		if _, senderEmailVerified, err := db.UserEmails().GetPrimaryEmail(ctx, sender.ID); err != nil {
 			return err
 		} else if !senderEmailVerified {
 			return errors.New("must verify your email address to invite a user to an organization")
@@ -487,7 +369,7 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 		//
 		// There is no user invite quota for on-prem instances because we assume they can
 		// trust their users to not abuse invites.
-		if ok, err := database.Users(db).CheckAndDecrementInviteQuota(ctx, sender.ID); err != nil {
+		if ok, err := db.Users().CheckAndDecrementInviteQuota(ctx, sender.ID); err != nil {
 			return err
 		} else if !ok {
 			return errors.New("invite quota exceeded (contact support to increase the quota)")
@@ -508,7 +390,7 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 		orgName = org.Name
 	}
 
-	return txemail.Send(ctx, txemail.Message{
+	return txemail.Send(ctx, "org_invite", txemail.Message{
 		To:       []string{recipientEmail},
 		Template: emailTemplates,
 		Data: struct {
@@ -541,8 +423,8 @@ Visit this link in your browser to accept the invite: {{.InvitationUrl}}
 This link will expire in {{.ExpiryDays}} days. You are receiving this email because @{{.FromUserName}} invited you to an organization on Sourcegraph Cloud.
 
 
-To see our Terms of Service, please visit this link: https://about.sourcegraph.com/terms
-To see our Privacy Policy, please visit this link: https://about.sourcegraph.com/privacy
+To see our Terms of Service, please visit this link: https://sourcegraph.com/terms
+To see our Privacy Policy, please visit this link: https://sourcegraph.com/privacy
 
 Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA
 `,
@@ -582,8 +464,8 @@ Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA
     This link will expire in {{.ExpiryDays}} days. You are receiving this email because @{{.FromUserName}} invited you to an organization on Sourcegraph Cloud.
   </p>
   <p class="mtl">
-    <a href="https://about.sourcegraph.com/terms">Terms</a>&nbsp;&#8226;&nbsp;
-    <a href="https://about.sourcegraph.com/privacy">Privacy</a>
+    <a href="https://sourcegraph.com/terms">Terms</a>&nbsp;&#8226;&nbsp;
+    <a href="https://sourcegraph.com/privacy">Privacy</a>
   </p>
   <p>Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA</p>
   </small>

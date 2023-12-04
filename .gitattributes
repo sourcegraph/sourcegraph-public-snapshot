@@ -1,5 +1,9 @@
 cmd/repo-updater/repos/testdata/** linguist-generated=true
 **/__fixtures__/** linguist-generated=true
+**/__snapshots__/** linguist-generated=true
 **/bindata.go linguist-generated=true
+**/Cargo.lock linguist-generated=true
+**/Cargo.Bazel.lock linguist-generated=true
 **/*.pb.go linguist-generated=true
 CHANGELOG.md merge=union
+**/mocks*_*test.go linguist-generated=true

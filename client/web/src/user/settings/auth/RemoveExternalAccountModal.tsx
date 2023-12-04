@@ -1,12 +1,11 @@
 import React, { useCallback, useState } from 'react'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, ErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, H3, Form } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { Scalars, DeleteExternalAccountResult, DeleteExternalAccountVariables } from '../../../graphql-operations'
+import type { Scalars, DeleteExternalAccountResult, DeleteExternalAccountVariables } from '../../../graphql-operations'
 
 const deleteUserExternalAccount = async (externalAccount: Scalars['ID']): Promise<void> => {
     dataOrThrowErrors(
@@ -23,14 +22,17 @@ const deleteUserExternalAccount = async (externalAccount: Scalars['ID']): Promis
     )
 }
 
-export const RemoveExternalAccountModal: React.FunctionComponent<{
-    id: Scalars['ID']
-    name: string
+export const RemoveExternalAccountModal: React.FunctionComponent<
+    React.PropsWithChildren<{
+        id: Scalars['ID']
+        name: string
 
-    onDidRemove: (id: string, name: string) => void
-    onDidCancel: () => void
-    onDidError: (error: ErrorLike) => void
-}> = ({ id, name, onDidRemove, onDidCancel, onDidError }) => {
+        onDidRemove: (id: string, name: string) => void
+        onDidCancel: () => void
+        onDidError: (error: ErrorLike) => void
+        isOpen: boolean
+    }>
+> = ({ id, name, onDidRemove, onDidCancel, onDidError, isOpen }) => {
     const [isLoading, setIsLoading] = useState(false)
 
     const onAccountRemove = useCallback<React.FormEventHandler<HTMLFormElement>>(
@@ -55,10 +57,11 @@ export const RemoveExternalAccountModal: React.FunctionComponent<{
             aria-labelledby={`heading--disconnect-${name}`}
             aria-describedby={`description--disconnect-${name}`}
             onDismiss={onDidCancel}
+            isOpen={isOpen}
         >
-            <h3 id={`heading--disconnect-${name}`} className="text-danger mb-4">
+            <H3 id={`heading--disconnect-${name}`} className="text-danger mb-4">
                 Disconnect {name}?
-            </h3>
+            </H3>
             <Form onSubmit={onAccountRemove}>
                 <div id={`description--disconnect-${name}`} className="form-group mb-4">
                     You are about to remove the sign in connection with {name}. After removing it, you won’t be able to

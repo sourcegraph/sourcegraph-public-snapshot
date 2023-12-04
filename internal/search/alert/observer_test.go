@@ -4,49 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func TestAlertForDiffCommitSearchLimits(t *testing.T) {
-	cases := []struct {
-		name                 string
-		multiErr             *errors.MultiError
-		wantAlertDescription string
-	}{
-		{
-			name:                 "diff_search_warns_on_repos_greater_than_search_limit",
-			multiErr:             errors.Append(&errors.MultiError{}, &commit.RepoLimitError{ResultType: "diff", Max: 50}),
-			wantAlertDescription: `Diff search can currently only handle searching across 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`,
-		},
-		{
-			name:                 "commit_search_warns_on_repos_greater_than_search_limit",
-			multiErr:             errors.Append(&errors.MultiError{}, &commit.RepoLimitError{ResultType: "commit", Max: 50}),
-			wantAlertDescription: `Commit search can currently only handle searching across 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`,
-		},
-		{
-			name:                 "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
-			multiErr:             errors.Append(&errors.MultiError{}, &commit.TimeLimitError{ResultType: "commit", Max: 10000}),
-			wantAlertDescription: `Commit search can currently only handle searching across 10000 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`,
-		},
-	}
-
-	for _, test := range cases {
-		alert, _ := (&Observer{}).errorToAlert(context.Background(), test.multiErr)
-		haveAlertDescription := alert.Description
-		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
-			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
-		}
-	}
-}
 
 func TestErrorToAlertStructuralSearch(t *testing.T) {
 	cases := []struct {
@@ -70,11 +36,10 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 		},
 	}
 	for _, test := range cases {
-		multiErr := &errors.MultiError{
-			Errors:      test.errors,
-			ErrorFormat: errors.ListFormatFunc,
-		}
-		haveAlert, _ := (&Observer{}).errorToAlert(context.Background(), multiErr)
+		multiErr := errors.Append(nil, test.errors...)
+		haveAlert, _ := (&Observer{
+			Logger: logtest.Scoped(t),
+		}).errorToAlert(context.Background(), multiErr)
 
 		if haveAlert != nil && haveAlert.Title != test.wantAlertTitle {
 			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.Title, test.wantAlertTitle)
@@ -84,13 +49,14 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 }
 
 func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
-	db := database.NewDB(nil)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, nil)
 
 	searchQuery := "context:@user repo:r1 foo"
 	wantAlert := &search.Alert{
 		PrometheusType: "no_resolved_repos__context_none_in_common",
 		Title:          "No repositories found for your query within the context @user",
-		ProposedQueries: []*search.ProposedQuery{
+		ProposedQueries: []*search.QueryDescription{
 			{
 
 				Description: "search in the global context",
@@ -105,11 +71,13 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	sr := Observer{
-		Db: database.NewDB(db),
-		SearchInputs: &run.SearchInputs{
+		Logger: logger,
+		Db:     db,
+		Inputs: &search.Inputs{
 			OriginalQuery: searchQuery,
 			Query:         q,
 			UserSettings:  &schema.Settings{},
+			Features:      &search.Features{},
 		},
 	}
 

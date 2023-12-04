@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090,SC1091
 source "$HOME/.profile"
 
-# Fetch the latest origin/master to accurately determine the set of changed
+# Fetch the latest origin/main to accurately determine the set of changed
 # files on this branch.
 echo "Running git fetch..."
 git fetch
 echo "Running git fetch... done"
 
 # Link command wrapper scripts so we can have more readable steps in the buildkite UI
-ln -s "$(pwd)/enterprise/dev/ci/scripts/trace-command.sh" tr 2>/dev/null || true
-ln -s "$(pwd)/enterprise/dev/ci/scripts/annotated-command.sh" an 2>/dev/null || true
+ln -s "$(pwd)/dev/ci/scripts/annotated-command.sh" an 2>/dev/null || true
+
+# Provides secrets to the client integration tests target.
+echo -e "build --define=GH_TOKEN=$GH_TOKEN\nbuild --define=PERCY_TOKEN=$PERCY_TOKEN" >.aspect/bazelrc/ci.generated.bazelrc

@@ -1,36 +1,31 @@
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 
-import { gql, useQuery } from '@sourcegraph/http-client'
+import { useQuery } from '@sourcegraph/http-client'
 
-import { IndexConfigurationResult } from '../../../../graphql-operations'
+import type { AutoIndexJobDescriptionFields, IndexConfigurationResult } from '../../../../graphql-operations'
+import { REPOSITORY_CONFIGURATION } from '../backend'
 
 interface UseRepositoryConfigResult {
-    configuration: string
+    configuration: {
+        raw: string
+        parsed: AutoIndexJobDescriptionFields[]
+    } | null
     loadingRepository: boolean
     repositoryError: ApolloError | undefined
 }
-
-export const REPOSITORY_CONFIGURATION = gql`
-    query IndexConfiguration($id: ID!) {
-        node(id: $id) {
-            ...RepositoryIndexConfigurationFields
-        }
-    }
-
-    fragment RepositoryIndexConfigurationFields on Repository {
-        __typename
-        indexConfiguration {
-            configuration
-        }
-    }
-`
 
 export const useRepositoryConfig = (id: string): UseRepositoryConfigResult => {
     const { data, loading, error } = useQuery<IndexConfigurationResult>(REPOSITORY_CONFIGURATION, {
         variables: { id },
     })
 
-    const configuration = (data?.node?.__typename === 'Repository' && data.node.indexConfiguration?.configuration) || ''
+    const configuration =
+        data?.node?.__typename === 'Repository' && data.node.indexConfiguration?.configuration
+            ? {
+                  raw: data.node.indexConfiguration.configuration,
+                  parsed: data.node.indexConfiguration.parsedConfiguration ?? [],
+              }
+            : null
 
     return {
         configuration,

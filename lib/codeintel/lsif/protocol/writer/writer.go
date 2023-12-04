@@ -14,7 +14,7 @@ var marshaller = jsoniter.ConfigFastest
 // underlying writer as newline-delimited JSON.
 type JSONWriter interface {
 	// Write emits a single vertex or edge value.
-	Write(v interface{})
+	Write(v any)
 
 	// Flush ensures that all elements have been written to the underlying writer.
 	Flush() error
@@ -22,7 +22,7 @@ type JSONWriter interface {
 
 type jsonWriter struct {
 	wg             sync.WaitGroup
-	ch             chan interface{}
+	ch             chan any
 	bufferedWriter *bufio.Writer
 	err            error
 }
@@ -37,7 +37,7 @@ const writerBufferSize = 4096
 
 // NewJSONWriter creates a new JSONWriter wrapping the given writer.
 func NewJSONWriter(w io.Writer) JSONWriter {
-	ch := make(chan interface{}, channelBufferSize)
+	ch := make(chan any, channelBufferSize)
 	bufferedWriter := bufio.NewWriterSize(w, writerBufferSize)
 	jw := &jsonWriter{ch: ch, bufferedWriter: bufferedWriter}
 	encoder := marshaller.NewEncoder(bufferedWriter)
@@ -61,7 +61,7 @@ func NewJSONWriter(w io.Writer) JSONWriter {
 }
 
 // Write emits a single vertex or edge value.
-func (jw *jsonWriter) Write(v interface{}) {
+func (jw *jsonWriter) Write(v any) {
 	jw.ch <- v
 }
 

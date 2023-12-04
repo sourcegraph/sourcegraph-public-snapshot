@@ -1,34 +1,41 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import * as H from 'history'
-import * as React from 'react'
-import { NEVER, of } from 'rxjs'
+import { Route, Routes } from 'react-router-dom'
+import { of } from 'rxjs'
 import sinon from 'sinon'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
+
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import {
-    MonitorEditInput,
-    MonitorEditTriggerInput,
-    MonitorEditActionInput,
+    type FetchCodeMonitorResult,
+    type MonitorEditInput,
+    type MonitorEditTriggerInput,
+    type MonitorEditActionInput,
     MonitorEmailPriority,
-} from '@sourcegraph/shared/src/graphql-operations'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
-
-import { FetchCodeMonitorResult } from '../../graphql-operations'
+} from '../../graphql-operations'
 
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
 import { mockCodeMonitor, mockCodeMonitorFields, mockUser } from './testing/util'
 
 describe('ManageCodeMonitorPage', () => {
-    const history = H.createMemoryHistory()
-    history.location.pathname = '/code-monitoring/test-monitor-id'
+    const origContext = window.context
+    beforeEach(() => {
+        window.context = {
+            emailEnabled: true,
+        } as any
+    })
+    afterEach(() => {
+        window.context = origContext
+    })
+
     const props = {
-        history,
-        location: history.location,
         authenticatedUser: mockUser,
         breadcrumbs: [{ depth: 0, breadcrumb: null }],
         setBreadcrumb: sinon.spy(),
         useBreadcrumb: sinon.spy(),
-        fetchUserCodeMonitors: sinon.spy(),
         updateCodeMonitor: sinon.spy(
             (
                 monitorEditInput: MonitorEditInput,
@@ -37,18 +44,21 @@ describe('ManageCodeMonitorPage', () => {
             ) => of(mockCodeMonitorFields)
         ),
         fetchCodeMonitor: sinon.spy((id: string) => of(mockCodeMonitor as FetchCodeMonitorResult)),
-        match: {
-            params: { id: 'test-id' },
-            isExact: true,
-            path: history.location.pathname,
-            url: 'https://sourcegraph.com',
-        },
         toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
-        deleteCodeMonitor: sinon.spy((id: string) => NEVER),
+        deleteCodeMonitor: sinon.spy((id: string) => of(undefined)),
+        isLightTheme: false,
+        isSourcegraphDotCom: false,
     }
 
     test('Form is pre-loaded with code monitor data', () => {
-        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <Routes>
+                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                </Routes>
+            </MockedTestProvider>,
+            { route: '/code-monitoring/test-monitor-id' }
+        )
         expect(props.fetchCodeMonitor.calledOnce).toBe(true)
 
         const nameInput = screen.getByTestId('name-input')
@@ -63,7 +73,14 @@ describe('ManageCodeMonitorPage', () => {
     })
 
     test('Updating the form executes the update request', () => {
-        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <Routes>
+                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                </Routes>
+            </MockedTestProvider>,
+            { route: '/code-monitoring/test-monitor-id' }
+        )
         const nameInput = screen.getByTestId('name-input')
         expect(nameInput).toHaveValue('Test code monitor')
 
@@ -75,8 +92,8 @@ describe('ManageCodeMonitorPage', () => {
         sinon.assert.calledWith(
             props.updateCodeMonitor,
             {
-                id: 'test-id',
-                update: { namespace: 'userID', description: 'Test updated', enabled: true },
+                id: 'test-monitor-id',
+                update: { namespace: 'test-id', description: 'Test updated', enabled: true },
             },
             { id: 'test-0', update: { query: 'test' } },
             [
@@ -108,14 +125,28 @@ describe('ManageCodeMonitorPage', () => {
     })
 
     test('Clicking Edit in the trigger area opens the query form', () => {
-        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <Routes>
+                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                </Routes>
+            </MockedTestProvider>,
+            { route: '/code-monitoring/test-monitor-id' }
+        )
         expect(screen.queryByTestId('trigger-query-edit')).not.toBeInTheDocument()
         userEvent.click(screen.getByTestId('trigger-button'))
         expect(screen.getByTestId('trigger-query-edit')).toBeInTheDocument()
     })
 
     test('Clicking Edit in the action area opens the action form', () => {
-        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <Routes>
+                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                </Routes>
+            </MockedTestProvider>,
+            { route: '/code-monitoring/test-monitor-id' }
+        )
         expect(screen.queryByTestId('action-form-email')).not.toBeInTheDocument()
         const editTrigger = screen.getByTestId('form-action-toggle-email')
         userEvent.click(editTrigger)
@@ -123,17 +154,31 @@ describe('ManageCodeMonitorPage', () => {
     })
 
     test('Save button is disabled when no changes have been made, enabled when changes have been made', () => {
-        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <Routes>
+                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                </Routes>
+            </MockedTestProvider>,
+            { route: '/code-monitoring/test-monitor-id' }
+        )
         const submitButton = screen.getByTestId('submit-monitor')
-        expect(submitButton).toBeDisabled()
+        assertAriaDisabled(submitButton)
 
         userEvent.type(screen.getByTestId('name-input'), 'Test code monitor updated')
 
-        expect(submitButton).toBeEnabled()
+        assertAriaEnabled(submitButton)
     })
 
     test('Cancelling after changes have been made shows confirmation prompt', () => {
-        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <Routes>
+                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                </Routes>
+            </MockedTestProvider>,
+            { route: '/code-monitoring/test-monitor-id' }
+        )
         const confirmStub = sinon.stub(window, 'confirm')
 
         userEvent.type(screen.getByTestId('name-input'), 'Test code monitor updated')
@@ -144,7 +189,14 @@ describe('ManageCodeMonitorPage', () => {
     })
 
     test('Cancelling without any changes made does not show confirmation prompt', () => {
-        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <Routes>
+                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                </Routes>
+            </MockedTestProvider>,
+            { route: '/code-monitoring/test-monitor-id' }
+        )
         const confirmStub = sinon.stub(window, 'confirm')
         userEvent.click(screen.getByTestId('cancel-monitor'))
 
@@ -153,7 +205,17 @@ describe('ManageCodeMonitorPage', () => {
     })
 
     test('Clicking delete code monitor opens deletion confirmation modal', () => {
-        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
+        const { locationRef } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <Routes>
+                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                    <Route path="/code-monitoring" element={null} />
+                </Routes>
+            </MockedTestProvider>,
+            {
+                route: '/code-monitoring/test-monitor-id',
+            }
+        )
         userEvent.click(screen.getByTestId('delete-monitor'))
         expect(screen.getByTestId('delete-modal')).toBeInTheDocument()
 
@@ -162,6 +224,6 @@ describe('ManageCodeMonitorPage', () => {
         userEvent.click(confirmDeleteButton)
 
         sinon.assert.calledOnce(props.deleteCodeMonitor)
-        expect(props.history.location.pathname).toEqual('/code-monitoring')
+        expect(locationRef.current?.pathname).toEqual('/code-monitoring')
     })
 })

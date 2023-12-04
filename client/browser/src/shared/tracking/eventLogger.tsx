@@ -1,15 +1,14 @@
 import { noop } from 'lodash'
-import { Observable, Subscription } from 'rxjs'
+import { type Observable, Subscription } from 'rxjs'
 import * as uuid from 'uuid'
 
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { storage } from '../../browser-extension/web-extension-api/storage'
-import { UserEvent } from '../../graphql-operations'
-import { logUserEvent, logEvent } from '../backend/userEvents'
+import { logEvent } from '../backend/userEvents'
 import { isInPage } from '../context'
-import { getPlatformName } from '../util/context'
+import { getExtensionVersion, getPlatformName } from '../util/context'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
@@ -37,14 +36,17 @@ export class ConditionalTelemetryService implements TelemetryService {
             })
         )
     }
-    public log(eventName: string, eventProperties?: any): void {
+    public log(eventName: string, eventProperties?: any, publicArgument?: any): void {
         // Wait for this.isEnabled to get a new value
         setTimeout(() => {
             if (this.isEnabled) {
-                this.innerTelemetryService.log(eventName, eventProperties)
+                this.innerTelemetryService.log(eventName, eventProperties, publicArgument)
             }
         })
     }
+    /**
+     * @deprecated Use logPageView instead
+     */
     public logViewEvent(eventName: string, eventProperties?: any): void {
         // Wait for this.isEnabled to get a new value
         setTimeout(() => {
@@ -53,6 +55,20 @@ export class ConditionalTelemetryService implements TelemetryService {
             }
         })
     }
+    public logPageView(eventName: string, eventProperties?: any, publicArgument?: any): void {
+        // Wait for this.isEnabled to get a new value
+        setTimeout(() => {
+            if (this.isEnabled) {
+                this.innerTelemetryService.logPageView(eventName, eventProperties, publicArgument)
+            }
+        })
+    }
+    /**
+     * Logs page view events, adding a suffix
+     *
+     * @returns
+     *
+     */
     public unsubscribe(): void {
         // Reset initial state
         this.isEnabled = false
@@ -64,6 +80,7 @@ export class EventLogger implements TelemetryService {
     private uid: string | null = null
 
     private platform = getPlatformName()
+    private version = getExtensionVersion()
 
     /**
      * Buffered Observable for the latest Sourcegraph URL
@@ -112,17 +129,15 @@ export class EventLogger implements TelemetryService {
     /**
      * Log a user action on the associated Sourcegraph instance
      */
-    private async logEvent(event: string, eventProperties?: any, userEvent?: UserEvent): Promise<void> {
+    private async logEvent(event: string, eventProperties?: any, publicArgument?: any): Promise<void> {
         const anonUserId = await this.getAnonUserID()
-        if (userEvent) {
-            logUserEvent(userEvent, anonUserId, this.sourcegraphURL, this.requestGraphQL)
-        }
         logEvent(
             {
                 name: event,
                 userCookieID: anonUserId,
                 url: this.sourcegraphURL,
-                argument: { platform: this.platform, ...eventProperties },
+                argument: { platform: this.platform, version: this.version, ...eventProperties },
+                publicArgument: { platform: this.platform, version: this.version, ...publicArgument },
             },
             this.requestGraphQL
         )
@@ -135,28 +150,27 @@ export class EventLogger implements TelemetryService {
      *
      * @param eventName The ID of the action executed.
      */
-    public async log(eventName: string, eventProperties?: any): Promise<void> {
-        switch (eventName) {
-            case 'findReferences':
-                await this.logEvent(eventName, eventProperties, UserEvent.CODEINTELINTEGRATIONREFS)
-                break
-            case 'goToDefinition':
-            case 'goToDefinition.preloaded':
-            case 'hover':
-                await this.logEvent(eventName, eventProperties, UserEvent.CODEINTELINTEGRATION)
-                break
-            default:
-                await this.logEvent(eventName, eventProperties)
-                break
-        }
+    public async log(eventName: string, eventProperties?: any, publicArgument?: any): Promise<void> {
+        await this.logEvent(eventName, eventProperties, publicArgument)
     }
 
     /**
      * Implements {@link TelemetryService}.
      *
+     * @deprecated Use logPageView instead
+     *
      * @param pageTitle The title of the page being viewed.
      */
     public async logViewEvent(pageTitle: string, eventProperties?: any): Promise<void> {
         await this.logEvent(`View${pageTitle}`, eventProperties)
+    }
+
+    /**
+     * Implements {@link TelemetryService}.
+     *
+     * @param eventName The name of the entity being viewed.
+     */
+    public async logPageView(eventName: string, eventProperties?: any, publicArgument?: any): Promise<void> {
+        await this.logEvent(`${eventName}Viewed`, eventProperties, publicArgument)
     }
 }

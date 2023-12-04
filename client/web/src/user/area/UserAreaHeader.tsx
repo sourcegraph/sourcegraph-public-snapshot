@@ -1,13 +1,16 @@
 import React, { useMemo } from 'react'
+
+import classNames from 'classnames'
 import { NavLink } from 'react-router-dom'
 
-import { PageHeader } from '@sourcegraph/wildcard'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { Icon, Link, PageHeader } from '@sourcegraph/wildcard'
 
-import { BatchChangesProps } from '../../batches'
-import { NavItemWithIconDescriptor } from '../../util/contributions'
-import { UserAvatar } from '../UserAvatar'
+import type { BatchChangesProps } from '../../batches'
+import type { NavItemWithIconDescriptor } from '../../util/contributions'
 
-import { UserAreaRouteContext } from './UserArea'
+import type { UserAreaRouteContext } from './UserArea'
+
 import styles from './UserAreaHeader.module.scss'
 
 interface Props extends UserAreaRouteContext {
@@ -17,6 +20,7 @@ interface Props extends UserAreaRouteContext {
 
 export interface UserAreaHeaderContext extends BatchChangesProps, Pick<Props, 'user'> {
     isSourcegraphDotCom: boolean
+    isCodyApp: boolean
 }
 
 export interface UserAreaHeaderNavItem extends NavItemWithIconDescriptor<UserAreaHeaderContext> {}
@@ -24,60 +28,69 @@ export interface UserAreaHeaderNavItem extends NavItemWithIconDescriptor<UserAre
 /**
  * Header for the user area.
  */
-export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, className = '', ...props }) => {
+export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    url,
+    navItems,
+    className = '',
+    ...props
+}) => {
     /*
      * The path segment would always be recreated on rerenders, thus invalidating the loop over it in PageHeader.
      * As a result, the UserAvatar was always reinstanciated and rendered again, whenever the header rerenders
      * (every location change, for example). This prevents it from flickering.
      */
     const path = useMemo(
-        () => [
-            {
-                text: (
-                    <span className="align-middle">
-                        {props.user.displayName ? (
-                            <>
-                                {props.user.displayName} ({props.user.username})
-                            </>
-                        ) : (
-                            props.user.username
-                        )}
-                    </span>
-                ),
-                icon: () => <UserAvatar className={styles.avatar} user={props.user} />,
-            },
-        ],
-        [props.user]
+        () =>
+            props.isCodyApp
+                ? { text: 'Settings' }
+                : {
+                      text: (
+                          <span className="align-middle">
+                              {props.user.displayName ? (
+                                  <>
+                                      {props.user.displayName} ({props.user.username})
+                                  </>
+                              ) : (
+                                  props.user.username
+                              )}
+                          </span>
+                      ),
+                      icon: () => <UserAvatar className={styles.avatar} user={props.user} />,
+                  },
+        [props.user, props.isCodyApp]
     )
+
+    const filteredNavItems = navItems.filter(({ condition = () => true }) => condition(props))
 
     return (
         <div className={className}>
             <div className="container">
-                <PageHeader path={path} className="mb-3" />
-                <div className="d-flex align-items-end justify-content-between">
-                    <ul className="nav nav-tabs w-100">
-                        {navItems.map(
-                            ({ to, label, exact, icon: Icon, condition = () => true }) =>
-                                condition(props) && (
-                                    <li key={label} className="nav-item">
-                                        <NavLink
-                                            to={url + to}
-                                            className="nav-link"
-                                            activeClassName="active"
-                                            exact={exact}
-                                        >
-                                            <span>
-                                                {Icon && <Icon className="icon-inline" />}{' '}
-                                                <span className="text-content" data-tab-content={label}>
-                                                    {label}
-                                                </span>
+                <PageHeader
+                    className="mb-3"
+                    actions={props.isCodyApp && <Link to="/site-admin/configuration">Advanced settings</Link>}
+                >
+                    <PageHeader.Heading as="h2" styleAs="h1">
+                        <PageHeader.Breadcrumb icon={path.icon}>{path.text}</PageHeader.Breadcrumb>
+                    </PageHeader.Heading>
+                </PageHeader>
+                {filteredNavItems.length > 0 && (
+                    <nav className="d-flex align-items-end justify-content-between" aria-label="User">
+                        <ul className={classNames('nav nav-tabs w-100', styles.navigation)}>
+                            {filteredNavItems.map(({ to, label, icon: ItemIcon }) => (
+                                <li key={label} className="nav-item">
+                                    <NavLink to={url + to} className={classNames('nav-link', styles.navigationLink)}>
+                                        <span>
+                                            {ItemIcon && <Icon as={ItemIcon} aria-hidden={true} />}{' '}
+                                            <span className="text-content" data-tab-content={label}>
+                                                {label}
                                             </span>
-                                        </NavLink>
-                                    </li>
-                                )
-                        )}
-                    </ul>
-                </div>
+                                        </span>
+                                    </NavLink>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+                )}
             </div>
         </div>
     )

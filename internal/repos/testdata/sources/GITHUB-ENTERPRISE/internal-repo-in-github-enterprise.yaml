@@ -9,20 +9,23 @@ interactions:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       - application/vnd.github.machine-man-preview+json
       - application/vnd.github.nebula-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma
     method: GET
   response:
     body: '{"id":442285,"node_id":"MDEwOlJlcG9zaXRvcnk0NDIyODU=","name":"fluffy-enigma","full_name":"admiring-austin-120/fluffy-enigma","private":true,"owner":{"login":"admiring-austin-120","id":1610,"node_id":"MDEyOk9yZ2FuaXphdGlvbjE2MTA=","avatar_url":"https://ghe.sgdev.org/avatars/u/1610?","gravatar_id":"","url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120","html_url":"https://ghe.sgdev.org/admiring-austin-120","followers_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/followers","following_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/following{/other_user}","gists_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/gists{/gist_id}","starred_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/starred{/owner}{/repo}","subscriptions_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/subscriptions","organizations_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/orgs","repos_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/repos","events_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/events{/privacy}","received_events_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/received_events","type":"Organization","site_admin":false},"html_url":"https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma","description":"Internal
-      repo used in tests in sourcegraph code.","fork":false,"url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma","forks_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/forks","keys_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/keys{/key_id}","collaborators_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/collaborators{/collaborator}","teams_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/teams","hooks_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/hooks","issue_events_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/issues/events{/number}","events_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/events","assignees_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/assignees{/user}","branches_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/branches{/branch}","tags_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/tags","blobs_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/git/blobs{/sha}","git_tags_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/git/tags{/sha}","git_refs_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/git/refs{/sha}","trees_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/git/trees{/sha}","statuses_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/statuses/{sha}","languages_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/languages","stargazers_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/stargazers","contributors_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/contributors","subscribers_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/subscribers","subscription_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/subscription","commits_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/commits{/sha}","git_commits_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/git/commits{/sha}","comments_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/comments{/number}","issue_comment_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/issues/comments{/number}","contents_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/contents/{+path}","compare_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/compare/{base}...{head}","merges_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/merges","archive_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/{archive_format}{/ref}","downloads_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/downloads","issues_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/issues{/number}","pulls_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/pulls{/number}","milestones_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/milestones{/number}","notifications_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/notifications{?since,all,participating}","labels_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/labels{/name}","releases_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/releases{/id}","deployments_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/deployments","created_at":"2021-10-29T08:48:53Z","updated_at":"2021-11-09T13:36:56Z","pushed_at":"2021-10-29T08:48:53Z","git_url":"git://ghe.sgdev.org/admiring-austin-120/fluffy-enigma.git","ssh_url":"git@ghe.sgdev.org:admiring-austin-120/fluffy-enigma.git","clone_url":"https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma.git","svn_url":"https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma","homepage":"","size":0,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":null,"topics":[],"visibility":"internal","forks":0,"open_issues":0,"watchers":0,"default_branch":"master","permissions":{"admin":true,"push":true,"pull":true},"temp_clone_token":"AAAAAAZDAG3F6QJX2QKKZ6TBSUL5A","allow_squash_merge":true,"allow_merge_commit":true,"allow_rebase_merge":true,"delete_branch_on_merge":false,"organization":{"login":"admiring-austin-120","id":1610,"node_id":"MDEyOk9yZ2FuaXphdGlvbjE2MTA=","avatar_url":"https://ghe.sgdev.org/avatars/u/1610?","gravatar_id":"","url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120","html_url":"https://ghe.sgdev.org/admiring-austin-120","followers_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/followers","following_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/following{/other_user}","gists_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/gists{/gist_id}","starred_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/starred{/owner}{/repo}","subscriptions_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/subscriptions","organizations_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/orgs","repos_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/repos","events_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/events{/privacy}","received_events_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/received_events","type":"Organization","site_admin":false},"network_count":0,"subscribers_count":0}'
+      repo used in tests in sourcegraph code.","fork":false,"url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma","forks_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/forks","keys_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/keys{/key_id}","collaborators_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/collaborators{/collaborator}","teams_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/teams","hooks_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/hooks","issue_events_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/issues/events{/number}","events_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/events","assignees_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/assignees{/user}","branches_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/branches{/branch}","tags_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/tags","blobs_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/git/blobs{/sha}","git_tags_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/git/tags{/sha}","git_refs_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/git/refs{/sha}","trees_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/git/trees{/sha}","statuses_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/statuses/{sha}","languages_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/languages","stargazers_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/stargazers","contributors_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/contributors","subscribers_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/subscribers","subscription_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/subscription","commits_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/commits{/sha}","git_commits_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/git/commits{/sha}","comments_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/comments{/number}","issue_comment_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/issues/comments{/number}","contents_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/contents/{+path}","compare_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/compare/{base}...{head}","merges_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/merges","archive_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/{archive_format}{/ref}","downloads_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/downloads","issues_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/issues{/number}","pulls_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/pulls{/number}","milestones_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/milestones{/number}","notifications_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/notifications{?since,all,participating}","labels_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/labels{/name}","releases_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/releases{/id}","deployments_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/deployments","created_at":"2021-10-29T08:48:53Z","updated_at":"2023-02-14T20:03:14Z","pushed_at":"2021-10-29T08:48:53Z","git_url":"git://ghe.sgdev.org/admiring-austin-120/fluffy-enigma.git","ssh_url":"git@ghe.sgdev.org:admiring-austin-120/fluffy-enigma.git","clone_url":"https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma.git","svn_url":"https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma","homepage":"","size":0,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":null,"allow_forking":false,"is_template":false,"topics":["fluff"],"visibility":"internal","forks":0,"open_issues":0,"watchers":0,"default_branch":"master","permissions":{"admin":true,"maintain":true,"push":true,"triage":true,"pull":true},"temp_clone_token":"AAAAAAZSLKSCSALV3D232WTD5PWQI","allow_squash_merge":true,"allow_merge_commit":true,"allow_rebase_merge":true,"allow_auto_merge":false,"delete_branch_on_merge":false,"organization":{"login":"admiring-austin-120","id":1610,"node_id":"MDEyOk9yZ2FuaXphdGlvbjE2MTA=","avatar_url":"https://ghe.sgdev.org/avatars/u/1610?","gravatar_id":"","url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120","html_url":"https://ghe.sgdev.org/admiring-austin-120","followers_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/followers","following_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/following{/other_user}","gists_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/gists{/gist_id}","starred_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/starred{/owner}{/repo}","subscriptions_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/subscriptions","organizations_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/orgs","repos_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/repos","events_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/events{/privacy}","received_events_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/received_events","type":"Organization","site_admin":false},"network_count":0,"subscribers_count":0}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
-        X-GitHub-Media-Type, Deprecation, Sunset
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
+        Sunset
       Cache-Control:
       - private, max-age=60, s-maxage=60
       Content-Security-Policy:
@@ -30,40 +33,97 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 17 Nov 2021 14:50:12 GMT
+      - Tue, 14 Feb 2023 20:15:20 GMT
       Etag:
-      - W/"06212834195bc400481b2b6ed4a12ddc"
+      - W/"6ffc4bfd96db6567c6feabbc5be95fc4e2cafe35a5f06b4603d5585471fc690d"
       Last-Modified:
-      - Tue, 09 Nov 2021 13:36:56 GMT
+      - Tue, 14 Feb 2023 20:03:14 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
       - GitHub.com
-      Status:
-      - 200 OK
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
       X-Github-Enterprise-Version:
-      - 2.22.6
+      - 3.3.16
       X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json, github.nebula-preview; format=json
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview.nebula-preview;
+        format=json
       X-Github-Request-Id:
-      - 18e60823-54dd-4801-8c55-fdb5bce8c82d
-      X-Oauth-Scopes:
-      - repo
+      - a82cb471-c23e-4814-a74f-184c273b9833
       X-Runtime-Rack:
-      - "0.144038"
+      - "0.103915"
       X-Xss-Protection:
-      - 1; mode=block
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      - application/vnd.github.nebula-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma
+    method: GET
+  response:
+    body: '{"id":442285,"node_id":"MDEwOlJlcG9zaXRvcnk0NDIyODU=","name":"fluffy-enigma","full_name":"admiring-austin-120/fluffy-enigma","private":true,"owner":{"login":"admiring-austin-120","id":1610,"node_id":"MDEyOk9yZ2FuaXphdGlvbjE2MTA=","avatar_url":"https://ghe.sgdev.org/avatars/u/1610?","gravatar_id":"","url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120","html_url":"https://ghe.sgdev.org/admiring-austin-120","followers_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/followers","following_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/following{/other_user}","gists_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/gists{/gist_id}","starred_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/starred{/owner}{/repo}","subscriptions_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/subscriptions","organizations_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/orgs","repos_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/repos","events_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/events{/privacy}","received_events_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/received_events","type":"Organization","site_admin":false},"html_url":"https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma","description":"Internal
+      repo used in tests in sourcegraph code.","fork":false,"url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma","forks_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/forks","keys_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/keys{/key_id}","collaborators_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/collaborators{/collaborator}","teams_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/teams","hooks_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/hooks","issue_events_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/issues/events{/number}","events_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/events","assignees_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/assignees{/user}","branches_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/branches{/branch}","tags_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/tags","blobs_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/git/blobs{/sha}","git_tags_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/git/tags{/sha}","git_refs_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/git/refs{/sha}","trees_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/git/trees{/sha}","statuses_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/statuses/{sha}","languages_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/languages","stargazers_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/stargazers","contributors_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/contributors","subscribers_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/subscribers","subscription_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/subscription","commits_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/commits{/sha}","git_commits_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/git/commits{/sha}","comments_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/comments{/number}","issue_comment_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/issues/comments{/number}","contents_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/contents/{+path}","compare_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/compare/{base}...{head}","merges_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/merges","archive_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/{archive_format}{/ref}","downloads_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/downloads","issues_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/issues{/number}","pulls_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/pulls{/number}","milestones_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/milestones{/number}","notifications_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/notifications{?since,all,participating}","labels_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/labels{/name}","releases_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/releases{/id}","deployments_url":"https://ghe.sgdev.org/api/v3/repos/admiring-austin-120/fluffy-enigma/deployments","created_at":"2021-10-29T08:48:53Z","updated_at":"2023-02-14T20:03:14Z","pushed_at":"2021-10-29T08:48:53Z","git_url":"git://ghe.sgdev.org/admiring-austin-120/fluffy-enigma.git","ssh_url":"git@ghe.sgdev.org:admiring-austin-120/fluffy-enigma.git","clone_url":"https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma.git","svn_url":"https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma","homepage":"","size":0,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":null,"allow_forking":false,"is_template":false,"topics":["fluff"],"visibility":"internal","forks":0,"open_issues":0,"watchers":0,"default_branch":"master","permissions":{"admin":true,"maintain":true,"push":true,"triage":true,"pull":true},"temp_clone_token":"AAAAAAZSLKSCSALV3D232WTD5PWQI","allow_squash_merge":true,"allow_merge_commit":true,"allow_rebase_merge":true,"allow_auto_merge":false,"delete_branch_on_merge":false,"organization":{"login":"admiring-austin-120","id":1610,"node_id":"MDEyOk9yZ2FuaXphdGlvbjE2MTA=","avatar_url":"https://ghe.sgdev.org/avatars/u/1610?","gravatar_id":"","url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120","html_url":"https://ghe.sgdev.org/admiring-austin-120","followers_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/followers","following_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/following{/other_user}","gists_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/gists{/gist_id}","starred_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/starred{/owner}{/repo}","subscriptions_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/subscriptions","organizations_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/orgs","repos_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/repos","events_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/events{/privacy}","received_events_url":"https://ghe.sgdev.org/api/v3/users/admiring-austin-120/received_events","type":"Organization","site_admin":false},"network_count":0,"subscribers_count":0}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
+        Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 14 Feb 2023 20:15:20 GMT
+      Etag:
+      - W/"6ffc4bfd96db6567c6feabbc5be95fc4e2cafe35a5f06b4603d5585471fc690d"
+      Last-Modified:
+      - Tue, 14 Feb 2023 20:03:14 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Enterprise-Version:
+      - 3.3.16
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview.nebula-preview;
+        format=json
+      X-Github-Request-Id:
+      - a82cb471-c23e-4814-a74f-184c273b9833
+      X-Runtime-Rack:
+      - "0.103915"
+      X-Xss-Protection:
+      - "0"
     status: 200 OK
     code: 200
     duration: ""

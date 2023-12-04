@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // findConsecutiveFailures scans the given set of builds for a series of consecutive
@@ -23,6 +24,13 @@ func findConsecutiveFailures(
 	var consecutiveFailures int
 	var build buildkite.Build
 	for buildsScanned, build = range builds {
+		if isBuildScheduled(build) {
+			// a Scheduled build should not be considered as part of the set that determines whether
+			// main is locked.
+			// An exmaple of a scheduled build is the nightly release healthcheck build at:
+			// https://buildkite.com/sourcegraph/sourcegraph/settings/schedules/d0b2e4ea-e2df-4fb5-b90e-db88fddb1b76
+			continue
+		}
 		if isBuildPassed(build) {
 			// If we find a passed build we are done
 			return
@@ -41,11 +49,11 @@ func findConsecutiveFailures(
 		consecutiveFailures += 1
 		commit := CommitInfo{
 			Author: author,
-			Commit: maybeString(build.Commit),
+			Commit: pointers.DerefZero(build.Commit),
 		}
 		if build.Number != nil {
 			commit.BuildNumber = *build.Number
-			commit.BuildURL = maybeString(build.WebURL)
+			commit.BuildURL = pointers.DerefZero(build.WebURL)
 		}
 		if build.CreatedAt != nil {
 			commit.BuildCreated = build.CreatedAt.Time
@@ -57,11 +65,4 @@ func findConsecutiveFailures(
 	}
 
 	return
-}
-
-func maybeString(s *string) string {
-	if s != nil {
-		return *s
-	}
-	return ""
 }

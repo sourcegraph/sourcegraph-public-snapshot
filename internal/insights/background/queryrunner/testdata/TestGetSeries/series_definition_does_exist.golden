@@ -1,0 +1,17 @@
+&types.InsightSeries{
+	ID: 1, SeriesID: "arealseries",
+	Query: "query1",
+	CreatedAt: time.Time{
+		ext: 63773913600,
+	},
+	OldestHistoricalAt:   time.Time{ext: 63773913600},
+	LastRecordedAt:       time.Time{ext: 63773913600},
+	NextRecordingAfter:   time.Time{ext: 63773913600},
+	LastSnapshotAt:       time.Time{ext: 63773913600},
+	NextSnapshotAfter:    time.Time{ext: 63773913600},
+	Enabled:              true,
+	SampleIntervalUnit:   "MONTH",
+	SampleIntervalValue:  1,
+	GenerationMethod:     types.GenerationMethod("search"),
+	SupportsAugmentation: true,
+}

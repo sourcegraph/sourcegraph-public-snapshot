@@ -11,7 +11,7 @@ response will look like.
 """
 type Error {
     """
-    A string giving more context about the error that ocurred.
+    A string giving more context about the error that occurred.
     """
     message: String!
     """
@@ -77,17 +77,30 @@ A mutation.
 """
 type Mutation {
     """
+    INTERNAL ONLY: Sets the value of versions.auto_upgrade in the frontend db.
+    Determines behavior of multiversion upgrades.
+
+    Only site admins may perform this mutation.
+    """
+    setAutoUpgrade(enable: Boolean!): EmptyResponse!
+    """
     Updates the user profile information for the user with the given ID.
 
     Only the user and site admins may perform this mutation.
     """
     updateUser(user: ID!, username: String, displayName: String, avatarURL: String): User!
     """
+    Updates the user's Cody plan to Pro or Community.
+
+    Only the user may perform this mutation.
+    """
+    changeCodyPlan(user: ID!, pro: Boolean!): User!
+    """
     Creates an organization. The caller is added as a member of the newly created organization.
 
     Only authenticated users may perform this mutation.
     """
-    createOrganization(name: String!, displayName: String): Org!
+    createOrganization(name: String!, displayName: String, statsID: ID): Org!
     """
     Updates an organization.
 
@@ -95,9 +108,27 @@ type Mutation {
     """
     updateOrganization(id: ID!, displayName: String): Org!
     """
-    Deletes an organization. Only site admins may perform this mutation.
+    Soft deletes an organization.
+
+    Only site admins may perform this mutation.
     """
     deleteOrganization(organization: ID!): EmptyResponse
+
+    """
+    Creates a webhook for the specified code host. Only site admins may perform this mutation.
+    """
+    createWebhook(name: String!, codeHostKind: String!, codeHostURN: String!, secret: String): Webhook!
+
+    """
+    Deletes a webhook by given ID. Only site admins may perform this mutation.
+    """
+    deleteWebhook(id: ID!): EmptyResponse!
+
+    """
+    Updates a webhook with given ID. Null values aren't updated.
+    """
+    updateWebhook(id: ID!, name: String, codeHostKind: String, codeHostURN: String, secret: String): Webhook!
+
     """
     Adds a external service. Only site admins may perform this mutation.
     """
@@ -109,7 +140,11 @@ type Mutation {
     """
     Delete an external service. Only site admins may perform this mutation.
     """
-    deleteExternalService(externalService: ID!): EmptyResponse!
+    deleteExternalService(externalService: ID!, async: Boolean = false): EmptyResponse!
+    """
+    Excludes a repo from external services configs. Only site admins may perform this mutation.
+    """
+    excludeRepoFromExternalServices(externalServices: [ID!]!, repo: ID!): EmptyResponse!
     """
     Tests the connection to a mirror repository's original source repository. This is an
     expensive and slow operation, so it should only be used for interactive diagnostics.
@@ -120,12 +155,7 @@ type Mutation {
         """
         The ID of the existing repository whose mirror to check.
         """
-        repository: ID
-        """
-        The name of a repository whose mirror to check. If the name is provided, the repository need not be added
-        to the site (but the site configuration must define a code host that knows how to handle the name).
-        """
-        name: String
+        repository: ID!
     ): CheckMirrorRepositoryConnectionResult!
     """
     Schedule the mirror repository to be updated from its original source repository. Updating
@@ -140,25 +170,48 @@ type Mutation {
         repository: ID!
     ): EmptyResponse!
     """
+    Force Zoekt to reindex the repository right now. Reindexing occurs
+    automatically, so this should not normally be needed.
+    """
+    reindexRepository(
+        """
+        The repository to index
+        """
+        repository: ID!
+    ): EmptyResponse!
+
+    """
     Creates a new user account.
 
     Only site admins may perform this mutation.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     createUser(
         """
         The new user's username.
         """
         username: String!
         """
-        The new user's optional email address. If given, it is marked as verified.
+        The new user's optional email address. If given, it must be verified by the user.
         """
         email: String
+        """
+        Whether or not to mark the provided email address as verified. If unset or set to
+        true, then the email address is immediately marked as verified - otherwise, the
+        email may be marked as unverified if SMTP and password resets are enabled.
+        """
+        verifiedEmail: Boolean
     ): CreateUserResult!
     """
     Randomize a user's password so that they need to reset it before they can sign in again.
 
     Only site admins may perform this mutation.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     randomizeUserPassword(user: ID!): RandomizeUserPasswordResult!
     """
     Adds an email address to the user's account. The email address will be marked as unverified until the user
@@ -204,26 +257,39 @@ type Mutation {
 
     - All user data (access tokens, email addresses, external account info, survey responses, etc)
     - Organization membership information (which organizations the user is a part of, any invitations created by or targeting the user).
-    - Sourcegraph extensions published by the user.
     - User, Organization, or Global settings authored by the user.
     """
     deleteUser(user: ID!, hard: Boolean): EmptyResponse
+    """
+    Bulk "deleteUser" action.
+    """
+    deleteUsers(users: [ID!]!, hard: Boolean): EmptyResponse
+    """
+    Bulk "recoverUser" action.
+    """
+    recoverUsers(userIDs: [ID!]!): EmptyResponse
     """
     Updates the current user's password. The oldPassword arg must match the user's current password.
     """
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
     """
-    Creates a password for the current user. It is only permitted if the user does not have a password and
-    they don't have any login connections.
+    Creates a password for the current user. It is only permitted if the user does not have a password.
     """
     createPassword(newPassword: String!): EmptyResponse
     """
     Sets the user to accept the site's Terms of Service and Privacy Policy.
-    If the ID is ommitted, the current user is assumed.
+    If the ID is omitted, the current user is assumed.
 
     Only the user or site admins may perform this mutation.
     """
     setTosAccepted(userID: ID): EmptyResponse!
+    """
+    Sets the user to have completed the post-signup flow.
+    If the ID is omitted, the current user is assumed.
+
+    Only the user or site admins may perform this mutation.
+    """
+    setCompletedPostSignup(userID: ID): EmptyResponse!
     """
     Creates an access token that grants the privileges of the specified user (referred to as the access token's
     "subject" user after token creation). The result is the access token value, which the caller is responsible
@@ -237,6 +303,9 @@ type Mutation {
 
     Only the user or site admins may perform this mutation.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     createAccessToken(user: ID!, scopes: [String!]!, note: String!): CreateAccessTokenResult!
     """
     Deletes and immediately revokes the specified access token, specified by either its ID or by the token
@@ -244,6 +313,9 @@ type Mutation {
 
     Only site admins or the user who owns the token may perform this mutation.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     deleteAccessToken(byID: ID, byToken: String): EmptyResponse!
     """
     Deletes the association between an external account and its Sourcegraph user. It does NOT delete the external
@@ -253,20 +325,21 @@ type Mutation {
     """
     deleteExternalAccount(externalAccount: ID!): EmptyResponse!
     """
-    Sends an invitation to join Sourcegraph to the given email address.
-
-    Returns instantly regardless of whether or not an invitation email was actually sent. For example, the email
-    may fail to send if there is a typo or it is invalid, or Sourcegraph may refuse to send it due to spam concerns
-    or if the user has been invited too recently.
+    Adds an external account to the authenticated user's account. The service type and service ID
+    must correspond to a valid auth provider on the site. The account details must be a stringified
+    JSON object that contains valid credentials for the provided service type.
     """
-    inviteEmailToSourcegraph(email: String!): EmptyResponse!
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
+    addExternalAccount(serviceType: String!, serviceID: String!, accountDetails: String!): EmptyResponse!
     """
     Invite the user with the given username to join the organization. The invited user account must already
     exist.
 
     Only site admins and any organization member may perform this mutation.
     """
-    inviteUserToOrganization(organization: ID!, username: String, email: String): InviteUserToOrganizationResult!
+    inviteUserToOrganization(organization: ID!, username: String!): InviteUserToOrganizationResult!
     """
     Accept or reject an existing organization invitation.
 
@@ -283,31 +356,6 @@ type Mutation {
         responseType: OrganizationInvitationResponseType!
     ): EmptyResponse!
     """
-    Resend the notification about an organization invitation to the recipient.
-
-    Only site admins and any member of the organization may perform this mutation.
-    """
-    resendOrganizationInvitationNotification(
-        """
-        The organization invitation.
-        """
-        organizationInvitation: ID!
-    ): EmptyResponse!
-    """
-    Revoke an existing organization invitation.
-
-    If the invitation has been accepted or rejected, it may no longer be revoked. After an
-    invitation is revoked, the recipient may not accept or reject it. Both cases yield an error.
-
-    Only site admins and any member of the organization may perform this mutation.
-    """
-    revokeOrganizationInvitation(
-        """
-        The organization invitation.
-        """
-        organizationInvitation: ID!
-    ): EmptyResponse!
-    """
     Immediately add a user as a member to the organization, without sending an invitation email.
 
     Only site admins may perform this mutation. Organization members may use the inviteUserToOrganization
@@ -320,31 +368,6 @@ type Mutation {
     Only site admins and any member of the organization may perform this mutation.
     """
     removeUserFromOrganization(user: ID!, organization: ID!): EmptyResponse
-    """
-    Adds or removes a tag on a user.
-
-    Tags are used internally by Sourcegraph as feature flags for experimental features.
-
-    Only site admins may perform this mutation.
-    """
-    setTag(
-        """
-        The ID of the user whose tags to set.
-
-        (This parameter is named "node" to make it easy to support tagging other types of nodes
-        other than users in the future.)
-        """
-        node: ID!
-        """
-        The tag to set.
-        """
-        tag: String!
-        """
-        The desired state of the tag on the user (whether to add or remove): true to add, false to
-        remove.
-        """
-        present: Boolean!
-    ): EmptyResponse!
     """
     Adds a Phabricator repository to Sourcegraph.
     """
@@ -405,7 +428,7 @@ type Mutation {
         date: String
     ): GitCommit
     """
-    Logs a user event.
+    Logs a user event. No longer used, only here for backwards compatibility with IDE and browser extensions.
     """
     logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse @deprecated(reason: "use logEvent instead")
     """
@@ -447,6 +470,22 @@ type Mutation {
         """
         referrer: String
         """
+        The original referrer for a user
+        """
+        originalReferrer: String
+        """
+        The session referrer for a user
+        """
+        sessionReferrer: String
+        """
+        The sessions first url for a user
+        """
+        sessionFirstURL: String
+        """
+        Device session ID to identify the user's session for analytics.
+        """
+        deviceSessionID: String
+        """
         The additional argument information.
         """
         argument: String
@@ -471,6 +510,26 @@ type Mutation {
         Used on Sourcegraph Cloud only.
         """
         insertID: String
+        """
+        The client that this event is being sent from.
+        """
+        client: String
+        """
+        The product category for the event, used for billing purposes.
+        """
+        billingProductCategory: String
+        """
+        The billing ID for the event, used for tagging user events for billing aggregation purposes.
+        """
+        billingEventID: String
+        """
+        The site ID that the client was connected to when the event was logged.
+        """
+        connectedSiteID: String
+        """
+        The connected site's license key, hashed using sha256. Used for uniquely identifying the site.
+        """
+        hashedLicenseKey: String
     ): EmptyResponse
     """
     Logs a batch of events.
@@ -497,6 +556,9 @@ type Mutation {
 
     Only site admins may perform this mutation.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     updateSiteConfiguration(
         """
         The last ID of the site configuration that is known by the client, to
@@ -515,10 +577,13 @@ type Mutation {
 
     Only site admins may perform this mutation.
     """
-    # SECURITY: Only trusted users should be given site admin permissions.
+    # 🚨 SECURITY: Only trusted users should be given site admin permissions.
     # Site admins have full access to the site configuration and other
     # sensitive data, and they can perform destructive actions such as
     # restarting the site.
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     setUserIsSiteAdmin(userID: ID!, siteAdmin: Boolean!): EmptyResponse
     """
     Invalidates all sessions belonging to a user.
@@ -526,6 +591,10 @@ type Mutation {
     Only site admins may perform this mutation.
     """
     invalidateSessionsByID(userID: ID!): EmptyResponse
+    """
+    Bulk "invalidateSessionsByID" action.
+    """
+    invalidateSessionsByIDs(userIDs: [ID!]!): EmptyResponse
     """
     Reloads the site by restarting the server. This is not supported for all deployment
     types. This may cause downtime.
@@ -541,14 +610,6 @@ type Mutation {
     Submits happiness feedback.
     """
     submitHappinessFeedback(input: HappinessFeedbackSubmissionInput!): EmptyResponse
-    """
-    Submits a request for a Sourcegraph Enterprise trial license.
-    """
-    requestTrial(email: String!): EmptyResponse
-    """
-    Manages the extension registry.
-    """
-    extensionRegistry: ExtensionRegistryMutation!
     """
     Creates a saved search.
     """
@@ -591,11 +652,6 @@ type Mutation {
     ): EmptyResponse!
 
     """
-    Set the repos synced by an external service
-    """
-    setExternalServiceRepos(id: ID!, repos: [String!], allRepos: Boolean!): EmptyResponse!
-
-    """
     Updates an out-of-band migration to run in a particular direction.
 
     Applied in the forward direction, an out-of-band migration migrates data into a format that
@@ -606,17 +662,14 @@ type Mutation {
     a format that is readable by the previous Sourcegraph instance. Recently introduced migrations
     should be applied in reverse prior to downgrading the instance.
     """
-    SetMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
+    setMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
 
     """
-    SetUserPublicRepos sets the list of public repos for a user's search context, ensuring those repos
-    exist and are cloned
+    EXPERIMENTAL: Create a new feature flag
     """
-    SetUserPublicRepos(userID: ID!, repoURIs: [String!]!): EmptyResponse!
-
-    """
-    (experimental) Create a new feature flag
-    """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     createFeatureFlag(
         """
         The name of the feature flag
@@ -638,8 +691,11 @@ type Mutation {
     ): FeatureFlag!
 
     """
-    (experimental) Delete a feature flag
+    EXPERIMENTAL: Delete a feature flag
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     deleteFeatureFlag(
         """
         The name of the feature flag
@@ -648,8 +704,11 @@ type Mutation {
     ): EmptyResponse!
 
     """
-    (experimental) Update a feature flag
+    EXPERIMENTAL: Update a feature flag
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     updateFeatureFlag(
         """
         The name of the feature flag
@@ -670,7 +729,7 @@ type Mutation {
     ): FeatureFlag!
 
     """
-    (experimental) Create a new feature flag override for the given org or user
+    EXPERIMENTAL: Create a new feature flag override for the given org or user
     """
     createFeatureFlagOverride(
         """
@@ -737,6 +796,142 @@ type Mutation {
         """
         settingsToEdit: String!
     ): EmptyResponse!
+
+    """
+    Sends an email for testing Sourcegraph's email configuration.
+
+    Only administrators can use this API.
+    """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
+    sendTestEmail(to: String!): String!
+
+    """
+    Enqueues a sync for the external service. It will be picked up in the background.
+
+    Site-admin or owner of the external service only.
+    """
+    syncExternalService(id: ID!): EmptyResponse!
+
+    """
+    Cancels an external service sync job. Must be in queued or processing state.
+
+    Site-admin or owner of the external service only.
+    """
+    cancelExternalServiceSync(id: ID!): EmptyResponse!
+
+    """
+    Associate a new key-value pair with a repo.
+    """
+    addRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
+        @deprecated(
+            reason: "Use addRepoMetadata instead. This field is a deprecated and will be removed in a future release."
+        )
+
+    """
+    Associate a new key-value pair metadata with a repo.
+    """
+    addRepoMetadata(repo: ID!, key: String!, value: String): EmptyResponse!
+
+    """
+    Update a key-value pair associated with a repo.
+    """
+    updateRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
+        @deprecated(
+            reason: "Use updateRepoMetadata instead. This field is a deprecated and will be removed in a future release."
+        )
+
+    """
+    Update metadata value for a given metadata key for associated with a repo.
+    """
+    updateRepoMetadata(repo: ID!, key: String!, value: String): EmptyResponse!
+
+    """
+    Delete a key-value pair associated with a repo.
+    """
+    deleteRepoKeyValuePair(repo: ID!, key: String!): EmptyResponse!
+        @deprecated(
+            reason: "Use deleteRepoMetadata instead. This field is a deprecated and will be removed in a future release."
+        )
+
+    """
+    Delete a key-value pair metadata associated with a repo.
+    """
+    deleteRepoMetadata(repo: ID!, key: String!): EmptyResponse!
+
+    """
+    INTERNAL ONLY: Reclone a repository from the gitserver. This involves deleting
+    the file on disk, marking it as not-cloned in the database, and then initiating
+    a repo clone.
+    """
+    recloneRepository(repo: ID!): EmptyResponse!
+
+    """
+    INTERNAL ONLY: Delete a repository from the gitserver. This involves deleting
+    the file on disk, and marking it as not-cloned in the database.
+    """
+    deleteRepositoryFromDisk(repo: ID!): EmptyResponse!
+
+    """
+    Create a new package repo reference filter.
+    """
+    addPackageRepoFilter(
+        """
+        Whether the matcher should be for allowlisting or blocklisting.
+        """
+        behaviour: PackageMatchBehaviour!
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        kind: PackageRepoReferenceKind!
+        """
+        The package repo reference matcher to persist.
+        """
+        filter: PackageVersionOrNameFilterInput!
+    ): PackageFilter!
+
+    """
+    Updates a package repo reference filter.
+    """
+    updatePackageRepoFilter(
+        """
+        The ID of the package repo reference filter to update.
+        """
+        id: ID!
+
+        behaviour: PackageMatchBehaviour!
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        kind: PackageRepoReferenceKind!
+
+        filter: PackageVersionOrNameFilterInput!
+    ): EmptyResponse!
+
+    """
+    Deletes a package repo reference filter.
+    """
+    deletePackageRepoFilter(id: ID!): EmptyResponse!
+
+    """
+    Sets the completions requests quota for the user per day. Quota: Null means
+    use the default quota.
+    """
+    setUserCompletionsQuota(user: ID!, quota: Int): User!
+    """
+    Sets the code completions requests quota for the user per day. Quota: Null means
+    use the default quota.
+    """
+    setUserCodeCompletionsQuota(user: ID!, quota: Int): User!
+    """
+    Submits a post-signup user survey about intended Cody usage.
+    """
+    submitCodySurvey(isForWork: Boolean!, isForPersonal: Boolean!): EmptyResponse!
 }
 
 """
@@ -778,6 +973,22 @@ input Event {
     """
     referrer: String
     """
+    The original referrer for a user
+    """
+    originalReferrer: String
+    """
+    The session referrer for a user
+    """
+    sessionReferrer: String
+    """
+    The sessions first url for a user
+    """
+    sessionFirstURL: String
+    """
+    Device session ID to identify the user's session for analytics.
+    """
+    deviceSessionID: String
+    """
     The additional argument information.
     """
     argument: String
@@ -802,6 +1013,26 @@ input Event {
     Used on Sourcegraph Cloud only.
     """
     insertID: String
+    """
+    The client that this event is being sent from.
+    """
+    client: String
+    """
+    The product category for the event, used for billing purposes.
+    """
+    billingProductCategory: String
+    """
+    The billing ID for the event, used for tagging user events for billing aggregation purposes.
+    """
+    billingEventID: String
+    """
+    The site ID that the client was connected to when the event was logged.
+    """
+    connectedSiteID: String
+    """
+    The connected site's license key, hashed using sha256. Used for uniquely identifying the site.
+    """
+    hashedLicenseKey: String
 }
 
 """
@@ -863,6 +1094,80 @@ enum EventSource {
     CODEHOSTINTEGRATION
     BACKEND
     STATICWEB
+    IDEEXTENSION
+    """
+    DEPRECATED
+    """
+    CODY
+}
+
+"""
+The product client where events come from.
+
+Future additions include:
+- BITBUCKET_NATIVE_INTEGRATION
+- GITLAB_NATIVE_INTEGRATION
+- CHROME_SOURCEGRAPH_EXTENSION
+- FIREFOX_SOURCEGRAPH_EXTENSION
+- EDGE_SOURCEGRAPH_EXTENSION
+- VSCODE_SOURCEGRAPH_EXTENSION (for https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph)
+- EMACS_CODY_EXTENSION
+"""
+enum EventClient {
+    SERVER_WEB
+    APP_WEB
+    DOTCOM_WEB
+    MARKETING_WEB
+    DOTCOM_BACKEND
+    APP_BACKEND
+    SERVER_BACKEND
+    VSCODE_CODY_EXTENSION
+    JETBRAINS_CODY_EXTENSION
+    NEOVIM_CODY_EXTENSION
+}
+
+"""
+The product categories for events, used for billing purposes.
+"""
+enum EventBillingProductCategory {
+    """
+    Used for all events related to non-billable, non-product usage (e.g. marketing, CTAs, signed out
+    events, etc.)
+    """
+    NOT_BILLABLE
+    """
+    Used for all billable but shared user interface events, such as administration, authentication, user
+    profile and settings, shared landing pages, etc.
+    """
+    SHARED
+    """
+    Used for all events primarily related to the Code Search product, including file and repo pageviews,
+    search actions, code navigation, batch changes, code insights, etc.
+    """
+    CODE_SEARCH
+    """
+    Used for all events primarily related to the Cody product, including chats, recipes, completions, web
+    chat views, etc.
+    """
+    CODY
+}
+
+"""
+Billing IDs for events, used for tagging user events for billing aggregation purposes.
+"""
+enum EventBillingID {
+    """
+    A billable Cody chat event, including manual chats, recipes, and more.
+    """
+    CodyChat
+    """
+    A billable Cody completion (aka suggestion or autocomplete) event.
+    """
+    CodyCompletion
+    """
+    A billable Cody embedding/code graph creation or search event.
+    """
+    CodyEmbedding
 }
 
 """
@@ -870,6 +1175,9 @@ Input for Mutation.settingsMutation, which contains fields that all settings (gl
 settings) mutations need.
 """
 input SettingsMutationGroupInput {
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     """
     The subject whose settings to mutate (organization, user, etc.).
     """
@@ -1013,7 +1321,6 @@ type CheckMirrorRepositoryConnectionResult {
     """
     error: String
 }
-
 """
 The result for Mutation.createUser.
 """
@@ -1025,6 +1332,9 @@ type CreateUserResult {
     """
     The reset password URL that the new user must visit to sign into their account. If the builtin
     username-password authentication provider is not enabled, this field's value is null.
+
+    If email sending (SMTP) is configured on this instance and an email was provided, an email
+    containing this URL will also be sent to the primary email address associated with the user.
     """
     resetPasswordURL: String
 }
@@ -1036,8 +1346,29 @@ type RandomizeUserPasswordResult {
     """
     The reset password URL that the user must visit to sign into their account again. If the builtin
     username-password authentication provider is not enabled, this field's value is null.
+
+    If email sending (SMTP) is configured on this instance, an email containing this URL
+    will also be sent to the primary email address associated with the user.
     """
     resetPasswordURL: String
+    """
+    If true, then an email with the password reset URL was sent to the primary email
+    address associated with the user. If false, email sending (SMTP) might not be configured
+    on this instance, or an error may have occurred - check the error logs with log scope
+    'randomizeUserPassword' for more details.
+    """
+    emailSent: Boolean!
+}
+
+"""
+Possible answers to "You use Sourcegraph to..." in the NPS Survey.
+"""
+enum SurveyUseCase {
+    UNDERSTAND_NEW_CODE
+    FIX_SECURITY_VULNERABILITIES
+    REUSE_CODE
+    RESPOND_TO_INCIDENTS
+    IMPROVE_CODE_QUALITY
 }
 
 """
@@ -1054,11 +1385,11 @@ input SurveySubmissionInput {
     """
     score: Int!
     """
-    The answer to "What is the most important reason for the score you gave".
+    The answer to "What do you use Sourcegraph for?".
     """
-    reason: String
+    otherUseCase: String
     """
-    The answer to "What can Sourcegraph do to provide a better product"
+    The answer to "What would make Sourcegraph better?"
     """
     better: String
 }
@@ -1068,11 +1399,7 @@ Input for a happiness feedback submission.
 """
 input HappinessFeedbackSubmissionInput {
     """
-    User's happiness rating, from 1-4.
-    """
-    score: Int!
-    """
-    The answer to "What's going well? What could be better?".
+    The feedback text from the user.
     """
     feedback: String
     """
@@ -1114,10 +1441,10 @@ type Query {
         uri: String
     ): Repository
     """
-    Looks up a repository by either name or cloneURL or hashedName. When the repository does not exist on the server
-    and "disablePublicRepoRedirects" is "false" in the site configuration, it returns a Redirect to
-    an external Sourcegraph URL that may have this repository instead. Otherwise, this query returns
-    null.
+    Looks up a repository by either name or cloneURL or hashedName. When the
+    repository does not exist on the server, it returns a Redirect to an
+    external Sourcegraph URL that may have this repository instead. Otherwise,
+    this query returns null.
     """
     repositoryRedirect(
         """
@@ -1143,11 +1470,6 @@ type Query {
     """
     externalServices(
         """
-        The namespace to scope returned external services.
-        Currently, this can only be used for a user.
-        """
-        namespace: ID
-        """
         Returns the first n external services from the list.
         """
         first: Int
@@ -1155,7 +1477,72 @@ type Query {
         Opaque pagination cursor.
         """
         after: String
+        """
+        If provided, fetch external services which contain a repo with the given ID.
+        """
+        repo: ID
     ): ExternalServiceConnection!
+    """
+    Lists all namespaces for a given external service connection.
+    A namespace is an entity on the code host that repositories are assignable to.
+    """
+    externalServiceNamespaces(
+        """
+        The GraphQL ID of the external service whose configuration will be used to define the code host remote url to
+        submit requests to and the token value to authenticate with.
+        If no external service exists which provides the necessary request parameters then leave ID nil and
+        provide kind, remote code host token and url.
+        """
+        id: ID
+        """
+        The kind of the external service.
+        """
+        kind: ExternalServiceKind!
+        """
+        The secret token value that is used to authenticate.
+        """
+        token: String!
+        """
+        The url of the external service.
+        """
+        url: String!
+    ): ExternalServiceNamespaceConnection!
+    """
+    Lists all repositories for a given external service connection.
+    """
+    externalServiceRepositories(
+        """
+        The GraphQL ID of the external service whose configuration will be used to define the code host remote url to
+        submit requests to and the token value to authenticate with.
+        If no external service exists which provides the necessary request parameters then leave ID nil and
+        provide kind, remote code host token and url.
+        """
+        id: ID
+        """
+        The kind of the external service.
+        """
+        kind: ExternalServiceKind!
+        """
+        The secret token value that is used to authenticate.
+        """
+        token: String!
+        """
+        The url of the external service.
+        """
+        url: String!
+        """
+        Repository query string.
+        """
+        query: String!
+        """
+        A list of repository names to exclude from results (in the form of owner/name).
+        """
+        excludeRepos: [String!]!
+        """
+        Returns the first n repositories matching the query and excludeRepos criteria.
+        """
+        first: Int
+    ): ExternalServiceRepositoryConnection!
     """
     List all repositories.
     """
@@ -1165,6 +1552,10 @@ type Query {
         """
         first: Int
         """
+        Returns the last n repositories from the list.
+        """
+        last: Int
+        """
         Return repositories whose names match the query.
         """
         query: String
@@ -1173,6 +1564,10 @@ type Query {
         """
         after: String
         """
+        An opaque cursor that is used for pagination.
+        """
+        before: String
+        """
         Return repositories whose names are in the list.
         """
         names: [String!]
@@ -1180,6 +1575,10 @@ type Query {
         Include cloned repositories.
         """
         cloned: Boolean = true
+        """
+        Include only repositories of the given clone status.
+        """
+        cloneStatus: CloneStatus
         """
         Include repositories that are not yet cloned and for which cloning is not in progress.
         """
@@ -1193,9 +1592,25 @@ type Query {
         """
         notIndexed: Boolean = true
         """
-        Include repositories that have encountered errors when cloning or fetching
+        Include repositories that have embeddings.
+        """
+        embedded: Boolean = true
+        """
+        Include repositories that don't have embeddings.
+        """
+        notEmbedded: Boolean = true
+        """
+        Include only repositories that have encountered errors when cloning or fetching
         """
         failedFetch: Boolean = false
+        """
+        Include repositories that are corrupt
+        """
+        corrupted: Boolean = false
+        """
+        Return repositories that are associated with the given external service.
+        """
+        externalService: ID
         """
         Sort field.
         """
@@ -1204,7 +1619,72 @@ type Query {
         Sort direction.
         """
         descending: Boolean = false
-    ): RepositoryConnection!
+    ): NewRepositoryConnection!
+
+    """
+    Query package repo references.
+    """
+    packageRepoReferences(
+        """
+        The exact package repo reference kind to filter by.
+        """
+        kind: PackageRepoReferenceKind
+        """
+        If supplied, only package repo references that match the given
+        terms by their name will be returned.
+        TODO: fuzzy vs exact?
+        """
+        name: String
+        """
+        Returns the first n package repo references from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): PackageRepoReferenceConnection!
+
+    """
+    Query package repo reference filters.
+    """
+    packageRepoFilters(
+        """
+        Whether the matcher should be for allowlisting or blocklisting.
+        """
+        behaviour: PackageMatchBehaviour
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        kind: PackageRepoReferenceKind
+    ): [PackageFilter!]
+
+    """
+    Returns either a list of package repo references,
+    or the versions of a single package repo reference,
+    that match the provided matcher.
+    """
+    packageRepoReferencesMatchingFilter(
+        """
+        The kind of the package repo reference this matcher should apply to.
+        """
+        kind: PackageRepoReferenceKind!
+        """
+        The matcher for which to return matching results.
+        """
+        filter: PackageVersionOrNameFilterInput!
+        """
+        Returns the first n package/package version matches from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): PackageRepoOrVersionConnection!
+
     """
     Looks up a Phabricator repository by name.
     """
@@ -1244,17 +1724,21 @@ type Query {
         """
         first: Int
         """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
         Return users whose usernames or display names match the query.
         """
         query: String
         """
-        Return only users with the given tag.
-        """
-        tag: String
-        """
         Returns users who have been active in a given period of time.
         """
         activePeriod: UserActivePeriod
+        """
+        Returns users who have NOT been active since a given point in time.
+        """
+        inactiveSince: DateTime
     ): UserConnection!
     """
     Looks up an organization by name.
@@ -1326,11 +1810,32 @@ type Query {
         query: String = ""
     ): Search
     """
-    All saved searches configured for the current user, merged from all configurations.
+    List of saved searches based on namespace
     """
-    savedSearches: [SavedSearch!]!
+    savedSearches(
+        """
+        The namespace to list the saved searches for.
+        """
+        namespace: ID!
+        """
+        The limit argument for forward pagination.
+        """
+        first: Int
+        """
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
+        """
+        after: String
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
+    ): SavedSearchesConnection!
     """
-    (experimental) Return the parse tree of a search query.
+    EXPERIMENTAL: Return the parse tree of a search query.
     """
     parseSearchQuery(
         """
@@ -1340,8 +1845,20 @@ type Query {
         """
         The parser to use for this query.
         """
-        patternType: SearchPatternType = literal
-    ): JSONValue
+        patternType: SearchPatternType = standard
+        """
+        The output corresponding to a phase in the parser pipeline.
+        """
+        outputPhase: SearchQueryOutputPhase = PARSE_TREE
+        """
+        The parser output format.
+        """
+        outputFormat: SearchQueryOutputFormat = JSON
+        """
+        The level of output format verbosity.
+        """
+        outputVerbosity: SearchQueryOutputVerbosity = BASIC
+    ): String!
     """
     The current site.
     """
@@ -1355,10 +1872,6 @@ type Query {
         """
         first: Int
     ): SurveyResponseConnection!
-    """
-    The extension registry.
-    """
-    extensionRegistry: ExtensionRegistry!
     """
     FOR INTERNAL USE ONLY: Lists all status messages
     """
@@ -1384,12 +1897,6 @@ type Query {
     ): Namespace
 
     """
-    Repos affiliated with the namespace (a user or an organization) & code hosts, these repos are not necessarily synced,
-    but ones that the configured code hosts are able to see.
-    """
-    affiliatedRepositories(namespace: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
-
-    """
     Returns true if any of the code hosts supplied are syncing now or within "seconds" from now.
     """
     codeHostSyncDue(ids: [ID!]!, seconds: Int!): Boolean!
@@ -1405,9 +1912,20 @@ type Query {
     featureFlags: [FeatureFlag!]!
 
     """
-    Retrieve the values of all feature flags for the current user
+    Retrieve a feature flag
     """
-    viewerFeatureFlags: [EvaluatedFeatureFlag!]!
+    featureFlag(name: String!): FeatureFlag!
+
+    """
+    Evaluates a feature flag for the current user
+    Returns null if feature flag does not exist
+    """
+    evaluateFeatureFlag(flagName: String!): Boolean
+
+    """
+    Retrieve all evaluated feature flags for the current user
+    """
+    evaluatedFeatureFlags: [EvaluatedFeatureFlag!]!
 
     """
     Retrieve the value of a feature flag for the organization
@@ -1461,25 +1979,23 @@ type Query {
         Only include webhook logs on or before this time.
         """
         until: DateTime
+
+        """
+        Only include webhook logs of given webhook ID.
+        """
+        webhookID: ID
+        """
+        Only include webhook logs that have no webhook ID set.
+        """
+        legacyOnly: Boolean
     ): WebhookLogConnection!
 
     """
-    Retrieve active executor compute instances.
+    Get a log of the latest outbound external requests. Only available to site admins.
     """
-    executors(
+    outboundRequests(
         """
-        An (optional) search query that searches over the hostname, queue name, os, architecture, and
-        version properties.
-        """
-        query: String
-
-        """
-        Whether to show only executors that have sent a heartbeat in the last fifteen minutes.
-        """
-        active: Boolean
-
-        """
-        Returns the first n executors.
+        Returns the first n log items. If omitted then it returns all of them.
         """
         first: Int
 
@@ -1487,11 +2003,30 @@ type Query {
         Opaque pagination cursor.
         """
         after: String
-    ): ExecutorConnection!
+    ): OutboundRequestConnection!
 
     """
-    (experimental)
-    Get invitation based on the JWT in the invitation URL
+    Get a list of background jobs that are currently known in the system.
+    """
+    backgroundJobs(
+        """
+        Returns the first n jobs. If omitted then it returns all of them.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        The maximum number of recent runs to return for each routine.
+        """
+        recentRunCount: Int
+    ): BackgroundJobConnection!
+
+    """
+    EXPERIMENTAL: Get invitation based on the JWT in the invitation URL
     """
     invitationByToken(
         """
@@ -1499,19 +2034,239 @@ type Query {
         """
         token: String!
     ): OrganizationInvitation!
+
+    """
+    Search for users that opt-in to search autocomplete.
+    """
+    autocompleteMembersSearch(
+        """
+        The organization ID
+        """
+        organization: ID!
+        """
+        Return users whose usernames or display names match the query.
+        """
+        query: String!
+    ): [AutocompleteMemberSearchItem!]!
+
+    """
+    Get started organization summary
+    """
+    orgMembersSummary(
+        """
+        The organization ID
+        """
+        organization: ID!
+    ): OrgMembersSummary!
+
+    """
+    Lists webhooks. Only available to site admins.
+    If no kind is given, it returns all webhooks.
+    If first is omitted, 20 items are returned
+    """
+    webhooks(
+        """
+        Returns the first n webhooks from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Optionally filter by kind.
+        """
+        kind: ExternalServiceKind
+    ): WebhookConnection!
+
+    """
+    List slow GraphQL requests that were recently captured (requires site-admin permissions).
+    """
+    slowRequests(
+        """
+        Opaque pagnination cursor.
+        """
+        after: String
+    ): SlowRequestConnection!
+
+    """
+    Roles returns all the roles in the database that matches the arguments.
+    """
+    roles(
+        """
+        The limit argument for forward pagination.
+        """
+        first: Int
+        """
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
+        """
+        after: String
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
+    ): RoleConnection!
+
+    """
+    This returns all permissions in a paginated format.
+    """
+    permissions(
+        """
+        The limit argument for forward pagination.
+        """
+        first: Int
+        """
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
+        """
+        after: String
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
+    ): PermissionConnection!
+
+    """
+    Returns information pertaining to all gitserver instances associated with this Sourcegraph instance.
+
+    Site-admin only.
+    """
+    gitservers: GitserverInstanceConnection!
 }
 
 """
-A list of active executors compute instances.
+A list of gitserver instances.
 """
-type ExecutorConnection {
+type GitserverInstanceConnection {
     """
-    A list of executors.
+    A list of gitserver instances.
     """
-    nodes: [Executor!]!
+    nodes: [GitserverInstance!]!
+    """
+    The total count of gitserver instances in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+GitserverInfo contains information about a gitserver instance.
+"""
+type GitserverInstance implements Node {
+    """
+    The unique identifier of the gitserver instance.
+    """
+    id: ID!
 
     """
-    The total number of executors in this result set.
+    The address of the gitserver instance.
+    """
+    address: String!
+
+    """
+    The amount of free space available on the gitserver instance, in bytes.
+    """
+    freeDiskSpaceBytes: BigInt!
+
+    """
+    The total amount of storage space on the gitserver instance, in bytes.
+    """
+    totalDiskSpaceBytes: BigInt!
+}
+
+"""
+Enum of the possible scopes for executor secrets.
+"""
+enum ExecutorSecretScope {
+    """
+    The secret is meant to be used with Batch Changes execution.
+    """
+    BATCHES
+
+    """
+    The secret is meant to be used with Auto-indexing.
+    """
+    CODEINTEL
+}
+
+"""
+A secret to be used in executor jobs.
+"""
+type ExecutorSecret implements Node {
+    """
+    The unique identifier of the secret.
+    """
+    id: ID!
+    """
+    The key under which the secret is available. Secrets are usually exposed
+    as environment variables named using this key.
+    Recommended format: uppercase letters, numbers and underscores.
+    """
+    key: String!
+    """
+    The scope of this secret. The secret will only be usable for jobs in this
+    particular scope.
+    """
+    scope: ExecutorSecretScope!
+    """
+    If true, this secret is defined in a namespace and a secret with the same key
+    is also defined in the global namespace, which this secret overwrites.
+    """
+    overwritesGlobalSecret: Boolean!
+    """
+    The namespace this secret belongs to. Null, if a global secret.
+    Global secrets are available to every execution.
+    """
+    namespace: Namespace
+    """
+    The creator of the secret. Null, if the creator has been deleted.
+    """
+    creator: User
+    """
+    The date and time this secret has been created.
+    """
+    createdAt: DateTime!
+    """
+    The date and time this secret has been last updated.
+    """
+    updatedAt: DateTime!
+    """
+    The list of access events to this secret. Every time the secret value is
+    decoded and used, one of these entries is created.
+    """
+    accessLogs(
+        """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
+    ): ExecutorSecretAccessLogConnection!
+}
+
+"""
+A list of executor secrets.
+"""
+type ExecutorSecretConnection {
+    """
+    A list of executor secrets.
+    """
+    nodes: [ExecutorSecret!]!
+
+    """
+    The total number of records in this result set.
     """
     totalCount: Int!
 
@@ -1522,73 +2277,175 @@ type ExecutorConnection {
 }
 
 """
-An active executor compute instance.
+A list of executor secret access logs.
 """
-type Executor implements Node {
+type ExecutorSecretAccessLogConnection {
     """
-    The unique identifier of this executor.
+    A list of access logs.
+    """
+    nodes: [ExecutorSecretAccessLog!]!
+
+    """
+    The total number of records in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An access log entry for an executor secret.
+These are created every time the secret value is decoded.
+"""
+type ExecutorSecretAccessLog implements Node {
+    """
+    The unique identifier of the log entry.
     """
     id: ID!
+    """
+    The secret that this log entry belongs to.
+    """
+    executorSecret: ExecutorSecret!
+    """
+    The user in which name the secret has been used.
+    This is null when the access was not by a user account, or
+    when the user account was deleted.
+    """
+    user: User
+    """
+    True when the secret was accessed by an internal procedure.
+    """
+    machineUser: String!
+    """
+    The date and time when the secret has been used.
+    """
+    createdAt: DateTime!
+}
+
+extend type Query {
+    """
+    The list of all globally available executor secrets.
+    """
+    executorSecrets(
+        """
+        The scope for which secrets shall be returned.
+        """
+        scope: ExecutorSecretScope!
+        """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
+    ): ExecutorSecretConnection!
+}
+
+extend type User {
+    """
+    The list of all available executor secrets for execution in this users namespace.
+    """
+    executorSecrets(
+        """
+        The scope for which secrets shall be returned.
+        """
+        scope: ExecutorSecretScope!
+        """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
+    ): ExecutorSecretConnection!
+}
+
+extend type Org {
+    """
+    The list of all available executor secrets for execution in this orgs namespace.
+    """
+    executorSecrets(
+        """
+        The scope for which secrets shall be returned.
+        """
+        scope: ExecutorSecretScope!
+        """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
+    ): ExecutorSecretConnection!
+}
+
+extend type Mutation {
+    """
+    Create a new executor secret.
+    See argument descriptions for more details.
+    """
+    createExecutorSecret(
+        """
+        The scope for which the secret is usable.
+        """
+        scope: ExecutorSecretScope!
+        """
+        The key under which the secret is known. For executions, this is the name
+        of the environment variable this secret will be accessible under.
+        It is therefore advised that key only contains uppercase letters, numbers
+        and underscores.
+        """
+        key: String!
+        """
+        The secret value.
+        """
+        value: String!
+        """
+        The namespace this secret is for. If not set, a global secret is created
+        that is accessible by all users.
+        Creating a global secret requires site-admin permissions.
+        Creating a namespaced secret requires write-access to the namespace.
+        """
+        namespace: ID
+    ): ExecutorSecret!
 
     """
-    The hostname of the executor instance.
+    Update the value of an existing executor secret.
     """
-    hostname: String!
+    updateExecutorSecret(
+        """
+        The scope of the secret.
+        """
+        scope: ExecutorSecretScope!
+        """
+        The identifier of the secret that shall be updated.
+        """
+        id: ID!
+        """
+        The new secret value.
+        """
+        value: String!
+    ): ExecutorSecret!
 
     """
-    The queue name that the executor polls for work.
+    Deletes the given executor secret.
     """
-    queueName: String!
-
-    """
-    Active is true, if a heartbeat from the executor has been received at most three heartbeat intervals ago.
-    """
-    active: Boolean!
-
-    """
-    The operating system running the executor.
-    """
-    os: String!
-
-    """
-    The machine architure running the executor.
-    """
-    architecture: String!
-
-    """
-    The version of Git used by the executor.
-    """
-    dockerVersion: String!
-
-    """
-    The version of the executor.
-    """
-    executorVersion: String!
-
-    """
-    The version of Docker used by the executor.
-    """
-    gitVersion: String!
-
-    """
-    The version of Ignite used by the executor.
-    """
-    igniteVersion: String!
-
-    """
-    The version of src-cli used by the executor.
-    """
-    srcCliVersion: String!
-
-    """
-    The first time the executor sent a heartbeat to the Sourcegraph instance.
-    """
-    firstSeenAt: DateTime!
-
-    """
-    The last time the executor sent a heartbeat to the Sourcegraph instance.
-    """
-    lastSeenAt: DateTime!
+    deleteExecutorSecret(
+        """
+        The scope of the secret.
+        """
+        scope: ExecutorSecretScope!
+        """
+        The identifier of the secret that shall be deleted.
+        """
+        id: ID!
+    ): EmptyResponse
 }
 
 """
@@ -1614,6 +2471,15 @@ type FeatureFlagBoolean {
     Overrides that apply to the feature flag
     """
     overrides: [FeatureFlagOverride!]!
+    """
+    When the feature flag was created.
+    """
+    createdAt: DateTime!
+
+    """
+    When the feature flag was last updated.
+    """
+    updatedAt: DateTime!
 }
 
 """
@@ -1635,6 +2501,15 @@ type FeatureFlagRollout {
     Overrides that apply to the feature flag
     """
     overrides: [FeatureFlagOverride!]!
+    """
+    When the feature flag was created.
+    """
+    createdAt: DateTime!
+
+    """
+    When the feature flag was last updated.
+    """
+    updatedAt: DateTime!
 }
 
 """
@@ -1657,7 +2532,7 @@ type FeatureFlagOverride {
     targetFlag: FeatureFlag!
 
     """
-    The overriden value of the feature flag
+    The overridden value of the feature flag
     """
     value: Boolean!
 }
@@ -1719,7 +2594,7 @@ type OutOfBandMigration implements Node {
     this version mirrors introduced and includes only major and minor parts separated by a dot.
 
     It is necessary to have completed this migration before upgrading to or past this version.
-    Otherwsie, the next instance version will no longer be aware of the old data format.
+    Otherwise, the next instance version will no longer be aware of the old data format.
     """
     deprecated: String
 
@@ -1782,18 +2657,74 @@ enum SearchVersion {
     """
     V1
     """
-    Search syntax that defaults to literal search.
+    Search syntax that defaults to literal-only search.
     """
     V2
+    """
+    Search syntax that defaults to standard search.
+    """
+    V3
 }
 
 """
 The search pattern type.
 """
 enum SearchPatternType {
+    standard
     literal
     regexp
     structural
+    lucky
+    keyword
+    newStandardRC1
+}
+
+"""
+Represents phases in query parsing. The parse tree corresponds closely to the
+input query syntax. A subsequent processing phase on the parse tree generates a
+job tree. The job tree is an internal representation analogous to a database
+query plan. The job tree discards information about query syntax and corresponds
+closely to backend services (text search, git commit search, etc.).
+"""
+enum SearchQueryOutputPhase {
+    PARSE_TREE
+    JOB_TREE
+}
+
+"""
+The output format to emit for a parsed query.
+"""
+enum SearchQueryOutputVerbosity {
+    """
+    Minimal verbosity outputs only nodes.
+    """
+    MINIMAL
+    """
+    Basic verbosity outputs nodes and essential fields associated with nodes.
+    """
+    BASIC
+    """
+    Maximal verbosity outputs nodes and all information associated with nodes.
+    """
+    MAXIMAL
+}
+
+"""
+The output format to emit for a parsed query.
+"""
+enum SearchQueryOutputFormat {
+    """
+    JSON format.
+    """
+    JSON
+    """
+    S-expression format.
+    """
+    SEXP
+    """
+    Mermaid flowchart format.
+    """
+    MERMAID
 }
 
 """
@@ -2060,9 +2991,33 @@ type SearchAlert {
     """
     description: String
     """
+    An identifier indicating the kind of alert
+    """
+    kind: String
+    """
     "Did you mean: ____" query proposals
     """
     proposedQueries: [SearchQueryDescription!]
+}
+
+"""
+A paginated connection for saved search queries, defined in settings.
+"""
+type SavedSearchesConnection implements Connection {
+    """
+    A list of saved searches.
+    """
+    nodes: [SavedSearch!]!
+
+    """
+    The total number of saved searches in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
 }
 
 """
@@ -2112,6 +3067,24 @@ type SearchQueryDescription {
     The query.
     """
     query: String!
+    """
+    Additional optional information describing attributes of this query.
+    """
+    annotations: [SearchQueryAnnotation!]
+}
+
+"""
+Additional information describing attributes of a query.
+"""
+type SearchQueryAnnotation {
+    """
+    A name for this query annotation label.
+    """
+    name: String!
+    """
+    An opaque value for this query annotation.
+    """
+    value: String!
 }
 
 """
@@ -2227,17 +3200,59 @@ A specific kind of external service.
 """
 enum ExternalServiceKind {
     AWSCODECOMMIT
+    AZUREDEVOPS
     BITBUCKETCLOUD
     BITBUCKETSERVER
+    GERRIT
     GITHUB
     GITLAB
     GITOLITE
+    GOMODULES
     JVMPACKAGES
     NPMPACKAGES
     OTHER
+    LOCALGIT
     PAGURE
     PERFORCE
     PHABRICATOR
+    PYTHONPACKAGES
+    RUSTPACKAGES
+    RUBYPACKAGES
+}
+
+"""
+The current state of a rate limiter.
+"""
+type RateLimiterState {
+    """
+    The number of tokens in the bucket.
+    """
+    burst: Int!
+
+    """
+    The current capacity of the rate limiter.
+    """
+    currentCapacity: Int!
+
+    """
+    If infinite is true, the rate limiter is functionally disabled.
+    """
+    infinite: Boolean!
+
+    """
+    The amount of time in seconds it takes for the rate limiter to refill the number of tokens specified by limit.
+    """
+    interval: Int!
+
+    """
+    The last time at which the rate limiter refilled tokens.
+    """
+    lastReplenishment: DateTime!
+
+    """
+    The number of tokens the rate limiter refills in the specified amount of time.
+    """
+    limit: Int!
 }
 
 """
@@ -2248,38 +3263,47 @@ type ExternalService implements Node {
     The external service's unique ID.
     """
     id: ID!
+
     """
     The kind of external service.
     """
     kind: ExternalServiceKind!
+
     """
     The display name of the external service.
     """
     displayName: String!
+
+    """
+    The current rate limiter state for the external service.
+    """
+    rateLimiterState: RateLimiterState
+
     """
     The JSON configuration of the external service.
     """
     config: JSONCString!
+
     """
     When the external service was created.
     """
     createdAt: DateTime!
+
     """
     When the external service was last updated.
     """
     updatedAt: DateTime!
-    """
-    The namespace this external service belongs to.
-    """
-    namespace: Namespace
+
     """
     The number of repos synced by the external service.
     """
     repoCount: Int!
+
     """
     An optional URL that will be populated when webhooks have been configured for the external service.
     """
     webhookURL: String
+
     """
     This is an optional field that's populated when we ran into errors on the
     backend side when trying to create/update an ExternalService, but the
@@ -2288,33 +3312,30 @@ type ExternalService implements Node {
     not break the API and stay backwards compatible.
     """
     warning: String
+
     """
     External services are synced with code hosts in the background. This optional field
-    will contain any errors that occured during the most recent completed sync.
+    will contain any errors that occurred during the most recent completed sync.
     """
     lastSyncError: String
+
     """
     LastSyncAt is the time the last sync job was run for this code host. Null if it
     has never been synced so far.
     """
     lastSyncAt: DateTime
+
     """
     The timestamp of the next sync job. Null if not scheduled for a re-sync.
     """
     nextSyncAt: DateTime
 
     """
-    Returns a list of scopes granted by the code host. It is based on the token used
-    when configuring the external service.
-    NOTE: Currently only GitHub is supported and the request consumes rate limit tokens
-    so it should be used sparingly.
-    """
-    grantedScopes: [String!]
-
-    """
     Returns recently received webhooks on this external service.
 
     Only site admins may access this field.
+
+    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice
     """
     webhookLogs(
         """
@@ -2342,24 +3363,297 @@ type ExternalService implements Node {
         """
         until: DateTime
     ): WebhookLogConnection!
+        @deprecated(
+            reason: "Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice"
+        )
 
     """
-    EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
-    repositories included by this external service, and is derived from commit history (because that
-    for example gives more accurate collaborator work email addresses than the contributors API which
-    often returns personal emails.
-
-    Importantly, this API works when repositories are not cloned on Sourcegraph yet so as to allow
-    inviting collaborators while repositories are cloning.
-
-    In general, this API should NOT be used once repositories are cloned on to Sourcegraph as it
-    reaches out to the code host directly which is wasteful if repositories are already cloned.
+    The list of recent sync jobs for this external service.
     """
-    invitableCollaborators: [Person!]!
+    syncJobs(first: Int): ExternalServiceSyncJobConnection!
+
+    """
+    Checks the availability of the external service.
+    """
+    checkConnection: ExternalServiceAvailability!
+
+    """
+    True if this external service can perform availability check by running checkConnection.
+
+    If this is false, then checkConnection responds with ExternalServiceAvailabilityUnknown.
+    """
+    hasConnectionCheck: Boolean!
+
+    """
+    True if this external service configuration supports `exclude` parameter.
+    """
+    supportsRepoExclusion: Boolean!
+
+    """
+    True if this external service is unrestricted and marks all repositories added by it as publicly accessible.
+    """
+    unrestricted: Boolean!
 }
 
 """
+Availability status of an external service for diagnostic purposes.
+
+This is so that the UI can surface whether the external service
+can serve requests, and if not, why is the reason for that.
+"""
+union ExternalServiceAvailability =
+      ExternalServiceAvailable
+    | ExternalServiceUnavailable
+    | ExternalServiceAvailabilityUnknown
+
+"""
+Indicator that the external service was recently found to be available.
+"""
+type ExternalServiceAvailable {
+    """
+    The timestamp of the last successful availability check that was performed.
+    """
+    lastCheckedAt: DateTime!
+}
+
+"""
+Indicator that the external service was recently not found available.
+"""
+type ExternalServiceUnavailable {
+    """
+    User-friendly textual description of supposed reason why the service is not available.
+    """
+    suspectedReason: String!
+}
+
+"""
+Availability for some external services may not be determined, or only partially
+supported. In that case unknown variant of ExternalServiceAvailability is returned.
+"""
+type ExternalServiceAvailabilityUnknown {
+    """
+    User-friendly textual description of the implementation status of availability.
+    This is expected to be tied to specific kinds of external services.
+    """
+    implementationNote: String!
+}
+
+"""
+A list of external service sync jobs.
+"""
+type ExternalServiceSyncJobConnection {
+    """
+    A list of sync jobs.
+    """
+    nodes: [ExternalServiceSyncJob!]!
+
+    """
+    The total number of jobs in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+The possible states of an external service sync job.
+"""
+enum ExternalServiceSyncJobState {
+    """
+    Not yet started. Will be picked up by a worker eventually.
+    """
+    QUEUED
+
+    """
+    Currently syncing.
+    """
+    PROCESSING
+
+    """
+    An error occurred while syncing. Will be retried eventually.
+    """
+    ERRORED
+
+    """
+    A fatal error occurred while syncing. No retries will be made.
+    """
+    FAILED
+
+    """
+    Sync finished successfully.
+    """
+    COMPLETED
+
+    """
+    Sync job is being canceled.
+    """
+    CANCELING
+
+    """
+    Sync job has been canceled.
+    """
+    CANCELED
+}
+
+"""
+An external service sync job represents one sync with the code host. It's a background
+job that will eventually be run by the repo syncer.
+"""
+type ExternalServiceSyncJob implements Node {
+    """
+    The unique identifier of the sync job.
+    """
+    id: ID!
+
+    """
+    The current state of the sync job.
+    """
+    state: ExternalServiceSyncJobState!
+
+    """
+    When the sync job was added to the queue.
+    """
+    queuedAt: DateTime!
+
+    """
+    Set when sync begins.
+    """
+    startedAt: DateTime
+
+    """
+    Set when sync finished.
+    """
+    finishedAt: DateTime
+
+    """
+    Error message, if the sync failed.
+    """
+    failureMessage: String
+
+    """
+    The number of repos synced during this sync job.
+    """
+    reposSynced: Int!
+
+    """
+    The number of times an error occurred syncing a repo during this sync job.
+    """
+    repoSyncErrors: Int!
+
+    """
+    The number of new repos discovered during this sync job.
+    """
+    reposAdded: Int!
+
+    """
+    The number of repos deleted as a result of this sync job.
+    """
+    reposDeleted: Int!
+
+    """
+    The number of existing repos whose metadata has changed during this sync job.
+    """
+    reposModified: Int!
+
+    """
+    The number of existing repos whose metadata did not change during this sync job.
+    """
+    reposUnmodified: Int!
+}
+
+"""
+A list of namespaces available to an external service configuration.
+"""
+type ExternalServiceNamespaceConnection {
+    """
+    A list of namespaces available on the source.
+    Namespaces are used to organize which members and users can access repositories
+    and are defined by external service kind (e.g. Github organizations, Bitbucket projects, etc.)
+    """
+    nodes: [ExternalServiceNamespace!]!
+
+    """
+    The total number of source repos in the connection.
+    """
+    totalCount: Int!
+}
+
+"""
+A namespace sourced from a defined external service (such as GitHub, GitLab, Phabricator, etc.) that can be discovered
+before any sync or mirror operations.
+"""
+type ExternalServiceNamespace {
+    """
+    The unique identifier of the external service namespace.
+    """
+    id: ID!
+    """
+    The name of the external service namespace.
+    """
+    name: String!
+    """
+    The Namespace's ID on the external service.
+    Example: For GitHub, this is the GitHub GraphQL API's node ID for the organization.
+    """
+    externalID: String!
+}
+
+"""
+A list of repositories available to an external service configuration.
+"""
+type ExternalServiceRepositoryConnection {
+    """
+    A list of repositories available on the source.
+    """
+    nodes: [ExternalServiceRepository!]!
+}
+
+"""
+A repository sourced from a defined external service (such as GitHub, GitLab, Phabricator, etc.) that can be discovered
+before any sync or mirror operations.
+"""
+type ExternalServiceRepository {
+    """
+    The unique identifier of the external service repository.
+    """
+    id: ID!
+    """
+    The name of the external service repository.
+    """
+    name: String!
+    """
+    The repository's ID on the external service.
+    Example: For GitHub, this is the GitHub GraphQL API's node ID for the repository.
+    """
+    externalID: String!
+}
+"""
 A list of repositories.
+
+The old `RepositoryConnection` is deprecated and is replaced by
+this new connection which support proper cursor based pagination.
+The new connection does not include `precise` argument for totalCount.
+"""
+type NewRepositoryConnection {
+    """
+    A list of repositories.
+    """
+    nodes: [Repository!]!
+    """
+    The total count of repositories in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+Deprecated! A list of repositories.
 """
 type RepositoryConnection {
     """
@@ -2378,6 +3672,15 @@ type RepositoryConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+All possible types of currently supported repositories, even though they may be stored
+as a git repository on disk.
+"""
+enum RepositoryType {
+    GIT_REPOSITORY
+    PERFORCE_DEPOT
 }
 
 """
@@ -2401,6 +3704,10 @@ type Repository implements Node & GenericSearchResultInterface {
     DEPRECATED: Use name.
     """
     uri: String! @deprecated(reason: "Use name.")
+    """
+    The source of this repository from where it was imported / converted.
+    """
+    sourceType: RepositoryType!
     """
     The repository's description.
     """
@@ -2434,6 +3741,17 @@ type Repository implements Node & GenericSearchResultInterface {
         """
         inputRevspec: String
     ): GitCommit
+
+    """
+    EXPERIMENTAL: Returns infomration about the given changelist of the perforce depot, or null if
+    no changelist exists with the given cid or it is not a perforce depot.
+    """
+    changelist(cid: String!): PerforceChangelist
+
+    """
+    The first commit inside the repo
+    """
+    firstEverCommit: GitCommit
     """
     Information and status related to mirroring, if this repository is a mirror of another repository (e.g., on
     some code host). In this case, the remote source repository is external to Sourcegraph and the mirror is
@@ -2445,6 +3763,7 @@ type Repository implements Node & GenericSearchResultInterface {
     Phabricator, etc.).
     """
     externalRepository: ExternalRepository!
+
     """
     Whether the repository is a fork.
     """
@@ -2581,7 +3900,7 @@ type Repository implements Node & GenericSearchResultInterface {
         """
         The date after which to count contributions.
         """
-        after: String
+        afterDate: String
         """
         Return contributors to files in this path.
         """
@@ -2590,6 +3909,9 @@ type Repository implements Node & GenericSearchResultInterface {
         Returns the first n contributors from the list.
         """
         first: Int
+        last: Int
+        after: String
+        before: String
     ): RepositoryContributorConnection!
     """
     Whether the viewer has admin privileges on this repository.
@@ -2618,6 +3940,351 @@ type Repository implements Node & GenericSearchResultInterface {
     The star count the repository has in the code host.
     """
     stars: Int!
+
+    """
+    A set of user-defined key-value pairs associated with the repo.
+    """
+    keyValuePairs: [KeyValuePair!]!
+        @deprecated(
+            reason: "Use repo.metadata instead. This field is a deprecated and will be removed in a future release."
+        )
+
+    """
+    A set of user-defined key-value pairs metadata associated with the repo.
+    """
+    metadata: [KeyValuePair!]!
+
+    """
+    The size of repo when cloned on disk
+    """
+    diskSizeBytes: BigInt
+
+    """
+    Returns true if embeddings for the repo are generated.
+    """
+    embeddingExists: Boolean!
+
+    """
+    Returns true if command executed on the repo are recorded.
+    """
+    isRecordingEnabled: Boolean!
+
+    """
+    Returns a list of all recorded commands for given repository.
+    """
+    recordedCommands(
+        """
+        Maximum number of recorded commands returned.
+        If a query specifies a limit higher than 40, it will be capped at 40.
+        The default value is 40. This prevents returning an excessive number
+        of recorded commands for performance reasons.
+        """
+        limit: Int = 40
+        """
+        Skips initial "offset" number of recorded commands.
+        (Default: 0)
+        """
+        offset: Int = 0
+    ): RecordedCommandConnection!
+}
+
+"""
+RecordedCommandConnection is a connection containing a list of RecordedCommand nodes.
+"""
+type RecordedCommandConnection {
+    """
+    A list of recorded commands for given repository.
+    """
+    nodes: [RecordedCommand!]!
+
+    """
+    The total number of recorded commands for given repository in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Recorded command is a Git command and its metadata which was run for particular repo.
+"""
+type RecordedCommand {
+    """
+    When the command started its execution.
+    """
+    start: DateTime!
+    """
+    Command run time in seconds.
+    """
+    duration: Float!
+    """
+    The command itself (e.g. "git fetch").
+    """
+    command: String!
+    """
+    Directory in which the command has been run.
+    """
+    dir: String!
+    """
+    Path to command executable (git executable in most cases).
+    """
+    path: String!
+
+    """
+    Output of the command.
+    """
+    output: String!
+
+    """
+    Indicates whether the command execution was successful.
+    """
+    isSuccess: Boolean!
+}
+
+"""
+A key-value pair
+"""
+type KeyValuePair {
+    """
+    The non-nullable key.
+    """
+    key: String!
+
+    """
+    The nullable value. A null value indicates this key-value pair should be treated as a tag.
+    """
+    value: String
+}
+
+"""
+List of package repo references.
+"""
+type PackageRepoReferenceConnection {
+    """
+    A list of package repo references.
+    """
+    nodes: [PackageRepoReference!]!
+
+    """
+    The total number of package repo references in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Connection resolver for either a list of package repo references or versions.
+"""
+union PackageRepoOrVersionConnection = PackageRepoReferenceConnection | PackageRepoReferenceVersionConnection
+
+"""
+List of package repo reference versions.
+"""
+type PackageRepoReferenceVersionConnection {
+    """
+    A list of package repo versions.
+    """
+    nodes: [PackageRepoReferenceVersion!]!
+
+    """
+    The total number of package repo versions in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A kind of package repo reference.
+ExternalServiceKind, with a more specific set of values.
+"""
+enum PackageRepoReferenceKind {
+    GOMODULES
+    JVMPACKAGES
+    NPMPACKAGES
+    PYTHONPACKAGES
+    RUSTPACKAGES
+    RUBYPACKAGES
+}
+
+"""
+A reference to a package repo, such as a maven artifact, rust crate etc.
+"""
+type PackageRepoReference {
+    """
+    A unique ID for the package repo reference.
+    """
+    id: ID!
+
+    """
+    The external service kind under which this package repo
+    reference is uniquely identified.
+    """
+    kind: PackageRepoReferenceKind!
+
+    """
+    The name of the package, in a format relevant to the specific ecosystem e.g.
+    maven artifact coordinates (com.sample:text), npm scoped packages (@monkeys/banana).
+    """
+    name: String!
+
+    """
+    The versions of this package known to the sourcegraph instance.
+    """
+    versions: [PackageRepoReferenceVersion!]!
+
+    """
+    Indicates whether a package repo reference has been blocked by a blocklist entry and/or
+    no matching entry in a non-empty allowlist
+    """
+    blocked: Boolean!
+
+    """
+    The synthetic repository (aka the package repo) created to store the contents of the
+    synced versions of the package repo reference. This type is subject to change once
+    package repos and other non-git code hosts become first-class.
+    """
+    repository: Repository
+}
+
+"""
+A version of a package repo reference.
+"""
+type PackageRepoReferenceVersion {
+    """
+    A unique ID for the package repo reference version.
+    """
+    id: ID!
+
+    """
+    The package repo reference that this ID is for.
+    """
+    packageRepoReferenceID: ID!
+
+    """
+    The version string. Not guaranteed to be semver or any other format.
+    """
+    version: String!
+}
+
+"""
+Whether a package repo reference filter is part of the allowlist or blocklist
+"""
+enum PackageMatchBehaviour {
+    """
+    Blocks a package repo reference from syncing.
+    """
+    BLOCK
+    """
+    Allows a package repo reference to be synced.
+    """
+    ALLOW
+}
+
+"""
+Filters package repo references of the matching scheme/kind, applying to either
+references of matching names or versions of a specific package name.
+One of either nameFilter or versionFilter must be provided.
+"""
+type PackageFilter {
+    """
+    Opaque ID string.
+    """
+    id: ID!
+
+    """
+    The behaviour of the filter when applied to a matching package repo reference or version.
+    """
+    behaviour: PackageMatchBehaviour!
+
+    """
+    The schemes/kinds of package repo references this filter should apply to only.
+    """
+    kind: PackageRepoReferenceKind!
+
+    """
+    Optional name-matching filter.
+    """
+    nameFilter: PackageNameFilter
+
+    """
+    Optional package-specific version-matching filter.
+    """
+    versionFilter: PackageVersionFilter
+}
+
+"""
+A package repo reference filter that matches names.
+"""
+type PackageNameFilter {
+    """
+    Glob string to match names.
+    """
+    packageGlob: String!
+}
+
+"""
+A package repo reference filter that matches versions for a specific name.
+"""
+type PackageVersionFilter {
+    """
+    Exact package name to match.
+    """
+    packageName: String!
+
+    """
+    Glob string to match versions.
+    """
+    versionGlob: String!
+}
+
+"""
+A name or version matching filter for. One of either nameFilter or versionFilter must be provided.
+"""
+input PackageVersionOrNameFilterInput {
+    """
+    Optional name-matching filter.
+    """
+    nameFilter: PackageNameFilterInput
+    """
+    Optional package-specific version-matching filter.
+    """
+    versionFilter: PackageVersionFilterInput
+}
+
+"""
+A package repo reference filter that matches names.
+"""
+input PackageNameFilterInput {
+    """
+    Glob string to match names.
+    """
+    packageGlob: String!
+}
+
+"""
+A package repo reference filter that matches versions for a specific name.
+"""
+input PackageVersionFilterInput {
+    """
+    Exact package name to match.
+    """
+    packageName: String!
+
+    """
+    Glob string to match versions.
+    """
+    versionGlob: String!
 }
 
 """
@@ -2700,9 +4367,22 @@ type MirrorRepositoryInfo {
     """
     cloned: Boolean!
     """
-    When the repository was last successfully updated from the remote source repository..
+    Whether the repository is currently corrupt.
+    """
+    isCorrupted: Boolean!
+    """
+    A Log of the corruption events that have been detected on this repository. Only 10 events are kept and the events
+    are ordered from most recent to least.
+    """
+    corruptionLogs: [RepoCorruptionLog!]!
+    """
+    When the repository was last successfully updated from the remote source repository.
     """
     updatedAt: DateTime
+    """
+    When the repository is next scheduled to be updated from the remote source repository.
+    """
+    nextSyncAt: DateTime
     """
     The state of this repository in the update schedule.
     """
@@ -2711,6 +4391,38 @@ type MirrorRepositoryInfo {
     The state of this repository in the update queue.
     """
     updateQueue: UpdateQueue
+    """
+    The last error message, if any, returned when fetching or cloning the repo
+    """
+    lastError: String
+    """
+    The output of the most recent repo sync job
+    """
+    lastSyncOutput: String
+    """
+    The byte size of the repo.
+    """
+    byteSize: BigInt!
+    """
+    The gitserver shard on which the repository is or will be cloned.
+    Only site admins can access this field.
+    """
+    shard: String
+}
+
+"""
+A corruption log entry that that records the time of when corruption was detected and a reason why the repo is regarded
+as corrupt
+"""
+type RepoCorruptionLog {
+    """
+    The time at which the repository was detected to be corrupt
+    """
+    timestamp: DateTime!
+    """
+    The reason why this repository was regarded as corrupt
+    """
+    reason: String!
 }
 
 """
@@ -2793,6 +4505,10 @@ type RepositoryTextSearchIndex {
     Git refs in the repository that are configured for text search indexing.
     """
     refs: [RepositoryTextSearchIndexedRef!]!
+    """
+    Information about the indexserver that hosts the repo's index.
+    """
+    host: repositoryIndexserverHost
 }
 
 """
@@ -2837,6 +4553,16 @@ type RepositoryTextSearchIndexStatus {
 }
 
 """
+Information about the indexserver that hosts the repo's index.
+"""
+type repositoryIndexserverHost {
+    """
+    The hostname of the indexserver.
+    """
+    name: String!
+}
+
+"""
 A Git ref (usually a branch) in a repository that is configured to be indexed for text search.
 """
 type RepositoryTextSearchIndexedRef {
@@ -2859,6 +4585,24 @@ type RepositoryTextSearchIndexedRef {
     indexed is false, this field's value is null.
     """
     indexedCommit: GitObject
+    """
+    EXPERIMENTAL: Information about the files that were not indexed.
+    """
+    skippedIndexed: SkippedIndexed
+}
+
+"""
+EXPERIMENTAL: Information about the files that were not indexed.
+"""
+type SkippedIndexed {
+    """
+    The count of files that were not indexed.
+    """
+    count: BigInt!
+    """
+    The query to retrieve the list of files that were not indexed.
+    """
+    query: String!
 }
 
 """
@@ -2906,6 +4650,10 @@ type PreviewRepositoryComparison {
         Return file diffs after the given cursor.
         """
         after: String
+        """
+        A list of paths or directories used to filter the diffs
+        """
+        paths: [String!]
     ): FileDiffConnection!
 }
 
@@ -2937,6 +4685,12 @@ type RepositoryComparison {
         Return the first n commits from the list.
         """
         first: Int
+
+        """
+        Filter to only the commits that modify files that match path.
+        Path can be either a file or a containing directory.
+        """
+        path: String
     ): GitCommitConnection!
     """
     The file diffs for each changed file.
@@ -2950,6 +4704,10 @@ type RepositoryComparison {
         Return file diffs after the given cursor.
         """
         after: String
+        """
+        A list of paths or directories used to filter the diffs
+        """
+        paths: [String!]
     ): FileDiffConnection!
 }
 
@@ -3124,6 +4882,10 @@ type FileDiffHunk {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Specifies which format/highlighting technique to use.
+        """
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedDiffHunkBody!
 }
 
@@ -3146,15 +4908,11 @@ Statistics about a diff.
 """
 type DiffStat {
     """
-    Number of additions.
+    Number of lines added.
     """
     added: Int!
     """
-    Number of changes.
-    """
-    changed: Int!
-    """
-    Number of deletions.
+    Number of lines deleted.
     """
     deleted: Int!
 }
@@ -3175,7 +4933,7 @@ type RepositoryContributorConnection {
     """
     Pagination information.
     """
-    pageInfo: PageInfo!
+    pageInfo: BidirectionalPageInfo!
 }
 
 """
@@ -3203,205 +4961,6 @@ type RepositoryContributor {
         """
         first: Int
     ): GitCommitConnection!
-}
-
-"""
-A code symbol (e.g., a function, variable, type, class, etc.).
-It is derived from DocumentSymbol as defined in the Language Server Protocol (see https://microsoft.github.io/language-server-protocol/specifications/specification-3-14/#textDocument_documentSymbol).
-"""
-type Symbol {
-    """
-    The name of the symbol.
-    """
-    name: String!
-    """
-    The name of the symbol that contains this symbol, if any. This field's value is not guaranteed to be
-    structured in such a way that callers can infer a hierarchy of symbols.
-    """
-    containerName: String
-    """
-    The kind of the symbol.
-    """
-    kind: SymbolKind!
-    """
-    The programming language of the symbol.
-    """
-    language: String!
-    """
-    The location where this symbol is defined.
-    """
-    location: Location!
-    """
-    The URL to this symbol (using the input revision specifier, which may not be immutable).
-    """
-    url: String!
-    """
-    The canonical URL to this symbol (using an immutable revision specifier).
-    """
-    canonicalURL: String!
-    """
-    Whether or not the symbol is local to the file it's defined in.
-    """
-    fileLocal: Boolean!
-}
-
-"""
-A location inside a resource (in a repository at a specific commit).
-"""
-type Location {
-    """
-    The file that this location refers to.
-    """
-    resource: GitBlob!
-    """
-    The range inside the file that this location refers to.
-    """
-    range: Range
-    """
-    The URL to this location (using the input revision specifier, which may not be immutable).
-    """
-    url: String!
-    """
-    The canonical URL to this location (using an immutable revision specifier).
-    """
-    canonicalURL: String!
-}
-
-"""
-A range inside a file. The start position is inclusive, and the end position is exclusive.
-"""
-type Range {
-    """
-    The start position of the range (inclusive).
-    """
-    start: Position!
-    """
-    The end position of the range (exclusive).
-    """
-    end: Position!
-}
-
-"""
-A zero-based position inside a file.
-"""
-type Position {
-    """
-    The line number (zero-based) of the position.
-    """
-    line: Int!
-    """
-    The character offset (zero-based) in the line of the position.
-    """
-    character: Int!
-}
-
-"""
-A list of diagnostics.
-"""
-type DiagnosticConnection {
-    """
-    A list of diagnostics.
-    """
-    nodes: [Diagnostic!]!
-
-    """
-    The total count of diagnostics (which may be larger than nodes.length if the connection is paginated).
-    """
-    totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-Represents a diagnostic, such as a compiler error or warning.
-"""
-type Diagnostic {
-    """
-    The location at which the message applies.
-    """
-    location: Location!
-
-    """
-    The diagnostic's severity.
-    """
-    severity: DiagnosticSeverity
-
-    """
-    The diagnostic's code as provided by the tool.
-    """
-    code: String
-
-    """
-    A human-readable string describing the source of this
-    diagnostic, e.g. "typescript" or "super lint".
-    """
-    source: String
-
-    """
-    The diagnostic's message.
-    """
-    message: String
-}
-
-"""
-Represents the severity level of a diagnostic.
-"""
-enum DiagnosticSeverity {
-    ERROR
-    WARNING
-    INFORMATION
-    HINT
-}
-
-"""
-All possible kinds of symbols. This set matches that of the Language Server Protocol
-(https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
-"""
-enum SymbolKind {
-    UNKNOWN
-    FILE
-    MODULE
-    NAMESPACE
-    PACKAGE
-    CLASS
-    METHOD
-    PROPERTY
-    FIELD
-    CONSTRUCTOR
-    ENUM
-    INTERFACE
-    FUNCTION
-    VARIABLE
-    CONSTANT
-    STRING
-    NUMBER
-    BOOLEAN
-    ARRAY
-    OBJECT
-    KEY
-    NULL
-    ENUMMEMBER
-    STRUCT
-    EVENT
-    OPERATOR
-    TYPEPARAMETER
-}
-
-"""
-A list of symbols.
-"""
-type SymbolConnection {
-    """
-    A list of symbols.
-    """
-    nodes: [Symbol!]!
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
 }
 
 """
@@ -3605,13 +5164,35 @@ type PhabricatorRepo {
 }
 
 """
-Pagination information. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
+Pagination information for forward-only pagination. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
 """
 type PageInfo {
     """
     When paginating forwards, the cursor to continue.
     """
     endCursor: String
+    """
+    When paginating forwards, are there more items?
+    """
+    hasNextPage: Boolean!
+}
+
+"""
+Pagination information for bi-directional pagination. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
+"""
+type BidirectionalPageInfo {
+    """
+    When paginating backwards, the cursor to continue.
+    """
+    startCursor: String
+    """
+    When paginating forwards, the cursor to continue.
+    """
+    endCursor: String
+    """
+    When paginating backwards, are there more items?
+    """
+    hasPreviousPage: Boolean!
     """
     When paginating forwards, are there more items?
     """
@@ -3680,6 +5261,10 @@ type GitCommit implements Node {
     """
     abbreviatedOID: String!
     """
+    EXPERIMENTAL: The perforce changelist ID if this git commit was originally converted from a perforce depot.
+    """
+    perforceChangelist: PerforceChangelist
+    """
     This commit's author.
     """
     author: Signature!
@@ -3716,6 +5301,15 @@ type GitCommit implements Node {
     """
     externalURLs: [ExternalLink!]!
     """
+    The Git tree or blob in this commit at the given path.
+    """
+    path(
+        """
+        The path of the tree or blob.
+        """
+        path: String = ""
+    ): GitTreeOrBlob
+    """
     The Git tree in this commit at the given path.
     """
     tree(
@@ -3723,12 +5317,6 @@ type GitCommit implements Node {
         The path of the tree.
         """
         path: String = ""
-        """
-        Whether to recurse into sub-trees. If true, it overrides the value of the "recursive" parameter on all of
-        GitTree's fields.
-        DEPRECATED: Use the "recursive" parameter on GitTree's fields instead.
-        """
-        recursive: Boolean = false
     ): GitTree
     """
     A list of file names in this repository.
@@ -3768,9 +5356,21 @@ type GitCommit implements Node {
         """
         path: String
         """
+        Follow history beyond renames (only works for a single file).
+        """
+        follow: Boolean = false
+        """
         Return commits more recent than the specified date.
         """
         after: String
+        """
+        Skip the first N commits of the repo before returning the number of commits as set in the field "first".
+        """
+        afterCursor: String
+        """
+        Return commits older than the specified date.
+        """
+        before: String
     ): GitCommitConnection!
     """
     Returns the number of commits that this commit is behind and ahead of revspec.
@@ -3794,7 +5394,22 @@ type GitCommit implements Node {
         """
         includePatterns: [String!]
     ): SymbolConnection!
+
+    """
+    Returns the comparison with another revision.
+    """
+    diff(
+        """
+        The base commit to compare to. Defaults to the commit's first parent.
+        """
+        base: String
+    ): RepositoryComparison!
 }
+
+"""
+Either a git tree or blob.
+"""
+union GitTreeOrBlob = GitTree | GitBlob
 
 """
 A set of Git behind/ahead counts for one commit relative to another.
@@ -3916,20 +5531,35 @@ interface TreeEntry {
     """
     Whether this tree entry is a single child
     """
-    isSingleChild(
-        """
-        Returns the first n files in the tree.
-        """
-        first: Int
-        """
-        Recurse into sub-trees.
-        """
-        recursive: Boolean = false
-        """
-        Recurse into sub-trees of single-child directories
-        """
-        recursiveSingleChild: Boolean = false
-    ): Boolean!
+    isSingleChild: Boolean!
+    """
+    The revision history for this file or directory.
+    """
+    history(first: Int, after: String): TreeEntryConnection!
+    """
+    The Git commit containing this tree entry was reached through.
+    Note that a tree entry can exist in multiple commits.
+    """
+    commit: GitCommit!
+}
+
+"""
+A list of TreeEntry
+"""
+type TreeEntryConnection {
+    """
+    A list of TreeEntry.
+    """
+    nodes: [TreeEntry!]!
+    """
+    The total count of TreeEntry in the connection. This total count may be larger
+    than the number of nodes in this object when the result is paginated.
+    """
+    totalCount: Int
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
 }
 
 """
@@ -3986,7 +5616,7 @@ type GitTree implements TreeEntry {
     """
     directories(
         """
-        Returns the first n files in the tree.
+        Returns the first n directories in the tree.
         """
         first: Int
         """
@@ -4016,15 +5646,21 @@ type GitTree implements TreeEntry {
         """
         first: Int
         """
-        Recurse into sub-trees. If true, implies recursiveSingleChild.
+        Recurse into sub-trees.
         """
         recursive: Boolean = false
         """
-        Recurse into sub-trees of single-child directories. If true, we return a flat list of
-        every directory that is a single child, and any directories or files that are
-        nested in a single child.
+        Includes all parent directories and their entries. For example, if the path is
+        `/client/web/something`, it will return the following entries in this order:
+
+          - `/*`
+          - `/client/*`
+          - `/client/web/*`
+          - `/client/web/something/*`
+
+        This is useful for rendering a collapsed tree view for the entry.
         """
-        recursiveSingleChild: Boolean = false
+        ancestors: Boolean = false
     ): [TreeEntry!]!
     """
     Symbols defined in this tree.
@@ -4042,20 +5678,29 @@ type GitTree implements TreeEntry {
     """
     Whether this tree entry is a single child
     """
-    isSingleChild(
-        """
-        Returns the first n files in the tree.
-        """
-        first: Int
-        """
-        Recurse into sub-trees.
-        """
-        recursive: Boolean = false
-        """
-        Recurse into sub-trees of single-child directories
-        """
-        recursiveSingleChild: Boolean = false
-    ): Boolean!
+    isSingleChild: Boolean!
+    """
+    The revision history for this file or directory.
+    """
+    history(first: Int, after: String): TreeEntryConnection!
+}
+
+"""
+The format and highlighting to use when requesting highlighting information for a file.
+"""
+enum HighlightResponseFormat {
+    """
+    HTML formatted file content without syntax highlighting.
+    """
+    HTML_PLAINTEXT
+    """
+    HTML formatted file content with syntax highlighting.
+    """
+    HTML_HIGHLIGHT
+    """
+    SCIP highlighting information as JSON.
+    """
+    JSON_SCIP
 }
 
 """
@@ -4083,11 +5728,24 @@ interface File2 {
     """
     The content of this file.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The file size in bytes.
     """
     byteSize: Int!
+    """
+    Total line count for the file. Returns 0 for binary files.
+    """
+    totalLines: Int!
     """
     Whether or not it is binary.
     """
@@ -4097,7 +5755,16 @@ interface File2 {
     rich file type.
     This HTML string is already escaped and thus is always safe to render.
     """
-    richHTML: String!
+    richHTML(
+        """
+        Return richHTML content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return richHTML content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The URL to this file (using the input revision specifier, which may not be immutable).
     """
@@ -4106,6 +5773,10 @@ interface File2 {
     The canonical URL to this file (using an immutable revision specifier).
     """
     canonicalURL: String!
+    """
+    The URL to this file using the changelist ID if this file is inside a perforce depot.
+    """
+    changelistURL: String
     """
     The URLs to this file on external services.
     """
@@ -4124,6 +5795,20 @@ interface File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Specifies which format/highlighting technique to use.
+        """
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
+        """
+        Return highlight content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        startLine: Int
+        """
+        Return blob highlight ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        endLine: Int
     ): HighlightedFile!
 }
 
@@ -4146,11 +5831,24 @@ type VirtualFile implements File2 {
     """
     The content of this file.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The file size in bytes.
     """
     byteSize: Int!
+    """
+    Total line count for the file. Returns 0 for binary files.
+    """
+    totalLines: Int!
     """
     Whether or not it is binary.
     """
@@ -4160,7 +5858,16 @@ type VirtualFile implements File2 {
     rich file type.
     This HTML string is already escaped and thus is always safe to render.
     """
-    richHTML: String!
+    richHTML(
+        """
+        Return richHTML content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return richHTML content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     Not implemented.
     """
@@ -4169,6 +5876,10 @@ type VirtualFile implements File2 {
     Not implemented.
     """
     canonicalURL: String!
+    """
+    Not impleemented.
+    """
+    changelistURL: String
     """
     Not implemented.
     """
@@ -4187,6 +5898,20 @@ type VirtualFile implements File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Specifies which format/highlighting technique to use.
+        """
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
+        """
+        Return highlight content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        startLine: Int
+        """
+        Return highlight content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        endLine: Int
     ): HighlightedFile!
 }
 
@@ -4235,11 +5960,24 @@ type GitBlob implements TreeEntry & File2 {
     """
     The content of this blob.
     """
-    content: String!
+    content(
+        """
+        Return blob content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return blob content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The file size in bytes.
     """
     byteSize: Int!
+    """
+    Total line count for the Blob. Returns 0 for binary files.
+    """
+    totalLines: Int!
     """
     Whether or not it is binary.
     """
@@ -4249,7 +5987,16 @@ type GitBlob implements TreeEntry & File2 {
     rich file type.
     This HTML string is already escaped and thus is always safe to render.
     """
-    richHTML: String!
+    richHTML(
+        """
+        Return richHTML content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return richHTML content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The Git commit containing this blob.
     """
@@ -4266,6 +6013,12 @@ type GitBlob implements TreeEntry & File2 {
     The canonical URL to this blob (using an immutable revision specifier).
     """
     canonicalURL: String!
+
+    """
+    The URL to this file using the changelist ID if this file is inside a perforce depot.
+    """
+    changelistURL: String
+
     """
     The URLs to this blob on its repository's external services.
     """
@@ -4273,7 +6026,7 @@ type GitBlob implements TreeEntry & File2 {
     """
     Blame the blob.
     """
-    blame(startLine: Int!, endLine: Int!): [Hunk!]!
+    blame(startLine: Int!, endLine: Int!, ignoreWhitespace: Boolean = false): [Hunk!]!
     """
     Highlight the blob contents.
     """
@@ -4288,6 +6041,20 @@ type GitBlob implements TreeEntry & File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Specifies which format/highlighting technique to use.
+        """
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
+        """
+        Return highlight content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        startLine: Int
+        """
+        Return highlight content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        endLine: Int
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
@@ -4307,7 +6074,7 @@ type GitBlob implements TreeEntry & File2 {
         query: String
     ): SymbolConnection!
     """
-    (Experimental) Symbol defined in this blob at the specfic line number and character offset.
+    EXPERIMENTAL: Symbol defined in this blob at the specific line number and character offset.
     """
     symbol(
         """
@@ -4322,20 +6089,27 @@ type GitBlob implements TreeEntry & File2 {
     """
     Always false, since a blob is a file, not directory.
     """
-    isSingleChild(
-        """
-        Returns the first n files in the tree.
-        """
-        first: Int
-        """
-        Recurse into sub-trees.
-        """
-        recursive: Boolean = false
-        """
-        Recurse into sub-trees of single-child directories
-        """
-        recursiveSingleChild: Boolean = false
-    ): Boolean!
+    isSingleChild: Boolean!
+    """
+    LFS is set if the GitBlob is a pointer to a file stored in LFS.
+    """
+    lfs: LFS
+    """
+    The revision history for this file
+    """
+    history(first: Int, after: String): TreeEntryConnection!
+}
+
+"""
+Information about a blob stored in Git Large File Storage (LFS).
+"""
+type LFS {
+    """
+    The size of the file in LFS in bytes.
+    Note: the file size in the GitBlob will be the size of the pointer not the file a
+    user checks out.
+    """
+    byteSize: BigInt!
 }
 
 """
@@ -4350,6 +6124,10 @@ type HighlightedFile {
     The HTML table that can be used to display the highlighted file.
     """
     html: String!
+    """
+    Base64 encoded JSON payload of LSIF Typed with syntax highlighting data.
+    """
+    lsif: String!
     """
     A list of the desired line ranges. Each list is a list of lines, where each element is an HTML
     table row '<tr>...</tr>' string. This is useful if you only need to display specific subsets of
@@ -4386,6 +6164,11 @@ type FileMatch {
     """
     lineMatches: [LineMatch!]!
     """
+    EXPERIMENTAL: This field is experimental and may be unstable.
+    The chunk matches.
+    """
+    chunkMatches: [ChunkMatch!]!
+    """
     Whether or not the limit was hit.
     """
     limitHit: Boolean!
@@ -4412,6 +6195,24 @@ type LineMatch {
     Whether or not the limit was hit.
     """
     limitHit: Boolean! @deprecated(reason: "will always be false")
+}
+
+"""
+A set of matched ranges contained in a chunk of contiguous lines.
+"""
+type ChunkMatch {
+    """
+    The contiguous set of full lines which contain the matches in ranges.
+    """
+    content: String!
+    """
+    The location of the beginning of content.
+    """
+    contentStart: Position!
+    """
+    The set of ranges within the content that matched the search query.
+    """
+    ranges: [Range!]!
 }
 
 """
@@ -4500,6 +6301,26 @@ type UserConnection {
 }
 
 """
+A paginated connection for users.
+"""
+type NewUsersConnection implements Connection {
+    """
+    A list of users.
+    """
+    nodes: [User!]!
+
+    """
+    The total number of users in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
 A user.
 """
 type User implements Node & SettingsSubject & Namespace {
@@ -4576,11 +6397,6 @@ type User implements Node & SettingsSubject & Namespace {
     """
     organizationMemberships: OrganizationMembershipConnection!
     """
-    Tags associated with the user. These are used for internal site management and feature selection.
-    Only the user and site admins can access this field.
-    """
-    tags: [String!]!
-    """
     Whether the user has already accepted the terms of service or not.
     """
     tosAccepted: Boolean!
@@ -4606,6 +6422,21 @@ type User implements Node & SettingsSubject & Namespace {
     Only the user and site admins can access this field.
     """
     emails: [UserEmail!]!
+    """
+    Whether the user has a verified email or not.
+    Only the user and site admins can access this field.
+    """
+    hasVerifiedEmail: Boolean!
+    """
+    Whether the user has completed the post-signup flow.
+    Only the user and site admins can access this field.
+    """
+    completedPostSignup: Boolean!
+    """
+    The user's verified primary email address (if any).
+    On dotcom only the user and site admins can access this field.
+    """
+    primaryEmail: UserEmail
     """
     The user's access tokens (which grant to the holder the privileges of the user). This consists
     of all access tokens whose subject is this user.
@@ -4658,48 +6489,80 @@ type User implements Node & SettingsSubject & Namespace {
     The name of this user namespace's component. For users, this is the username.
     """
     namespaceName: String!
+
     """
-    Repositories from external services owned by this user.
+    Whether the user is controlled externally through SCIM.
     """
-    repositories(
+    scimControlled: Boolean!
+
+    """
+    The list of all roles assigned to this user.
+    """
+    roles(
         """
-        Returns the first n repositories from the list.
+        The limit argument for forward pagination.
         """
         first: Int
         """
-        Return repositories whose names match the query.
+        The limit argument for backward pagination.
         """
-        query: String
+        last: Int
         """
-        An opaque cursor that is used for pagination.
+        The cursor argument for forward pagination.
         """
         after: String
         """
-        Include cloned repositories.
+        The cursor argument for backward pagination.
         """
-        cloned: Boolean = true
-        """
-        Include repositories that are not yet cloned and for which cloning is not in progress.
-        """
-        notCloned: Boolean = true
-        """
-        Include repositories that have a text search index.
-        """
-        indexed: Boolean = true
-        """
-        Include repositories that do not have a text search index.
-        """
-        notIndexed: Boolean = true
-        """
-        Only include repositories from this external service.
-        """
-        externalServiceID: ID
-    ): RepositoryConnection!
-
+        before: String
+    ): RoleConnection!
     """
-    publicRepositories returns the repos listed in user_public_repos for this user
+    The list of permissions granted to this user based on their roles.
     """
-    publicRepositories: [Repository!]!
+    permissions: PermissionConnection!
+    """
+    The configured override for the user to the completions request quota per day.
+    Null, if not overwritten.
+    """
+    completionsQuotaOverride: Int
+    """
+    The configured override for the user to the code completions request quota
+    per day.
+    Null, if not overwritten.
+    """
+    codeCompletionsQuotaOverride: Int
+    """
+    Whether the user has enrolled for Cody Pro.
+    """
+    codyProEnabled: Boolean!
+    """
+    The date when the user enrolled for Cody Pro.
+    """
+    codyProEnabledAt: DateTime
+    """
+    The start date of current billing period of Cody.
+    """
+    codyCurrentPeriodStartDate: DateTime
+    """
+    The end date of current billing period of Cody.
+    """
+    codyCurrentPeriodEndDate: DateTime
+    """
+    The count of Cody chats in the current billing period.
+    """
+    codyCurrentPeriodChatUsage: Int
+    """
+    The count of Cody code completions in the current billing period.
+    """
+    codyCurrentPeriodCodeUsage: Int
+    """
+    The limit of Cody chats for the current billing period.
+    """
+    codyCurrentPeriodChatLimit: Int
+    """
+    The limit of Cody code completions for the current billing period.
+    """
+    codyCurrentPeriodCodeLimit: Int
 }
 
 """
@@ -4871,6 +6734,30 @@ type ExternalAccount implements Node {
     Only site admins may query this field.
     """
     accountData: JSONValue
+    """
+    Public provider-specific data about the external account.
+    Only users that are linked to the external account and site admins
+    may query this field.
+    """
+    publicAccountData: PublicExternalAccountData
+}
+
+"""
+Public provider-specific data about the external account.
+"""
+type PublicExternalAccountData {
+    """
+    The text name the user is using on the external account, if any.
+    """
+    displayName: String
+    """
+    The login or username the user is using on the external account, if any.
+    """
+    login: String
+    """
+    Link to the user profile page for the external account.
+    """
+    url: String
 }
 
 """
@@ -4990,7 +6877,28 @@ type Org implements Node & SettingsSubject & Namespace {
     """
     A list of users who are members of this organization.
     """
-    members: UserConnection!
+    members(
+        """
+        The limit argument for forward pagination.
+        """
+        first: Int
+        """
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
+        """
+        after: String
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
+        """
+        Return users whose usernames or display names match the query.
+        """
+        query: String
+    ): NewUsersConnection!
     """
     The latest settings for the organization.
     Only organization members and site admins can access this field.
@@ -5113,6 +7021,49 @@ type OrganizationInvitation implements Node {
     """
     isVerifiedEmail: Boolean
 }
+"""
+Result user returned by invite members autocomplete search.
+"""
+type AutocompleteMemberSearchItem {
+    """
+    The unique ID for the user.
+    """
+    id: ID!
+    """
+    The user's username.
+    """
+    username: String!
+    """
+    The display name chosen by the user.
+    """
+    displayName: String
+    """
+    The URL of the user's avatar image.
+    """
+    avatarURL: String
+    """
+    If the user belongs to current Organization.
+    """
+    inOrg: Boolean
+}
+
+"""
+Result organization members count and pending invitations count.
+"""
+type OrgMembersSummary {
+    """
+    The unique ID for the Org.
+    """
+    id: ID!
+    """
+    Total number of members for the org.
+    """
+    membersCount: Int!
+    """
+    Total number of pending invites for the org.
+    """
+    invitesCount: Int!
+}
 
 """
 The recipient's possible responses to an invitation to join an organization as a member.
@@ -5138,6 +7089,7 @@ enum RepositoryOrderBy {
     deprecated (use the equivalent REPOSITORY_CREATED_AT)
     """
     REPOSITORY_CREATED_AT
+    SIZE
 }
 
 """
@@ -5195,8 +7147,11 @@ type Site implements SettingsSubject {
     siteID: String!
     """
     The site's configuration. Only visible to site admins.
+
+    If returnSafeConfigsOnly is true, returns a subset of the configuration classified
+    as safe config.
     """
-    configuration: SiteConfiguration!
+    configuration(returnSafeConfigsOnly: Boolean): SiteConfiguration!
     """
     The site's latest site-wide settings (which are the second-lowest-precedence
     in the configuration cascade for a user).
@@ -5283,6 +7238,22 @@ type Site implements SettingsSubject {
     """
     needsRepositoryConfiguration: Boolean!
     """
+    Whether the external services haven been created from a configuration file
+    specified in the EXTSVC_CONFIG_FILE.
+    """
+    externalServicesFromFile: Boolean!
+    """
+    Whether the external services can be updated even if `externalServicesFromFile` is
+    true. All changes made while `externalServicesFromFile` is true will be discarded once
+    Sourcegraph restarts.
+    """
+    allowEditExternalServicesWithFile: Boolean!
+    """
+    The number of external services distinguished by local repositories and remote repositories.
+    Local repository code host connections are only supported in Cody App.
+    """
+    externalServicesCounts: ExternalServicesCounts!
+    """
     Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
     Only applies if the site does not have a valid license.
     """
@@ -5295,10 +7266,6 @@ type Site implements SettingsSubject {
     BACKCOMPAT: Always returns true.
     """
     hasCodeIntelligence: Boolean!
-    """
-    Whether we want to show built-in searches on the saved searches page
-    """
-    disableBuiltInSearches: Boolean!
     """
     Whether the server sends emails to users to verify email addresses. If false, then site admins must manually
     verify users' email addresses.
@@ -5325,11 +7292,56 @@ type Site implements SettingsSubject {
         """
         months: Int
     ): SiteUsageStatistics!
+
+    """
+    New usage statistics/analytics for this site.
+    """
+    analytics: Analytics!
+
+    """
+    List all users.
+    """
+    users(
+        """
+        Return users whose usernames or display names match the query.
+        """
+        query: String
+        """
+        Returns users who have been active in a given period of time.
+        """
+        siteAdmin: Boolean
+        """
+        Returns users that contain filter in the username field.
+        """
+        username: String
+        """
+        Returns users that contain filter in the email field.
+        """
+        email: String
+        """
+        Returns users for the given lastActive enum period.
+        When omitted does NOT apply and returns for all period available.
+        """
+        lastActiveAt: SiteUsersDateRangeInput
+        """
+        Returns either deleted or not deleted users. Returns all users when omitted.
+        """
+        deletedAt: SiteUsersDateRangeInput
+        """
+        Returns users who where created within a given date time range.
+        """
+        createdAt: SiteUsersDateRangeInput
+        """
+        Returns users whose events count within a given range.
+        """
+        eventsCount: SiteUsersNumberRangeInput
+    ): SiteUsers!
+
     """
     Monitoring overview for this site.
     Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
     is to monitor Sourcegraph, it is better to configure alerting or query Prometheus directly in
-    order to ensure that if the frontend goes down you still recieve alerts:
+    order to ensure that if the frontend goes down you still receive alerts:
     Configure alerting: https://docs.sourcegraph.com/admin/observability/alerting
     Query Prometheus directly: https://docs.sourcegraph.com/admin/observability/alerting_custom_consumption
     """
@@ -5337,13 +7349,189 @@ type Site implements SettingsSubject {
         """
         Days of history (based on current UTC time).
         """
-        days: Int
+        days: Int @deprecated(reason: "No longer supported - will be removed after Sourcegraph 4.5")
     ): MonitoringStatistics!
     """
     Whether changes can be made to site settings through the API. When global settings are configured through
     the GLOBAL_SETTINGS_FILE environment variable, site settings edits cannot be made through the API.
     """
     allowSiteSettingsEdits: Boolean!
+
+    """
+    FOR INTERNAL USE ONLY: Returns information about instance upgrade readiness.
+    """
+    upgradeReadiness: UpgradeReadiness!
+    """
+    FOR INTERNAL USE ONLY: The state of readiness to auto upgrade the Sourcegraph instance via migrator commands.
+    """
+    autoUpgradeEnabled: Boolean!
+
+    """
+    Wether the current App installation has a connected Sourcegraph.com account.
+    """
+    appHasConnectedDotComAccount: Boolean!
+
+    """
+    The quota of completions requests allowed per user in a day. Null, if unlimited.
+    """
+    perUserCompletionsQuota: Int
+
+    """
+    The quota of code completions requests allowed per user in a day. Null, if unlimited.
+    """
+    perUserCodeCompletionsQuota: Int
+
+    """
+    Whether users are required to have a verified email in order to access Cody.
+    """
+    requiresVerifiedEmailForCody: Boolean!
+
+    """
+    Whether Cody is enabled for this site.
+    """
+    isCodyEnabled: Boolean!
+
+    """
+    If Cody is enabled, this returns how Cody is configured to talk to the LLM.
+    """
+    codyLLMConfiguration: CodyLLMConfiguration
+
+    """
+    Returns the status of the Cody Rate limits when using the `sourcegraph` provider.
+    If the instance is not using the Cody Gateway there will be no rate limits.
+
+    Site-admin only.
+    """
+    codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
+}
+
+"""
+Cody LLM configuration contains information about how the main LLM used by Cody
+is configured.
+"""
+type CodyLLMConfiguration {
+    """
+    Name of the model being used for chat.
+    """
+    chatModel: String!
+    """
+    Maximum number of tokens client should use when talking to the chatModel.
+    """
+    chatModelMaxTokens: Int
+    """
+    Name of the model being used for fast chat.
+    """
+    fastChatModel: String!
+    """
+    Maximum number of tokens client should use when talking to the fastChatModel.
+    """
+    fastChatModelMaxTokens: Int
+    """
+    Name of the model being used for code completions.
+    """
+    completionModel: String!
+    """
+    Maximum number of tokens client should use when talking to the completionModel.
+    """
+    completionModelMaxTokens: Int
+    """
+    Name of the provider being used for LLM interactions.
+    """
+    provider: String!
+}
+
+"""
+CodyGatewayRateLimitStatus current status of a rate limit.
+"""
+type CodyGatewayRateLimitStatus {
+    """
+    The feature that the rate limit applies to.
+    """
+    feature: String!
+
+    """
+    The limit allowed.
+    """
+    limit: BigInt!
+
+    """
+    The number of usages in current period.
+    """
+    usage: BigInt!
+
+    """
+    The percentage of the rate limit used.
+    """
+    percentUsed: Int!
+
+    """
+    The time interval for the rate limit.
+    """
+    interval: String!
+
+    """
+    When the rate limit next resets if an interval has already started.
+    """
+    nextLimitReset: DateTime
+}
+
+"""
+External services count information includes a count of services for remote code host connections and a count of services
+for local code host connections (local is only supported for Cody App).
+"""
+type ExternalServicesCounts {
+    """
+    The count of external services configured for remote code host connections.
+    """
+    remoteExternalServicesCount: Int!
+    """
+    The count of external services configured for local code host connections.
+    """
+    localExternalServicesCount: Int!
+}
+
+"""
+Instance upgrade readiness information includes schema drifts and deprecated-but-unfinished out-of-band migrations.
+"""
+type UpgradeReadiness {
+    """
+    The schema drift details.
+    """
+    schemaDrift: [SchemaDriftSummary!]!
+    """
+    The list of deprecated-but-unfinished out-of-band migrations.
+    """
+    requiredOutOfBandMigrations: [OutOfBandMigration!]!
+}
+
+"""
+A summary of a schema drift.
+"""
+type SchemaDriftSummary {
+    """
+    Name of the table that contains the drift
+    """
+    name: String!
+    """
+    The problem that was found
+    """
+    problem: String!
+    """
+    The suggested solution to the problem
+    """
+    solution: String!
+    """
+    The diff of the schema drift
+    """
+    diff: String
+    """
+    The SQL to fix the schema drift
+    """
+    statements: [String!]
+    """
+    The Sourcegraph URL that contains the potential fix
+    """
+    urlHint: String
 }
 
 """
@@ -5364,6 +7552,108 @@ type SiteConfiguration {
     on the configuration (that can't be expressed in the JSON Schema).
     """
     validationMessages: [String!]!
+    """
+    EXPERIMENTAL: A list of diffs to depict what changed since the previous version of this
+    configuration.
+    Only site admins may perform this query.
+    """
+    history(
+        """
+        The number of nodes to return starting from the beginning (oldest).
+        Note: Use either first or last (see below) in the query. Setting both will
+        return an error.
+        """
+        first: Int
+        """
+        The number of nodes to return starting from the end (latest).
+        Note: Use either last or first (see above) in the query. Setting both will
+        return an error.
+        """
+        last: Int
+        """
+        Opaque pagination cursor to be used when paginating forwards that may be also used
+        in conjunction with "first" to return the first N nodes.
+        """
+        after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards that may be
+        also used in conjunction with "last" to return the last N nodes.
+        """
+        before: String
+    ): SiteConfigurationChangeConnection
+    """
+    License information from license key. Available only to site-admins.
+    """
+    licenseInfo: LicenseInfo!
+}
+
+"""
+License information extracted from license key.
+"""
+type LicenseInfo {
+    """
+    Tags of the license.
+    """
+    tags: [String!]!
+    """
+    The number of users that can use the license.
+    """
+    userCount: Int!
+    """
+    The expiration date of the license.
+    """
+    expiresAt: DateTime!
+}
+
+"""
+A list of site config diffs. Diff generation may not be available from the very
+start depending on when the value of redacted_contents is available in the
+database.
+"""
+type SiteConfigurationChangeConnection implements Connection {
+    """
+    A list of diffs in the site config
+    """
+    nodes: [SiteConfigurationChange!]!
+    """
+    The total number of diffs in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+A diff representing the change in the site config compared to the previous version.
+"""
+type SiteConfigurationChange implements Node {
+    """
+    The ID of the site config in the history.
+    """
+    id: ID!
+    """
+    The user who made this change. If empty, it indicates that either the
+    author's information is not available or the change in the site config was applied
+    via an internal process (example: site startup or SITE_CONFIG_FILE being reloaded).
+    """
+    author: User
+
+    """
+    The diff string when diffed against the previous site config.
+    """
+    diff: String!
+    """
+    The timestamp when this change in the site config was applied.
+    """
+    createdAt: DateTime!
+    """
+    The timestamp when this change in the site config was modified. Usually
+    this should be the same as createdAt as entries in the site config history are
+    considered immutable.
+    """
+    updatedAt: DateTime!
 }
 
 """
@@ -5635,6 +7925,528 @@ type SiteUsageStatistics {
 }
 
 """
+A pre-defined periods to get site analytics.
+"""
+enum AnalyticsDateRange {
+    """
+    Last 3 months date range.
+    """
+    LAST_THREE_MONTHS
+    """
+    Last month date range.
+    """
+    LAST_MONTH
+    """
+    Last week date range.
+    """
+    LAST_WEEK
+    """
+    Custom date range.
+    """
+    CUSTOM
+}
+
+"""
+Group site analytics by period.
+"""
+enum AnalyticsGrouping {
+    """
+    Group data by day.
+    """
+    DAILY
+    """
+    Group data by week.
+    """
+    WEEKLY
+}
+
+"""
+Analytics for certain date.
+"""
+type AnalyticsStatItemNode {
+    """
+    A date in ISO format
+    """
+    date: String!
+    """
+    Total number of events.
+    """
+    count: Float!
+    """
+    Unique number of users who triggered event.
+    This counts deleted users as well as anonymous users.
+    """
+    uniqueUsers: Float!
+    """
+    Unique number of currently registered users who triggered event.
+    """
+    registeredUsers: Float!
+}
+
+"""
+Analytics summary.
+"""
+type AnalyticsStatItemSummary {
+    """
+    Total number of events.
+    """
+    totalCount: Float!
+    """
+    Total unique number of users who triggered event.
+    This counts deleted users as well as anonymous users.
+    """
+    totalUniqueUsers: Float!
+    """
+    Total unique number of currently registered users who triggered event.
+    """
+    totalRegisteredUsers: Float!
+}
+
+"""
+Analytics result item.
+"""
+type AnalyticsStatItem {
+    """
+    Analytics summary.
+    """
+    summary: AnalyticsStatItemSummary!
+    """
+    Array of analytics by period.
+    """
+    nodes: [AnalyticsStatItemNode!]!
+}
+
+"""
+Search analytics.
+"""
+type AnalyticsSearchResult {
+    """
+    Searches analytics
+    """
+    searches: AnalyticsStatItem!
+    """
+    Search result click analytics
+    """
+    resultClicks: AnalyticsStatItem!
+    """
+    File view analytics
+    """
+    fileViews: AnalyticsStatItem!
+    """
+    File open analytics
+    """
+    fileOpens: AnalyticsStatItem!
+    """
+    Code copied from search results analytics
+    """
+    codeCopied: AnalyticsStatItem!
+}
+
+"""
+Notebook analytics.
+"""
+type AnalyticsNotebooksResults {
+    """
+    Notebooks creation analytics.
+    """
+    creations: AnalyticsStatItem!
+    """
+    Notebooks views analytics.
+    """
+    views: AnalyticsStatItem!
+    """
+    Notebooks block run analytics.
+    """
+    blockRuns: AnalyticsStatItem!
+}
+
+"""
+Users frequency by days used.
+"""
+type AnalyticsUsersFrequencyItem {
+    """
+    Number of days used
+    """
+    daysUsed: Float!
+    """
+    Number of users.
+    """
+    frequency: Float!
+    """
+    Percentage of users from total frequencies.
+    """
+    percentage: Float!
+}
+
+"""
+Monthly active users
+"""
+type AnalyticsMonthlyActiveUsers {
+    """
+    year-month for which the total active users are calculated
+    """
+    date: String!
+    """
+    total count of active users
+    """
+    count: Float!
+}
+
+"""
+Users' analytics.
+"""
+type AnalyticsUsersResult {
+    """
+    Users' activity analytics.
+    """
+    activity: AnalyticsStatItem!
+    """
+    Frequency of usage by day.
+    """
+    frequencies: [AnalyticsUsersFrequencyItem!]!
+    """
+    Monthly active users for last 3 months.
+    """
+    monthlyActiveUsers: [AnalyticsMonthlyActiveUsers!]!
+}
+
+"""
+CodeIntel' analytics.
+"""
+type AnalyticsCodeIntelResult {
+    """
+    "GoToRef" click
+    """
+    referenceClicks: AnalyticsStatItem!
+    """
+    "GoToDef" click
+    """
+    definitionClicks: AnalyticsStatItem!
+    """
+    Code Intel events made from web
+    """
+    inAppEvents: AnalyticsStatItem!
+    """
+    Code Intel events made from code host
+    """
+    codeHostEvents: AnalyticsStatItem!
+    """
+    Search based events
+    """
+    searchBasedEvents: AnalyticsStatItem!
+    """
+    Precise events
+    """
+    preciseEvents: AnalyticsStatItem!
+    """
+    Cross-repo events
+    """
+    crossRepoEvents: AnalyticsStatItem!
+}
+
+"""
+CodeIntelByLanguage analytics.
+"""
+type AnalyticsCodeIntelByLanguageResult {
+    """
+    Language
+    """
+    language: String!
+    """
+    Precision
+    """
+    precision: String!
+    """
+    Count
+    """
+    count: Float!
+}
+
+"""
+CodeIntelTopRepositories analytics.
+"""
+type AnalyticsCodeIntelRepositoryResult {
+    """
+    Repository name
+    """
+    name: String!
+    """
+    Language
+    """
+    language: String!
+    """
+    Event kind
+    """
+    kind: String!
+    """
+    Event precision (either "search-based" or "precise")
+    """
+    precision: String!
+    """
+    Event count
+    """
+    events: Float!
+    """
+    Has precise
+    """
+    hasPrecise: Boolean!
+}
+
+"""
+Repositories summary.
+"""
+type AnalyticsReposSummartResult {
+    """
+    Total number of repositories.
+    """
+    count: Float!
+    """
+    Total number of repositories with precise code-intel.
+    """
+    preciseCodeIntelCount: Float!
+}
+
+"""
+Batch changes analytics.
+"""
+type AnalyticsBatchChangesResult {
+    """
+    Changesets created
+    """
+    changesetsCreated: AnalyticsStatItem!
+    """
+    Changesets merged
+    """
+    changesetsMerged: AnalyticsStatItem!
+}
+
+"""
+Extentions analytics.
+"""
+type AnalyticsExtensionsResult {
+    """
+    JetBrains IDE plugin search events.
+    """
+    jetbrains: AnalyticsStatItem!
+    """
+    VSCode IDE extension search events.
+    """
+    vscode: AnalyticsStatItem!
+    """
+    Browser (chrome, firefox, safari) extensions code navigation events.
+    This includes events like "Go to Def", "Find ref" and "Find implementation"
+    """
+    browser: AnalyticsStatItem!
+}
+
+"""
+Code insights analytics.
+"""
+type AnalyticsCodesInsightsResult {
+    """
+    Insights hovers statistics.
+    """
+    insightHovers: AnalyticsStatItem!
+    """
+    Insights data point clicks statistics.
+    """
+    insightDataPointClicks: AnalyticsStatItem!
+}
+"""
+Analytics describes a new site statistics.
+"""
+type Analytics {
+    """
+    Search statistics.
+    """
+    search(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsSearchResult!
+    """
+    Notebooks statistics.
+    """
+    notebooks(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsNotebooksResults!
+    """
+    Users statistics.
+    """
+    users(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsUsersResult!
+    """
+    Code-intelligence statistics.
+    """
+    codeIntel(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsCodeIntelResult!
+    """
+    Code-intelligence statistics grouped by language and precision.
+    """
+    codeIntelByLanguage(dateRange: AnalyticsDateRange): [AnalyticsCodeIntelByLanguageResult!]!
+    """
+    Top repositories by code-intelligence events.
+    """
+    codeIntelTopRepositories(dateRange: AnalyticsDateRange): [AnalyticsCodeIntelRepositoryResult!]!
+    """
+    Repositories summary statistics.
+    """
+    repos: AnalyticsReposSummartResult!
+    """
+    Batch changes statistics
+    """
+    batchChanges(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsBatchChangesResult!
+    """
+    Extensions statistics
+    """
+    extensions(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsExtensionsResult!
+    """
+    Code insights statistics
+    """
+    codeInsights(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsCodesInsightsResult!
+}
+
+"""
+Site user.
+"""
+type SiteUser {
+    """
+    The unique ID for the user.
+    """
+    id: ID!
+    """
+    User's username.
+    """
+    username: String!
+    """
+    User's primary email.
+    """
+    email: String
+    """
+    User's display name
+    """
+    displayName: String
+    """
+    The datetime when user was created in the system.
+    """
+    createdAt: String!
+    """
+    The datetime when user was last active.
+    """
+    lastActiveAt: String
+    """
+    The datetime when user was deleted.
+    """
+    deletedAt: String
+    """
+    Whether user is site admin or not.
+    """
+    siteAdmin: Boolean!
+    """
+    Whether the user is controlled through SCIM.
+    """
+    scimControlled: Boolean!
+    """
+    Total number of user's event_logs.
+    """
+    eventsCount: Float!
+    """
+    Whether or not the user account is locked.
+    """
+    locked: Boolean!
+}
+
+"""
+SiteUserOrderBy enumerates the ways a users list can be ordered.
+"""
+enum SiteUserOrderBy {
+    USERNAME
+    """
+    User's primary email.
+    """
+    EMAIL
+    """
+    The total number of user's event_logs.
+    """
+    EVENTS_COUNT
+    """
+    The last event_log datetime.
+    """
+    LAST_ACTIVE_AT
+    """
+    The datetime when user was added to the system.
+    """
+    CREATED_AT
+    """
+    The datetime when user was soft deleted.
+    """
+    DELETED_AT
+    """
+    Whether the user is site admin or not.
+    """
+    SITE_ADMIN
+}
+
+"""
+SiteUsersDateRangeInput argument to filter based on date range or date equals to null
+"""
+input SiteUsersDateRangeInput {
+    """
+    Less than or equal to
+    """
+    lte: DateTime
+    """
+    Greater than or equal to
+    """
+    gte: DateTime
+    """
+    Negation
+    """
+    not: Boolean
+    """
+    Equal to Null
+    """
+    empty: Boolean
+}
+
+"""
+SiteUsersNumberRangeInput argument to filter based on the number range
+"""
+input SiteUsersNumberRangeInput {
+    """
+    Less than or equal to
+    """
+    gte: Float
+    """
+    Greater than or equal to
+    """
+    lte: Float
+}
+
+"""
+Site users.
+"""
+type SiteUsers {
+    """
+    User total count.
+    """
+    totalCount: Float!
+    """
+    List of users.
+    """
+    nodes(
+        """
+        Returns the "limit" number users from the list.
+        """
+        limit: Int
+        """
+        Skips initial "offset" number of users.
+        """
+        offset: Int
+        """
+        Returns users ordered by a given column.
+        """
+        orderBy: SiteUserOrderBy
+        """
+        Returns ordered users in descending order provided by orderBy field.
+        """
+        descending: Boolean
+    ): [SiteUser!]!
+}
+
+"""
 SiteUsagePeriod describes a site's usage statistics for a given timespan.
 This information is visible to all viewers.
 """
@@ -5670,6 +8482,9 @@ type MonitoringStatistics {
     Alerts fired in this time span.
     """
     alerts: [MonitoringAlert!]!
+        @deprecated(
+            reason: "No longer supported, and will no longer return data - query will be removed after Sourcegraph 4.5"
+        )
 }
 
 """
@@ -5758,6 +8573,10 @@ type SurveyResponse {
     """
     better: String
     """
+    The answer to "What do you use Sourcegraph for?".
+    """
+    otherUseCase: String
+    """
     The time when this response was created.
     """
     createdAt: DateTime!
@@ -5819,454 +8638,36 @@ type ProductLicenseInfo {
     The date when this license expires.
     """
     expiresAt: DateTime!
+    """
+    The Salesforce subscription ID associated with this license.
+    """
+    salesforceSubscriptionID: String
+    """
+    The Salesforce opportunity ID associated with this license.
+    """
+    salesforceOpportunityID: String
+    """
+    This indicates if the current license is valid. It will be false if:
+    - The license key has expired
+    - The license key is in use on another instance
+    - The license key was revoked
+    """
+    isValid: Boolean!
+    """
+    This indicates the reason the license is invalid. It'll be null if `isValid` is true.
+    """
+    licenseInvalidityReason: String
+    """
+    The license key, hashed using sha256.
+    """
+    hashedKey: String
 }
 
 """
-An extension registry.
+FOR INTERNAL USE ONLY: A status message produced when disableAutoGitUpdates is
+set to true in the site configuration
 """
-type ExtensionRegistry {
-    """
-    Find an extension by its extension ID (which is the concatenation of the publisher name, a slash ("/"), and the
-    extension name).
-    To find an extension by its GraphQL ID, use Query.node.
-    """
-    extension(extensionID: String!): RegistryExtension
-    """
-    A list of extensions published in the extension registry.
-    """
-    extensions(
-        """
-        Returns the first n extensions from the list.
-        """
-        first: Int
-        """
-        Returns only extensions from this publisher.
-        """
-        publisher: ID
-        """
-        Returns only extensions matching the query.
-        The following keywords are supported:
-        - category:"C" - include only extensions in the given category.
-        - tag:"T" - include only extensions in the given tag.
-        The following keywords are ignored by the server (so that the frontend can post-process the result set to
-        implement the keywords):
-        - installed - include only installed extensions.
-        - enabled - include only enabled extensions.
-        - disabled - include only disabled extensions.
-        """
-        query: String
-        """
-        Include extensions from the local registry.
-        """
-        local: Boolean = true
-        """
-        Include extensions from remote registries.
-        """
-        remote: Boolean = true
-        """
-        Returns only extensions with the given IDs.
-        """
-        extensionIDs: [String!]
-        """
-        Sorts the list of extension results such that the extensions with these IDs are first in the result set.
-        """
-        prioritizeExtensionIDs: [String!]
-    ): RegistryExtensionConnection!
-    """
-    A list of publishers with at least 1 extension in the registry.
-    """
-    publishers(
-        """
-        Return the first n publishers from the list.
-        """
-        first: Int
-    ): RegistryPublisherConnection!
-    """
-    A list of publishers that the viewer may publish extensions as.
-    """
-    viewerPublishers: [RegistryPublisher!]!
-    """
-    The extension ID prefix for extensions that are published in the local extension registry. This is the
-    hostname (and port, if non-default HTTP/HTTPS) of the Sourcegraph "externalURL" site configuration property.
-    It is null if extensions published on this Sourcegraph site do not have an extension ID prefix.
-    Examples: "sourcegraph.example.com/", "sourcegraph.example.com:1234/"
-    """
-    localExtensionIDPrefix: String
-    """
-    A list of featured extensions in the registry.
-    """
-    featuredExtensions: FeaturedExtensionsConnection
-}
-
-"""
-A publisher of a registry extension.
-"""
-union RegistryPublisher = User | Org
-
-"""
-A list of publishers of extensions in the registry.
-"""
-type RegistryPublisherConnection {
-    """
-    A list of publishers.
-    """
-    nodes: [RegistryPublisher!]!
-    """
-    The total count of publishers in the connection. This total count may be larger than the number of
-    nodes in this object when the result is paginated.
-    """
-    totalCount: Int!
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-Mutations for the extension registry.
-"""
-type ExtensionRegistryMutation {
-    """
-    Create a new extension in the extension registry.
-    """
-    createExtension(
-        """
-        The ID of the extension's publisher (a user or organization).
-        """
-        publisher: ID!
-        """
-        The name of the extension.
-        """
-        name: String!
-    ): ExtensionRegistryCreateExtensionResult!
-    """
-    Update an extension in the extension registry.
-    Only authorized extension publishers may perform this mutation.
-    """
-    updateExtension(
-        """
-        The extension to update.
-        """
-        extension: ID!
-        """
-        The new name for the extension, or null to leave unchanged.
-        """
-        name: String
-    ): ExtensionRegistryUpdateExtensionResult!
-    """
-    Delete an extension from the extension registry.
-    Only authorized extension publishers may perform this mutation.
-    """
-    deleteExtension(
-        """
-        The ID of the extension to delete.
-        """
-        extension: ID!
-    ): EmptyResponse!
-    """
-    Publish an extension in the extension registry, creating it (if it doesn't yet exist) or updating it (if it
-    does).
-    This is a helper that wraps multiple other GraphQL mutations to expose a single API for publishing an
-    extension.
-    """
-    publishExtension(
-        """
-        The extension ID of the extension to publish. If a host prefix (e.g., "sourcegraph.example.com/") is
-        needed and it is not included, it is automatically prepended.
-        Examples: "alice/myextension", "acmecorp/myextension"
-        """
-        extensionID: String!
-        """
-        The extension manifest (as JSON).
-        """
-        manifest: String!
-        """
-        The bundled JavaScript source of the extension.
-        """
-        bundle: String
-        """
-        The source map of the extension's JavaScript bundle, if any.
-        The JavaScript bundle's "//# sourceMappingURL=" directive, if any, is ignored. When the bundle is served,
-        the source map provided here is referenced instead.
-        """
-        sourceMap: String
-        """
-        Force publish even if there are warnings (such as invalid JSON warnings).
-        """
-        force: Boolean = false
-    ): ExtensionRegistryPublishExtensionResult!
-}
-
-"""
-The result of Mutation.extensionRegistry.createExtension.
-"""
-type ExtensionRegistryCreateExtensionResult {
-    """
-    The newly created extension.
-    """
-    extension: RegistryExtension!
-}
-
-"""
-The result of Mutation.extensionRegistry.updateExtension.
-"""
-type ExtensionRegistryUpdateExtensionResult {
-    """
-    The newly updated extension.
-    """
-    extension: RegistryExtension!
-}
-
-"""
-The result of Mutation.extensionRegistry.publishExtension.
-"""
-type ExtensionRegistryPublishExtensionResult {
-    """
-    The extension that was just published.
-    """
-    extension: RegistryExtension!
-}
-
-"""
-An extension's listing in the extension registry.
-"""
-type RegistryExtension implements Node {
-    """
-    The unique, opaque, permanent ID of the extension. Do not display this ID to the user; display
-    RegistryExtension.extensionID instead (it is friendlier and still unique, but it can be renamed).
-    """
-    id: ID!
-    """
-    The UUID of the extension. This identifies the extension externally (along with the origin). The UUID maps
-    1-to-1 to RegistryExtension.id.
-    """
-    uuid: String!
-    """
-    The publisher of the extension. If this extension is from a remote registry, the publisher may be null.
-    """
-    publisher: RegistryPublisher
-    """
-    The qualified, unique name that refers to this extension, consisting of the registry name (if non-default),
-    publisher's name, and the extension's name, all joined by "/" (for example, "acme-corp/my-extension-name").
-    """
-    extensionID: String!
-    """
-    The extension ID without the registry name.
-    """
-    extensionIDWithoutRegistry: String!
-    """
-    The name of the extension (not including the publisher's name).
-    """
-    name: String!
-    """
-    The extension manifest, or null if none is set.
-    """
-    manifest: ExtensionManifest
-    """
-    The date when this extension was created on the registry.
-    """
-    createdAt: DateTime
-    """
-    The date when this extension was last updated on the registry (including updates to its metadata only, not
-    publishing new releases).
-    """
-    updatedAt: DateTime
-    """
-    The date when a release of this extension was most recently published, or null if there are no releases.
-    """
-    publishedAt: DateTime
-    """
-    The URL to the extension on this Sourcegraph site.
-    """
-    url: String!
-    """
-    The URL to the extension on the extension registry where it lives (if this is a remote
-    extension). If this extension is local, then this field's value is null.
-    """
-    remoteURL: String
-    """
-    The name of this extension's registry.
-    """
-    registryName: String!
-    """
-    Whether the registry extension is published on this Sourcegraph site.
-    """
-    isLocal: Boolean!
-    """
-    Whether the extension is marked as a work-in-progress extension by the extension author.
-    """
-    isWorkInProgress: Boolean!
-    """
-    Whether the viewer has admin privileges on this registry extension.
-    """
-    viewerCanAdminister: Boolean!
-}
-
-"""
-A description of the extension, how to run or access it, and when to activate it.
-"""
-type ExtensionManifest {
-    """
-    The raw JSON (or JSONC) contents of the manifest. This value may be large (because many
-    manifests contain README and icon data), and it is JSONC (not strict JSON), which means
-    it must be parsed with a JSON parser that supports trailing commas and comments. Consider
-    using jsonFields instead.
-    """
-    raw: String!
-    """
-    The manifest as JSON (not JSONC, even if the raw manifest is JSONC) with only the
-    specified fields. This is useful for callers that only need certain fields and want
-    to avoid fetching a large amount of data (because many manifests contain README
-    and icon data).
-    """
-    jsonFields(fields: [String!]!): JSONValue!
-    """
-    The description specified in the manifest, if any.
-    """
-    description: String
-    """
-    The URL to the bundled JavaScript source code for the extension, if any.
-    """
-    bundleURL: String
-}
-
-"""
-A list of registry extensions.
-"""
-type RegistryExtensionConnection {
-    """
-    A list of registry extensions.
-    """
-    nodes: [RegistryExtension!]!
-    """
-    The total count of registry extensions in the connection. This total count may be larger than the number of
-    nodes in this object when the result is paginated.
-    """
-    totalCount: Int!
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-    """
-    The URL to this list, or null if none exists.
-    """
-    url: String
-    """
-    Errors that occurred while communicating with remote registries to obtain the list of extensions.
-    In order to be able to return local extensions even when the remote registry is unreachable, errors are
-    recorded here instead of in the top-level GraphQL errors list.
-    """
-    error: String
-}
-
-"""
-A list of featured extensions in the registry.
-"""
-type FeaturedExtensionsConnection {
-    """
-    A list of featured registry extensions.
-    """
-    nodes: [RegistryExtension!]!
-
-    """
-    Errors that occurred while communicating with remote registries to obtain the list of extensions.
-    In order to be able to return local extensions even when the remote registry is unreachable, errors are
-    recorded here instead of in the top-level GraphQL errors list.
-    """
-    error: String
-}
-
-"""
-Aggregate local code intelligence for all ranges that fall between a window of lines in a document.
-"""
-type CodeIntelligenceRangeConnection {
-    """
-    Aggregate local code intelligence grouped by range.
-    """
-    nodes: [CodeIntelligenceRange!]!
-}
-
-"""
-Aggregate code intelligence for a particular range within a document.
-"""
-type CodeIntelligenceRange {
-    """
-    The range this code intelligence applies to.
-    """
-    range: Range!
-
-    """
-    A list of definitions of the symbol occurring within the range.
-    """
-    definitions: LocationConnection!
-
-    """
-    A list of references of the symbol occurring within the range.
-    """
-    references: LocationConnection!
-
-    """
-    A list of implementations of the symbol occurring within the range.
-    """
-    implementations: LocationConnection!
-
-    """
-    The hover result of the symbol occurring within the range.
-    """
-    hover: Hover
-
-    """
-    The documentation result of the symbol occurring within the range, if any.
-    """
-    documentation: Documentation
-}
-
-"""
-Documentation at some position in a file.
-"""
-type Documentation {
-    """
-    The path ID of the documentation, which can be used to build a link to the documentation or
-    (after trimming the URL hash) passed to documentationPage or documentationPathInfo.
-    """
-    pathID: String!
-}
-
-"""
-A list of locations within a file.
-"""
-type LocationConnection {
-    """
-    A list of locations within a file.
-    """
-    nodes: [Location!]!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-Hover range and markdown content.
-"""
-type Hover {
-    """
-    A markdown string containing the contents of the hover.
-    """
-    markdown: Markdown!
-
-    """
-    The range to highlight.
-    """
-    range: Range!
-}
-
-"""
-FOR INTERNAL USE ONLY: A status message produced when repositories are being
-cloned
-"""
-type CloningProgress {
+type GitUpdatesDisabled {
     """
     The message of this status message
     """
@@ -6274,9 +8675,30 @@ type CloningProgress {
 }
 
 """
-FOR INTERNAL USE ONLY: A status message produced when repositories are being indexed
+FOR INTERNAL USE ONLY: A status message produced when the disk threshold for gitserver is reached.
 """
-type IndexingProgress {
+type GitserverDiskThresholdReached {
+    """
+    The message of this status message
+    """
+    message: String!
+}
+
+"""
+FOR INTERNAL USE ONLY: A status message produced when there are no repositories and no sync jobs in process
+"""
+type NoRepositoriesDetected {
+    """
+    The message of this status message
+    """
+    message: String!
+}
+
+"""
+FOR INTERNAL USE ONLY: A status message produced when repositories are being
+cloned
+"""
+type CloningProgress {
     """
     The message of this status message
     """
@@ -6310,20 +8732,31 @@ type SyncError {
 }
 
 """
-FOR INTERNAL USE ONLY: A status message produced when repositories could not
-be indexed
+FOR INTERNAL USE ONLY: A status message produced when repositories are being
+indexed for search.
 """
-type IndexingError {
+type IndexingProgress {
     """
-    The message of this status message
+    The number of repositories that have not been indexed yet.
     """
-    message: String!
+    notIndexed: Int!
+    """
+    The number of repositories that have been indexed.
+    """
+    indexed: Int!
 }
 
 """
 FOR INTERNAL USE ONLY: A status message
 """
-union StatusMessage = CloningProgress | IndexingProgress | ExternalServiceSyncError | SyncError | IndexingError
+union StatusMessage =
+      GitUpdatesDisabled
+    | NoRepositoriesDetected
+    | CloningProgress
+    | ExternalServiceSyncError
+    | SyncError
+    | IndexingProgress
+    | GitserverDiskThresholdReached
 
 """
 An arbitrarily large integer encoded as a decimal string.
@@ -6342,6 +8775,41 @@ type RepositoryStats {
     The number of lines indexed
     """
     indexedLinesCount: BigInt!
+
+    """
+    The number of all repositories in the instance, without soft-deleted or blocked repositories.
+    """
+    total: Int!
+    """
+    The number of cloned repositories in the instance. This number might be
+    higher than 'total', if soft-deleted repositories haven't been cleaned up
+    yet.
+    """
+    cloned: Int!
+    """
+    The number of repositories in the instance that are currently being cloned.
+    """
+    cloning: Int!
+    """
+    The number of repositories in the instance that not cloned yet.
+    """
+    notCloned: Int!
+    """
+    The number of repositories where initial cloning or subsequent fetching resulted in an error.
+    """
+    failedFetch: Int!
+    """
+    The number of indexed repositories
+    """
+    indexed: Int!
+    """
+    The number of repositories that are currently corrupt
+    """
+    corrupted: Int!
+    """
+    The number of repositories that have embeddings
+    """
+    embedded: Int!
 }
 
 """
@@ -6374,7 +8842,7 @@ type EventLog {
     """
     The source of the event.
     """
-    source: EventSource!
+    source: String!
     """
     The additional argument information.
     """
@@ -6406,34 +8874,6 @@ type EventLogsConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
-}
-
-"""
-A list of code host repositories
-"""
-type CodeHostRepositoryConnection {
-    """
-    A list of repositories affiliated with a code host.
-    """
-    nodes: [CodeHostRepository!]!
-}
-
-"""
-A repository returned directly from a code host
-"""
-type CodeHostRepository {
-    """
-    The Name "owner/reponame" of the repo
-    """
-    name: String!
-    """
-    The code host the repo came from
-    """
-    codeHost: ExternalService
-    """
-    Is the repo private
-    """
-    private: Boolean!
 }
 
 """
@@ -6479,6 +8919,107 @@ type TemporarySettings {
     A JSON string representing the temporary settings.
     """
     contents: String!
+}
+
+"""
+Represents an incoming webhook from a code host.
+"""
+type Webhook implements Node {
+    """
+    The unique ID of the webhook.
+    """
+    id: ID!
+    """
+    The user facing UUID of the webhook.
+    """
+    uuid: String!
+    """
+    The URL of the webhook in the instance. This is the location where we expect to receive payloads.
+    """
+    url: String!
+    """
+    Descriptive webhook name.
+    """
+    name: String!
+    """
+    The kind of code host sending payloads. (eg. GitHub, GitLab)
+    """
+    codeHostKind: ExternalServiceKind!
+    """
+    The URN of the code host instance. (eg. https://gitlab.com)
+    """
+    codeHostURN: String!
+    """
+    Optional secret.
+    """
+    secret: String
+    """
+    The last time this webhook was updated.
+    """
+    updatedAt: DateTime!
+    """
+    The user who last updated this webhook.
+    Null if the user was deleted or if the webhook hasn't been updated yet.
+    """
+    updatedBy: User
+    """
+    When the webhook was created.
+    """
+    createdAt: DateTime!
+    """
+    The user who created this webhook.
+    Null if the user was deleted.
+    """
+    createdBy: User
+    """
+    The logs related to this webhook.
+    """
+    webhookLogs(
+        """
+        Returns the first n webhook logs.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Only include webhook logs that resulted in errors.
+        """
+        onlyErrors: Boolean
+
+        """
+        Only include webhook logs on or after this time.
+        """
+        since: DateTime
+
+        """
+        Only include webhook logs on or before this time.
+        """
+        until: DateTime
+    ): WebhookLogConnection!
+}
+
+"""
+A list of webhooks
+"""
+type WebhookConnection {
+    """
+    A list of webhooks.
+    """
+    nodes: [Webhook!]!
+
+    """
+    The total number of webhooks in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
 }
 
 """
@@ -6543,7 +9084,7 @@ interface WebhookLogMessage {
     """
     The headers in the HTTP message.
     """
-    headers: [WebhookLogHeader!]!
+    headers: [HTTPHeader!]!
 
     """
     The body content of the HTTP message.
@@ -6558,7 +9099,7 @@ type WebhookLogRequest implements WebhookLogMessage {
     """
     The headers in the HTTP message.
     """
-    headers: [WebhookLogHeader!]!
+    headers: [HTTPHeader!]!
 
     """
     The body content of the HTTP message.
@@ -6588,7 +9129,7 @@ type WebhookLogResponse implements WebhookLogMessage {
     """
     The headers in the HTTP message.
     """
-    headers: [WebhookLogHeader!]!
+    headers: [HTTPHeader!]!
 
     """
     The body content of the HTTP message.
@@ -6597,16 +9138,1641 @@ type WebhookLogResponse implements WebhookLogMessage {
 }
 
 """
-A single HTTP header within a webhook log.
+A list of logged outbound requests.
 """
-type WebhookLogHeader {
+type OutboundRequestConnection {
     """
-    The header name.
+    A list of outbound requests.
+    """
+    nodes: [OutboundRequest!]!
+
+    """
+    The total number of outbound request log items in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A single outbound request.
+"""
+type OutboundRequest implements Node {
+    """
+    The request log item ID.
+    """
+    id: ID!
+
+    """
+    The time the request was sent at.
+    """
+    startedAt: DateTime!
+
+    """
+    The method used in the HTTP request. E.g. GET, POST, etc.
+    """
+    method: String!
+
+    """
+    The full URL the request was sent to.
+    """
+    url: String!
+
+    """
+    The headers sent with the HTTP request.
+    """
+    requestHeaders: [HTTPHeader!]!
+
+    """
+    The body content of the HTTP message.
+    """
+    requestBody: String!
+
+    """
+    The HTTP status code received.
+    """
+    statusCode: Int!
+
+    """
+    The headers received with the HTTP response.
+    """
+    responseHeaders: [HTTPHeader!]!
+
+    """
+    The total time the request took to complete, in milliseconds.
+    """
+    durationMs: Int!
+
+    """
+    Any error message got from the request Doer in case of an error, otherwise an empty string.
+    """
+    errorMessage: String!
+
+    """
+    Stack information to figure out where the ExternalClientFactory was created.
+    """
+    creationStackFrame: String!
+
+    """
+    Stack information to figure out where in the code base the request was initiated.
+    """
+    callStack: String!
+}
+
+"""
+A key-value pair
+"""
+type HTTPHeader {
+    """
+    The header name
     """
     name: String!
 
     """
-    The header values.
+    Can be multiple values
     """
     values: [String!]!
+}
+
+"""
+A list of background jobs that are currently known in the system
+"""
+type BackgroundJobConnection {
+    """
+    A list of outbound requests.
+    """
+    nodes: [BackgroundJob!]!
+
+    """
+    The total number of outbound request log items in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A single background job.
+"""
+type BackgroundJob implements Node {
+    """
+    The background job ID.
+    """
+    id: ID!
+
+    """
+    The name of the job.
+    """
+    name: String!
+
+    """
+    The routines that run inside this job.
+    """
+    routines: [BackgroundRoutine!]!
+}
+
+"""
+A routine that runs inside a background job.
+"""
+type BackgroundRoutine {
+    """
+    The name of the routine.
+    """
+    name: String!
+
+    """
+    Tells whether this is a periodic goroutine, a DB worker, or something else
+    """
+    type: BackgroundRoutineType!
+
+    """
+    Explains what the routine does.
+    """
+    description: String!
+
+    """
+    The interval at which the routine runs, if it's periodic.
+    """
+    intervalMs: Int
+
+    """
+    The instances of this routine that are running or ran recently. An instance means one routine on one host.
+    """
+    instances: [BackgroundRoutineInstance!]!
+
+    """
+    The recent runs of this routine.
+    """
+    recentRuns: [BackgroundRoutineRecentRun!]!
+
+    """
+    Some stats of the runs of this routine in the past few days.
+    """
+    stats: BackgroundRoutineStats!
+}
+
+"""
+Enum of the possible background routine types
+"""
+enum BackgroundRoutineType {
+    """
+    Periodic routine
+    """
+    PERIODIC
+
+    """
+    Periodic routine with metrics set up
+    """
+    PERIODIC_WITH_METRICS
+
+    """
+    DB-backed worker
+    """
+    DB_BACKED
+
+    """
+    Custom routine
+    """
+    CUSTOM
+}
+
+"""
+One instance of the background routine, running on a host.
+"""
+type BackgroundRoutineInstance {
+    """
+    The ID of the instance.
+    """
+    hostName: String!
+
+    """
+    The time the instance was last started. (If it's unknown, this will be null.)
+    """
+    lastStartedAt: DateTime
+
+    """
+    The time the instance was last stopped. (If it's unknown, this will be null.)
+    """
+    lastStoppedAt: DateTime
+}
+
+"""
+A single run of the routine. A run is not the start/stop event but the actual execution of the routine handler.
+"""
+type BackgroundRoutineRecentRun {
+    """
+    The time the run started.
+    """
+    at: DateTime!
+
+    """
+    The name of the host that ran the routine.
+    """
+    hostName: String!
+
+    """
+    The duration of the run.
+    """
+    durationMs: Int!
+
+    """
+    The error message, if any.
+    """
+    errorMessage: String
+}
+
+"""
+Holds statistics about a background routine.
+"""
+type BackgroundRoutineStats {
+    """
+    The start of the earliest day for which we have any runs registered.
+    """
+    since: DateTime
+
+    """
+    The number of times the routine ran in the period.
+    """
+    runCount: Int!
+
+    """
+    The number of times the routine run ended with an error.
+    """
+    errorCount: Int!
+
+    """
+    The minimum duration of a run, in milliseconds.
+    """
+    minDurationMs: Int!
+
+    """
+    The average duration of a run, in milliseconds.
+    """
+    avgDurationMs: Int!
+
+    """
+    The maximum duration of a run, in milliseconds.
+    """
+    maxDurationMs: Int!
+}
+
+"""
+The clone status of a repository.
+"""
+enum CloneStatus {
+    NOT_CLONED
+    CLONING
+    CLONED
+}
+
+extend type Query {
+    """
+    Retrieve active executor compute instances.
+    """
+    executors(
+        """
+        An (optional) search query that searches over the hostname, queue name, os, architecture, and
+        version properties.
+        """
+        query: String
+
+        """
+        Whether to show only executors that have sent a heartbeat in the last fifteen minutes.
+        """
+        active: Boolean
+
+        """
+        Returns the first n executors.
+        """
+        first: Int = 50
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): ExecutorConnection!
+
+    """
+    Returns true if executors have been configured on the Sourcegraph instance.
+    This is based on heuristics and doesn't necessarily mean that they would be
+    working.
+    """
+    areExecutorsConfigured: Boolean!
+}
+
+"""
+A list of active executors compute instances.
+"""
+type ExecutorConnection {
+    """
+    A list of executors.
+    """
+    nodes: [Executor!]!
+
+    """
+    The total number of executors in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An active executor compute instance.
+"""
+type Executor implements Node {
+    """
+    The unique identifier of this executor.
+    """
+    id: ID!
+
+    """
+    The hostname of the executor instance.
+    """
+    hostname: String!
+
+    """
+    The queue name that the executor polls for work.
+    """
+    queueName: String
+
+    """
+    The queue name that the executor polls for work.
+    """
+    queueNames: [String!]
+
+    """
+    Active is true, if a heartbeat from the executor has been received at most three heartbeat intervals ago.
+    """
+    active: Boolean!
+
+    """
+    The operating system running the executor.
+    """
+    os: String!
+
+    """
+    The machine architecture running the executor.
+    """
+    architecture: String!
+
+    """
+    The version of Git used by the executor.
+    """
+    dockerVersion: String!
+
+    """
+    The version of the executor.
+    """
+    executorVersion: String!
+
+    """
+    The version of Docker used by the executor.
+    """
+    gitVersion: String!
+
+    """
+    The version of Ignite used by the executor.
+    """
+    igniteVersion: String!
+
+    """
+    The version of src-cli used by the executor.
+    """
+    srcCliVersion: String!
+
+    """
+    The first time the executor sent a heartbeat to the Sourcegraph instance.
+    """
+    firstSeenAt: DateTime!
+
+    """
+    The last time the executor sent a heartbeat to the Sourcegraph instance.
+    """
+    lastSeenAt: DateTime!
+    """
+    The compatibility of the executor with respect to the Sourcegraph instance.
+    If outdated, please make sure that the executor and the Sourcegraph backend are of compatible versions. This means they should match in major and minor version, but they may be 1 minor version apart.
+    If too new, please update the Sourcegraph instance to match the version of the executor or downgrade the executor.
+
+    Compatibility can be null if the executor or Sourcegraph instance runs in dev mode or there's a version mismatch.
+    """
+    compatibility: ExecutorCompatibility
+}
+
+"""
+The compatibility of the executor with the sourcegraph instance.
+"""
+enum ExecutorCompatibility {
+    """
+    Executor version is more than one version behind the Sourcegraph instance.
+    """
+    OUTDATED
+
+    """
+    Executor is up-to-date with the Sourcegraph instance.
+    """
+    UP_TO_DATE
+
+    """
+    Executor version is more than one version ahead of the Sourcegraph instance.
+    """
+    VERSION_AHEAD
+}
+
+"""
+The result for Query.slowRequests.
+"""
+type SlowRequestConnection {
+    """
+    A list of slow graphql requests logs.
+    """
+    nodes: [SlowRequest!]!
+
+    """
+    The total number of slow graphql logs in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A logged slow GraphQL request, captured by the backend.
+"""
+type SlowRequest {
+    """
+    The index of this request.
+    """
+    index: String!
+    """
+    The date at which this request was started.
+    """
+    start: DateTime!
+    """
+    The duration of the request.
+    """
+    duration: Float!
+    """
+    The user associated with that request, if any.
+    """
+    user: User
+    """
+    The name of the GraphQL request.
+    """
+    name: String!
+    """
+    The source from which the request originated.
+    """
+    source: String!
+    """
+    The repository referenced by the request, if any.
+    """
+    repository: Repository
+    """
+    The variables used to build the GraphQL request.
+    """
+    variables: String!
+    """
+    The errors returned if the request failed.
+    """
+    errors: [String!]!
+    """
+    The GraphQL query.
+    """
+    query: String!
+    """
+    The file path referenced by the request, if any.
+    """
+    filepath: String
+}
+
+"""
+An object with totalCount and PageInfo.
+"""
+interface Connection {
+    """
+    The total count of items in the connection.
+    """
+    totalCount: Int!
+    """
+    The pagination info for the connection.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+Pagination information.
+"""
+type ConnectionPageInfo {
+    """
+    When paginating forwards, the cursor to continue.
+    """
+    endCursor: String
+    """
+    When paginating forwards, are there more items?
+    """
+    hasNextPage: Boolean!
+    """
+    When paginating backward, the cursor to continue.
+    """
+    startCursor: String
+    """
+    When paginating backward, are there more items?
+    """
+    hasPreviousPage: Boolean!
+}
+
+"""
+A team is a grouping of users/persons into a common handle. Teams are commonly used to define
+codeowners.
+"""
+type Team implements Node {
+    """
+    The unique ID of the team.
+    """
+    id: ID!
+
+    """
+    The name of the team. Needs to be globally unique across usernames, organization
+    names, and team names. Team names can use alphanumeric characters, - dash
+    and / forward slash.
+    """
+    name: String!
+
+    """
+    URL to link to the teams profile page.
+    """
+    url: String!
+
+    """
+    URL to an avatar of this team.
+    """
+    avatarURL: String
+
+    """
+    A human readable name substitute for the name. Null, if not defined.
+    """
+    displayName: String
+
+    """
+    A team can be made read-only from the CLI instructing the UI to show a warning
+    banner that this is managed externally, and management features will only be
+    available to site-admins. It can also still be manipulated from the CLI.
+    """
+    readonly: Boolean!
+
+    """
+    The teams direct members. That is members that are strictly part of this team,
+    but not members of child teams. Team membership is NOT inherited.
+    """
+    members(
+        """
+        Returns the first n team members from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Optionally apply a text search filter over the results.
+        """
+        search: String
+    ): TeamMemberConnection!
+
+    """
+    Parent team can be null, if this is a root team.
+    """
+    parentTeam: Team
+
+    """
+    The list of direct child teams.
+    """
+    childTeams(
+        """
+        Returns the first n teams from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Optionally apply a text search filter over the results.
+        """
+        search: String
+    ): TeamConnection!
+
+    """
+    True, if the current user can modify this team.
+    """
+    viewerCanAdminister: Boolean!
+
+    """
+    The creator of this team. Null, if the user was deleted.
+    """
+    creator: User
+
+    """
+    True, if the team is external, i.e. not found in our database.
+    Example: CODEOWNERS files can contain references to GitHub teams which are not the part of Sourcegraph teams.
+    """
+    external: Boolean!
+}
+
+"""
+A list of teams.
+"""
+type TeamConnection {
+    """
+    The total count of items in the connection.
+    """
+    totalCount: Int!
+
+    """
+    The pagination info for the connection.
+    """
+    pageInfo: PageInfo!
+
+    """
+    The current page of teams in this connection.
+    """
+    nodes: [Team!]!
+}
+
+"""
+A list of team members.
+"""
+type TeamMemberConnection {
+    """
+    The total count of items in the connection.
+    """
+    totalCount: Int!
+
+    """
+    The pagination info for the connection.
+    """
+    pageInfo: PageInfo!
+
+    """
+    The current page of team members in this connection.
+    """
+    nodes: [TeamMember!]!
+}
+
+"""
+A team member is an entity that can be associated to a team.
+
+For now, this will be User, and will be expanded to User | Person later.
+"""
+interface TeamMember {
+    """
+    All the teams this TeamMember is a direct member of.
+    """
+    teams(
+        """
+        Returns the first n teams from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Optionally apply a text search filter over the results.
+        """
+        search: String
+    ): TeamConnection!
+}
+
+extend type User implements TeamMember {
+    """
+    All the teams this user is a direct member of.
+    """
+    teams(
+        """
+        Returns the first n teams from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Optionally apply a text search filter over the results.
+        """
+        search: String
+    ): TeamConnection!
+}
+
+extend type Query {
+    """
+    Get a single team by name. Returns null if not found.
+    """
+    team(name: String!): Team
+
+    """
+    Get the global list of all root teams. (Those without a parent team).
+    """
+    teams(
+        """
+        Returns the first n teams from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Search can be used to do a text-search over the team names.
+        """
+        search: String
+        """
+        Do not include any teams that have this ancestor in parent-team relationship.
+        This includes the team with the ID mentioned (that is a team is considered
+        its own ancestor).
+        """
+        exceptAncestor: ID
+        """
+        If set to true, child teams (ones that have parent set) are also returned.
+        If not specified, the default behavior is to only include top-level teams.
+        """
+        includeChildTeams: Boolean
+    ): TeamConnection!
+}
+
+extend type Mutation {
+    """
+    Creates a team. The name must be unique, display name can be used to set a custom
+    display value for the team inside Sourcegraph.
+
+    If readonly is true, the Sourcegraph UI will show a warning banner that this team
+    is managed externally, and it can only be modified by site-admins.
+    This is to prevent state drift from external systems that ingest team information into Sourcegraph.
+    Readonly can only be set by site-admins.
+
+    Either parentTeam XOR parentTeamName can be specified to make the team a child
+    team of the given parent. Only members of the parent team or site-admis can create
+    a child team.
+    """
+    createTeam(
+        name: String!
+        displayName: String
+        readonly: Boolean = false
+        parentTeam: ID
+        parentTeamName: String
+    ): Team!
+
+    """
+    Update an existing team. ID or Name must be specified, but not both.
+
+    To unset the display name, pass an empty string. Null will make it ignore updates.
+
+    Either parentTeam XOR parentTeamName XOR makeRoot can be specified to make the team a child
+    team of the given parent or conversely to make a team a root team (with no parent team).
+    The user has to be a team-member of both the child and parent team for that, and
+    neither can be read-only. Site-admin can modify all teams without constraints.
+    """
+    updateTeam(
+        id: ID
+        name: String
+        displayName: String
+        parentTeam: ID
+        parentTeamName: String
+        makeRoot: Boolean
+    ): Team!
+
+    """
+    Delete team deletes a team. ID or Name must be specified, but not both.
+    Must be team-member to delete. If the team is marked as read-only, must be site-admin.
+    """
+    deleteTeam(id: ID, name: String): EmptyResponse
+
+    """
+    Add a list of team members to an existing team.
+    People that already are part of the team are ignored.
+
+    Either team XOR teamName can be specified to specify the team.
+    Must be team member to add new team members, or site-admin.
+
+    For now, members can only be the IDs of User entities in Sourcegraph.
+    Later, we will expand this to allow Persons as well.
+
+    If skipUnmatchedMembers is true, members that are not matched to a user are skipped.
+    """
+    addTeamMembers(
+        team: ID
+        teamName: String
+        members: [TeamMemberInput!]!
+        skipUnmatchedMembers: Boolean = false
+    ): Team!
+
+    """
+    This is a convenience method to forcefully overwrite the full set of members
+    of a team. This is handy to sync external state without diffing the current
+    members vs the desired set of members.
+
+    Either team XOR teamName can be specified to specify the team.
+    Must be team member to modify team members, or site-admin.
+
+    For now, members can only be the IDs of User entities in Sourcegraph.
+    Later, we will expand this to allow Persons as well.
+
+    If skipUnmatchedMembers is true, members that are not matched to a user are skipped.
+    """
+    setTeamMembers(
+        team: ID
+        teamName: String
+        members: [TeamMemberInput!]!
+        skipUnmatchedMembers: Boolean = false
+    ): Team!
+
+    """
+    This mutation removes team membership for the given team and set of members.
+    Members that weren't part of the team are ignored.
+
+    Either team XOR teamName can be specified to specify the team.
+    Must be team member to remove team members, or site-admin.
+
+    For now, members can only be the IDs of User entities in Sourcegraph.
+    Later, we will expand this to allow Persons as well.
+
+    If skipUnmatchedMembers is true, members that are not matched to a user are skipped.
+    """
+    removeTeamMembers(
+        team: ID
+        teamName: String
+        members: [TeamMemberInput!]!
+        skipUnmatchedMembers: Boolean = false
+    ): Team!
+}
+
+"""
+Options to specify a user for team membership. Multiple options can be provided,
+with the following precedence order: (Other mismatches will be discarded)
+- UserID
+- Username
+- Email
+- External Account fields
+
+Examples:
+- If ID is set and no match, return.
+- If ID and username is set, and ID matches but username doesn't, match.
+"""
+input TeamMemberInput {
+    """
+    Explicitly define a user by ID.
+    """
+    userID: ID
+    """
+    Explicitly define a user by username in Sourcegraph.
+    """
+    username: String
+    """
+    If the email is associated to a user and verified, the user account will be matched.
+    """
+    email: String
+
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Service ID for the GitHub OAuth provider, for example, is https://github.com/.
+    """
+    externalAccountServiceID: String
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Service Type for the GitHub OAuth provider, for example, is github.
+    """
+    externalAccountServiceType: String
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Account ID is the unique identifier on the external account platform.
+    """
+    externalAccountAccountID: String
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Account Login is usually the username on the external account platform.
+    """
+    externalAccountLogin: String
+}
+
+"""
+A list of access requests
+"""
+type AccessRequestConnection {
+    """
+    Total count of access requests
+    """
+    totalCount: Int!
+    """
+    A list of access requests
+    """
+    nodes: [AccessRequest!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: BidirectionalPageInfo!
+}
+
+"""
+Access request status enum
+"""
+enum AccessRequestStatus {
+    """
+    Access request is submitted and waiting for actions
+    """
+    PENDING
+    """
+    Access request was approved
+    """
+    APPROVED
+    """
+    Access request was rejected
+    """
+    REJECTED
+}
+
+"""
+Access request
+"""
+type AccessRequest implements Node {
+    """
+    The unique identifier of the secret.
+    """
+    id: ID!
+
+    """
+    Name of a person requested access
+    """
+    name: String!
+
+    """
+    Email of a person requested access
+    """
+    email: String!
+
+    """
+    The date and time when request access was created
+    """
+    createdAt: DateTime!
+
+    """
+    Additional information submitted by person requested access
+    """
+    additionalInfo: String
+
+    """
+    Access request status
+    """
+    status: AccessRequestStatus!
+}
+
+extend type Query {
+    """
+    List access requests.
+    """
+    accessRequests(
+        status: AccessRequestStatus
+        """
+        Returns the first n access requests from the list.
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): AccessRequestConnection!
+}
+
+"""
+Repo metadata key or value connection result`
+"""
+type RepoMetadataKeyOrValueConnection {
+    """
+    Total count of repo key-value pair metadata
+    """
+    totalCount: Int!
+    """
+    A list of repo key-value pair metadata
+    """
+    nodes: [String!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: BidirectionalPageInfo!
+}
+
+"""
+Repo metadata key result
+"""
+type RepoMetadataKeyResult {
+    """
+    Returns paginated list of repo metadata distinct values matching a query
+    """
+    values(
+        query: String
+        """
+        Pagination paramters
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): RepoMetadataKeyOrValueConnection!
+}
+
+"""
+Repo key-value pair metadata
+"""
+type RepoMetadata {
+    """
+    Returns paginated list of repo metadata distinct keys matching a query
+    """
+    keys(
+        query: String
+        """
+        Pagination paramters
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): RepoMetadataKeyOrValueConnection!
+
+    """
+    Repo metadata key
+    """
+    key(key: String!): RepoMetadataKeyResult
+}
+
+extend type Query {
+    """
+    Repository key-value pair metadata
+    """
+    repoMeta: RepoMetadata
+}
+
+extend type Mutation {
+    """
+    Marks access_request as rejected
+    """
+    setAccessRequestStatus(id: ID!, status: AccessRequestStatus!): EmptyResponse
+}
+
+"""
+A role
+"""
+type Role implements Node {
+    """
+    The globally unique identifier for this role.
+    """
+    id: ID!
+    """
+    The human readable name for this role.
+    """
+    name: String!
+    """
+    Indicates whether a role is a default system role, which cannot be modified or deleted, or a custom role added by a site admin.
+    """
+    system: Boolean!
+    """
+    The list of permissions that will be granted to any user with this role.
+    """
+    permissions(
+        """
+        The limit argument for forward pagination.
+        """
+        first: Int
+        """
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
+        """
+        after: String
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
+    ): PermissionConnection!
+    """
+    The date and time when the role was created.
+    """
+    createdAt: DateTime!
+}
+
+"""
+A list of roles.
+"""
+type RoleConnection {
+    """
+    A list of roles.
+    """
+    nodes: [Role!]!
+    """
+    The total count of roles in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+A list of permissions.
+"""
+type PermissionConnection {
+    """
+    A list of permissions.
+    """
+    nodes: [Permission!]!
+    """
+    The total count of permissions in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+A namespace represents a distinct context within which permission policies
+are defined and enforced.
+"""
+enum PermissionNamespace {
+    """
+    This represents the Batch Changes namespace.
+    """
+    BATCH_CHANGES
+    """
+    Code ownership namespace used for permitting to assign ownership
+    within Sourcegraph.
+    """
+    OWNERSHIP
+
+    """
+    Repo Metadata namespace used for permitting to edit repository
+    key-value pair metadata.
+    """
+    REPO_METADATA
+}
+
+"""
+A permission
+"""
+type Permission implements Node {
+    """
+    The globally unique identifier for this permission.
+    """
+    id: ID!
+    """
+    The namespace in which this permission belongs to.
+    """
+    namespace: PermissionNamespace!
+    """
+    The unique action which is granted to a bearer of this permission.
+    """
+    action: String!
+    """
+    A unique, human-readable string used to represent a permission, taking the form: <namespace>:<object_id>#<relation>@<user_id | user_group>
+    """
+    displayName: String!
+    """
+    The date and time when the permission was created.
+    """
+    createdAt: DateTime!
+}
+
+"""
+A list of symbols.
+"""
+type SymbolConnection {
+    """
+    A list of symbols.
+    """
+    nodes: [Symbol!]!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A code symbol (e.g., a function, variable, type, class, etc.).
+It is derived from DocumentSymbol as defined in the Language Server Protocol (see https://microsoft.github.io/language-server-protocol/specifications/specification-3-14/#textDocument_documentSymbol).
+"""
+type Symbol {
+    """
+    The name of the symbol.
+    """
+    name: String!
+    """
+    The name of the symbol that contains this symbol, if any. This field's value is not guaranteed to be
+    structured in such a way that callers can infer a hierarchy of symbols.
+    """
+    containerName: String
+    """
+    The kind of the symbol.
+    """
+    kind: SymbolKind!
+    """
+    The programming language of the symbol.
+    """
+    language: String!
+    """
+    The location where this symbol is defined.
+    """
+    location: Location!
+    """
+    The URL to this symbol (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The canonical URL to this symbol (using an immutable revision specifier).
+    """
+    canonicalURL: String!
+    """
+    Whether or not the symbol is local to the file it's defined in.
+    """
+    fileLocal: Boolean!
+}
+
+"""
+All possible kinds of symbols. This set matches that of the Language Server Protocol
+(https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
+"""
+enum SymbolKind {
+    UNKNOWN
+    FILE
+    MODULE
+    NAMESPACE
+    PACKAGE
+    CLASS
+    METHOD
+    PROPERTY
+    FIELD
+    CONSTRUCTOR
+    ENUM
+    INTERFACE
+    FUNCTION
+    VARIABLE
+    CONSTANT
+    STRING
+    NUMBER
+    BOOLEAN
+    ARRAY
+    OBJECT
+    KEY
+    NULL
+    ENUMMEMBER
+    STRUCT
+    EVENT
+    OPERATOR
+    TYPEPARAMETER
+}
+
+"""
+A list of locations within a file.
+"""
+type LocationConnection {
+    """
+    A list of locations within a file.
+    """
+    nodes: [Location!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A location inside a resource (in a repository at a specific commit).
+"""
+type Location {
+    """
+    The file that this location refers to.
+    """
+    resource: CodeIntelGitBlob!
+    """
+    The range inside the file that this location refers to.
+    """
+    range: Range
+    """
+    The URL to this location (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The canonical URL to this location (using an immutable revision specifier).
+    """
+    canonicalURL: String!
+}
+
+"""
+A range inside a file. The start position is inclusive, and the end position is exclusive.
+"""
+type Range {
+    """
+    The start position of the range (inclusive).
+    """
+    start: Position!
+    """
+    The end position of the range (exclusive).
+    """
+    end: Position!
+}
+
+"""
+A zero-based position inside a file.
+"""
+type Position {
+    """
+    The line number (zero-based) of the position.
+    """
+    line: Int!
+    """
+    The character offset (zero-based) in the line of the position.
+    """
+    character: Int!
+}
+
+"""
+A gitblob resolver specific to code intel.
+"""
+type CodeIntelGitBlob {
+    """
+    The full path (relative to the root) of this tree.
+    """
+    path: String!
+    """
+    The base name (i.e., last path component only) of this tree.
+    """
+    name: String!
+    """
+    The Git commit containing this tree.
+    """
+    commit: CodeIntelCommit!
+    """
+    The URL to this tree (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The repository containing this tree.
+    """
+    repository: CodeIntelRepository!
+    """
+    The content of this blob.
+    """
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
+}
+
+"""
+A Code Intel Git Tree.
+"""
+type CodeIntelGitTree {
+    """
+    The full path (relative to the root) of this tree.
+    """
+    path: String!
+    """
+    The base name (i.e., last path component only) of this tree.
+    """
+    name: String!
+    """
+    The Git commit containing this tree.
+    """
+    commit: CodeIntelCommit!
+    """
+    The URL to this tree (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The repository containing this tree.
+    """
+    repository: CodeIntelRepository!
+    """
+    The content of this blob.
+    """
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
+}
+
+"""
+A codeintel repository is a Git source control repository that is mirrored from some origin code host and it is specific to code intel.
+"""
+type CodeIntelRepository {
+    """
+    The globally addressable ID for this commit.
+    """
+    id: ID!
+    """
+    The repository's name, as a path with one or more components. It conventionally consists of
+    the repository's hostname and path (joined by "/"), minus any suffixes (such as ".git").
+    Examples:
+    - github.com/foo/bar
+    - my-code-host.example.com/myrepo
+    - myrepo
+    """
+    name: String!
+    """
+    The URL to this repository.
+    """
+    url: String!
+    """
+    Information about this repository from the external service that it originates from (such as GitHub, GitLab,
+    Phabricator, etc.). Only populated when used as part of repository list previews for configuration policies.
+    """
+    externalRepository: CodeIntelExternalRepository
+}
+
+"""
+A repository on an external service (such as GitHub, GitLab, Phabricator, etc.).
+"""
+type CodeIntelExternalRepository {
+    """
+    The type of external service where this repository resides.
+    Example: "github", "gitlab", etc.
+    """
+    serviceType: String!
+    """
+    The particular instance of the external service where this repository resides. Its value is
+    opaque but typically consists of the canonical base URL to the service.
+    Example: For GitHub.com, this is "https://github.com/".
+    """
+    serviceID: String!
+}
+
+"""
+A Code Intel Commit.
+"""
+type CodeIntelCommit {
+    """
+    The globally addressable ID for this commit.
+    """
+    id: ID!
+    """
+    This commit's Git object ID (OID), a 40-character SHA-1 hash.
+    """
+    oid: GitObjectID!
+    """
+    The abbreviated form of this commit's OID.
+    """
+    abbreviatedOID: String!
+    """
+    The URL to this commit (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The repository that contains this commit.
+    """
+    repository: CodeIntelRepository!
+}
+
+"""
+EXPERIMENTAL: A Perforce changelist.
+"""
+type PerforceChangelist {
+    """
+    The changelist ID.
+    """
+    cid: String!
+    """
+    The canonical URL to this changelist.
+    """
+    canonicalURL: String!
+    """
+    The corresponding git commit of this changelist.
+    """
+    commit: GitCommit!
+}
+
+extend type Query {
+    """
+    List of all configured code hosts on this instance.
+
+    Site-admin only.
+    """
+    codeHosts(first: Int = 50, after: String, search: String): CodeHostConnection!
+}
+
+"""
+A list of code hosts.
+"""
+type CodeHostConnection {
+    """
+    Only when this flag is true, the connection can be trusted to be complete.
+    This will stop existing in Sourcegraph 5.3 when the migration is ensured
+    to be complete.
+    """
+    isMigrationDone: Boolean!
+
+    """
+    A list of code hosts.
+    """
+    nodes: [CodeHost!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+
+    """
+    The total number of records in this result set.
+    """
+    totalCount: Int!
+}
+
+"""
+A specific code host, like github.com.
+"""
+type CodeHost implements Node {
+    """
+    The id of the code host.
+    """
+    id: ID!
+
+    """
+    The type of code host, e.g. GITHUB.
+    """
+    kind: ExternalServiceKind!
+
+    """
+    The url for the code host, e.g. github.com.
+    """
+    url: String!
+
+    """
+    A amount of API requests Sourcegraph can send to the code host.
+    """
+    apiRateLimitQuota: Int
+
+    """
+    How often API rate limits get reset. Defined in seconds.
+    """
+    apiRateLimitIntervalSeconds: Int
+
+    """
+    A amount of git requests Sourcegraph can send to the code host.
+    """
+    gitRateLimitQuota: Int
+
+    """
+    How often git rate limits get reset. Defined in seconds.
+    """
+    gitRateLimitIntervalSeconds: Int
+
+    """
+    All external services that refer to this code host.
+    """
+    externalServices(first: Int = 50, after: String): ExternalServiceConnection!
 }

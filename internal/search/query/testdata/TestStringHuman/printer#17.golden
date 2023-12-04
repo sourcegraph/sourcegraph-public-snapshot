@@ -1,0 +1,4 @@
+{
+  "Input": "filePath.Clean( AND NOT filepath.Clean(filePath.Join(\"/\",",
+  "Result": "(content:\"filePath.Clean(\" AND -content:\"filepath.Clean(filePath.Join(\\\"/\\\",\")"
+}

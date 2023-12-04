@@ -1,0 +1,34 @@
+# Export traces to a Jaeger instance.
+#
+# Variables:
+#
+# - $JAEGER_HOST
+
+receivers:
+  otlp:
+    protocols:
+      grpc: # port 4317
+      http: # port 4318
+
+exporters:
+  jaeger:
+    # Default Jaeger GRPC server
+    endpoint: "$JAEGER_HOST:14250"
+    tls:
+      insecure: true
+
+extensions:
+  health_check:
+    endpoint: ":13133"
+  zpages:
+    endpoint: ":55679"
+
+service:
+  telemetry:
+    metrics:
+      address: ":8888"
+  extensions: [health_check,zpages]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [jaeger]

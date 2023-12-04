@@ -1,0 +1,4 @@
+{
+  "Input": "this or that and here or there",
+  "Result": "(this OR (that AND here) OR there)"
+}

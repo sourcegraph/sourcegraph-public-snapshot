@@ -1,0 +1,41 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gitdomain",
+    srcs = [
+        "commit_graph.go",
+        "common.go",
+        "errors.go",
+        "exec.go",
+        "log.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/gitserver/v1:gitserver",
+        "//internal/lazyregexp",
+        "//lib/errors",
+        "@com_github_gobwas_glob//:glob",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_sourcegraph_log//:log",
+        "@io_k8s_utils//strings/slices",
+    ],
+)
+
+go_test(
+    name = "gitdomain_test",
+    timeout = "short",
+    srcs = [
+        "commit_graph_test.go",
+        "common_test.go",
+        "exec_test.go",
+    ],
+    embed = [":gitdomain"],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

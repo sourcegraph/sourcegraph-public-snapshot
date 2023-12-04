@@ -1,10 +1,14 @@
-import * as React from 'react'
+import type * as React from 'react'
 
 type Merge<P1 = {}, P2 = {}> = Omit<P1, keyof P2> & P2
 
 export type ForwardReferenceExoticComponent<E, OwnProps> = React.ForwardRefExoticComponent<
     Merge<E extends React.ElementType ? React.ComponentPropsWithRef<E> : never, OwnProps & { as?: E }>
 >
+
+type PropsWithChildren<P> = P &
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ({ children?: React.ReactNode | undefined } | { children: (...args: any[]) => React.ReactNode })
 
 export interface ForwardReferenceComponent<
     IntrinsicElementString,
@@ -25,10 +29,12 @@ export interface ForwardReferenceComponent<
     <As = IntrinsicElementString>(
         props: As extends ''
             ? { as: keyof JSX.IntrinsicElements }
-            : As extends React.ComponentType<infer P>
+            : As extends React.ComponentType<PropsWithChildren<infer P>>
             ? Merge<P, OwnProps & { as: As }>
             : As extends keyof JSX.IntrinsicElements
             ? Merge<JSX.IntrinsicElements[As], OwnProps & { as: As }>
             : never
     ): React.ReactElement | null
 }
+
+export type ObservableStatus = 'initial' | 'next' | 'completed' | 'error'

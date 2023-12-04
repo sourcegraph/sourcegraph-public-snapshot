@@ -1,53 +1,121 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .modal {
     height: 80vh;
-    width: 80vw;
-}
-
-.content {
-    display: flex;
-    align-items: stretch;
-    flex-direction: column;
-    height: 100%;
+    max-height: 850px;
+    // `!important` is required to ensure that this rule is applied in the production bundle.
+    // It can be removed after addressing the following issue:
+    // https://github.com/sourcegraph/sourcegraph/issues/42217
+    width: 80vw !important;
+    max-width: 900px;
+    background-color: var(--body-bg);
+    padding: 0;
 }
 
 .header {
-    display: flex;
-    justify-content: space-between;
-    padding-bottom: 0.25rem;
-    margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
+    margin-bottom: -1px; // stylelint-disable-line declaration-property-unit-allowed-list
+    z-index: 1;
+}
+
+.shortcut {
+    color: var(--text-muted);
+    font-weight: normal;
+    margin-left: 0.125rem;
 }
 
 .input {
-    margin-bottom: 0.75rem;
+    margin: 0.25rem 1rem 0.5rem 1rem;
+    box-shadow: var(--search-input-shadow);
 }
 
-.results {
-    overflow: hidden auto;
-    flex: 1;
-    text-align: left;
-    list-style-type: none;
-    padding: unset;
+.result-item {
+    &:hover {
+        background-color: var(--color-bg-2);
+    }
 }
 
 .focused {
     border-radius: var(--border-radius);
-    background-color: var(--color-bg-2);
+    background-color: var(--color-bg-3);
+}
+
+.keyboard-explanation {
+    color: var(--text-muted);
+    font-size: 0.75rem;
 }
 
 .summary {
     display: flex;
+    align-items: center;
     margin-bottom: 0.5rem;
+    padding: 0 1rem;
+
+    @media (--xs-breakpoint-down) {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+.summary > * {
+    flex: 1;
+}
+
+.search-query {
+    display: flex;
+    margin-left: auto;
 }
 
 .result-count {
     flex: 1;
+    font-size: 0.75rem;
+    color: var(--text-muted);
 }
 
-.close-icon {
-    color: var(--icon-color);
+.experimental-badge {
+    margin: -0.5rem 0.75rem 0 auto;
+    text-transform: uppercase;
+}
+
+.close-button {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: -0.5rem;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        svg {
+            color: var(--icon-color);
+        }
+    }
 }
 
 .show-more {
     align-self: center;
+}
+
+.tab-list {
+    gap: 0.75rem;
+    display: flex;
+    flex-direction: row;
+}
+
+.tab {
+    gap: 0.5rem;
+}
+
+.tab-centered-text {
+    text-align: center;
+}
+.active-tab {
+    background-color: var(--color-bg-2);
+}
+
+.fuzzy-scope-selector {
+    width: fit-content;
+    margin-left: auto;
+    margin-bottom: 0;
+
+    select {
+        background-color: transparent;
+    }
 }

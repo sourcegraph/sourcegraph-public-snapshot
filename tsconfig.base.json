@@ -1,0 +1,29 @@
+{
+  "extends": "@sourcegraph/tsconfig",
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "allowJs": false,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "noErrorTruncation": true,
+    "importHelpers": true,
+    "resolveJsonModule": true,
+    "composite": true,
+    "outDir": "out",
+    "rootDir": "."
+  },
+  "watchOptions": {
+    "watchFile": "useFsEvents",
+    "watchDirectory": "useFsEvents",
+    "fallbackPolling": "dynamicPriority"
+  },
+  "include": [],
+  "exclude": ["out", "node_modules"]
+}

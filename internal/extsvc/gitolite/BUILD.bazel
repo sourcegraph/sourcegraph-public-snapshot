@@ -1,0 +1,30 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gitolite",
+    srcs = [
+        "codehost.go",
+        "repos.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/extsvc",
+        "//internal/gitserver/v1:gitserver",
+        "@com_github_inconshreveable_log15//:log15",
+    ],
+)
+
+go_test(
+    name = "gitolite_test",
+    timeout = "short",
+    srcs = ["repos_test.go"],
+    embed = [":gitolite"],
+    deps = [
+        "//internal/errcode",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

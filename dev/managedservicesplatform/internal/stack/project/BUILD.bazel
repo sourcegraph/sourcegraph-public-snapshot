@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "project",
+    srcs = ["project.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/project",
+    visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    deps = [
+        "//dev/managedservicesplatform/internal/resource/random",
+        "//dev/managedservicesplatform/internal/resourceid",
+        "//dev/managedservicesplatform/internal/stack",
+        "//dev/managedservicesplatform/internal/stack/options/googleprovider",
+        "//dev/managedservicesplatform/internal/stack/options/randomprovider",
+        "//dev/managedservicesplatform/spec",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_aws_jsii_runtime_go//:jsii-runtime-go",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//project",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//projectservice",
+    ],
+)

@@ -1,3 +1,5 @@
+import { afterAll, describe, expect, it } from 'vitest'
+
 import { DOM } from './dom'
 
 describe('can create dom elements from generated code tables', () => {
@@ -6,12 +8,8 @@ describe('can create dom elements from generated code tables', () => {
 
     it('can create the code view test cases and their helper function work', () => {
         for (const codeViewProps of dom.createCodeViews()) {
-            const {
-                codeView,
-                getCodeElementFromTarget,
-                getCodeElementFromLineNumber,
-                getLineNumberFromCodeElement,
-            } = codeViewProps
+            const { codeView, getCodeElementFromTarget, getCodeElementFromLineNumber, getLineNumberFromCodeElement } =
+                codeViewProps
 
             for (let index = 1; index < 10; index++) {
                 const cellFromLine = getCodeElementFromLineNumber(codeView, index)

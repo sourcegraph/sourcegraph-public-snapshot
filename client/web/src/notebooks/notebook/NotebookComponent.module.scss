@@ -1,0 +1,15 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.search-notebook {
+    position: relative;
+    width: 100%;
+    // Allow enough space to fit the menu
+    padding-right: 13rem;
+    @media (--md-breakpoint-down) {
+        padding-right: 2.5rem;
+    }
+}
+
+.header {
+    margin-bottom: 1rem;
+}

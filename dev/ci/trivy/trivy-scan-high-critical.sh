@@ -42,6 +42,11 @@ trivy_scan() {
     "--output"
     "${outputFile}"
 
+    # workaround for scans failing due to exceeding timeout deadline
+    # (e.g. https://buildkite.com/sourcegraph/sourcegraph/builds/192926#0185a568-ee3e-494a-abbf-7b8f9c3f226f/118-173)
+    "--timeout"
+    "15m"
+
     # scan the docker image named "target"
     "${target}"
   )
@@ -73,6 +78,7 @@ case "${exitCode:-"0"}" in
   "${VULNERABILITY_EXIT_CODE}")
     # we found vulnerabilities - upload the annotation
     create_annotation "${ARTIFACT_FILE}" "${IMAGE}"
+    echo "<br />Trivy found issues. More information [here](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/security/trivy/#for-sourcegraph-engineers)." >> ./annotations/trivy-scan-high-critical.md
     exit "${VULNERABILITY_EXIT_CODE}"
     ;;
   *)

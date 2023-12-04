@@ -30,9 +30,10 @@ The generic term **changeset** is used to refer to any of the following:
 - GitHub pull requests.
 - Bitbucket Server / Bitbucket Data Center and Bitbucket Data Center pull requests.
 - GitLab merge requests.
-- Bitbucket Cloud pull requests (not yet supported).
+- Bitbucket Cloud pull requests.
+- Gerrit changes.
+- <span class="badge badge-beta">Beta</span> Perforce changelists.
 - Phabricator diffs (not yet supported).
-- Gerrit changes (not yet supported).
 
 A single batch change can span many repositories and many code hosts.
 
@@ -48,11 +49,17 @@ A single batch change can span many repositories and many code hosts.
 
 To learn about the internals of Batch Changes, see [Batch Changes](../../../dev/background-information/batch_changes/index.md) in the developer documentation.
 
+## Ownership
+
+When a user is deleted, their Batch Changes become inaccessible in the UI but the data is not permanently deleted.
+This allows recovering the Batch Changes if the user is restored.
+
+However, if the user deletion is permanent, deleting both account and data, then the associated Batch Changes are also permanently deleted from the database. This frees storage space and removes dangling references.
+
 ## Known issues
 
-- Batch Changes currently support **GitHub**, **GitLab** and **Bitbucket Server and Bitbucket Data Center** repositories. If you're interested in using Batch Changes on other code hosts, [let us know](https://about.sourcegraph.com/contact).
-- Forking a repository and creating a pull request on the fork is not yet supported. Because of this limitation, you need write access to each repository that your batch change will change (in order to push a branch to it), either through your account or a service account (see [credentials](../how-tos/configuring_credentials.md)).
-- {#server-execution} Batch change steps are run locally (in the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli)). Sourcegraph does not yet support executing batch change steps on the server. For this reason, the APIs for creating and updating a batch change require you to upload all of the changeset specs (which are produced by executing the batch spec locally). Also see [how scalable is Batch Changes](../references/faq.md#how-scalable-is-batch-changes-how-many-changesets-can-i-create).
+- Batch Changes currently support **GitHub**, **GitLab** and **Bitbucket Server and Bitbucket Data Center** repositories. If you're interested in using Batch Changes on other code hosts, [let us know](https://sourcegraph.com/contact).
+- {#server-execution} Batch change steps are run locally (in the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli)) or [server-side](https://docs.sourcegraph.com/batch_changes/explanations/server_side) `Beta`. For this reason, the APIs for creating and updating a batch change require you to upload all of the changeset specs (which are produced by executing the batch spec locally). Also see [how scalable is Batch Changes](../references/faq.md#how-scalable-is-batch-changes-how-many-changesets-can-i-create).
 - It is not yet possible for multiple users to edit the same batch change that was created under an organization.
 - It is not yet possible to reuse a branch in a repository across multiple batch changes.
 - The only type of user credential supported by Sourcegraph right now is a [personal access token](../how-tos/configuring_credentials.md), either per user, or via a global service account. Further credential types may be supported in the future.

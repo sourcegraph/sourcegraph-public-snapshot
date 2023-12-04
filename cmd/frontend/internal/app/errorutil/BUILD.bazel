@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "errorutil",
+    srcs = ["handlers.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/internal/handlerutil",
+        "//internal/conf",
+        "//internal/env",
+        "//internal/trace",
+        "@com_github_inconshreveable_log15//:log15",
+    ],
+)

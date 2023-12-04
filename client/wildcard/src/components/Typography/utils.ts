@@ -1,7 +1,8 @@
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
-import { TYPOGRAPHY_ALIGNMENTS, TYPOGRAPHY_MODES, TYPOGRAPHY_WEIGHTS } from './constants'
+import type { TYPOGRAPHY_ALIGNMENTS, TYPOGRAPHY_MODES, TYPOGRAPHY_WEIGHTS } from './constants'
+
 import styles from './Typography.module.scss'
 
 export interface TypographyProps {
@@ -10,15 +11,15 @@ export interface TypographyProps {
     as?: React.ElementType
 }
 
-interface GetAlignmentStyleParameters {
+export interface GetAlignmentStyleParameters {
     alignment?: typeof TYPOGRAPHY_ALIGNMENTS[number]
 }
 
-interface GetModeStyleParameters {
+export interface GetModeStyleParameters {
     mode?: typeof TYPOGRAPHY_MODES[number]
 }
 
-interface GetFontWeightStyleParameters {
+export interface GetFontWeightStyleParameters {
     weight?: typeof TYPOGRAPHY_WEIGHTS[number]
 }
 
@@ -30,11 +31,14 @@ export const getFontWeightStyle = ({ weight }: GetFontWeightStyleParameters): st
 
 export const getModeStyle = ({ mode }: GetModeStyleParameters): string => {
     switch (mode) {
-        case 'single-line':
+        case 'single-line': {
             return styles.singleLine
-        case 'break-word':
+        }
+        case 'break-word': {
             return styles.breakWord
-        default:
+        }
+        default: {
             return ''
+        }
     }
 }

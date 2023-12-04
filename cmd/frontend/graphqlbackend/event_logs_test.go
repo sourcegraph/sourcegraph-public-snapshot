@@ -9,14 +9,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestUser_EventLogs(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
@@ -58,7 +58,7 @@ func TestUser_EventLogs(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := NewUserResolver(db, &types.User{ID: 1}).EventLogs(test.ctx, nil)
+				_, err := NewUserResolver(test.ctx, db, &types.User{ID: 1}).EventLogs(test.ctx, nil)
 				got := fmt.Sprintf("%v", err)
 				want := "must be authenticated as user with id 1"
 				assert.Equal(t, want, got)

@@ -8,7 +8,7 @@ In this guide, you'll install the Sourcegraph CLI, `src`, connect it to your Sou
 
 ## Installation
 
-`src` is shipped as a single, standalone binary. You can get the latest release by following the instructions for your operating system below (check out the [GitHub page](https://github.com/sourcegraph/src-cli) for additional documentation):
+`src` is shipped as a single, standalone binary. You can get the latest release by following the instructions for your operating system below (check out the [repository](https://sourcegraph.com/github.com/sourcegraph/src-cli) for additional documentation):
 
 ### macOS
 
@@ -56,7 +56,7 @@ Once complete, you should have two new environment variables set: `SRC_ENDPOINT`
 Searching is performed using the [`src search`](references/search.md) command. For example, to search for `ResolveRepositories` in the `src` repository, you can run:
 
 ```sh
-src search 'r:github.com/sourcegraph/src-cli ResolveRepositories'
+src search 'r:github.com/sourcegraph/src-cli NewArchiveRegistry'
 ```
 
 This should result in this output:
@@ -70,3 +70,21 @@ You've run your first search from the command line! 🎉🎉
 You can now explore the [range of commands `src` provides](references/index.md), including the extensive support for [batch changes](../../batch_changes/index.md).
 
 To learn what else you can do with `src`, see "[CLI](index.md)" in the Sourcegraph documentation.
+
+## Troubleshooting
+If you run into authentication issues, the `frontend` container is the best place to check for useful logs. 
+
+### Gzip Error on Apache Proxies
+If you are running `src login` through an apache proxy, you may run into the following error in your frontend logs:
+```bash
+"error":"gzip: invalid header"
+```
+Please check your `httpd.conf` for the following:
+```
+<Location>
+  ... 
+  SetInputFilter DEFLATE
+  ...
+</Location>
+```
+If this is present, you will need to delete `SetInputFilter DEFLATE`. If not, it will result in sending an unexpected response back to `src`, which will, in turn, be rejected. 

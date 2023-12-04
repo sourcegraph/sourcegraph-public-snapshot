@@ -1,0 +1,42 @@
+$border-size: 0.125rem;
+$background-color: var(--color-bg-1);
+
+.container {
+    padding: $border-size !important;
+    position: relative;
+    width: 25rem;
+
+    &::before {
+        content: '';
+        position: absolute;
+        width: 1rem;
+        height: 1rem;
+        left: 50%;
+        bottom: calc(100% - 1rem / 2);
+        background: var(--marketing-gradient);
+        transform: rotate(45deg);
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        width: 1rem;
+        height: 1rem;
+        left: 50%;
+        bottom: calc(100% - 1rem + #{$border-size} * 2.5);
+        background: $background-color;
+        transform: rotate(45deg);
+    }
+}
+
+.inner-container {
+    background: $background-color;
+}
+
+.divider {
+    border-bottom: 1px solid var(--border-color-2);
+}
+
+.text-underline {
+    text-decoration: underline;
+}

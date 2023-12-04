@@ -1,30 +1,36 @@
-import { storiesOf } from '@storybook/react'
-import React from 'react'
+import type { Meta, StoryFn } from '@storybook/react'
 import sinon from 'sinon'
+
+import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
 
-import codeMonitorFormStyles from './CodeMonitorForm.module.scss'
 import { FormTriggerArea } from './FormTriggerArea'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/FormTrigerArea', module).addParameters({
-    design: {
-        type: 'Figma',
-        url:
-            'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=3891%3A41568',
-    },
-    chromatic: {
-        delay: 600, // Delay screenshot for input validation debouncing
-        viewports: [720],
-        disableSnapshot: false,
-    },
-})
+import codeMonitorFormStyles from './CodeMonitorForm.module.scss'
 
-add('FormTrigerArea', () => (
+const config: Meta = {
+    title: 'web/enterprise/code-monitoring/FormTrigerArea',
+    parameters: {
+        design: {
+            type: 'Figma',
+            url: 'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=3891%3A41568',
+        },
+        chromatic: {
+            delay: 600, // Delay screenshot for input validation debouncing
+            viewports: [720],
+            disableSnapshot: false,
+        },
+    },
+}
+
+export default config
+
+export const FormTrigerArea: StoryFn = () => (
     <WebStory>
         {props => (
             <>
-                <h2>Closed, empty query</h2>
+                <H2>Closed, empty query</H2>
                 <div className="my-2">
                     <FormTriggerArea
                         {...props}
@@ -36,10 +42,11 @@ add('FormTrigerArea', () => (
                         cardBtnClassName={codeMonitorFormStyles.cardButton}
                         cardLinkClassName={codeMonitorFormStyles.cardLink}
                         cardClassName={codeMonitorFormStyles.card}
+                        isSourcegraphDotCom={false}
                     />
                 </div>
 
-                <h2>Open, empty query</h2>
+                <H2>Open, empty query</H2>
                 <div className="my-2">
                     <FormTriggerArea
                         {...props}
@@ -51,10 +58,11 @@ add('FormTrigerArea', () => (
                         cardBtnClassName={codeMonitorFormStyles.cardButton}
                         cardLinkClassName={codeMonitorFormStyles.cardLink}
                         cardClassName={codeMonitorFormStyles.card}
+                        isSourcegraphDotCom={false}
                     />
                 </div>
 
-                <h2>Open, partially valid query</h2>
+                <H2>Open, partially valid query</H2>
                 <div className="my-2">
                     <FormTriggerArea
                         {...props}
@@ -66,10 +74,11 @@ add('FormTrigerArea', () => (
                         cardBtnClassName={codeMonitorFormStyles.cardButton}
                         cardLinkClassName={codeMonitorFormStyles.cardLink}
                         cardClassName={codeMonitorFormStyles.card}
+                        isSourcegraphDotCom={false}
                     />
                 </div>
 
-                <h2>Open, fully valid query</h2>
+                <H2>Open, fully valid query</H2>
                 <div className="my-2">
                     <FormTriggerArea
                         {...props}
@@ -81,9 +90,12 @@ add('FormTrigerArea', () => (
                         cardBtnClassName={codeMonitorFormStyles.cardButton}
                         cardLinkClassName={codeMonitorFormStyles.cardLink}
                         cardClassName={codeMonitorFormStyles.card}
+                        isSourcegraphDotCom={false}
                     />
                 </div>
             </>
         )}
     </WebStory>
-))
+)
+
+FormTrigerArea.storyName = 'FormTrigerArea'

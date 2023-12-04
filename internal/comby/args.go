@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/inconshreveable/log15"
 )
 
 func (args Args) String() string {
@@ -45,9 +43,10 @@ func (args Args) String() string {
 		s = append(s, "-directory", string(i))
 	case FileContent:
 		s = append(s, fmt.Sprintf("<stdin content, length %d>", len(string(i))))
+	case Tar:
+		s = append(s, "-tar", "-chunk-matches", "0")
 	default:
 		s = append(s, fmt.Sprintf("~comby mccombyface is sad and can't handle type %T~", i))
-		log15.Error("unrecognized input type: %T", i)
 	}
 
 	return strings.Join(s, " ")

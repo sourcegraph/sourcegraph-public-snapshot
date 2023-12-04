@@ -2,8 +2,8 @@ import React from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
-import { CommunitySearchContextMetadata } from './types'
+import { CommunitySearchContextPage, type CommunitySearchContextPageProps } from './CommunitySearchContextPage'
+import type { CommunitySearchContextMetadata } from './types'
 
 export const chakraui: CommunitySearchContextMetadata = {
     title: 'CHAKRA UI',
@@ -13,12 +13,12 @@ export const chakraui: CommunitySearchContextMetadata = {
     examples: [
         {
             title: 'Search for Chakra UI packages',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'file:package.json',
         },
         {
             title: 'Browse diffs for recent code changes',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'type:diff after:"1 week ago"',
         },
     ],
@@ -27,5 +27,5 @@ export const chakraui: CommunitySearchContextMetadata = {
 }
 
 export const ChakraUICommunitySearchContextPage: React.FunctionComponent<
-    Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>
+    React.PropsWithChildren<Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>>
 > = props => <CommunitySearchContextPage {...props} communitySearchContextMetadata={chakraui} />

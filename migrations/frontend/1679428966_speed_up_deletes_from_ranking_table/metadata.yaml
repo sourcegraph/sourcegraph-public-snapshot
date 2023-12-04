@@ -1,0 +1,3 @@
+name: Speed up deletes from ranking table
+parents: [1679404397]
+createIndexConcurrently: true

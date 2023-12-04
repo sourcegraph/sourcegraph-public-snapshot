@@ -1,21 +1,23 @@
-import classNames from 'classnames'
 import React from 'react'
 
-import { renderMarkdown } from '@sourcegraph/common'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { Alert } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
 
-import { DismissibleAlert, DismissibleAlertProps } from '../components/DismissibleAlert'
+import { renderMarkdown } from '@sourcegraph/common'
+import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
+import { Alert, Markdown } from '@sourcegraph/wildcard'
+
+import { DismissibleAlert, type DismissibleAlertProps } from '../components/DismissibleAlert'
+import type { SiteFlagAlertFields } from '../graphql-operations'
 
 /**
  * A global alert that is shown at the top of the viewport.
  */
-export const GlobalAlert: React.FunctionComponent<{
-    alert: Pick<GQL.IAlert, 'message' | 'isDismissibleWithKey' | 'type'>
-    className?: string
-}> = ({ alert, className: commonClassName }) => {
+export const GlobalAlert: React.FunctionComponent<
+    React.PropsWithChildren<{
+        alert: SiteFlagAlertFields
+        className?: string
+    }>
+> = ({ alert, className: commonClassName }) => {
     const content = <Markdown dangerousInnerHTML={renderMarkdown(alert.message)} />
     const className = classNames(commonClassName, 'd-flex')
 
@@ -39,13 +41,17 @@ export const GlobalAlert: React.FunctionComponent<{
 
 function alertVariantForType(type: AlertType): DismissibleAlertProps['variant'] {
     switch (type) {
-        case AlertType.INFO:
+        case AlertType.INFO: {
             return 'info'
-        case AlertType.WARNING:
+        }
+        case AlertType.WARNING: {
             return 'warning'
-        case AlertType.ERROR:
+        }
+        case AlertType.ERROR: {
             return 'danger'
-        default:
+        }
+        default: {
             return 'warning'
+        }
     }
 }

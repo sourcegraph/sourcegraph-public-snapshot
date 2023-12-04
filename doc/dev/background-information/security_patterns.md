@@ -46,7 +46,7 @@ More specifically, an actor will be one of these three cases:
 
 Care must be taken when checking an actor: it's possible to have a context that doesn't have an actor at all, in which case `actor.FromContext()` will return `nil`.
 
-Code in `cmd/frontend` and `enterprise/cmd/frontend` can take advantage of [the helper functions available in `cmd/frontend/backend`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@c764844/-/docs/cmd/frontend/backend#func) such as `CheckCurrentUserIsSiteAdmin` and `CheckSiteAdminOrSameUser`. These functions already take the details of internal and user actors into account, and are the safest way to perform authorization checks at the frontend level (for example, in GraphQL resolvers).
+Code in `cmd/frontend` can take advantage of [the helper functions available in `cmd/frontend/backend`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@c764844/-/docs/cmd/frontend/backend#func) such as `CheckCurrentUserIsSiteAdmin` and `CheckSiteAdminOrSameUser`. These functions already take the details of internal and user actors into account, and are the safest way to perform authorization checks at the frontend level (for example, in GraphQL resolvers).
 
 Below the frontend level, or in other commands, you'll need to implement more of your own authorization logic. Two `nil`-safe methods are provided on the `Actor` type: `IsAuthenticated()` and `IsInternal()`, which are always safe to call. The `UID` field must only be accessed after calling `IsAuthenticated()`.
 

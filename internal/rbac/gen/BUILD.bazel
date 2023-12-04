@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "gen_lib",
+    srcs = ["yamldata.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/rbac/gen",
+    visibility = ["//visibility:private"],
+    deps = ["@in_gopkg_yaml_v3//:yaml_v3"],
+)
+
+go_binary(
+    name = "type_gen",
+    embed = [":gen_lib"],
+    visibility = ["//visibility:public"],
+)

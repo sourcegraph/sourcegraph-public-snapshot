@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	"golang.org/x/oauth2"
 )
 
@@ -21,6 +21,14 @@ type Flags struct {
 
 	IssuesRepoOwner string
 	IssuesRepoName  string
+
+	// ProtectedBranch designates a branch name that should always record an exception when a PR is opened
+	// against it. It's primary use case is to discourage PRs againt the release branch on sourcegraph/deploy-sourcegraph-cloud.
+	ProtectedBranch string
+
+	// AdditionalContext contains a paragraph that will be appended at the end of the created exception. It enables
+	// repositories to further explain why an exception has been recorded.
+	AdditionalContext string
 }
 
 func (f *Flags) Parse() {
@@ -29,6 +37,8 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.GitHubRunURL, "github.run-url", "", "URL to GitHub actions run")
 	flag.StringVar(&f.IssuesRepoOwner, "issues.repo-owner", "sourcegraph", "owner of repo to create issues in")
 	flag.StringVar(&f.IssuesRepoName, "issues.repo-name", "sec-pr-audit-trail", "name of repo to create issues in")
+	flag.StringVar(&f.ProtectedBranch, "protected-branch", "", "name of branch that if set as the base branch in a PR, will always open an exception")
+	flag.StringVar(&f.AdditionalContext, "additional-context", "", "additional information that will be appended to the recorded exception, if any.")
 	flag.Parse()
 }
 
@@ -49,11 +59,32 @@ func main() {
 	if err := json.Unmarshal(payloadData, &payload); err != nil {
 		log.Fatal("Unmarshal: ", err)
 	}
-	log.Printf("got event for pull request %s, full payload: %+v\n", payload.PullRequest.URL, payload)
+	log.Printf("handling event for pull request %s, payload: %+v\n", payload.PullRequest.URL, payload.Dump())
 
 	// Discard unwanted events
-	if payload.PullRequest.Base.Ref != "main" {
-		log.Printf("unknown pull request base %q - discarding\n", payload.PullRequest.Base.Ref)
+	switch ref := payload.PullRequest.Base.Ref; ref {
+	// This is purely an API call usage optimization, so we don't need to be so specific
+	// as to require usage to provide the default branch - we can just rely on a simple
+	// allowlist of commonly used default branches.
+	case "main", "master", "release":
+		log.Printf("performing checks against allow-listed pull request base %q", ref)
+	case flags.ProtectedBranch:
+		if flags.ProtectedBranch == "" {
+			log.Printf("unknown pull request base %q - discarding\n", ref)
+			return
+		}
+
+		log.Printf("performing checks against protected pull request base %q", ref)
+	default:
+		log.Printf("unknown pull request base %q - discarding\n", ref)
+		return
+	}
+	if payload.PullRequest.Draft {
+		log.Println("skipping event on draft PR")
+		return
+	}
+	if payload.Action == "closed" && !payload.PullRequest.Merged {
+		log.Println("ignoring closure of un-merged pull request")
 		return
 	}
 	if payload.Action == "edited" && payload.PullRequest.Merged {
@@ -81,10 +112,11 @@ const (
 func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
 	result := checkPR(ctx, ghc, payload, checkOpts{
 		ValidateReviews: true,
+		ProtectedBranch: flags.ProtectedBranch,
 	})
 	log.Printf("checkPR: %+v\n", result)
 
-	if result.HasTestPlan() && result.Reviewed {
+	if result.HasTestPlan() && result.Reviewed && !result.ProtectedBranch {
 		log.Println("Acceptance checked and PR reviewed, done")
 		// Don't create status that likely nobody will check anyway
 		return nil
@@ -104,7 +136,15 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 		return nil
 	}
 
-	issue := generateExceptionIssue(payload, &result)
+	issue := generateExceptionIssue(payload, &result, flags.AdditionalContext)
+
+	log.Printf("Ensuring label for repository %q\n", payload.Repository.FullName)
+	_, _, err := ghc.Issues.CreateLabel(ctx, flags.IssuesRepoName, flags.IssuesRepoName, &github.Label{
+		Name: github.String(payload.Repository.FullName),
+	})
+	if err != nil {
+		log.Printf("Ignoring error on CreateLabel: %s\n", err)
+	}
 
 	log.Printf("Creating issue for exception: %+v\n", issue)
 	created, _, err := ghc.Issues.Create(ctx, flags.IssuesRepoOwner, flags.IssuesRepoName, issue)
@@ -131,7 +171,8 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 
 func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
 	result := checkPR(ctx, ghc, payload, checkOpts{
-		ValidateReviews: true,
+		ValidateReviews: false, // only validate reviews on post-merge
+		ProtectedBranch: flags.ProtectedBranch,
 	})
 	log.Printf("checkPR: %+v\n", result)
 
@@ -145,9 +186,12 @@ func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayloa
 		prState = "failure"
 		stateDescription = "No test plan detected - please provide one!"
 		stateURL = "https://docs.sourcegraph.com/dev/background-information/testing_principles#test-plans"
+	case result.ProtectedBranch:
+		prState = "success"
+		stateDescription = "No action needed, but an exception will be opened post-merge."
 	default:
-		// No need to set a status
-		return nil
+		prState = "success"
+		stateDescription = "No action needed, nice!"
 	}
 
 	owner, repo := payload.Repository.GetOwnerAndName()

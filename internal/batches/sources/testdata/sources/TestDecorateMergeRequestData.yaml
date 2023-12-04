@@ -1,0 +1,117 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/api/v4/projects/16606399/merge_requests/6
+    method: GET
+  response:
+    body: '{"id":203458494,"iid":6,"project_id":16606399,"title":"Update README.md","description":"","state":"opened","created_at":"2023-02-03T22:48:08.513Z","updated_at":"2023-02-03T22:48:10.068Z","merged_by":null,"merge_user":null,"merged_at":null,"closed_by":null,"closed_at":null,"target_branch":"master","source_branch":"hello-world","user_notes_count":0,"upvotes":0,"downvotes":0,"author":{"id":11440943,"username":"courier-new","name":"Kelli
+      Rockwell","state":"active","avatar_url":"https://gitlab.com/uploads/-/system/user/avatar/11440943/avatar.png","web_url":"https://gitlab.com/courier-new"},"assignees":[],"assignee":null,"reviewers":[],"source_project_id":43195414,"target_project_id":16606399,"labels":[],"draft":false,"work_in_progress":false,"milestone":null,"merge_when_pipeline_succeeds":false,"merge_status":"can_be_merged","detailed_merge_status":"mergeable","sha":"f1143d212147dda485e5645058f7f1e53fc23b90","merge_commit_sha":null,"squash_commit_sha":null,"discussion_locked":null,"should_remove_source_branch":null,"force_remove_source_branch":true,"allow_collaboration":true,"allow_maintainer_to_push":true,"reference":"!6","references":{"short":"!6","relative":"!6","full":"sourcegraph/src-cli!6"},"web_url":"https://gitlab.com/sourcegraph/src-cli/-/merge_requests/6","time_stats":{"time_estimate":0,"total_time_spent":0,"human_time_estimate":null,"human_total_time_spent":null},"squash":false,"squash_on_merge":false,"task_completion_status":{"count":0,"completed_count":0},"has_conflicts":false,"blocking_discussions_resolved":true,"approvals_before_merge":null,"subscribed":true,"changes_count":"1","latest_build_started_at":null,"latest_build_finished_at":null,"first_deployed_to_production_at":null,"pipeline":null,"head_pipeline":null,"diff_refs":{"base_sha":"c5a7ae0c5e82e439049568a0db674fc2a52d6ba6","head_sha":"f1143d212147dda485e5645058f7f1e53fc23b90","start_sha":"c5a7ae0c5e82e439049568a0db674fc2a52d6ba6"},"merge_error":null,"first_contribution":true,"user":{"can_merge":false}}'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 793ebf195a13c4f5-SEA
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 03 Feb 2023 22:54:06 GMT
+      Etag:
+      - W/"96601f4ad53334300417e15e3e6aabb5"
+      Gitlab-Lb:
+      - fe-19-lb-gprd
+      Gitlab-Sv:
+      - localhost
+      Nel:
+      - '{"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}'
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Report-To:
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=ysHX7051HaPcDh5pXnffcdDkRBljm%2BPDmrtqswRsNoG8p5i2O48yQPVkfpLXzId%2FkY3Hvax3%2BPEk7kBKn8sV36nzOxvUPRc2i%2Bbq7K1KsyQB3p7MHYQxRK7y0Fo%3D"}],"group":"cf-nel","max_age":604800}'
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Request-Id:
+      - 35dec1aeaa1d48a603a32ce3e8381aab
+      X-Runtime:
+      - "0.147032"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/api/v4/projects/16606088/merge_requests/1
+    method: GET
+  response:
+    body: '{"id":48622867,"iid":1,"project_id":16606088,"title":"a8n: Rename CampaignPlan.changesets
+      to CampaignPlan.changesetPlans","description":"This is a follow-up to #7965
+      and stacked on top of it. See motivation/reasoning in #7965.\n\nI propose the
+      change here because the returned type is a ChangesetPlansConnection and not
+      Changesets. The same field is called changesetPlans on Campaign.","state":"opened","created_at":"2020-01-30T11:50:02.607Z","updated_at":"2020-01-30T11:50:02.607Z","merged_by":null,"merge_user":null,"merged_at":null,"closed_by":null,"closed_at":null,"target_branch":"master","source_branch":"a8n/rename-api-2","user_notes_count":0,"upvotes":0,"downvotes":0,"author":{"id":3294801,"username":"ryan-blunden","name":"Ryan
+      Blunden","state":"active","avatar_url":"https://gitlab.com/uploads/-/system/user/avatar/3294801/avatar.png","web_url":"https://gitlab.com/ryan-blunden"},"assignees":[],"assignee":null,"reviewers":[],"source_project_id":16606088,"target_project_id":16606088,"labels":[],"draft":false,"work_in_progress":false,"milestone":null,"merge_when_pipeline_succeeds":false,"merge_status":"cannot_be_merged","detailed_merge_status":"broken_status","sha":"a758949195248d7ada367e67c0e02a5f55b25cc9","merge_commit_sha":null,"squash_commit_sha":null,"discussion_locked":null,"should_remove_source_branch":null,"force_remove_source_branch":false,"reference":"!1","references":{"short":"!1","relative":"!1","full":"sourcegraph/sourcegraph!1"},"web_url":"https://gitlab.com/sourcegraph/sourcegraph/-/merge_requests/1","time_stats":{"time_estimate":0,"total_time_spent":0,"human_time_estimate":null,"human_total_time_spent":null},"squash":false,"squash_on_merge":false,"task_completion_status":{"count":0,"completed_count":0},"has_conflicts":true,"blocking_discussions_resolved":true,"approvals_before_merge":null,"subscribed":false,"changes_count":"5","head_pipeline":null,"diff_refs":{"base_sha":"60b55461099aa1bfc2881ceaf621af5c3108dc91","head_sha":"a758949195248d7ada367e67c0e02a5f55b25cc9","start_sha":"b12f5679e669363e27c74f5dcb8b818478a412a0"},"merge_error":null,"first_contribution":true,"user":{"can_merge":false}}'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 793ebf1b1c0ec4f5-SEA
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 03 Feb 2023 22:54:06 GMT
+      Etag:
+      - W/"c7e050288874c027336de54a461a439d"
+      Gitlab-Lb:
+      - fe-13-lb-gprd
+      Gitlab-Sv:
+      - localhost
+      Nel:
+      - '{"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}'
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Report-To:
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=0BCAs5DQtDqyleMsQZYs%2BA2EnW0rpFzO5YAM%2BaE%2B66ljPV9zBkJEA8c%2BDyECXt3s4%2B473HdgPmftwk9eMURT3dt2xMmlTiQDADoxp2U%2BpBQ3k%2FlQcWtBhjshkf0%3D"}],"group":"cf-nel","max_age":604800}'
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Request-Id:
+      - edf9c087e51c50fd0a6e416b8c75608f
+      X-Runtime:
+      - "0.121122"
+    status: 200 OK
+    code: 200
+    duration: ""

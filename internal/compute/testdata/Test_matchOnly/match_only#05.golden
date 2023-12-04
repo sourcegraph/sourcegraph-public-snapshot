@@ -1,0 +1,42 @@
+{
+  "Input": "g(h(?:(?:.|\n)+)@)#",
+  "Result": {
+    "matches": [
+      {
+        "value": "gh\n123\n!@#",
+        "range": {
+          "start": {
+            "offset": 6,
+            "line": -1,
+            "column": -1
+          },
+          "end": {
+            "offset": 16,
+            "line": -1,
+            "column": -1
+          }
+        },
+        "environment": {
+          "1": {
+            "value": "h\n123\n!@",
+            "range": {
+              "start": {
+                "offset": 7,
+                "line": -1,
+                "column": -1
+              },
+              "end": {
+                "offset": 15,
+                "line": -1,
+                "column": -1
+              }
+            }
+          }
+        }
+      }
+    ],
+    "path": "bedge",
+    "repositoryID": 5,
+    "repository": "codehost.com/myorg/myrepo"
+  }
+}

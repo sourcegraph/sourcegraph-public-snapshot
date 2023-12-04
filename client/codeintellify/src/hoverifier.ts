@@ -8,14 +8,14 @@ import {
     from,
     fromEvent,
     merge,
-    Observable,
+    type Observable,
     of,
     Subject,
-    Subscribable,
-    SubscribableOrPromise,
+    type Subscribable,
+    type SubscribableOrPromise,
     Subscription,
     race,
-    MonoTypeOperatorFunction,
+    type MonoTypeOperatorFunction,
 } from 'rxjs'
 import {
     catchError,
@@ -33,26 +33,35 @@ import {
     mergeMap,
     delay,
     startWith,
+    tap,
 } from 'rxjs/operators'
+import { Key } from 'ts-key-enum'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Position, Range } from '@sourcegraph/extension-api-types'
+import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import type { Position, Range } from '@sourcegraph/extension-api-types'
 
-import { elementOverlaps, scrollIntoCenterIfNeeded, toMaybeLoadingProviderResult } from './helpers'
-import { emitLoading, MaybeLoadingResult, LOADING } from './loading'
+import { elementOverlaps, scrollRectangleIntoCenterIfNeeded, toMaybeLoadingProviderResult } from './helpers'
+import { emitLoading, type MaybeLoadingResult, LOADING } from './loading'
 import { calculateOverlayPosition } from './overlayPosition'
-import { PositionEvent, SupportedMouseEvent } from './positions'
+import type { PositionEvent, SupportedMouseEvent } from './positions'
 import { createObservableStateContainer } from './state'
 import {
     convertNode,
-    DiffPart,
-    DOMFunctions,
+    type DiffPart,
+    type DOMFunctions,
+    findElementWithOffset,
     getCodeElementsInRange,
     getTokenAtPositionOrRange,
-    HoveredToken,
+    type HoveredToken,
     shouldTokenize,
 } from './tokenPosition'
-import { HoverAttachment, HoverOverlayProps, isPosition, LineOrPositionOrRange, DocumentHighlight } from './types'
+import {
+    type HoverAttachment,
+    type HoverOverlayProps,
+    isPosition,
+    type LineOrPositionOrRange,
+    type DocumentHighlight,
+} from './types'
 
 const defaultSelectionHighlightClassName = 'selection-highlight'
 const defaultDocumentHighlightClassName = 'sourcegraph-document-highlight'
@@ -75,8 +84,16 @@ export interface HoverifierOptions<C extends object, D, A> {
         /**
          * The closest parent element that is `position: relative`
          */
-        relativeElement: HTMLElement
+        relativeElement?: HTMLElement
     }>
+
+    pinOptions?: {
+        /** Emit on this Observable to pin the popover. */
+        pins: Subscribable<void>
+
+        /** * Emit on this Observable when the close button in the HoverOverlay was clicked */
+        closeButtonClicks: Subscribable<void>
+    }
 
     hoverOverlayElements: Subscribable<HTMLElement | null>
 
@@ -235,6 +252,9 @@ export interface HoverifyOptions<C extends object>
  * @template A The type of an action.
  */
 export interface HoverState<C extends object, D, A> {
+    /** The currently hovered token */
+    hoveredToken?: HoveredToken & C
+
     /**
      * The currently hovered and highlighted HTML element.
      */
@@ -249,6 +269,8 @@ export interface HoverState<C extends object, D, A> {
      * The props to pass to `HoverOverlay`, or `undefined` if it should not be rendered.
      */
     hoverOverlayProps?: Pick<HoverOverlayProps<C, D, A>, Exclude<keyof HoverOverlayProps<C, D, A>, 'actionComponent'>>
+
+    pinned?: boolean
 
     /**
      * The highlighted range, which is the range in the hover result or else the range of the hovered token.
@@ -271,8 +293,10 @@ export interface HoverState<C extends object, D, A> {
 interface InternalHoverifierState<C extends object, D, A> {
     hoverOrError?: typeof LOADING | (HoverAttachment & D) | null | ErrorLike
 
+    pinned: boolean
+
     /** The desired position of the hover overlay */
-    hoverOverlayPosition?: { left: number; top: number }
+    hoverOverlayPosition?: { left: number } & ({ top: number } | { bottom: number })
 
     /** The currently hovered token */
     hoveredToken?: HoveredToken & C
@@ -311,8 +335,8 @@ interface InternalHoverifierState<C extends object, D, A> {
  * The primary purpose of this is to reduce UI jitter by not showing the overlay when there is nothing to show
  * (because there is no content, or because it is still loading).
  */
-const shouldRenderOverlay = (state: InternalHoverifierState<{}, {}, {}>): boolean =>
-    !state.mouseIsMoving &&
+const shouldRenderOverlay = <C extends object, D, A>(state: InternalHoverifierState<C, D, A>): boolean =>
+    !(!state.pinned && state.mouseIsMoving) &&
     ((!!state.hoverOrError && state.hoverOrError !== LOADING) ||
         (!!state.actionsOrError &&
             state.actionsOrError !== LOADING &&
@@ -328,6 +352,7 @@ const shouldRenderOverlay = (state: InternalHoverifierState<{}, {}, {}>): boolea
 const internalToExternalState = <C extends object, D, A>(
     internalState: InternalHoverifierState<C, D, A>
 ): HoverState<C, D, A> => ({
+    hoveredToken: internalState.hoveredToken,
     hoveredTokenElement: internalState.hoveredTokenElement,
     actionsOrError: internalState.actionsOrError,
     selectedPosition: internalState.selectedPosition,
@@ -340,13 +365,14 @@ const internalToExternalState = <C extends object, D, A>(
               actionsOrError: internalState.actionsOrError,
           }
         : undefined,
+    pinned: internalState.pinned,
 })
 
 /** The time in ms after which to show a loader if the result has not returned yet */
 export const LOADER_DELAY = 600
 
 /** The time in ms after the mouse has stopped moving in which to show the tooltip */
-export const TOOLTIP_DISPLAY_DELAY = 10
+export const TOOLTIP_DISPLAY_DELAY = 60
 
 /** The time in ms to debounce mouseover events. */
 export const MOUSEOVER_DELAY = 50
@@ -395,6 +421,7 @@ export type ContextResolver<C extends object> = (hoveredToken: HoveredToken) => 
  * @template A The type of an action.
  */
 export function createHoverifier<C extends object, D, A>({
+    pinOptions,
     hoverOverlayElements,
     hoverOverlayRerenders,
     getHover,
@@ -408,6 +435,7 @@ export function createHoverifier<C extends object, D, A>({
     // Shared between all hoverified code views
     const container = createObservableStateContainer<InternalHoverifierState<C, D, A>>({
         hoveredTokenElement: undefined,
+        pinned: false,
         hoveredToken: undefined,
         hoverOrError: undefined,
         hoverOverlayPosition: undefined,
@@ -422,30 +450,34 @@ export function createHoverifier<C extends object, D, A>({
     const allPositionsFromEvents = new Subject<MouseEventTrigger>()
 
     // This keeps the overlay open while the mouse moves over another token on the way to the overlay
-    // eslint-disable-next-line unicorn/consistent-function-scoping
-    const suppressWhileOverlayShown = <T>(): MonoTypeOperatorFunction<T> => observable =>
-        observable.pipe(
-            withLatestFrom(from(hoverOverlayElements).pipe(startWith(null))),
-            switchMap(([value, overlayElement]) =>
-                overlayElement === null
-                    ? of(value)
-                    : race(
-                          fromEvent(overlayElement, 'mouseover').pipe(mapTo('suppress')),
-                          of('emit').pipe(delay(MOUSEOVER_DELAY))
-                      ).pipe(
-                          filter(action => action === 'emit'),
-                          mapTo(value)
-                      )
-            )
-        )
 
-    const isEventType = <T extends SupportedMouseEvent>(type: T) => (
-        event: MouseEventTrigger
-    ): event is MouseEventTrigger & { eventType: T } => event.eventType === type
+    const suppressWhileOverlayShown =
+        <T>(): MonoTypeOperatorFunction<T> =>
+        observable =>
+            observable.pipe(
+                withLatestFrom(from(hoverOverlayElements).pipe(startWith(null))),
+                switchMap(([value, overlayElement]) =>
+                    overlayElement === null
+                        ? of(value)
+                        : race(
+                              fromEvent(overlayElement, 'mouseover').pipe(mapTo('suppress')),
+                              of('emit').pipe(delay(MOUSEOVER_DELAY))
+                          ).pipe(
+                              filter(action => action === 'emit'),
+                              mapTo(value)
+                          )
+                )
+            )
+
+    const isEventType =
+        <T extends SupportedMouseEvent>(type: T) =>
+        (event: MouseEventTrigger): event is MouseEventTrigger & { eventType: T } =>
+            event.eventType === type
     const allCodeMouseMoves = allPositionsFromEvents.pipe(filter(isEventType('mousemove')), suppressWhileOverlayShown())
     const allCodeMouseOvers = allPositionsFromEvents.pipe(filter(isEventType('mouseover')), suppressWhileOverlayShown())
+    const allCodeClicks = allPositionsFromEvents.pipe(filter(isEventType('click')))
 
-    const allPositionJumps = new Subject<PositionJump & EventOptions<C>>()
+    const positionJumps = new Subject<PositionJump & EventOptions<C>>()
 
     /**
      * Whenever a Subscription returned by `hoverify()` is unsubscribed,
@@ -484,6 +516,8 @@ export function createHoverifier<C extends object, D, A>({
             ...rest,
         })),
         debounceTime(MOUSEOVER_DELAY),
+        // Do not consider mouseovers while overlay is pinned
+        filter(() => !container.values.pinned),
         switchMap(({ adjustPosition, codeView, resolveContext, position, ...rest }) =>
             adjustPosition && position
                 ? from(
@@ -505,6 +539,54 @@ export function createHoverifier<C extends object, D, A>({
         ),
         share()
     )
+    /**
+     * Emits DOM elements at new positions found in the URL. When pinning is
+     * disabled, this does not emit at all because the tooltip doesn't get
+     * pinned at the jump target.
+     */
+    const jumpTargets = positionJumps.pipe(
+        withLatestFrom(container.updates),
+        filter(([, { pinned }]) => pinned),
+        map(([position]) => position),
+        // Only use line and character for comparison
+        map(({ position: { line, character, part }, ...rest }) => ({
+            position: { line, character, part },
+            ...rest,
+        })),
+        // Ignore same values
+        // It's important to do this before filtering otherwise navigating from
+        // a position, to a line-only position, back to the first position would get ignored
+        distinctUntilChanged((a, b) => isEqual(a, b)),
+        map(({ position, codeView, dom, overrideTokenize, ...rest }) => {
+            let cell: HTMLElement | null
+            let target: HTMLElement | undefined
+            let part: DiffPart | undefined
+            if (isPosition(position)) {
+                cell = dom.getCodeElementFromLineNumber(codeView, position.line, position.part)
+                if (cell) {
+                    target = findElementWithOffset(
+                        cell,
+                        { offsetStart: position.character },
+                        shouldTokenize({ tokenize, overrideTokenize })
+                    )
+                    if (target) {
+                        part = dom.getDiffCodePart?.(target)
+                    } else {
+                        logger.warn('Could not find target for position in file', position)
+                    }
+                }
+            }
+            return {
+                ...rest,
+                eventType: 'jump' as const,
+                target,
+                position: { ...position, part },
+                codeView,
+                dom,
+                overrideTokenize,
+            }
+        })
+    )
 
     // REPOSITIONING
     // On every componentDidUpdate (after the component was rerendered, e.g. from a hover state update) resposition
@@ -516,7 +598,7 @@ export function createHoverifier<C extends object, D, A>({
         from(hoverOverlayRerenders)
             .pipe(
                 // with the latest target that came from either a mouseover, click or location change (whatever was the most recent)
-                withLatestFrom(merge(codeMouseOverTargets)),
+                withLatestFrom(merge(codeMouseOverTargets, jumpTargets)),
                 map(
                     ([
                         { hoverOverlayElement, relativeElement },
@@ -569,7 +651,15 @@ export function createHoverifier<C extends object, D, A>({
                     ...rest,
                 })),
                 map(({ hoverOverlayElement, relativeElement, target }) =>
-                    target ? calculateOverlayPosition({ relativeElement, target, hoverOverlayElement }) : undefined
+                    target
+                        ? calculateOverlayPosition({
+                              relativeElement,
+                              target,
+                              hoverOverlayElement,
+                              windowInnerHeight: window.innerHeight,
+                              windowScrollY: window.scrollY,
+                          })
+                        : undefined
                 )
             )
             .subscribe(hoverOverlayPosition => {
@@ -578,7 +668,7 @@ export function createHoverifier<C extends object, D, A>({
     )
 
     /** Emits new positions including context at which a tooltip needs to be shown from clicks, mouseovers and URL changes. */
-    const resolvedPositionEvents = merge(codeMouseOverTargets).pipe(
+    const resolvedPositionEvents = merge(codeMouseOverTargets, jumpTargets).pipe(
         map(({ position, resolveContext, eventType, ...rest }) => ({
             ...rest,
             eventType,
@@ -642,9 +732,9 @@ export function createHoverifier<C extends object, D, A>({
         hoveredTokenElement,
         scrollBoundaries,
         ...rest
-    }: Omit<InternalHoverifierState<C, D, A>, 'mouseIsMoving' | 'hoverOverlayIsFixed'> &
+    }: Omit<InternalHoverifierState<C, D, A>, 'mouseIsMoving' | 'pinned'> &
         Omit<EventOptions<C>, 'resolveContext' | 'dom'> & { codeView: HTMLElement }): Observable<
-        Omit<InternalHoverifierState<C, D, A>, 'mouseIsMoving' | 'hoverOverlayIsFixed'> & { codeView: HTMLElement }
+        Omit<InternalHoverifierState<C, D, A>, 'mouseIsMoving' | 'pinned'> & { codeView: HTMLElement }
     > => {
         const result = of({ hoveredTokenElement, ...rest })
         if (!hoveredTokenElement || !scrollBoundaries) {
@@ -658,7 +748,7 @@ export function createHoverifier<C extends object, D, A>({
                 mapTo({
                     ...rest,
                     hoveredTokenElement,
-                    hoverOverlayIsFixed: false,
+                    pinned: false,
                     hoverOrError: undefined,
                     hoveredToken: undefined,
                     actionsOrError: undefined,
@@ -770,7 +860,6 @@ export function createHoverifier<C extends object, D, A>({
                             highlightedRange,
                             hoverOrError,
                             hoveredTokenElement,
-                            hoverOverlayPosition: undefined,
                         })
                     }
                 )
@@ -824,7 +913,7 @@ export function createHoverifier<C extends object, D, A>({
             // Get the document highlights for that position
             return from(getDocumentHighlights(position)).pipe(
                 catchError(error => {
-                    console.error(error)
+                    logger.error(error)
                     return []
                 }),
                 map(documentHighlights => ({
@@ -953,15 +1042,31 @@ export function createHoverifier<C extends object, D, A>({
     const resetHover = (): void => {
         container.update({
             hoverOverlayPosition: undefined,
+            pinned: false,
             hoverOrError: undefined,
             hoveredToken: undefined,
             actionsOrError: undefined,
         })
     }
 
+    // Pin on request.
+    subscription.add(pinOptions?.pins.subscribe(() => container.update({ pinned: true })))
+
+    // Unpin on close, ESC, or click.
+    subscription.add(
+        merge(
+            pinOptions?.closeButtonClicks ?? EMPTY,
+            fromEvent<KeyboardEvent>(window, 'keydown').pipe(
+                filter(event => event.key === Key.Escape),
+                tap(event => event.preventDefault())
+            ),
+            allCodeClicks
+        ).subscribe(() => resetHover())
+    )
+
     // LOCATION CHANGES
     subscription.add(
-        allPositionJumps.subscribe(
+        positionJumps.subscribe(
             ({ position, scrollElement, codeView, dom: { getCodeElementFromLineNumber }, overrideTokenize }) => {
                 container.update({
                     // Remember active position in state for blame and range expansion
@@ -975,7 +1080,16 @@ export function createHoverifier<C extends object, D, A>({
                 }
                 // Scroll into view
                 if (codeElements.length > 0) {
-                    scrollIntoCenterIfNeeded(scrollElement, codeView, codeElements[0].element)
+                    // We assume that the first element is always the top most
+                    // element and the last element is the bottom most element.
+                    const topRectangle = codeElements[0].element.getBoundingClientRect()
+                    const bottomRectangle = codeElements.at(-1)!.element.getBoundingClientRect()
+                    const rectangle = {
+                        top: topRectangle.top,
+                        bottom: bottomRectangle.bottom,
+                        height: bottomRectangle.bottom - topRectangle.top,
+                    }
+                    scrollRectangleIntoCenterIfNeeded(scrollElement, codeView, rectangle)
                 }
             }
         )
@@ -996,7 +1110,11 @@ export function createHoverifier<C extends object, D, A>({
             map(internalToExternalState),
             distinctUntilChanged((a, b) => isEqual(a, b))
         ),
-        hoverify({ positionEvents, positionJumps = EMPTY, ...eventOptions }: HoverifyOptions<C>): Subscription {
+        hoverify({
+            positionEvents,
+            positionJumps: positionJumpsArgument = EMPTY,
+            ...eventOptions
+        }: HoverifyOptions<C>): Subscription {
             const codeViewId = Symbol('CodeView')
             const subscription = new Subscription()
             // Broadcast all events from this code view
@@ -1006,9 +1124,9 @@ export function createHoverifier<C extends object, D, A>({
                     .subscribe(allPositionsFromEvents)
             )
             subscription.add(
-                from(positionJumps)
+                from(positionJumpsArgument)
                     .pipe(map(jump => ({ ...jump, ...eventOptions, codeViewId })))
-                    .subscribe(allPositionJumps)
+                    .subscribe(positionJumps)
             )
             subscription.add(() => {
                 // Make sure hover is hidden and associated subscriptions unsubscribed

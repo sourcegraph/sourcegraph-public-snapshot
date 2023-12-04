@@ -1,6 +1,14 @@
-import classNames from 'classnames'
-import React, { forwardRef, ForwardRefExoticComponent, ReactNode, RefAttributes, TextareaHTMLAttributes } from 'react'
+import {
+    forwardRef,
+    type ForwardRefExoticComponent,
+    type ReactNode,
+    type RefAttributes,
+    type TextareaHTMLAttributes,
+} from 'react'
 
+import classNames from 'classnames'
+
+import { Label } from '../..'
 import { FormFieldMessage } from '../internal/FormFieldMessage'
 import { getValidStyle } from '../internal/utils'
 
@@ -50,10 +58,31 @@ export const TextArea: ForwardRefExoticComponent<TextAreaProps & RefAttributes<H
             ...otherProps
         } = props
 
+        if (!label && !message) {
+            return (
+                // eslint-disable-next-line react/forbid-elements
+                <textarea
+                    disabled={disabled}
+                    className={classNames(
+                        'form-control',
+                        styles.textarea,
+                        getValidStyle(isValid),
+                        size === 'small' && 'form-control-sm',
+                        resizeable === false && styles.resizeNone,
+                        inputClassName,
+                        className
+                    )}
+                    {...otherProps}
+                    ref={reference}
+                />
+            )
+        }
+
         return (
-            <label className={classNames(styles.label, className)}>
+            <Label className={classNames(styles.label, className)}>
                 {label && <div className="mb-2">{size === 'small' ? <small>{label}</small> : label}</div>}
 
+                {/* eslint-disable-next-line react/forbid-elements */}
                 <textarea
                     disabled={disabled}
                     className={classNames(
@@ -68,7 +97,7 @@ export const TextArea: ForwardRefExoticComponent<TextAreaProps & RefAttributes<H
                     ref={reference}
                 />
                 {message && <FormFieldMessage isValid={isValid}>{message}</FormFieldMessage>}
-            </label>
+            </Label>
         )
     }
 )

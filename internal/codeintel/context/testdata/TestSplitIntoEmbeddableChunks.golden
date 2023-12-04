@@ -1,0 +1,16 @@
+[]context.EmbeddableChunk{
+	{
+		EndLine: 4,
+		Content: "Line\nLine\nLine\nLine",
+	},
+	{
+		StartLine: 4,
+		EndLine:   7,
+		Content:   "\nLine\nLine",
+	},
+	{
+		StartLine: 7,
+		EndLine:   10,
+		Content:   "\nLine\nLine",
+	},
+}

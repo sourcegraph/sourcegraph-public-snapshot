@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -15,16 +18,16 @@ import (
 
 // A Sourcer converts the given ExternalService to a Source whose yielded Repos
 // should be synced.
-type Sourcer func(*types.ExternalService) (Source, error)
+type Sourcer func(context.Context, *types.ExternalService) (Source, error)
 
 // NewSourcer returns a Sourcer that converts the given ExternalService
 // into a Source that uses the provided httpcli.Factory to create the
 // http.Clients needed to contact the respective upstream code host APIs.
 //
 // The provided decorator functions will be applied to the Source.
-func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
-	return func(svc *types.ExternalService) (Source, error) {
-		src, err := NewSource(svc, cf)
+func NewSourcer(logger log.Logger, db database.DB, cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
+	return func(ctx context.Context, svc *types.ExternalService) (Source, error) {
+		src, err := NewSource(ctx, logger.Scoped("source"), db, svc, cf)
 		if err != nil {
 			return nil, err
 		}
@@ -38,32 +41,47 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 }
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
-func NewSource(svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
+func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
-		return NewGithubSource(svc, cf)
+		return NewGitHubSource(ctx, logger.Scoped("GithubSource"), db, svc, cf)
 	case extsvc.KindGitLab:
-		return NewGitLabSource(svc, cf)
+		return NewGitLabSource(ctx, logger.Scoped("GitLabSource"), svc, cf)
+	case extsvc.KindAzureDevOps:
+		return NewAzureDevOpsSource(ctx, logger.Scoped("AzureDevOpsSource"), svc, cf)
+	case extsvc.KindGerrit:
+		return NewGerritSource(ctx, svc, cf)
 	case extsvc.KindBitbucketServer:
-		return NewBitbucketServerSource(svc, cf)
+		return NewBitbucketServerSource(ctx, logger.Scoped("BitbucketServerSource"), svc, cf)
 	case extsvc.KindBitbucketCloud:
-		return NewBitbucketCloudSource(svc, cf)
+		return NewBitbucketCloudSource(ctx, logger.Scoped("BitbucketCloudSource"), svc, cf)
 	case extsvc.KindGitolite:
-		return NewGitoliteSource(svc, cf)
+		return NewGitoliteSource(ctx, svc, cf)
 	case extsvc.KindPhabricator:
-		return NewPhabricatorSource(svc, cf)
+		return NewPhabricatorSource(ctx, logger.Scoped("PhabricatorSource"), svc, cf)
 	case extsvc.KindAWSCodeCommit:
-		return NewAWSCodeCommitSource(svc, cf)
+		return NewAWSCodeCommitSource(ctx, svc, cf)
 	case extsvc.KindPerforce:
-		return NewPerforceSource(svc)
+		return NewPerforceSource(ctx, svc)
+	case extsvc.KindGoPackages:
+		return NewGoPackagesSource(ctx, svc, cf)
 	case extsvc.KindJVMPackages:
-		return NewJVMPackagesSource(svc)
+		// JVM doesn't need a client factory because we use coursier.
+		return NewJVMPackagesSource(ctx, svc)
 	case extsvc.KindPagure:
-		return NewPagureSource(svc, cf)
-	case extsvc.KindNPMPackages:
-		return NewNPMPackagesSource(svc)
+		return NewPagureSource(ctx, svc, cf)
+	case extsvc.KindNpmPackages:
+		return NewNpmPackagesSource(ctx, svc, cf)
+	case extsvc.KindPythonPackages:
+		return NewPythonPackagesSource(ctx, svc, cf)
+	case extsvc.KindRustPackages:
+		return NewRustPackagesSource(ctx, svc, cf)
+	case extsvc.KindRubyPackages:
+		return NewRubyPackagesSource(ctx, svc, cf)
 	case extsvc.KindOther:
-		return NewOtherSource(svc, cf)
+		return NewOtherSource(ctx, svc, cf, logger.Scoped("OtherSource"))
+	case extsvc.VariantLocalGit.AsKind():
+		return NewLocalGitSource(ctx, logger.Scoped("LocalSource"), svc)
 	default:
 		return nil, errors.Newf("cannot create source for kind %q", svc.Kind)
 	}
@@ -75,27 +93,32 @@ type Source interface {
 	// ListRepos sends all the repos a source yields over the passed in channel
 	// as SourceResults
 	ListRepos(context.Context, chan SourceResult)
+	// CheckConnection returns an error if the Source service is not reachable
+	// or available to serve requests. The error is descriptive and can be displayed
+	// to the user.
+	CheckConnection(context.Context) error
 	// ExternalServices returns the ExternalServices for the Source.
 	ExternalServices() types.ExternalServices
 }
 
-// RepoGetter captures the optional GetRepo method of a Source. It's used only
-// on sourcegraph.com to lazily sync individual repos.
+// RepoGetter captures the optional GetRepo method of a Source. It's used on
+// sourcegraph.com to lazily sync individual repos and to lazily sync dependency
+// repos on any customer instance.
 type RepoGetter interface {
 	GetRepo(context.Context, string) (*types.Repo, error)
 }
 
-type DBSource interface {
+type DependenciesServiceSource interface {
 	Source
-	SetDB(dbutil.DB)
+	SetDependenciesService(depsSvc *dependencies.Service)
 }
 
-// WithDB returns a decorator used in NewSourcer that calls SetDB on Sources that
-// can be upgraded to it.
-func WithDB(db dbutil.DB) func(Source) Source {
+// WithDependenciesService returns a decorator used in NewSourcer that calls SetDB on
+// Sources that can be upgraded to it.
+func WithDependenciesService(depsSvc *dependencies.Service) func(Source) Source {
 	return func(src Source) Source {
-		if s, ok := src.(DBSource); ok {
-			s.SetDB(db)
+		if s, ok := src.(DependenciesServiceSource); ok {
+			s.SetDependenciesService(depsSvc)
 			return s
 		}
 		return src
@@ -159,14 +182,11 @@ type SourceError struct {
 }
 
 func (s *SourceError) Error() string {
-	var e *errors.MultiError
+	var e errors.MultiError
 	if errors.As(s.Err, &e) {
 		// Create new Error with custom formatter. Do not mutate otherwise can
 		// race with other callers of Error.
-		return (&errors.MultiError{
-			Errors:      e.Errors,
-			ErrorFormat: sourceErrorFormatFunc,
-		}).Error()
+		return sourceErrorFormatFunc(e.Errors())
 	}
 	return s.Err.Error()
 }
@@ -190,9 +210,9 @@ func sourceErrorFormatFunc(es []error) string {
 		len(es), strings.Join(points, "\n\t"))
 }
 
-// listAll calls ListRepos on the given Source and collects the SourceResults
+// ListAll calls ListRepos on the given Source and collects the SourceResults
 // the Source sends over a channel into a slice of *types.Repo and a single error
-func listAll(ctx context.Context, src Source) ([]*types.Repo, error) {
+func ListAll(ctx context.Context, src Source) ([]*types.Repo, error) {
 	results := make(chan SourceResult)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -204,7 +224,7 @@ func listAll(ctx context.Context, src Source) ([]*types.Repo, error) {
 
 	var (
 		repos []*types.Repo
-		errs  *errors.MultiError
+		errs  error
 	)
 
 	for res := range results {
@@ -217,5 +237,35 @@ func listAll(ctx context.Context, src Source) ([]*types.Repo, error) {
 		repos = append(repos, res.Repo)
 	}
 
-	return repos, errs.ErrorOrNil()
+	return repos, errs
+}
+
+// searchRepositories calls SearchRepositories on the given DiscoverableSource and collects the SourceResults
+// the Source sends over a channel into a slice of *types.Repo and a single error
+func searchRepositories(ctx context.Context, src DiscoverableSource, query string, first int, excludeRepos []string) ([]*types.Repo, error) {
+	results := make(chan SourceResult)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go func() {
+		src.SearchRepositories(ctx, query, first, excludeRepos, results)
+		close(results)
+	}()
+
+	var (
+		repos []*types.Repo
+		errs  error
+	)
+
+	for res := range results {
+		if res.Err != nil {
+			for _, extSvc := range res.Source.ExternalServices() {
+				errs = errors.Append(errs, &SourceError{Err: res.Err, ExtSvc: extSvc})
+			}
+			continue
+		}
+		repos = append(repos, res.Repo)
+	}
+
+	return repos, errs
 }

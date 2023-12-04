@@ -1,0 +1,49 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "conversion",
+    srcs = [
+        "canonicalize.go",
+        "correlate.go",
+        "errors.go",
+        "group.go",
+        "prune.go",
+        "reader.go",
+        "state.go",
+        "types.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/codeintel/lsif/conversion/datastructures",
+        "//lib/codeintel/lsif/protocol/reader",
+        "//lib/codeintel/pathexistence",
+        "//lib/codeintel/precise",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "conversion_test",
+    timeout = "short",
+    srcs = [
+        "canonicalize_test.go",
+        "correlate_test.go",
+        "group_test.go",
+        "prune_test.go",
+    ],
+    # The testdata folders lives in our parent folder, which cannot be referenced directly.
+    # therefore, we have to create a filegroup with the correct visibility and reference
+    # it manually below.
+    data = ["//lib/codeintel/lsif/testdata:data"],
+    embed = [":conversion"],
+    deps = [
+        "//lib/codeintel/lsif/conversion/datastructures",
+        "//lib/codeintel/lsif/protocol",
+        "//lib/codeintel/lsif/protocol/reader",
+        "//lib/codeintel/precise",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

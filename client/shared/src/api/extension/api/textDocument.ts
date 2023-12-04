@@ -1,19 +1,21 @@
-import * as sourcegraph from 'sourcegraph'
+import type { TextDocument, Position as APIPosition, Range as APIRange } from 'sourcegraph'
 
 import { Position, Range } from '@sourcegraph/extension-api-classes'
+
+import type { TextDocument as PlainTextDocument } from '../../../codeintel/legacy-extensions/api'
 
 import { PrefixSumComputer } from './utils/prefixSumComputer'
 import { getWordAtText } from './utils/wordHelpers'
 
 /** @internal */
-export class ExtensionDocument implements sourcegraph.TextDocument {
+export class ExtensionDocument implements TextDocument {
     private _eol: string
     private _lines: string[]
     public uri: string
     public languageId: string
     public text: string | undefined
 
-    constructor(private model: Pick<sourcegraph.TextDocument, 'uri' | 'languageId' | 'text'>) {
+    constructor(private model: Pick<PlainTextDocument, 'uri' | 'languageId' | 'text'>) {
         this._eol = getEOL(model.text || '')
         this._lines = model.text !== undefined ? model.text.split(this._eol) : []
         this.uri = this.model.uri
@@ -21,7 +23,7 @@ export class ExtensionDocument implements sourcegraph.TextDocument {
         this.text = this.model.text
     }
 
-    public update({ text }: Pick<sourcegraph.TextDocument, 'text'>): void {
+    public update({ text }: Pick<PlainTextDocument, 'text'>): void {
         this.model = {
             ...this.model,
             text,
@@ -31,13 +33,13 @@ export class ExtensionDocument implements sourcegraph.TextDocument {
         this.text = text
     }
 
-    public offsetAt(position: sourcegraph.Position): number {
+    public offsetAt(position: APIPosition): number {
         this.throwIfNoModelText()
         position = this.validatePosition(position)
         return this.lineStarts.getAccumulatedValue(position.line - 1) + position.character
     }
 
-    public positionAt(offset: number): sourcegraph.Position {
+    public positionAt(offset: number): APIPosition {
         this.throwIfNoModelText()
         offset = Math.floor(offset)
         offset = Math.max(0, offset)
@@ -48,7 +50,7 @@ export class ExtensionDocument implements sourcegraph.TextDocument {
         return new Position(out.index, character)
     }
 
-    public validatePosition(position: sourcegraph.Position): sourcegraph.Position {
+    public validatePosition(position: APIPosition): APIPosition {
         this.throwIfNoModelText()
         if (!(position instanceof Position)) {
             throw new TypeError('invalid argument')
@@ -82,7 +84,7 @@ export class ExtensionDocument implements sourcegraph.TextDocument {
         return new Position(line, character)
     }
 
-    public validateRange(range: sourcegraph.Range): sourcegraph.Range {
+    public validateRange(range: APIRange): APIRange {
         this.throwIfNoModelText()
         if (!(range instanceof Range)) {
             throw new TypeError('invalid argument')
@@ -97,7 +99,7 @@ export class ExtensionDocument implements sourcegraph.TextDocument {
         return new Range(start.line, start.character, end.line, end.character)
     }
 
-    public getWordRangeAtPosition(position: sourcegraph.Position): sourcegraph.Range | undefined {
+    public getWordRangeAtPosition(position: APIPosition): APIRange | undefined {
         this.throwIfNoModelText()
         position = this.validatePosition(position)
         const wordAtText = getWordAtText(position.character, this._lines[position.line])
@@ -107,7 +109,7 @@ export class ExtensionDocument implements sourcegraph.TextDocument {
         return undefined
     }
 
-    public getText(range?: sourcegraph.Range): string | undefined {
+    public getText(range?: APIRange): string | undefined {
         this.throwIfNoModelText()
         range = range ? this.validateRange(range) : undefined
         if (!range) {

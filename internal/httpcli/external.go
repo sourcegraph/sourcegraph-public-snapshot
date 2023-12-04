@@ -1,13 +1,17 @@
 package httpcli
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"net/http"
 	"reflect"
 	"sync"
+	"sync/atomic"
 
-	"github.com/inconshreveable/log15"
+	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -22,6 +26,9 @@ var tlsExternalConfig struct {
 	sync.RWMutex
 	*schema.TlsExternal
 }
+
+var outboundRequestLogLimit atomic.Int32
+var redactOutboundRequestHeaders atomic.Bool
 
 // SetTLSExternalConfig is called by the conf package whenever TLSExternalConfig changes.
 // This is needed to avoid circular imports.
@@ -38,6 +45,28 @@ func TLSExternalConfig() *schema.TlsExternal {
 	return tlsExternalConfig.TlsExternal
 }
 
+// SetOutboundRequestLogLimit is called by the conf package whenever OutboundRequestLogLimit changes.
+// This is needed to avoid circular imports.
+func SetOutboundRequestLogLimit(i int32) {
+	outboundRequestLogLimit.Store(i)
+}
+
+// OutboundRequestLogLimit returns the current value of the global OutboundRequestLogLimit value.
+func OutboundRequestLogLimit() int32 {
+	return outboundRequestLogLimit.Load()
+}
+
+// SetRedactOutboundRequestHeaders is called by the conf package whenever the RedactOutboundRequestHeaders setting changes.
+// This is needed to avoid circular imports.
+func SetRedactOutboundRequestHeaders(b bool) {
+	redactOutboundRequestHeaders.Store(b)
+}
+
+// RedactOutboundRequestHeaders returns the current value of the global RedactOutboundRequestHeaders setting.
+func RedactOutboundRequestHeaders() bool {
+	return redactOutboundRequestHeaders.Load()
+}
+
 func (t *externalTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	t.mu.RLock()
 	config, effective := t.config, t.effective
@@ -46,13 +75,17 @@ func (t *externalTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	if current := TLSExternalConfig(); current == nil {
 		return t.base.RoundTrip(r)
 	} else if !reflect.DeepEqual(config, current) {
-		effective = t.update(current)
+		effective = t.update(r.Context(), current)
 	}
 
 	return effective.RoundTrip(r)
 }
 
-func (t *externalTransport) update(config *schema.TlsExternal) *http.Transport {
+func (t *externalTransport) update(ctx context.Context, config *schema.TlsExternal) *http.Transport {
+	// No function calls here use the context further
+	tr, _ := trace.New(ctx, "externalTransport.update")
+	defer tr.End()
+
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -72,11 +105,10 @@ func (t *externalTransport) update(config *schema.TlsExternal) *http.Transport {
 		if effective.TLSClientConfig.RootCAs == nil {
 			pool, err := x509.SystemCertPool() // safe to mutate, a clone is returned
 			if err != nil {
-				log15.Warn(
-					"httpcli external transport failed to load SystemCertPool. Communication with external HTTPS APIs may fail",
-					"error",
-					err,
-				)
+				tr.AddEvent("failed to load SystemCertPool",
+					trace.Error(err),
+					attribute.String("warning", "communication with external HTTPS APIs may fail"))
+
 				pool = x509.NewCertPool()
 			}
 			effective.TLSClientConfig.RootCAs = pool

@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`HoverOverlay actions and hover empty 1`] = `
+exports[`HoverOverlay > actions and hover empty 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -17,11 +17,14 @@ exports[`HoverOverlay actions and hover empty 1`] = `
         No hover information available.
       </small>
     </div>
+    <div
+      class="actionsContainer"
+    />
   </div>
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay actions and hover error 1`] = `
+exports[`HoverOverlay > actions and hover error 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -33,16 +36,21 @@ exports[`HoverOverlay actions and hover error 1`] = `
       data-testid="hover-overlay-contents"
     >
       <div
+        aria-live="polite"
         class="hoverError"
+        role="alert"
       >
         M2
       </div>
     </div>
+    <div
+      class="actionsContainer"
+    />
   </div>
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay actions and hover loading 1`] = `
+exports[`HoverOverlay > actions and hover loading 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -57,187 +65,22 @@ exports[`HoverOverlay actions and hover loading 1`] = `
         class="loaderRow"
       >
         <div
-          class="loadingSpinner"
-        />
-      </div>
-    </div>
-  </div>
-</DocumentFragment>
-`;
-
-exports[`HoverOverlay actions and hover present 1`] = `
-<DocumentFragment>
-  <div
-    class="card hoverOverlay"
-    data-testid="hover-overlay"
-    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
-  >
-    <div
-      class="hoverOverlayContents"
-      data-testid="hover-overlay-contents"
-    >
-      <span
-        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
-        data-testid="hover-overlay-content"
-      >
-        <p>
-          v
-        </p>
-        
-
-      </span>
-    </div>
-    <div
-      class="actions"
-    >
-      <div
-        class="actionsInner"
-      >
-        <a
-          class="test-action-item action test-tooltip-untitled"
-          href=""
-          role="button"
-          tabindex="0"
-        >
-            
-        </a>
-      </div>
-    </div>
-  </div>
-</DocumentFragment>
-`;
-
-exports[`HoverOverlay actions and hover undefined 1`] = `<DocumentFragment />`;
-
-exports[`HoverOverlay actions empty 1`] = `
-<DocumentFragment>
-  <div
-    class="card hoverOverlay"
-    data-testid="hover-overlay"
-    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
-  >
-    <div
-      class="hoverOverlayContents"
-      data-testid="hover-overlay-contents"
-    />
-  </div>
-</DocumentFragment>
-`;
-
-exports[`HoverOverlay actions error 1`] = `<DocumentFragment />`;
-
-exports[`HoverOverlay actions error, hover present 1`] = `
-<DocumentFragment>
-  <div
-    class="card hoverOverlay"
-    data-testid="hover-overlay"
-    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
-  >
-    <div
-      class="hoverOverlayContents"
-      data-testid="hover-overlay-contents"
-    >
-      <span
-        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
-        data-testid="hover-overlay-content"
-      >
-        <p>
-          v
-        </p>
-        
-
-      </span>
-    </div>
-  </div>
-</DocumentFragment>
-`;
-
-exports[`HoverOverlay actions loading 1`] = `
-<DocumentFragment>
-  <div
-    class="card hoverOverlay"
-    data-testid="hover-overlay"
-    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
-  >
-    <div
-      class="hoverOverlayContents"
-      data-testid="hover-overlay-contents"
-    />
-  </div>
-</DocumentFragment>
-`;
-
-exports[`HoverOverlay actions present 1`] = `
-<DocumentFragment>
-  <div
-    class="card hoverOverlay"
-    data-testid="hover-overlay"
-    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
-  >
-    <div
-      class="hoverOverlayContents"
-      data-testid="hover-overlay-contents"
-    />
-    <div
-      class="actions"
-    >
-      <div
-        class="actionsInner"
-      >
-        <a
-          class="test-action-item action test-tooltip-some-title"
-          href=""
-          role="button"
-          tabindex="0"
-        >
-           Some title 
-        </a>
-      </div>
-    </div>
-  </div>
-</DocumentFragment>
-`;
-
-exports[`HoverOverlay actions present, hover loading 1`] = `
-<DocumentFragment>
-  <div
-    class="card hoverOverlay"
-    data-testid="hover-overlay"
-    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
-  >
-    <div
-      class="hoverOverlayContents hoverOverlayContentsLoading"
-      data-testid="hover-overlay-contents"
-    >
-      <div
-        class="loaderRow"
-      >
-        <div
-          class="loadingSpinner"
+          aria-label="Loading"
+          aria-live="polite"
+          class="mdi-icon loadingSpinner"
+          data-loading-spinner="true"
+          role="img"
         />
       </div>
     </div>
     <div
-      class="actions"
-    >
-      <div
-        class="actionsInner"
-      >
-        <a
-          class="test-action-item action test-tooltip-untitled"
-          href=""
-          role="button"
-          tabindex="0"
-        >
-            
-        </a>
-      </div>
-    </div>
+      class="actionsContainer"
+    />
   </div>
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay actions, hover and alert present 1`] = `
+exports[`HoverOverlay > actions and hover present 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -255,68 +98,53 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
         <p>
           v
         </p>
-        
-
       </span>
     </div>
     <div
-      class="hoverOverlayAlerts"
+      class="actionsContainer"
     >
       <div
-        class="alert"
+        class="actions"
       >
-        <span
-          class="hoverOverlayContent hoverOverlayContent"
-          data-testid="hover-overlay-content"
-        >
-          <p>
-            Testing 
-            <code>
-              markdown
-            </code>
-             rendering.
-          </p>
-          
-
-        </span>
         <div
-          class="alertDismiss"
+          class="actionsInner"
         >
-          <a
-            class=""
-            href=""
-            role="button"
+          <button
+            class="test-action-item action test-tooltip-untitled"
+            type="button"
           >
-            <small>
-              Dismiss
-            </small>
-          </a>
+              
+          </button>
         </div>
       </div>
     </div>
-    <div
-      class="actions"
-    >
-      <div
-        class="actionsInner"
-      >
-        <a
-          class="test-action-item action test-tooltip-untitled"
-          href=""
-          role="button"
-          tabindex="0"
-        >
-            
-        </a>
-      </div>
-    </div>
   </div>
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay hover empty 1`] = `<DocumentFragment />`;
+exports[`HoverOverlay > actions and hover undefined 1`] = `<DocumentFragment />`;
 
-exports[`HoverOverlay hover error 1`] = `
+exports[`HoverOverlay > actions empty 1`] = `
+<DocumentFragment>
+  <div
+    class="card hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
+  >
+    <div
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
+    />
+    <div
+      class="actionsContainer"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`HoverOverlay > actions error 1`] = `<DocumentFragment />`;
+
+exports[`HoverOverlay > actions error, hover present 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -327,17 +155,23 @@ exports[`HoverOverlay hover error 1`] = `
       class="hoverOverlayContents"
       data-testid="hover-overlay-contents"
     >
-      <div
-        class="hoverError"
+      <span
+        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
+        data-testid="hover-overlay-content"
       >
-        M
-      </div>
+        <p>
+          v
+        </p>
+      </span>
     </div>
+    <div
+      class="actionsContainer"
+    />
   </div>
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay hover error, actions present 1`] = `
+exports[`HoverOverlay > actions loading 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -347,34 +181,48 @@ exports[`HoverOverlay hover error, actions present 1`] = `
     <div
       class="hoverOverlayContents"
       data-testid="hover-overlay-contents"
-    >
-      <div
-        class="hoverError"
-      >
-        M
-      </div>
-    </div>
+    />
     <div
-      class="actions"
+      class="actionsContainer"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`HoverOverlay > actions present 1`] = `
+<DocumentFragment>
+  <div
+    class="card hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
+  >
+    <div
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
+    />
+    <div
+      class="actionsContainer"
     >
       <div
-        class="actionsInner"
+        class="actions"
       >
-        <a
-          class="test-action-item action test-tooltip-untitled"
-          href=""
-          role="button"
-          tabindex="0"
+        <div
+          class="actionsInner"
         >
-            
-        </a>
+          <button
+            class="test-action-item action test-tooltip-some-title"
+            type="button"
+          >
+             Some title 
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay hover loading 1`] = `
+exports[`HoverOverlay > actions present, hover loading 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -389,15 +237,39 @@ exports[`HoverOverlay hover loading 1`] = `
         class="loaderRow"
       >
         <div
-          class="loadingSpinner"
+          aria-label="Loading"
+          aria-live="polite"
+          class="mdi-icon loadingSpinner"
+          data-loading-spinner="true"
+          role="img"
         />
+      </div>
+    </div>
+    <div
+      class="actionsContainer"
+    >
+      <div
+        class="actions"
+      >
+        <div
+          class="actionsInner"
+        >
+          <button
+            class="test-action-item action test-tooltip-untitled"
+            type="button"
+          >
+              
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay hover present 1`] = `
+exports[`HoverOverlay > hover empty 1`] = `<DocumentFragment />`;
+
+exports[`HoverOverlay > hover error 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -408,22 +280,63 @@ exports[`HoverOverlay hover present 1`] = `
       class="hoverOverlayContents"
       data-testid="hover-overlay-contents"
     >
-      <span
-        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
-        data-testid="hover-overlay-content"
+      <div
+        aria-live="polite"
+        class="hoverError"
+        role="alert"
       >
-        <p>
-          v
-        </p>
-        
+        M
+      </div>
+    </div>
+    <div
+      class="actionsContainer"
+    />
+  </div>
+</DocumentFragment>
+`;
 
-      </span>
+exports[`HoverOverlay > hover error, actions present 1`] = `
+<DocumentFragment>
+  <div
+    class="card hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
+  >
+    <div
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
+    >
+      <div
+        aria-live="polite"
+        class="hoverError"
+        role="alert"
+      >
+        M
+      </div>
+    </div>
+    <div
+      class="actionsContainer"
+    >
+      <div
+        class="actions"
+      >
+        <div
+          class="actionsInner"
+        >
+          <button
+            class="test-action-item action test-tooltip-untitled"
+            type="button"
+          >
+              
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay hover present, actions loading 1`] = `
+exports[`HoverOverlay > hover loading 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -431,25 +344,29 @@ exports[`HoverOverlay hover present, actions loading 1`] = `
     style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
   >
     <div
-      class="hoverOverlayContents"
+      class="hoverOverlayContents hoverOverlayContentsLoading"
       data-testid="hover-overlay-contents"
     >
-      <span
-        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
-        data-testid="hover-overlay-content"
+      <div
+        class="loaderRow"
       >
-        <p>
-          v
-        </p>
-        
-
-      </span>
+        <div
+          aria-label="Loading"
+          aria-live="polite"
+          class="mdi-icon loadingSpinner"
+          data-loading-spinner="true"
+          role="img"
+        />
+      </div>
     </div>
+    <div
+      class="actionsContainer"
+    />
   </div>
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay multiple hovers present 1`] = `
+exports[`HoverOverlay > hover present 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -467,8 +384,60 @@ exports[`HoverOverlay multiple hovers present 1`] = `
         <p>
           v
         </p>
-        
+      </span>
+    </div>
+    <div
+      class="actionsContainer"
+    />
+  </div>
+</DocumentFragment>
+`;
 
+exports[`HoverOverlay > hover present, actions loading 1`] = `
+<DocumentFragment>
+  <div
+    class="card hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
+  >
+    <div
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
+    >
+      <span
+        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
+        data-testid="hover-overlay-content"
+      >
+        <p>
+          v
+        </p>
+      </span>
+    </div>
+    <div
+      class="actionsContainer"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`HoverOverlay > multiple hovers present 1`] = `
+<DocumentFragment>
+  <div
+    class="card hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
+  >
+    <div
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
+    >
+      <span
+        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
+        data-testid="hover-overlay-content"
+      >
+        <p>
+          v
+        </p>
       </span>
       <hr />
       <span
@@ -478,10 +447,11 @@ exports[`HoverOverlay multiple hovers present 1`] = `
         <p>
           v2
         </p>
-        
-
       </span>
     </div>
+    <div
+      class="actionsContainer"
+    />
   </div>
 </DocumentFragment>
 `;

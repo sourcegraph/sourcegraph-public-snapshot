@@ -1,25 +1,19 @@
-import * as H from 'history'
 import React, { useCallback } from 'react'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { FileDiffConnection } from '@sourcegraph/web/src/components/diff/FileDiffConnection'
-import { FileDiffNode } from '@sourcegraph/web/src/components/diff/FileDiffNode'
-import { FilteredConnectionQueryArguments } from '@sourcegraph/web/src/components/FilteredConnection'
-
-import { Scalars } from '../../../../graphql-operations'
+import { FileDiffNode, type FileDiffNodeProps } from '../../../../components/diff/FileDiffNode'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
+import type { Scalars, FileDiffFields } from '../../../../graphql-operations'
 
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
 
 export const ChangesetSpecFileDiffConnection: React.FunctionComponent<
-    {
+    React.PropsWithChildren<{
         spec: Scalars['ID']
-        history: H.History
-        location: H.Location
 
         /** Used for testing. **/
         queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
-    } & ThemeProps
-> = ({ spec, history, location, isLightTheme, queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs }) => {
+    }>
+> = ({ spec, queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs }) => {
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(
         (args: FilteredConnectionQueryArguments) =>
@@ -31,24 +25,20 @@ export const ChangesetSpecFileDiffConnection: React.FunctionComponent<
         [spec, queryChangesetSpecFileDiffs]
     )
     return (
-        <FileDiffConnection
+        <FilteredConnection<FileDiffFields, Omit<FileDiffNodeProps, 'node'>>
             listClassName="list-group list-group-flush"
             noun="changed file"
             pluralNoun="changed files"
             queryConnection={queryFileDiffs}
             nodeComponent={FileDiffNode}
             nodeComponentProps={{
-                history,
-                location,
-                isLightTheme,
                 persistLines: true,
                 lineNumbers: true,
             }}
             defaultFirst={15}
             hideSearch={true}
             noSummaryIfAllNodesVisible={true}
-            history={history}
-            location={location}
+            withCenteredSummary={true}
             useURLQuery={false}
             cursorPaging={true}
         />

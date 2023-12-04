@@ -1,13 +1,13 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"hash/crc32"
-	"io"
+	"io/fs"
 	"log"
 	"math"
+	"math/rand"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -17,34 +17,37 @@ import (
 	"syscall"
 	"time"
 
+	_ "embed"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Options are configurables for Combine.
 type Options struct {
-	// Limit is the maximum number of commits we import in total. Limit is
-	// useful to specify when creating a new combined repo.
-	Limit int
+	Logger *log.Logger
 
 	// LimitRemote is the maximum number of commits we import from each remote. The
 	// memory usage of Combine is based on the number of unseen commits per
 	// remote. LimitRemote is useful to specify when importing a large new upstream.
 	LimitRemote int
 
-	Logger *log.Logger
+	// GCRatio defines a 1/n chance that we run 'git gc --aggressive' before a
+	// a git-combine pass while in daemon mode. If GCRatio is 0, we'll never run 'git gc --aggressive'.
+	//
+	// 'git combine --aggressive' should be used to maintain repository health with large repos, as the
+	// normal 'git gc' was found to be insufficient.
+	GCRatio uint
 }
 
 func (o *Options) SetDefaults() {
-	if o.Limit == 0 {
-		o.Limit = math.MaxInt
-	}
-
 	if o.LimitRemote == 0 {
-		o.LimitRemote = o.Limit
+		o.LimitRemote = math.MaxInt
 	}
 
 	if o.Logger == nil {
@@ -52,30 +55,14 @@ func (o *Options) SetDefaults() {
 	}
 }
 
-// how many entries to keep track of per repo when deciding if we have seen a
-// commit before.
-const recentRootTreesMaxEntries = 1000
-
 // Combine opens the git repository at path and transforms commits from all
 // non-origin remotes into commits onto HEAD.
 func Combine(path string, opt Options) error {
 	opt.SetDefaults()
 
-	log := opt.Logger
+	logger := opt.Logger
 
 	r, err := git.PlainOpen(path)
-	if err != nil {
-		return err
-	}
-
-	parentHash := getHeadHash(r)
-
-	recentRootTrees, err := getRecentRootTrees(r, recentRootTreesMaxEntries)
-	if err != nil {
-		return err
-	}
-
-	readmeHash, err := readmeObject(r.Storer)
 	if err != nil {
 		return err
 	}
@@ -85,103 +72,90 @@ func Combine(path string, opt Options) error {
 		return err
 	}
 
-	type dirCommit struct {
-		*object.Commit
-
-		// dir is the name of the directory we will import Commit into.
-		dir string
+	headRef, _ := r.Head()
+	var head *object.Commit
+	if headRef != nil {
+		head, err = r.CommitObject(headRef.Hash())
+		if err != nil {
+			return err
+		}
 	}
 
-	rootTree := map[string]plumbing.Hash{}
-	var commits []*dirCommit
+	logger.Println("Determining the tree hashes of subdirectories...")
+	remoteToTree := map[string]plumbing.Hash{}
+	if head != nil {
+		tree, err := head.Tree()
+		if err != nil {
+			return err
+		}
+		for _, entry := range tree.Entries {
+			remoteToTree[entry.Name] = entry.Hash
+		}
+	}
+
+	logger.Println("Collecting new commits...")
+	lastLog := time.Now()
+	remoteToCommits := map[string][]*object.Commit{}
 	for remote := range conf.Remotes {
 		if remote == "origin" {
 			continue
 		}
 
-		// we don't know what the remote HEAD is, so we hardcode the usual
-		// options and test if they exist.
-		var ref *plumbing.Reference
-		for _, name := range []string{"main", "master", "trunk", "development"} {
-			cand, err := storer.ResolveReference(r.Storer, plumbing.NewRemoteReferenceName(remote, name))
-			if err == nil {
-				ref = cand
-				break
-			}
-		}
-		if ref == nil {
-			log.Printf("ignoring remote %q since can't find HEAD branch", remote)
-			continue
-		}
-
-		iter, err := r.Log(&git.LogOptions{
-			From: ref.Hash(),
-		})
+		commit, err := remoteHead(r, remote)
 		if err != nil {
 			return err
 		}
+		if commit == nil {
+			// No known default branch on this remote, ignore it.
+			continue
+		}
 
-		seen := recentRootTrees[remote]
+		for depth := 0; depth < opt.LimitRemote; depth++ {
+			if time.Since(lastLog) > time.Second {
+				logger.Printf("Collecting new commits... (remotes %s, commit depth %d)", remote, depth)
+				lastLog = time.Now()
+			}
 
-		for i := 0; i < opt.LimitRemote; i++ {
-			commit, err := iter.Next()
-			if err == io.EOF {
+			if commit.TreeHash == remoteToTree[remote] {
+				break
+			}
+
+			remoteToCommits[remote] = append(remoteToCommits[remote], commit)
+
+			if commit.NumParents() == 0 {
+				remoteToTree[remote] = commit.TreeHash
+				break
+			}
+			nextCommit, err := commit.Parent(0)
+			if err == plumbing.ErrObjectNotFound {
+				remoteToTree[remote] = commit.TreeHash
 				break
 			} else if err != nil {
 				return err
 			}
-
-			if seen.Contains(commit.TreeHash) {
-				rootTree[remote] = commit.TreeHash
-				break
-			}
-
-			commits = append(commits, &dirCommit{
-				dir:    remote,
-				Commit: commit,
-			})
+			commit = nextCommit
 		}
 	}
 
-	sort.Slice(commits, func(i, j int) bool {
-		return commits[i].Committer.When.Before(commits[j].Committer.When)
-	})
+	applyCommit := func(remote string, commit *object.Commit) error {
+		remoteToTree[remote] = commit.TreeHash
 
-	if len(commits) > opt.Limit {
-		// We only take the last Limit commits. But we want to ensure we are
-		// using the latest treehash for each dir, so we need to walk over the
-		// commits we are cutting out first.
-		cut := len(commits) - opt.Limit
-		for _, commit := range commits[:cut] {
-			rootTree[commit.dir] = commit.TreeHash
-		}
-		commits = commits[cut:]
-	}
-
-	for i, commit := range commits {
-		// This is the important line, "/dir" will now be the code (tree) for
-		// this commit. We don't touch the other entries, so the other
-		// directories will have the same code as the previous commit we
-		// created.
-		rootTree[commit.dir] = commit.TreeHash
-
+		// Add tree entries for each remote in matching directories.
 		var entries []object.TreeEntry
-		for dir, hash := range rootTree {
+		for thisRemote, tree := range remoteToTree {
 			entries = append(entries, object.TreeEntry{
-				Name: dir,
+				Name: thisRemote,
 				Mode: filemode.Dir,
-				Hash: hash,
+				Hash: tree,
 			})
 		}
-		entries = append(entries, object.TreeEntry{
-			Name: "README.md",
-			Mode: filemode.Regular,
-			Hash: readmeHash,
-		})
+
+		// TODO is this necessary?
 		sort.Slice(entries, func(i, j int) bool {
 			return entries[i].Name < entries[j].Name
 		})
 
+		// Construct the root tree.
 		treeHash, err := storeObject(r.Storer, &object.Tree{
 			Entries: entries,
 		})
@@ -198,125 +172,75 @@ func Combine(path string, opt Options) error {
 				Email: "no-reply@sourcegraph.com",
 				When:  commit.Committer.When,
 			},
-			Message:  sanitizeMessage(commit.dir, commit.Commit),
+			Message:  sanitizeMessage(remote, commit),
 			TreeHash: treeHash,
 		}
 
 		// We just create a linear history. parentHash is zero if this is the
 		// first commit to HEAD.
-		if !parentHash.IsZero() {
-			newCommit.ParentHashes = []plumbing.Hash{parentHash}
+		if head != nil {
+			newCommit.ParentHashes = []plumbing.Hash{head.Hash}
 		}
 
-		parentHash, err = storeObject(r.Storer, newCommit)
+		headHash, err := storeObject(r.Storer, newCommit)
 		if err != nil {
 			return err
 		}
 
-		if err := setHEAD(r.Storer, parentHash); err != nil {
+		if err := setHEAD(r.Storer, headHash); err != nil {
 			return err
 		}
 
-		log.Printf("%d/%d created %s from %s %s", i+1, len(commits), parentHash, commit.Hash, commitTitle(newCommit))
-	}
-
-	return nil
-}
-
-// getHeadHash returns the hash for HEAD. If that fails plumbing.ZeroHash is
-// returned.
-func getHeadHash(r *git.Repository) plumbing.Hash {
-	head, err := r.Head()
-	if err != nil {
-		return plumbing.ZeroHash
-	}
-	return head.Hash()
-}
-
-type hashSet map[plumbing.Hash]struct{}
-
-func (h hashSet) Add(k plumbing.Hash) {
-	h[k] = struct{}{}
-}
-
-func (h hashSet) Contains(k plumbing.Hash) bool {
-	if h == nil {
-		return false
-	}
-	_, ok := h[k]
-	return ok
-}
-
-func getRecentRootTrees(r *git.Repository, maxEntries int) (map[string]hashSet, error) {
-	dirs := map[string]hashSet{}
-
-	// Ensure HEAD exists so we fallback to empty behaviour on empty branch
-	// instead of error.
-	_, err := r.Head()
-	if err != nil {
-		return dirs, nil
-	}
-
-	iter, err := r.Log(&git.LogOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	for i := 0; i < maxEntries; i++ {
-		commit, err := iter.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, err
+		headRef, _ := r.Head()
+		if headRef != nil {
+			head, err = r.CommitObject(headRef.Hash())
+			if err != nil {
+				return err
+			}
 		}
 
-		tree, err := commit.Tree()
-		if err != nil {
-			return nil, err
+		return nil
+	}
+
+	logger.Println("Applying new commits...")
+	total := 0
+	for _, commits := range remoteToCommits {
+		total += len(commits)
+	}
+	for height := 0; len(remoteToCommits) > 0; {
+		// Loop over keys so we can delete entries from the map.
+		remotes := []string{}
+		for remote := range remoteToCommits {
+			remotes = append(remotes, remote)
 		}
 
-		for _, entry := range tree.Entries {
-			if entry.Mode == filemode.Dir {
-				seen, ok := dirs[entry.Name]
-				if !ok {
-					seen = make(hashSet)
-					dirs[entry.Name] = seen
-				}
-				seen.Add(entry.Hash)
+		// Pop 1 commit per remote and put each tree in a directory by the same name as the remote.
+		for _, remote := range remotes {
+			deepestCommit := remoteToCommits[remote][len(remoteToCommits[remote])-1]
+
+			err = applyCommit(remote, deepestCommit)
+			if err != nil {
+				return err
+			}
+			height++
+
+			// Pop the deepest commit.
+			remoteToCommits[remote] = remoteToCommits[remote][:len(remoteToCommits[remote])-1]
+
+			// Delete this remote once we applied all of its new commits.
+			if len(remoteToCommits[remote]) == 0 {
+				delete(remoteToCommits, remote)
+			}
+
+			if time.Since(lastLog) > time.Second {
+				progress := float64(height) / float64(total)
+				logger.Printf("%.2f%% done (applied %d commits out of %d total)", progress*100, height+1, total)
+				lastLog = time.Now()
 			}
 		}
 	}
 
-	return dirs, nil
-}
-
-func readmeObject(storer storer.EncodedObjectStorer) (plumbing.Hash, error) {
-	readme := []byte(`# megarepo
-
-This is a synthetic monorepo created by continuously applying commits from upstream projects into respective sub directories.
-
-See https://github.com/sourcegraph/sourcegraph/tree/main/internal/cmd/git-combine
-`)
-	obj := storer.NewEncodedObject()
-	obj.SetType(plumbing.BlobObject)
-	obj.SetSize(int64(len(readme)))
-
-	w, err := obj.Writer()
-	if err != nil {
-		return plumbing.ZeroHash, err
-	}
-
-	if _, err := w.Write(readme); err != nil {
-		_ = w.Close()
-		return plumbing.ZeroHash, err
-	}
-
-	if err := w.Close(); err != nil {
-		return plumbing.ZeroHash, err
-	}
-
-	return storer.SetEncodedObject(obj)
+	return nil
 }
 
 func storeObject(storer storer.EncodedObjectStorer, obj interface {
@@ -421,24 +345,21 @@ func getGitDir() (string, error) {
 	return dir, nil
 }
 
-func runGit(dir string, args ...string) error {
-	// they should be _much_ faster than this, but we set this incase git gets blocked.
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-	defer cancel()
-
-	cmd := exec.CommandContext(ctx, "git", args...)
+func runCommand(dir, command string, args ...string) error {
+	cmd := exec.Command(command, args...)
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	start := time.Now()
-	log.Printf("starting git %s", strings.Join(args, " "))
+	log.Printf("starting %q %s", command, strings.Join(args, " "))
 	err := cmd.Run()
-	log.Printf("finished git in %s", time.Since(start))
+	log.Printf("finished %q in %s", command, time.Since(start))
+
 	return err
 }
 
-func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Options) error {
+func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 	isDone := func() bool {
 		select {
 		case <-done:
@@ -450,16 +371,37 @@ func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Opt
 
 	opt.SetDefaults()
 
+	err := cleanupStaleLockFiles(dir, opt.Logger)
+	if err != nil {
+		return errors.Wrap(err, "removing stale git lock files")
+	}
+
+	err = trackDefaultBranches(dir)
+	if err != nil {
+		return errors.Wrap(err, "ensuring that remote refspecs point to default branches")
+	}
+
 	for {
 		// convenient way to stop the daemon to do manual operations like add
 		// more upstreams.
 		if b, err := os.ReadFile(filepath.Join(dir, "PAUSE")); err == nil {
 			opt.Logger.Printf("PAUSE file present: %s", string(b))
-			<-ticker
+			select {
+			case <-time.After(time.Minute):
+			case <-done:
+				return nil
+			}
 			continue
 		}
 
-		if err := runGit(dir, "fetch", "--all", "--no-tags"); err != nil {
+		if opt.GCRatio > 0 && rand.Intn(int(opt.GCRatio)) == 0 {
+			opt.Logger.Printf("running garbage collection to maintain optimum repository health")
+			if err := runCommand(dir, "git", "gc", "--aggressive"); err != nil {
+				return err
+			}
+		}
+
+		if err := runCommand(dir, "git", "fetch", "--all", "--no-tags"); err != nil {
 			return err
 		}
 
@@ -479,12 +421,12 @@ func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Opt
 			return err
 		} else if !hasOrigin {
 			opt.Logger.Printf("skipping push since remote origin is missing")
-		} else if err := runGit(dir, "push", "origin"); err != nil {
+		} else if err := runCommand(dir, "git", "push", "origin"); err != nil {
 			return err
 		}
 
 		select {
-		case <-ticker:
+		case <-time.After(time.Minute):
 		case <-done:
 			return nil
 		}
@@ -494,13 +436,13 @@ func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Opt
 func main() {
 	daemon := flag.Bool("daemon", false, "run in daemon mode. This mode loops on fetch, combine, push.")
 	limitRemote := flag.Int("limit-remote", 0, "limits the number of commits imported from each remote. If 0 there is no limit. Used to reduce memory usage when importing new large remotes.")
-	limit := flag.Int("limit", 0, "limits the number of commits imported in total. If 0 there is no limit. Used to reduce memory usage when importing new large remotes.")
+	gcRatio := flag.Uint("gc-ratio", 24*60*3, "(only in daemon mode) 1/n chance of running an aggressive garbage collection job before a git-combine job. If 0, aggressive garbage collection is disabled. Defaults to running aggressive garbage collection once every 3 days.")
 
 	flag.Parse()
 
 	opt := Options{
-		Limit:       *limit,
 		LimitRemote: *limitRemote,
+		GCRatio:     *gcRatio,
 	}
 
 	gitDir, err := getGitDir()
@@ -509,7 +451,6 @@ func main() {
 	}
 
 	if *daemon {
-		ticker := time.NewTicker(time.Minute)
 		done := make(chan struct{}, 1)
 
 		go func() {
@@ -519,7 +460,7 @@ func main() {
 			done <- struct{}{}
 		}()
 
-		err := doDaemon(gitDir, ticker.C, done, opt)
+		err := doDaemon(gitDir, done, opt)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -530,4 +471,114 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+// cleanupStaleLockFiles removes any "stale" Git lock files inside gitDir that might have been left behind
+// by a crashed git-combine process.
+func cleanupStaleLockFiles(gitDir string, logger *log.Logger) error {
+	if logger == nil {
+		logger = log.Default()
+	}
+
+	var lockFiles []string
+
+	// add "well-known" lock files
+	for _, f := range []string{
+		"gc.pid.lock", // created when git starts a garbage collection run
+		"index.lock",  // created when running "git add" / "git commit"
+
+		// from cmd/gitserver/internal/cleanup.go, see
+		// https://github.com/sourcegraph/sourcegraph/blob/55d83e8111d4dfea480ad94813e07d58068fec9c/cmd/gitserver/internal/cleanup.go#L325-L359
+		"config.lock",
+		"packed-refs.lock",
+	} {
+		lockFiles = append(lockFiles, filepath.Join(gitDir, f))
+	}
+
+	// from cmd/gitserver/internal/cleanup.go, see
+	// https://github.com/sourcegraph/sourcegraph/blob/55d83e8111d4dfea480ad94813e07d58068fec9c/cmd/gitserver/internal/cleanup.go#L325-L359
+	lockFiles = append(lockFiles, filepath.Join(gitDir, "objects", "info", "commit-graph.lock"))
+
+	refsDir := filepath.Join(gitDir, "refs")
+
+	// discover lock files that look like refs/remotes/origin/main.lock
+	err := filepath.WalkDir(refsDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() || !strings.HasSuffix(path, ".lock") {
+			return nil
+		}
+
+		lockFiles = append(lockFiles, path)
+		return nil
+	})
+
+	if err != nil {
+		return errors.Wrapf(err, "finding stale lockfiles in %q", refsDir)
+	}
+
+	// remove all stale lock files
+	for _, f := range lockFiles {
+		err := os.Remove(f)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				continue
+			}
+
+			return errors.Wrapf(err, "removing stale lock file %q", f)
+		}
+
+		logger.Printf("removed stale lock file %q", f)
+	}
+
+	return nil
+}
+
+// remoteHead returns the HEAD commit for the given remote.
+func remoteHead(r *git.Repository, remote string) (*object.Commit, error) {
+	// We don't know what the remote HEAD is, so we hardcode the usual options and test if they exist.
+	commonDefaultBranches := []string{"main", "master", "trunk", "development"}
+	for _, name := range commonDefaultBranches {
+		ref, err := storer.ResolveReference(r.Storer, plumbing.NewRemoteReferenceName(remote, name))
+		if err == nil {
+			return r.CommitObject(ref.Hash())
+		}
+	}
+
+	log.Printf("ignoring remote %q because it doesn't have any of the common default branches %v", remote, commonDefaultBranches)
+	return nil, nil
+}
+
+//go:embed default-branch.sh
+var defaultBranchScript string
+
+// trackDefaultBranches ensures that the refspec for each remote points to
+// the current default branch.
+func trackDefaultBranches(dir string) error {
+	f, err := os.CreateTemp("", "default-branch-*.sh")
+	if err != nil {
+		return errors.Wrap(err, "creating temp file")
+	}
+
+	defer os.Remove(f.Name())
+	defer f.Close()
+
+	_, err = f.WriteString(defaultBranchScript)
+	if err != nil {
+		return errors.Wrap(err, "writing default branch script")
+	}
+
+	err = f.Close()
+	if err != nil {
+		return errors.Wrap(err, "closing temp file")
+	}
+
+	err = runCommand(dir, "bash", f.Name())
+	if err != nil {
+		return errors.Wrap(err, "while running bash script")
+	}
+
+	return nil
 }

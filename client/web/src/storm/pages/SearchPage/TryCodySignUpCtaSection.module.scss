@@ -1,0 +1,69 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.container {
+    max-width: 50rem;
+    gap: 2rem;
+
+    @media (--sm-breakpoint-down) {
+        flex-wrap: wrap-reverse;
+        justify-content: center;
+    }
+}
+
+h2 {
+    font-style: normal;
+    font-weight: 600;
+}
+
+.cody-illustration {
+    /* Auto layout */
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0;
+    gap: 0.75rem;
+
+    /* Inside auto layout */
+    flex: none;
+    flex-grow: 0;
+}
+
+.cody-conversations {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0 0.75rem;
+    gap: 0.75rem;
+    margin: 1rem;
+}
+
+.cody-conversation {
+    border: 0.125 solid var(--border-color);
+    padding: 0.25rem 1rem;
+    border-radius: 0.25rem 0.25rem 0.25rem 0;
+}
+
+.card {
+    background-color: var(--color-bg-1);
+}
+
+.vscode-icon {
+    color: var(--primary);
+}
+
+.experimental-badge {
+    --badge-base: transparent;
+    --badge-light: var(--secondary-2);
+    --badge-dark: var(--secondary-2);
+    --badge-text: var(--text-muted);
+    --badge-border: 1px solid var(--secondary);
+}
+
+.list {
+    list-style: inside;
+}
+
+@media screen and (--lg-breakpoint-down) {
+    .cody-illustration {
+        order: 1;
+    }
+}

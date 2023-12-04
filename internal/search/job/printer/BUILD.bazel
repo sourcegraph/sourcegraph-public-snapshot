@@ -1,0 +1,36 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "printer",
+    srcs = [
+        "encoder.go",
+        "json.go",
+        "mermaid.go",
+        "sexp.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/job/printer",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/search/job",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "printer_test",
+    timeout = "short",
+    srcs = [
+        "json_test.go",
+        "mermaid_test.go",
+        "printer_test.go",
+        "sexp_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":printer"],
+    deps = [
+        "//internal/search/job",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)

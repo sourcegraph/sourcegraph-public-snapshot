@@ -1,0 +1,253 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Commit Page > Split view, version 2017.09-r1 > line number 3 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "​import (",
+  "selector": "TR:nth-child(3) > TD:nth-child(5)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Commit Page > Split view, version 2017.09-r1 > line number 3 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "​import (",
+  "selector": "TR:nth-child(3) > TD:nth-child(5)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Commit Page > Split view, version 2017.09-r1 > line number 7 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "​func log() {",
+  "selector": "TR:nth-child(7) > TD.new.new-full:nth-child(5)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Commit Page > Split view, version 2017.09-r1 > line number 7 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "​func log() {",
+  "selector": "TR:nth-child(7) > TD.new.new-full:nth-child(5)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Commit Page > Split view, version 2017.09-r1 > line number 10 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "fmt.Println(\\"Debug\\")",
+  "selector": "TR:nth-child(15) > TD.old:nth-child(2)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Commit Page > Split view, version 2017.09-r1 > line number 10 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "fmt.Println(\\"Debug\\")",
+  "selector": "TR:nth-child(15) > TD.old:nth-child(2)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Commit Page > Unified view, version 2017.09-r1 > line number 3 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "import (",
+  "selector": "TR:nth-child(3) > TD.right:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Commit Page > Unified view, version 2017.09-r1 > line number 3 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "import (",
+  "selector": "TR:nth-child(3) > TD.right:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Commit Page > Unified view, version 2017.09-r1 > line number 7 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "func log() {",
+  "selector": "TR:nth-child(7) > TD.right.new:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Commit Page > Unified view, version 2017.09-r1 > line number 7 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "func log() {",
+  "selector": "TR:nth-child(7) > TD.right.new:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Commit Page > Unified view, version 2017.09-r1 > line number 10 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "fmt.Println(\\"Debug\\")",
+  "selector": "TR:nth-child(15) > TD.left.old:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Commit Page > Unified view, version 2017.09-r1 > line number 10 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "fmt.Println(\\"Debug\\")",
+  "selector": "TR:nth-child(15) > TD.left.old:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Split view, version 2017.09-r1 > line number 9 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "​    Println(\\"hello world\\")",
+  "selector": "TR:nth-child(9) > TD:nth-child(5)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Split view, version 2017.09-r1 > line number 9 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "​    Println(\\"hello world\\")",
+  "selector": "TR:nth-child(9) > TD:nth-child(5)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Split view, version 2017.09-r1 > line number 10 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "​  fmt.Println(\\"Debug\\")",
+  "selector": "TR:nth-child(10) > TD.new.new-full:nth-child(5)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Split view, version 2017.09-r1 > line number 10 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "​  fmt.Println(\\"Debug\\")",
+  "selector": "TR:nth-child(10) > TD.new.new-full:nth-child(5)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Split view, version 2019.21.0-r25 > line number 29 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "resp := &Response{ID: req.ID}",
+  "selector": "TR:nth-child(5) > TD.annotated",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Split view, version 2019.21.0-r25 > line number 29 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "resp := &Response{ID: req.ID}",
+  "selector": "TR:nth-child(5) > TD.annotated",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Split view, version 2019.21.0-r25 > line number 34 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "if e, ok := err.(*Error); ok {",
+  "selector": "TR:nth-child(10) > TD.old.old-full.annotated:nth-child(2)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Split view, version 2019.21.0-r25 > line number 34 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "if e, ok := err.(*Error); ok {",
+  "selector": "TR:nth-child(10) > TD.old.old-full.annotated:nth-child(2)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Split view, version 2019.21.0-r25 > line number 64 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "func randoasfasfafsm_1(size int) error {",
+  "selector": "TR:nth-child(34) > TD.new.new-full.annotated:nth-child(5)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Split view, version 2019.21.0-r25 > line number 64 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "func randoasfasfafsm_1(size int) error {",
+  "selector": "TR:nth-child(34) > TD.new.new-full.annotated:nth-child(5)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Unified view, version 2017.09-r1 > line number 9 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "Println(\\"hello world\\")",
+  "selector": "TR:nth-child(9) > TD.right:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Unified view, version 2017.09-r1 > line number 9 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "Println(\\"hello world\\")",
+  "selector": "TR:nth-child(9) > TD.right:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Unified view, version 2017.09-r1 > line number 10 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "fmt.Println(\\"Debug\\")",
+  "selector": "TR:nth-child(10) > TD.right.new:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Unified view, version 2017.09-r1 > line number 10 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "fmt.Println(\\"Debug\\")",
+  "selector": "TR:nth-child(10) > TD.right.new:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Unified view, version 2019.21.0-r25 > line number 29 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "resp := &Response{ID: req.ID}",
+  "selector": "TR:nth-child(5) > TD.right.annotated",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Unified view, version 2019.21.0-r25 > line number 29 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "resp := &Response{ID: req.ID}",
+  "selector": "TR:nth-child(5) > TD.right.annotated",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Unified view, version 2019.21.0-r25 > line number 34 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "-     if e, ok := err.(*Error); ok {",
+  "selector": "TR:nth-child(10) > TD.left.old.old-full:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Unified view, version 2019.21.0-r25 > line number 34 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "-     if e, ok := err.(*Error); ok {",
+  "selector": "TR:nth-child(10) > TD.left.old.old-full:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Unified view, version 2019.21.0-r25 > line number 64 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "+ func randoasfasfafsm_1(size int) error {",
+  "selector": "TR:nth-child(34) > TD.right.new.new-full:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffDOMFunctions > Differential Page > Unified view, version 2019.21.0-r25 > line number 64 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "+ func randoasfasfafsm_1(size int) error {",
+  "selector": "TR:nth-child(34) > TD.right.new.new-full:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions > diffusionDOMFns > line number 1 > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "​package main",
+  "selector": "TR:nth-child(1) > TD",
+}
+`;
+
+exports[`Phabricator DOM functions > diffusionDOMFns > line number 1 > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "​package main",
+  "selector": "TR:nth-child(1) > TD",
+}
+`;
+
+exports[`Phabricator DOM functions > diffusionDOMFns > line number 10 > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "​}",
+  "selector": "TR:nth-child(10) > TD",
+}
+`;
+
+exports[`Phabricator DOM functions > diffusionDOMFns > line number 10 > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "​}",
+  "selector": "TR:nth-child(10) > TD",
+}
+`;

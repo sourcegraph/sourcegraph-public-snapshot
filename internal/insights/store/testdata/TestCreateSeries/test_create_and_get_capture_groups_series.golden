@@ -1,0 +1,17 @@
+[]types.InsightSeries{{
+	ID:                         1,
+	SeriesID:                   "capture-group-1",
+	Query:                      "well hello there",
+	CreatedAt:                  time.Time{ext: 63755427600},
+	OldestHistoricalAt:         time.Time{ext: 63723891600},
+	LastRecordedAt:             time.Time{ext: 63723891600},
+	NextRecordingAfter:         time.Time{ext: 63755427600},
+	LastSnapshotAt:             time.Time{ext: 63755427600},
+	NextSnapshotAfter:          time.Time{ext: 63755427600},
+	Enabled:                    true,
+	SampleIntervalUnit:         "MONTH",
+	GeneratedFromCaptureGroups: true,
+	GenerationMethod:           types.GenerationMethod("search"),
+	SupportsAugmentation:       true,
+	RepositoryCriteria:         valast.Addr("repo:a").(*string),
+}}

@@ -1,9 +1,6 @@
 package monitoring
 
 import (
-	"strings"
-	"unicode"
-
 	"github.com/grafana-tools/sdk"
 )
 
@@ -47,6 +44,9 @@ const (
 
 	// Seconds for representing time.
 	Seconds UnitType = "s"
+
+	// Minutes for representing time.
+	Minutes UnitType = "m"
 
 	// Percentage in the range of 0-100.
 	Percentage UnitType = "percent"
@@ -95,23 +95,4 @@ func observablePanelID(groupIndex, rowIndex, observableIndex int) uint {
 		(groupIndex * 100) +
 		(rowIndex * 10) +
 		(observableIndex * 1))
-}
-
-// isValidGrafanaUID checks if the given string is a valid UID for entry into a Grafana dashboard. This is
-// primarily used in the URL, e.g. /-/debug/grafana/d/syntect-server/<UID> and allows us to have
-// static URLs we can document like:
-//
-// 	Go to https://sourcegraph.example.com/-/debug/grafana/d/syntect-server/syntect-server
-//
-// Instead of having to describe all the steps to navigate there because the UID is random.
-func isValidGrafanaUID(s string) bool {
-	if s != strings.ToLower(s) {
-		return false
-	}
-	for _, r := range s {
-		if !(unicode.IsLetter(r) || unicode.IsNumber(r) || r == '-') {
-			return false
-		}
-	}
-	return true
 }

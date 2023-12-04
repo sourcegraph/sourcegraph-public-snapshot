@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "hubspot",
+    srcs = [
+        "contacts.go",
+        "events.go",
+        "forms.go",
+        "hubspot.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/httpcli",
+        "//lib/errors",
+        "@com_github_google_go_querystring//query",
+        "@org_uber_go_atomic//:atomic",
+    ],
+)

@@ -1,0 +1,53 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.sidebar {
+    width: 15.5rem;
+
+    @media (--md-breakpoint-down) {
+        width: 100%;
+    }
+}
+
+.item {
+    @media (--md-breakpoint-down) {
+        width: calc(50% - 0.75rem);
+    }
+
+    @media (--xs-breakpoint-down) {
+        width: 100%;
+    }
+}
+
+.sticky-box {
+    background-color: var(--sidebar-bg);
+    border: 1px solid var(--sidebar-border-color);
+    padding: 0.75rem;
+    border-radius: var(--border-radius);
+
+    @media (--md-breakpoint-down) {
+        // Sidebar shouldn't be sticky in smaller screens
+        position: static !important;
+
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        column-gap: 1.5rem;
+    }
+
+    @media (--xs-breakpoint-down) {
+        display: block;
+    }
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: -0.25rem -0.75rem 0.75rem -0.75rem;
+    padding: 0 0.75rem 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--sidebar-border-color);
+
+    @media (--md-breakpoint-down) {
+        display: none;
+    }
+}

@@ -1,0 +1,202 @@
+:root {
+    --badge-font-size: 0.75rem;
+    --badge-font-weight: 500;
+    --badge-padding-y: 0.125rem;
+    --badge-padding-x: 0.375rem;
+    --badge-border-radius: 3px;
+    --badge-transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
+        box-shadow 0.15s ease-in-out;
+}
+
+.badge {
+    display: inline-block;
+    padding: var(--badge-padding-y) var(--badge-padding-x);
+    font-size: var(--badge-font-size);
+    font-weight: var(--badge-font-weight);
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: var(--badge-border-radius);
+
+    background-color: var(--subtle-bg);
+    color: var(--link-color);
+    border: none;
+    line-height: 1rem;
+
+    &:focus,
+    &.focus {
+        outline: 0;
+    }
+}
+
+// Base Variants
+.primary,
+.secondary,
+.success,
+.danger,
+.info,
+.warning,
+.merged,
+.outline-secondary {
+    background-color: var(--badge-base);
+    color: var(--badge-text);
+    border: var(--badge-border, none);
+}
+
+.primary {
+    --badge-base: var(--primary);
+    --badge-light: var(--primary-2);
+    --badge-dark: var(--primary-3);
+    --badge-text: var(--light-text);
+}
+
+.secondary {
+    --badge-base: var(--secondary);
+    --badge-light: var(--secondary-2);
+    --badge-dark: var(--secondary-3);
+    --badge-text: var(--body-color);
+}
+
+.success {
+    --badge-base: var(--success);
+    --badge-light: var(--success-2);
+    --badge-dark: var(--success-3);
+    --badge-text: var(--light-text);
+}
+
+.danger {
+    --badge-base: var(--danger);
+    --badge-light: var(--danger-2);
+    --badge-dark: var(--danger-3);
+    --badge-text: var(--light-text);
+}
+
+.info {
+    --badge-base: var(--info);
+    --badge-light: var(--info-2);
+    --badge-dark: var(--info-3);
+    --badge-text: var(--dark-text);
+}
+
+.warning {
+    --badge-base: var(--warning);
+    --badge-light: var(--warning-2);
+    --badge-dark: var(--warning-3);
+    --badge-text: var(--dark-text);
+}
+
+.merged {
+    --badge-base: var(--merged);
+    --badge-light: var(--merged-2);
+    --badge-dark: var(--merged-3);
+    --badge-text: var(--light-text);
+}
+
+.outline-secondary {
+    --badge-base: transparent;
+    --badge-light: var(--secondary-2);
+    --badge-dark: var(--secondary-2);
+    --badge-text: var(--text-muted);
+    --badge-border: 1px solid var(--secondary);
+}
+
+a.primary,
+a.secondary,
+a.success,
+a.danger,
+a.info,
+a.warning,
+a.merged,
+a.outline-secondary {
+    background-color: var(--badge-base);
+    color: var(--badge-text);
+
+    &:hover,
+    &:focus,
+    &.focus {
+        color: var(--badge-text);
+        background-color: var(--badge-dark);
+    }
+
+    &:focus,
+    &.focus {
+        outline: 0;
+
+        :global(.theme-light) & {
+            box-shadow: 0 0 0 0.125rem var(--badge-light);
+        }
+
+        :global(.theme-dark) & {
+            box-shadow: 0 0 0 0.125rem var(--badge-dark);
+        }
+    }
+}
+
+:global(.theme-light),
+:global(.theme-dark) {
+    // Update secondary text color and focus state for better contrast
+    a.secondary,
+    a.outline-secondary {
+        &:focus,
+        &.focus {
+            box-shadow: var(--focus-box-shadow);
+        }
+    }
+    a.secondary {
+        &:hover,
+        &:focus,
+        &.focus {
+            color: var(--body-color);
+        }
+    }
+}
+
+// Outline links need slightly different treatment to be more visible on hover
+:global(.theme-light) {
+    a.outline-secondary {
+        &:hover,
+        &:focus,
+        &.focus {
+            border-color: var(--secondary);
+        }
+    }
+}
+
+:global(.theme-dark) {
+    a.outline-secondary {
+        &:hover,
+        &:focus,
+        &.focus {
+            border-color: var(--secondary-4);
+        }
+    }
+}
+
+a.badge {
+    transition: var(--badge-transition);
+}
+
+a.badge:hover,
+a.badge:focus {
+    text-decoration: none;
+}
+
+.badge:empty {
+    display: none;
+}
+
+.pill {
+    // Preserve original Bootstrap padding values
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    padding-right: 0.6em;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    padding-left: 0.6em;
+    border-radius: 10rem;
+}
+
+.small {
+    --badge-font-size: 0.6875rem;
+    --badge-padding-y: 0;
+    --badge-padding-x: 0.25rem;
+    --badge-border-radius: 2px;
+}

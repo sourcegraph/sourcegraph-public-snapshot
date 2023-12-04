@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"unicode/utf8"
 
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -48,6 +49,19 @@ func ToMatchTree(q protocol.Node) (MatchTree, error) {
 		return &Operator{Kind: v.Kind, Operands: operands}, nil
 	default:
 		return nil, errors.Errorf("unknown protocol query type %T", q)
+	}
+}
+
+// Visit performs a preorder traversal over the match tree, calling f on each node
+func Visit(mt MatchTree, f func(MatchTree)) {
+	switch v := mt.(type) {
+	case *Operator:
+		f(mt)
+		for _, child := range v.Operands {
+			Visit(child, f)
+		}
+	default:
+		f(mt)
 	}
 }
 
@@ -145,7 +159,12 @@ func (dm *DiffMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit,
 		var hunkHighlights map[int]MatchedHunk
 		for hunkIdx, hunk := range fileDiff.Hunks {
 			var lineHighlights map[int]result.Ranges
-			for lineIdx, line := range bytes.Split(hunk.Body, []byte("\n")) {
+			lr := byteutils.NewLineReader(hunk.Body)
+			lineIdx := -1
+			for lr.Scan() {
+				line := lr.Line()
+				lineIdx++
+
 				if len(line) == 0 {
 					continue
 				}
@@ -192,6 +211,23 @@ type DiffModifiesFile struct {
 }
 
 func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
+	{
+		// This block pre-filters a commit based on the output of the `--name-status` output.
+		// It is significantly cheaper to get the changed file names compared to generating the full
+		// diff, so we try to short-circuit when possible.
+
+		foundMatch := false
+		for _, fileName := range lc.ModifiedFiles() {
+			if dmf.Regexp.Match([]byte(fileName), &lc.LowerBuf) {
+				foundMatch = true
+				break
+			}
+		}
+		if !foundMatch {
+			return filterResult(false), MatchedCommit{}, nil
+		}
+	}
+
 	diff, err := lc.Diff()
 	if err != nil {
 		return filterResult(false), MatchedCommit{}, err
@@ -287,13 +323,11 @@ func matchesToRanges(content []byte, matches [][]int) result.Ranges {
 	var (
 		unscannedOffset          = 0
 		scannedNewlines          = 0
-		scannedRunes             = 0
 		lastScannedNewlineOffset = -1
 	)
 
-	lineColumnOffset := func(byteOffset int) (line, column, offset int) {
+	lineColumnOffset := func(byteOffset int) (line, column int) {
 		unscanned := content[unscannedOffset:byteOffset]
-		scannedRunes += utf8.RuneCount(unscanned)
 		lastUnscannedNewlineOffset := bytes.LastIndexByte(unscanned, '\n')
 		if lastUnscannedNewlineOffset != -1 {
 			lastScannedNewlineOffset = unscannedOffset + lastUnscannedNewlineOffset
@@ -301,16 +335,16 @@ func matchesToRanges(content []byte, matches [][]int) result.Ranges {
 		}
 		column = utf8.RuneCount(content[lastScannedNewlineOffset+1 : byteOffset])
 		unscannedOffset = byteOffset
-		return scannedNewlines, column, scannedRunes
+		return scannedNewlines, column
 	}
 
 	res := make(result.Ranges, 0, len(matches))
 	for _, match := range matches {
-		startLine, startColumn, startOffset := lineColumnOffset(match[0])
-		endLine, endColumn, endOffset := lineColumnOffset(match[1])
+		startLine, startColumn := lineColumnOffset(match[0])
+		endLine, endColumn := lineColumnOffset(match[1])
 		res = append(res, result.Range{
-			Start: result.Location{Line: startLine, Column: startColumn, Offset: startOffset},
-			End:   result.Location{Line: endLine, Column: endColumn, Offset: endOffset},
+			Start: result.Location{Line: startLine, Column: startColumn, Offset: match[0]},
+			End:   result.Location{Line: endLine, Column: endColumn, Offset: match[1]},
 		})
 	}
 	return res

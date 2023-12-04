@@ -4,6 +4,11 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestNew(t *testing.T) {
@@ -20,6 +25,35 @@ func TestStatic(t *testing.T) {
 
 	m = Static("http://test-1", "http://test-2")
 	expectEndpoints(t, m, "http://test-1", "http://test-2")
+}
+
+func TestStatic_empty(t *testing.T) {
+	m := Static()
+	expectEndpoints(t, m)
+
+	// Empty maps should fail on Get but not on Endpoints
+	_, err := m.Get("foo")
+	if _, ok := err.(*EmptyError); !ok {
+		t.Fatal("Get should return EmptyError")
+	}
+
+	_, err = m.GetN("foo", 5)
+	if _, ok := err.(*EmptyError); !ok {
+		t.Fatal("GetN should return EmptyError")
+	}
+
+	_, err = m.GetMany("foo")
+	if _, ok := err.(*EmptyError); !ok {
+		t.Fatal("GetMany should return EmptyError")
+	}
+
+	eps, err := m.Endpoints()
+	if err != nil {
+		t.Fatal("Endpoints should not return an error")
+	}
+	if len(eps) != 0 {
+		t.Fatal("Endpoints should be empty")
+	}
 }
 
 func TestGetN(t *testing.T) {
@@ -81,8 +115,8 @@ func expectEndpoints(t *testing.T, m *Map, endpoints ...string) {
 	}
 	if got, err := m.GetMany(keys...); err != nil {
 		t.Fatalf("GetMany failed: %v", err)
-	} else if !reflect.DeepEqual(got, vals) {
-		t.Fatalf("GetMany(%v) unexpected response:\ngot  %v\nwant %v", keys, got, vals)
+	} else if diff := cmp.Diff(vals, got, cmpopts.EquateEmpty()); diff != "" {
+		t.Fatalf("GetMany(%v) unexpected response (-want, +got):\n%s", keys, diff)
 	}
 }
 
@@ -96,4 +130,68 @@ func TestEndpoints(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("m.Endpoints() unexpected return:\ngot:  %v\nwant: %v", got, want)
 	}
+}
+
+func TestSync(t *testing.T) {
+	eps := make(chan endpoints, 1)
+	defer close(eps)
+
+	urlspec := "http://test"
+	m := &Map{
+		urlspec: urlspec,
+		discofunk: func(disco chan endpoints) {
+			for {
+				v, ok := <-eps
+				if !ok {
+					return
+				}
+				disco <- v
+			}
+		},
+	}
+
+	// Test that we block m.Get() until eps sends its first value
+	want := []string{"a", "b"}
+	eps <- endpoints{
+		Service:   urlspec,
+		Endpoints: want,
+	}
+	expectEndpoints(t, m, want...)
+
+	// We now rely on sync, so we retry until we see what we want. Set an
+	// error.
+	eps <- endpoints{
+		Service: urlspec,
+		Error:   errors.New("boom"),
+	}
+	if !waitUntil(5*time.Second, func() bool {
+		_, err := m.Get("test")
+		return err != nil
+	}) {
+		t.Fatal("expected map to return error")
+	}
+
+	eps <- endpoints{
+		Service:   urlspec,
+		Endpoints: want,
+	}
+	if !waitUntil(5*time.Second, func() bool {
+		_, err := m.Get("test")
+		return err == nil
+	}) {
+		t.Fatal("expected map to recover from error")
+	}
+}
+
+// waitUntil will wait d. It will return early when pred returns true.
+// Otherwise it will return pred() after d.
+func waitUntil(d time.Duration, pred func() bool) bool {
+	deadline := time.Now().Add(d)
+	for time.Now().Before(deadline) {
+		if pred() {
+			return true
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	return pred()
 }

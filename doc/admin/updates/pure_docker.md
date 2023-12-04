@@ -4,298 +4,647 @@ This document describes the exact changes needed to update a [pure-Docker Source
 Each section comprehensively describes the changes needed in Docker images, environment variables, and added/removed services. **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-2. Find the relevant entry for your update in the update notes on this page.
+2. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.**
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## 3.36.2 -> 3.36.3
+## Unreleased
 
-To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/3273d3c7da750ff15ba9d4f24d1e09e835bf11d9](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/3273d3c7da750ff15ba9d4f24d1e09e835bf11d9)
+<!-- Add changes changes to this section before release. -->
 
-## 3.36.1 -> 3.36.2
+## v5.2.2 ➔ v5.2.3
 
-To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/45946fd69dd061cb39c85cfd06a037aeeaf74808](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/45946fd69dd061cb39c85cfd06a037aeeaf74808)
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.2.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.2.2...v5.2.3)
 
-## 3.35 -> 3.36.1
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.2.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.2.2...v5.2.3)
 
-To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/25cdf1858de7fe3d0a3e3479a7e5620a02ac6a2c](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/25cdf1858de7fe3d0a3e3479a7e5620a02ac6a2c)
+#### Notes:
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.35).*
+## v5.2.1 ➔ v5.2.2
 
-## 3.35.1 -> 3.35.2
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.2.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.2.1...v5.2.2)
 
-To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/abc948e60a489f559ebd5cc8f0affcd3c4371fa4](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/abc948e60a489f559ebd5cc8f0affcd3c4371fa4)
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.2.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.2.1...v5.2.2)
 
-## 3.35.0 -> 3.35.1
-**Due to issues related to Code Insights on the 3.35.0 release, users are advised to upgrade to 3.35.1 as soon as possible.**
+#### Notes:
 
-There is a [known issue](../../code_insights/how-tos/Troubleshooting.md#oob-migration-has-made-progress-but-is-stuck-before-reaching-100) with the Code Insights out-of-band settings migration not reaching 100% complete when encountering deleted users or organizations.
+## v5.2.0 ➔ v5.2.1
 
-To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ba0d94eb945fd3371ed888e4b7177828b33acd3d](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ba0d94eb945fd3371ed888e4b7177828b33acd3d)
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.2.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.2.0...v5.2.1)
 
-## 3.34 -> 3.35.1
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.2.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.2.0...v5.2.1)
 
-**Due to issues related to Code Insights on the 3.35.0 release, users are advised to upgrade directly to 3.35.1.**
+#### Notes:
 
-The `query-runner` service has been decomissioned in the 3.35.0 release. You can safely remove the `query-runner` service from your installation.
+## v5.1.9 ➔ v5.2.0
 
-To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/33b076a123c23930cc3339167bdd5502bebc5a3c](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/33b076a123c23930cc3339167bdd5502bebc5a3c)
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.2.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.9...v5.2.0)
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.34).*
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.2.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.9...v5.2.0)
 
-## 3.34.x -> 3.34.2
+#### Notes:
 
-To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/e88d0f4615fc231576d37819b816576ac75b28d7](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/e88d0f4615fc231576d37819b816576ac75b28d7)
+## v5.1.8 ➔ v5.1.9
 
-## 3.33 -> 3.34.2
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.9`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.8...v5.1.9)
 
-To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/d615dd5f63ec0984d60076aecf0bc598d9ffc1a8](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/d615dd5f63ec0984d60076aecf0bc598d9ffc1a8)
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.9`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.8...v5.1.9)
 
-__Please upgrade directly to 3.34.2.__
+#### Notes:
 
-A bug in our 3.34 and 3.34.1 release causes some repositories from older Sourcegraph versions to not appear in search results due to a database change.
+## v5.1.7 ➔ v5.1.8
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.33).*
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.8`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.7...v5.1.8)
 
-## 3.32 -> 3.33
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.8`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.7...v5.1.8)
 
-To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/f6dc5c4a859b09faaea44a34e3ba8e85c92fcf58](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/f6dc5c4a859b09faaea44a34e3ba8e85c92fcf58)
+#### Notes:
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.32).*
+## v5.1.6 ➔ v5.1.7
 
-## 3.31 -> 3.32
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.7`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.6...v5.1.7)
 
-To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c4c283ae9f89fa48232f0b99ed1982008034fee](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c4c283ae9f89fa48232f0b99ed1982008034fee)
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.7`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.6...v5.1.7)
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.32).*
+#### Notes:
 
-## 3.30.3 -> 3.31
+## v5.1.5 ➔ v5.1.6
 
-The **built-in** main Postgres (`pgsql`) and codeintel (`codeintel-db`) databases have switched to an alpine-based Docker image. Upon upgrading, Sourcegraph will need to re-index the entire database.
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.6`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.5...v5.1.6)
 
-If you have already upgraded to 3.30.3, which uses the new alpine-based Docker images, all users that use our bundled (built-in) database instances should have already performed [the necessary re-indexing](../migration/3_31.md).
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.6`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.5...v5.1.6)
 
-> NOTE: The above does not apply to users that use external databases (e.x: Amazon RDS, Google Cloud SQL, etc.).
+#### Notes:
 
-## 3.30.x -> 3.31
+## v5.1.4 ➔ v5.1.5
 
-The **built-in** main Postgres (`pgsql`) and codeintel (`codeintel-db`) databases have switched to an alpine-based Docker image. Upon upgrading, Sourcegraph will need to re-index the entire database.
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.5`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.4...v5.1.5)
 
-All users that use our bundled (built-in) database instances **must** read through the [3.31 upgrade guide](../migration/3_31.md) _before_ upgrading.
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.5`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.4...v5.1.5)
 
-> NOTE: The above does not apply to users that use external databases (e.x: Amazon RDS, Google Cloud SQL, etc.).
+#### Notes:
 
-## 3.29 -> 3.30.3
+## v5.1.3 ➔ v5.1.4
 
-> WARNING: **Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](../migration/3_30.md).
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.4`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.3...v5.1.4)
 
-To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca5966754162c2b3e077e64e60687138874](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca5966754162c2b3e077e64e60687138874)
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.4`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.3...v5.1.4)
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.29).*
+#### Notes:
 
-## 3.28 -> 3.29
+## v5.1.2 ➔ v5.1.3
 
-To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/940100429fdd59f930436d47e226f5a7116bf6d9](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/940100429fdd59f930436d47e226f5a7116bf6d9)
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.2...v5.1.3)
 
-This upgrade adds a new `worker` service that runs a number of background jobs that were previously run in the `frontend` service. See [notes on deploying workers](../workers.md#deploying-workers) for additional details. Good initial values for CPU and memory resources allocated to this new service should match the `frontend` service.
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.2...v5.1.3)
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.28).*
+#### Notes:
 
-## 3.27 -> 3.28
+## v5.1.1 ➔ v5.1.2
 
-To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/fa9bd6b4749697e09a4a74537e180e8331d84a5b](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/fa9bd6b4749697e09a4a74537e180e8331d84a5b)
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.1...v5.1.2)
 
-## 3.26 -> 3.27
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.1...v5.1.2)
 
-To upgrade, please perform the changes in the following diff:
+#### Notes:
 
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/1d01302a86d219a0f00f6dcbd27d4a511581ff27](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/1d01302a86d219a0f00f6dcbd27d4a511581ff27)
+## v5.1.0 ➔ v5.1.1
 
-> Warning: ⚠️ Sourcegraph 3.27 now requires **Postgres 12+**.
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.0...v5.1.1)
 
-If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12.5 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied supplied database images.
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.0...v5.1.1)
 
-## 3.26.0 -> 3.26.2
+#### Notes:
 
-To upgrade, please perform the changes in the following diff:
+## v5.0.6 ➔ v5.1.0
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/de80a4af2ef2eeb23526e3ea560f7f72e1a71a5f
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.0.6...v5.1.0)
 
-> NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.0.6...v5.1.0)
 
-## 3.25 -> 3.26.0
+#### Notes:
 
-To upgrade, please perform the changes in the following diff:
+## v5.0.5 ➔ v5.0.6
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/68ffad230fc6f99477cedd303a55b91a8c4d9acb
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.0.6`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.0.5...v5.0.6)
 
-> NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.0.6`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.0.5...v5.0.6)
 
-## 3.24 -> 3.25
+#### Notes:
 
-Confirm that `codeinsights-db-disk` has the correct file permissions:
+## v5.0.4 ➔ v5.0.5
 
-```
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.0.5`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.0.4...v5.0.5)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.0.5`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.0.4...v5.0.5)
+
+#### Notes:
+
+## v5.0.3 ➔ v5.0.4
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.0.4`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.0.3...v5.0.4)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.0.4`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.0.3...v5.0.4)
+
+#### Notes:
+
+## v5.0.2 ➔ v5.0.3
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.0.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.0.2...v5.0.3)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.0.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.0.2...v5.0.3)
+
+#### Notes:
+
+## v5.0.1 ➔ v5.0.2
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.0.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.0.1...v5.0.2)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.0.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.0.1...v5.0.2)
+
+#### Notes:
+
+## v5.0.0 ➔ v5.0.1
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.0.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.0.0...v5.0.1)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.0.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.0.0...v5.0.1)
+
+#### Notes:
+
+## v4.5.1 ➔ v5.0.0
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.0.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v4.5.1...v5.0.0)
+
+For non-standard replica builds: 
+- [`Customer Replica 1: ➔ v5.0.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v4.5.1...v5.0.0)
+
+#### Notes:
+
+## v4.5.0 ➔ v4.5.1
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v4.5.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v4.5.0...v4.5.1)
+
+For non-standard replica builds: 
+- [`Customer Replica 1: ➔ v4.5.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v4.5.0...v4.5.1)
+
+#### Notes:
+
+## v4.4.2 ➔ v4.5.0
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v4.5.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v4.4.2...v4.5.0)
+
+For non-standard replica builds: 
+- [`Customer Replica 1: ➔ v4.5.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v4.4.2...v4.5.0)
+
+#### Notes:
+
+- This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](../how-to/lsif_scip_migration.md) for more details.
+
+## v4.4.1 ➔ v4.4.2
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v4.4.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v4.4.1...v4.4.2)
+
+For non-standard replica builds: 
+- [`Customer Replica 1: ➔ v4.4.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v4.4.1...v4.4.2)
+
+#### Notes:
+
+## v4.4.0 ➔ v4.4.1
+
+As a template, perform the same actions as the following diffs in your own deployment:
+- [`➔ v4.4.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/9f597b9fb42ea1a170e4456e57e4340d3f722e65)
+- 
+## v4.3.1 ➔ v4.4.1
+
+As a template, perform the same actions as the following diffs in your own deployment:
+- [`➔ v4.4.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/8cdeb7616b73e100aec41806b1118264fea0615d)
+- Users attempting a multi-version upgrade to v4.4.0 may be affected by a [known bug](https://github.com/sourcegraph/sourcegraph/pull/46969) in which an outdated schema migration is included in the upgrade process. _This issue is fixed in patch v4.4.2_
+
+  - The error will be encountered while running `upgrade`, and contains the following text: `"frontend": failed to apply migration 1648115472`. 
+    - To resolve this issue run migrator with the args `'add-log', '-db=frontend', '-version=1648115472'`. 
+    - If migrator was stopped while running `upgrade` the next run of upgrade will encounter drift, this drift should be disregarded by providing migrator with the `--skip-drift-check` flag.
+
+## v4.2 ➔ v4.3.1
+
+As a template, perform the same actions as the following diffs in your own deployment:
+- [`➔ v4.3.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/1a8f9a3d71664bf31a1fae9d2ad99c9074eaebe9)
+
+## v4.1 ➔ v4.2.1
+
+- `minio` has been replaced with `blobstore`. Please see the update notes here: https://docs.sourcegraph.com/admin/how-to/blobstore_update_notes
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v4.2.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a2bd81af53c8b8ad5b0d69e7857945a1f96e331f)
+
+## v4.0 ➔ v4.1.3
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v4.1.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/c1684d0e613630bbe70bc81693e56c906d8f2d08)
+
+**Patch releases**:
+
+- [`v4.1.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/88523d785a0a2fcf943fca44f8d7be381209f3d7)
+
+## v3.43 ➔ v4.0
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v4.0.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/916d2f79e04955e5bef2a47dba738d68655f20ac)
+
+**Patch releases**:
+
+- [`➔ v4.0.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/46a3d0652ad6396a99d2c8b601ff362fbcf4a1c3)
+
+## v3.42 ➔ v3.43
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.43.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/94be340c1b0e57c866d2f530c489da4f65d453e2)
+
+**Patch releases**:
+
+- `v3.43.1`
+- `v3.43.2`
+
+## v3.41 ➔ v3.42
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.42.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a189e495813bc33d544b302eb98c197d70eacc87)
+
+**Patch releases**:
+
+- `v3.42.1`
+- `v3.42.2`
+
+## v3.40 ➔ v3.41
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.41.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/8bfd70892c1bf56c5a88db0329826800c7a1097b)
+
+## v3.39 ➔ v3.40
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> 3.40.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c94a1fb5fa396759d4800a717af6658548943f7)
+- [`-> 3.40.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/312b9f8308148cf9403cc7868eee7b5c9611b121)
+
+**Patch releases**:
+
+- `v3.40.1`
+- `v3.40.2`
+
+**Notes**:
+
+- A fix that corrects the default behavior of the `migrator` service is included in this release. An attempt to standardize CLI packages in v3.39.0 unintentionally
+broke the default behavior. In order to guard against this, all command line arguments are explicitly set in the deployment manifest.
+- **CAUTION** Added the ability to customize postgres server configuration by mounting external configuration files. If you have customized the config in any way, you should copy your changes to the added `postgresql.conf` files [sourcegraph/deploy-sourcegraph-docker#806](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/806)
+
+## v3.38 ➔ v3.39
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> 3.39.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/b37367c738d28ef7e27c8b1f833eb9355bd9e8b1)
+- [`-> 3.39.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/c2450311e385f077679d7666c09fd5a2aa7a6b6e)
+
+**Patch releases**:
+
+- `v3.39.1`
+
+**Notes**:
+
+- In this release we need to remove timescaledb from `shared_preload_libraries` configuration in `codeinsights-db`'s `postgresql.conf`. This step will be [performed automatically](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/b37367c738d28ef7e27c8b1f833eb9355bd9e8b1#diff-916162e35509bb582798c4306953fec9f43779d82420cb4435576e2873869f78R17). It can be performed manually instead of run as part of the deploy script.
+
+## v3.37 ➔ v3.38
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.38.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a66a74ce9a120a9da743eb44c6fea3a55f51842a)
+- [`➔ v3.38.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/19735936834aab31134888c179bf07387f09a647)
+
+**Patch releases**:
+
+- `v3.38.1`
+
+**Notes**:
+
+- This release adds the requirement that the environment variables `SRC_GIT_SERVERS`, `SEARCHER_URL`, `SYMBOLS_URL`, and `INDEXED_SEARCH_SERVERS` are set for the worker process.
+
+## v3.36 ➔ v3.37
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.37.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/9e369ec86cdef50b9e2a8350040d011cf2c7cd49)
+
+**Notes**:
+
+- This release adds a new container that runs database migrations (`migrator`) independently of the frontend container. Confirm the environment variables on this new container match your database settings. [Read more about manual operation of the migrator](https://docs.sourcegraph.com/admin/how-to/manual_database_migrations)
+
+## v3.35 ➔ v3.36
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.36.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/25cdf1858de7fe3d0a3e3479a7e5620a02ac6a2c)
+- [`➔ v3.36.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/45946fd69dd061cb39c85cfd06a037aeeaf74808)
+- [`➔ v3.36.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/3273d3c7da750ff15ba9d4f24d1e09e835bf11d9)
+
+**Patch releases**:
+
+- `v3.36.1`
+- `v3.36.3`
+- `v3.36.3`
+
+## v3.34 ➔ v3.35
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.35.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/33b076a123c23930cc3339167bdd5502bebc5a3c)
+- [`➔ v3.35.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ba0d94eb945fd3371ed888e4b7177828b33acd3d)
+- [`➔ v3.35.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/abc948e60a489f559ebd5cc8f0affcd3c4371fa4)
+
+**Patch releases**:
+
+- `v3.35.1`
+- `v3.35.2`
+
+**Notes**:
+
+- The `query-runner` service has been decomissioned in the 3.35.0 release. You can safely remove the `query-runner` service from your installation.
+- There is a [known issue](../../code_insights/how-tos/Troubleshooting.md#oob-migration-has-made-progress-but-is-stuck-before-reaching-100) with the Code Insights out-of-band settings migration not reaching 100% complete when encountering deleted users or organizations.
+
+
+## v3.33 ➔ v3.34
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.34.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/d615dd5f63ec0984d60076aecf0bc598d9ffc1a8)
+
+**Patch releases**:
+
+- `v3.34.1`
+- `v3.34.2`
+
+## v3.32 ➔ v3.33
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.33.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/f6dc5c4a859b09faaea44a34e3ba8e85c92fcf58)
+
+## v3.31 ➔ v3.32
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.32.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c4c283ae9f89fa48232f0b99ed1982008034fee)
+
+## v3.30 ➔ v3.31
+
+> WARNING: **This upgrade must originate from `v3.30.3`.**
+
+**Notes**:
+
+- The **built-in** main Postgres (`pgsql`) and codeintel (`codeintel-db`) databases have switched to an alpine-based Docker image. Upon upgrading, Sourcegraph will need to re-index the entire database. All users that use our bundled (built-in) database instances **must** read through the [3.31 upgrade guide](../migration/3_31.md) _before_ upgrading.
+
+## v3.29 ➔ v3.30
+
+> WARNING: **If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2** please follow [this migration guide](../migration/3_30.md).
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.30.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca5966754162c2b3e077e64e60687138874)
+
+**Patch releases**:
+
+- `v3.30.1`
+- `v3.30.2`
+- `v3.30.3`
+
+## v3.28 ➔ v3.29
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.29.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/940100429fdd59f930436d47e226f5a7116bf6d9)
+
+**Patch releases**:
+
+- `v3.29.1`
+
+**Notes**:
+
+- This upgrade adds a new `worker` service that runs a number of background jobs that were previously run in the `frontend` service. See [notes on deploying workers](../workers.md#deploying-workers) for additional details. Good initial values for CPU and memory resources allocated to this new service should match the `frontend` service.
+
+## v3.27 ➔ v3.28
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.28.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/fa9bd6b4749697e09a4a74537e180e8331d84a5b)
+
+## v3.26 ➔ v3.27
+
+> WARNING: Sourcegraph 3.27 now requires **Postgres 12+**.
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.27.4`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/1d01302a86d219a0f00f6dcbd27d4a511581ff27)
+
+**Patch releases**:
+
+- `v3.27.1`
+- `v3.27.2`
+- `v3.27.3`
+- `v3.27.4`
+
+**Notes**:
+
+- If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12.5 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied supplied database images.
+
+## v3.26 ➔ v3.26
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.26.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/68ffad230fc6f99477cedd303a55b91a8c4d9acb)
+- [`➔ v3.26.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/de80a4af2ef2eeb23526e3ea560f7f72e1a71a5f)
+
+**Patch releases**:
+
+- `v3.26.1`
+- `v3.26.2`
+
+## v3.24 ➔ v3.25
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.25.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ee2cbb59c80a382fb6cc649d4547b044d9a8b28d)
+
+**Notes**:
+
+- **If you are connecting to an external Postgres database using SSL/TLS:** Go `1.15` introduced changes to SSL/TLS connection validation which requires certificates to include a `SAN`. This field was not included in older certificates and clients relied on the `CN` field. You might see an error like `x509: certificate relies on legacy Common Name field`. We recommend that customers using Sourcegraph with an external database and connecting to it using SSL/TLS check whether the certificate is up to date.
+  - AWS RDS customers please reference [AWS' documentation on updating the SSL/TLS certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html) for steps to rotate your certificate.
+- Confirm that `codeinsights-db-disk` has the correct file permissions via the following command.
+
+
+```bash
 sudo chown -R 999:999 ~/sourcegraph-docker/codeinsights-db-disk/
 ```
 
-- **If your are connecting to an external Postgres database using SSL/TLS:** Go `1.15` introduced changes to SSL/TLS connection validation which requires certificates to include a `SAN`. This field was not included in older certificates and clients relied on the `CN` field. You might see an error like `x509: certificate relies on legacy Common Name field`. We recommend that customers using Sourcegraph with an external database and connecting to it using SSL/TLS check whether the certificate is up to date.
-  - AWS RDS customers please reference [AWS' documentation on updating the SSL/TLS certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html) for steps to rotate your certificate.
+## v3.23 ➔ v3.24
 
-To upgrade, please perform the changes in the following diff:
+As a template, perform the same actions as the following diffs in your own deployment:
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ee2cbb59c80a382fb6cc649d4547b044d9a8b28d
+- [`➔ v3.24.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4acc4c7ed5d49ce41b1f68d654a3f4e2f35bd622)
 
-## 3.23.0 -> 3.24.0
+## v3.22 ➔ v3.23
 
-To upgrade, please perform the changes in the following diff:
+As a template, perform the same actions as the following diffs in your own deployment:
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4acc4c7ed5d49ce41b1f68d654a3f4e2f35bd622
+- [`➔ v3.23.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/10de1a4e34ab2c716bd63e52a68a6af896bd81b7)
 
-## 3.22.0 -> 3.23.0
+## v3.21 ➔ v3.22
 
-To upgrade, please perform the changes in the following diff:
+As a template, perform the same actions as the following diffs in your own deployment:
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/10de1a4e34ab2c716bd63e52a68a6af896bd81b7
+- [`➔ v3.22.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/223c11dacffafb985c2d29b6c6a9b84bcc8255be)
 
-## 3.21.2 -> 3.22.0
+**Notes**:
 
-To upgrade, please perform the changes in the following diff:
+- This upgrade removes the `code intel bundle manager`. This service has been deprecated and all references to it have been removed.
+- This upgrade also adds a MinIO container that doesn't require any custom configuration. You can find more detailed documentation in https://docs.sourcegraph.com/admin/external_services/object_storage.
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/223c11dacffafb985c2d29b6c6a9b84bcc8255be
+## v3.20 ➔ v3.21
 
-This upgrade removes the `code intel bundle manager`. This service has been deprecated and all references to it have been removed.
+As a template, perform the same actions as the following diffs in your own deployment:
 
-This upgrade also adds a MinIO container that doesn't require any custom configuration. You can find more detailed documentation in https://docs.sourcegraph.com/admin/external_services/object_storage.
+- [`➔ v3.21.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4629ddfcdfd070b41801106199817ae903ead510)
 
+**Patch releases**:
 
-## 3.20.1 -> 3.21.2
+- `v3.21.1`
+- `v3.21.2`
 
-To upgrade, please perform the changes in the following diff:
+**Notes***:
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4629ddfcdfd070b41801106199817ae903ead510
+- This upgrade includes a new code-intel DB (`deploy-codeintel-db.sh`) and a new service `minio` (`deploy-minio.sh`) to store precise code intel indexes.
+- There is a new environment variable for frontend and frontend-internal called `CODEINTEL_PGHOST`.
 
-### Note new services
+## v3.19 ➔ v3.20
 
-This upgrade includes a new code-intel DB (`deploy-codeintel-db.sh`) and a new service `minio` (`deploy-minio.sh`)
-to store LSIF indices.
-There is a new environment variable for frontend and frontend-internal called `CODEINTEL_PGHOST`.
+As a template, perform the same actions as the following diffs in your own deployment:
 
-(both of these changes are described exactly in the diff above)
+- [`➔ v3.20.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/7c57315a1ce05981d436860d79ca01553931e274)
 
-## 3.19.1 -> 3.20.1
+**Patch releases**:
 
-To upgrade, please perform the changes in the following diff:
+- `v3.20.1`
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/7c57315a1ce05981d436860d79ca01553931e274
+**Notes**:
 
-### Confirm file permissions
+- Confirm that `lsif-server-disk` has the correct file permissions via the following command.
 
-Confirm that `lsif-server-disk` has the correct file permissions:
-
-```
+```bash
 sudo chown -R 100:101 ~/sourcegraph-docker/lsif-server-disk/ ~/sourcegraph-docker/lsif-server-disk/
 ```
 
-## 3.18.0 -> 3.19.1
+## v3.18 ➔ v3.19
 
-To upgrade, please perform the changes in the following diff:
+As a template, perform the same actions as the following diffs in your own deployment:
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a1648452c6f7c16637b0e069776df12604c27f73
+- [`➔ v3.19.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a1648452c6f7c16637b0e069776df12604c27f73)
 
-### Confirm file permissions
+**Patch releases**:
 
-Confirm that `lsif-server-disk` has the correct file permissions:
+- `v3.19.1`
 
-```
+**Notes**:
+
+- Confirm that `lsif-server-disk` has the correct file permissions via the following command.
+
+```bash
 sudo chown -R 100:101 ~/sourcegraph-docker/lsif-server-disk/ ~/sourcegraph-docker/lsif-server-disk/
 ```
 
-## 3.17.2 -> 3.18.0 changes
+## v3.17 ➔ v3.18
 
-To upgrade, please perform the changes in the following diff:
+As a template, perform the same actions as the following diffs in your own deployment:
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/7e6b23cdfead3be639048c5fa7fffe07441610f2
+- [`➔ v3.18.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/7e6b23cdfead3be639048c5fa7fffe07441610f2)
 
-Note: `deploy-grafana.sh` and `deploy-prometheus.sh` had environment variables changed, otherwise only image tags have changed.
+**Notes**:
 
-## v3.16.0 -> v3.17.2 changes
+- `deploy-grafana.sh` and `deploy-prometheus.sh` had environment variables changed, otherwise only image tags have changed.
 
-To upgrade, please perform the changes in the following diff:
+## v3.16 ➔ v3.17
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2895236661de3ff633ee56fe0b87e9a0f530cc60
+As a template, perform the same actions as the following diffs in your own deployment:
 
-## v3.15.1 → v3.16.0 changes
+- [`➔ v3.17.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2895236661de3ff633ee56fe0b87e9a0f530cc60)
 
-This release involves two steps:
+**Patch releases**:
 
-1. Change `3.15.1` image tags to `3.16.0`
-2. Update `prometheus/prometheus_targets.yml` [as shown here](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/customer-replica-v3.15.1...customer-replica-v3.16.0#diff-1d4c5a677b37d150c65ea8356cad978a)
+- `v3.17.2`
 
-Exact diff of changes to make: https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/customer-replica-v3.15.1...customer-replica-v3.16.0
+## v3.15 ➔ v3.16
 
-## v3.14.2 → v3.15.1 changes
+As a template, perform the same actions as this [diff](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/customer-replica-v3.15.1...customer-replica-v3.16.0) in your own deployment.
 
-This release:
+**Steps**:
 
-- Removes the 4-container Jaeger deployment, which had performance issues, in favor of a single-container one that works well.
-- Removes the old `lsif-server` service deployment, replacing it with 3 `precise-code-intel` services.
-- Changes the versions of all Sourcegraph images to be consistent (just `3.15.1` instead of some being inconsistent), which in some cases required changing the names of the images (but the containers / services / shell scripts remain the same for now).
+1. Change `3.15.1` image tags to `3.16.0`.
+1. Update `prometheus/prometheus_targets.yml` [as shown here](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/customer-replica-v3.15.1...customer-replica-v3.16.0#diff-1d4c5a677b37d150c65ea8356cad978a).
 
-### Update environment variables
+## v3.14 ➔ v3.15
 
-- On `frontend` and `frontend-internal` containers: Remove the `LSIF_SERVER_URL` environment variable.
-- On `frontend` and `frontend-internal` containers: Set `PRECISE_CODE_INTEL_API_SERVER_URL=http://precise-code-intel-api-server:3186`
-- On all containers: Change `JAEGER_AGENT_HOST=jaeger-agent` to `JAEGER_AGENT_HOST=jaeger`
+**Patch releases**:
 
-### Remove all old container deployments
+- `v3.15.1`
 
-- `jaeger-agent` container (`deploy-jaeger-agent.sh`).
-- `jaeger-cassandra` container (`deploy-jaeger-cassandra.sh`).
-- `jaeger-collector` container (`deploy-jaeger-collector.sh`).
-- `jaeger-query` container (`deploy-jaeger-query.sh`).
-- `lsif-server` container (`deploy-lsif-server.sh`).
+**Steps**:
 
-### Add new container deployments
+1. Update environment variables
+  - On `frontend` and `frontend-internal` containers, remove the `LSIF_SERVER_URL` environment variable.
+  - On `frontend` and `frontend-internal` containers, set `PRECISE_CODE_INTEL_API_SERVER_URL=http://precise-code-intel-api-server:3186`
+  - On all containers, change `JAEGER_AGENT_HOST=jaeger-agent` to `JAEGER_AGENT_HOST=jaeger`
+1. Remove all old container deployments
+  - `jaeger-agent` container (`deploy-jaeger-agent.sh`)
+  - `jaeger-cassandra` container (`deploy-jaeger-cassandra.sh`)
+  - `jaeger-collector` container (`deploy-jaeger-collector.sh`)
+  - `jaeger-query` container (`deploy-jaeger-query.sh`)
+  - `lsif-server` container (`deploy-lsif-server.sh`)
+1. Add new container deployments
+  - Add a single `jaeger` container [following this spec](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.15.1/deploy-jaeger.sh#L1)
+  - Add a single `precise-code-intel-api-server` container [following this spec](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.15.1/deploy-precise-code-intel-api-server.sh)
+  - Add a single `precise-code-intel-bundle-manager` container [following this spec](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.15.1/deploy-precise-code-intel-bundle-manager.sh)
+  - Add a single `precise-code-intel-worker` container [following this spec](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.15.1/deploy-precise-code-intel-worker.sh)
+1. Update prometheus_targets.yml by replacing `lsif-server:3186` with `precise-code-intel-api-server:3186` and replacing `lsif-server:3187` with `precise-code-intel-bundle-manager:3187`
+1. Update image tags to `3.15.1`. Change *all sourcegraph/<service>* image tags to `3.15.1`. This includes all images you previously had as `3.14.2` AND all `sourcegraph/<service>` images:
 
-- Add a single `jaeger` container [following this spec](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.15.1/deploy-jaeger.sh#L1).
-- Add a single `precise-code-intel-api-server` container [following this spec](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.15.1/deploy-precise-code-intel-api-server.sh)
-- Add a single `precise-code-intel-bundle-manager` container [following this spec](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.15.1/deploy-precise-code-intel-bundle-manager.sh)
-- Add a single `precise-code-intel-worker` container [following this spec](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.15.1/deploy-precise-code-intel-worker.sh)
-
-### Update prometheus_targets.yml
-
-```diff
--    - lsif-server:3186
--    - lsif-server:3187
-+    - precise-code-intel-api-server:3186
-+    - precise-code-intel-bundle-manager:3187
-```
-
-### Update image tags to 3.15.1
-
-Please change *all sourcegraph/<service>* image tags to `3.15.1. This includes all images you previously had as `:3.14.2` AND all `sourcegraph/<service>` images:
-
-```
-index.docker.io/sourcegraph/grafana:3.15.1
-index.docker.io/sourcegraph/prometheus:3.15.1
-index.docker.io/sourcegraph/redis-cache:3.15.1
-index.docker.io/sourcegraph/redis-store:3.15.1
-index.docker.io/sourcegraph/pgsql:3.15.1
-```
+- `index.docker.io/sourcegraph/grafana:3.15.1`
+- `index.docker.io/sourcegraph/prometheus:3.15.1`
+- `index.docker.io/sourcegraph/redis-cache:3.15.1`
+- `index.docker.io/sourcegraph/redis-store:3.15.1`
+- `index.docker.io/sourcegraph/pgsql:3.15.1`
 
 The following _images_ have been renamed AND use Sourcegraph versions now (their container names and shell script names remain the same for now):
 
@@ -309,225 +658,3 @@ The following _images_ have been renamed AND use Sourcegraph versions now (their
 - index.docker.io/sourcegraph/zoekt-webserver:0.0.20200318141342-0b140b7@sha256:0d0fbce55b51ec7bdd37927539f50459cd0f207b7cf219ca5122d07792012fb1
 + index.docker.io/sourcegraph/indexed-searcher:3.15.1
 ```
-
-## v3.13.2 → v3.14.2 changes
-
-### Update image tags
-
-Change 3.13.2 → 3.14.2 for the following containers:
-
-| Container         | New image                                       |
-|-------------------|-------------------------------------------------|
-| frontend          | index.docker.io/sourcegraph/frontend:3.14.2     |
-| frontend-internal | index.docker.io/sourcegraph/frontend:3.14.2     |
-| github-proxy      | index.docker.io/sourcegraph/github-proxy:3.14.2 |
-| gitserver         | index.docker.io/sourcegraph/gitserver:3.14.2    |
-| lsif-server       | index.docker.io/sourcegraph/lsif-server:3.14.2  |
-| query-runner      | index.docker.io/sourcegraph/query-runner:3.14.2 |
-| replacer          | index.docker.io/sourcegraph/replacer:3.14.2     |
-| repo-updater      | index.docker.io/sourcegraph/repo-updater:3.14.2 |
-| searcher          | index.docker.io/sourcegraph/searcher:3.14.2     |
-| symbols           | index.docker.io/sourcegraph/symbols:3.14.2      |
-
-Also change the follow which are not versioned alongside Sourcegraph currently:
-
-| Container         | New image                                       |
-|-------------------|-------------------------------------------------|
-| grafana           | index.docker.io/sourcegraph/grafana:10.0.12@sha256:2cde7e16fa56e81237fb05e228018015385f6498c4642d4ae073799a02b2b68c |
-| prometheus        | index.docker.io/sourcegraph/prometheus:10.0.10@sha256:4d73d99f3b18d8e4e09f63671c51eabcba956e357ab33d682de8cf1540e3b863 |
-| zoekt-indexserver | index.docker.io/sourcegraph/zoekt-indexserver:0.0.20200318141948-0b140b7@sha256:b022fd7e4884a71786acae32e0ec8baf785c18350ebf5d574d52335a346364f9 |
-| zoekt-webserver   | index.docker.io/sourcegraph/zoekt-webserver:0.0.20200318141342-0b140b7@sha256:0d0fbce55b51ec7bdd37927539f50459cd0f207b7cf219ca5122d07792012fb1 |
-
-## v3.12.5 → v3.13.2 changes
-
-### Confirm file permissions
-
-Confirm that `redis-store-disk` has the correct file permissions:
-
-```
-sudo chown -R 999:1000 ~/sourcegraph-docker/redis-store-disk/ ~/sourcegraph-docker/redis-cache-disk/
-```
-
-### Update image tags
-
-Change 3.12.5 → 3.13.2 for the following containers:
-
-| Container         | New image                                       |
-|-------------------|-------------------------------------------------|
-| frontend          | index.docker.io/sourcegraph/frontend:3.13.2     |
-| frontend-internal | index.docker.io/sourcegraph/frontend:3.13.2     |
-| github-proxy      | index.docker.io/sourcegraph/github-proxy:3.13.2 |
-| gitserver         | index.docker.io/sourcegraph/gitserver:3.13.2    |
-| lsif-server       | index.docker.io/sourcegraph/lsif-server:3.13.2  |
-| query-runner      | index.docker.io/sourcegraph/query-runner:3.13.2 |
-| replacer          | index.docker.io/sourcegraph/replacer:3.13.2     |
-| repo-updater      | index.docker.io/sourcegraph/repo-updater:3.13.2 |
-| searcher          | index.docker.io/sourcegraph/searcher:3.13.2     |
-| symbols           | index.docker.io/sourcegraph/symbols:3.13.2      |
-
-Also change the follow which are not versioned alongside Sourcegraph currently:
-
-| Container         | New image                                       |
-|-------------------|-------------------------------------------------|
-| grafana           | index.docker.io/sourcegraph/grafana:10.0.10@sha256:a6f9816346c3e38478f4b855eeee199fc91a4f69311f5dd57760bf74c3234715 |
-| prometheus        | index.docker.io/sourcegraph/prometheus:10.0.8@sha256:75efaada5a335cda9895f337d8f31b6abb7a082ef3092b7bb24bf31fb78eafe6 |
-| redis-cache       | index.docker.io/sourcegraph/redis-cache:20-02-03_da9d71ca@sha256:7820219195ab3e8fdae5875cd690fed1b2a01fd1063bd94210c0e9d529c38e56 |
-| redis-store       | index.docker.io/sourcegraph/redis-store:20-01-30_c903717e@sha256:e8467a8279832207559bdfbc4a89b68916ecd5b44ab5cf7620c995461c005168 |
-| syntect-server    | index.docker.io/sourcegraph/syntect_server:c0297a1@sha256:333abb45cfaae9c9d37e576c3853843b00eca33a40a7c71f6b93211ed96528df |
-| zoekt-indexserver | index.docker.io/sourcegraph/zoekt-indexserver:0.0.20200302121716-13dbd22@sha256:91643d83223bb72f4aa2b5031ceb774c8e604a227c58ed54375bd341f25e2ef3 |
-| zoekt-webserver   | index.docker.io/sourcegraph/zoekt-webserver:0.0.20200302121635-13dbd22@sha256:0183bd676fe1ba774edcca29f042d8d3594e833e08b6d603af98f74c575eaf69 |
-
-## v3.12.2 → v3.12.5 changes
-
-### Confirm file permissions
-
-Confirm that the `replacer-disk` has the correct file permissions:
-
-```
-sudo chown 100:101 ~/sourcegraph-docker/replacer-disk
-```
-
-### Update image tags
-
-Change 3.12.2 → 3.12.5 for the following containers:
-
-| Container         | New image                                       |
-|-------------------|-------------------------------------------------|
-| frontend          | index.docker.io/sourcegraph/frontend:3.12.5     |
-| frontend-internal | index.docker.io/sourcegraph/frontend:3.12.5     |
-| github-proxy      | index.docker.io/sourcegraph/github-proxy:3.12.5 |
-| gitserver         | index.docker.io/sourcegraph/gitserver:3.12.5    |
-| lsif-server       | index.docker.io/sourcegraph/lsif-server:3.12.5  |
-| query-runner      | index.docker.io/sourcegraph/query-runner:3.12.5 |
-| replacer          | index.docker.io/sourcegraph/replacer:3.12.5     |
-| repo-updater      | index.docker.io/sourcegraph/repo-updater:3.12.5 |
-| searcher          | index.docker.io/sourcegraph/searcher:3.12.5     |
-| symbols           | index.docker.io/sourcegraph/symbols:3.12.5      |
-
-Also change the follow which are not versioned alongside Sourcegraph currently:
-
-| Container         | New image                                       |
-|-------------------|-------------------------------------------------|
-| zoekt-indexserver | index.docker.io/sourcegraph/zoekt-indexserver:0.0.20200124185115-83b89a5@sha256:efd1fb37fc62bfab963f12e95f69778b0e2e6a253caed5be9025840072ea85b5 |
-| zoekt-webserver   | index.docker.io/sourcegraph/zoekt-webserver:0.0.20200124185328-83b89a5@sha256:cde27ee7db0fe6c293a8c9df47b529fb01b5a898e6cbeea4c18d80fe218563db |
-
-## v3.12.1 → v3.12.2 changes
-
-### Update image tags
-
-Change 3.12.1 → v3.12.2 for the following containers:
-
-| Container         | New image                                       |
-|-------------------|-------------------------------------------------|
-| frontend          | index.docker.io/sourcegraph/frontend:3.12.2     |
-| frontend-internal | index.docker.io/sourcegraph/frontend:3.12.2     |
-| github-proxy      | index.docker.io/sourcegraph/github-proxy:3.12.2 |
-| gitserver         | index.docker.io/sourcegraph/gitserver:3.12.2    |
-| lsif-server       | index.docker.io/sourcegraph/lsif-server:3.12.2  |
-| query-runner      | index.docker.io/sourcegraph/query-runner:3.12.2 |
-| replacer          | index.docker.io/sourcegraph/replacer:3.12.2     |
-| repo-updater      | index.docker.io/sourcegraph/repo-updater:3.12.2 |
-| searcher          | index.docker.io/sourcegraph/searcher:3.12.2     |
-| symbols           | index.docker.io/sourcegraph/symbols:3.12.2      |
-
-Also change the follow which are not versioned alongside Sourcegraph currently:
-
-| Container         | New image                                       |
-|-------------------|-------------------------------------------------|
-| prometheus        | index.docker.io/sourcegraph/prometheus:10.0.7@sha256:22d54f27c7df8733a06c7ae8c2e851b61b1ed42f1f5621d493ef58ebd8d815e0 |
-
-## v3.10.4 → v3.12.1 changes
-
-### Management console removal
-
-- Please remove the `management-console` container entirely from your deployment ([details](https://docs.sourcegraph.com/admin/migration/3_11#migration-notes-for-sourcegraph-3-11)).
-- Please remove the `- management-console:6060` entry from your `prometheus/prometheus_targets.yml` file.
-
-### If you use `SITE_CONFIG_FILE` or `CRITICAL_CONFIG_FILE`
-
-If you are making use of `SITE_CONFIG_FILE` or `CRITICAL_CONFIG_FILE` environment variables please:
-
-1. Simply copy all properties from `CRITICAL_CONFIG_FILE` and paste them into your `SITE_CONFIG_FILE`.
-2. Delete and remove the `CRITICAL_CONFIG_FILE`, as it will no longer be used (the two are now just one).
-
-### Update image tags
-
-Change 3.10.4 → v3.12.1 for the following containers:
-
-| Container         | New image                                       |
-|-------------------|-------------------------------------------------|
-| frontend          | index.docker.io/sourcegraph/frontend:3.12.1     |
-| frontend-internal | index.docker.io/sourcegraph/frontend:3.12.1     |
-| github-proxy      | index.docker.io/sourcegraph/github-proxy:3.12.1 |
-| gitserver         | index.docker.io/sourcegraph/gitserver:3.12.1    |
-| lsif-server       | index.docker.io/sourcegraph/lsif-server:3.12.1  |
-| query-runner      | index.docker.io/sourcegraph/query-runner:3.12.1 |
-| replacer          | index.docker.io/sourcegraph/replacer:3.12.1     |
-| repo-updater      | index.docker.io/sourcegraph/repo-updater:3.12.1 |
-| searcher          | index.docker.io/sourcegraph/searcher:3.12.1     |
-| symbols           | index.docker.io/sourcegraph/symbols:3.12.1      |
-
-Also change the follow which are not versioned alongside Sourcegraph currently:
-
-| Container         | New image                                       |
-|-------------------|-------------------------------------------------|
-| grafana           | index.docker.io/sourcegraph/grafana:10.0.9@sha256:0132e5602030145803753468497a2d17640164b9c34df4ce2532dd93e4b1f6fc |
-| prometheus        | index.docker.io/sourcegraph/prometheus:10.0.6@sha256:f681ceb9400f0d546601cbf827ac9c3db16acd37e810da0860cf05d4f42305d1 |
-| syntect-server    | index.docker.io/sourcegraph/syntect_server:2b5a3fb@sha256:ef5529cafdc68d5a21edea472ee8ad966878b173044aa5c3db93bc3d84765b1f |
-| zoekt-indexserver | index.docker.io/sourcegraph/zoekt-indexserver:0.0.20191204145522-b470e5f@sha256:84e9de8be269277d6e4711a61d0c9675a44d409a4bf7f7dd1b90a22175095fa7 |
-| zoekt-webserver   | index.docker.io/sourcegraph/zoekt-webserver:0.0.20191204145231-b470e5f@sha256:fc3bfa69fc60b7a049a6646b71e45896cfae8adf3484602d140965c3781463a0 |
-| pgsql (no change if using external Postgres) | index.docker.io/sourcegraph/postgres-11.4:19-11-14_b084311b@sha256:072481559d559cfd9a53ad77c3688b5cf583117457fd452ae238a20405923297 |
-| redis-cache (no change if using external Redis) | index.docker.io/sourcegraph/redis-cache:19-04-16_6891de82@sha256:4cbfac8af0abb673899250d4fd859cc477d6426de519e9deb71e454e18322499 |
-| redis-store (no change if using external Redis) | index.docker.io/sourcegraph/redis-store:19-04-16_6891de821@sha256:56426d601ce1f6d63088fea1cefa61f69a2e809c7d90fc1d157cca63cf81b277 |
-
-## v3.10.4 → v3.12.5 changes
-
-### Confirm file permissions
-
-Confirm that the `replacer-disk` has the correct file permissions:
-
-```
-sudo chown 100:101 ~/sourcegraph-docker/replacer-disk
-```
-
-### Management console removal
-
-- Please remove the `management-console` container entirely from your deployment ([details](https://docs.sourcegraph.com/admin/migration/3_11#migration-notes-for-sourcegraph-3-11)).
-- Please remove the `- management-console:6060` entry from your `prometheus/prometheus_targets.yml` file.
-
-### If you use `SITE_CONFIG_FILE` or `CRITICAL_CONFIG_FILE`
-
-If you are making use of `SITE_CONFIG_FILE` or `CRITICAL_CONFIG_FILE` environment variables please:
-
-1. Simply copy all properties from `CRITICAL_CONFIG_FILE` and paste them into your `SITE_CONFIG_FILE`.
-2. Delete and remove the `CRITICAL_CONFIG_FILE`, as it will no longer be used (the two are now just one).
-
-### Update image tags
-
-Change 3.10.4 → v3.12.5 for the following containers:
-
-| Container         | New image                                       |
-|-------------------|-------------------------------------------------|
-| frontend          | index.docker.io/sourcegraph/frontend:3.12.5     |
-| frontend-internal | index.docker.io/sourcegraph/frontend:3.12.5     |
-| github-proxy      | index.docker.io/sourcegraph/github-proxy:3.12.5 |
-| gitserver         | index.docker.io/sourcegraph/gitserver:3.12.5    |
-| lsif-server       | index.docker.io/sourcegraph/lsif-server:3.12.5  |
-| query-runner      | index.docker.io/sourcegraph/query-runner:3.12.5 |
-| replacer          | index.docker.io/sourcegraph/replacer:3.12.5     |
-| repo-updater      | index.docker.io/sourcegraph/repo-updater:3.12.5 |
-| searcher          | index.docker.io/sourcegraph/searcher:3.12.5     |
-| symbols           | index.docker.io/sourcegraph/symbols:3.12.5      |
-
-Also change the follow which are not versioned alongside Sourcegraph currently:
-
-| Container         | New image                                       |
-|-------------------|-------------------------------------------------|
-| grafana           | index.docker.io/sourcegraph/grafana:10.0.9@sha256:0132e5602030145803753468497a2d17640164b9c34df4ce2532dd93e4b1f6fc |
-| prometheus        | index.docker.io/sourcegraph/prometheus:10.0.7@sha256:22d54f27c7df8733a06c7ae8c2e851b61b1ed42f1f5621d493ef58ebd8d815e0 |
-| syntect-server    | index.docker.io/sourcegraph/syntect_server:2b5a3fb@sha256:ef5529cafdc68d5a21edea472ee8ad966878b173044aa5c3db93bc3d84765b1f |
-| zoekt-indexserver | index.docker.io/sourcegraph/zoekt-indexserver:0.0.20200124185115-83b89a5@sha256:efd1fb37fc62bfab963f12e95f69778b0e2e6a253caed5be9025840072ea85b5 |
-| zoekt-webserver   | index.docker.io/sourcegraph/zoekt-webserver:0.0.20200124185328-83b89a5@sha256:cde27ee7db0fe6c293a8c9df47b529fb01b5a898e6cbeea4c18d80fe218563db |
-| pgsql (no change if using external Postgres) | index.docker.io/sourcegraph/postgres-11.4:19-11-14_b084311b@sha256:072481559d559cfd9a53ad77c3688b5cf583117457fd452ae238a20405923297 |
-| redis-cache (no change if using external Redis) | index.docker.io/sourcegraph/redis-cache:19-04-16_6891de82@sha256:4cbfac8af0abb673899250d4fd859cc477d6426de519e9deb71e454e18322499 |
-| redis-store (no change if using external Redis) | index.docker.io/sourcegraph/redis-store:19-04-16_6891de821@sha256:56426d601ce1f6d63088fea1cefa61f69a2e809c7d90fc1d157cca63cf81b277 |

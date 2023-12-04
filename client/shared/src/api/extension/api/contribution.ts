@@ -1,8 +1,7 @@
 import { mapValues } from 'lodash'
 
-import { Context, Expression, parse, parseTemplate } from '@sourcegraph/template-parser'
-
-import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '../../protocol'
+import type { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '@sourcegraph/client-api'
+import { type Context, Expression, parse, parseTemplate } from '@sourcegraph/template-parser'
 
 /**
  * Merges the contributions.
@@ -52,17 +51,6 @@ export function mergeContributions(contributions: Evaluated<Contributions>[]): E
                             // noop
                         }
                     }
-                }
-            } catch {
-                // noop
-            }
-        }
-        if (contribution.views) {
-            try {
-                if (!merged.views) {
-                    merged.views = [...contribution.views]
-                } else {
-                    merged.views = [...merged.views, ...contribution.views]
                 }
             } catch {
                 // noop

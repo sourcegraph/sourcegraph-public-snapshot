@@ -5,8 +5,14 @@ interface PageError {
     errorID: string
 }
 
+interface BuildInfo {
+    commitSHA?: string
+    version?: string
+}
+
 interface Window {
     pageError?: PageError
+    buildInfo: BuildInfo
     context: import('./jscontext').SourcegraphContext
 }
 
@@ -22,3 +28,4 @@ declare module '*.yml' {
     const ymlModule: string
     export default ymlModule
 }
+s

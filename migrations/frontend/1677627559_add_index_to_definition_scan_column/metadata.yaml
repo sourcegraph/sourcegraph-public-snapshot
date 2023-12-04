@@ -1,0 +1,3 @@
+name: Add index to definition scan column
+parents: [1677627515]
+createIndexConcurrently: true

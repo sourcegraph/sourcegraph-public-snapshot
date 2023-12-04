@@ -1,7 +1,8 @@
-import classNames from 'classnames'
 import React from 'react'
 
-import { ForwardReferenceComponent } from '../../..'
+import classNames from 'classnames'
+
+import type { ForwardReferenceComponent } from '../../..'
 
 import styles from './CardText.module.scss'
 

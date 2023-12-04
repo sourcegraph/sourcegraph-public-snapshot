@@ -6,8 +6,10 @@ type QueryResponse struct {
 			Commit struct {
 				Blob struct {
 					LSIF struct {
-						Definitions Definitions `json:"definitions"`
-						References  References  `json:"references"`
+						Definitions     Definitions     `json:"definitions"`
+						References      References      `json:"references"`
+						Implementations Implementations `json:"implementations"`
+						Prototypes      Prototypes      `json:"prototypes"`
 					} `json:"lsif"`
 				} `json:"blob"`
 			} `json:"commit"`
@@ -20,6 +22,16 @@ type Definitions struct {
 }
 
 type References struct {
+	Nodes    []Node   `json:"nodes"`
+	PageInfo PageInfo `json:"pageInfo"`
+}
+
+type Implementations struct {
+	Nodes    []Node   `json:"nodes"`
+	PageInfo PageInfo `json:"pageInfo"`
+}
+
+type Prototypes struct {
 	Nodes    []Node   `json:"nodes"`
 	PageInfo PageInfo `json:"pageInfo"`
 }

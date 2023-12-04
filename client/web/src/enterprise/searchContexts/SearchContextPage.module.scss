@@ -1,6 +1,6 @@
 .search-context-page {
-    &__private-badge {
-        font-size: 0.625rem;
+    &__title-spec {
+        word-break: break-all;
     }
 
     &__repo-revs-row {
@@ -24,4 +24,23 @@
             }
         }
     }
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.actions {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.badge-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0.25rem;
 }

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 
@@ -114,15 +115,13 @@ func TestBatchingStream(t *testing.T) {
 			count.Add(int64(len(event.Results)))
 		}))
 
-		var wg sync.WaitGroup
-		wg.Add(10)
+		p := pool.New()
 		for i := 0; i < 10; i++ {
-			go func() {
+			p.Go(func() {
 				s.Send(SearchEvent{Results: make(result.Matches, 1)})
-				wg.Done()
-			}()
+			})
 		}
-		wg.Wait()
+		p.Wait()
 
 		// One should be sent immediately
 		require.Equal(t, count.Load(), int64(1))
@@ -131,4 +130,21 @@ func TestBatchingStream(t *testing.T) {
 		s.Done()
 		require.Equal(t, count.Load(), int64(10))
 	})
+}
+
+func TestDedupingStream(t *testing.T) {
+	var sent []result.Match
+	s := NewDedupingStream(StreamFunc(func(e SearchEvent) {
+		sent = append(sent, e.Results...)
+	}))
+
+	for i := 0; i < 2; i++ {
+		s.Send(SearchEvent{
+			Results: []result.Match{&result.FileMatch{
+				File: result.File{Path: "lombardy"},
+			}},
+		})
+	}
+
+	require.Equal(t, 1, len(sent))
 }

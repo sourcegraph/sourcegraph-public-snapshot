@@ -1,0 +1,22 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`LinkOrSpan > render a link when "to" is set 1`] = `
+<DocumentFragment>
+  <a
+    class=""
+    href="http://example.com"
+  >
+    foo
+  </a>
+</DocumentFragment>
+`;
+
+exports[`LinkOrSpan > render a span when "to" is undefined 1`] = `
+<DocumentFragment>
+  <span
+    class=""
+  >
+    foo
+  </span>
+</DocumentFragment>
+`;

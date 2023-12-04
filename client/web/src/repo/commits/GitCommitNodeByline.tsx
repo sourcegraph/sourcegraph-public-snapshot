@@ -1,10 +1,13 @@
-import classNames from 'classnames'
 import React from 'react'
 
-import { Timestamp } from '../../components/time/Timestamp'
-import { SignatureFields } from '../../graphql-operations'
+import classNames from 'classnames'
+
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { Tooltip } from '@sourcegraph/wildcard'
+
+import type { SignatureFields } from '../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../person/PersonLink'
-import { UserAvatar } from '../../user/UserAvatar'
 
 interface Props {
     author: SignatureFields
@@ -12,22 +15,32 @@ interface Props {
     className?: string
     avatarClassName?: string
     compact?: boolean
+    preferAbsoluteTimestamps?: boolean
     messageElement?: JSX.Element
     commitMessageBody?: JSX.Element
+    isPerforceDepot?: boolean
+    as?: 'div' | 'td'
 }
 
 /**
  * Displays a Git commit's author and committer (with avatars if available) and the dates.
  */
-export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
+export const GitCommitNodeByline: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     author,
     committer,
     className = '',
     avatarClassName,
     compact,
+    preferAbsoluteTimestamps,
     messageElement,
     commitMessageBody,
+    isPerforceDepot,
+    as = 'div',
 }) => {
+    const Wrapper = as
+
+    const refActionType = isPerforceDepot ? 'submitted by' : 'committed by'
+
     // Omit GitHub as committer to reduce noise. (Edits and squash commits made in the GitHub UI
     // include GitHub as a committer.)
 
@@ -42,63 +55,60 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
     ) {
         // The author and committer both exist and are different people.
         return (
-            <div data-testid="git-commit-node-byline" className={className}>
+            <Wrapper data-testid="git-commit-node-byline" className={className}>
                 <div className="flex-shrink-0">
-                    <UserAvatar
-                        className={classNames('icon-inline', avatarClassName)}
-                        user={author.person}
-                        data-tooltip={`${formatPersonName(author.person)} (author)`}
-                    />{' '}
-                    <UserAvatar
-                        className={classNames('icon-inline mr-2', avatarClassName)}
-                        user={committer.person}
-                        data-tooltip={`${formatPersonName(committer.person)} (committer)`}
-                    />
+                    <Tooltip content={`${formatPersonName(author.person)} (author)`}>
+                        <UserAvatar inline={true} className={avatarClassName} user={author.person} />
+                    </Tooltip>{' '}
+                    <Tooltip content={`${formatPersonName(committer.person)} (committer)`}>
+                        <UserAvatar
+                            inline={true}
+                            className={classNames('mr-2', avatarClassName)}
+                            user={committer.person}
+                        />
+                    </Tooltip>
                 </div>
                 <div className="overflow-hidden">
                     {!compact ? (
                         <>
                             {messageElement}
-                            <PersonLink person={author.person} className="font-weight-bold" /> authored and commited by{' '}
-                            <PersonLink person={committer.person} className="font-weight-bold" />{' '}
-                            <Timestamp date={committer.date} />
+                            <PersonLink person={author.person} className="font-weight-bold" /> authored and{' '}
+                            {refActionType} <PersonLink person={committer.person} className="font-weight-bold" />{' '}
+                            <Timestamp date={committer.date} preferAbsolute={preferAbsoluteTimestamps} />
                             {commitMessageBody}
                         </>
                     ) : (
                         <>
-                            <PersonLink person={author.person} className="font-weight-bold" /> and{' '}
-                            <PersonLink person={committer.person} className="font-weight-bold" />{' '}
+                            <PersonLink person={author.person} /> and <PersonLink person={committer.person} />{' '}
                         </>
                     )}
                 </div>
-            </div>
+            </Wrapper>
         )
     }
 
     return (
-        <div data-testid="git-commit-node-byline" className={className}>
+        <Wrapper data-testid="git-commit-node-byline" className={className}>
             <div>
-                <UserAvatar
-                    className={classNames('icon-inline mr-1 mr-2', avatarClassName)}
-                    user={author.person}
-                    data-tooltip={formatPersonName(author.person)}
-                />
+                <Tooltip content={formatPersonName(author.person)}>
+                    <UserAvatar
+                        inline={true}
+                        className={classNames('mr-1 mr-2', avatarClassName)}
+                        user={author.person}
+                    />
+                </Tooltip>
             </div>
-            <div className="overflow-hidden">
+            <div className="text-truncate">
                 {!compact && (
                     <>
                         {messageElement}
-                        committed by <PersonLink person={author.person} className="font-weight-bold" />{' '}
-                        <Timestamp date={author.date} />
+                        {refActionType} <PersonLink person={author.person} className="font-weight-bold" />{' '}
+                        <Timestamp date={author.date} preferAbsolute={preferAbsoluteTimestamps} />
                         {commitMessageBody}
                     </>
                 )}
-                {compact && (
-                    <>
-                        <PersonLink person={author.person} className="font-weight-bold" />{' '}
-                    </>
-                )}
+                {compact && <PersonLink person={author.person} />}
             </div>
-        </div>
+        </Wrapper>
     )
 }

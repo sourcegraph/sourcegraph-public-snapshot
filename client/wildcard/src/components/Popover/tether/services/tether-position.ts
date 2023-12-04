@@ -1,6 +1,6 @@
-import { createPoint, Point } from '../models/geometry/point'
-import { getIntersection, intersects, Rectangle } from '../models/geometry/rectangle'
-import { Position, Strategy } from '../models/tether-models'
+import { createPoint, type Point } from '../models/geometry/point'
+import { getIntersection, intersects, type Rectangle } from '../models/geometry/rectangle'
+import { type ElementPosition, Strategy } from '../models/tether-models'
 
 import {
     getConstrainedElement,
@@ -16,7 +16,7 @@ import {
     isElementVisible,
 } from './geometry'
 import { getExtendedConstraint } from './geometry/actions/get-extended-constraint'
-import { TetherLayout } from './types'
+import type { TetherLayout } from './types'
 
 export interface TetherState {
     /** Area of the element in pixels */
@@ -33,6 +33,8 @@ export interface TetherState {
 
     /** Y and X coordinates of marker element */
     markerOffset: Point
+
+    position: ElementPosition
 }
 
 /**
@@ -43,8 +45,8 @@ export interface TetherState {
  * @param layout - Document layout information (overflows, constrains, paddings, etc)
  * @param position - Another position value to fit tooltip element
  */
-export function getPositionState(layout: TetherLayout, position: Position): TetherState | null {
-    const { overlapping, anchorOffset, strategy } = layout
+export function getPositionState(layout: TetherLayout, position: ElementPosition): TetherState | null {
+    const { overlapping, anchorOffset, strategy, targetPadding } = layout
     const { element, target, marker, overflow, constraint } = getNormalizedLayout(layout)
 
     const { markerAngle, markerOrigin, rotatedMarker } = getMarkerRotation(marker, position)
@@ -58,16 +60,20 @@ export function getPositionState(layout: TetherLayout, position: Position): Teth
     }
 
     // Extend the target element by marker size element  for correctness of calculations below
-    const extendedTarget = getTargetElement(overflowedTarget, marker, position)
+    const targetElement = getTargetElement(
+        getTargetElement(overflowedTarget, targetPadding, position),
+        rotatedMarker,
+        position
+    )
 
     // Change element tooltip coordinates to put this element right next extended target element
-    const joinedElement = getJoinedElement(element, extendedTarget, position)
+    const joinedElement = getJoinedElement(element, targetElement, position)
 
     const extendedConstraint =
-        strategy === Strategy.Absolute ? getExtendedConstraint(extendedTarget, constraint) : constraint
+        strategy === Strategy.Absolute ? getExtendedConstraint(targetElement, constraint) : constraint
 
     // Calculate constraint rectangle by target position and default constraint
-    const elementConstraint = getElementConstraint(extendedTarget, extendedConstraint, position, overlapping)
+    const elementConstraint = getElementConstraint(targetElement, extendedConstraint, position, overlapping)
 
     // Change tooltip element rectangle by element constraint
     const constrainedElement = getConstrainedElement(joinedElement, elementConstraint)
@@ -89,8 +95,8 @@ export function getPositionState(layout: TetherLayout, position: Position): Teth
 
     // Check visibility and join geometry
     const isTooltipVisible = isElementVisible(constrainedElement)
-    const isTooltipJoined = intersects(extendedTarget, constrainedElement)
-    const isMarkerJoined = intersects(extendedTarget, constrainedMarker)
+    const isTooltipJoined = intersects(targetElement, constrainedElement)
+    const isMarkerJoined = intersects(targetElement, constrainedMarker)
 
     if (!isTooltipVisible || (!isTooltipJoined && !isMarkerJoined)) {
         return null
@@ -102,6 +108,7 @@ export function getPositionState(layout: TetherLayout, position: Position): Teth
         elementBounds,
         markerAngle,
         markerOffset,
+        position,
     }
 }
 

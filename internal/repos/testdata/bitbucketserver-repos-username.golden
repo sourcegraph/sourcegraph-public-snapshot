@@ -3,7 +3,7 @@
    "ID": 0,
    "Name": "bb/SG/go-langserver",
    "URI": "bitbucket.example.com/SG/go-langserver",
-   "Description": "go-langserver",
+   "Description": "",
    "Fork": false,
    "Archived": false,
    "Private": false,
@@ -18,13 +18,14 @@
    "Sources": {
     "extsvc:bitbucketserver:1": {
      "ID": "extsvc:bitbucketserver:1",
-     "CloneURL": "https://keegan@bitbucket.example.com/scm/sg/go-langserver.git"
+     "CloneURL": "https://foo@bitbucket.example.com/scm/sg/go-langserver.git"
     }
    },
    "Metadata": {
     "slug": "go-langserver",
     "id": 1,
     "name": "go-langserver",
+    "description": "",
     "scmId": "git",
     "state": "AVAILABLE",
     "statusMessage": "Available",
@@ -68,7 +69,7 @@
    "ID": 0,
    "Name": "bb/SG/python-langserver",
    "URI": "bitbucket.example.com/SG/python-langserver",
-   "Description": "python-langserver",
+   "Description": "",
    "Fork": false,
    "Archived": false,
    "Private": true,
@@ -83,13 +84,14 @@
    "Sources": {
     "extsvc:bitbucketserver:1": {
      "ID": "extsvc:bitbucketserver:1",
-     "CloneURL": "https://keegan@bitbucket.example.com/scm/sg/python-langserver.git"
+     "CloneURL": "https://foo@bitbucket.example.com/scm/sg/python-langserver.git"
     }
    },
    "Metadata": {
     "slug": "python-langserver",
     "id": 2,
     "name": "python-langserver",
+    "description": "",
     "scmId": "git",
     "state": "AVAILABLE",
     "statusMessage": "Available",
@@ -133,7 +135,7 @@
    "ID": 0,
    "Name": "bb/SG/python-langserver-fork",
    "URI": "bitbucket.example.com/SG/python-langserver-fork",
-   "Description": "python-langserver-fork",
+   "Description": "",
    "Fork": true,
    "Archived": false,
    "Private": true,
@@ -148,13 +150,14 @@
    "Sources": {
     "extsvc:bitbucketserver:1": {
      "ID": "extsvc:bitbucketserver:1",
-     "CloneURL": "https://keegan@bitbucket.example.com/scm/sg/python-langserver-fork.git"
+     "CloneURL": "https://foo@bitbucket.example.com/scm/sg/python-langserver-fork.git"
     }
    },
    "Metadata": {
     "slug": "python-langserver-fork",
     "id": 5,
     "name": "python-langserver-fork",
+    "description": "",
     "scmId": "git",
     "state": "AVAILABLE",
     "statusMessage": "Available",
@@ -163,6 +166,7 @@
      "slug": "python-langserver",
      "id": 2,
      "name": "python-langserver",
+     "description": "",
      "scmId": "git",
      "state": "AVAILABLE",
      "statusMessage": "Available",
@@ -239,7 +243,7 @@
    "ID": 0,
    "Name": "bb/~KEEGAN/rgp",
    "URI": "bitbucket.example.com/~KEEGAN/rgp",
-   "Description": "rgp",
+   "Description": "",
    "Fork": false,
    "Archived": false,
    "Private": true,
@@ -254,13 +258,14 @@
    "Sources": {
     "extsvc:bitbucketserver:1": {
      "ID": "extsvc:bitbucketserver:1",
-     "CloneURL": "https://keegan@bitbucket.example.com/scm/~keegan/rgp.git"
+     "CloneURL": "https://foo@bitbucket.example.com/scm/~keegan/rgp.git"
     }
    },
    "Metadata": {
     "slug": "rgp",
     "id": 4,
     "name": "rgp",
+    "description": "",
     "scmId": "git",
     "state": "AVAILABLE",
     "statusMessage": "Available",
@@ -304,7 +309,7 @@
    "ID": 0,
    "Name": "bb/~KEEGAN/rgp-unavailable",
    "URI": "bitbucket.example.com/~KEEGAN/rgp-unavailable",
-   "Description": "rgp-unavailable",
+   "Description": "",
    "Fork": false,
    "Archived": false,
    "Private": true,
@@ -326,6 +331,7 @@
     "slug": "rgp-unavailable",
     "id": 4,
     "name": "rgp-unavailable",
+    "description": "",
     "scmId": "git",
     "state": "UNAVAILABLE",
     "statusMessage": "Unavailable",

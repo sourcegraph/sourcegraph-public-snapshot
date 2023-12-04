@@ -1,9 +1,9 @@
 import React from 'react'
 
-import { PerformanceGauge, Props } from '../PerformanceGauge'
+import { PerformanceGauge, type Props } from '../PerformanceGauge'
 
 import styles from './StyledPerformanceGauge.module.scss'
 
 export const StyledPerformanceGauge: React.FunctionComponent<
-    Exclude<Props, 'countClassName' | 'labelClassName'>
+    React.PropsWithChildren<Exclude<Props, 'countClassName' | 'labelClassName'>>
 > = props => <PerformanceGauge countClassName={styles.count} labelClassName={styles.label} {...props} />

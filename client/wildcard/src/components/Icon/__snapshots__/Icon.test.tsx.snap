@@ -1,28 +1,137 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Icon renders a simple icon correctly 1`] = `
+exports[`Icon > custom icons > renders a medium icon correctly 1`] = `
 <DocumentFragment>
-  <div
-    class="iconInline"
+  <svg
+    aria-label="Sourcegraph logo"
+    class="mdi-icon iconInline iconInlineMd"
+    fill="none"
+    role="img"
+    viewBox="0 0 52 52"
+    xmlns="http://www.w3.org/2000/svg"
   >
-    <svg
-      fill="none"
-      viewBox="0 0 52 52"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"
-        fill="#FF5543"
-      />
-      <path
-        d="M10.9 44.7C9.1 45 7.3 44.4 6 43c-1.8-2.2-1.6-5.4.6-7.2L38.7 8.5c2.2-1.8 5.4-1.6 7.2.6 1.8 2.2 1.6 5.4-.6 7.2l-32 27.3c-.7.6-1.6 1-2.4 1.1z"
-        fill="#A112FF"
-      />
-      <path
-        d="M46.8 38.1c-.9.2-1.8.1-2.6-.2L4.4 23.8c-2.7-1-4.1-3.9-3.1-6.6 1-2.7 3.9-4.1 6.6-3.1l39.7 14.1c2.7 1 4.1 3.9 3.1 6.6-.6 1.8-2.2 3-3.9 3.3z"
-        fill="#00CBEC"
-      />
-    </svg>
-  </div>
+    <path
+      d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"
+      fill="#FF5543"
+    />
+    <path
+      d="M10.9 44.7C9.1 45 7.3 44.4 6 43c-1.8-2.2-1.6-5.4.6-7.2L38.7 8.5c2.2-1.8 5.4-1.6 7.2.6 1.8 2.2 1.6 5.4-.6 7.2l-32 27.3c-.7.6-1.6 1-2.4 1.1z"
+      fill="#A112FF"
+    />
+    <path
+      d="M46.8 38.1c-.9.2-1.8.1-2.6-.2L4.4 23.8c-2.7-1-4.1-3.9-3.1-6.6 1-2.7 3.9-4.1 6.6-3.1l39.7 14.1c2.7 1 4.1 3.9 3.1 6.6-.6 1.8-2.2 3-3.9 3.3z"
+      fill="#00CBEC"
+    />
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`Icon > custom icons > renders a simple inline icon correctly 1`] = `
+<DocumentFragment>
+  <svg
+    aria-hidden="true"
+    class="mdi-icon iconInline"
+    fill="none"
+    role="img"
+    viewBox="0 0 52 52"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"
+      fill="#FF5543"
+    />
+    <path
+      d="M10.9 44.7C9.1 45 7.3 44.4 6 43c-1.8-2.2-1.6-5.4.6-7.2L38.7 8.5c2.2-1.8 5.4-1.6 7.2.6 1.8 2.2 1.6 5.4-.6 7.2l-32 27.3c-.7.6-1.6 1-2.4 1.1z"
+      fill="#A112FF"
+    />
+    <path
+      d="M46.8 38.1c-.9.2-1.8.1-2.6-.2L4.4 23.8c-2.7-1-4.1-3.9-3.1-6.6 1-2.7 3.9-4.1 6.6-3.1l39.7 14.1c2.7 1 4.1 3.9 3.1 6.6-.6 1.8-2.2 3-3.9 3.3z"
+      fill="#00CBEC"
+    />
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`Icon > legacy mdi-react icons > renders a medium icon correctly 1`] = `
+<DocumentFragment>
+  <svg
+    aria-label="Checkmark"
+    class="mdi-icon mdi-icon iconInline iconInlineMd"
+    fill="currentColor"
+    height="24"
+    role="img"
+    viewBox="0 0 24 24"
+    width="24"
+  >
+    <path
+      d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+    />
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`Icon > legacy mdi-react icons > renders a simple inline icon correctly 1`] = `
+<DocumentFragment>
+  <svg
+    aria-hidden="true"
+    class="mdi-icon mdi-icon iconInline"
+    fill="currentColor"
+    height="24"
+    role="img"
+    viewBox="0 0 24 24"
+    width="24"
+  >
+    <path
+      d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+    />
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`Icon > new @mdi/js icons > renders a medium icon correctly 1`] = `
+<DocumentFragment>
+  <svg
+    aria-label="Checkmark"
+    class="mdi-icon iconInline iconInlineMd"
+    fill="currentColor"
+    height="24"
+    role="img"
+    viewBox="0 0 24 24"
+    width="24"
+  >
+    <path
+      d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+    />
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`Icon > new @mdi/js icons > renders a simple inline icon correctly 1`] = `
+<DocumentFragment>
+  <svg
+    aria-hidden="true"
+    class="mdi-icon iconInline"
+    fill="currentColor"
+    height="24"
+    role="img"
+    viewBox="0 0 24 24"
+    width="24"
+  >
+    <path
+      d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+    />
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`Icon > styled as icons > renders a simple span 1`] = `
+<DocumentFragment>
+  <span
+    aria-label="Smile"
+    class="mdi-icon iconInline"
+    role="img"
+  >
+    :)
+  </span>
 </DocumentFragment>
 `;

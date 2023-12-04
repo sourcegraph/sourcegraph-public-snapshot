@@ -1,6 +1,7 @@
-import { Context, parse, parseTemplate } from '@sourcegraph/template-parser'
+import { describe, expect, it, test } from 'vitest'
 
-import { ContributableMenu, Contributions, Evaluated } from '../../protocol'
+import { ContributableMenu, type Contributions, type Evaluated } from '@sourcegraph/client-api'
+import { type Context, parse, parseTemplate } from '@sourcegraph/template-parser'
 
 import {
     evaluateContributions,
@@ -16,7 +17,6 @@ describe('mergeContributions()', () => {
             { id: '1.b', command: 'c', title: '1.B' },
         ],
         menus: {
-            [ContributableMenu.CommandPalette]: [{ action: '1.a' }],
             [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
         },
     }
@@ -27,7 +27,6 @@ describe('mergeContributions()', () => {
             { id: '2.b', command: 'c', title: '2.B' },
         ],
         menus: {
-            [ContributableMenu.CommandPalette]: [{ action: '2.a' }],
             [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
         },
     }
@@ -39,7 +38,6 @@ describe('mergeContributions()', () => {
             { id: '2.b', command: 'c', title: '2.B' },
         ],
         menus: {
-            [ContributableMenu.CommandPalette]: [{ action: '1.a' }, { action: '2.a' }],
             [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
             [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
         },
@@ -76,13 +74,6 @@ describe('filterContributions()', () => {
         expect(filterContributions({ menus: {} })).toEqual(expected)
     })
 
-    it('handles empty array of menu contributions', () => {
-        const expected: Evaluated<Contributions> = {
-            menus: { commandPalette: [] },
-        }
-        expect(filterContributions({ menus: { commandPalette: [] } })).toEqual(expected)
-    })
-
     it('handles non-empty contributions', () => {
         const expected: Evaluated<Contributions> = {
             actions: [
@@ -91,7 +82,6 @@ describe('filterContributions()', () => {
                 { id: 'a3', command: 'c' },
             ],
             menus: {
-                [ContributableMenu.CommandPalette]: [{ action: 'a1', when: true }, { action: 'a3' }],
                 [ContributableMenu.GlobalNav]: [{ action: 'a1', when: true }, { action: 'a2' }],
             },
         }
@@ -103,11 +93,6 @@ describe('filterContributions()', () => {
                     { id: 'a3', command: 'c' },
                 ],
                 menus: {
-                    [ContributableMenu.CommandPalette]: [
-                        { action: 'a1', when: true },
-                        { action: 'a2', when: false },
-                        { action: 'a3' },
-                    ],
                     [ContributableMenu.GlobalNav]: [
                         { action: 'a1', when: true },
                         { action: 'a2' },

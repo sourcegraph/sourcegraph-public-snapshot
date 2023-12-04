@@ -3,6 +3,8 @@ package shared
 import (
 	"fmt"
 	"strings"
+
+	"github.com/prometheus/common/model"
 )
 
 type ObservableConstructorOptions struct {
@@ -29,6 +31,9 @@ type ObservableConstructorOptions struct {
 	// will add a prefix to the constructed legend.
 	MetricDescriptionRoot string
 
+	// JobLabel is the name of the label used to denote the job name. If unset, "job" is used.
+	JobLabel string
+
 	// Filters are additional prometheus filter expressions used to select or hide values
 	// for a given label pattern.
 	Filters []string
@@ -41,6 +46,10 @@ type ObservableConstructorOptions struct {
 	//                             batches-01 store operations
 	// queue + shared label values ^^^^^^^^^^ ^^^^^^^^^^^^^^^^ metric desc + generic term (chosen by constructor)
 	By []string
+
+	// RangeWindow allows setting a custom window for functions like `rate` and `increase`. By default it is
+	// set to 5m.
+	RangeWindow model.Duration
 }
 
 // observableConstructor is a type of constructor function used in this package that creates
@@ -76,15 +85,23 @@ type GroupConstructorOptions struct {
 // expressions. The given container name may be string or pattern, which will be matched
 // against the prefix of the value of the job label. Note that this excludes replicas like
 // -0 and -1 in docker-compose.
-func makeFilters(containerName string, filters ...string) string {
-	filters = append(filters, fmt.Sprintf(`job=~"^%s.*"`, containerName))
+func makeFilters(containerLabel, containerName string, filters ...string) string {
+	if containerLabel == "" {
+		containerLabel = "job"
+	}
+
+	filters = append(filters, fmt.Sprintf(`%s=~"^%s.*"`, containerLabel, containerName))
 	return strings.Join(filters, ",")
 }
 
-// makeBy returns the suffix if the aggregator expression (e.g., max by (queue)),
-//                                                                   ^^^^^^^^^^
-// as well as a prefix to be used as part of the legend consisting of placeholder
-// values that will render to the value of the label/variable in the Grafana UI.
+// makeBy returns the suffix if the aggregator expression.
+//
+//	e.g. max by (queue)
+//	         ^^^^^^^^^^
+//
+// legendPrefix is a prefix to be used as part of the legend consisting of
+// placeholder values that will render to the value of the label/variable in
+// the Grafana UI.
 func makeBy(labels ...string) (aggregateExprSuffix string, legendPrefix string) {
 	if len(labels) == 0 {
 		return "", ""

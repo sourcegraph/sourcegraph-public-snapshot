@@ -1,9 +1,9 @@
-import { asyncScheduler, defer, from, Observable, OperatorFunction, Subscription } from 'rxjs'
+import { asyncScheduler, defer, from, Observable, type OperatorFunction, Subscription } from 'rxjs'
 import { concatAll, filter, mergeMap, observeOn, tap } from 'rxjs/operators'
 
 import { isDefined, isInstanceOf } from '@sourcegraph/common'
 
-import { MutationRecordLike, querySelectorAllOrSelf } from '../../util/dom'
+import { type MutationRecordLike, querySelectorAllOrSelf } from '../../util/dom'
 
 interface View {
     element: HTMLElement

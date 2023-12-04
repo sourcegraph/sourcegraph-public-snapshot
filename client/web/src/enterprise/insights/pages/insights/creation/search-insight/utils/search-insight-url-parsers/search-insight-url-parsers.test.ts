@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { decodeSearchInsightUrl, encodeSearchInsightUrl } from './search-insight-url-parsers'
 
 describe('decodeSearchInsightUrl', () => {
@@ -9,7 +11,7 @@ describe('decodeSearchInsightUrl', () => {
 
     test('should return a valid search insight initial values object', () => {
         const queryString = encodeURIComponent(
-            `?repositories=github.com/sourcegraph/sourcegraph, github.com/example/example&title=Insight title&allRepos=true&series=${JSON.stringify(
+            `?repositories=github.com/sourcegraph/sourcegraph,github.com/example/example&title=Insight title&series=${JSON.stringify(
                 [
                     {
                         id: 1,
@@ -23,17 +25,14 @@ describe('decodeSearchInsightUrl', () => {
         )
 
         expect(decodeSearchInsightUrl(queryString)).toStrictEqual({
-            repositories: 'github.com/sourcegraph/sourcegraph, github.com/example/example',
+            repoMode: 'urls-list',
+            repoQuery: { query: '' },
+            repositories: ['github.com/sourcegraph/sourcegraph', 'github.com/example/example'],
             title: 'Insight title',
-            allRepos: true,
             series: [
-                { id: 1, edit: false, valid: false, name: 'series 1', query: 'test1', stroke: 'red' },
-                { id: 2, edit: false, valid: false, name: 'series 2', query: 'test2', stroke: 'blue' },
+                { id: 1, edit: false, valid: true, autofocus: false, name: 'series 1', query: 'test1', stroke: 'red' },
+                { id: 2, edit: false, valid: true, autofocus: false, name: 'series 2', query: 'test2', stroke: 'blue' },
             ],
-            step: 'days',
-            stepValue: '8',
-            visibility: '',
-            dashboardReferenceCount: 0,
         })
     })
 })
@@ -41,9 +40,8 @@ describe('decodeSearchInsightUrl', () => {
 describe('encodeSearchInsightUrl', () => {
     test('should encode search insight values in a way that they could be decoded with decodeUrlSearchInsight', () => {
         const encodedSearchInsightParameters = encodeSearchInsightUrl({
-            repositories: 'github.com/sourcegraph/sourcegraph, github.com/example/example',
+            repositories: ['github.com/sourcegraph/sourcegraph', 'github.com/example/example'],
             title: 'Insight title',
-            allRepos: true,
             series: [
                 { id: '1', name: 'series 1', query: 'test1', stroke: 'red' },
                 { id: '2', name: 'series 2', query: 'test2', stroke: 'blue' },
@@ -51,17 +49,30 @@ describe('encodeSearchInsightUrl', () => {
         })
 
         expect(decodeSearchInsightUrl(encodedSearchInsightParameters)).toStrictEqual({
-            repositories: 'github.com/sourcegraph/sourcegraph, github.com/example/example',
+            repoMode: 'urls-list',
+            repoQuery: { query: '' },
+            repositories: ['github.com/sourcegraph/sourcegraph', 'github.com/example/example'],
             title: 'Insight title',
-            allRepos: true,
             series: [
-                { id: '1', edit: false, valid: false, name: 'series 1', query: 'test1', stroke: 'red' },
-                { id: '2', edit: false, valid: false, name: 'series 2', query: 'test2', stroke: 'blue' },
+                {
+                    id: '1',
+                    edit: false,
+                    valid: true,
+                    autofocus: false,
+                    name: 'series 1',
+                    query: 'test1',
+                    stroke: 'red',
+                },
+                {
+                    id: '2',
+                    edit: false,
+                    valid: true,
+                    autofocus: false,
+                    name: 'series 2',
+                    query: 'test2',
+                    stroke: 'blue',
+                },
             ],
-            step: 'days',
-            stepValue: '8',
-            visibility: '',
-            dashboardReferenceCount: 0,
         })
     })
 })

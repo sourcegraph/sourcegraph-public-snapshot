@@ -30,7 +30,7 @@ type cloneURLResolver struct {
 
 // cloneURLResolvers is the list of clone-URL-to-repo-URI mappings, derived
 // from the site config
-var cloneURLResolvers = conf.Cached(func() interface{} {
+var cloneURLResolvers = conf.Cached[[]*cloneURLResolver](func() []*cloneURLResolver {
 	cloneURLConfig := conf.Get().GitCloneURLToRepositoryName
 	var resolvers []*cloneURLResolver
 	for _, c := range cloneURLConfig {
@@ -51,7 +51,7 @@ var cloneURLResolvers = conf.Cached(func() interface{} {
 // CustomCloneURLToRepoName maps from clone URL to repo name using custom mappings specified by the
 // user in site config. An empty string return value indicates no match.
 func CustomCloneURLToRepoName(cloneURL string) (repoName api.RepoName) {
-	for _, r := range cloneURLResolvers().([]*cloneURLResolver) {
+	for _, r := range cloneURLResolvers() {
 		if name := mapString(r.from, cloneURL, r.to); name != "" {
 			return api.RepoName(name)
 		}

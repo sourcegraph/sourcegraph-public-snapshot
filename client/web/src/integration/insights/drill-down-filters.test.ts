@@ -1,16 +1,18 @@
 import assert from 'assert'
 
 import delay from 'delay'
+import { afterEach, beforeEach, describe, it } from 'mocha'
 import { Key } from 'ts-key-enum'
 
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
+import type { InsightViewNode } from '../../graphql-operations'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from '../context'
 
-import { BACKEND_INSIGHTS } from './utils/insight-mock-data'
-import { overrideGraphQLExtensions } from './utils/override-insights-graphql'
+import { MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE } from './fixtures/calculated-insights'
+import { createJITMigrationToGQLInsightMetadataFixture } from './fixtures/insights-metadata'
+import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-api'
 
 describe('Backend insight drill down filters', () => {
     let driver: Driver
@@ -20,8 +22,6 @@ describe('Backend insight drill down filters', () => {
         driver = await createDriverForTest()
     })
 
-    after(() => driver?.close())
-
     beforeEach(async function () {
         testContext = await createWebIntegrationTestContext({
             driver,
@@ -30,49 +30,83 @@ describe('Backend insight drill down filters', () => {
         })
     })
 
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    after(() => driver?.close())
     afterEach(() => testContext?.dispose())
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
-    it('should update user settings if drill-down filters have been persisted', async () => {
-        const userSubjectSettigns = {
-            'insights.allrepos': {
-                'searchInsights.insight.backend_ID_001': {
-                    series: [],
-                },
-            },
-        }
-
-        overrideGraphQLExtensions({
+    it('should update the insight configuration if drill-down filters have been persisted', async () => {
+        overrideInsightsGraphQLApi({
             testContext,
-            userSettings: userSubjectSettigns,
             overrides: {
-                // Mock back-end insights with standard gql API handler.
-                Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
-                OverwriteSettings: () => ({
-                    settingsMutation: {
-                        overwriteSettings: {
-                            empty: emptyResponse,
+                // Mock back-end insights with standard gql API handler
+                GetAllInsightConfigurations: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' })],
+                        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+                        totalCount: 1,
+                    },
+                }),
+
+                // Calculated insight mock
+                GetInsightView: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE],
+                    },
+                }),
+
+                GetSearchContexts: () => ({
+                    __typename: 'Query',
+                    searchContexts: {
+                        __typename: 'SearchContextConnection',
+                        nodes: [],
+                        pageInfo: {
+                            hasNextPage: false,
                         },
                     },
                 }),
 
-                SubjectSettings: () => ({
-                    settingsSubject: {
-                        latestSettings: {
-                            id: 310,
-                            contents: JSON.stringify(userSubjectSettigns),
-                        },
+                GetSearchContextByName: () => ({
+                    searchContexts: {
+                        __typename: 'SearchContextConnection',
+                        nodes: [
+                            {
+                                __typename: 'SearchContext',
+                                spec: '@sourcegraph/sourcegraph',
+                                query: 'repo:github.com/sourcegraph/sourcegraph',
+                            },
+                        ],
+                    },
+                }),
+
+                UpdateLineChartSearchInsight: () => ({
+                    __typename: 'Mutation',
+                    updateLineChartSearchInsight: {
+                        __typename: 'InsightViewPayload',
+                        view: createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' }),
                     },
                 }),
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/all')
+        await driver.page.waitForSelector('svg circle')
 
         await driver.page.click('button[aria-label="Filters"]')
+
+        // fill in the excludeRepoRegexp filter
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
         await driver.page.type('[name="excludeRepoRegexp"]', 'github.com/sourcegraph/sourcegraph')
+
+        // fill in the search context filter regexp
+        await driver.page.click('button[aria-label="search context filter section"]')
+        await driver.page.type('[name="context"]', '@sourcegraph/sourcegraph')
+
+        // Wait until async validation of the search context field is passed
+        await delay(1000)
 
         // Close the drill-down filter panel
         await driver.page.keyboard.press(Key.Escape)
@@ -83,68 +117,95 @@ describe('Backend insight drill down filters', () => {
         // In this time we should see active button state (filter dot should appear if we've got some filters)
         await driver.page.click('button[aria-label="Active filters"]')
 
+        // Wait until async validation of the search context field is passed
+        await delay(500)
+
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[role="dialog"][aria-label="Drill-down filters panel"] button[type="submit"]')
-        }, 'Insights')
+        }, 'UpdateLineChartSearchInsight')
 
-        assert.deepStrictEqual(variables, {
-            ids: ['searchInsights.insight.backend_ID_001'],
-            includeRepoRegex: '',
-            excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
+        assert.deepStrictEqual(variables.input.viewControls, {
+            filters: {
+                searchContexts: ['@sourcegraph/sourcegraph'],
+                includeRepoRegex: '',
+                excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
+            },
+            seriesDisplayOptions: {
+                limit: null,
+                numSamples: null,
+                sortOptions: {
+                    direction: 'DESC',
+                    mode: 'RESULT_COUNT',
+                },
+            },
         })
     })
 
     it('should create a new insight with predefined filters via drill-down flow insight creation', async () => {
-        const userSubjectSettigns = {
-            'insights.allrepos': {
-                'searchInsights.insight.backend_ID_001': {
-                    title: 'Linear backend insight with filters',
-                    repositories: [],
-                    series: [
-                        {
-                            name: 'Series #1',
-                            query: 'test query string',
-                            stroke: 'var(--primary)',
-                        },
-                    ],
-                    filters: {
-                        includeRepoRegexp: '',
-                        excludeRepoRegexp: 'github.com/sourcegraph/sourcegraph',
-                    },
-                },
+        const insightWithFilters: InsightViewNode = {
+            ...createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated', id: 'view_1' }),
+            defaultFilters: {
+                __typename: 'InsightViewFilters',
+                searchContexts: [],
+                includeRepoRegex: '',
+                excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
             },
         }
 
-        overrideGraphQLExtensions({
+        overrideInsightsGraphQLApi({
             testContext,
-            userSettings: userSubjectSettigns,
             overrides: {
-                // Mock back-end insights with standard gql API handler.
-                Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
-                OverwriteSettings: () => ({
-                    settingsMutation: {
-                        overwriteSettings: {
-                            empty: emptyResponse,
+                // Mock back-end insights with standard gql API handler
+                GetAllInsightConfigurations: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [insightWithFilters],
+                        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+                        totalCount: 1,
+                    },
+                }),
+
+                // Calculated insight mock
+                GetInsightView: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE],
+                    },
+                }),
+
+                GetSearchContexts: () => ({
+                    __typename: 'Query',
+                    searchContexts: {
+                        __typename: 'SearchContextConnection',
+                        nodes: [],
+                        pageInfo: {
+                            hasNextPage: false,
                         },
                     },
                 }),
 
-                SubjectSettings: () => ({
-                    settingsSubject: {
-                        latestSettings: {
-                            id: 310,
-                            contents: JSON.stringify(userSubjectSettigns),
-                        },
+                SaveInsightAsNewView: () => ({
+                    __typename: 'Mutation',
+                    saveInsightAsNewView: {
+                        __typename: 'InsightViewPayload',
+                        view: createJITMigrationToGQLInsightMetadataFixture({ id: 'view_2', type: 'calculated' }),
                     },
                 }),
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/all')
+        await driver.page.waitForSelector('svg circle')
 
         await driver.page.click('button[aria-label="Active filters"]')
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
+
+        await driver.page.type('[name="includeRepoRegexp"]', 'github.com/sourcegraph/sourcegraph')
+
+        // Wait until async validation of the search context field is passed
+        await delay(500)
 
         await driver.page.click(
             '[role="dialog"][aria-label="Drill-down filters panel"] button[data-testid="save-as-new-view-button"]'
@@ -157,41 +218,26 @@ describe('Backend insight drill down filters', () => {
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[role="dialog"][aria-label="Drill-down filters panel"] button[type="submit"]')
-        }, 'OverwriteSettings')
+        }, 'SaveInsightAsNewView')
 
-        assert.deepStrictEqual(JSON.parse(variables.contents), {
-            'insights.allrepos': {
-                'searchInsights.insight.backend_ID_001': {
-                    title: 'Linear backend insight with filters',
-                    repositories: [],
-                    series: [
-                        {
-                            name: 'Series #1',
-                            query: 'test query string',
-                            stroke: 'var(--primary)',
-                        },
-                    ],
-                    filters: {
-                        includeRepoRegexp: '',
-                        excludeRepoRegexp: 'github.com/sourcegraph/sourcegraph',
-                    },
+        assert.deepStrictEqual(variables.input, {
+            insightViewId: 'view_1',
+            dashboard: null,
+            options: {
+                title: 'Insight with filters',
+            },
+            viewControls: {
+                filters: {
+                    includeRepoRegex: 'github.com/sourcegraph/sourcegraph',
+                    excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
+                    searchContexts: [''],
                 },
-                'searchInsights.insight.insightWithFilters': {
-                    title: 'Insight with filters',
-                    repositories: [],
-                    series: [
-                        {
-                            name: 'Series #1',
-                            query: 'test query string',
-                            stroke: 'var(--primary)',
-                        },
-                    ],
-                    step: {
-                        months: 1,
-                    },
-                    filters: {
-                        includeRepoRegexp: '',
-                        excludeRepoRegexp: 'github.com/sourcegraph/sourcegraph',
+                seriesDisplayOptions: {
+                    limit: null,
+                    numSamples: null,
+                    sortOptions: {
+                        direction: 'DESC',
+                        mode: 'RESULT_COUNT',
                     },
                 },
             },

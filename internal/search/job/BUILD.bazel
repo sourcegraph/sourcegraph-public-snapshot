@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "job",
+    srcs = [
+        "job.go",
+        "observe.go",
+        "walk.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/job",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/endpoint",
+        "//internal/gitserver",
+        "//internal/grpc/defaults",
+        "//internal/search",
+        "//internal/search/streaming",
+        "//internal/trace",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_zoekt//:zoekt",
+        "@io_opentelemetry_go_otel//attribute",
+        "@org_uber_go_atomic//:atomic",
+    ],
+)

@@ -1,0 +1,31 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+
+proto_library(
+    name = "news_proto",
+    srcs = ["news.proto"],
+    visibility = ["//:__subpackages__"],
+    deps = ["@com_google_protobuf//:timestamp_proto"],
+)
+
+go_proto_library(
+    name = "news_go_proto",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news",
+    proto = ":news_proto",
+    visibility = ["//:__subpackages__"],
+)
+
+go_library(
+    name = "news",
+    embed = [":v1_go_proto"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news/v1",
+    visibility = ["//:__subpackages__"],
+)
+
+go_proto_library(
+    name = "v1_go_proto",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news/v1",
+    proto = ":news_proto",
+    visibility = ["//:__subpackages__"],
+)

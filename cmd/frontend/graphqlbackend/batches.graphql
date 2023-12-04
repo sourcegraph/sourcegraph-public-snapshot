@@ -99,6 +99,7 @@ enum ChangesetExternalState {
     OPEN
     CLOSED
     MERGED
+    READONLY
     DELETED
 }
 
@@ -185,6 +186,11 @@ enum ChangesetState {
     """
     MERGED
     """
+    The changeset is published, and is now read-only, most likely due to the
+    repository being archived.
+    """
+    READONLY
+    """
     The changeset is published, not being reconciled and has been deleted on the code host.
     """
     DELETED
@@ -212,32 +218,18 @@ interface Changeset {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
         viewerCanAdminister: Boolean
     ): BatchChangeConnection!
-
-    """
-    The publication state of the changeset.
-    """
-    publicationState: ChangesetPublicationState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The reconciler state of the changeset.
-    """
-    reconcilerState: ChangesetReconcilerState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The external state of the changeset, or null when not yet published to the code host.
-    """
-    externalState: ChangesetExternalState
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
 
     """
     The state of the changeset.
@@ -282,32 +274,18 @@ type HiddenExternalChangeset implements Node & Changeset {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
         viewerCanAdminister: Boolean
     ): BatchChangeConnection!
-
-    """
-    The publication state of the changeset.
-    """
-    publicationState: ChangesetPublicationState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The reconciler state of the changeset.
-    """
-    reconcilerState: ChangesetReconcilerState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The external state of the changeset, or null when not yet published to the code host.
-    """
-    externalState: ChangesetExternalState
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
 
     """
     The state of the changeset.
@@ -363,14 +341,23 @@ type ExternalChangeset implements Node & Changeset {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
         viewerCanAdminister: Boolean
     ): BatchChangeConnection!
+
+    """
+    The batch change that "owns" this changeset: If this is null, it is imported/tracked by a batch change.
+    """
+    ownedByBatchChange: ID
 
     """
     The events belonging to this changeset.
@@ -410,28 +397,17 @@ type ExternalChangeset implements Node & Changeset {
     body: String
 
     """
-    The author of the changeset, or null if the data hasn't been synced from the code host yet,
-    or the changeset has not yet been published.
+    The author of the changeset, or null if the data is unavailable or hasn't been synced
+    from the code host yet.
+
+    Note that author is not fully supported by some code host APIs:
+    * GitHub - only author.name
+    * GitLab - only author.name
+    * Bitbucket Server - author is not always available
+    * Bitbucket Cloud - author is never available
+    * Azure DevOps - author is always available
     """
     author: Person
-
-    """
-    The publication state of the changeset.
-    """
-    publicationState: ChangesetPublicationState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The reconciler state of the changeset.
-    """
-    reconcilerState: ChangesetReconcilerState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The external state of the changeset, or null when not yet published to the code host.
-    """
-    externalState: ChangesetExternalState
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
 
     """
     The state of the changeset.
@@ -454,9 +430,20 @@ type ExternalChangeset implements Node & Changeset {
     host).
     """
     forkNamespace: String
+    """
+    If the changeset was opened from a fork, this is the name of the fork repository.
+    """
+    forkName: String
+
+    """
+    Commit verification object for this changeset's commit, if it was signed.
+    """
+    commitVerification: CommitVerification
 
     """
     The review state of this changeset. This is only set once the changeset is published on the code host.
+
+    Note: The COMMENTED and DISMISSED review states are not yet implemented.
     """
     reviewState: ChangesetReviewState
 
@@ -496,6 +483,35 @@ type ExternalChangeset implements Node & Changeset {
     Null if the changeset was only imported.
     """
     currentSpec: VisibleChangesetSpec
+}
+
+"""
+Commit signing verification for a code host, e.g. if it was signed via GitHub App or
+an SSH key.
+"""
+union CommitVerification = GitHubCommitVerification
+
+"""
+The verification object describing the result of verifying the commit's signature.
+https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#create-a-commit
+"""
+type GitHubCommitVerification {
+    """
+    Indicates whether GitHub considers the signature in the commit verified
+    """
+    verified: Boolean!
+    """
+    The reason for the verified value
+    """
+    reason: String!
+    """
+    The signature extracted from the commit
+    """
+    signature: String!
+    """
+    The value that was signed
+    """
+    payload: String!
 }
 
 """
@@ -550,12 +566,50 @@ type ChangesetsStats {
     The count of all changesets.
     """
     total: Int!
+    """
+    If true, then all changesets are either merged or closed. This indicates that the batch change is completed.
+    """
+    isCompleted: Boolean!
+    """
+    The count of changesets that are complete (i.e in a merged or closed state) and not archived or deleted.
+    """
+    percentComplete: Int!
 }
 
 """
 Stats on all the changesets that have been applied to this repository by batch changes.
 """
 type RepoChangesetsStats {
+    """
+    The count of unpublished changesets.
+    """
+    unpublished: Int!
+    """
+    The count of draft changesets.
+    """
+    draft: Int!
+    """
+    The count of open changesets.
+    """
+    open: Int!
+    """
+    The count of merged changesets.
+    """
+    merged: Int!
+    """
+    The count of closed changesets.
+    """
+    closed: Int!
+    """
+    The count of all changesets.
+    """
+    total: Int!
+}
+
+"""
+Stats on all the changesets across the instance.
+"""
+type GlobalChangesetsStats {
     """
     The count of unpublished changesets.
     """
@@ -695,6 +749,10 @@ enum ChangesetSpecOperation {
     The changeset is kept in the batch change, but it's marked as archived.
     """
     ARCHIVE
+    """
+    The changeset is re-added to the batch change.
+    """
+    REATTACH
 }
 
 """
@@ -903,14 +961,6 @@ type GitBranchChangesetDescription {
     For example: "4095572721c6234cd72013fd49dff4fb48f0f8a4"
     """
     baseRev: String!
-
-    """
-    The repository that contains the branch with this changeset's changes.
-    """
-    headRepository: Repository!
-        @deprecated(
-            reason: "Unused. Sourcegraph does not populate a full repository when creating a changeset on a fork. Use VisibleChangesetSpec.fork or ExternalChangeset.forkNamespace instead."
-        )
 
     """
     The full name of the Git ref that holds the changes proposed by this changeset. This ref will
@@ -1160,40 +1210,39 @@ Aggregated stats on nodes in this connection.
 """
 type ChangesetApplyPreviewConnectionStats {
     """
-    Push a new commit to the code host.
+    The amount of new commits from the batch change in this operation.
     """
     push: Int!
     """
-    Update the existing changeset on the codehost. This is purely the changeset resource on the code host,
-    not the git commit. For updates to the commit, see 'PUSH'.
+    The amount of existing changeset that will be updated from the batch change in this operation.
     """
     update: Int!
     """
-    Move the existing changeset out of being a draft.
+    The amount of changesets that will be un-drafted from the batch change in this operation.
     """
     undraft: Int!
     """
-    Publish a changeset to the codehost.
+    The amount of changesets that will be pubished from the batch change in this operation.
     """
     publish: Int!
     """
-    Publish a changeset to the codehost as a draft changeset. (Only on supported code hosts).
+    The amount of changesets that will be published as a draft from the batch change in this operation.
     """
     publishDraft: Int!
     """
-    Sync the changeset with the current state on the codehost.
+    The amount of changesets that will be synced from the batch change in this operation.
     """
     sync: Int!
     """
-    Import an existing changeset from the code host with the ExternalID from the spec.
+    The amount of changesets that will be imported from the batch change in this operation.
     """
     import: Int!
     """
-    Close the changeset on the codehost.
+    The amount of changesets that will be closed from the batch change in this operation.
     """
     close: Int!
     """
-    Reopen the changeset on the codehost.
+    The amount of changesets that will be re-opened from the batch change in this operation.
     """
     reopen: Int!
     """
@@ -1201,11 +1250,11 @@ type ChangesetApplyPreviewConnectionStats {
     """
     sleep: Int!
     """
-    The changeset is removed from some of the associated batch changes.
+    The amount of changesets that will be removed from the batch change in this operation.
     """
     detach: Int!
     """
-    The changeset will still be attached to the batch change but marked as archived.
+    The amount of changesets that will be archived from the batch change in this operation.
     """
     archive: Int!
     """
@@ -1220,6 +1269,10 @@ type ChangesetApplyPreviewConnectionStats {
     The amount of changesets that are disassociated from the batch change in this operation.
     """
     removed: Int!
+    """
+    The amount of changesets that will be re-added from the batch change in this operation.
+    """
+    reattach: Int!
 }
 
 """
@@ -1288,6 +1341,26 @@ extend type Mutation {
         """
         changesetSpec: String!
     ): ChangesetSpec!
+
+    """
+    FOR INTERNAL USE ONLY.
+
+    Upload multiple changeset specs that will be used in a future update to a batch change. The changeset specs
+    are stored and can be referenced by their ID in the applyBatchChange mutation. Just uploading the
+    changeset specs does not result in changes to the batch change or any of its changesets; you need
+    to call applyBatchChange to use it.
+
+    The returned ChangesetSpecs is immutable and expires after a certain period of time (if not
+    used in a call to applyBatchChange), which can be queried on ChangesetSpec.expiresAt.
+    """
+    createChangesetSpecs(
+        """
+        The raw changeset specs (as JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/changeset_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
+        """
+        changesetSpecs: [String!]!
+    ): [ChangesetSpec!]!
 
     """
     Enqueue the given changeset for high-priority syncing.
@@ -1372,6 +1445,26 @@ extend type Mutation {
     ): BatchChange!
 
     """
+    Checks if a batch change with the specified name exists, if it doesn't, it creates a batch change
+    with an empty batch spec otherwise returns the existing batch change, this is useful for drafting
+    server-side batch changes with the src-cli tool.
+    The user creating the batch change must have permission to create it in the
+    namespace provided. Use `createBatchSpecFromRaw` and `replaceBatchSpecInput` to update
+    the input batch spec after creating.
+    """
+    upsertEmptyBatchChange(
+        """
+        The namespace (either a user or organization) that this batch change should belong to.
+        """
+        namespace: ID!
+
+        """
+        The (unique) name to identify the batch change by in its namespace.
+        """
+        name: String!
+    ): BatchChange!
+
+    """
     Creates a batch spec and triggers a job to evaluate the workspaces. Consumers need to
     poll the batch spec until the resolution is completed to get a full list of all
     workspaces. This might become streaming so the results will come in over time.
@@ -1408,8 +1501,6 @@ extend type Mutation {
 
         """
         Don't use cache entries.
-
-        TODO: Not implemented yet.
         """
         noCache: Boolean = false
 
@@ -1418,6 +1509,11 @@ extend type Mutation {
         used to create) batch changes in this namespace.
         """
         namespace: ID!
+
+        """
+        The batch change this batch spec is associated with.
+        """
+        batchChange: ID!
     ): BatchSpec!
 
     """
@@ -1464,8 +1560,6 @@ extend type Mutation {
 
         """
         Don't use cache entries.
-
-        TODO: Not implemented yet.
         """
         noCache: Boolean = false
     ): BatchSpec!
@@ -1506,8 +1600,6 @@ extend type Mutation {
 
         """
         Don't use cache entries.
-
-        TODO: Not implemented yet.
         """
         noCache: Boolean = false
 
@@ -1547,11 +1639,10 @@ extend type Mutation {
         """
         batchSpec: ID!
         """
-        Don't use cache entries.
-
-        TODO: Not implemented yet.
+        Don't use cache entries. If set, will overwrite the current batchSpec.NoCache
+        state.
         """
-        noCache: Boolean = false
+        noCache: Boolean
         """
         Right away set the autoApplyEnabled flag on the batch spec.
 
@@ -1639,6 +1730,12 @@ extend type Mutation {
         The URL of the external service being configured.
         """
         externalServiceURL: String!
+
+        """
+        The username associated with the credential, if required by the external
+        service kind.
+        """
+        username: String
 
         """
         The credential to be stored. This can never be retrieved through the API and will be stored encrypted.
@@ -1753,9 +1850,13 @@ extend type Query {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -1774,6 +1875,10 @@ extend type Query {
         """
         name: String!
     ): BatchChange
+    """
+    Stats on all the changesets across the instance for Batch Changes.
+    """
+    globalChangesetsStats: GlobalChangesetsStats!
 
     """
     All globally configured code hosts usable with Batch Changes.
@@ -1788,6 +1893,20 @@ extend type Query {
         """
         after: String
     ): BatchChangesCodeHostConnection!
+
+    """
+    Returns a list of available bulk operations for changesets belonging to a batch change.
+    """
+    availableBulkOperations(
+        """
+        The batch change the selected changesets belong to.
+        """
+        batchChange: ID!
+        """
+        The changesets to query for bulk operations applicable to.
+        """
+        changesets: [ID!]!
+    ): [BulkOperationType!]!
 
     """
     A list of batch specs.
@@ -1806,7 +1925,79 @@ extend type Query {
         Opaque pagination cursor.
         """
         after: String
+        """
+        Include locally executed (i.e. with src-cli) batch specs in the list of specs returned.
+        """
+        includeLocallyExecutedSpecs: Boolean
+        """
+        Exclude the empty batch specs that are initially created and applied to draft batch changes.
+        """
+        excludeEmptySpecs: Boolean
     ): BatchSpecConnection!
+
+    """
+    Determines if a batch change credential is authorized for a code host.
+    """
+    checkBatchChangesCredential(batchChangesCredential: ID!): EmptyResponse!
+
+    """
+    Takes the batch spec as input and resolves the workspaces for it, without persisting them.
+    This endpoint is used in src-cli to resolve workspaces.
+    """
+    resolveWorkspacesForBatchSpec(batchSpec: String!): [ResolvedBatchSpecWorkspace!]!
+
+    """
+    Returns the max number of changesets are allowed for License that does not have the batch change feature.
+    """
+    maxUnlicensedChangesets: Int!
+
+    """
+    Get all changesets in the given batch change by ID.
+    """
+    getChangesetsByIDs(batchChange: ID!, changesets: [ID!]!): ChangesetConnection!
+}
+
+"""
+A not persisted resolved workspace, returned from resolveWorkspacesForBatchSpec.
+"""
+type ResolvedBatchSpecWorkspace {
+    """
+    The repository to run over.
+    """
+    repository: Repository!
+
+    """
+    The branch to run over.
+    """
+    branch: GitRef!
+
+    """
+    The path to run in.
+    """
+    path: String!
+
+    """
+    If true, only the files within the workspace will be fetched.
+    """
+    onlyFetchWorkspace: Boolean!
+
+    """
+    If true, this workspace has been skipped, because some rule forced this.
+    For now, the only one is a .batchignore file existing in the repository.
+    """
+    ignored: Boolean!
+
+    """
+    If true, this workspace has been skipped, because the code host on which
+    the repository is hosted is not supported.
+    """
+    unsupported: Boolean!
+
+    """
+    If this workspace was resolved based on a search, this is the list of paths
+    to files that have been included in the search results.
+    """
+    searchResultPaths: [String!]!
 }
 
 """
@@ -1887,6 +2078,8 @@ type BatchSpecWorkspaceResolution {
         Search for workspaces matching this query. Queries may include quoted substrings
         to match phrases, and words may be preceded by - to negate them.
         Currently, this supports searching repository names only.
+        Repos that are not visible to the viewer will be omitted entirely when
+        this argument is passed.
         """
         search: String
         """
@@ -1965,10 +2158,9 @@ type BatchSpecWorkspaceStages {
     setup: [ExecutionLogEntry!]!
 
     """
-    Execution log entry related to running src batch exec.
-    This field is null, if the step had not been executed.
+    Execution log entries related to running the steps of the batch spec.
     """
-    srcExec: ExecutionLogEntry
+    srcExec: [ExecutionLogEntry!]!
 
     """
     Execution log entries related to tearing down the workspace.
@@ -2016,13 +2208,96 @@ enum BatchSpecWorkspaceState {
 }
 
 """
-A workspace in Batch Changes to run in.
+The common interface for a batch spec workspace. Depending on access to the repository,
+either a HiddenBatchSpecWorkspace or a VisibleBatchSpecWorkspace will be serving this
+interface.
 """
-type BatchSpecWorkspace implements Node {
+interface BatchSpecWorkspace {
     """
     The unique ID for the workspace.
     """
     id: ID!
+
+    """
+    Used for reverse querying.
+    """
+    batchSpec: BatchSpec!
+
+    """
+    If true, only the files within the workspace will be fetched.
+    """
+    onlyFetchWorkspace: Boolean!
+
+    """
+    If true, this workspace has been skipped, because some rule forced this.
+    For now, the only one is a .batchignore file existing in the repository.
+    """
+    ignored: Boolean!
+
+    """
+    If true, this workspace has been skipped, because the code host on which
+    the repository is hosted is not supported.
+    """
+    unsupported: Boolean!
+
+    """
+    Whether we found a task cache result.
+    """
+    cachedResultFound: Boolean!
+
+    """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
+
+    """
+    The time when the workspace was enqueued for processing. Null, if not yet enqueued.
+    """
+    queuedAt: DateTime
+
+    """
+    The time when the workspace started processing. Null, if not yet started.
+    """
+    startedAt: DateTime
+
+    """
+    The time when the workspace finished processing. Null, if not yet finished.
+    """
+    finishedAt: DateTime
+
+    """
+    The current state the workspace is in.
+    """
+    state: BatchSpecWorkspaceState!
+
+    """
+    The rank of this execution in the queue of the user. The value of this field is null if the
+    execution has started.
+    """
+    placeInQueue: Int
+
+    """
+    The rank of this execution in the global queue. The value of this field is null if the
+    execution has started.
+    """
+    placeInGlobalQueue: Int
+
+    """
+    The diff stat over all created changeset specs. Null, if not yet finished or
+    failed.
+    """
+    diffStat: DiffStat
+}
+
+"""
+A workspace to which the requesting user has access.
+"""
+type VisibleBatchSpecWorkspace implements BatchSpecWorkspace & Node {
+    """
+    The unique ID for the workspace.
+    """
+    id: ID!
+
     """
     The repository to run over.
     """
@@ -2062,10 +2337,13 @@ type BatchSpecWorkspace implements Node {
 
     """
     Whether we found a task cache result.
-
-    TODO: Not implemented yet.
     """
     cachedResultFound: Boolean!
+
+    """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
 
     """
     Executor stages of running in this workspace. Null, if the execution hasn't
@@ -2118,13 +2396,19 @@ type BatchSpecWorkspace implements Node {
     Populated, when the execution is finished. This is where you get the combined
     diffs.
     """
-    changesetSpecs: [ChangesetSpec!]
+    changesetSpecs: [VisibleChangesetSpec!]
 
     """
-    The rank of this execution in the queue. The value of this field is null if the
+    The rank of this execution in the queue of the user. The value of this field is null if the
     execution has started.
     """
     placeInQueue: Int
+
+    """
+    The rank of this execution in the global queue. The value of this field is null if the
+    execution has started.
+    """
+    placeInGlobalQueue: Int
 
     """
     The diff stat over all created changeset specs. Null, if not yet finished or
@@ -2138,6 +2422,86 @@ type BatchSpecWorkspace implements Node {
     Only available to site-admins.
     """
     executor: Executor
+}
+
+"""
+A workspace to which the requesting user does not have access.
+"""
+type HiddenBatchSpecWorkspace implements BatchSpecWorkspace & Node {
+    """
+    The unique ID for the workspace.
+    """
+    id: ID!
+
+    """
+    Used for reverse querying.
+    """
+    batchSpec: BatchSpec!
+
+    """
+    If true, only the files within the workspace will be fetched.
+    """
+    onlyFetchWorkspace: Boolean!
+
+    """
+    If true, this workspace has been skipped, because some rule forced this.
+    For now, the only one is a .batchignore file existing in the repository.
+    """
+    ignored: Boolean!
+
+    """
+    If true, this workspace has been skipped, because the code host on which
+    the repository is hosted is not supported.
+    """
+    unsupported: Boolean!
+
+    """
+    Whether we found a task cache result.
+    """
+    cachedResultFound: Boolean!
+
+    """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
+
+    """
+    The time when the workspace was enqueued for processing. Null, if not yet enqueued.
+    """
+    queuedAt: DateTime
+
+    """
+    The time when the workspace started processing. Null, if not yet started.
+    """
+    startedAt: DateTime
+
+    """
+    The time when the workspace finished processing. Null, if not yet finished.
+    """
+    finishedAt: DateTime
+
+    """
+    The current state the workspace is in.
+    """
+    state: BatchSpecWorkspaceState!
+
+    """
+    The rank of this execution in the queue of the user. The value of this field is null if the
+    execution has started.
+    """
+    placeInQueue: Int
+
+    """
+    The rank of this execution in the global queue. The value of this field is null if the
+    execution has started.
+    """
+    placeInGlobalQueue: Int
+
+    """
+    The diff stat over all created changeset specs. Null, if not yet finished or
+    failed.
+    """
+    diffStat: DiffStat
 }
 
 """
@@ -2166,8 +2530,6 @@ type BatchSpecWorkspaceStep {
 
     """
     True, if a cached result has been found.
-
-    TODO: Not yet implemented.
     """
     cachedResultFound: Boolean!
 
@@ -2188,8 +2550,8 @@ type BatchSpecWorkspaceStep {
         """
         Return the log lines after N lines.
         """
-        after: Int
-    ): [String!]
+        after: String
+    ): BatchSpecWorkspaceStepOutputLineConnection!
 
     """
     The time when the step started processing. Null, if not yet started.
@@ -2228,6 +2590,26 @@ type BatchSpecWorkspaceStep {
 }
 
 """
+A list of Output lines from a Batch spec workspace.
+"""
+type BatchSpecWorkspaceStepOutputLineConnection {
+    """
+    The total number of output lines in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+
+    """
+    A list of output lines.
+    """
+    nodes: [String!]!
+}
+
+"""
 An output variable in a step.
 """
 type BatchSpecWorkspaceOutputVariable {
@@ -2251,8 +2633,9 @@ type BatchSpecWorkspaceEnvironmentVariable {
     name: String!
     """
     The variable value.
+    If null, the variable will be populated from a secret.
     """
-    value: String!
+    value: String
 }
 
 """
@@ -2292,22 +2675,6 @@ type BatchChange implements Node {
     The state of the batch change.
     """
     state: BatchChangeState!
-
-    """
-    The user that created the initial spec. In an org, this will be different from the namespace, or null if the user was deleted.
-    """
-    specCreator: User
-        @deprecated(
-            reason: "Unused. This always incorrectly returned the current batch specs creator, not the intial one. This field is deprecated and will be removed in a future release."
-        )
-
-    """
-    The user who created the batch change initially by applying the spec for the first time, or null if the user was deleted.
-
-    This is an alias of BatchChange.creator.
-    """
-    initialApplier: User
-        @deprecated(reason: "Use creator instead. This field is deprecated and will be removed in a future release.")
 
     """
     The user who created the batch change, or null if the user was deleted.
@@ -2367,32 +2734,18 @@ type BatchChange implements Node {
         """
         after: String
         """
-        Only include changesets with any of the given reconciler states.
-        """
-        reconcilerState: [ChangesetReconcilerState!]
-            @deprecated(
-                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
-            )
-        """
-        Only include changesets with the given publication state.
-        """
-        publicationState: ChangesetPublicationState
-            @deprecated(
-                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
-            )
-        """
-        Only include changesets with the given external state.
-        """
-        externalState: ChangesetExternalState
-            @deprecated(
-                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
-            )
-        """
         Only include changesets with the given state.
         """
         state: ChangesetState
         """
+        Query only changesets that are either open or draft. This is used on the close page to list changesets that remain open.
+        When set, passing state is not allowed.
+        """
+        onlyClosable: Boolean
+        """
         Only include changesets with the given review state.
+
+        Note: The COMMENTED and DISMISSED review states are not yet implemented.
         """
         reviewState: ChangesetReviewState
         """
@@ -2481,6 +2834,14 @@ type BatchChange implements Node {
         Opaque pagination cursor.
         """
         after: String
+        """
+        Include locally executed (i.e. with src-cli) batch specs in the list of specs returned.
+        """
+        includeLocallyExecutedSpecs: Boolean
+        """
+        Exclude the empty batch specs that are initially created and applied to draft batch changes.
+        """
+        excludeEmptySpecs: Boolean
     ): BatchSpecConnection!
 }
 
@@ -2532,6 +2893,10 @@ enum BulkOperationType {
     Bulk publish changesets.
     """
     PUBLISH
+    """
+    Export changesets.
+    """
+    EXPORT
 }
 
 """
@@ -2659,6 +3024,22 @@ enum BatchSpecState {
     The execution has been canceled.
     """
     CANCELED
+}
+
+"""
+The possible sources of a batch spec.
+"""
+enum BatchSpecSource {
+    """
+    The spec was created from the local src-cli workflow.
+    """
+    LOCAL
+
+    """
+    This spec was created for remote server-side execution, e.g. from the web UI editor,
+    or with src batch remote.
+    """
+    REMOTE
 }
 
 """
@@ -2819,7 +3200,8 @@ type BatchSpec implements Node {
     applyURL: String
 
     """
-    When true, the viewing user can apply this spec.
+    When true, the viewing user can apply this spec, modify it, and run workspace
+    resolution jobs.
     """
     viewerCanAdminister: Boolean!
 
@@ -2902,10 +3284,37 @@ type BatchSpec implements Node {
     allowUnsupported: Boolean
 
     """
+    If true, workspaces will not run with cached results.
+
+    Null, if not created through createBatchSpecFromRaw.
+    """
+    noCache: Boolean
+
+    """
     If true, viewer can retry the batch spec execution by calling
     retryBatchSpecExecution.
     """
     viewerCanRetry: Boolean!
+
+    """
+    Whether the batch spec was created from the local src-cli workflow or remotely for
+    server-side execution.
+    """
+    source: BatchSpecSource!
+
+    """
+    The files that are mounted in the steps of a batch spec.
+    """
+    files(
+        """
+        Returns the first n files from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): BatchSpecWorkspaceFileConnection
 }
 
 """
@@ -2942,9 +3351,13 @@ extend type Org {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -2966,9 +3379,13 @@ extend type User {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -3012,9 +3429,13 @@ extend type Repository {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -3069,16 +3490,38 @@ type BatchChangesCodeHost {
     credential: BatchChangesCredential
 
     """
+    Configuration for commit signing, if any has been set up. Always nil if the code
+    host type doesn't have commit signing support yet.
+    """
+    commitSigningConfiguration: CommitSigningConfiguration
+
+    """
     If true, some of the repositories on this code host require
     an SSH key to be configured.
     """
     requiresSSH: Boolean!
 
     """
+    If true, this code host requires credentials to have a username as well as a personal access token.
+    """
+    requiresUsername: Boolean!
+
+    """
+    If true, this code host can setup commit signing.
+    """
+    supportsCommitSigning: Boolean!
+
+    """
     If true, the code host has webhooks configured.
     """
     hasWebhooks: Boolean!
 }
+
+"""
+Commit signing configuration for a code host, e.g. GitHubApp or SSHKey. Today, the
+only supported form of commit signing is via a GitHub App.
+"""
+union CommitSigningConfiguration = GitHubApp
 
 """
 A user token configured for batch changes use on the specified code host.
@@ -3145,4 +3588,144 @@ input ChangesetSpecPublicationStateInput {
     The desired publication state.
     """
     publicationState: PublishedValue!
+}
+
+"""
+A list of BatchSpecMounts.
+"""
+type BatchSpecWorkspaceFileConnection {
+    """
+    The total number of files.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+    """
+    A list of workspace files in a batch spec.
+    """
+    nodes: [BatchSpecWorkspaceFile!]!
+}
+
+"""
+The metadata of a file being used in a batch spec step.
+"""
+type BatchSpecWorkspaceFile implements File2 & Node {
+    """
+    The ID of the file.
+    """
+    id: ID!
+    """
+    When the file was last touched.
+    """
+    modifiedAt: DateTime!
+    """
+    When the file is initially created at.
+    """
+    createdAt: DateTime!
+    """
+    When the file is updated at.
+    """
+    updatedAt: DateTime!
+
+    """
+    The full path (relative to the root) of this file.
+    """
+    path: String!
+    """
+    The base name (i.e., file name only) of this file.
+    """
+    name: String!
+    """
+    False because this is a file, not a directory.
+    """
+    isDirectory: Boolean!
+    """
+    The content of this file.
+    """
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
+    """
+    The file size in bytes.
+    """
+    byteSize: Int!
+    """
+    Total line count for the Blob. Returns 0 for binary files.
+    """
+    totalLines: Int!
+    """
+    Whether or not it is binary.
+    """
+    binary: Boolean!
+    """
+    The file rendered as rich HTML, or an empty string if it is not a supported
+    rich file type.
+    This HTML string is already escaped and thus is always safe to render.
+    """
+    richHTML(
+        """
+        Return richHTML content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return richHTML content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
+    """
+    The URL to this file (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The canonical URL to this file (using an immutable revision specifier).
+    """
+    canonicalURL: String!
+
+    """
+    Not implemented.
+    """
+    changelistURL: String
+
+    """
+    The URLs to this file on external services.
+    """
+    externalURLs: [ExternalLink!]!
+    """
+    Highlight the file.
+    """
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
+        """
+        If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
+        2000 bytes is enabled. This may produce a significant amount of HTML
+        which some browsers (such as Chrome, but not Firefox) may have trouble
+        rendering efficiently.
+        """
+        highlightLongLines: Boolean = false
+        """
+        Specifies which format/highlighting technique to use.
+        """
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
+        """
+        Return highlight content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        startLine: Int
+        """
+        Return highlight content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        endLine: Int
+    ): HighlightedFile!
 }

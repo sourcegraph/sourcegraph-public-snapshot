@@ -1,0 +1,158 @@
+<html lang="en" class="light">
+    <head>
+        <title>Sourcegraph for JetBrains</title>
+        <style>
+            html,
+            body {
+                margin: 0;
+                font-size: 13px;
+                font-family: 'DejaVu Sans', sans-serif;
+            }
+
+            html.dark,
+            .dark body {
+                background-color: #3c3f41;
+                color: #bbbbbb;
+            }
+
+            html.light,
+            .light body {
+                background-color: rgb(242, 242, 242);
+                color: rgb(8, 8, 8);
+            }
+
+            #modal {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                margin: 20px 0;
+            }
+
+            #webview-and-overlay {
+                position: relative;
+                width: 960px;
+                height: 400px;
+                margin-left: -2px;
+            }
+
+            #webview-overlay {
+                position: absolute;
+                visibility: hidden;
+                width: calc(100% - 2 * 150px);
+                height: 100%;
+                z-index: 2;
+                display: flex;
+                padding: 0 150px;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                line-height: 1.5em;
+                margin-left: 1px;
+            }
+
+            html.dark #webview-overlay,
+            .dark body #webview-overlay {
+                background-color: #3c3f41;
+                color: #bbbbbb;
+            }
+
+            html.light #webview-overlay,
+            .light body #webview-overlay {
+                background-color: rgb(242, 242, 242);
+                color: #bbbbbb;
+            }
+
+            #webview {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                border-top: 0 !important;
+                z-index: 1;
+            }
+
+            .dark #webview {
+                border: 1px solid #616161;
+            }
+
+            .light #webview {
+                border: 1px solid rgb(198, 198, 198);
+            }
+
+            #title {
+                text-align: center;
+                width: 960px;
+                padding: 2px 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-bottom: none !important;
+            }
+
+            .dark #title {
+                background-color: #4a4e52;
+                border: 1px solid #616161;
+            }
+
+            .light #title {
+                background-color: rgb(235, 235, 235);
+                border: 1px solid rgb(198, 198, 198);
+            }
+
+            #title > img {
+                margin-right: 5px;
+            }
+
+            #code-details {
+                width: calc(960px - 10px);
+                max-width: 100%;
+                border-top: 0 !important;
+                height: 320px;
+                margin: 0;
+                padding: 5px;
+                overflow: auto;
+                font-family: monospace;
+                white-space: pre;
+            }
+
+            .dark #code-details {
+                border: 1px solid #616161;
+                background-color: #2b2b2b;
+            }
+
+            .light #code-details {
+                border: 1px solid rgb(198, 198, 198);
+                background-color: #fff;
+            }
+
+            #code-details-highlight {
+                border-radius: 2px;
+            }
+
+            .dark #code-details-highlight {
+                background-color: #ebcb8b;
+                color: #4f5b66;
+            }
+
+            .light #code-details-highlight {
+                background-color: #ebcb8b;
+                color: #4f5b66;
+            }
+        </style>
+        <meta charset="UTF-8" />
+    </head>
+    <body>
+        <div id="modal">
+            <div id="title">
+                <img alt="Sourcegraph logo" height="16" src="/icons/sourcegraphLogo.svg" width="16" /> Sourcegraph
+            </div>
+            <div id="webview-and-overlay">
+                <div id="webview-overlay"></div>
+                <iframe height="100%" id="webview" src="/html/index.html" width="100%"></iframe>
+            </div>
+            <div id="code-details"></div>
+
+            <script type="module" src="/dist/bridgeMock.js"></script>
+        </div>
+    </body>
+</html>

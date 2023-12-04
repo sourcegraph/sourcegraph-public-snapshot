@@ -1,0 +1,23 @@
+exclude: (^.*\.snap$)|(^internal/database/.*\.json)|(^internal/database/.*\.md)|(^migrations/[^/]+/squashed\.sql)
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/keith/pre-commit-buildifier
+    rev: 5.0.1
+    hooks:
+      - id: buildifier
+      - id: buildifier-lint
+  - repo: local
+    hooks:
+    - id: check-tokens
+      name: check-tokens
+      description: 'Check for common tokens being committed'
+      entry: ./dev/check-tokens.sh
+      language: script
+      'types': [text]
+      args: []
+      require_serial: false

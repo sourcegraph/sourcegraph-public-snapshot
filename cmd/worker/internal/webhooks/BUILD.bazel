@@ -1,0 +1,36 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "webhooks",
+    srcs = [
+        "handler.go",
+        "janitor.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/encryption/keyring",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/observation",
+        "@com_github_inconshreveable_log15//:log15",
+    ],
+)
+
+go_test(
+    name = "webhooks_test",
+    timeout = "short",
+    srcs = ["handler_test.go"],
+    embed = [":webhooks"],
+    deps = [
+        "//internal/database/dbmocks",
+        "//lib/errors",
+        "@com_github_derision_test_go_mockgen//testutil/assert",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

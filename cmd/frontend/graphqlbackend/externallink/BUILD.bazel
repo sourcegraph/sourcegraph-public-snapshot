@@ -1,0 +1,42 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "externallink",
+    srcs = [
+        "doc.go",
+        "repository.go",
+        "resolver.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/errcode",
+        "//internal/extsvc",
+        "//internal/gitserver",
+        "//internal/repoupdater/protocol",
+        "//internal/trace",
+        "//internal/types",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "externallink_test",
+    timeout = "short",
+    srcs = ["repository_test.go"],
+    embed = [":externallink"],
+    deps = [
+        "//internal/api",
+        "//internal/database/dbmocks",
+        "//internal/extsvc",
+        "//internal/extsvc/github",
+        "//internal/extsvc/gitlab",
+        "//internal/gitserver",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_derision_test_go_mockgen//testutil/require",
+    ],
+)

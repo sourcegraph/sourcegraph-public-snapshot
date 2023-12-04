@@ -8,19 +8,20 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-        - uses: jenschelkopf/issue-label-notification-action@f7d2363e5efa18b8aeea671ca8093e183ae8f218 # 1.3
+        - uses: felixfbecker/issue-label-notification-action@57b8a1f93c7951ce8af6cce8c6c90ae35a51c2e0
           with:
+             token: "${{ secrets.LABELER_GITHUB_TOKEN }}"
+             edit_body: true
+             message: /cc {recipients}
              recipients: |
-                  team/growth-and-integrations=@muratsu @rrhyne @jjinnii
-                  team/cloud=@RafLeszczynski
-                  team/search-product=@benvenker @lguychard
-                  team/search-core=@jjeffwarner
-                  [deprecated]team/search=@lguychard @benvenker @jjeffwarner
-                  team/code-intelligence=@macraig
-                  team/code-insights=@joelkw @felixfbecker @vovakulikov @unclejustin
-                  team/distribution=@dan-mckean
-                  team/delivery=@dan-mckean @caugustus-sourcegraph @kevinwojo
+                  team/growth=@sourcegraph/growth
+                  team/cloud=@sourcegraph/cloud
+                  team/search-product=@sourcegraph/search-product
+                  team/search-core=@sourcegraph/search-core
+                  team/code-insights=@vovakulikov
                   team/security=@dcomas
-                  team/dev-experience=@taylorsperry @jhchabran @kstretch9
-                  team/repo-management=@jplahn @dan-mckean
+                  team/dev-experience=@jhchabran @kstretch9
                   team/devops=@sourcegraph/cloud-devops
+                  team/source=@mrnugget
+                  cody-gateway=@unknwon @eseliger @bobheadxi @rafax
+                  team/search-platform=@sourcegraph/search-platform

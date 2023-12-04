@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { RadioButton } from '@sourcegraph/wildcard'
 
@@ -61,7 +62,13 @@ interface Props {
 /**
  * A row of radio buttons.
  */
-export const RadioButtons: React.FunctionComponent<Props> = ({ nodes, onChange, selected, className, name }) => (
+export const RadioButtons: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    nodes,
+    onChange,
+    selected,
+    className,
+    name,
+}) => (
     <div className={classNames(styles.radioButtons, className)}>
         {nodes.map(node => (
             <RadioButton

@@ -1,446 +1,280 @@
-import classNames from 'classnames'
-import * as H from 'history'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Observable } from 'rxjs'
+import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { asError } from '@sourcegraph/common'
-import { SearchContextProps } from '@sourcegraph/search'
-import { SearchSidebar, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
+import { useLocation, useNavigate } from 'react-router-dom'
+import type { Observable } from 'rxjs'
+
+import { limitHit } from '@sourcegraph/branded'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
-import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
-import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage, useObservable } from '@sourcegraph/wildcard'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
+import { updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
+import { LATEST_VERSION, type StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { SearchStreamingProps } from '..'
-import { AuthenticatedUser } from '../../auth'
-import { SearchBetaIcon } from '../../components/CtaIcons'
-import { PageTitle } from '../../components/PageTitle'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { usePersistentCadence } from '../../hooks'
-import { CodeInsightsProps } from '../../insights/types'
-import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
-import { OnboardingTour } from '../../onboarding-tour/OnboardingTour'
-import { OnboardingTourInfo } from '../../onboarding-tour/OnboardingTourInfo'
-import { BrowserExtensionAlert } from '../../repo/actions/BrowserExtensionAlert'
-import { IDEExtensionAlert } from '../../repo/actions/IdeExtensionAlert'
-import {
-    HAS_DISMISSED_BROWSER_EXTENSION_ALERT_KEY,
-    HAS_DISMISSED_IDE_EXTENSION_ALERT_KEY,
-} from '../../repo/actions/InstallIntegrationsAlert'
-import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import {
-    useExperimentalFeatures,
-    useNavbarQueryState,
-    useSearchStack,
-    buildSearchURLQueryFromQueryState,
-} from '../../stores'
-import { browserExtensionInstalled } from '../../tracking/analyticsUtils'
-import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
+import type { SearchAggregationProps, SearchStreamingProps } from '..'
+import type { AuthenticatedUser } from '../../auth'
+import type { CodeMonitoringProps } from '../../codeMonitoring'
+import { formatUrlOverrideFeatureFlags } from '../../featureFlags/lib/parseUrlOverrideFeatureFlags'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { useFeatureFlagOverrides } from '../../featureFlags/useFeatureFlagOverrides'
+import type { CodeInsightsProps } from '../../insights/types'
+import type { OwnConfigProps } from '../../own/OwnConfigProps'
+import { useDeveloperSettings, useNavbarQueryState } from '../../stores'
 import { submitSearch } from '../helpers'
+import { useRecentSearches } from '../input/useRecentSearches'
 
-import { DidYouMean } from './DidYouMean'
-import { SearchAlert } from './SearchAlert'
+import { useAggregationUIMode } from './components/aggregation'
+import { NewSearchContent } from './components/new-search-content/NewSearchContent'
+import { SearchContent } from './components/search-content/SearchContent'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
-import { SearchResultsInfoBar } from './SearchResultsInfoBar'
-import { getRevisions } from './sidebar/Revisions'
-import styles from './StreamingSearchResults.module.scss'
+import { useStreamingSearchPings } from './useStreamingSearchPings'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
-        Pick<ActivationProps, 'activation'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         SettingsCascadeProps,
-        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'requestGraphQL'>,
+        PlatformContextProps,
         TelemetryProps,
-        ThemeProps,
         CodeInsightsProps,
-        FeatureFlagProps {
+        SearchAggregationProps,
+        CodeMonitoringProps,
+        OwnConfigProps,
+        ExtensionsControllerProps {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
-
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
-// The latest supported version of our search syntax. Users should never be able to determine the search version.
-// The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
-// and will therefore default to V1.
-export const LATEST_VERSION = 'V2'
-
-const CTA_ALERTS_CADENCE_KEY = 'SearchResultCtaAlerts.pageViews'
-const CTA_ALERT_DISPLAY_CADENCE = 6
-const IDE_CTA_CADENCE_SHIFT = 3
-
-type CtaToDisplay = 'signup' | 'browser' | 'ide'
-
-function useCtaAlert(
-    isAuthenticated: boolean,
-    areResultsFound: boolean
-): {
-    ctaToDisplay?: CtaToDisplay
-    onCtaAlertDismissed: () => void
-} {
-    const [hasDismissedSignupAlert, setHasDismissedSignupAlert] = useLocalStorage<boolean>(
-        'StreamingSearchResults.hasDismissedSignupAlert',
-        false
-    )
-    const [hasDismissedBrowserExtensionAlert, setHasDismissedBrowserExtensionAlert] = useLocalStorage<boolean>(
-        HAS_DISMISSED_BROWSER_EXTENSION_ALERT_KEY,
-        false
-    )
-    const [hasDismissedIDEExtensionAlert, setHasDismissedIDEExtensionAlert] = useLocalStorage<boolean>(
-        HAS_DISMISSED_IDE_EXTENSION_ALERT_KEY,
-        false
-    )
-    const isBrowserExtensionInstalled = useObservable<boolean>(browserExtensionInstalled)
-
-    const displaySignupAndBrowserExtensionCTAsBasedOnCadence = usePersistentCadence(
-        CTA_ALERTS_CADENCE_KEY,
-        CTA_ALERT_DISPLAY_CADENCE
-    )
-    const displayIDEExtensionCTABasedOnCadence = usePersistentCadence(
-        CTA_ALERTS_CADENCE_KEY,
-        CTA_ALERT_DISPLAY_CADENCE,
-        IDE_CTA_CADENCE_SHIFT
-    )
-
-    const ctaToDisplay = useMemo<CtaToDisplay | undefined>((): CtaToDisplay | undefined => {
-        if (!areResultsFound) {
-            return
-        }
-
-        if (!hasDismissedSignupAlert && !isAuthenticated && displaySignupAndBrowserExtensionCTAsBasedOnCadence) {
-            return 'signup'
-        }
-
-        if (
-            !hasDismissedBrowserExtensionAlert &&
-            isAuthenticated &&
-            isBrowserExtensionInstalled === false &&
-            displaySignupAndBrowserExtensionCTAsBasedOnCadence
-        ) {
-            return 'browser'
-        }
-
-        if (!hasDismissedIDEExtensionAlert && displayIDEExtensionCTABasedOnCadence) {
-            return 'ide'
-        }
-
-        return
-    }, [
-        areResultsFound,
-        hasDismissedSignupAlert,
-        isAuthenticated,
-        displaySignupAndBrowserExtensionCTAsBasedOnCadence,
-        hasDismissedBrowserExtensionAlert,
-        isBrowserExtensionInstalled,
-        hasDismissedIDEExtensionAlert,
-        displayIDEExtensionCTABasedOnCadence,
-    ])
-
-    const onCtaAlertDismissed = useCallback((): void => {
-        if (ctaToDisplay === 'signup') {
-            setHasDismissedSignupAlert(true)
-        } else if (ctaToDisplay === 'browser') {
-            setHasDismissedBrowserExtensionAlert(true)
-        } else if (ctaToDisplay === 'ide') {
-            setHasDismissedIDEExtensionAlert(true)
-        }
-    }, [
-        ctaToDisplay,
-        setHasDismissedBrowserExtensionAlert,
-        setHasDismissedIDEExtensionAlert,
-        setHasDismissedSignupAlert,
-    ])
-
-    return {
-        ctaToDisplay,
-        onCtaAlertDismissed,
-    }
-}
-
-export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResultsProps> = props => {
+export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => {
     const {
         streamSearch,
-        location,
         authenticatedUser,
         telemetryService,
-        codeInsightsEnabled,
         isSourcegraphDotCom,
-        extensionsController: { extHostAPI: extensionHostAPI },
+        searchAggregationEnabled,
+        codeMonitoringEnabled,
+        platformContext,
+        extensionsController,
     } = props
 
-    const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
+    const location = useLocation()
+    const navigate = useNavigate()
+    const { addRecentSearch } = useRecentSearches()
+    const featureOverrides = useFeatureFlagOverrides()
+
+    // Feature flags
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
+    const newSearchNavigation = useExperimentalFeatures(features => features.newSearchNavigationUI ?? false)
+
+    // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
     const patternType = useNavbarQueryState(state => state.searchPatternType)
-    const query = useNavbarQueryState(state => state.searchQueryFromURL)
+    const searchMode = useNavbarQueryState(state => state.searchMode)
+    const liveQuery = useNavbarQueryState(state => state.queryState.query)
+    const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
+    const queryState = useNavbarQueryState(state => state.queryState)
+    const setQueryState = useNavbarQueryState(state => state.setQueryState)
+    const submitQuerySearch = useNavbarQueryState(state => state.submitSearch)
+    const [aggregationUIMode] = useAggregationUIMode()
 
-    // Log view event on first load
-    useEffect(
-        () => {
-            telemetryService.logViewEvent('SearchResults')
-        },
-        // Only log view on initial load
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
-    )
-
-    // Log search query event when URL changes
-    useEffect(() => {
-        const metrics = query ? collectMetrics(query) : undefined
-
-        telemetryService.log(
-            'SearchResultsQueried',
-            {
-                code_search: {
-                    query_data: {
-                        query: metrics,
-                        combined: query,
-                        empty: !query,
-                    },
-                },
-            },
-            {
-                code_search: {
-                    query_data: {
-                        // 🚨 PRIVACY: never provide any private query data in the
-                        // { code_search: query_data: query } property,
-                        // which is also potentially exported in pings data.
-                        query: metrics,
-
-                        // 🚨 PRIVACY: Only collect the full query string for unauthenticated users
-                        // on Sourcegraph.com, and only after sanitizing to remove certain filters.
-                        combined:
-                            !authenticatedUser && isSourcegraphDotCom ? sanitizeQueryForTelemetry(query) : undefined,
-                        empty: !query,
-                    },
-                },
-            }
-        )
-        // Only log when the query changes
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [query])
-
+    // Derived state
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
+    const { searchOptions } = useDeveloperSettings(settings => settings.zoekt)
 
     const options: StreamSearchOptions = useMemo(
         () => ({
             version: LATEST_VERSION,
-            patternType: patternType ?? SearchPatternType.literal,
+            patternType: patternType ?? SearchPatternType.standard,
             caseSensitive,
             trace,
+            featureOverrides: formatUrlOverrideFeatureFlags(featureOverrides),
+            searchMode,
+            chunkMatches: true,
+            zoektSearchOptions: searchOptions,
         }),
-        [caseSensitive, patternType, trace]
+        [patternType, caseSensitive, trace, featureOverrides, searchMode, searchOptions]
     )
+    const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, telemetryService)
 
-    const results = useCachedSearchResults(streamSearch, query, options, extensionHostAPI, telemetryService)
+    const { logSearchResultClicked } = useStreamingSearchPings({
+        telemetryService,
+        isSourcegraphDotCom,
+        results,
+        isAuauthenticated: !!authenticatedUser,
+    })
 
-    // Log events when search completes or fails
     useEffect(() => {
         if (results?.state === 'complete') {
-            telemetryService.log('SearchResultsFetched', {
-                code_search: {
-                    // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
-                    results: {
-                        results_count: results.results.length,
-                        any_cloning: results.progress.skipped.some(skipped => skipped.reason === 'repository-cloning'),
-                        alert: results.alert ? results.alert.title : null,
-                    },
-                },
-            })
-        } else if (results?.state === 'error') {
-            telemetryService.log('SearchResultsFetchFailed', {
-                code_search: { error_message: asError(results.error).message },
-            })
-            console.error(results.error)
+            // Add the recent search in the next queue execution to avoid updating a React component while rendering another component.
+            setTimeout(
+                () => addRecentSearch(submittedURLQuery, results.progress.matchCount, limitHit(results.progress)),
+                0
+            )
         }
-    }, [results, telemetryService])
+    }, [addRecentSearch, results, submittedURLQuery])
 
-    useSearchStack(
-        useMemo(
-            () =>
-                results?.state === 'complete'
-                    ? {
-                          type: 'search',
-                          query,
-                          caseSensitive,
-                          patternType,
-                          searchContext: props.selectedSearchContextSpec,
-                      }
-                    : null,
-            [results, query, patternType, caseSensitive, props.selectedSearchContextSpec]
-        )
-    )
-
+    // Expand/contract all results
     const [allExpanded, setAllExpanded] = useState(false)
+
     const onExpandAllResultsToggle = useCallback(() => {
         setAllExpanded(oldValue => !oldValue)
         telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
     }, [allExpanded, telemetryService])
 
-    const [showSavedSearchModal, setShowSavedSearchModal] = useState(false)
-    const onSaveQueryClick = useCallback(() => setShowSavedSearchModal(true), [])
-    const onSaveQueryModalClose = useCallback(() => {
-        setShowSavedSearchModal(false)
-        telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
-    }, [telemetryService])
-
-    // Reset expanded state when new search is started
     useEffect(() => {
-        setAllExpanded(false)
+        setAllExpanded(false) // Reset expanded state when new search is started
     }, [location.search])
+
+    const handleSidebarSearchSubmit = useCallback(
+        /**
+         * The `updatedSearchQuery` is required in case we synchronously update the search
+         * query in the event handlers and want to submit a new search. Without this argument,
+         * the `handleSidebarSearchSubmit` function uses the outdated location reference
+         * because the component was not re-rendered yet.
+         *
+         * Example use-case: search-aggregation result bar click where we first update the URL
+         * by settings the `groupBy` search param to `null` and then synchronously call `submitSearch`.
+         */
+        (updates: QueryUpdate[], updatedSearchQuery?: string) =>
+            submitQuerySearch(
+                {
+                    selectedSearchContextSpec: props.selectedSearchContextSpec,
+                    historyOrNavigate: navigate,
+                    location: {
+                        ...location,
+                        search: updatedSearchQuery || location.search,
+                    },
+                    source: 'filter',
+                },
+                updates
+            ),
+        [submitQuerySearch, props.selectedSearchContextSpec, navigate, location]
+    )
 
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
             telemetryService.log('SearchSkippedResultsAgainClicked')
+
+            const { selectedSearchContextSpec } = props
             submitSearch({
-                ...props,
+                historyOrNavigate: navigate,
+                location,
+                selectedSearchContextSpec,
                 caseSensitive,
                 patternType,
-                query: applyAdditionalFilters(query, additionalFilters),
+                query: applyAdditionalFilters(submittedURLQuery, additionalFilters),
                 source: 'excludedResults',
             })
         },
-        [query, telemetryService, patternType, caseSensitive, props]
+        [telemetryService, props, navigate, location, caseSensitive, patternType, submittedURLQuery]
     )
-    const [showSidebar, setShowSidebar] = useState(false)
 
-    const onSignUpClick = useCallback((): void => {
-        const args = { page: 'search' }
-        telemetryService.log('SignUpPLGSearchCTA_1_Search', args, args)
-    }, [telemetryService])
+    /**
+     * The `updatedSearchQuery` is required in case we synchronously update the search
+     * query in the event handlers and want to submit a new search. Without this argument,
+     * the `handleSidebarSearchSubmit` function uses the outdated location reference
+     * because the component was not re-rendered yet.
+     *
+     * Example use-case: search-aggregation result bar click where we first update the URL
+     * by settings the `groupBy` search param to `null` and then synchronously call `submitSearch`.
+     */
+    const handleSearchAggregationBarClick = (query: string, updatedSearchQuery: string): void => {
+        const { selectedSearchContextSpec } = props
+        submitSearch({
+            historyOrNavigate: navigate,
+            location: { ...location, search: updatedSearchQuery },
+            selectedSearchContextSpec,
+            caseSensitive,
+            patternType,
+            query,
+            source: 'nav',
+        })
+    }
 
-    const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
-    const showOnboardingTour =
-        props.isSourcegraphDotCom && !props.authenticatedUser && props.featureFlags.get('getting-started-tour')
-    const { ctaToDisplay, onCtaAlertDismissed } = useCtaAlert(!!authenticatedUser, resultsFound)
+    const onDisableSmartSearch = useCallback(() => {
+        const { selectedSearchContextSpec } = props
+        submitSearch({
+            historyOrNavigate: navigate,
+            location,
+            selectedSearchContextSpec,
+            caseSensitive,
+            patternType: SearchPatternType.standard,
+            query: submittedURLQuery,
+            source: 'smartSearchDisabled',
+        })
+    }, [caseSensitive, location, navigate, props, submittedURLQuery])
 
-    // Log view event when signup CTA is shown
-    useEffect(() => {
-        if (ctaToDisplay === 'signup') {
-            telemetryService.log('SearchResultResultsCTAShown')
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ctaToDisplay])
+    const hasResultsToAggregate = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
+    const showAggregationPanel = searchAggregationEnabled && hasResultsToAggregate
 
-    return (
-        <div className={styles.streamingSearchResults}>
-            <PageTitle key="page-title" title={query} />
-
-            <SearchSidebar
-                activation={props.activation}
-                caseSensitive={caseSensitive}
-                patternType={patternType}
-                settingsCascade={props.settingsCascade}
-                telemetryService={props.telemetryService}
-                selectedSearchContextSpec={props.selectedSearchContextSpec}
-                className={classNames(
-                    styles.streamingSearchResultsSidebar,
-                    showSidebar && styles.streamingSearchResultsSidebarShow
-                )}
-                filters={results?.filters}
-                getRevisions={getRevisions}
-                prefixContent={
-                    showOnboardingTour ? (
-                        <OnboardingTour className="mb-1" telemetryService={props.telemetryService} />
-                    ) : undefined
-                }
-                buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-            />
-
-            <SearchResultsInfoBar
-                {...props}
-                patternType={patternType}
-                caseSensitive={caseSensitive}
-                query={query}
-                enableCodeInsights={codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)}
-                enableCodeMonitoring={enableCodeMonitoring}
-                resultsFound={resultsFound}
-                className={classNames('flex-grow-1', styles.streamingSearchResultsInfobar)}
-                allExpanded={allExpanded}
-                onExpandAllResultsToggle={onExpandAllResultsToggle}
-                onSaveQueryClick={onSaveQueryClick}
-                onShowFiltersChanged={show => setShowSidebar(show)}
-                stats={
-                    <StreamingProgress
-                        progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
-                        state={results?.state || 'loading'}
-                        onSearchAgain={onSearchAgain}
-                        showTrace={!!trace}
-                    />
-                }
-            />
-
-            <DidYouMean
-                telemetryService={props.telemetryService}
-                query={query}
-                patternType={patternType}
-                caseSensitive={caseSensitive}
-                selectedSearchContextSpec={props.selectedSearchContextSpec}
-            />
-
-            <div className={styles.streamingSearchResultsContainer}>
-                {showOnboardingTour && <OnboardingTourInfo className="mt-2 mr-3 mb-3" />}{' '}
-                {showSavedSearchModal && (
-                    <SavedSearchModal
-                        {...props}
-                        patternType={patternType}
-                        query={query}
-                        authenticatedUser={authenticatedUser}
-                        onDidCancel={onSaveQueryModalClose}
-                    />
-                )}
-                {results?.alert && (
-                    <div className={classNames(styles.streamingSearchResultsContentCentered, 'mt-4')}>
-                        <SearchAlert alert={results.alert} caseSensitive={caseSensitive} patternType={patternType} />
-                    </div>
-                )}
-                {ctaToDisplay === 'signup' && (
-                    <CtaAlert
-                        title="Sign up to add your public and private repositories and unlock search flow"
-                        description="Do all the things editors can’t: search multiple repos & commit history, monitor, save
-                searches and more."
-                        cta={{
-                            label: 'Get started',
-                            href: buildGetStartedURL('search-cta', '/user/settings/repositories'),
-                            onClick: onSignUpClick,
-                        }}
-                        icon={<SearchBetaIcon />}
-                        className="mr-3"
-                        onClose={onCtaAlertDismissed}
-                    />
-                )}
-                {ctaToDisplay === 'browser' && (
-                    <BrowserExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} page="search" />
-                )}
-                {ctaToDisplay === 'ide' && (
-                    <IDEExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} page="search" />
-                )}
-                <StreamingSearchResultsList
-                    {...props}
-                    results={results}
-                    allExpanded={allExpanded}
-                    showSearchContext={showSearchContext}
-                    assetsRoot={window.context?.assetsRoot || ''}
-                    renderSearchUserNeedsCodeHost={user => (
-                        <SearchUserNeedsCodeHost user={user} orgSearchContext={props.selectedSearchContextSpec} />
-                    )}
-                />
-            </div>
-        </div>
+    return !newSearchNavigation ? (
+        <SearchContent
+            submittedURLQuery={submittedURLQuery}
+            queryState={queryState}
+            liveQuery={liveQuery}
+            allExpanded={allExpanded}
+            searchMode={searchMode}
+            trace={!!trace}
+            searchContextsEnabled={props.searchContextsEnabled}
+            patternType={patternType}
+            results={results}
+            showAggregationPanel={showAggregationPanel}
+            selectedSearchContextSpec={props.selectedSearchContextSpec}
+            aggregationUIMode={aggregationUIMode}
+            caseSensitive={caseSensitive}
+            authenticatedUser={authenticatedUser}
+            isSourcegraphDotCom={isSourcegraphDotCom}
+            enableRepositoryMetadata={enableRepositoryMetadata}
+            options={options}
+            codeMonitoringEnabled={codeMonitoringEnabled}
+            fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
+            onNavbarQueryChange={setQueryState}
+            onSearchSubmit={handleSidebarSearchSubmit}
+            onQuerySubmit={handleSearchAggregationBarClick}
+            onExpandAllResultsToggle={onExpandAllResultsToggle}
+            onSearchAgain={onSearchAgain}
+            onDisableSmartSearch={onDisableSmartSearch}
+            onLogSearchResultClick={logSearchResultClicked}
+            settingsCascade={props.settingsCascade}
+            telemetryService={telemetryService}
+            platformContext={platformContext}
+        />
+    ) : (
+        <NewSearchContent
+            submittedURLQuery={submittedURLQuery}
+            queryState={queryState}
+            liveQuery={liveQuery}
+            allExpanded={allExpanded}
+            searchMode={searchMode}
+            trace={!!trace}
+            searchContextsEnabled={props.searchContextsEnabled}
+            patternType={patternType}
+            results={results}
+            showAggregationPanel={showAggregationPanel}
+            selectedSearchContextSpec={props.selectedSearchContextSpec}
+            aggregationUIMode={aggregationUIMode}
+            caseSensitive={caseSensitive}
+            authenticatedUser={authenticatedUser}
+            isSourcegraphDotCom={isSourcegraphDotCom}
+            enableRepositoryMetadata={enableRepositoryMetadata}
+            options={options}
+            codeMonitoringEnabled={codeMonitoringEnabled}
+            fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
+            onNavbarQueryChange={setQueryState}
+            onSearchSubmit={handleSidebarSearchSubmit}
+            onQuerySubmit={handleSearchAggregationBarClick}
+            onExpandAllResultsToggle={onExpandAllResultsToggle}
+            onSearchAgain={onSearchAgain}
+            onDisableSmartSearch={onDisableSmartSearch}
+            onLogSearchResultClick={logSearchResultClicked}
+            settingsCascade={props.settingsCascade}
+            telemetryService={telemetryService}
+            platformContext={platformContext}
+            extensionsController={extensionsController}
+        />
     )
 }
 

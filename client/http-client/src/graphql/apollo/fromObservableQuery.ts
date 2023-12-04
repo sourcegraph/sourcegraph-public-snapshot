@@ -1,5 +1,7 @@
-import { ApolloQueryResult, ObservableQuery } from '@apollo/client'
+import type { ApolloQueryResult, ObservableQuery, OperationVariables } from '@apollo/client'
 import { Observable } from 'rxjs'
+
+import { logger } from '@sourcegraph/common'
 
 /**
  * Converts ObservableQuery returned by `client.watchQuery` to `rxjs` Observable.
@@ -8,8 +10,8 @@ import { Observable } from 'rxjs'
  * const rxjsObservable = fromObservableQuery(client.watchQuery(query))
  * ```
  */
-export function fromObservableQuery<T extends object>(
-    observableQuery: ObservableQuery<T>
+export function fromObservableQuery<T extends object, Variables extends OperationVariables = OperationVariables>(
+    observableQuery: ObservableQuery<T, Variables>
 ): Observable<ApolloQueryResult<T>> {
     return new Observable<ApolloQueryResult<T>>(subscriber => {
         const subscription = observableQuery.subscribe(subscriber)
@@ -39,7 +41,7 @@ export function fromObservableQueryPromise<T extends object, V extends object>(
 
         return function unsubscribe() {
             subscriber.unsubscribe()
-            subscriptionPromise.then(subscription => subscription?.unsubscribe()).catch(error => console.log(error))
+            subscriptionPromise.then(subscription => subscription?.unsubscribe()).catch(error => logger.error(error))
         }
     })
 }

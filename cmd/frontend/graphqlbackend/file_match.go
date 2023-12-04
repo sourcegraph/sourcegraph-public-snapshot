@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -29,11 +30,15 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 	// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
 	// (which would make it slow). This GitCommitResolver will return empty
 	// values for all other fields.
-	return NewGitTreeEntryResolver(fm.db, fm.Commit(), CreateFileInfo(fm.Path, false))
+	opts := GitTreeEntryResolverOpts{
+		Commit: fm.Commit(),
+		Stat:   CreateFileInfo(fm.Path, false),
+	}
+	return NewGitTreeEntryResolver(fm.db, gitserver.NewClient("graphql.filematch.tree"), opts)
 }
 
 func (fm *FileMatchResolver) Commit() *GitCommitResolver {
-	commit := NewGitCommitResolver(fm.db, fm.RepoResolver, fm.CommitID, nil)
+	commit := NewGitCommitResolver(fm.db, gitserver.NewClient("graphql.filematch.commit"), fm.RepoResolver, fm.CommitID, nil)
 	commit.inputRev = fm.InputRev
 	return commit
 }
@@ -56,9 +61,18 @@ func (fm *FileMatchResolver) Symbols() []symbolResolver {
 }
 
 func (fm *FileMatchResolver) LineMatches() []lineMatchResolver {
-	r := make([]lineMatchResolver, 0, len(fm.FileMatch.LineMatches))
-	for _, lm := range fm.FileMatch.LineMatches {
+	lineMatches := fm.FileMatch.ChunkMatches.AsLineMatches()
+	r := make([]lineMatchResolver, 0, len(lineMatches))
+	for _, lm := range lineMatches {
 		r = append(r, lineMatchResolver{lm})
+	}
+	return r
+}
+
+func (fm *FileMatchResolver) ChunkMatches() []chunkMatchResolver {
+	r := make([]chunkMatchResolver, 0, len(fm.FileMatch.ChunkMatches))
+	for _, cm := range fm.FileMatch.ChunkMatches {
+		r = append(r, chunkMatchResolver{cm})
 	}
 	return r
 }
@@ -71,10 +85,6 @@ func (fm *FileMatchResolver) ToRepository() (*RepositoryResolver, bool) { return
 func (fm *FileMatchResolver) ToFileMatch() (*FileMatchResolver, bool)   { return fm, true }
 func (fm *FileMatchResolver) ToCommitSearchResult() (*CommitSearchResultResolver, bool) {
 	return nil, false
-}
-
-func (fm *FileMatchResolver) ResultCount() int32 {
-	return int32(fm.FileMatch.ResultCount())
 }
 
 type lineMatchResolver struct {
@@ -99,4 +109,48 @@ func (lm lineMatchResolver) OffsetAndLengths() [][]int32 {
 
 func (lm lineMatchResolver) LimitHit() bool {
 	return false
+}
+
+type chunkMatchResolver struct {
+	result.ChunkMatch
+}
+
+func (c chunkMatchResolver) Content() string {
+	return c.ChunkMatch.Content
+}
+
+func (c chunkMatchResolver) ContentStart() searchPositionResolver {
+	return searchPositionResolver{c.ChunkMatch.ContentStart}
+}
+
+func (c chunkMatchResolver) Ranges() []searchRangeResolver {
+	res := make([]searchRangeResolver, 0, len(c.ChunkMatch.Ranges))
+	for _, r := range c.ChunkMatch.Ranges {
+		res = append(res, searchRangeResolver{r})
+	}
+	return res
+}
+
+type searchPositionResolver struct {
+	result.Location
+}
+
+func (l searchPositionResolver) Line() int32 {
+	return int32(l.Location.Line)
+}
+
+func (l searchPositionResolver) Character() int32 {
+	return int32(l.Location.Column)
+}
+
+type searchRangeResolver struct {
+	result.Range
+}
+
+func (r searchRangeResolver) Start() searchPositionResolver {
+	return searchPositionResolver{r.Range.Start}
+}
+
+func (r searchRangeResolver) End() searchPositionResolver {
+	return searchPositionResolver{r.Range.End}
 }

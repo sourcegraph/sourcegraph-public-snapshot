@@ -1,24 +1,3 @@
-extend type Query {
-    """
-    Runs a code monitor search.
-    """
-    codeMonitorSearch(
-        """
-        PatternType controls the search pattern type, if and only if it is not specified in the query string using
-        the patternType: field.
-        """
-        patternType: SearchPatternType
-        """
-        The search query (such as "foo" or "repo:myrepo foo").
-        """
-        query: String = ""
-        """
-        codeMonitorID is the code monitor associated with this search
-        """
-        codeMonitorID: ID
-    ): Search
-}
-
 extend type Mutation {
     """
     Create a code monitor.
@@ -100,6 +79,20 @@ extend type Mutation {
     Triggers a test email for a code monitor action.
     """
     triggerTestEmailAction(namespace: ID!, description: String!, email: MonitorEmailInput!): EmptyResponse!
+
+    """
+    Triggers a test webhook call for a code monitor action.
+    """
+    triggerTestWebhookAction(namespace: ID!, description: String!, webhook: MonitorWebhookInput!): EmptyResponse!
+
+    """
+    Triggers a test Slack webhook message for a code monitor action.
+    """
+    triggerTestSlackWebhookAction(
+        namespace: ID!
+        description: String!
+        slackWebhook: MonitorSlackWebhookInput!
+    ): EmptyResponse!
 }
 
 extend type User {
@@ -111,6 +104,22 @@ extend type User {
         Returns the first n monitors from the list.
         """
         first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorConnection!
+}
+
+extend type Query {
+    """
+    A list of monitors. Site-admin only.
+    """
+    monitors(
+        """
+        Returns the first n monitors from the list.
+        """
+        first: Int!
         """
         Opaque pagination cursor.
         """
@@ -250,6 +259,19 @@ type MonitorTriggerEvent implements Node {
     The time and date of the event.
     """
     timestamp: DateTime!
+    """
+    The query (with after filter) that provides an approximation of the
+    set of results associated with this trigger run. Will always be empty
+    while status is PENDING.
+    """
+    query: String
+
+    """
+    The number of results recorded for this trigger run. Will always be
+    zero until status is SUCCESS.
+    """
+    resultCount: Int!
+
     """
     A list of actions.
     """

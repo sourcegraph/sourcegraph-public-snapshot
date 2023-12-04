@@ -2,6 +2,7 @@ package debugproxies
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,10 +13,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestReverseProxyRequestPaths(t *testing.T) {
@@ -32,9 +36,15 @@ func TestReverseProxyRequestPaths(t *testing.T) {
 		return
 	}
 
+	featureFlags := dbmocks.NewMockFeatureFlagStore()
+	featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
+
+	db := dbmocks.NewStrictMockDB()
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+
 	ep := Endpoint{Service: "gitserver", Addr: proxiedURL.Host}
 	displayName := displayNameFromEndpoint(ep)
-	rph.Populate(database.NewMockDB(), []Endpoint{ep})
+	rph.Populate(db, []Endpoint{ep})
 
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -46,7 +56,7 @@ func TestReverseProxyRequestPaths(t *testing.T) {
 
 	rtr := mux.NewRouter()
 	rtr.PathPrefix("/-/debug").Name(router.Debug)
-	rph.AddToRouter(rtr.Get(router.Debug).Subrouter(), database.NewMockDB())
+	rph.AddToRouter(rtr.Get(router.Debug).Subrouter(), db)
 
 	rtr.ServeHTTP(w, req)
 
@@ -74,7 +84,7 @@ func TestIndexLinks(t *testing.T) {
 
 	ep := Endpoint{Service: "gitserver", Addr: proxiedURL.Host}
 	displayName := displayNameFromEndpoint(ep)
-	rph.Populate(database.NewMockDB(), []Endpoint{ep})
+	rph.Populate(dbmocks.NewMockDB(), []Endpoint{ep})
 
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -84,9 +94,15 @@ func TestIndexLinks(t *testing.T) {
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 
+	featureFlags := dbmocks.NewMockFeatureFlagStore()
+	featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
+
+	db := dbmocks.NewStrictMockDB()
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+
 	rtr := mux.NewRouter()
 	rtr.PathPrefix("/-/debug").Name(router.Debug)
-	rph.AddToRouter(rtr.Get(router.Debug).Subrouter(), database.NewMockDB())
+	rph.AddToRouter(rtr.Get(router.Debug).Subrouter(), db)
 
 	rtr.ServeHTTP(w, req)
 
@@ -128,5 +144,96 @@ func TestDisplayNameFromEndpoint(t *testing.T) {
 		if got != c.Want {
 			t.Errorf("displayNameFromEndpoint(%q, %q) mismatch (-want +got):\n%s", c.Service, c.Addr, cmp.Diff(c.Want, got))
 		}
+	}
+}
+
+func TestAdminOnly(t *testing.T) {
+	tests := []struct {
+		name             string
+		mockUsers        func(users *dbmocks.MockUserStore)
+		mockFeatureFlags func(featureFlags *dbmocks.MockFeatureFlagStore)
+		mockActor        *actor.Actor
+		wantStatus       int
+	}{
+		{
+			name: "not an admin",
+			mockUsers: func(users *dbmocks.MockUserStore) {
+				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+			},
+			mockFeatureFlags: func(featureFlags *dbmocks.MockFeatureFlagStore) {
+				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
+			},
+			mockActor:  &actor.Actor{},
+			wantStatus: http.StatusForbidden,
+		},
+		{
+			name: "no feature flag",
+			mockUsers: func(users *dbmocks.MockUserStore) {
+				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+			},
+			mockFeatureFlags: func(featureFlags *dbmocks.MockFeatureFlagStore) {
+				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
+			},
+			mockActor:  &actor.Actor{},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name: "has feature flag but not enabled",
+			mockUsers: func(users *dbmocks.MockUserStore) {
+				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+			},
+			mockFeatureFlags: func(featureFlags *dbmocks.MockFeatureFlagStore) {
+				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&featureflag.FeatureFlag{Bool: &featureflag.FeatureFlagBool{Value: false}}, nil)
+			},
+			mockActor:  &actor.Actor{},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name: "feature flag enabled but not Sourcegraph operator",
+			mockUsers: func(users *dbmocks.MockUserStore) {
+				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+			},
+			mockFeatureFlags: func(featureFlags *dbmocks.MockFeatureFlagStore) {
+				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&featureflag.FeatureFlag{Bool: &featureflag.FeatureFlagBool{Value: true}}, nil)
+			},
+			mockActor:  &actor.Actor{},
+			wantStatus: http.StatusForbidden,
+		},
+		{
+			name: "feature flag enabled and Sourcegraph operator",
+			mockUsers: func(users *dbmocks.MockUserStore) {
+				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+			},
+			mockFeatureFlags: func(featureFlags *dbmocks.MockFeatureFlagStore) {
+				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&featureflag.FeatureFlag{Bool: &featureflag.FeatureFlagBool{Value: true}}, nil)
+			},
+			mockActor:  &actor.Actor{SourcegraphOperator: true},
+			wantStatus: http.StatusOK,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			users := dbmocks.NewMockUserStore()
+			test.mockUsers(users)
+
+			featureFlags := dbmocks.NewMockFeatureFlagStore()
+			test.mockFeatureFlags(featureFlags)
+
+			db := dbmocks.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, "/-/debug", nil)
+			r = r.WithContext(actor.WithActor(r.Context(), test.mockActor))
+			AdminOnly(
+				db,
+				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+				}),
+			).ServeHTTP(w, r)
+
+			assert.Equal(t, test.wantStatus, w.Code)
+		})
 	}
 }

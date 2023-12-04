@@ -1,99 +1,91 @@
-import { Location } from 'history'
 import React from 'react'
-import { match } from 'react-router'
-import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 
-import { PageHeader, Button } from '@sourcegraph/wildcard'
+import { NavLink } from 'react-router-dom'
 
-import { BatchChangesProps } from '../../batches'
-import { NavItemWithIconDescriptor } from '../../util/contributions'
+import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
+
+import type { BatchChangesProps } from '../../batches'
+import type { NavItemWithIconDescriptor } from '../../util/contributions'
 import { OrgAvatar } from '../OrgAvatar'
 
-import { OrgAreaPageProps } from './OrgArea'
+import type { OrgAreaRouteContext } from './OrgArea'
 
-interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
+interface Props extends OrgAreaRouteContext {
     isSourcegraphDotCom: boolean
+    isCodyApp: boolean
     navItems: readonly OrgAreaHeaderNavItem[]
     className?: string
 }
 
-export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org'> {
-    isSourcegraphDotCom: boolean
-    newMembersInviteEnabled: boolean
+export interface OrgSummary {
+    membersSummary: { membersCount: number; invitesCount: number }
+    extServices: { totalCount: number }
 }
 
-export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaHeaderContext> {
-    isActive?: (match: match | null, location: Location, props: OrgAreaHeaderContext) => boolean
+export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org'> {
+    isSourcegraphDotCom: boolean
+    isCodyApp: boolean
 }
+
+export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaHeaderContext> {}
 
 /**
  * Header for the organization area.
  */
-export const OrgHeader: React.FunctionComponent<Props> = ({
+export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     batchChangesEnabled,
     batchChangesExecutionEnabled,
     batchChangesWebhookLogsEnabled,
     org,
     navItems,
-    match,
     className = '',
     isSourcegraphDotCom,
-    newMembersInviteEnabled,
+    isCodyApp,
 }) => {
-    const context = {
+    const context: OrgAreaHeaderContext = {
         batchChangesEnabled,
         batchChangesExecutionEnabled,
         batchChangesWebhookLogsEnabled,
         org,
         isSourcegraphDotCom,
-        newMembersInviteEnabled,
+        isCodyApp,
     }
+
+    const url = `/organizations/${org.name}`
 
     return (
         <div className={className}>
             <div className="container">
                 {org && (
                     <>
-                        <PageHeader
-                            path={[
-                                {
-                                    icon: () => <OrgAvatar org={org.name} size="lg" className="mr-3" />,
-                                    text: (
-                                        <span className="align-middle">
-                                            {org.displayName ? (
-                                                <>
-                                                    {org.displayName} ({org.name})
-                                                </>
-                                            ) : (
-                                                org.name
-                                            )}
-                                        </span>
-                                    ),
-                                },
-                            ]}
-                            className="mb-3"
-                        />
-                        <div className="d-flex align-items-end justify-content-between">
+                        <PageHeader className="mb-3">
+                            <PageHeader.Heading as="h2" styleAs="h1">
+                                <PageHeader.Breadcrumb
+                                    icon={() => <OrgAvatar org={org.name} size="lg" className="mr-3" />}
+                                >
+                                    <span className="align-middle">
+                                        {org.displayName ? (
+                                            <>
+                                                {org.displayName} ({org.name})
+                                            </>
+                                        ) : (
+                                            org.name
+                                        )}
+                                    </span>
+                                </PageHeader.Breadcrumb>
+                            </PageHeader.Heading>
+                        </PageHeader>
+                        <nav className="d-flex align-items-end justify-content-between" aria-label="Org">
                             <ul className="nav nav-tabs w-100">
                                 {navItems.map(
-                                    ({ to, label, exact, icon: Icon, condition = () => true, isActive }) =>
+                                    ({ to, label, exact, icon: ItemIcon, condition = () => true, dynamicLabel }) =>
                                         condition(context) && (
                                             <li key={label} className="nav-item">
-                                                <NavLink
-                                                    to={match.url + to}
-                                                    className="nav-link"
-                                                    activeClassName="active"
-                                                    exact={exact}
-                                                    isActive={
-                                                        isActive
-                                                            ? (match, location) => isActive(match, location, context)
-                                                            : undefined
-                                                    }
-                                                >
+                                                <NavLink to={url + to} className="nav-link" end={exact}>
                                                     <span>
-                                                        {Icon && <Icon className="icon-inline" />}{' '}
+                                                        {ItemIcon && <Icon as={ItemIcon} aria-hidden={true} />}{' '}
                                                         <span className="text-content" data-tab-content={label}>
-                                                            {label}
+                                                            {dynamicLabel ? dynamicLabel(context) : label}
                                                         </span>
                                                     </span>
                                                 </NavLink>
@@ -115,7 +107,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                                     </Button>
                                 </div>
                             )}
-                        </div>
+                        </nav>
                     </>
                 )}
             </div>

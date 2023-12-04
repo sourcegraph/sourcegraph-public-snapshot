@@ -1,9 +1,9 @@
-import { proxy } from 'comlink'
 import { BehaviorSubject } from 'rxjs'
+import { describe, expect, test } from 'vitest'
 
-import { SettingsCascade } from '../../../settings/settings'
-import { ClientAPI } from '../../client/api/api'
-import { SettingsEdit } from '../../client/services/settings'
+import type { SettingsCascade } from '../../../settings/settings'
+import type { ClientAPI } from '../../client/api/api'
+import type { SettingsEdit } from '../../client/services/settings'
 import { pretendRemote } from '../../util'
 import { proxySubscribable } from '../api/common'
 
@@ -24,7 +24,6 @@ describe('ExtensionHost: Configuration', () => {
                     sourcegraphURL: 'https://example.com/',
                 },
                 pretendRemote<ClientAPI>({
-                    getScriptURLForExtension: proxy(() => undefined),
                     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
                 })
             )
@@ -44,7 +43,6 @@ describe('ExtensionHost: Configuration', () => {
                     sourcegraphURL: 'https://example.com/',
                 },
                 pretendRemote<ClientAPI>({
-                    getScriptURLForExtension: proxy(() => undefined),
                     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
                 })
             )
@@ -62,7 +60,6 @@ describe('ExtensionHost: Configuration', () => {
                     sourcegraphURL: 'https://example.com/',
                 },
                 pretendRemote<ClientAPI>({
-                    getScriptURLForExtension: proxy(() => undefined),
                     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
                 })
             )
@@ -82,7 +79,6 @@ describe('ExtensionHost: Configuration', () => {
                     sourcegraphURL: 'https://example.com/',
                 },
                 pretendRemote<ClientAPI>({
-                    getScriptURLForExtension: proxy(() => undefined),
                     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
                 })
             )
@@ -105,7 +101,6 @@ describe('ExtensionHost: Configuration', () => {
                     sourcegraphURL: 'https://example.com/',
                 },
                 pretendRemote<ClientAPI>({
-                    getScriptURLForExtension: proxy(() => undefined),
                     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
                     applySettingsEdit: edit =>
                         Promise.resolve().then(() => {
@@ -115,7 +110,7 @@ describe('ExtensionHost: Configuration', () => {
             )
             const config = extensionAPI.configuration.get<{ a: string }>()
             await config.update('a', 'aha!')
-            expect(requestedEdits).toEqual<SettingsEdit[]>([{ path: ['a'], value: 'aha!' }])
+            expect(requestedEdits).toEqual([{ path: ['a'], value: 'aha!' }] as SettingsEdit[])
             expect(config.get('a')).toBe('b') // no optimistic updates
         })
     })

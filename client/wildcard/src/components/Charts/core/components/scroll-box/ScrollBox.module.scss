@@ -1,0 +1,52 @@
+.root {
+    --shutter-height-internal: var(--shutter-height, 2rem);
+    --shutter-color-start-internal: var(--shutter-color-start, var(--color-bg-1));
+    --shutter-color-stop-internal: var(--shutter-color-stop, rgba(249, 250, 251, 0));
+
+    position: relative;
+    overflow: hidden;
+
+    &::before,
+    &::after {
+        content: '';
+        display: block;
+        position: absolute;
+        width: 100%;
+        height: var(--shutter-height-internal);
+        max-height: 100%;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    &::before {
+        top: 0;
+        background: linear-gradient(
+            0deg,
+            var(--shutter-color-stop-internal) 0%,
+            var(--shutter-color-start-internal) 100%
+        );
+    }
+
+    &::after {
+        bottom: 0;
+        background: linear-gradient(
+            180deg,
+            var(--shutter-color-stop-internal) 0%,
+            var(--shutter-color-start-internal) 100%
+        );
+    }
+
+    &--with-top-fader::before {
+        opacity: 1;
+    }
+
+    &--with-bottom-fader::after {
+        opacity: 1;
+    }
+}
+
+.scroll-container {
+    overflow-y: auto;
+    height: 100%;
+}

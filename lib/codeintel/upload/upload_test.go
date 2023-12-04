@@ -73,6 +73,7 @@ func TestUploadIndex(t *testing.T) {
 			AccessToken:         "hunter2",
 			GitHubToken:         "ght",
 			MaxPayloadSizeBytes: 1000,
+			AdditionalHeaders:   map[string]string{"Content-Type": "application/x-ndjson+lsif"},
 		},
 	})
 	if err != nil {

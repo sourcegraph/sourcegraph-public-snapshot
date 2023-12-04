@@ -1,0 +1,83 @@
+.root {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    flex-direction: row;
+    padding: 1.5rem;
+
+    &--mobile {
+        flex-direction: column;
+    }
+}
+
+.section {
+    flex: 1;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 2rem 0 0 0;
+    padding: 0;
+}
+
+.button {
+    text-align: left;
+    border: none;
+    padding: 0.5rem 0.75rem;
+    position: relative;
+    transition: none;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    outline: none;
+
+    --button-arrow-color: transparent;
+
+    &:hover,
+    &:focus {
+        background-color: var(--color-bg-2);
+
+        --button-arrow-color: var(--color-bg-2);
+
+        .button-svg {
+            display: block;
+        }
+    }
+
+    &--active {
+        --button-arrow-color: var(--secondary);
+
+        &:hover {
+            --button-arrow-color: var(--secondary-3);
+        }
+
+        &:focus {
+            --button-arrow-color: var(--secondary);
+        }
+
+        .button-svg {
+            display: block;
+        }
+    }
+}
+
+.button-svg {
+    display: none;
+    position: absolute;
+    height: 100%;
+    top: 0;
+    right: 0;
+    transform: translateX(calc(100% - 1px));
+
+    path {
+        fill: var(--button-arrow-color);
+    }
+}
+
+.chart {
+    height: 25rem;
+    width: 100%;
+    background-color: var(--color-bg-2);
+}

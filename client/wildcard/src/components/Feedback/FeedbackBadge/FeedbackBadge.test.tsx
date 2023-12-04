@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react'
-import React from 'react'
+import { describe, expect, it } from 'vitest'
 
 import { FEEDBACK_BADGES_STATUS } from './constant'
 import { FeedbackBadge } from './FeedbackBadge'

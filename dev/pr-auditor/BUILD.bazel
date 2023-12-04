@@ -1,0 +1,43 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "pr-auditor_lib",
+    srcs = [
+        "check.go",
+        "issue.go",
+        "main.go",
+        "webhook.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/pr-auditor",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//lib/errors",
+        "@com_github_google_go_github_v55//github",
+        "@com_github_grafana_regexp//:regexp",
+        "@org_golang_x_exp//slices",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)
+
+go_binary(
+    name = "pr-auditor",
+    embed = [":pr-auditor_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "pr-auditor_test",
+    timeout = "short",
+    srcs = [
+        "check_test.go",
+        "issue_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":pr-auditor_lib"],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

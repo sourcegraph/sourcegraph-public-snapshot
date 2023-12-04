@@ -1,8 +1,29 @@
 .dropdown-button {
-    // Added padding from .dropdown-toggle-split to overide default padding
-    padding: 0.375rem 0.5625rem;
+    border-left: 1px solid var(--border-primary-color);
+    padding: 0 0.25rem;
+}
 
-    &__item {
-        min-width: min(90vw, 350px);
+.menu-list {
+    width: 22rem;
+    // NOTE: The default provided by reach-ui is 'nowrap', which causes overflow scroll
+    // behavior rather than wrapping.
+    white-space: normal;
+}
+
+.menu-list-item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+
+    &[data-reach-menu-item][aria-disabled='false']:active {
+        --text-muted: var(--white);
+    }
+
+    &[data-reach-menu-item][aria-disabled='true']:hover {
+        background-color: transparent;
+    }
+
+    &[data-reach-menu-item][aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.7;
     }
 }

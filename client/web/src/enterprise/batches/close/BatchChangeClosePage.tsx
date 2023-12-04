@@ -1,45 +1,32 @@
-import { subDays } from 'date-fns'
-import * as H from 'history'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useState, useMemo, useCallback } from 'react'
 
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { subDays } from 'date-fns'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { useParams } from 'react-router-dom'
+
+import { type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { CreatedByAndUpdatedByInfoByline } from '../../../components/Byline/CreatedByAndUpdatedByInfoByline'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
-import { BatchChangeChangesetsResult, BatchChangeFields, Scalars } from '../../../graphql-operations'
+import type { BatchChangeChangesetsResult, Scalars } from '../../../graphql-operations'
 import {
-    queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
-    queryChangesets as _queryChangesets,
+    type queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
+    type queryChangesets as _queryChangesets,
     fetchBatchChangeByNamespace as _fetchBatchChangeByNamespace,
 } from '../detail/backend'
-import { BatchChangeInfoByline } from '../detail/BatchChangeInfoByline'
 
-import { closeBatchChange as _closeBatchChange } from './backend'
+import type { closeBatchChange as _closeBatchChange } from './backend'
 import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
 import { BatchChangeCloseChangesetsList } from './BatchChangeCloseChangesetsList'
 
-export interface BatchChangeClosePageProps
-    extends ThemeProps,
-        TelemetryProps,
-        PlatformContextProps,
-        ExtensionsControllerProps {
+export interface BatchChangeClosePageProps {
     /**
      * The namespace ID.
      */
     namespaceID: Scalars['ID']
-    /**
-     * The batch change name.
-     */
-    batchChangeName: BatchChangeFields['name']
-    history: H.History
-    location: H.Location
 
     /** For testing only. */
     fetchBatchChangeByNamespace?: typeof _fetchBatchChangeByNamespace
@@ -51,29 +38,21 @@ export interface BatchChangeClosePageProps
     closeBatchChange?: typeof _closeBatchChange
 }
 
-export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageProps> = ({
+export const BatchChangeClosePage: React.FunctionComponent<React.PropsWithChildren<BatchChangeClosePageProps>> = ({
     namespaceID,
-    batchChangeName,
-    history,
-    location,
-    extensionsController,
-    isLightTheme,
-    platformContext,
-    telemetryService,
     fetchBatchChangeByNamespace = _fetchBatchChangeByNamespace,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
     closeBatchChange,
 }) => {
+    const { batchChangeName } = useParams()
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
     const createdAfter = useMemo(() => subDays(new Date(), 3).toISOString(), [])
     const batchChange = useObservable(
-        useMemo(() => fetchBatchChangeByNamespace(namespaceID, batchChangeName, createdAfter), [
-            fetchBatchChangeByNamespace,
-            namespaceID,
-            batchChangeName,
-            createdAfter,
-        ])
+        useMemo(
+            () => fetchBatchChangeByNamespace(namespaceID, batchChangeName!, createdAfter),
+            [fetchBatchChangeByNamespace, namespaceID, batchChangeName, createdAfter]
+        )
     )
 
     const [totalCount, setTotalCount] = useState<number>()
@@ -117,11 +96,11 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
                     { text: batchChange.name },
                 ]}
                 byline={
-                    <BatchChangeInfoByline
+                    <CreatedByAndUpdatedByInfoByline
                         createdAt={batchChange.createdAt}
-                        creator={batchChange.creator}
-                        lastAppliedAt={batchChange.lastAppliedAt}
-                        lastApplier={batchChange.lastApplier}
+                        createdBy={batchChange.creator}
+                        updatedAt={batchChange.lastAppliedAt}
+                        updatedBy={batchChange.lastApplier}
                     />
                 }
                 className="test-batch-change-close-page mb-3"
@@ -132,7 +111,6 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
                     batchChangeURL={batchChange.url}
                     closeChangesets={closeChangesets}
                     setCloseChangesets={setCloseChangesets}
-                    history={history}
                     closeBatchChange={closeBatchChange}
                     viewerCanAdminister={batchChange.viewerCanAdminister}
                     totalCount={totalCount}
@@ -140,13 +118,7 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
             )}
             <BatchChangeCloseChangesetsList
                 batchChangeID={batchChange.id}
-                history={history}
-                location={location}
                 viewerCanAdminister={batchChange.viewerCanAdminister}
-                extensionsController={extensionsController}
-                isLightTheme={isLightTheme}
-                platformContext={platformContext}
-                telemetryService={telemetryService}
                 queryChangesets={queryChangesets}
                 queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                 willClose={closeChangesets}

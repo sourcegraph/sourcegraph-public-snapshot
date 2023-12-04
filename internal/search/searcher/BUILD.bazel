@@ -1,0 +1,55 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "searcher",
+    srcs = [
+        "client.go",
+        "client_grpc.go",
+        "search.go",
+        "stream.go",
+        "symbol_search_job.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/searcher",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/searcher/protocol",
+        "//internal/api",
+        "//internal/conf",
+        "//internal/endpoint",
+        "//internal/errcode",
+        "//internal/gitserver",
+        "//internal/grpc/defaults",
+        "//internal/httpcli",
+        "//internal/limiter",
+        "//internal/search",
+        "//internal/search/job",
+        "//internal/search/result",
+        "//internal/search/streaming",
+        "//internal/search/streaming/http",
+        "//internal/searcher/v1:searcher",
+        "//internal/symbols",
+        "//internal/trace",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+        "@org_golang_x_sync//errgroup",
+    ],
+)
+
+go_test(
+    name = "searcher_test",
+    timeout = "short",
+    srcs = ["symbol_search_job_test.go"],
+    embed = [":searcher"],
+    deps = [
+        "//internal/search/result",
+        "//internal/types",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

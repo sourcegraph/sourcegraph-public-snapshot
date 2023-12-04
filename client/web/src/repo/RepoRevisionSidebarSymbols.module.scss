@@ -26,27 +26,13 @@
     min-height: 0 !important;
 }
 
-.link {
-    display: block;
-    padding: 0.25rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--secondary);
-
-    &--active,
-    &:hover {
-        background-color: var(--color-bg-3);
-        text-decoration: none;
-        color: var(--body-color);
-        border-radius: var(--border-radius);
-    }
+.form-container {
+    position: sticky;
+    top: 0;
+    background-color: var(--body-bg);
 }
 
-.name {
-    color: var(--body-color);
-}
-
-.container-name {
-    margin-left: 0.25rem;
+.tree-node {
+    // Account for the sticky input box at the top of the sidebar
+    scroll-margin-top: 2.75rem;
 }

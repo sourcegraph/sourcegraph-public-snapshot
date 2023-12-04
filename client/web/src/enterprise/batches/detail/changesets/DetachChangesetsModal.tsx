@@ -1,11 +1,11 @@
 import React, { useCallback, useState } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button, Modal, H3, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { Scalars } from '../../../../graphql-operations'
+import { LoaderButton } from '../../../../components/LoaderButton'
+import type { Scalars } from '../../../../graphql-operations'
 import { detachChangesets as _detachChangesets } from '../backend'
 
 export interface DetachChangesetsModalProps extends TelemetryProps {
@@ -18,7 +18,7 @@ export interface DetachChangesetsModalProps extends TelemetryProps {
     detachChangesets?: typeof _detachChangesets
 }
 
-export const DetachChangesetsModal: React.FunctionComponent<DetachChangesetsModalProps> = ({
+export const DetachChangesetsModal: React.FunctionComponent<React.PropsWithChildren<DetachChangesetsModalProps>> = ({
     onCancel,
     afterCreate,
     batchChangeID,
@@ -43,8 +43,8 @@ export const DetachChangesetsModal: React.FunctionComponent<DetachChangesetsModa
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
-            <h3 id={labelId}>Detach changesets</h3>
-            <p className="mb-4">Are you sure you want to detach the selected changesets?</p>
+            <H3 id={labelId}>Detach changesets</H3>
+            <Text className="mb-4">Are you sure you want to detach the selected changesets?</Text>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <div className="d-flex justify-content-end">
                 <Button
@@ -56,10 +56,14 @@ export const DetachChangesetsModal: React.FunctionComponent<DetachChangesetsModa
                 >
                     Cancel
                 </Button>
-                <Button onClick={onSubmit} disabled={isLoading === true} variant="primary">
-                    {isLoading === true && <LoadingSpinner />}
-                    Detach
-                </Button>
+                <LoaderButton
+                    onClick={onSubmit}
+                    disabled={isLoading === true}
+                    variant="primary"
+                    loading={isLoading === true}
+                    alwaysShowLabel={true}
+                    label="Detach"
+                />
             </div>
         </Modal>
     )

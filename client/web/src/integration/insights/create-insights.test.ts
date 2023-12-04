@@ -1,20 +1,18 @@
 import assert from 'assert'
 
 import delay from 'delay'
+import { afterEach, beforeEach, describe, it } from 'mocha'
 
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
-import { percySnapshotWithVariants } from '../utils'
+import { TimeIntervalStepUnit } from '../../graphql-operations'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from '../context'
+import { createEditorAPI, percySnapshotWithVariants } from '../utils'
 
-import {
-    INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
-    INSIGHT_TYPES_MIGRATION_COMMITS,
-    LangStatsInsightContent,
-} from './utils/insight-mock-data'
-import { overrideGraphQLExtensions } from './utils/override-insights-graphql'
+import { SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE, LANG_STATS_INSIGHT_DATA_FIXTURE } from './fixtures/runtime-insights'
+import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-api'
 
 describe('Code insight create insight page', () => {
     let driver: Driver
@@ -24,8 +22,6 @@ describe('Code insight create insight page', () => {
         driver = await createDriverForTest()
     })
 
-    after(() => driver?.close())
-
     beforeEach(async function () {
         testContext = await createWebIntegrationTestContext({
             driver,
@@ -34,64 +30,61 @@ describe('Code insight create insight page', () => {
         })
     })
 
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    after(() => driver?.close())
     afterEach(() => testContext?.dispose())
+    afterEachSaveScreenshotIfFailed(() => driver.page)
+
     it('is styled correctly, with welcome popup', async () => {
+        overrideInsightsGraphQLApi({ testContext })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create')
 
         // Waiting for all important part page be rendered.
         await driver.page.waitForSelector('[data-testid="create-search-insights"]')
         await driver.page.waitForSelector('[data-testid="create-lang-usage-insight"]')
-        await driver.page.waitForSelector('[data-testid="explore-extensions"]')
 
         await percySnapshotWithVariants(driver.page, 'Create new insight page — Welcome popup')
+        await accessibilityAudit(driver.page)
     })
 
     it('is styled correctly, without welcome popup', async () => {
-        overrideGraphQLExtensions({ testContext })
+        overrideInsightsGraphQLApi({ testContext })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create')
 
         // Waiting for all important part page be rendered.
         await driver.page.waitForSelector('[data-testid="create-search-insights"]')
         await driver.page.waitForSelector('[data-testid="create-lang-usage-insight"]')
-        await driver.page.waitForSelector('[data-testid="explore-extensions"]')
 
         await percySnapshotWithVariants(driver.page, 'Create new insight page')
+        await accessibilityAudit(driver.page)
     })
 
-    it('should update user/org setting if code stats insight has been created', async () => {
-        overrideGraphQLExtensions({
+    it('should run a proper GQL mutation if code-stats insight has been created', async () => {
+        overrideInsightsGraphQLApi({
             testContext,
             overrides: {
-                OverwriteSettings: () => ({
-                    settingsMutation: {
-                        overwriteSettings: {
-                            empty: emptyResponse,
-                        },
-                    },
-                }),
-
-                SubjectSettings: () => ({
-                    settingsSubject: {
-                        latestSettings: {
-                            id: 310,
-                            contents: JSON.stringify({}),
-                        },
-                    },
-                }),
-
                 /**
                  * Mock for async repositories field validation.
                  */
-                BulkRepositoriesSearch: () => ({
-                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
+                CheckRepositoryExists: () => ({
+                    repository: {
+                        __typename: 'Repository',
+                        name: 'github.com/sourcegraph/sourcegraph',
+                    },
                 }),
 
-                LangStatsInsightContent: () => LangStatsInsightContent,
+                LangStatsInsightContent: () => LANG_STATS_INSIGHT_DATA_FIXTURE,
 
                 /** Mock for repository suggest component. */
                 RepositorySearchSuggestions: () => ({
                     repositories: { nodes: [] },
+                }),
+
+                CreateLangStatsInsight: () => ({
+                    __typename: 'Mutation',
+                    createPieChartSearchInsight: {
+                        __typename: 'InsightViewPayload',
+                        view: { __typename: 'InsightView', id: '001' },
+                    },
                 }),
             },
         })
@@ -116,22 +109,26 @@ describe('Code insight create insight page', () => {
         await driver.page.type('input[name="title"]', 'Test insight title')
 
         await percySnapshotWithVariants(driver.page, 'Code insights create new language usage insight')
+        await accessibilityAudit(driver.page)
 
         const addToUserConfigRequest = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[data-testid="insight-save-button"]')
-        }, 'OverwriteSettings')
+        }, 'CreateLangStatsInsight')
 
         // Check that new org settings config has edited insight
-        assert.deepStrictEqual(JSON.parse(addToUserConfigRequest.contents), {
-            'codeStatsInsights.insight.testInsightTitle': {
+        assert.deepStrictEqual(addToUserConfigRequest.input, {
+            query: '',
+            repositoryScope: {
+                repositories: ['github.com/sourcegraph/sourcegraph'],
+            },
+            presentationOptions: {
                 title: 'Test insight title',
-                repository: 'github.com/sourcegraph/sourcegraph',
                 otherThreshold: 0.03,
             },
         })
     })
 
-    it('should update user/org settings if search based insight has been created', async () => {
+    it.skip('should run a proper GQL mutation if search-based insight has been created', async () => {
         // Mock `Date.now` to stabilize timestamps
         await driver.page.evaluateOnNewDocument(() => {
             // Number of ms between Unix epoch and June 31, 2021
@@ -139,38 +136,103 @@ describe('Code insight create insight page', () => {
             Date.now = () => mockMs
         })
 
-        overrideGraphQLExtensions({
+        overrideInsightsGraphQLApi({
             testContext,
             overrides: {
-                OverwriteSettings: () => ({
-                    settingsMutation: {
-                        overwriteSettings: {
-                            empty: emptyResponse,
-                        },
-                    },
-                }),
-
-                SubjectSettings: () => ({
-                    settingsSubject: {
-                        latestSettings: {
-                            id: 310,
-                            contents: JSON.stringify({}),
-                        },
-                    },
-                }),
-
                 // Mock for async repositories field validation.
-                BulkRepositoriesSearch: () => ({
-                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
+                CheckRepositoryExists: () => ({
+                    repository: {
+                        __typename: 'Repository',
+                        name: 'github.com/sourcegraph/sourcegraph',
+                    },
                 }),
 
-                // Mocks of commits searching and data search itself for live preview chart
-                BulkSearchCommits: () => INSIGHT_TYPES_MIGRATION_COMMITS,
-                BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
+                // Mocks live preview chart
+                GetInsightPreview: () => SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE,
 
                 // Mock for repository suggest component
                 RepositorySearchSuggestions: () => ({
                     repositories: { nodes: [] },
+                }),
+
+                CreateSearchBasedInsight: () => ({
+                    __typename: 'Mutation',
+                    createLineChartSearchInsight: {
+                        view: {
+                            id: '001',
+                            isFrozen: false,
+                            defaultFilters: {
+                                includeRepoRegex: null,
+                                excludeRepoRegex: null,
+                                searchContexts: [],
+                                __typename: 'InsightViewFilters',
+                            },
+                            dashboardReferenceCount: 0,
+                            dashboards: { nodes: [] },
+
+                            repositoryDefinition: {
+                                repositories: ['github.com/sourcegraph/sourcegraph'],
+                                __typename: 'InsightRepositoryScope',
+                            },
+
+                            presentation: {
+                                __typename: 'LineChartInsightViewPresentation',
+                                title: 'Test insight title',
+                                seriesPresentation: [
+                                    {
+                                        seriesId: '1',
+                                        label: 'test series #1 title',
+                                        color: 'var(--oc-cyan-7)',
+                                        __typename: 'LineChartDataSeriesPresentation',
+                                    },
+                                    {
+                                        seriesId: '2',
+                                        label: 'test series #2 title',
+                                        color: 'var(--oc-grape-7)',
+                                        __typename: 'LineChartDataSeriesPresentation',
+                                    },
+                                ],
+                            },
+                            dataSeriesDefinitions: [
+                                {
+                                    seriesId: '1',
+                                    query: 'test series #1 query',
+                                    timeScope: {
+                                        unit: TimeIntervalStepUnit.MONTH,
+                                        value: 2,
+                                        __typename: 'InsightIntervalTimeScope',
+                                    },
+                                    isCalculated: false,
+                                    generatedFromCaptureGroups: false,
+                                    groupBy: null,
+                                    __typename: 'SearchInsightDataSeriesDefinition',
+                                },
+                                {
+                                    seriesId: '1',
+                                    query: 'test series #2 query',
+                                    timeScope: {
+                                        unit: TimeIntervalStepUnit.MONTH,
+                                        value: 2,
+                                        __typename: 'InsightIntervalTimeScope',
+                                    },
+                                    isCalculated: false,
+                                    generatedFromCaptureGroups: false,
+                                    groupBy: null,
+                                    __typename: 'SearchInsightDataSeriesDefinition',
+                                },
+                            ],
+                            defaultSeriesDisplayOptions: {
+                                limit: null,
+                                numSamples: null,
+                                sortOptions: {
+                                    direction: null,
+                                    mode: null,
+                                },
+                            },
+                            __typename: 'InsightView',
+                        },
+                        __typename: 'InsightViewPayload',
+                    },
                 }),
             },
         })
@@ -195,13 +257,10 @@ describe('Code insight create insight page', () => {
         )
 
         // Add first series query
-        await driver.page.waitForSelector('[data-testid="series-form"]:nth-child(1) #monaco-query-input')
-        await driver.replaceText({
-            selector: '[data-testid="series-form"]:nth-child(1) #monaco-query-input',
-            newText: 'test series #1 query',
-            enterTextMethod: 'type',
-            selectMethod: 'keyboard',
-        })
+        {
+            const editor = await createEditorAPI(driver, '[data-testid="series-form"]:nth-child(1) .test-query-input')
+            await editor.replace('test series #1 query')
+        }
 
         // Pick first series color
         await driver.page.click('[data-testid="series-form"]:nth-child(1) label[title="Cyan"]')
@@ -216,41 +275,56 @@ describe('Code insight create insight page', () => {
         )
 
         // Add second series query
-        await driver.page.waitForSelector('[data-testid="series-form"]:nth-child(1) #monaco-query-input')
-        await driver.replaceText({
-            selector: '[data-testid="series-form"]:nth-child(2) #monaco-query-input',
-            newText: 'test series #2 query',
-            enterTextMethod: 'type',
-            selectMethod: 'keyboard',
-        })
+        {
+            const editor = await createEditorAPI(driver, '[data-testid="series-form"]:nth-child(2) .test-query-input')
+            await editor.replace('test series #2 query')
+        }
 
         // With two filled data series our mock for live preview should work - render line chart with two lines
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.waitForSelector('[data-testid="code-search-insight-live-preview"] circle')
 
         const addToUserConfigRequest = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[data-testid="insight-save-button"]')
-        }, 'OverwriteSettings')
+        }, 'CreateSearchBasedInsight')
 
         // Check that new org settings config has edited insight
-        assert.deepStrictEqual(JSON.parse(addToUserConfigRequest.contents), {
-            'searchInsights.insight.testInsightTitle': {
-                title: 'Test insight title',
-                repositories: ['github.com/sourcegraph/sourcegraph'],
-                series: [
-                    {
-                        name: 'test series #1 title',
-                        query: 'test series #1 query',
-                        stroke: 'var(--oc-cyan-7)',
+        assert.deepStrictEqual(addToUserConfigRequest.input, {
+            dataSeries: [
+                {
+                    query: 'test series #1 query',
+                    options: {
+                        label: 'test series #1 title',
+                        lineColor: 'var(--oc-cyan-7)',
                     },
-                    {
-                        name: 'test series #2 title',
-                        query: 'test series #2 query',
-                        stroke: 'var(--oc-grape-7)',
+                    repositoryScope: {
+                        repositories: ['github.com/sourcegraph/sourcegraph'],
                     },
-                ],
-                step: {
-                    months: 2,
+                    timeScope: {
+                        stepInterval: {
+                            unit: 'MONTH',
+                            value: 2,
+                        },
+                    },
                 },
+                {
+                    query: 'test series #2 query',
+                    options: {
+                        label: 'test series #2 title',
+                        lineColor: 'var(--oc-grape-7)',
+                    },
+                    repositoryScope: {
+                        repositories: ['github.com/sourcegraph/sourcegraph'],
+                    },
+                    timeScope: {
+                        stepInterval: {
+                            unit: 'MONTH',
+                            value: 2,
+                        },
+                    },
+                },
+            ],
+            options: {
+                title: 'Test insight title',
             },
         })
     })

@@ -15,28 +15,28 @@ import (
 //
 // Rules are expressed as Glob syntaxes:
 //
-//    pattern:
-//        { term }
+//	pattern:
+//	    { term }
 //
-//    term:
-//        `*`         matches any sequence of non-separator characters
-//        `**`        matches any sequence of characters
-//        `?`         matches any single non-separator character
-//        `[` [ `!` ] { character-range } `]`
-//                    character class (must be non-empty)
-//        `{` pattern-list `}`
-//                    pattern alternatives
-//        c           matches character c (c != `*`, `**`, `?`, `\`, `[`, `{`, `}`)
-//        `\` c       matches character c
+//	term:
+//	    `*`         matches any sequence of non-separator characters
+//	    `**`        matches any sequence of characters
+//	    `?`         matches any single non-separator character
+//	    `[` [ `!` ] { character-range } `]`
+//	                character class (must be non-empty)
+//	    `{` pattern-list `}`
+//	                pattern alternatives
+//	    c           matches character c (c != `*`, `**`, `?`, `\`, `[`, `{`, `}`)
+//	    `\` c       matches character c
 //
-//    character-range:
-//        c           matches character c (c != `\\`, `-`, `]`)
-//        `\` c       matches character c
-//        lo `-` hi   matches character c for lo <= c <= hi
+//	character-range:
+//	    c           matches character c (c != `\\`, `-`, `]`)
+//	    `\` c       matches character c
+//	    lo `-` hi   matches character c for lo <= c <= hi
 //
-//    pattern-list:
-//        pattern { `,` pattern }
-//                    comma-separated (without spaces) patterns
+//	pattern-list:
+//	    pattern { `,` pattern }
+//	                comma-separated (without spaces) patterns
 //
 // This Glob syntax is currently from github.com/gobwas/glob:
 // https://sourcegraph.com/github.com/gobwas/glob@e7a84e9525fe90abcda167b604e483cc959ad4aa/-/blob/glob.go?L39:6
@@ -46,12 +46,11 @@ import (
 //
 // Paths are relative to the root of the repo.
 type SubRepoPermissions struct {
-	PathIncludes []string
-	PathExcludes []string
+	Paths []string
 }
 
 // ExternalUserPermissions is a collection of accessible repository/project IDs
-// (on code host). It contains exact IDs, as well as prefixes to both include
+// (on the code host). It contains exact IDs, as well as prefixes to both include
 // and exclude IDs.
 //
 // 🚨 SECURITY: Every call site should evaluate all fields of this struct to
@@ -122,10 +121,6 @@ type Provider interface {
 	// to decide whether to discard.
 	FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts FetchPermsOptions) ([]extsvc.AccountID, error)
 
-	// FetchUserPermsByToken is similar to FetchUserPerms but only requires a token
-	// in order to communicate with the code host.
-	FetchUserPermsByToken(ctx context.Context, token string, opts FetchPermsOptions) (*ExternalUserPermissions, error)
-
 	// ServiceType returns the service type (e.g., "gitlab") of this authz provider.
 	ServiceType() string
 
@@ -140,7 +135,7 @@ type Provider interface {
 	// ValidateConnection checks that the configuration and credentials of the authz provider
 	// can establish a valid connection with the provider, and returns warnings based on any
 	// issues it finds.
-	ValidateConnection(ctx context.Context) (warnings []string)
+	ValidateConnection(ctx context.Context) error
 }
 
 // ErrUnauthenticated indicates an unauthenticated request.

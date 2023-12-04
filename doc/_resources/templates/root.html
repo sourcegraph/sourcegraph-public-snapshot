@@ -8,49 +8,239 @@
 
 		<head>
 			<title>{{block "title" .}}Home{{end}} - Sourcegraph docs</title>
-            <link rel="icon" type="image/png" href="https://about.sourcegraph.com/sourcegraph-mark.png" />
-			<link rel="stylesheet" type="text/css" href="{{asset "docsite.css"}}" />
-            <script src="{{asset "docsite.js"}}"></script>
-            <script src="{{asset "railroad.js"}}"></script>
-			<meta name="viewport" content="width=device-width, initial-scale=1" />
-      {{block "seo" . }}{{end}}
+            <link rel="icon" type="image/png" href="https://sourcegraph.com/sourcegraph-mark.png" />
+            {{if .ContentVersion}}
+                <link rel="stylesheet" type="text/css" href="{{assetsFromVersion .ContentVersion "docsite.css" }}" />
+                <script src="{{assetsFromVersion .ContentVersion "docsite.js" }}"></script>
+                <script src="{{assetsFromVersion .ContentVersion "railroad.js" }}"></script>
+            {{else}}
+                <link rel="stylesheet" type="text/css" href="{{asset "docsite.css" }}" />
+                <script src="{{asset "docsite.js" }}"></script>
+                <script src="{{asset "railroad.js" }}"></script>
+            {{end}}
+            <link rel="preconnect" href="https://fonts.googleapis.com" />
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+            <link
+                href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap"
+                rel="stylesheet"
+            />
+           <meta name="viewport" content="width=device-width, initial-scale=1" />
+			{{block "seo" . }}{{end}}
+			{{block "head" .}}{{end}}
+
+            <!-- Plausible -->
+            <script src="https://plausible.io/js/plausible.js" defer data-domain="docs.sourcegraph.com"></script>
+            <!-- End Plausible -->
 
             <!-- Google Tag Manager -->
-            <script>(function (w, d, s, l, i) {
-                    w[l] = w[l] || []; w[l].push({
-                        'gtm.start':
-                            new Date().getTime(), event: 'gtm.js'
-                    }); var f = d.getElementsByTagName(s)[0],
-                        j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
-                            'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
-                })(window, document, 'script', 'dataLayer', 'GTM-TB4NLS7');</script>
+            <script>
+                (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                })(window,document,'script','dataLayer','GTM-TB4NLS7');
+            </script>
             <!-- End Google Tag Manager -->
-
-			{{block "head" .}}{{end}}
+            <!-- Google tag (gtag.js) -->
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-K7F82VH69T"></script>
+            <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-K7F82VH69T');
+            </script>
 		</head>
 
         <!-- Default to light theme if no JavaScript -->
 		<body class="theme-light">
-            <!-- Google Tag Manager (noscript) -->
-            <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-            <!-- End Google Tag Manager (noscript) -->
+            <script>
+                // If dark theme is requested, set it immediately to avoid flashing.
+                // The rest of theme handling happens in docsite.js.
+                const pref = localStorage.getItem('theme-preference') || 'auto'
+                if (pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.body.classList.remove('theme-light')
+                    document.body.classList.add('theme-dark')
+                }
+            </script>
 
+            <link rel="stylesheet" href="https://esm.sh/@markprompt/css@0.12.0?css" />
+
+            <script>
+            </script>
+            <script type="module">
+                import { markprompt, openMarkprompt } from 'https://esm.sh/@markprompt/web@0.15.0';
+
+                function showMarkprompt() {
+                    openMarkprompt()
+                }
+                window.showMarkprompt = showMarkprompt;
+
+                const showInstantSearch = localStorage.getItem('markprompt-instant-search') === 'true'
+
+                const oldSearchForm = document.getElementById("search-form");
+                const oldMarkpromptButton = document.getElementById("markprompt-button");
+                const newMarkprompt = document.getElementById("markprompt");
+
+                oldSearchForm.style.display = showInstantSearch ? 'none' : 'block';
+                oldMarkpromptButton.style.display = showInstantSearch ? 'none' : 'block';
+                newMarkprompt.style.display = showInstantSearch ? 'block' : 'none';
+
+                const markpromptEl = newMarkprompt
+
+                const sluggify = (text) => {
+                    return text
+                        .toLowerCase()
+                        .replace(/[^\w\s-]/g, '')
+                        .replace(/\s+/g, '-');
+                }
+
+                const pathToHref = (path) => {
+                    const lastDotIndex = path.lastIndexOf('.');
+                    let cleanPath = path;
+                    if (lastDotIndex >= 0) {
+                        cleanPath = path.substring(0, lastDotIndex);
+                    }
+                    if (cleanPath.endsWith('/index')) {
+                        cleanPath = cleanPath.replace(/\/index/gi, '');
+                    }
+                    return cleanPath.replace(/^\/*doc\//, "/")?.replace(/\.[^.]+$/, "");
+                };
+
+                const getHref = (result) => {
+                    const path = pathToHref(result.file.path);
+                    if (result.meta?.leadHeading?.id) {
+                        return `${path}#${result.meta.leadHeading.id}`;
+                    } else if (result.meta?.leadHeading?.value) {
+                        return `${path}#${result.meta.leadHeading.slug}`;
+                    }
+                    return path;
+                };
+
+                const removeFileExtension = (fileName) => {
+                    const lastDotIndex = fileName.lastIndexOf('.');
+                    if (lastDotIndex === -1) {
+                        return fileName;
+                    }
+                    return fileName.substring(0, lastDotIndex);
+                };
+
+                const getLabel = (result) => {
+                    let label = (
+                        result.meta?.leadHeading?.value ||
+                        result.file?.title ||
+                        removeFileExtension(result.file.path.split('/').slice(-1)[0])
+                    );
+                    if (label === "index") {
+                        label = "Home"
+                    }
+                    label = label.replace(/[_-]+/gi, " ")
+                    label = label.charAt(0).toUpperCase() + label.slice(1);
+                    return label
+                };
+
+                const promptTemplate = `You are a very enthusiastic company representative from Sourcegraph who loves to help people! Below is a list of context sections separated by three dashes ('---'). They consist of a section id, which corresponds to the file from which the section is in, followed by the actual section content, in Markdown format.
+
+In the content, you may find relative links in Markdown format. Some examples are [Step 1](#step1), [Writing an indexer](explanations/writing_an_indexer.md), [Home](/docs/index.md). If you encounter such a link, you need to reconstruct the full path. Here is how you should do it:
+- First, transform the section id to an absolute URL path, and remove the "/doc" prefix. For instance, "/doc/code_navigation/step-1.md" should be turned into "/code_navigation/step-1". Note that filenames like "index.md" corresponding to a root path, so for instance, "/doc/code_navigation/index.md" becomes "/doc/code_navigation".
+- Given this absolute base path, prepend it to the relative link. For instance, if the link "[Step 1](#step1)" comes from a section whose id is "/doc/code_navigation/getting-started.md", then this link should be turned into "[Step 1](/code_navigation/getting-started#step1)". Similarly, if the link [Writing an indexer](explanations/writing_an_indexer.md), comes from a section whose id is "/doc/code_navigation/index.md", then this link should be turned into "[Writing an indexer](/code_navigation/explanations/writing_an_indexer)".
+- In insist: if a link starts with "/doc/", replace the "/doc/" prefix by "/".
+
+Finally, you should always offer answers with high conviction, based on the provided context. If you are unsure and the answer is not explicitly written in the documentation, say "I don't know".
+
+Here are the context sections:
+---
+\{\{CONTEXT\}\}
+
+Question: "\{\{PROMPT\}\}"
+
+Answer (including related code snippets if available):`
+
+                markprompt('dzvb1USv2SLXKiQMnH56ua3dW54mSChj',
+                    markpromptEl, {
+                        debug: false,
+                        prompt: {
+                            model: "gpt-4",
+                            promptTemplate,
+                            placeholder: "Search or ask a question…",
+                            cta: "Ask Docs AI"
+                        },
+                        feedback: { enabled: true },
+                        search: {
+                            enabled: showInstantSearch,
+                            getHref
+                        },
+                        trigger: {
+                            label: 'Search or ask Docs AI',
+                            placeholder: showInstantSearch ? 'Search or ask Docs AI' : "Ask AI",
+                            floating: false,
+                            customElement: !showInstantSearch,
+                        },
+                        showBranding: false,
+                        references: { getHref, getLabel },
+                    }
+                );
+            </script>
+
+            <!-- Google Tag Manager (noscript) -->
+            <noscript>
+                <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7"
+                height="0" width="0" style="display:none;visibility:hidden"></iframe>
+            </noscript>
+            <!-- End Google Tag Manager (noscript) -->
 			<aside id="sidebar">
                 <header>
 				    <h1 id="logo"><a href="/">
-                        <img src="{{asset "logo-theme-light.svg"}}" class="theme-light" alt="Sourcegraph docs"/>
-                        <img src="{{asset "logo-theme-dark.svg"}}" class="theme-dark" alt="Sourcegraph docs"/>
+                    {{if .ContentVersion}}
+                        <img src="{{assetsFromVersion .ContentVersion "logo-theme-light.svg" }}" class="theme-light" alt="Sourcegraph docs"/>
+                        <img src="{{assetsFromVersion .ContentVersion "logo-theme-dark.svg" }}" class="theme-dark" alt="Sourcegraph docs"/>
+                    {{else}}
+                        <img src="{{asset "logo-theme-light.svg" }}" class="theme-light" alt="Sourcegraph docs"/>
+                        <img src="{{asset "logo-theme-dark.svg" }}" class="theme-dark" alt="Sourcegraph docs"/>
+                    {{end}}
+                        <span class="sr-only">Sourcegraph Docs</span>
                     </a></h1>
-                    <form id="search-form" method="get" action="/search">
-                        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M21.172 24l-7.387-7.387c-1.388.874-3.024 1.387-4.785 1.387-4.971 0-9-4.029-9-9s4.029-9 9-9 9 4.029 9 9c0 1.761-.514 3.398-1.387 4.785l7.387 7.387-2.828 2.828zm-12.172-8c3.859 0 7-3.14 7-7s-3.141-7-7-7-7 3.14-7 7 3.141 7 7 7z"/></svg>
-					    <input type="text" id="search" name="q" value="{{block "query" .}}{{end}}" placeholder="" spellcheck="false" aria-label="Query" />
-                        <input type="hidden" name="v" value="{{block "version" .}}{{end}}">
-					    <button id="search-button" type="submit" aria-label="Search" class="sr-only">Search</button>
-				    </form>
+                    <div class="markprompt-search-container">
+                        <form id="search-form" method="get" action="/search">
+                            {{/*  <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M21.172 24l-7.387-7.387c-1.388.874-3.024 1.387-4.785 1.387-4.971 0-9-4.029-9-9s4.029-9 9-9 9 4.029 9 9c0 1.761-.514 3.398-1.387 4.785l7.387 7.387-2.828 2.828zm-12.172-8c3.859 0 7-3.14 7-7s-3.141-7-7-7-7 3.14-7 7 3.141 7 7 7z"/></svg>  */}}
+                            {{/*  <svg width="24" height="24" fill="none" aria-hidden="true" class="search-icon"><path d="m19 19-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></circle></svg>  */}}
+                            <input type="text" id="search" name="q" value="{{block "query" .}}{{end}}" placeholder="Search docs..." spellcheck="false" aria-label="Query" />
+                            <input type="hidden" name="v" value="{{block "version" .}}{{end}}">
+                            <button id="search-button" type="submit" aria-label="Search" class="sr-only">Search</button>
+                        </form>
+                        <button id="markprompt-button" aria-label="Open prompt" onclick="showMarkprompt()">
+                            <svg id="markprompt-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        </button>
+                        <div id="markprompt" style="display: none" />
+                    </div>
                 </header>
                 <nav id="sections" class="links sidebar">
                     <div class="nav-section tree">
                         <h2 class="sr-only">Sections</h2>
+                        <ul>
+                            <li>
+                                <a href="/getting-started">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+                                        class="lucide lucide-book-open">
+                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                                    </svg>
+                                    Getting Started
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/tutorials">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+                                        class="lucide lucide-shapes">
+                                        <path d="M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z" />
+                                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                                        <circle cx="17.5" cy="17.5" r="3.5" />
+                                    </svg>
+                                    Tutorials
+                                </a>
+                            </li>
+                        </ul>
                         {{if (contentFileExists .ContentVersion "sidebar.md")}}
                             {{renderMarkdownContentFile .ContentVersion "sidebar.md"}}
                         {{else}}
@@ -60,17 +250,20 @@
                     <div class="nav-section">
                         <h2 class="sr-only">External</h2>
                         <ul>
-                            <li class="external"><a href="https://about.sourcegraph.com">About Sourcegraph</a></li>
                             <li class="external"><a href="https://sourcegraph.com">Sourcegraph.com</a></li>
                         </ul>
                     </div>
                 </nav>
                 <div id="theme">
-                    <div>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" title="Theme">
+                        <title>Theme</title>
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                            d="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM12 24C18.6274 24 24 18.6274 24 12C24 5.37258 18.6274 0 12 0C5.37258 0 0 5.37258 0 12C0 18.6274 5.37258 24 12 24Z" />
+                        <path d="M12 12V24C5.37258 24 0 18.6274 0 12C0 5.37258 5.37258 0 12 0V12Z" />
+                    </svg>
                     <button type="button" data-theme-preference="auto">Auto</button>
                     <button type="button" data-theme-preference="light">Light</button>
                     <button type="button" data-theme-preference="dark">Dark</button>
-                    </div>
                 </div>
 			</aside>
 
@@ -81,12 +274,11 @@
                 <footer>
                     <nav class="links external">
                         <ul>
-                            <li><a href="https://about.sourcegraph.com">About Sourcegraph</a></li>
                             <li><a href="https://sourcegraph.com">Sourcegraph.com</a></li>
                             <li><a href="https://github.com/sourcegraph/sourcegraph">Code (GitHub)</a></li>
-                            <li><a href="https://about.sourcegraph.com/terms">Terms</a></li>
-                            <li><a href="https://about.sourcegraph.com/security">Security</a></li>
-                            <li><a href="https://about.sourcegraph.com/privacy">Privacy</a></li>
+                            <li><a href="https://sourcegraph.com/terms">Terms</a></li>
+                            <li><a href="https://sourcegraph.com/security">Security</a></li>
+                            <li><a href="https://sourcegraph.com/privacy">Privacy</a></li>
                         </ul>
                     </nav>
                 </footer>
@@ -112,12 +304,12 @@
                 <li><a href="code_search/reference">Reference</a></li>
             </ul>
         </li>
-        <li><a href="/code_intelligence">Code intelligence</a>
+        <li><a href="/code_navigation">Code navigation</a>
             <ul>
-                <li><a href="code_intelligence/tutorials">Tutorials</a></li>
-                <li><a href="code_intelligence/how-to">How-to guides</a></li>
-                <li><a href="code_intelligence/explanations">Explanations</a></li>
-                <li><a href="code_intelligence/reference">Reference</a></li>
+                <li><a href="code_navigation/tutorials">Tutorials</a></li>
+                <li><a href="code_navigation/how-to">How-to guides</a></li>
+                <li><a href="code_navigation/explanations">Explanations</a></li>
+                <li><a href="code_navigation/reference">Reference</a></li>
             </ul>
         </li>
         <li><a href="/batch_changes">Batch changes</a>
@@ -138,7 +330,6 @@
                 <li><a href="/admin/config">Configuration</a></li>
                 <li><a href="/admin/external_service">Code hosts</a></li>
                 <li><a href="/admin/auth">User authentication</a></li>
-                <li><a href="/admin/extensions">Extension registry</a></li>
                 <li><a href="/admin/observability">Observability</a></li>
                 <li><a href="/admin/faq">FAQ</a></li>
                 <li><a href="/admin/troubleshooting">Troubleshooting</a></li>

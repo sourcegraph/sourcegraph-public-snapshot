@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	appsv1 "k8s.io/api/apps/v1"
@@ -17,22 +16,25 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // K8S returns a Map for the given k8s urlspec (e.g. k8s+http://searcher), starting
 // service discovery in the background.
-func K8S(urlspec string) *Map {
+func K8S(logger log.Logger, urlspec string) *Map {
+	logger = logger.Scoped("k8s")
 	return &Map{
 		urlspec:   urlspec,
-		discofunk: k8sDiscovery(urlspec, namespace(), loadClient),
+		discofunk: k8sDiscovery(logger, urlspec, namespace(logger), loadClient),
 	}
 }
 
 // k8sDiscovery does service discovery of the given k8s urlspec (e.g. k8s+http://searcher),
 // publishing endpoint changes to the given disco channel. It's started by endpoint.K8S as a
 // go-routine.
-func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientset, error)) func(chan endpoints) {
+func k8sDiscovery(logger log.Logger, urlspec, ns string, clientFactory func() (*kubernetes.Clientset, error)) func(chan endpoints) {
 	return func(disco chan endpoints) {
 		u, err := parseURL(urlspec)
 		if err != nil {
@@ -61,23 +63,32 @@ func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientse
 			informer = factory.Core().V1().Endpoints().Informer()
 		}
 
-		handle := func(obj interface{}) {
+		handle := func(obj any) {
 			eps := k8sEndpoints(u, obj)
-
-			log15.Info(
+			logger.Info(
 				"endpoints k8s discovered",
-				"urlspec", urlspec,
-				"service", u.Service,
-				"count", len(eps),
-				"endpoints", eps,
+				log.String("urlspec", urlspec),
+				log.String("service", u.Service),
+				log.Int("count", len(eps)),
+				log.Strings("endpoints", eps),
 			)
+
+			if len(eps) == 0 {
+				err := errors.Errorf(
+					"no %s endpoints could be found (this may indicate more %s replicas are needed, contact support@sourcegraph.com for assistance)",
+					u.Service,
+					u.Service,
+				)
+				disco <- endpoints{Service: u.Service, Error: err}
+				return
+			}
 
 			disco <- endpoints{Service: u.Service, Endpoints: eps}
 		}
 
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc:    handle,
-			UpdateFunc: func(_, obj interface{}) { handle(obj) },
+			UpdateFunc: func(_, obj any) { handle(obj) },
 		})
 
 		stop := make(chan struct{})
@@ -89,7 +100,7 @@ func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientse
 
 // k8sEndpoints constructs a list of endpoint addresses for u based on the
 // kubernetes resource object obj.
-func k8sEndpoints(u *k8sURL, obj interface{}) []string {
+func k8sEndpoints(u *k8sURL, obj any) []string {
 	var eps []string
 
 	switch o := (obj).(type) {
@@ -181,17 +192,18 @@ func parseURL(rawurl string) (*k8sURL, error) {
 // namespace returns the namespace the pod is currently running in
 // this is done because the k8s client we previously used set the namespace
 // when the client was created, the official k8s client does not
-func namespace() string {
+func namespace(logger log.Logger) string {
+	logger = logger.Scoped("namespace")
 	const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		log15.Warn("endpoint: falling back to kubernetes default namespace", "error", filename+" is empty")
+		logger.Warn("falling back to kubernetes default namespace", log.String("error", filename+" is empty"))
 		return "default"
 	}
 
 	ns := strings.TrimSpace(string(data))
 	if ns == "" {
-		log15.Warn("file: ", filename, " empty using \"default\" ns")
+		logger.Warn("empty namespace in file", log.String("filename", filename), log.String("namespaceInFile", ""), log.String("namespace", "default"))
 		return "default"
 	}
 	return ns

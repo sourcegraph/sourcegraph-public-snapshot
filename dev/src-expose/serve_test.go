@@ -38,7 +38,7 @@ func TestReposHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			root := gitInitRepos(t, tc.repos...)
 
-			h, err := (&Serve{
+			h := (&Serve{
 				Info:  testLogger(t),
 				Debug: discardLogger,
 				Addr:  testAddress,
@@ -46,9 +46,6 @@ func TestReposHandler(t *testing.T) {
 
 				updatingServerInfo: 2, // disables background updates
 			}).handler()
-			if err != nil {
-				t.Fatal(err)
-			}
 
 			var want []Repo
 			for _, name := range tc.repos {
@@ -71,7 +68,7 @@ func TestReposHandler(t *testing.T) {
 			// This is the difference to above, we point our root at the git repo
 			root = filepath.Join(root, "project-root")
 
-			h, err := (&Serve{
+			h := (&Serve{
 				Info:  testLogger(t),
 				Debug: discardLogger,
 				Addr:  testAddress,
@@ -79,9 +76,6 @@ func TestReposHandler(t *testing.T) {
 
 				updatingServerInfo: 2, // disables background updates
 			}).handler()
-			if err != nil {
-				t.Fatal(err)
-			}
 
 			// project-root is served from /repos, etc
 			want := []Repo{{Name: "project-root", URI: "/repos"}}
@@ -149,11 +143,7 @@ func testReposHandler(t *testing.T, h http.Handler, repos []Repo) {
 }
 
 func gitInitRepos(t *testing.T, names ...string) string {
-	root, err := os.MkdirTemp("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.RemoveAll(root) })
+	root := t.TempDir()
 	root = filepath.Join(root, "repos-root")
 
 	for _, name := range names {
@@ -171,11 +161,7 @@ func gitInitRepos(t *testing.T, names ...string) string {
 }
 
 func TestIgnoreGitSubmodules(t *testing.T) {
-	root, err := os.MkdirTemp("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.RemoveAll(root) })
+	root := t.TempDir()
 
 	if err := os.MkdirAll(filepath.Join(root, "dir"), os.ModePerm); err != nil {
 		t.Fatal(err)

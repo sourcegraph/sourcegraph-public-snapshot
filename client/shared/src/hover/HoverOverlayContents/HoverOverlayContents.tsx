@@ -1,14 +1,16 @@
-import classNames from 'classnames'
-import { upperFirst } from 'lodash'
 import React from 'react'
 
-import { isErrorLike } from '@sourcegraph/common'
-import { Alert, AlertProps, LoadingSpinner } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
+import { upperFirst } from 'lodash'
 
-import hoverOverlayStyle from '../HoverOverlay.module.scss'
-import { HoverOverlayBaseProps } from '../HoverOverlay.types'
+import { isErrorLike } from '@sourcegraph/common'
+import { Alert, type AlertProps, LoadingSpinner } from '@sourcegraph/wildcard'
+
+import type { HoverOverlayBaseProps } from '../HoverOverlay.types'
 
 import { HoverOverlayContent } from './HoverOverlayContent'
+
+import hoverOverlayStyle from '../HoverOverlay.module.scss'
 
 interface HoverOverlayContentsProps extends Pick<HoverOverlayBaseProps, 'hoverOrError'> {
     iconClassName?: string
@@ -18,15 +20,11 @@ interface HoverOverlayContentsProps extends Pick<HoverOverlayBaseProps, 'hoverOr
     contentClassName?: string
 }
 
-export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsProps> = props => {
-    const {
-        hoverOrError,
-        iconClassName,
-        errorAlertClassName,
-        errorAlertVariant,
-        badgeClassName,
-        contentClassName,
-    } = props
+export const HoverOverlayContents: React.FunctionComponent<
+    React.PropsWithChildren<HoverOverlayContentsProps>
+> = props => {
+    const { hoverOrError, iconClassName, errorAlertClassName, errorAlertVariant, badgeClassName, contentClassName } =
+        props
 
     if (hoverOrError === 'loading') {
         return (
@@ -51,7 +49,7 @@ export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsP
         return null
     }
 
-    if (hoverOrError === null || (hoverOrError.contents.length === 0 && hoverOrError.alerts?.length)) {
+    if (hoverOrError === null || hoverOrError.contents.length === 0) {
         return (
             // Show some content to give the close button space and communicate to the user we couldn't find a hover.
             <small className={classNames(hoverOverlayStyle.hoverEmpty)}>No hover information available.</small>

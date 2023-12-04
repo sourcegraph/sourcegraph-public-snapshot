@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	jsoniter "github.com/json-iterator/go"
 
@@ -16,16 +18,21 @@ import (
 var (
 	client *gqltestutil.Client
 
-	initSG   = flag.NewFlagSet("initserver", flag.ExitOnError)
-	addRepos = flag.NewFlagSet("addrepos", flag.ExitOnError)
+	initSG       = flag.NewFlagSet("initserver", flag.ExitOnError)
+	addRepos     = flag.NewFlagSet("addrepos", flag.ExitOnError)
+	oobmigration = flag.NewFlagSet("oobmigration", flag.ExitOnError)
 
 	baseURL  = initSG.String("baseurl", os.Getenv("SOURCEGRAPH_BASE_URL"), "The base URL of the Sourcegraph instance. (Required)")
 	email    = initSG.String("email", os.Getenv("TEST_USER_EMAIL"), "The email of the admin user. (Required)")
 	username = initSG.String("username", os.Getenv("SOURCEGRAPH_SUDO_USER"), "The username of the admin user. (Required)")
 	password = initSG.String("password", os.Getenv("TEST_USER_PASSWORD"), "The password of the admin user. (Required)")
+	sgenvrc  = initSG.String("sg_envrc", os.Getenv("SG_ENVRC"), "Location of the sg_envrc file to write down the sudo token to")
 
 	githubToken    = addRepos.String("githubtoken", os.Getenv("GITHUB_TOKEN"), "The github access token that will be used to authenticate an external service. (Required)")
 	addReposConfig = addRepos.String("config", "", "Path to the external service config. (Required)")
+
+	migrationID       = oobmigration.String("id", "", "The target oobmigration identifier. (Required)")
+	migrationDownFlag = oobmigration.Bool("down", false, "Supply to change the migration from up (default) to down.")
 
 	home    = os.Getenv("HOME")
 	profile = home + "/.sg_envrc"
@@ -35,7 +42,7 @@ func main() {
 	flag.Parse()
 
 	if len(os.Args) < 2 {
-		fmt.Println("initSG or addRepos subcommand is required")
+		fmt.Println("initSG, addRepos, or oobmigration subcommand is required")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
@@ -47,6 +54,9 @@ func main() {
 	case "addRepos":
 		addRepos.Parse(os.Args[2:])
 		addReposCommand()
+	case "oobmigration":
+		oobmigration.Parse(os.Args[2:])
+		oobmigrationCommand()
 	case "default":
 		flag.PrintDefaults()
 		os.Exit(1)
@@ -88,19 +98,22 @@ func initSourcegraph() {
 	}
 
 	// Ensure site configuration is set up correctly
-	siteConfig, err := client.SiteConfiguration()
+	siteConfig, lastID, err := client.SiteConfiguration()
 	if err != nil {
 		log.Fatal(err)
 	}
 	if siteConfig.ExternalURL != *baseURL {
 		siteConfig.ExternalURL = *baseURL
-		err = client.UpdateSiteConfiguration(siteConfig)
+		err = client.UpdateSiteConfiguration(siteConfig, lastID)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
 	envvar := "export SOURCEGRAPH_SUDO_TOKEN=" + token
+	if *sgenvrc != "" {
+		profile = *sgenvrc
+	}
 	file, err := os.Create(profile)
 	if err != nil {
 		log.Fatal(err)
@@ -112,7 +125,7 @@ func initSourcegraph() {
 
 	log.Println("Instance initialized, SOURCEGRAPH_SUDO_TOKEN set in", profile)
 }
-func mustMarshalJSONString(v interface{}) string {
+func mustMarshalJSONString(v any) string {
 	str, err := jsoniter.MarshalToString(v)
 	if err != nil {
 		panic(err)
@@ -159,7 +172,6 @@ func addReposCommand() {
 	jsoniter.Unmarshal(byteValue, &externalsvcs)
 
 	for i := range externalsvcs {
-
 		// Set up external service
 		esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 			Kind:        externalsvcs[i].Kind,
@@ -189,5 +201,40 @@ func addReposCommand() {
 		} else {
 			log.Print(esID)
 		}
+	}
+}
+
+const MigrationTimeout = time.Minute * 5
+
+func oobmigrationCommand() {
+	if *migrationID == "" {
+		log.Fatal("migration identifier (-id) is not supplied")
+	}
+	id := *migrationID
+	up := !*migrationDownFlag
+
+	client, err := gqltestutil.SignIn(*baseURL, *email, *password)
+	if err != nil {
+		log.Fatal("Failed to sign in:", err)
+	}
+	log.Println("Site admin authenticated:", *username)
+
+	if err := client.SetMigrationDirection(id, up); err != nil {
+		log.Fatal(err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), MigrationTimeout)
+	defer cancel()
+
+	if err := client.PollMigration(ctx, id, func(progress float64) bool {
+		if up {
+			log.Printf("Waiting for migration %s to complete (%.2f%% done).", id, progress*100)
+		} else {
+			log.Printf("Waiting for migration %s to rollback (%.2f%% done).", id, (1-progress)*100)
+		}
+
+		return (up && progress == 1) || (!up && progress == 0)
+	}); err != nil {
+		log.Fatal(err)
 	}
 }

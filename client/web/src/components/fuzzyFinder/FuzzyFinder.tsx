@@ -1,27 +1,145 @@
-import { ApolloError, useQuery } from '@apollo/client'
-import * as H from 'history'
-import React, { useState, useEffect, Dispatch, SetStateAction } from 'react'
-import { useHistory } from 'react-router-dom'
+import React, { useEffect, type Dispatch, type SetStateAction, useCallback, useRef } from 'react'
 
-import { gql, getDocumentNode } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type * as H from 'history'
 
-import { FuzzySearch, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
-import { FileNamesResult, FileNamesVariables } from '../../graphql-operations'
-import { parseBrowserRepoURL } from '../../util/url'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { FuzzyModal } from './FuzzyModal'
+import { useFuzzyShortcuts } from './FuzzyShortcuts'
+import { fuzzyIsActive, type FuzzyTabsProps, type FuzzyState, useFuzzyState, type FuzzyTabKey } from './FuzzyTabs'
 
-const DEFAULT_MAX_RESULTS = 100
+const DEFAULT_MAX_RESULTS = 50
 
-export interface FuzzyFinderProps extends TelemetryProps {
+export interface FuzzyFinderContainerProps
+    extends TelemetryProps,
+        Pick<FuzzyFinderProps, 'location'>,
+        SettingsCascadeProps,
+        FuzzyTabsProps {
+    isVisible: boolean
+    setIsVisible: React.Dispatch<SetStateAction<boolean>>
+}
+
+/**
+ * This components registers a global keyboard shortcut to render the fuzzy
+ * finder and renders the fuzzy finder.
+ */
+export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerProps> = props => {
+    const { isVisible, setIsVisible } = props
+    const isVisibleRef = useRef(isVisible)
+    isVisibleRef.current = isVisible
+    const state = useFuzzyState(props)
+    const { tabs, setQuery, activeTab, setActiveTab, repoRevision, scope, isScopeToggleDisabled, toggleScope } = state
+    const isScopeToggleDisabledRef = useRef(isScopeToggleDisabled)
+    isScopeToggleDisabledRef.current = isScopeToggleDisabled
+
+    // We need useRef to access the latest state inside `openFuzzyFinder` below.
+    // The keyboard shortcut does not pick up changes to the callback even if we
+    // declare them as dependencies of `openFuzzyFinder`.
+    const tabsRef = useRef(tabs)
+    tabsRef.current = tabs
+    const repositoryName = useRef('')
+    repositoryName.current = repoRevision.repositoryName
+    const activeTabRef = useRef(activeTab)
+    activeTabRef.current = activeTab
+
+    const openFuzzyFinder = useCallback(
+        (tab: FuzzyTabKey): void => {
+            if (tabsRef.current.isOnlyFilesEnabled() && !repositoryName.current) {
+                return // Legacy mode: only activate inside a repository
+            }
+            const activeTab = activeTabRef.current
+            const isVisible = isVisibleRef.current
+            if (!isVisible) {
+                if (activeTabRef.current !== tab) {
+                    // Reset the query when the user activates a different tab.
+                    // For example, if the user had "Repos" open, opens a repo,
+                    // and then triggers Cmd+P to activate the "Files" tab then
+                    // we discard the previous query from the "Repos" tab.
+                    setQuery('')
+                }
+                setIsVisible(true)
+            }
+            if (!isScopeToggleDisabledRef.current && isVisible && tab === activeTab) {
+                switch (tab) {
+                    case 'files':
+                    case 'symbols':
+                    case 'all': {
+                        toggleScope()
+                    }
+                }
+            } else {
+                const newTab = tabsRef.current.focusNamedTab(tab)
+                if (newTab) {
+                    setActiveTab(newTab)
+                }
+            }
+        },
+        [setActiveTab, setIsVisible, toggleScope, setQuery]
+    )
+
+    const shortcuts = useFuzzyShortcuts()
+
+    useEffect(() => {
+        if (isVisible) {
+            props.telemetryService.log('FuzzyFinderViewed', { action: 'shortcut open' })
+        }
+    }, [props.telemetryService, isVisible])
+
+    const handleItemClick = useCallback(
+        (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => {
+            props.telemetryService.log(eventName, { activeTab, scope }, { activeTab, scope })
+            setIsVisible(false)
+        },
+        [props.telemetryService, setIsVisible, activeTab, scope]
+    )
+
+    if (tabs.isAllDisabled()) {
+        return null
+    }
+
+    // Disable the fuzzy finder if only the 'files' tab is enabled and we're not
+    // in a repository-related page.
+    if (tabs.isOnlyFilesEnabled() && !fuzzyIsActive(activeTab, 'files')) {
+        return null
+    }
+
+    return (
+        <>
+            {shortcuts
+                .filter(shortcut => shortcut.isEnabled)
+                .flatMap(shortcut =>
+                    shortcut.shortcut?.keybindings.map(keybinding => (
+                        <Shortcut
+                            {...keybinding}
+                            key={`fuzzy-shortcut-${shortcut.name}-${JSON.stringify(keybinding)}`}
+                            onMatch={() => openFuzzyFinder(shortcut.name)}
+                            ignoreInput={true}
+                        />
+                    ))
+                )}
+            {isVisible && (
+                <FuzzyFinder
+                    {...state}
+                    setIsVisible={setIsVisible}
+                    location={props.location}
+                    onClickItem={handleItemClick}
+                />
+            )}
+        </>
+    )
+}
+
+interface FuzzyFinderProps extends FuzzyState {
     setIsVisible: Dispatch<SetStateAction<boolean>>
 
-    isVisible: boolean
+    /**
+     * Search result click handler.
+     */
+    onClickItem: (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => void
 
     location: H.Location
-
-    setCacheRetention: Dispatch<SetStateAction<boolean>>
 
     /**
      * The maximum number of files a repo can have to use case-insensitive fuzzy finding.
@@ -34,124 +152,9 @@ export interface FuzzyFinderProps extends TelemetryProps {
     caseInsensitiveFileCountThreshold?: number
 }
 
-export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = ({
-    location: { search, pathname, hash },
-    setCacheRetention,
-    setIsVisible,
-    isVisible,
-    telemetryService,
-}) => {
-    // The state machine of the fuzzy finder. See `FuzzyFSM` for more details
-    // about the state transititions.
-    const [fsm, setFsm] = useState<FuzzyFSM>({ key: 'empty' })
-    const { repoName = '', commitID = '', rawRevision = '' } = parseBrowserRepoURL(pathname + search + hash)
-    const { downloadFilename, isLoadingFilename, filenameError } = useFilename(repoName, commitID || rawRevision)
+const FuzzyFinder: React.FunctionComponent<React.PropsWithChildren<FuzzyFinderProps>> = props => {
+    const { setIsVisible } = props
+    const onClose = useCallback(() => setIsVisible(false), [setIsVisible])
 
-    const history = useHistory()
-    useEffect(
-        () =>
-            history.listen(location => {
-                const url = location.pathname + location.search + location.hash
-                const { repoName: repo = '', commitID: commit = '', rawRevision: raw = '' } = parseBrowserRepoURL(url)
-                if (repo !== repoName || commit !== commitID || raw !== rawRevision) {
-                    setCacheRetention(false)
-                }
-            }),
-        [history, repoName, commitID, rawRevision, setCacheRetention]
-    )
-
-    useEffect(() => {
-        if (isVisible) {
-            telemetryService.log('FuzzyFinderViewed', { action: 'shortcut open' })
-        }
-    }, [telemetryService, isVisible])
-
-    if (!isVisible) {
-        return null
-    }
-
-    return (
-        <FuzzyModal
-            repoName={repoName}
-            commitID={commitID}
-            initialMaxResults={DEFAULT_MAX_RESULTS}
-            initialQuery=""
-            downloadFilenames={downloadFilename}
-            isLoading={isLoadingFilename}
-            isError={filenameError}
-            onClose={() => setIsVisible(false)}
-            fsm={fsm}
-            setFsm={setFsm}
-        />
-    )
-}
-
-/**
- * The fuzzy finder modal is implemented as a state machine with the following transitions:
- *
- * ```
- *   ╭────[cached]───────────────────────╮  ╭──╮
- *   │                                   v  │  v
- * Empty ─[uncached]───> Downloading ──> Indexing ──> Ready
- *                       ╰──────────────────────> Failed
- * ```
- *
- * - Empty: start state.
- * - Downloading: downloading filenames from the remote server. The filenames
- *                are cached using the browser's CacheStorage, if available.
- * - Indexing: processing the downloaded filenames. This step is usually
- *             instant, unless the repo is very large (>100k source files).
- *             In the torvalds/linux repo (~70k files), this step takes <1s
- *             on my computer but the chromium/chromium repo (~360k files)
- *             it takes ~3-5 seconds. This step is async so that the user can
- *             query against partially indexed results.
- * - Ready: all filenames have been indexed.
- * - Failed: something unexpected happened, the user can't fuzzy find files.
- */
-export type FuzzyFSM = Empty | Downloading | Indexing | Ready | Failed
-export interface Empty {
-    key: 'empty'
-}
-export interface Downloading {
-    key: 'downloading'
-}
-export interface Indexing {
-    key: 'indexing'
-    indexing: SearchIndexing
-}
-export interface Ready {
-    key: 'ready'
-    fuzzy: FuzzySearch
-}
-export interface Failed {
-    key: 'failed'
-    errorMessage: string
-}
-
-const FILE_NAMES = gql`
-    query FileNames($repository: String!, $commit: String!) {
-        repository(name: $repository) {
-            commit(rev: $commit) {
-                fileNames
-            }
-        }
-    }
-`
-
-interface FilenameResult {
-    downloadFilename: string[]
-    isLoadingFilename: boolean
-    filenameError: ApolloError | undefined
-}
-
-const useFilename = (repository: string, commit: string): FilenameResult => {
-    const { data, loading, error } = useQuery<FileNamesResult, FileNamesVariables>(getDocumentNode(FILE_NAMES), {
-        variables: { repository, commit },
-    })
-
-    return {
-        downloadFilename: data?.repository?.commit?.fileNames || [],
-        isLoadingFilename: loading,
-        filenameError: error,
-    }
+    return <FuzzyModal {...props} initialMaxResults={DEFAULT_MAX_RESULTS} initialQuery="" onClose={onClose} />
 }

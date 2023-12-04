@@ -2,7 +2,9 @@ package honey
 
 import (
 	"github.com/honeycombio/libhoney-go"
-	"github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Event represents a mockable/noop-able single event in Honeycomb terms, as per
@@ -11,15 +13,15 @@ type Event interface {
 	// Dataset returns the destination dataset of this event
 	Dataset() string
 	// AddField adds a single key-value pair to this event.
-	AddField(key string, val interface{})
-	// AddLogFields adds each opentracing-go/log key-value field to this event.
-	AddLogFields(fields []log.Field)
+	AddField(key string, val any)
+	// AddAttributes adds each otel/attribute key-value field to this event.
+	AddAttributes([]attribute.KeyValue)
 	// Add adds a complex type to the event. For structs, it adds each exported field.
 	// For maps, it adds each key/value. Add will error on all other types.
-	Add(data interface{}) error
+	Add(data any) error
 	// Fields returns all the added fields of the event. The returned map is not safe to
 	// be modified concurrently with calls Add/AddField/AddLogFields.
-	Fields() map[string]interface{}
+	Fields() map[string]any
 	// SetSampleRate overrides the global sample rate for this event. Default is 1,
 	// meaning no sampling. If you want to send one event out of every 250 times
 	// Send() is called, you would specify 250 here.
@@ -43,7 +45,7 @@ func (w eventWrapper) Dataset() string {
 	return w.event.Dataset
 }
 
-func (w eventWrapper) AddField(name string, val interface{}) {
+func (w eventWrapper) AddField(name string, val any) {
 	data, ok := w.Fields()[name]
 	if !ok {
 		data = val
@@ -56,17 +58,17 @@ func (w eventWrapper) AddField(name string, val interface{}) {
 	w.event.AddField(name, data)
 }
 
-func (w eventWrapper) AddLogFields(fields []log.Field) {
-	for _, field := range fields {
-		w.AddField(field.Key(), field.Value())
+func (w eventWrapper) AddAttributes(attrs []attribute.KeyValue) {
+	for _, attr := range attrs {
+		w.AddField(string(attr.Key), attr.Value.AsInterface())
 	}
 }
 
-func (w eventWrapper) Add(data interface{}) error {
+func (w eventWrapper) Add(data any) error {
 	return w.event.Add(data)
 }
 
-func (w eventWrapper) Fields() map[string]interface{} {
+func (w eventWrapper) Fields() map[string]any {
 	return w.event.Fields()
 }
 
@@ -82,27 +84,43 @@ func (w eventWrapper) Send() error {
 // NewEvent returns a noop event. NewEvent.Send will only work if
 // Enabled() returns true.
 func NewEvent(dataset string) Event {
-	if !Enabled() {
-		return noopEvent{}
+	ev, _ := newEvent(dataset)
+	return ev
+}
+
+// NewEventWithFields creates an event for logging to the given dataset. The given
+// fields are assigned to the event.
+func NewEventWithFields(dataset string, fields map[string]any) Event {
+	ev, enabled := newEvent(dataset)
+	if enabled {
+		for key, value := range fields {
+			ev.AddField(key, value)
+		}
 	}
+	return ev
+}
+
+// newEvent is a helper used by NewEvent* which returns true if the event is
+// not a noop event.
+func newEvent(dataset string) (Event, bool) {
+	if !Enabled() {
+		metricNewEvent.WithLabelValues("false", dataset).Inc()
+		return noopEvent{}, false
+	}
+	metricNewEvent.WithLabelValues("true", dataset).Inc()
+
 	ev := libhoney.NewEvent()
 	ev.Dataset = dataset + suffix
 	return eventWrapper{
 		event:        ev,
 		sliceWrapped: map[string]bool{},
-	}
+	}, true
 }
 
-// NewEventWithFields creates an event for logging to the given dataset. The given
-// fields are assigned to the event.
-func NewEventWithFields(dataset string, fields map[string]interface{}) Event {
-	if !Enabled() {
-		return noopEvent{}
-	}
-	ev := NewEvent(dataset)
-	for key, value := range fields {
-		ev.AddField(key, value)
-	}
-
-	return ev
-}
+// metricNewEvent will help us understand traffic we send to honeycomb as well
+// as identify services wanting to log to honeycomb but missing the requisit
+// environment variables.
+var metricNewEvent = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_honey_event_total",
+	Help: "The total number of honeycomb events created (before sampling).",
+}, []string{"enabled", "dataset"})

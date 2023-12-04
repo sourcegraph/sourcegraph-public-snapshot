@@ -6,23 +6,25 @@ import (
 	"io"
 	"strings"
 
+	"github.com/prometheus/prometheus/model/labels"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
-	canonicalAlertSolutionsURL = "https://docs.sourcegraph.com/admin/observability/alert_solutions"
+	canonicalAlertDocsURL      = "https://docs.sourcegraph.com/admin/observability/alerts"
 	canonicalDashboardsDocsURL = "https://docs.sourcegraph.com/admin/observability/dashboards"
 
-	alertSolutionsFile = "alert_solutions.md"
+	alertsDocsFile     = "alerts.md"
 	dashboardsDocsFile = "dashboards.md"
 )
 
-const alertSolutionsHeader = `# Alert solutions
+const alertsReferenceHeader = `# Alerts reference
 
-<!-- DO NOT EDIT: generated via: go generate ./monitoring -->
+<!-- DO NOT EDIT: generated via: bazel run //doc/admin/observability:write_monitoring_docs -->
 
-This document contains possible solutions for when you find alerts are firing in Sourcegraph's monitoring.
-If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com) for assistance.
+This document contains a complete reference of all alerts in Sourcegraph's monitoring, and next steps for when you find alerts that are firing.
+If your alert isn't mentioned here, or if the next steps don't help, [contact us](mailto:support@sourcegraph.com) for assistance.
 
 To learn more about Sourcegraph's alerting and how to set up alerts, see [our alerting guide](https://docs.sourcegraph.com/admin/observability/alerting).
 
@@ -30,7 +32,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 const dashboardsHeader = `# Dashboards reference
 
-<!-- DO NOT EDIT: generated via: go generate ./monitoring -->
+<!-- DO NOT EDIT: generated via: bazel run //doc/admin/observability:write_monitoring_docs -->
 
 This document contains a complete reference on Sourcegraph's available dashboards, as well as details on how to interpret the panels and metrics.
 
@@ -46,7 +48,7 @@ func fprintSubtitle(w io.Writer, text string) {
 // Write a standardized Observable header that one can reliably generate an anchor link for.
 //
 // See `observableAnchor`.
-func fprintObservableHeader(w io.Writer, c *Container, o *Observable, headerLevel int) {
+func fprintObservableHeader(w io.Writer, c *Dashboard, o *Observable, headerLevel int) {
 	fmt.Fprint(w, strings.Repeat("#", headerLevel))
 	fmt.Fprintf(w, " %s: %s\n\n", c.Name, o.Name)
 }
@@ -59,20 +61,22 @@ func fprintOwnedBy(w io.Writer, owner ObservableOwner) {
 // Create an anchor link that matches `fprintObservableHeader`
 //
 // Must match Prometheus template in `docker-images/prometheus/cmd/prom-wrapper/receivers.go`
-func observableDocAnchor(c *Container, o Observable) string {
+func observableDocAnchor(c *Dashboard, o Observable) string {
 	observableAnchor := strings.ReplaceAll(o.Name, "_", "-")
 	return fmt.Sprintf("%s-%s", c.Name, observableAnchor)
 }
 
 type documentation struct {
-	alertSolutions bytes.Buffer
-	dashboards     bytes.Buffer
+	alertDocs  bytes.Buffer
+	dashboards bytes.Buffer
+
+	injectLabelMatchers []*labels.Matcher
 }
 
-func renderDocumentation(containers []*Container) (*documentation, error) {
+func renderDocumentation(containers []*Dashboard) (*documentation, error) {
 	var docs documentation
 
-	fmt.Fprint(&docs.alertSolutions, alertSolutionsHeader)
+	fmt.Fprint(&docs.alertDocs, alertsReferenceHeader)
 	fmt.Fprint(&docs.dashboards, dashboardsHeader)
 
 	for _, c := range containers {
@@ -92,10 +96,7 @@ func renderDocumentation(containers []*Container) (*documentation, error) {
 						return nil, errors.Errorf("error rendering alert solution entry %q %q: %w",
 							c.Name, o.Name, err)
 					}
-					if err := docs.renderDashboardPanelEntry(c, g, o, observablePanelID(gIndex, rIndex, oIndex)); err != nil {
-						return nil, errors.Errorf("error rendering dashboard panel entry  %q %q: %w",
-							c.Name, o.Name, err)
-					}
+					docs.renderDashboardPanelEntry(c, o, observablePanelID(gIndex, rIndex, oIndex))
 				}
 			}
 		}
@@ -104,17 +105,18 @@ func renderDocumentation(containers []*Container) (*documentation, error) {
 	return &docs, nil
 }
 
-func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) error {
+func (d *documentation) renderAlertSolutionEntry(c *Dashboard, o Observable) error {
 	if o.Warning == nil && o.Critical == nil {
 		return nil
 	}
 
-	fprintObservableHeader(&d.alertSolutions, c, &o, 2)
-	fprintSubtitle(&d.alertSolutions, o.Description)
+	fprintObservableHeader(&d.alertDocs, c, &o, 2)
+	fprintSubtitle(&d.alertDocs, o.Description)
 
+	var alertQueryDetails []string
 	var prometheusAlertNames []string // collect names for silencing configuration
 	// Render descriptions of various levels of this alert
-	fmt.Fprintf(&d.alertSolutions, "**Descriptions**\n\n")
+	fmt.Fprintf(&d.alertDocs, "**Descriptions**\n\n")
 	for _, alert := range []struct {
 		level     string
 		threshold *ObservableAlertDefinition
@@ -129,42 +131,65 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(&d.alertSolutions, "- <span class=\"badge badge-%s\">%s</span> %s\n", alert.level, alert.level, desc)
+		fmt.Fprintf(&d.alertDocs, "- <span class=\"badge badge-%s\">%s</span> %s\n", alert.level, alert.level, desc)
+
+		alertQuery, err := alert.threshold.generateAlertQuery(o, d.injectLabelMatchers, newVariableApplier(c.Variables))
+		if err != nil {
+			return err
+		}
+		if alert.threshold.customQuery != "" {
+			alertQueryDetails = append(alertQueryDetails, fmt.Sprintf("Custom query for %s alert: `%s`", alert.level, alertQuery))
+		} else {
+			alertQueryDetails = append(alertQueryDetails, fmt.Sprintf("Generated query for %s alert: `%s`", alert.level, alertQuery))
+		}
+
 		prometheusAlertNames = append(prometheusAlertNames,
 			fmt.Sprintf("  \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
 	}
-	fmt.Fprint(&d.alertSolutions, "\n")
+	fmt.Fprint(&d.alertDocs, "\n")
 
-	// Render solutions for dealing with this alert
-	fmt.Fprintf(&d.alertSolutions, "**Possible solutions**\n\n")
-	if o.PossibleSolutions != "none" {
-		possibleSolutions, _ := toMarkdown(o.PossibleSolutions, true)
-		fmt.Fprintf(&d.alertSolutions, "%s\n", possibleSolutions)
+	// Render next steps for dealing with this alert
+	fmt.Fprintf(&d.alertDocs, "**Next steps**\n\n")
+	if o.NextSteps != "none" {
+		nextSteps, _ := toMarkdown(o.NextSteps, true)
+		fmt.Fprintf(&d.alertDocs, "%s\n", nextSteps)
 	}
 	if o.Interpretation != "" && o.Interpretation != "none" {
 		// indicate help is available in dashboards reference
-		fmt.Fprintf(&d.alertSolutions, "- More help interpreting this metric is available in the [dashboards reference](./%s#%s).\n",
+		fmt.Fprintf(&d.alertDocs, "- More help interpreting this metric is available in the [dashboards reference](./%s#%s).\n",
 			dashboardsDocsFile, observableDocAnchor(c, o))
 	} else {
 		// just show the panel reference
-		fmt.Fprintf(&d.alertSolutions, "- Learn more about the related dashboard panel in the [dashboards reference](./%s#%s).\n",
+		fmt.Fprintf(&d.alertDocs, "- Learn more about the related dashboard panel in the [dashboards reference](./%s#%s).\n",
 			dashboardsDocsFile, observableDocAnchor(c, o))
 	}
 	// add silencing configuration as another solution
-	fmt.Fprintf(&d.alertSolutions, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
-	fmt.Fprintf(&d.alertSolutions, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
+	fmt.Fprintf(&d.alertDocs, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
+	fmt.Fprintf(&d.alertDocs, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
 %s
 ]`, strings.Join(prometheusAlertNames, ",\n")))
-	if o.Owner != "" {
+	if o.Owner.identifier != "" {
 		// add owner
-		fprintOwnedBy(&d.alertSolutions, o.Owner)
+		fprintOwnedBy(&d.alertDocs, o.Owner)
 	}
+
+	if len(alertQueryDetails) > 0 {
+		fmt.Fprintf(&d.alertDocs, `
+<details>
+<summary>Technical details</summary>
+
+%s
+
+</details>
+`, strings.Join(alertQueryDetails, "\n\n"))
+	}
+
 	// render break for readability
-	fmt.Fprint(&d.alertSolutions, "\n<br />\n\n")
+	fmt.Fprint(&d.alertDocs, "\n<br />\n\n")
 	return nil
 }
 
-func (d *documentation) renderDashboardPanelEntry(c *Container, g Group, o Observable, panelID uint) error {
+func (d *documentation) renderDashboardPanelEntry(c *Dashboard, o Observable, panelID uint) {
 	fprintObservableHeader(&d.dashboards, c, &o, 4)
 	fprintSubtitle(&d.dashboards, upperFirst(o.Description))
 
@@ -174,10 +199,10 @@ func (d *documentation) renderDashboardPanelEntry(c *Container, g Group, o Obser
 		fmt.Fprintf(&d.dashboards, "%s\n\n", interpretation)
 	}
 
-	// add link to alert solutions IF there is an alert attached
+	// add link to alerts reference IF there is an alert attached
 	if !o.NoAlert {
-		fmt.Fprintf(&d.dashboards, "Refer to the [alert solutions reference](./%s#%s) for %s related to this panel.\n\n",
-			alertSolutionsFile, observableDocAnchor(c, o), pluralize("alert", o.alertsCount()))
+		fmt.Fprintf(&d.dashboards, "Refer to the [alerts reference](./%s#%s) for %s related to this panel.\n\n",
+			alertsDocsFile, observableDocAnchor(c, o), pluralize("alert", o.alertsCount()))
 	} else {
 		fmt.Fprintf(&d.dashboards, "This panel has no related alerts.\n\n")
 	}
@@ -186,7 +211,7 @@ func (d *documentation) renderDashboardPanelEntry(c *Container, g Group, o Obser
 	fmt.Fprintf(&d.dashboards, "To see this panel, visit `/-/debug/grafana/d/%[1]s/%[1]s?viewPanel=%[2]d` on your Sourcegraph instance.\n\n",
 		c.Name, panelID)
 
-	if o.Owner != "" {
+	if o.Owner.identifier != "" {
 		// add owner
 		fprintOwnedBy(&d.dashboards, o.Owner)
 	}
@@ -202,5 +227,4 @@ Query: %s
 
 	// render break for readability
 	fmt.Fprint(&d.dashboards, "\n<br />\n\n")
-	return nil
 }

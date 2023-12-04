@@ -11,10 +11,10 @@ import (
 func Ignore(err error, pred ErrorPredicate) error {
 	// If the error (or any wrapped error) is a multierror,
 	// filter its children.
-	var multi *MultiError
+	var multi *multiError
 	if As(err, &multi) {
-		filtered := multi.Errors[:0]
-		for _, childErr := range multi.Errors {
+		filtered := multi.errs[:0]
+		for _, childErr := range multi.errs {
 			if ignored := Ignore(childErr, pred); ignored != nil {
 				filtered = append(filtered, ignored)
 			}
@@ -22,7 +22,7 @@ func Ignore(err error, pred ErrorPredicate) error {
 		if len(filtered) == 0 {
 			return nil
 		}
-		multi.Errors = filtered
+		multi.errs = filtered
 		return err
 	}
 
@@ -49,4 +49,14 @@ func IsPred(target error) ErrorPredicate {
 	}
 }
 
-var IsContextCanceled = IsPred(context.Canceled)
+func IsContextCanceled(err error) bool {
+	return Is(err, context.Canceled)
+}
+
+func IsDeadlineExceeded(err error) bool {
+	return Is(err, context.DeadlineExceeded)
+}
+
+func IsContextError(err error) bool {
+	return IsAny(err, context.Canceled, context.DeadlineExceeded)
+}

@@ -8,10 +8,13 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	godiff "github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -61,7 +64,6 @@ var (
 		"log",
 		"--decorate=full",
 		"-z",
-		"--no-merges",
 		"--format=format:" + "%x1E" + strings.Join(commitFields, "%x00") + "%x00",
 	}
 
@@ -80,11 +82,13 @@ const (
 )
 
 type CommitSearcher struct {
+	Logger               log.Logger
 	RepoDir              string
 	Query                MatchTree
 	Revisions            []protocol.RevisionSpecifier
 	IncludeDiff          bool
 	IncludeModifiedFiles bool
+	RepoName             api.RepoName
 }
 
 // Search runs a search for commits matching the given predicate across the revisions passed in as revisionArgs.
@@ -119,8 +123,8 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 	// submitted to the job queue
 	g.Go(func() error {
 		for resultChan := range resultChans {
-			for result := range resultChan {
-				onMatch(result)
+			for res := range resultChan {
+				onMatch(res)
 			}
 		}
 
@@ -130,13 +134,17 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 	return g.Wait()
 }
 
-func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
+func (cs *CommitSearcher) gitArgs() []string {
 	revArgs := revsToGitArgs(cs.Revisions)
 	args := append(logArgs, revArgs...)
 	if cs.IncludeModifiedFiles {
-		args = append(args, "--name-only")
+		args = append(args, "--name-status")
 	}
-	cmd := exec.CommandContext(ctx, "git", args...)
+	return args
+}
+
+func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
+	cmd := exec.CommandContext(ctx, "git", cs.gitArgs()...)
 	cmd.Dir = cs.RepoDir
 	stdoutReader, err := cmd.StdoutPipe()
 	if err != nil {
@@ -152,7 +160,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	defer func() {
 		// Always call cmd.Wait to avoid leaving zombie processes around.
 		if e := cmd.Wait(); e != nil {
-			err = errors.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String())).ErrorOrNil()
+			err = errors.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String(), cs.Logger))
 		}
 	}()
 
@@ -186,7 +194,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	return scanner.Err()
 }
 
-func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string) error {
+func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string, logger log.Logger) error {
 	if ctx.Err() != nil {
 		// Ignore errors when context is cancelled
 		return nil
@@ -195,8 +203,18 @@ func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string) 
 		// Ignore no commits error error
 		return nil
 	}
-	log15.Warn("git search command exited with non-zero status code", "stderr", stderr)
+	logger.Warn("git search command exited with non-zero status code", log.String("stderr", stderr))
 	return err
+}
+
+func getSubRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) func(string) (bool, error) {
+	if !authz.SubRepoEnabled(checker) {
+		return nil
+	}
+	a := actor.FromContext(ctx)
+	return func(filePath string) (bool, error) {
+		return authz.FilterActorPath(ctx, checker, a, repo, filePath)
+	}
 }
 
 func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
@@ -228,7 +246,7 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 				return err
 			}
 			if mergedResult.Satisfies() {
-				cm, err := CreateCommitMatch(lc, highlights, cs.IncludeDiff)
+				cm, err := CreateCommitMatch(lc, highlights, cs.IncludeDiff, getSubRepoFilterFunc(ctx, authz.DefaultSubRepoPermsChecker, cs.RepoName))
 				if err != nil {
 					return err
 				}
@@ -238,11 +256,11 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 		return nil
 	}
 
-	var errs *errors.MultiError
+	var errs error
 	for j := range jobs {
 		errs = errors.Append(errs, runJob(j))
 	}
-	return errs.ErrorOrNil()
+	return errs
 }
 
 func revsToGitArgs(revs []protocol.RevisionSpecifier) []string {
@@ -338,6 +356,16 @@ func (c *CommitScanner) Scan() bool {
 		return false
 	}
 
+	// Filter out empty modified files, which can happen due to how
+	// --name-status formats its output. Also trim spaces on the files
+	// for the same reason.
+	modifiedFiles := parts[11:11]
+	for _, part := range parts[11:] {
+		if len(part) > 0 {
+			modifiedFiles = append(modifiedFiles, bytes.TrimSpace(part))
+		}
+	}
+
 	c.next = &RawCommit{
 		Hash:           parts[0],
 		RefNames:       parts[1],
@@ -350,7 +378,7 @@ func (c *CommitScanner) Scan() bool {
 		CommitterDate:  parts[8],
 		Message:        bytes.TrimSpace(parts[9]),
 		ParentHashes:   parts[10],
-		ModifiedFiles:  parts[11:],
+		ModifiedFiles:  modifiedFiles,
 	}
 
 	return true
@@ -364,7 +392,7 @@ func (c *CommitScanner) Err() error {
 	return c.err
 }
 
-func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool) (*protocol.CommitMatch, error) {
+func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool, filterFunc func(string) (bool, error)) (*protocol.CommitMatch, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return nil, err
@@ -381,29 +409,64 @@ func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool) (*pro
 		if err != nil {
 			return nil, err
 		}
+		rawDiff = filterRawDiff(rawDiff, filterFunc)
 		diff.Content, diff.MatchedRanges = FormatDiff(rawDiff, hc.Diff)
 	}
 
+	commitID, err := api.NewCommitID(string(lc.Hash))
+	if err != nil {
+		return nil, err
+	}
+
+	parentIDs, err := lc.ParentIDs()
+	if err != nil {
+		return nil, err
+	}
+
 	return &protocol.CommitMatch{
-		Oid: api.CommitID(lc.Hash),
+		Oid: commitID,
 		Author: protocol.Signature{
-			Name:  string(lc.AuthorName),
-			Email: string(lc.AuthorEmail),
+			Name:  utf8String(lc.AuthorName),
+			Email: utf8String(lc.AuthorEmail),
 			Date:  authorDate,
 		},
 		Committer: protocol.Signature{
-			Name:  string(lc.CommitterName),
-			Email: string(lc.CommitterEmail),
+			Name:  utf8String(lc.CommitterName),
+			Email: utf8String(lc.CommitterEmail),
 			Date:  committerDate,
 		},
-		Parents:    lc.ParentIDs(),
+		Parents:    parentIDs,
 		SourceRefs: lc.SourceRefs(),
 		Refs:       lc.RefNames(),
 		Message: result.MatchedString{
-			Content:       string(lc.Message),
+			Content:       utf8String(lc.Message),
 			MatchedRanges: hc.Message,
 		},
 		Diff:          diff,
 		ModifiedFiles: lc.ModifiedFiles(),
 	}, nil
+}
+
+func utf8String(b []byte) string {
+	return string(bytes.ToValidUTF8(b, []byte("�")))
+}
+
+func filterRawDiff(rawDiff []*godiff.FileDiff, filterFunc func(string) (bool, error)) []*godiff.FileDiff {
+	logger := log.Scoped("filterRawDiff")
+	if filterFunc == nil {
+		return rawDiff
+	}
+	filtered := make([]*godiff.FileDiff, 0, len(rawDiff))
+	for _, fileDiff := range rawDiff {
+		if filterFunc != nil {
+			if isAllowed, err := filterFunc(fileDiff.NewName); err != nil {
+				logger.Error("error filtering files in raw diff", log.Error(err))
+				continue
+			} else if !isAllowed {
+				continue
+			}
+		}
+		filtered = append(filtered, fileDiff)
+	}
+	return filtered
 }

@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/opentracing/opentracing-go/ext"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -34,18 +34,14 @@ const (
 
 // List lists extensions on the remote registry matching the query (or all if the query is empty).
 func List(ctx context.Context, registry *url.URL, query string) (xs []*Extension, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "registry/client.List")
-	span.SetTag("registry", registry.String())
-	span.SetTag("query", query)
+	tr, ctx := trace.New(ctx, "registry.List",
+		attribute.Stringer("registry", registry),
+		attribute.String("query", query))
 	defer func() {
 		if xs != nil {
-			span.SetTag("results", len(xs))
+			tr.SetAttributes(attribute.Int("results", len(xs)))
 		}
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("error", err.Error())
-		}
-		span.Finish()
+		tr.EndWithErr(&err)
 	}()
 
 	var q url.Values
@@ -88,14 +84,6 @@ func getBy(ctx context.Context, registry *url.URL, op, field, value string) (*Ex
 	return x, nil
 }
 
-func GetFeaturedExtensions(ctx context.Context, registry *url.URL) ([]*Extension, error) {
-	var x []*Extension
-	if err := httpGet(ctx, "registry.GetFeaturedExtensions", toURL(registry, "extensions/featured", nil), &x); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
 type notFoundError struct{ field, value string }
 
 func (notFoundError) NotFound() bool { return true }
@@ -103,7 +91,7 @@ func (e *notFoundError) Error() string {
 	return fmt.Sprintf("extension not found with %s %q", e.field, e.value)
 }
 
-func httpGet(ctx context.Context, op, urlStr string, result interface{}) (err error) {
+func httpGet(ctx context.Context, op, urlStr string, result any) (err error) {
 	defer func() { err = errors.Wrap(err, remoteRegistryErrorMessage) }()
 
 	req, err := http.NewRequest("GET", urlStr, nil)

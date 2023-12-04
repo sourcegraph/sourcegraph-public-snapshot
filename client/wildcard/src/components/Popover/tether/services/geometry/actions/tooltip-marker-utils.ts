@@ -1,6 +1,6 @@
-import { createPoint, Point } from '../../../models/geometry/point'
-import { createRectangle, createRectangleFromPoints, Rectangle } from '../../../models/geometry/rectangle'
-import { Position } from '../../../models/tether-models'
+import { createPoint, type Point } from '../../../models/geometry/point'
+import { createRectangle, createRectangleFromPoints, type Rectangle } from '../../../models/geometry/rectangle'
+import { type ElementPosition, Position } from '../../../models/tether-models'
 import { POSITION_VARIANTS } from '../constants'
 
 /**
@@ -10,7 +10,7 @@ import { POSITION_VARIANTS } from '../constants'
  * @param marker - rotated marker
  * @param position - another tooltip position
  */
-export function getMarkerConstraint(element: Rectangle, marker: Rectangle, position: Position): Rectangle {
+export function getMarkerConstraint(element: Rectangle, marker: Rectangle, position: ElementPosition): Rectangle {
     const side = POSITION_VARIANTS[position].positionSides
 
     let xStart = element.right
@@ -56,7 +56,7 @@ interface MarkerRotation {
  * Returns marker element position information. Shifted center of marker element for
  * correct rotation, marker rectangle itself and rotation angle.
  */
-export function getMarkerRotation(marker: Rectangle, position: Position): MarkerRotation {
+export function getMarkerRotation(marker: Rectangle, position: ElementPosition): MarkerRotation {
     const markerAngle = POSITION_VARIANTS[position].rotationAngle
 
     if (markerAngle % 180 !== 0) {

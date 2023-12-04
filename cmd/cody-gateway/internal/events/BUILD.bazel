@@ -1,0 +1,46 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "events",
+    srcs = [
+        "buffered.go",
+        "delayed.go",
+        "events.go",
+        "instrumented.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/codygateway",
+        "//internal/goroutine",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@com_google_cloud_go_bigquery//:bigquery",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel//codes",
+        "@io_opentelemetry_go_otel_metric//:metric",
+        "@io_opentelemetry_go_otel_trace//:trace",
+    ],
+)
+
+go_test(
+    name = "events_test",
+    srcs = [
+        "buffered_internal_test.go",
+        "buffered_test.go",
+    ],
+    embed = [":events"],
+    deps = [
+        "//lib/errors",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_sourcegraph_conc//:conc",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

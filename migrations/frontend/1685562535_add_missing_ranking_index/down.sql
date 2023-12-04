@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS codeintel_initial_path_ranks_processed_codeintel_initial_path_ranks_id;

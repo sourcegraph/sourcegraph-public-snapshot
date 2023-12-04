@@ -1,0 +1,164 @@
+.root {
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.header {
+    display: flex;
+    text-align: center;
+    gap: 2rem;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+
+    &-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    &-step-number {
+        width: 3rem;
+        height: 3rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5rem;
+        border-radius: 50%;
+
+        :global(.theme-light) & {
+            color: var(--white);
+            border: 2px solid var(--body-bg);
+            background-color: var(--purple);
+
+            &--completed {
+                color: #b99dcc;
+                background-color: #dccde7;
+            }
+
+            &--disabled {
+                color: var(--text-muted);
+                background-color: #d9d9d9;
+            }
+        }
+
+        :global(.theme-dark) & {
+            color: var(--gray-01);
+            border: 2px solid var(--gray-01);
+            background-color: var(--purple);
+
+            &--completed {
+                color: #b99dcc;
+                background-color: #dccde7;
+            }
+
+            &--disabled {
+                color: var(--text-muted);
+                background-color: var(--gray-03);
+            }
+        }
+    }
+
+    &-step-label {
+        font-weight: normal;
+
+        // Font normal and font bold have different text size, in order to
+        // avoid text layout jumps we reserve element width based on bold version
+        // of label.
+        &::before {
+            content: attr(data-label-text);
+            display: block;
+            font-weight: bold;
+            height: 0;
+            visibility: hidden;
+        }
+
+        &--active {
+            font-weight: bold;
+        }
+    }
+}
+
+.content {
+    width: 100%;
+    flex-grow: 1;
+    margin: auto;
+}
+
+.actions {
+    width: 100%;
+}
+
+.footer {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--gray-02);
+
+    :global(.theme-dark) & {
+        background-color: var(--color-bg-2);
+    }
+
+    &-navigation {
+        display: flex;
+        border-top: 1px solid var(--border-color);
+    }
+
+    &-inner-navigation {
+        display: flex;
+        flex-grow: 1;
+        gap: 0.25rem;
+        padding: 0.5rem;
+        width: 100%;
+        max-width: 55rem;
+        margin: auto;
+    }
+
+    &-widget {
+        display: flex;
+        flex-grow: 1;
+        width: 100%;
+        max-width: 55rem;
+        margin: auto;
+        position: relative;
+        padding: 0.25rem 0.5rem;
+
+        // Hide when we have no custom widget within
+        &:empty {
+            display: none;
+        }
+
+        // Since empty selector above implies that widget should have
+        // only custom widget and no wrappers (otherwise :empty will
+        // be never triggered) we set border and background with pseudo after
+        // element stretched to the full width of the screen
+        //
+        // Note: dynamic :has(element:empty) { display: none } doesn't work
+        // properly in Safari
+        &::after {
+            background-color: var(--color-bg-1);
+            border-top: 1px solid var(--border-color);
+
+            display: block;
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            // stylelint-disable-next-line declaration-property-unit-allowed-list
+            margin: 0 calc(50% - 50vw);
+            height: 100%;
+            z-index: 0;
+        }
+    }
+
+    // Hide default next button if the custom button is rendered
+    &-next-portal:not(:empty) + &-next {
+        display: none;
+    }
+
+    &-skip {
+        margin-right: auto;
+    }
+}

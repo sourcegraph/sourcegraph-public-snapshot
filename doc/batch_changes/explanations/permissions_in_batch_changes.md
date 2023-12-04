@@ -15,6 +15,17 @@ Site admins have admin permissions on all batch changes.
 
 Users have admin permissions on the batch changes they created and read access to other batch changes.
 
+### Namespaces
+
+A batch change can be created under either a user or organization namespace:
+
+- User namespace: Only the user who created the batch change has admin access. Other users have read access.
+
+- Organization namespace:
+  - By default, all members of the organization have read access.
+  - If the `orgs.allMembersBatchChangesAdmin` setting is enabled, all organization members also have admin access.
+  - If that setting is disabled, only the user who created the batch change has admin access. Other organization members have read access.
+
 ### Batch Change access for each permission level
 
 Batch change action | Read | Admin
@@ -24,7 +35,7 @@ View burndown chart (aggregate changeset statuses over time) | ⬤ | ⬤
 View list of patches and changesets | ⬤ | ⬤
 View diffstat (aggregate count of added/changed/deleted lines) | ⬤ | ⬤
 View error messages (related to creating or syncing changesets) |  | ⬤
-Edit batch change name, description, and branch name |  | ⬤
+Edit batch spec |  | ⬤
 Update batch change patches (and changesets on code hosts) |  | ⬤
 Publish changesets to code host |  | ⬤
 Add/remove existing changesets to/from batch change |  | ⬤
@@ -46,7 +57,7 @@ Interactions with a code host are made possible by [configuring credentials](../
 
 ## Repository permissions for Batch Changes
 
-Your [repository permissions](../../../admin/repo/permissions.md) determine what information in a batch change you can view. You can only see a batch change's proposed changes to a repository if you have read access to that repository. Read or admin permissions on a batch change does not (by itself) permit you to view all of the batch change's changes.
+Your [repository permissions](../../../admin/permissions/index.md) determine what information in a batch change you can view. You can only see a batch change's proposed changes to a repository if you have read access to that repository. Read or admin permissions on a batch change does not (by itself) permit you to view all of the batch change's changes.
 
 When you view a batch change, you can see a list of patches and changesets. For each patch and changeset:
 

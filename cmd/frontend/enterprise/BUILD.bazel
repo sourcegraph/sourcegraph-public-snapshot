@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "enterprise",
+    srcs = ["enterprise.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/webhooks",
+        "//internal/api",
+        "//internal/auth",
+        "//internal/codeintel/types",
+        "//internal/conf",
+        "//internal/database",
+    ],
+)

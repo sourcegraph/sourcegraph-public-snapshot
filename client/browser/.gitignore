@@ -1,5 +1,6 @@
 npm-debug.log
-yarn-error.log
+pnpm-error.log
+pnpm-debug.log
 .DS_Store
 
 # Ignore build/ except for the Phabricator package.json
@@ -21,3 +22,5 @@ npm-debug.log.*
 /.gtm/
 
 code-intel-extensions
+
+*.har

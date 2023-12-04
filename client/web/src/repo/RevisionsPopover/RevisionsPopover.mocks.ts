@@ -1,10 +1,10 @@
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 import { subDays } from 'date-fns'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { GitRefType } from '@sourcegraph/shared/src/graphql-operations'
 
-import {
+import type {
     GitCommitAncestorsConnectionFields,
     GitRefConnectionFields,
     RepositoryGitCommitResult,
@@ -12,12 +12,13 @@ import {
 } from '../../graphql-operations'
 import { REPOSITORY_GIT_REFS } from '../GitReference'
 
-import { RevisionsPopoverProps } from './RevisionsPopover'
+import type { RevisionsPopoverProps } from './RevisionsPopover'
 import { REPOSITORY_GIT_COMMIT } from './RevisionsPopoverCommits'
 
 export const MOCK_PROPS: RevisionsPopoverProps = {
-    repo: 'some-repo-id',
+    repoId: 'some-repo-id',
     repoName: 'testorg/testrepo',
+    repoServiceType: 'github',
     defaultBranch: 'main',
     currentRev: 'main',
     togglePopover: () => null,
@@ -55,11 +56,11 @@ const generateGitReferenceNodes = (nodeCount: number, variant: GitRefType): GitR
                         date: yesterday,
                         person: commitPerson,
                     },
-                    behindAhead: null,
+                    behindAhead: {},
                 },
             },
         }
-    })
+    }) as GitRefConnectionFields['nodes']
 
 const generateGitCommitNodes = (nodeCount: number): GitCommitAncestorsConnectionFields['nodes'] =>
     new Array(nodeCount).fill(null).map((_value, index) => ({
@@ -83,7 +84,7 @@ const branchesMock: MockedResponse<RepositoryGitRefsResult> = {
         variables: {
             query: '',
             first: 50,
-            repo: MOCK_PROPS.repo,
+            repo: MOCK_PROPS.repoId,
             type: GitRefType.GIT_BRANCH,
             withBehindAhead: false,
         },
@@ -186,7 +187,7 @@ const tagsMock: MockedResponse<RepositoryGitRefsResult> = {
         variables: {
             query: '',
             first: 50,
-            repo: MOCK_PROPS.repo,
+            repo: MOCK_PROPS.repoId,
             type: GitRefType.GIT_TAG,
             withBehindAhead: false,
         },
@@ -264,7 +265,7 @@ const commitsMock: MockedResponse<RepositoryGitCommitResult> = {
         variables: {
             query: '',
             first: 15,
-            repo: MOCK_PROPS.repo,
+            repo: MOCK_PROPS.repoId,
             revision: MOCK_PROPS.currentRev,
         },
     },

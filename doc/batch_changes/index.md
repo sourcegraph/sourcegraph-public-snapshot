@@ -35,8 +35,6 @@ body.theme-dark .markdown-body ul li:before {
 
 <p class="subtitle">Make large-scale code changes across many repositories and code hosts</p>
 
-> WARNING: Campaigns was renamed to Sourcegraph Batch Changes in version 3.26. [Read more](references/name-change.md)
-
 <p class="lead">
 Create a batch change by specifying a search query to get a list of repositories and a script to run in each. You can also <a href="how-tos/creating_changesets_per_project_in_monorepos">create a batch change on a monorepo</a> by specifying which projects to run the script on. The batch change then lets you create changesets (a generic term for pull requests or merge requests) on all affected repositories or projects. Batch Changes allows you to track their progress until they're all merged. You can preview the changes and update them at any time. A batch change can also be used to track and manage manually created changesets.
 </p>
@@ -52,19 +50,19 @@ Create a batch change by specifying a search query to get a list of repositories
 <div class="getting-started">
   <a href="quickstart" class="btn" alt="Run through the Quickstart guide">
    <span>New to Batch Changes?</span>
-   </br>
+   <br>
    Run through the <b>quickstart guide</b> and create a batch change in less than 10 minutes.
   </a>
 
-  <a href="https://www.youtube.com/watch?v=eOmiyXIWTCw" class="btn" alt="Watch the Batch Changes demo video">
+  <a href="https://www.youtube.com/watch?v=GKyHYqH6ggY" class="btn" alt="Watch the Batch Changes demo video">
    <span>Demo video</span>
-   </br>
+   <br>
    Watch the Batch Changes demo video to see what it's capable of.
   </a>
 
   <a href="explanations/introduction_to_batch_changes" class="btn" alt="Read the Introduction to Batch Changes">
    <span>Introduction to Batch Changes</span>
-   </br>
+   <br>
    Find out what Batch Changes is, learn key concepts and see what others use them for.
   </a>
 </div>
@@ -91,9 +89,10 @@ Create a batch change by specifying a search query to get a list of repositories
 - [Handling errored changesets](how-tos/handling_errored_changesets.md)
 - [Opting out of batch changes](how-tos/opting_out_of_batch_changes.md)
 - [Bulk operations on changesets](how-tos/bulk_operations_on_changesets.md)
-- Batch changes in monorepos
+- [Using file mounts with server-side execution](how-tos/server_side_file_mounts.md)
+- Batch changes in monorepos <span class="badge badge-beta">Beta</span>
   - [Creating changesets per project in monorepos](how-tos/creating_changesets_per_project_in_monorepos.md)
-  - <span class="badge badge-experimental">Experimental</span> [Creating multiple changesets in large repositories](how-tos/creating_multiple_changesets_in_large_repositories.md)
+  - <span class="badge badge-beta">Beta</span> [Creating multiple changesets in large repositories](how-tos/creating_multiple_changesets_in_large_repositories.md)
 
 ## Tutorials
 

@@ -1,0 +1,34 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "client",
+    srcs = [
+        "compute_text_client.go",
+        "match_context_client.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/compute/client",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/compute",
+        "//internal/search/streaming/api",
+        "//internal/search/streaming/http",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "client_test",
+    timeout = "short",
+    srcs = [
+        "compute_text_client_test.go",
+        "match_context_client_test.go",
+    ],
+    embed = [":client"],
+    deps = [
+        "//internal/compute",
+        "//internal/search/streaming/api",
+        "//internal/search/streaming/http",
+        "@com_github_hexops_autogold_v2//:autogold",
+    ],
+)

@@ -2,8 +2,8 @@ import React from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
-import { CommunitySearchContextMetadata } from './types'
+import { CommunitySearchContextPage, type CommunitySearchContextPageProps } from './CommunitySearchContextPage'
+import type { CommunitySearchContextMetadata } from './types'
 
 export const temporal: CommunitySearchContextMetadata = {
     title: 'Temporal',
@@ -13,12 +13,12 @@ export const temporal: CommunitySearchContextMetadata = {
     examples: [
         {
             title: 'All test functions',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'type:symbol Test',
         },
         {
             title: 'Search for a specifc function or class',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'type:symbol SimpleSslContextBuilder',
         },
     ],
@@ -27,5 +27,5 @@ export const temporal: CommunitySearchContextMetadata = {
 }
 
 export const TemporalCommunitySearchContextPage: React.FunctionComponent<
-    Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>
+    React.PropsWithChildren<Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>>
 > = props => <CommunitySearchContextPage {...props} communitySearchContextMetadata={temporal} />

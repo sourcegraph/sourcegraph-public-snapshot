@@ -1,18 +1,18 @@
-import { action } from '@storybook/addon-actions'
-import { Story, Meta } from '@storybook/react'
-import classNames from 'classnames'
-import { flow } from 'lodash'
 import React from 'react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { action } from '@storybook/addon-actions'
+import type { StoryFn, Meta } from '@storybook/react'
+import classNames from 'classnames'
+import { flow } from 'lodash'
 
-import 'storybook-addon-designs'
+import '@storybook/addon-designs'
 
-import { Alert } from './Alert'
-import { ALERT_VARIANTS } from './constants'
+import { H1, H4, Text } from '..'
+import { BrandedStory } from '../../stories/BrandedStory'
 
 import { AlertLink } from '.'
+import { Alert } from './Alert'
+import { ALERT_VARIANTS } from './constants'
 
 const preventDefault = <E extends React.SyntheticEvent>(event: E): E => {
     event.preventDefault()
@@ -21,28 +21,23 @@ const preventDefault = <E extends React.SyntheticEvent>(event: E): E => {
 
 const config: Meta = {
     title: 'wildcard/Alert',
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
     parameters: {
         component: Alert,
         chromatic: {
             enableDarkMode: true,
+            disableSnapshot: false,
         },
         design: [
             {
                 type: 'figma',
                 name: 'Figma Light',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A196',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A196',
             },
             {
                 type: 'figma',
                 name: 'Figma Dark',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A525',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A525',
             },
         ],
     },
@@ -50,24 +45,34 @@ const config: Meta = {
 
 export default config
 
-export const Alerts: Story = () => (
+export const Alerts: StoryFn = () => (
     <>
-        <h1>Alerts</h1>
-        <p>
+        <H1>Alerts</H1>
+        <Text>
             Provide contextual feedback messages for typical user actions with the handful of available and flexible
             alert messages.
-        </p>
+        </Text>
         <div className="mb-2">
             {ALERT_VARIANTS.map(variant => (
                 <Alert key={variant} variant={variant}>
-                    <h4>Too many matching repositories</h4>
-                    Use a 'repo:' or 'repogroup:' filter to narrow your search.
+                    <H4>Too many matching repositories</H4>
+                    Use a 'repo:' filter to narrow your search.
                 </Alert>
             ))}
             <Alert variant="info" className="d-flex align-items-center">
                 <div className="flex-grow-1">
-                    <h4>Too many matching repositories</h4>
-                    Use a 'repo:' or 'repogroup:' filter to narrow your search.
+                    <H4>Too many matching repositories</H4>
+                    Use a 'repo:' filter to narrow your search.
+                </div>
+                <AlertLink className="mr-2" to="/" onClick={flow(preventDefault, action(classNames('link clicked')))}>
+                    Dismiss
+                </AlertLink>
+            </Alert>
+
+            <Alert variant="secondary" withIcon={false} className="d-flex align-items-center">
+                <div className="flex-grow-1">
+                    <H4>Too many matching repositories</H4>
+                    Use a 'repo:' filter to narrow your search.
                 </div>
                 <AlertLink className="mr-2" to="/" onClick={flow(preventDefault, action(classNames('link clicked')))}>
                     Dismiss

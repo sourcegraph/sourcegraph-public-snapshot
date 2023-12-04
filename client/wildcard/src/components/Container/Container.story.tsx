@@ -1,34 +1,33 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
-import React from 'react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
+import { H1, H2, H3, Text, Input } from '..'
+import { BrandedStory } from '../../stories/BrandedStory'
 import { Alert } from '../Alert'
 import { Button } from '../Button'
 
 import { Container } from './Container'
 
-const decorator: DecoratorFn = story => (
-    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+const decorator: Decorator = story => (
+    <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 
 const config: Meta = {
     title: 'wildcard/Container',
+    component: Container,
     decorators: [decorator],
 }
 
 export default config
 
-export const Overview: Story = () => (
+export const Overview: StoryFn = () => (
     <>
         <Alert variant="info">
-            <p>
+            <Text>
                 A container is meant to group content semantically together. Every page using it should have a header,
                 optionally a description for the page and the container itself. Depending on the scope of a button, it
                 should live inside or outside of the container.
-            </p>
-            <p>If the button</p>
+            </Text>
+            <Text>If the button</Text>
             <ul className="mb-0">
                 <li>
                     affects everything inside the container (ie. saves all form fields within the container), it should
@@ -41,19 +40,19 @@ export const Overview: Story = () => (
             </ul>
         </Alert>
         <hr />
-        <h1>Example 1</h1>
-        <h2>Some page explanation</h2>
-        <p className="text-muted">Optional: Add some descriptive text about what this page does.</p>
+        <H1>Example 1</H1>
+        <H2>Some page explanation</H2>
+        <Text className="text-muted">Optional: Add some descriptive text about what this page does.</Text>
         <Container className="mb-3">
-            <h3>Section I</h3>
-            <p>Here you change the username.</p>
+            <H3>Section I</H3>
+            <Text>Here you change the username.</Text>
             <div className="form-group">
-                <input type="text" className="form-control" />
+                <Input />
             </div>
-            <h3>Section II</h3>
-            <p>Here you change your email.</p>
+            <H3>Section II</H3>
+            <Text>Here you change your email.</Text>
             <div className="form-group mb-0">
-                <input type="text" className="form-control" />
+                <Input type="email" />
             </div>
         </Container>
         <div className="mb-3">
@@ -63,23 +62,23 @@ export const Overview: Story = () => (
             <Button variant="secondary">Cancel</Button>
         </div>
         <hr />
-        <h1>Example 2</h1>
-        <h2>Some page explanation</h2>
-        <p className="text-muted">Optional: Add some descriptive text about what this page does.</p>
+        <H1>Example 2</H1>
+        <H2>Some page explanation</H2>
+        <Text className="text-muted">Optional: Add some descriptive text about what this page does.</Text>
         <Container className="mb-3">
-            <h3>Section I</h3>
-            <p>Here you change the username.</p>
+            <H3>Section I</H3>
+            <Text>Here you change the username.</Text>
             <div className="form-group">
-                <input type="text" className="form-control" />
+                <Input />
             </div>
             <Button className="mb-2" variant="secondary">
                 Save
             </Button>
             <hr className="mb-2" />
-            <h3>Section II</h3>
-            <p>Here you change your email.</p>
+            <H3>Section II</H3>
+            <Text>Here you change your email.</Text>
             <div className="form-group">
-                <input type="text" className="form-control" />
+                <Input type="email" />
             </div>
             <Button variant="secondary">Save</Button>
         </Container>
@@ -89,6 +88,7 @@ export const Overview: Story = () => (
 Overview.parameters = {
     chromatic: {
         enableDarkMode: true,
+        disableSnapshot: false,
     },
     design: {
         type: 'figma',

@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "client",
+    srcs = [
+        "metadata.go",
+        "progress.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/streaming/client",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/search",
+        "//internal/search/streaming",
+        "//internal/search/streaming/api",
+        "//internal/types",
+        "//lib/pointers",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_exp//slices",
+    ],
+)

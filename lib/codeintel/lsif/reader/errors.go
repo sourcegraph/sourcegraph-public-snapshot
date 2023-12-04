@@ -12,7 +12,7 @@ type ValidationError struct {
 }
 
 // NewValidationError creates a new validation error with the given error message.
-func NewValidationError(format string, args ...interface{}) *ValidationError {
+func NewValidationError(format string, args ...any) *ValidationError {
 	return &ValidationError{
 		Message: fmt.Sprintf(format, args...),
 	}

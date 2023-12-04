@@ -7,7 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -20,12 +20,12 @@ func (s *store) CreateSymbolsTable(ctx context.Context) error {
 			path VARCHAR(4096) NOT NULL,
 			pathlowercase VARCHAR(4096) NOT NULL,
 			line INT NOT NULL,
+			character INT NOT NULL,
 			kind VARCHAR(255) NOT NULL,
 			language VARCHAR(255) NOT NULL,
 			parent VARCHAR(255) NOT NULL,
 			parentkind VARCHAR(255) NOT NULL,
 			signature VARCHAR(255) NOT NULL,
-			pattern VARCHAR(255) NOT NULL,
 			filelimited BOOLEAN NOT NULL
 		)
 	`))
@@ -49,20 +49,43 @@ func (s *store) CreateSymbolIndexes(ctx context.Context) error {
 }
 
 func (s *store) DeletePaths(ctx context.Context, paths []string) error {
-	if len(paths) == 0 {
+	for _, chunkOfPaths := range chunksOf1000(paths) {
+		pathQueries := []*sqlf.Query{}
+		for _, path := range chunkOfPaths {
+			pathQueries = append(pathQueries, sqlf.Sprintf("%s", path))
+		}
+
+		err := s.Exec(ctx, sqlf.Sprintf(`DELETE FROM symbols WHERE path IN (%s)`, sqlf.Join(pathQueries, ",")))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func chunksOf1000(strings []string) [][]string {
+	if strings == nil {
 		return nil
 	}
 
-	pathQueries := make([]*sqlf.Query, 0, len(paths))
-	for _, path := range paths {
-		pathQueries = append(pathQueries, sqlf.Sprintf("%s", path))
+	chunks := [][]string{}
+
+	for i := 0; i < len(strings); i += 1000 {
+		end := i + 1000
+
+		if end > len(strings) {
+			end = len(strings)
+		}
+
+		chunks = append(chunks, strings[i:end])
 	}
 
-	return s.Exec(ctx, sqlf.Sprintf(`DELETE FROM symbols WHERE path IN (%s)`, sqlf.Join(pathQueries, ",")))
+	return chunks
 }
 
 func (s *store) WriteSymbols(ctx context.Context, symbolOrErrors <-chan parser.SymbolOrError) (err error) {
-	rows := make(chan []interface{})
+	rows := make(chan []any)
 	group, ctx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
@@ -86,7 +109,7 @@ func (s *store) WriteSymbols(ctx context.Context, symbolOrErrors <-chan parser.S
 	group.Go(func() error {
 		return batch.InsertValues(
 			ctx,
-			s.Handle().DB(),
+			s.Handle(),
 			"symbols",
 			batch.MaxNumSQLiteParameters,
 			[]string{
@@ -95,12 +118,12 @@ func (s *store) WriteSymbols(ctx context.Context, symbolOrErrors <-chan parser.S
 				"path",
 				"pathlowercase",
 				"line",
+				"character",
 				"kind",
 				"language",
 				"parent",
 				"parentkind",
 				"signature",
-				"pattern",
 				"filelimited",
 			},
 			rows,
@@ -110,19 +133,19 @@ func (s *store) WriteSymbols(ctx context.Context, symbolOrErrors <-chan parser.S
 	return group.Wait()
 }
 
-func symbolToRow(symbol result.Symbol) []interface{} {
-	return []interface{}{
+func symbolToRow(symbol result.Symbol) []any {
+	return []any{
 		symbol.Name,
 		strings.ToLower(symbol.Name),
 		symbol.Path,
 		strings.ToLower(symbol.Path),
 		symbol.Line,
+		symbol.Character,
 		symbol.Kind,
 		symbol.Language,
 		symbol.Parent,
 		symbol.ParentKind,
 		symbol.Signature,
-		symbol.Pattern,
 		symbol.FileLimited,
 	}
 }

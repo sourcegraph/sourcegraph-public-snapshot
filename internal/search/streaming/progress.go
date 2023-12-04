@@ -21,6 +21,11 @@ type Stats struct {
 	// Status is a RepoStatusMap of repository search statuses.
 	Status search.RepoStatusMap
 
+	// BackendsMissing is the number of search backends that failed to be
+	// searched. This is due to it being unreachable. The most common reason
+	// for this is during zoekt rollout.
+	BackendsMissing int
+
 	// ExcludedForks is the count of excluded forked repos because the search
 	// query doesn't apply to them, but that we want to know about.
 	ExcludedForks int
@@ -50,8 +55,9 @@ func (c *Stats) Update(other *Stats) {
 
 	c.Status.Union(&other.Status)
 
-	c.ExcludedForks = c.ExcludedForks + other.ExcludedForks
-	c.ExcludedArchived = c.ExcludedArchived + other.ExcludedArchived
+	c.BackendsMissing += other.BackendsMissing
+	c.ExcludedForks += other.ExcludedForks
+	c.ExcludedArchived += other.ExcludedArchived
 }
 
 // Zero returns true if stats is empty. IE calling Update will result in no
@@ -64,6 +70,7 @@ func (c *Stats) Zero() bool {
 	return !(c.IsLimitHit ||
 		len(c.Repos) > 0 ||
 		c.Status.Len() > 0 ||
+		c.BackendsMissing > 0 ||
 		c.ExcludedForks > 0 ||
 		c.ExcludedArchived > 0)
 }
@@ -81,6 +88,7 @@ func (c *Stats) String() string {
 		n    int
 	}{
 		{"repos", len(c.Repos)},
+		{"backendsMissing", c.BackendsMissing},
 		{"excludedForks", c.ExcludedForks},
 		{"excludedArchived", c.ExcludedArchived},
 	}
@@ -99,12 +107,4 @@ func (c *Stats) String() string {
 // Equal provides custom comparison which is used by go-cmp
 func (c *Stats) Equal(other *Stats) bool {
 	return reflect.DeepEqual(c, other)
-}
-
-// Deref returns the zero-valued stats if its receiver is nil
-func (c *Stats) Deref() Stats {
-	if c != nil {
-		return *c
-	}
-	return Stats{}
 }

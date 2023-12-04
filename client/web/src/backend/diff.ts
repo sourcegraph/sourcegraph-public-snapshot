@@ -11,7 +11,6 @@ export const diffStatFields = gql`
     fragment DiffStatFields on DiffStat {
         __typename
         added
-        changed
         deleted
     }
 `
@@ -55,13 +54,13 @@ export const fileDiffFields = gql`
         mostRelevantFile {
             __typename
             url
+            changelistURL
         }
         hunks {
             ...FileDiffHunkFields
         }
         stat {
             added
-            changed
             deleted
         }
         internalID

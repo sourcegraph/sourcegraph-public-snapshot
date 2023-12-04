@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "gerrit.schema.json#",
+  "title": "GerritConnection",
+  "description": "Configuration for a connection to Gerrit.",
+  "allowComments": true,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["url", "username", "password"],
+  "properties": {
+    "url": {
+      "description": "URL of a Gerrit instance, such as https://gerrit.example.com.",
+      "type": "string",
+      "pattern": "^https?://",
+      "not": {
+        "type": "string",
+        "pattern": "example\\.com"
+      },
+      "format": "uri",
+      "examples": ["https://gerrit.example.com"]
+    },
+    "username": {
+      "description": "A username for authentication withe the Gerrit code host.",
+      "type": "string",
+      "minLength": 1
+    },
+    "password": {
+      "description": "The password associated with the Gerrit username used for authentication.",
+      "type": "string",
+      "minLength": 1
+    },
+    "projects": {
+      "description": "An array of project strings specifying which Gerrit projects to mirror on Sourcegraph. If empty, all projects will be mirrored.",
+      "type": "array",
+      "items": { "type": "string" },
+      "examples": [
+        ["name", "owner/name"],
+        ["docs", "kubernetes/kubernetes", "golang/go", "facebook/react"]
+      ]
+    },
+    "authorization": {
+      "title": "GerritAuthorization",
+      "description": "If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type \"gerrit\" with the same `url` field as specified in this `GerritConnection`.",
+      "type": "object",
+      "properties": {
+        "identityProvider": {
+          "description": "The identity provider to use for user information. If not set, the `url` field is used.",
+          "type": "string"
+        }
+      }
+    }
+  }
+}

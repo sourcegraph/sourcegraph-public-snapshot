@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { collectMetrics } from './metrics'
 
 expect.addSnapshotSerializer({
@@ -17,11 +19,9 @@ describe('collectMetrics', () => {
     })
 
     test('predicates', () => {
-        expect(collectMetrics('repo:contains.file(foo) and repo:contains(file:foo content:bar)'))
-            .toMatchInlineSnapshot(`
+        expect(collectMetrics('repo:contains.path(foo) r:contains.file(path:foo content:bar)')).toMatchInlineSnapshot(`
             {
-              "count_and": 1,
-              "count_repo_contains": 1,
+              "count_repo_contains_path": 1,
               "count_repo_contains_file": 1
             }
         `)

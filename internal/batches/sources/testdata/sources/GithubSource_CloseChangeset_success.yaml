@@ -1,0 +1,105 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"query":"\nfragment commit on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
+      {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
+      review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
+      {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment timelineItems on
+      PullRequestTimelineItems {\n  ... on AssignedEvent {\n    actor {\n      ...actor\n    }\n    assignee
+      {\n      ...actor\n    }\n    createdAt\n  }\n  ... on ClosedEvent {\n    actor
+      {\n      ...actor\n    }\n    createdAt\n    url\n  }\n  ... on IssueComment
+      {\n    databaseId\n    author {\n      ...actor\n    }\n    authorAssociation\n    body\n    createdAt\n    editor
+      {\n      ...actor\n    }\n    url\n    updatedAt\n    includesCreatedEdit\n    publishedAt\n  }\n  ...
+      on RenamedTitleEvent {\n    actor {\n      ...actor\n    }\n    previousTitle\n    currentTitle\n    createdAt\n  }\n  ...
+      on MergedEvent {\n    actor {\n      ...actor\n    }\n    mergeRefName\n    url\n    commit
+      {\n      ...commit\n    }\n    createdAt\n  }\n  ... on PullRequestReview {\n    ...review\n  }\n  ...
+      on PullRequestReviewThread {\n    comments(last: 100) {\n      nodes {\n        databaseId\n        author
+      {\n          ...actor\n        }\n        authorAssociation\n        editor
+      {\n          ...actor\n        }\n        commit {\n          ...commit\n        }\n        body\n        state\n        url\n        createdAt\n        updatedAt\n        includesCreatedEdit\n      }\n    }\n  }\n  ...
+      on ReopenedEvent {\n    actor {\n      ...actor\n    }\n    createdAt\n  }\n  ...
+      on ReviewDismissedEvent {\n    actor {\n      ...actor\n    }\n    review {\n      ...review\n    }\n    dismissalMessage\n    createdAt\n  }\n  ...
+      on ReviewRequestRemovedEvent {\n    actor {\n      ...actor\n    }\n    requestedReviewer
+      {\n      ...actor\n    }\n    requestedTeam: requestedReviewer {\n      ...
+      on Team {\n        name\n        url\n        avatarUrl\n      }\n    }\n    createdAt\n  }\n  ...
+      on ReviewRequestedEvent {\n    actor {\n      ...actor\n    }\n    requestedReviewer
+      {\n      ...actor\n    }\n    requestedTeam: requestedReviewer {\n      ...
+      on Team {\n        name\n        url\n        avatarUrl\n      }\n    }\n    createdAt\n  }\n  ...
+      on ReadyForReviewEvent {\n    actor {\n      ...actor\n    }\n    createdAt\n  }\n  ...
+      on UnassignedEvent {\n    actor {\n      ...actor\n    }\n    assignee {\n      ...actor\n    }\n    createdAt\n  }\n  ...
+      on LabeledEvent {\n    actor {\n      ...actor\n    }\n    label {\n      ...label\n    }\n    createdAt\n  }\n  ...
+      on UnlabeledEvent {\n    actor {\n      ...actor\n    }\n    label {\n      ...label\n    }\n    createdAt\n  }\n  ...
+      on PullRequestCommit {\n    commit {\n      ...commit\n    }\n  }\n  \n  ...
+      on ConvertToDraftEvent {\n    actor {\n\t  ...actor\n\t}\n\tcreatedAt\n  }\n\n}\n\nfragment
+      actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment label on Label
+      {\n  name\n  color\n  description\n  id\n}\n\nfragment commitWithChecks on Commit
+      {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
+      20) {\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
+      20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
+      prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
+      repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  reviewDecision\n  isDraft\n  author
+      {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
+      {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
+      100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
+      {\n      ...prCommit\n    }\n  }\n  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT,
+      CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW,
+      PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT,
+      REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT,
+      READY_FOR_REVIEW_EVENT, CONVERT_TO_DRAFT_EVENT]) {\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n    nodes
+      {\n      __typename\n      ...timelineItems\n    }\n  }\n}\nmutation\tClosePullRequest($input:ClosePullRequestInput!)
+      {\n  closePullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"pullRequestId":"PR_kwDODS5xec4waMkR"}}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"closePullRequest":{"pullRequest":{"id":"PR_kwDODS5xec4waMkR","title":"This
+      is a test PR","body":"This is the description of the test PR","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/468","number":468,"createdAt":"2021-12-30T22:57:42Z","updatedAt":"2023-06-23T15:05:25Z","headRefOid":"a5955a89096304d07531f7467b269b1bcf2727c7","baseRefOid":"58dd8da9d9099a823c814c528b29b72c9b2ac98b","headRefName":"test-pr-10","baseRefName":"master","reviewDecision":"REVIEW_REQUIRED","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"a5955a89096304d07531f7467b269b1bcf2727c7","status":null,"checkSuites":{"nodes":[{"id":"CS_kwDODS5xec8AAAABHeqoTA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHeqoUA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHeqoVA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADA7bFkw","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADA7bFlw","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2021-12-30T22:56:31Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABiOjJ02gBqjk2MTg4Mjc5MzI="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"a5955a89096304d07531f7467b269b1bcf2727c7","message":"Test
+      branch.","messageHeadline":"Test branch.","committedDate":"2021-12-30T22:56:31Z","pushedDate":"2021-12-30T22:56:37Z","url":"https://github.com/sourcegraph/automation-testing/commit/a5955a89096304d07531f7467b269b1bcf2727c7","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","email":"adam@adamharvey.name","name":"Adam
+      Harvey","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"}}}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"createdAt":"2021-12-30T23:02:46Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-5829292407"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-02-03T20:14:42Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-02-03T20:15:12Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-8435938069"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:32:21Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:36:41Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-9263776785"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:40:30Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:40:47Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-9263793435"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:42:37Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:44:38Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-9263807970"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:49:43Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:50:02Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-9263832101"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"createdAt":"2023-06-23T14:49:25Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"createdAt":"2023-06-23T14:57:55Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-9618751642"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"createdAt":"2023-06-23T15:03:55Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"createdAt":"2023-06-23T15:05:21Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-9618827932"}]}}}}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 23 Jun 2023 15:39:41 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - CEB3:7240:1F697C4:401880A:6495BCBD
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "148"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""

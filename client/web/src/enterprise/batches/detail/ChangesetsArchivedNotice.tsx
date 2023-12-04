@@ -1,21 +1,21 @@
-import * as H from 'history'
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import React, { useEffect, useState } from 'react'
 
+import { mdiArchive } from '@mdi/js'
+import { useLocation, useNavigate } from 'react-router-dom'
+
 import { pluralize } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
-export interface ChangesetsArchivedNoticeProps {
-    history: H.History
-    location: H.Location
-}
+export interface ChangesetsArchivedNoticeProps {}
 
-export const ChangesetsArchivedNotice: React.FunctionComponent<ChangesetsArchivedNoticeProps> = ({
-    history,
-    location,
-}) => {
+export const ChangesetsArchivedNotice: React.FunctionComponent<
+    React.PropsWithChildren<ChangesetsArchivedNoticeProps>
+> = () => {
+    const location = useLocation()
+    const navigate = useNavigate()
+
     const [archivedCount, setArchivedCount] = useState<number | undefined>()
     const [archivedBy, setArchivedBy] = useState<string | undefined>()
     useEffect(() => {
@@ -31,9 +31,9 @@ export const ChangesetsArchivedNotice: React.FunctionComponent<ChangesetsArchive
         }
 
         if (new URLSearchParams(location.search).toString() !== parameters.toString()) {
-            history.replace({ ...location, search: parameters.toString() })
+            navigate({ ...location, search: parameters.toString() }, { replace: true })
         }
-    }, [history, location])
+    }, [location, navigate])
 
     if (!archivedCount || !archivedBy) {
         return <></>
@@ -43,7 +43,7 @@ export const ChangesetsArchivedNotice: React.FunctionComponent<ChangesetsArchive
         <DismissibleAlert variant="info" partialStorageKey={`changesets-archived-by-${archivedBy}`}>
             <div className="d-flex align-items-center">
                 <div className="d-none d-md-block">
-                    <ArchiveIcon className="icon icon-inline mr-2" />
+                    <Icon aria-hidden={true} className="icon mr-2" svgPath={mdiArchive} />
                 </div>
                 <div className="flex-grow-1">
                     {archivedCount} {pluralize('changeset', archivedCount)} {pluralize('has', archivedCount, 'have')}{' '}

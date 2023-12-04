@@ -1,4 +1,4 @@
-import { Observable, isObservable, of, throwError } from 'rxjs'
+import { type Observable, isObservable, of, throwError } from 'rxjs'
 
 /**
  * Calls a function and returns the result as an Observable.

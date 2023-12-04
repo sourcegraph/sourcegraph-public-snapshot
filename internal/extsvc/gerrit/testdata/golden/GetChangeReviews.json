@@ -1,0 +1,19 @@
+[
+  {
+   "approvals": {
+    "Code-Review": "-2"
+   },
+   "_account_id": 1000018,
+   "name": "Idan Varsano",
+   "email": "idan.varsano@sourcegraph.com",
+   "username": "ivarsano"
+  },
+  {
+   "approvals": {
+    "Code-Review": "+1"
+   },
+   "_account_id": 1000034,
+   "name": "Kelli Rockwell",
+   "email": "kelli@sourcegraph.com"
+  }
+ ]

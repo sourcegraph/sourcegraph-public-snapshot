@@ -1,9 +1,10 @@
 import { from } from 'rxjs'
 import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
+import { describe, test } from 'vitest'
 
 import { isDefined, isTaggedUnionMember } from '@sourcegraph/common'
 
-import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
+import { assertToJSON, collectSubscribableValues, integrationTestContext } from '../../testing/testHelpers'
 
 describe('Selections (integration)', () => {
     describe('editor.selectionsChanged', () => {

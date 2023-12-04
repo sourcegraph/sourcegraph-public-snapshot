@@ -4,17 +4,22 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func RunnerFromDSNs(dsns map[string]string, appName string, newStore StoreFactory) (*runner.Runner, error) {
-	return RunnerFromDSNsWithSchemas(dsns, appName, newStore, schemas.Schemas)
+func RunnerFromDSNs(out *output.Output, logger log.Logger, dsns map[string]string, appName string, newStore StoreFactory) (*runner.Runner, error) {
+	return RunnerFromDSNsWithSchemas(out, logger, dsns, appName, newStore, schemas.Schemas)
 }
 
-func RunnerFromDSNsWithSchemas(dsns map[string]string, appName string, newStore StoreFactory, availableSchemas []*schemas.Schema) (*runner.Runner, error) {
+func RunnerFromDSNsWithSchemas(out *output.Output, logger log.Logger, dsns map[string]string, appName string, newStore StoreFactory, availableSchemas []*schemas.Schema) (*runner.Runner, error) {
+	var verbose = env.LogLevel == "dbug"
 	frontendSchema, ok := schemaByName(availableSchemas, "frontend")
 	if !ok {
 		return nil, errors.Newf("no available schema matches %q", "frontend")
@@ -23,32 +28,43 @@ func RunnerFromDSNsWithSchemas(dsns map[string]string, appName string, newStore 
 	if !ok {
 		return nil, errors.Newf("no available schema matches %q", "codeintel")
 	}
-	codeinsightsSchema, ok := schemaByName(availableSchemas, "codeinsights")
-	if !ok {
-		return nil, errors.Newf("no available schema matches %q", "codeinsights")
-	}
 
 	makeFactory := func(
 		name string,
 		schema *schemas.Schema,
-		factory func(dsn, appName string, observationContext *observation.Context) (*sql.DB, error),
+		factory func(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error),
 	) runner.StoreFactory {
 		return func(ctx context.Context) (runner.Store, error) {
-			db, err := factory(dsns[name], appName, &observation.TestContext)
+			var pending output.Pending
+			if verbose {
+				pending = out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s: %s", schema.Name, dsns[name]))
+			} else {
+				pending = out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s", schema.Name))
+			}
+			db, err := factory(observation.NewContext(logger), dsns[name], appName)
 			if err != nil {
+				pending.Destroy()
 				return nil, err
+			}
+			if verbose {
+				pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %s: %s succeeded", schema.Name, dsns[name]))
+			} else {
+				pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %s succeeded", schema.Name))
 			}
 
 			return initStore(ctx, newStore, db, schema)
 		}
 	}
 	storeFactoryMap := map[string]runner.StoreFactory{
-		"frontend":     makeFactory("frontend", frontendSchema, RawNewFrontendDB),
-		"codeintel":    makeFactory("codeintel", codeintelSchema, RawNewCodeIntelDB),
-		"codeinsights": makeFactory("codeinsights", codeinsightsSchema, RawNewCodeInsightsDB),
+		"frontend":  makeFactory("frontend", frontendSchema, RawNewFrontendDB),
+		"codeintel": makeFactory("codeintel", codeintelSchema, RawNewCodeIntelDB),
 	}
 
-	return runner.NewRunnerWithSchemas(storeFactoryMap, availableSchemas), nil
+	codeinsightsSchema, ok := schemaByName(availableSchemas, "codeinsights")
+	if ok {
+		storeFactoryMap["codeinsights"] = makeFactory("codeinsights", codeinsightsSchema, RawNewCodeInsightsDB)
+	}
+	return runner.NewRunnerWithSchemas(logger, storeFactoryMap, availableSchemas), nil
 }
 
 func schemaByName(schemas []*schemas.Schema, name string) (*schemas.Schema, bool) {
@@ -61,7 +77,7 @@ func schemaByName(schemas []*schemas.Schema, name string) (*schemas.Schema, bool
 	return nil, false
 }
 
-func runnerFromDB(newStore StoreFactory, db *sql.DB, schemas ...*schemas.Schema) *runner.Runner {
+func runnerFromDB(logger log.Logger, newStore StoreFactory, db *sql.DB, schemas ...*schemas.Schema) *runner.Runner {
 	storeFactoryMap := make(map[string]runner.StoreFactory, len(schemas))
 	for _, schema := range schemas {
 		schema := schema
@@ -71,5 +87,5 @@ func runnerFromDB(newStore StoreFactory, db *sql.DB, schemas ...*schemas.Schema)
 		}
 	}
 
-	return runner.NewRunner(storeFactoryMap)
+	return runner.NewRunner(logger, storeFactoryMap)
 }

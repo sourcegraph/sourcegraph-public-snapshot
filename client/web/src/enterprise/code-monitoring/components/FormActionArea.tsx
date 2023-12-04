@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { Link, H3 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
-import { CodeMonitorFields } from '../../../graphql-operations'
-import { useExperimentalFeatures } from '../../../stores'
-import { triggerTestEmailAction } from '../backend'
+import type { AuthenticatedUser } from '../../../auth'
+import type { CodeMonitorFields } from '../../../graphql-operations'
 
 import { EmailAction } from './actions/EmailAction'
 import { SlackWebhookAction } from './actions/SlackWebhookAction'
@@ -26,6 +25,7 @@ export interface ActionProps {
     setAction: (action?: MonitorAction) => void
     disabled: boolean
     monitorName: string
+    authenticatedUser: AuthenticatedUser
 
     // For testing purposes only
     _testStartOpen?: boolean
@@ -37,9 +37,8 @@ export type MonitorAction = CodeMonitorFields['actions']['nodes'][number]
  * TODO farhan: this component is built with the assumption that each monitor has exactly one email action.
  * Refactor to accomodate for more than one.
  */
-export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
+export const FormActionArea: React.FunctionComponent<React.PropsWithChildren<ActionAreaProps>> = ({
     actions,
-    actionsCompleted,
     setActionsCompleted,
     disabled,
     authenticatedUser,
@@ -81,7 +80,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
 
     return (
         <>
-            <h3 className="mb-1">Actions</h3>
+            <H3 className="mb-1">Actions</H3>
             <span className="text-muted">Run any number of actions in response to an event</span>
 
             <EmailAction
@@ -90,7 +89,6 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 setAction={setEmailAction}
                 authenticatedUser={authenticatedUser}
                 monitorName={monitorName}
-                triggerTestEmailAction={triggerTestEmailAction}
             />
 
             {(showWebhooks || slackWebhookAction) && (
@@ -99,6 +97,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                     action={slackWebhookAction}
                     setAction={setSlackWebhookAction}
                     monitorName={monitorName}
+                    authenticatedUser={authenticatedUser}
                 />
             )}
 
@@ -108,6 +107,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                     action={webhookAction}
                     setAction={setWebhookAction}
                     monitorName={monitorName}
+                    authenticatedUser={authenticatedUser}
                 />
             )}
 

@@ -2,67 +2,61 @@ package cliutil
 
 import (
 	"context"
-	"flag"
 	"fmt"
-	"strconv"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func AddLog(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Command {
-	var (
-		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s add-log", commandName), flag.ExitOnError)
-		schemaNameFlag = flagSet.String("db", "", `The target schema to modify.`)
-		versionFlag    = flagSet.String("version", "", "The migration version.")
-		upFlag         = flagSet.Bool("up", true, "The migration direction.")
-	)
+func AddLog(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
+	schemaNameFlag := &cli.StringFlag{
+		Name:     "schema",
+		Usage:    "The target `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'",
+		Required: true,
+		Aliases:  []string{"db"},
+	}
+	versionFlag := &cli.IntFlag{
+		Name:     "version",
+		Usage:    "The migration `version` to log.",
+		Required: true,
+	}
+	upFlag := &cli.BoolFlag{
+		Name:  "up",
+		Usage: "The migration direction.",
+		Value: true,
+	}
 
-	exec := func(ctx context.Context, args []string) error {
-		if len(args) != 0 {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
-			return flag.ErrHelp
-		}
+	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+		var (
+			schemaName  = TranslateSchemaNames(schemaNameFlag.Get(cmd), out)
+			versionFlag = versionFlag.Get(cmd)
+			upFlag      = upFlag.Get(cmd)
+			logger      = log.Scoped("up")
+		)
 
-		if *schemaNameFlag == "" {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
-			return flag.ErrHelp
-		}
-
-		if *versionFlag == "" {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a migration version via -version"))
-			return flag.ErrHelp
-		}
-		version, err := strconv.Atoi(*versionFlag)
-		if err != nil {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: invalid migration version %q", *versionFlag))
-			return flag.ErrHelp
-		}
-
-		r, err := factory(ctx, []string{*schemaNameFlag})
-		if err != nil {
-			return err
-		}
-		store, err := r.Store(ctx, *schemaNameFlag)
+		store, err := setupStore(ctx, factory, schemaName)
 		if err != nil {
 			return err
 		}
 
-		return store.WithMigrationLog(ctx, definition.Definition{ID: version}, *upFlag, noop)
-	}
+		logger.Info("Writing new completed migration log", log.String("schema", schemaName), log.Int("version", versionFlag), log.Bool("up", upFlag))
+		return store.WithMigrationLog(ctx, definition.Definition{ID: versionFlag}, upFlag, func() error { return nil })
+	})
 
-	return &ffcli.Command{
-		Name:       "add-log",
-		ShortUsage: fmt.Sprintf("%s add-log -db=<schema> -version=<version> [-up=true|false]", commandName),
-		ShortHelp:  "Add an entry to the migration log",
-		FlagSet:    flagSet,
-		Exec:       exec,
-		LongHelp:   ConstructLongHelp(),
+	return &cli.Command{
+		Name:        "add-log",
+		UsageText:   fmt.Sprintf("%s add-log -db=<schema> -version=<version> [-up=true|false]", commandName),
+		Usage:       "Add an entry to the migration log",
+		Description: ConstructLongHelp(),
+		Action:      action,
+		Flags: []cli.Flag{
+			schemaNameFlag,
+			versionFlag,
+			upFlag,
+		},
 	}
-}
-
-func noop() error {
-	return nil
 }

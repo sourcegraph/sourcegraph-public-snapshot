@@ -1,30 +1,31 @@
-import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo } from 'react'
-import { RouteComponentProps } from 'react-router'
-import { Observable, Subject } from 'rxjs'
+
+import { mdiPlus } from '@mdi/js'
+import { type Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader, Button, Link } from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Container, PageHeader, Button, Link, Icon, Text } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
-import {
+import type {
     AccessTokenFields,
     AccessTokensConnectionFields,
     AccessTokensResult,
     AccessTokensVariables,
     CreateAccessTokenResult,
 } from '../../../graphql-operations'
-import { accessTokenFragment, AccessTokenNode, AccessTokenNodeProps } from '../../../settings/tokens/AccessTokenNode'
-import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
+import {
+    accessTokenFragment,
+    AccessTokenNode,
+    type AccessTokenNodeProps,
+} from '../../../settings/tokens/AccessTokenNode'
+import type { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
-interface Props
-    extends Pick<UserSettingsAreaRouteContext, 'user'>,
-        Pick<RouteComponentProps<{}>, 'history' | 'location' | 'match'>,
-        TelemetryProps {
+interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>, TelemetryProps {
     /**
      * The newly created token, if any. This component must call onDidPresentNewToken
      * when it is finished presenting the token secret to the user.
@@ -41,11 +42,9 @@ interface Props
 /**
  * Displays access tokens whose subject is a specific user.
  */
-export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
+export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
-    history,
-    location,
-    match,
+    authenticatedUser,
     user,
     newToken,
     onDidPresentNewToken,
@@ -73,6 +72,8 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
         [user.id]
     )
 
+    const siteAdminViewingOtherUser = authenticatedUser && authenticatedUser.id !== user.id
+
     return (
         <div className="user-settings-tokens-page">
             <PageTitle title="Access tokens" />
@@ -81,9 +82,11 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
                 path={[{ text: 'Access tokens' }]}
                 description="Access tokens may be used to access the Sourcegraph API."
                 actions={
-                    <Button to={`${match.url}/new`} variant="primary" as={Link}>
-                        <AddIcon className="icon-inline" /> Generate new token
-                    </Button>
+                    !siteAdminViewingOtherUser && (
+                        <Button to="new" variant="primary" as={Link}>
+                            <Icon role="img" aria-hidden={true} svgPath={mdiPlus} /> Generate new token
+                        </Button>
+                    )
                 }
                 className="mb-3"
             />
@@ -102,10 +105,10 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
                     updates={accessTokenUpdates}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
-                    history={history}
-                    location={location}
                     emptyElement={
-                        <p className="text-muted text-center w-100 mb-0">You don't have any access tokens.</p>
+                        <Text alignment="center" className="text-muted w-100 mb-0">
+                            You don't have any access tokens.
+                        </Text>
                     }
                 />
             </Container>
@@ -145,7 +148,7 @@ const queryAccessTokens = (variables: AccessTokensVariables): Observable<AccessT
                 throw new Error('User not found')
             }
             if (data.node.__typename !== 'User') {
-                throw new Error(`Mode is a ${data.node.__typename}, not a User`)
+                throw new Error(`Node is a ${data.node.__typename}, not a User`)
             }
             return data.node.accessTokens
         })

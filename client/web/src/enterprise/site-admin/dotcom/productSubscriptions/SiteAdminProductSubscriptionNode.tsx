@@ -1,52 +1,14 @@
 import * as React from 'react'
 
-import { gql } from '@sourcegraph/http-client'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { LinkOrSpan } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../../../components/time/Timestamp'
+import type { SiteAdminProductSubscriptionFields } from '../../../../graphql-operations'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 import { ProductLicenseTags } from '../../../productSubscription/ProductLicenseTags'
 
-export const siteAdminProductSubscriptionFragment = gql`
-    fragment SiteAdminProductSubscriptionFields on ProductSubscription {
-        id
-        name
-        account {
-            id
-            username
-            displayName
-            emails {
-                email
-                isPrimary
-            }
-        }
-        invoiceItem {
-            plan {
-                nameWithBrand
-            }
-            userCount
-            expiresAt
-        }
-        activeLicense {
-            id
-            info {
-                productNameWithBrand
-                tags
-                userCount
-                expiresAt
-            }
-            licenseKey
-            createdAt
-        }
-        createdAt
-        isArchived
-        urlForSiteAdmin
-    }
-`
-
-export const SiteAdminProductSubscriptionNodeHeader: React.FunctionComponent = () => (
+export const SiteAdminProductSubscriptionNodeHeader: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <thead>
         <tr>
             <th>ID</th>
@@ -59,15 +21,15 @@ export const SiteAdminProductSubscriptionNodeHeader: React.FunctionComponent = (
 )
 
 export interface SiteAdminProductSubscriptionNodeProps {
-    node: GQL.IProductSubscription
+    node: SiteAdminProductSubscriptionFields
 }
 
 /**
  * Displays a product subscription in a connection in the site admin area.
  */
-export const SiteAdminProductSubscriptionNode: React.FunctionComponent<SiteAdminProductSubscriptionNodeProps> = ({
-    node,
-}) => (
+export const SiteAdminProductSubscriptionNode: React.FunctionComponent<
+    React.PropsWithChildren<SiteAdminProductSubscriptionNodeProps>
+> = ({ node }) => (
     <tr>
         <td className="text-nowrap">
             <LinkOrSpan to={node.urlForSiteAdmin} className="mr-3">

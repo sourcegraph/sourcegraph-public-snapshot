@@ -6,16 +6,16 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/opentracing/opentracing-go/ext"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // Repository returns the external links for a repository.
@@ -37,13 +37,13 @@ func Repository(ctx context.Context, db database.DB, repo *types.Repo) (links []
 }
 
 // FileOrDir returns the external links for a file or directory in a repository.
-func FileOrDir(ctx context.Context, db database.DB, repo *types.Repo, rev, path string, isDir bool) (links []*Resolver, err error) {
+func FileOrDir(ctx context.Context, db database.DB, client gitserver.Client, repo *types.Repo, rev, path string, isDir bool) (links []*Resolver, err error) {
 	rev = url.PathEscape(rev)
 
 	phabRepo, link, serviceType := linksForRepository(ctx, db, repo)
 	if phabRepo != nil {
 		// We need a branch name to construct the Phabricator URL.
-		branchName, _, err := git.GetDefaultBranchShort(ctx, repo.Name)
+		branchName, _, err := client.GetDefaultBranch(ctx, repo.Name, true)
 		if err == nil && branchName != "" {
 			links = append(links, NewResolver(
 				fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, url.PathEscape(branchName), path, rev),
@@ -53,15 +53,15 @@ func FileOrDir(ctx context.Context, db database.DB, repo *types.Repo, rev, path 
 	}
 
 	if link != nil {
-		var url string
+		var urlStr string
 		if isDir {
-			url = link.Tree
+			urlStr = link.Tree
 		} else {
-			url = link.Blob
+			urlStr = link.Blob
 		}
-		if url != "" {
-			url = strings.NewReplacer("{rev}", rev, "{path}", path).Replace(url)
-			links = append(links, NewResolver(url, serviceType))
+		if urlStr != "" {
+			urlStr = strings.NewReplacer("{rev}", rev, "{path}", path).Replace(urlStr)
+			links = append(links, NewResolver(urlStr, serviceType))
 		}
 	}
 
@@ -100,16 +100,15 @@ func linksForRepository(
 	db database.DB,
 	repo *types.Repo,
 ) (phabRepo *types.PhabricatorRepo, links *protocol.RepoLinks, serviceType string) {
-	span, ctx := ot.StartSpanFromContext(ctx, "externallink.linksForRepository")
-	defer span.Finish()
-	span.SetTag("Repo", repo.Name)
-	span.SetTag("ExternalRepo", repo.ExternalRepo)
+	tr, ctx := trace.New(ctx, "linksForRepository",
+		repo.Name.Attr(),
+		attribute.Stringer("externalRepo", repo.ExternalRepo))
+	defer tr.End()
 
 	var err error
 	phabRepo, err = db.Phabricator().GetByName(ctx, repo.Name)
 	if err != nil && !errcode.IsNotFound(err) {
-		ext.Error.Set(span, true)
-		span.SetTag("phabErr", err.Error())
+		tr.SetError(err)
 	}
 
 	repoInfo := protocol.NewRepoInfo(repo)

@@ -1,19 +1,23 @@
+import { useMemo } from 'react'
+
 import {
     gql as apolloGql,
     useQuery as useApolloQuery,
     useMutation as useApolloMutation,
+    useSuspenseQuery_experimental as useApolloSuspenseQuery,
     useLazyQuery as useApolloLazyQuery,
-    DocumentNode,
-    OperationVariables,
-    QueryHookOptions as ApolloQueryHookOptions,
-    QueryResult,
-    MutationHookOptions as ApolloMutationHookOptions,
-    MutationTuple,
-    QueryTuple,
+    type DocumentNode,
+    type OperationVariables,
+    type QueryHookOptions as ApolloQueryHookOptions,
+    type QueryResult,
+    type MutationHookOptions as ApolloMutationHookOptions,
+    type MutationTuple,
+    type QueryTuple,
+    type UseSuspenseQueryResult,
+    type SuspenseQueryHookOptions,
 } from '@apollo/client'
-import { useMemo } from 'react'
 
-import { ApolloContext } from '../types'
+import type { ApolloContext } from '../types'
 
 type RequestDocument = string | DocumentNode
 
@@ -33,7 +37,7 @@ export const getDocumentNode = (document: RequestDocument): DocumentNode => {
 const useDocumentNode = (document: RequestDocument): DocumentNode =>
     useMemo(() => getDocumentNode(document), [document])
 
-export interface QueryHookOptions<TData = any, TVariables = OperationVariables>
+export interface QueryHookOptions<TData = any, TVariables extends OperationVariables = OperationVariables>
     extends Omit<ApolloQueryHookOptions<TData, TVariables>, 'context'> {
     /**
      * Shared context information for apollo client. Since internal apollo
@@ -51,19 +55,26 @@ export interface QueryHookOptions<TData = any, TVariables = OperationVariables>
  * @param options Operation variables and request configuration
  * @returns GraphQL response
  */
-export function useQuery<TData = any, TVariables = OperationVariables>(
+export function useQuery<TData = any, TVariables extends OperationVariables = OperationVariables>(
     query: RequestDocument,
     options: QueryHookOptions<TData, TVariables>
 ): QueryResult<TData, TVariables> {
     const documentNode = useDocumentNode(query)
     return useApolloQuery(documentNode, options)
 }
-export function useLazyQuery<TData = any, TVariables = OperationVariables>(
+export function useLazyQuery<TData = any, TVariables extends OperationVariables = OperationVariables>(
     query: RequestDocument,
     options: QueryHookOptions<TData, TVariables>
 ): QueryTuple<TData, TVariables> {
     const documentNode = useDocumentNode(query)
     return useApolloLazyQuery(documentNode, options)
+}
+export function useSuspenseQuery<TData = any, TVariables extends OperationVariables = OperationVariables>(
+    query: RequestDocument,
+    options: SuspenseQueryHookOptions<TData, TVariables>
+): UseSuspenseQueryResult<TData, TVariables> {
+    const documentNode = useDocumentNode(query)
+    return useApolloSuspenseQuery(documentNode, options)
 }
 
 interface MutationHookOptions<TData = any, TVariables = OperationVariables>

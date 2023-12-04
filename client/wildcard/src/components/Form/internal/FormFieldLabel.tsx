@@ -1,4 +1,7 @@
-import React from 'react'
+import { forwardRef } from 'react'
+
+import { Label } from '../..'
+import type { ForwardReferenceComponent } from '../../../types'
 
 export interface FormFieldLabelProps {
     /**
@@ -11,8 +14,10 @@ export interface FormFieldLabelProps {
 /**
  * A simple label to render alongside a form field.
  */
-export const FormFieldLabel: React.FunctionComponent<FormFieldLabelProps> = ({ htmlFor, className, children }) => (
-    <label htmlFor={htmlFor} className={className}>
-        {children}
-    </label>
-)
+export const FormFieldLabel = forwardRef(function FormFieldLabel({ htmlFor, className, children, ...rest }, reference) {
+    return (
+        <Label htmlFor={htmlFor} className={className} ref={reference} {...rest}>
+            {children}
+        </Label>
+    )
+}) as ForwardReferenceComponent<'label', FormFieldLabelProps>

@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/sourcegraph/go-lsp"
 )
@@ -19,31 +18,40 @@ type Symbol struct {
 	// merge Symbol and SymbolMatch.
 	Path       string
 	Line       int
+	Character  int
 	Kind       string
 	Language   string
 	Parent     string
 	ParentKind string
 	Signature  string
-	Pattern    string
 
 	FileLimited bool
 }
 
-func NewSymbolMatch(file *File, lineNumber int, name, kind, parent, parentKind, language, line string, fileLimited bool) *SymbolMatch {
+// NewSymbolMatch returns a new SymbolMatch. Passing -1 as the character will make NewSymbolMatch infer
+// the column from the line and symbol name.
+func NewSymbolMatch(file *File, lineNumber, character int, name, kind, parent, parentKind, language, line string, fileLimited bool) *SymbolMatch {
+	if character == -1 {
+		// The caller is requesting we infer the character position.
+		character = strings.Index(line, name)
+
+		if character == -1 {
+			// We couldn't find the symbol in the line, so set the column to 0. ctags doesn't always
+			// return the right line.
+			character = 0
+		}
+	}
+
 	return &SymbolMatch{
 		Symbol: Symbol{
-			Name:       name,
-			Kind:       kind,
-			Parent:     parent,
-			ParentKind: parentKind,
-			Path:       file.Path,
-			Line:       lineNumber,
-			Language:   language,
-			// symbolRange requires a Pattern /^...$/ containing the line of the symbol to compute the symbol's offsets.
-			// This Pattern is directly accessible on the unindexed code path. But on the indexed code path, we need to
-			// populate it, or we will always compute a 0 offset, which messes up API use (e.g., highlighting).
-			// It must escape `/` or `\` in the line.
-			Pattern:     fmt.Sprintf("/^%s$/", escape(line)),
+			Name:        name,
+			Kind:        kind,
+			Parent:      parent,
+			ParentKind:  parentKind,
+			Path:        file.Path,
+			Line:        lineNumber,
+			Character:   character,
+			Language:    language,
 			FileLimited: fileLimited,
 		},
 		File: file,
@@ -109,89 +117,10 @@ func (s Symbol) LSPKind() lsp.SymbolKind {
 	return 0
 }
 
-// offset calculates a symbol offset based on the the only Symbol
-// data member that currently exposes line content: the symbols Pattern member,
-// which has the form /^ ... $/. We find the offset of the symbol name in this
-// line, after escaping the Pattern.
-func (s *Symbol) offset() int {
-	if s.Pattern == "" {
-		return 0
-	}
-	i := strings.Index(unescapePattern(s.Pattern), s.Name)
-	if i >= 0 {
-		return i
-	}
-	return 0
-}
-
-func escape(s string) string {
-	isSpecial := func(c rune) bool {
-		switch c {
-		case '\\', '/':
-			return true
-		default:
-			return false
-		}
-	}
-
-	// Avoid extra work by counting additions. regexp.QuoteMeta does the same,
-	// but is more efficient since it does it via bytes.
-	count := 0
-	for _, c := range s {
-		if isSpecial(c) {
-			count++
-		}
-	}
-	if count == 0 {
-		return s
-	}
-
-	escaped := make([]rune, 0, len(s)+count)
-	for _, c := range s {
-		if isSpecial(c) {
-			escaped = append(escaped, '\\')
-		}
-		escaped = append(escaped, c)
-	}
-	return string(escaped)
-}
-
-// unescapePattern expects a regexp pattern of the form /^ ... $/ and unescapes
-// the pattern inside it.
-func unescapePattern(pattern string) string {
-	pattern = strings.TrimSuffix(strings.TrimPrefix(pattern, "/^"), "$/")
-	var start int
-	var r rune
-	var escaped []rune
-	buf := []byte(pattern)
-
-	next := func() rune {
-		r, start := utf8.DecodeRune(buf)
-		buf = buf[start:]
-		return r
-	}
-
-	for len(buf) > 0 {
-		r = next()
-		if r == '\\' && len(buf[start:]) > 0 {
-			r = next()
-			if r == '/' || r == '\\' {
-				escaped = append(escaped, r)
-				continue
-			}
-			escaped = append(escaped, '\\', r)
-			continue
-		}
-		escaped = append(escaped, r)
-	}
-	return string(escaped)
-}
-
 func (s Symbol) Range() lsp.Range {
-	offset := s.offset()
 	return lsp.Range{
-		Start: lsp.Position{Line: s.Line - 1, Character: offset},
-		End:   lsp.Position{Line: s.Line - 1, Character: offset + len(s.Name)},
+		Start: lsp.Position{Line: s.Line - 1, Character: s.Character},
+		End:   lsp.Position{Line: s.Line - 1, Character: s.Character + len(s.Name)},
 	}
 }
 
@@ -206,7 +135,7 @@ type SymbolMatch struct {
 
 func (s *SymbolMatch) URL() *url.URL {
 	base := s.File.URL()
-	base.Fragment = urlFragmentFromRange(s.Symbol.Range())
+	base.RawQuery = urlFragmentFromRange(s.Symbol.Range())
 	return base
 }
 

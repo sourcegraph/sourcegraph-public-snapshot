@@ -1,0 +1,23 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "trie",
+    srcs = [
+        "frozen_trie.go",
+        "rune_trie.go",
+        "string_trie.go",
+        "trie.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/trie",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "trie_test",
+    timeout = "short",
+    srcs = ["trie_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":trie"],
+    deps = ["//lib/errors"],
+)

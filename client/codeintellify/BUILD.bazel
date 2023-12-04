@@ -1,0 +1,98 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "npm_package", "ts_project", "vitest_test")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
+
+npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root()
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/common:tsconfig",
+        "//client/extension-api-types:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "codeintellify_lib",
+    srcs = [
+        "src/helpers.ts",
+        "src/hoverifier.ts",
+        "src/index.ts",
+        "src/loading.ts",
+        "src/overlayPosition.ts",
+        "src/positions.ts",
+        "src/state.ts",
+        "src/tokenPosition.ts",
+        "src/types.ts",
+        "src/typings/html.d.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":node_modules/@sourcegraph/common",
+        ":node_modules/@sourcegraph/extension-api-types",
+        "//:node_modules/@types/lodash",
+        "//:node_modules/lodash",
+        "//:node_modules/rxjs",
+        "//:node_modules/ts-key-enum",
+    ],
+)
+
+ts_project(
+    name = "codeintellify_tests",
+    testonly = True,
+    srcs = [
+        "src/hoverifier.test.ts",
+        "src/loading.test.ts",
+        "src/overlayPosition.test.ts",
+        "src/positions.test.ts",
+        "src/testSetup.test.ts",
+        "src/testutils/dom.test.ts",
+        "src/testutils/dom.ts",
+        "src/testutils/fixtures.ts",
+        "src/testutils/generate.ts",
+        "src/testutils/github/generate.ts",
+        "src/testutils/mouse.ts",
+        "src/testutils/revision.ts",
+        "src/testutils/sourcegraph/generate.ts",
+        "src/tokenPosition.test.ts",
+    ],
+    data = [
+        "src/testutils/github/styles.css",
+        "src/testutils/mux.go.txt",
+        "src/testutils/sourcegraph/styles.css",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":codeintellify_lib",
+        ":node_modules/@sourcegraph/common",
+        ":node_modules/@sourcegraph/extension-api-types",
+        ":node_modules/@sourcegraph/testing",
+        "//:node_modules/@testing-library/jest-dom",  #keep
+        "//:node_modules/@types/lodash",
+        "//:node_modules/@types/node",
+        "//:node_modules/lodash",
+        "//:node_modules/rxjs",
+        "//:node_modules/vitest",
+    ],
+)
+
+npm_package(
+    name = "codeintellify_pkg",
+    srcs = [
+        "package.json",
+        ":codeintellify_lib",
+    ],
+)
+
+vitest_test(
+    name = "test",
+    data = [
+        ":codeintellify_tests",
+    ],
+)

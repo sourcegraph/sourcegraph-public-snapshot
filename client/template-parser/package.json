@@ -7,7 +7,7 @@
   "sideEffects": false,
   "license": "Apache-2.0",
   "scripts": {
-    "eslint": "eslint --cache 'src/**/*.[jt]s?(x)'",
-    "test": "jest"
+    "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
+    "test": "vitest"
   }
 }

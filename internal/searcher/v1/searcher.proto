@@ -1,0 +1,187 @@
+syntax = "proto3";
+
+package searcher.v1;
+
+import "google/protobuf/duration.proto";
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/searcher/v1";
+
+// SearcherService is an internal interface for the searcher service.
+service SearcherService {
+  // Search executes a search, streaming back its results
+  rpc Search(SearchRequest) returns (stream SearchResponse) {}
+}
+
+// SearchRequest is set of parameters for a search.
+message SearchRequest {
+  reserved 9;
+
+  // repo is the name of the repo to search (e.g. "github.com/gorilla/mux")
+  string repo = 1;
+
+  // repo_id is the Sourcegraph repository ID of the repo to search
+  uint32 repo_id = 2;
+
+  // commit_oid is the 40-character commit hash for the commit to be searched.
+  // It is required to be resolved, not a ref like HEAD or master.
+  string commit_oid = 3;
+
+  // indexed is whether the revision to be searched is indexed or
+  // unindexed. This matters for structural search because it will query
+  // Zoekt for indexed structural search.
+  bool indexed = 4;
+
+  PatternInfo pattern_info = 5;
+
+  // URL specifies the repository's Git remote URL (for gitserver). It is optional. See
+  // (gitserver.ExecRequest).URL for documentation on what it is used for.
+  string url = 6;
+
+  // branch is used for structural search as an alternative to Commit
+  // because Zoekt only takes branch names
+  string branch = 7;
+
+  // fetch_timeout is the amount of time to wait for a repo archive to
+  // fetch.
+  //
+  // This timeout should be low when searching across many repos so that
+  // unfetched repos don't delay the search, and because we are likely
+  // to get results from the repos that have already been fetched.
+  //
+  // This timeout should be high when searching across a single repo
+  // because returning results slowly is better than returning no
+  // results at all.
+  //
+  // This only times out how long we wait for the fetch request; the
+  // fetch will still happen in the background so future requests don't
+  // have to wait.
+  google.protobuf.Duration fetch_timeout = 8;
+}
+
+// SearchResponse is a message in the response stream for Search
+message SearchResponse {
+  // Done is the final SearchResponse message sent in the stream
+  // of responses to Search.
+  message Done {
+    bool limit_hit = 1;
+    bool deadline_hit = 2;
+  }
+
+  oneof message {
+    FileMatch file_match = 1;
+    Done done_message = 2;
+  }
+}
+
+// FileMatch is a file that matched the search query along
+// with the parts of the file that matched.
+message FileMatch {
+  // The file's path
+  bytes path = 1;
+
+  // A list of matched chunks
+  repeated ChunkMatch chunk_matches = 2;
+
+  // Whether the limit was hit while searching this
+  // file. Indicates that the results for this file
+  // may not be complete.
+  bool limit_hit = 3;
+}
+
+// ChunkMatch is a matched chunk of a file.
+message ChunkMatch {
+  // The raw content that contains the match. Will always
+  // contain complete lines.
+  bytes content = 1;
+
+  // The location relative to the start of the file
+  // where the chunk content starts.
+  Location content_start = 2;
+
+  // A list of ranges within the chunk content that match
+  // the search query.
+  repeated Range ranges = 3;
+}
+
+message Range {
+  Location start = 1;
+  Location end = 2;
+}
+
+// A location represents an offset within a file.
+message Location {
+  // The byte offset from the beginning of the byte slice.
+  int32 offset = 1;
+  // The number of newlines in the file before the offset.
+  int32 line = 2;
+  // The rune offset from the beginning of the last line.
+  int32 column = 3;
+}
+
+message PatternInfo {
+  // pattern is the search query. It is a regular expression if IsRegExp
+  // is true, otherwise a fixed string. eg "route variable"
+  string pattern = 1;
+
+  // is_negated if true will invert the matching logic for regexp searches. IsNegated=true is
+  // not supported for structural searches.
+  bool is_negated = 2;
+
+  // is_regexp if true will treat the pattern as a regular expression.
+  bool is_regexp = 3;
+
+  // is_structural if true will treat the pattern as a Comby structural search pattern.
+  bool is_structural = 4;
+
+  // is_word_match if true will only match the pattern at word boundaries.
+  bool is_word_match = 5;
+
+  // is_case_sensitive if false will ignore the case of text and pattern
+  // when finding matches.
+  bool is_case_sensitive = 6;
+
+  // exclude_pattern is a pattern that may not match the returned files' paths.
+  // eg '**/node_modules'
+  string exclude_pattern = 7;
+
+  // include_patterns is a list of patterns that must *all* match the returned
+  // files' paths.
+  // eg '**/node_modules'
+  //
+  // The patterns are ANDed together; a file's path must match all patterns
+  // for it to be kept. That is also why it is a list (unlike the singular
+  // ExcludePattern); it is not possible in general to construct a single
+  // glob or Go regexp that represents multiple such patterns ANDed together.
+  repeated string include_patterns = 8;
+
+  // path_patterns_are_case_sensitive indicates that exclude_pattern and
+  // include_patterns are case sensitive.
+  bool path_patterns_are_case_sensitive = 9;
+
+  // limit is the cap on the total number of matches returned.
+  // A match is either a path match, or a fragment of a line matched by the query.
+  int64 limit = 10;
+
+  // pattern_matches_content is whether the pattern should be matched
+  // against the content of files.
+  bool pattern_matches_content = 11;
+
+  // pattern_matches_content is whether a file whose path matches
+  // pattern (but whose contents don't) should be considered a match.
+  bool pattern_matches_path = 12;
+
+  // comby_rule is a rule that constrains matching for structural search.
+  // It only applies when IsStructuralPat is true.
+  // As a temporary measure, the expression `where "backcompat" == "backcompat"` acts as
+  // a flag to activate the old structural search path, which queries zoekt for the
+  // file list in the frontend and passes it to searcher.
+  string comby_rule = 13;
+
+  // languages is the list of languages passed via the lang filters (e.g., "lang:c")
+  repeated string languages = 14;
+
+  // select is the value of the the select field in the query. It is not necessary to
+  // use it since selection is done after the query completes, but exposing it can enable
+  // optimizations.
+  string select = 15;
+}

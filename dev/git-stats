@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+# This script outputs statistics for the current git repository. This script
+# is used by the search-core team to understand the size and shape of a
+# repository. In particular we use this when understanding the scale of a
+# monorepo to help us guide our work.
+
+set -e
+
+# Do everything from the gitdir. Makes ls-tree below also not work on a
+# subtree.
+cd "$(git rev-parse --git-dir)"
+
+# The size of the git store (not the working copy).
+echo "$(du -sh .)" gitdir
+
+# The number of commits reachable from HEAD
+echo "$(git rev-list --count HEAD)" commits
+
+
+# Some awk which extracts statistics on the files in the latest commit.
+echo
+echo HEAD statistics
+git ls-tree -r --long HEAD | awk '
+BEGIN {
+    base = 10
+    logbase = log(base)
+}
+$4 != "-" {
+    if ($4 == 0) {
+        hist[0]++
+    } else {
+        hist[int(log($4) / logbase) + 1]++
+    }
+    total += $4
+    count++
+}
+END {
+    printf("%.3fGiB\n%d files\n", total / 1024 / 1024 / 1024, count)
+    printf("histogram:\n")
+    for (x in hist) {
+        printf("%d^%d\t%d\n", base, x, hist[x])
+    }
+}
+'

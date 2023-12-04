@@ -1,0 +1,382 @@
+// This file is a fork from SearachBox.module.scss and contains JetBrains specific UI changes
+
+@import 'wildcard/src/global-styles/breakpoints';
+
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 12rem;
+    min-height: 2rem;
+    border-top: 1px solid var(--jb-border-color);
+
+    @media (--xs-breakpoint-down) {
+        display: inline;
+        padding: 0.5rem;
+    }
+
+    &__background-container {
+        display: flex;
+        flex-grow: 1;
+        align-items: center;
+        background-color: var(--jb-list-bg);
+        height: 100%;
+        max-width: 100%;
+
+        @media (--xs-breakpoint-down) {
+            height: auto;
+            border: none;
+            display: inline;
+        }
+
+        &:first-child {
+            border-left-color: var(--input-border-color);
+        }
+    }
+
+    &__focus-container {
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
+        height: 1.5rem;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        flex: 1 1 auto;
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
+        margin: 2px;
+        border: 1px solid transparent;
+        background-color: var(--jb-input-bg);
+
+        &__icon {
+            padding-left: 0.25rem;
+            padding-right: 0.25rem;
+            color: var(--jb-icon-color);
+        }
+
+        &:focus-within {
+            border: 1px solid var(--input-focus-border-color);
+            box-shadow: var(--search-box-focus-box-shadow);
+        }
+
+        @media (--xs-breakpoint-down) {
+            height: auto;
+            flex-wrap: wrap;
+            display: inline;
+            padding-left: 0;
+            margin-left: 0;
+
+            &:focus-within {
+                border: none;
+                box-shadow: none;
+            }
+        }
+    }
+
+    &__version-context-dropdown,
+    &__context-dropdown {
+        margin-left: 0.25rem;
+
+        @media (--xs-breakpoint-down) {
+            display: inline-block;
+            vertical-align: middle;
+            margin-bottom: 0.5rem;
+        }
+
+        > button,
+        > button:hover,
+        > button:focus {
+            height: 1.5rem;
+            padding: 0.125rem 1rem;
+            cursor: default;
+            background: var(--jb-button-bg);
+            border: 1px solid var(--jb-border-color);
+            border-radius: 4px;
+
+            &:focus {
+                border: 1px solid var(--jb-focus-border-color);
+                box-shadow: 0 0 0 2px rgb(28 126 214 / 25%);
+            }
+
+            > code {
+                font-family: inherit;
+                font-weight: normal;
+            }
+        }
+
+        :global(.dropdown-menu) {
+            border-radius: 0;
+            padding: 0;
+            border: none;
+            box-shadow: 0 4px 16px -6px rgba(64, 64, 64, 0.3);
+        }
+    }
+
+    &__context-menu {
+        // On JetBrains, the menu always appears under the context button with a top positon of 40px
+        max-height: calc(100vh - 40px);
+        border: 1px solid var(--jb-border-color);
+
+        > div {
+            border: none;
+
+            &:not(:last-child) {
+                border-bottom: 1px solid var(--jb-border-color);
+            }
+
+            &:first-child,
+            &:last-child {
+                padding: 0.375rem 0.75rem;
+                background: var(--subtle-bg);
+            }
+
+            &:first-child {
+                font-weight: 600;
+                color: var(--jb-text-color);
+
+                > button {
+                    display: none;
+                }
+            }
+
+            &:nth-child(2) {
+                padding: 0;
+
+                input {
+                    border: none;
+                    box-shadow: none;
+                    padding: 0 0.75rem;
+
+                    &:focus {
+                        box-shadow: none;
+                    }
+
+                    &::placeholder {
+                        color: var(--jb-inactive-text-color);
+                    }
+                }
+            }
+
+            &:last-child {
+                flex-direction: row-reverse;
+
+                > button {
+                    height: 1.5rem;
+                    padding: 0.125rem 1rem;
+                    background: var(--jb-button-bg);
+                    border: 1px solid var(--jb-border-color);
+                    border-radius: 4px;
+                    cursor: default;
+                    color: var(--jb-text-color);
+                    font-weight: normal;
+
+                    &:hover,
+                    &:focus {
+                        text-decoration: none !important;
+                        color: var(--jb-text-color) !important;
+                    }
+
+                    &:focus {
+                        border: 1px solid var(--jb-focus-border-color);
+                        box-shadow: 0 0 0 2px rgb(28 126 214 / 25%);
+                    }
+                }
+            }
+        }
+
+        button[data-search-context-spec],
+        :global(button.disabled.dropdown-item) {
+            padding: 0 0.75rem;
+            cursor: default;
+
+            > small:not(:first-child),
+            > span {
+                color: var(--jb-inactive-text-color);
+            }
+
+            > span {
+                background: inherit;
+            }
+
+            &:hover {
+                background-color: var(--dropdown-link-hover-bg);
+
+                > small:first-child {
+                    color: var(--dropdown-link-color);
+                }
+
+                > span {
+                    background-color: var(--dropdown-link-hover-bg);
+                }
+            }
+
+            &[data-selected],
+            &:focus {
+                background-color: var(--dropdown-link-active-bg);
+
+                > small,
+                > span {
+                    color: var(--light-text);
+                }
+
+                > span {
+                    background-color: var(--dropdown-link-active-bg);
+                }
+            }
+        }
+
+        input {
+            background-color: var(--jb-input-bg);
+            border-radius: 0;
+
+            &:focus {
+                border-color: var(--jb-focus-border-color);
+                box-shadow: var(--search-box-focus-box-shadow);
+            }
+        }
+    }
+
+    &__separator {
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
+        width: 1px;
+        height: 1.125rem;
+        background-color: var(--border-color-2);
+
+        @media (--xs-breakpoint-down) {
+            display: none;
+        }
+    }
+
+    &__input {
+        // stylelint-disable-next-line declaration-property-unit-allowed-lis
+        margin-top: 1px;
+        @media (--xs-breakpoint-down) {
+            display: inline-block;
+            width: 100%;
+            border: 1px solid var(--input-border-color);
+            border-radius: var(--border-radius);
+            padding: 0.375rem 0.5rem;
+
+            &:focus-within,
+            &:focus {
+                border: 1px solid var(--jb-focus-border-color);
+                box-shadow: var(--search-box-focus-box-shadow);
+            }
+        }
+    }
+
+    &__toggles {
+        padding-right: 0;
+        padding-left: 0.35rem;
+
+        @media (--xs-breakpoint-down) {
+            // Important is kept to give this display a higher priority at this screen size
+            //  since ToggleContainer has an opposing display of flex
+            display: inline-flex !important;
+            margin-top: 0.75rem;
+            padding-left: 0;
+        }
+    }
+
+    &__button {
+        display: flex;
+
+        @media (--xs-breakpoint-down) {
+            display: inline-flex;
+            flex-direction: row-reverse;
+            margin-top: 0.5rem;
+            float: right;
+        }
+    }
+
+    :global(.cm-editor) {
+        :global(.cm-content),
+        :global(.cm-scroller) {
+            font-family: inherit;
+        }
+
+        :global(.cm-line) {
+            ::selection {
+                color: var(--jb-selection-color);
+                background-color: var(--jb-selection-bg);
+            }
+        }
+
+        :global(.cm-tooltip):global(.cm-tooltip-autocomplete) {
+            color: var(--jb-text-color);
+            background-color: var(--dropdown-bg);
+            border: 1px solid var(--jb-border-color);
+            border-radius: 0;
+            box-shadow: 0 0.25rem 0.5rem rgba(64, 64, 64, 0.3);
+
+            &::after {
+                content: 'Press Tab to apply selection';
+                padding: 0.125rem 0.75rem;
+                display: block;
+                background: var(--jb-tooltip-bg);
+                color: var(--jb-inactive-text-color);
+                font-size: var(--code-font-size);
+            }
+
+            :global(.cm-completionInfo) {
+                padding: 0 0.25rem;
+                border: none;
+                border-radius: 0;
+                margin-top: -1px;
+                font-size: var(--code-font-size);
+                line-height: 1.2rem;
+            }
+
+            :global(.cm-completionLabel),
+            :global(.cm-completionMatchedText) {
+                font-weight: normal;
+            }
+
+            :global(.cm-completionMatchedText) {
+                background-color: rgb(255, 222, 122);
+                border: 1px solid rgb(225, 197, 117);
+                color: rgb(50, 50, 50);
+                border-radius: 3px;
+            }
+
+            :global(.cm-completionDetail) {
+                text-align: end;
+                font-style: normal;
+                color: var(--jb-inactive-text-color);
+            }
+
+            > ul {
+                font-family: inherit;
+
+                > li {
+                    align-items: center;
+                    font-size: var(--code-font-size);
+                    padding: 0 0.125rem 0 0.75rem;
+                    border-width: 1px 0;
+
+                    > svg {
+                        padding-right: 0.25rem;
+                    }
+
+                    &:hover {
+                        background-color: var(--dropdown-link-hover-bg);
+                    }
+
+                    &[aria-selected],
+                    &:focus {
+                        background-color: var(--dropdown-link-active-bg) !important;
+                        border-color: var('--jb-focus-border-color');
+
+                        :global(.cm-completionLabel),
+                        :global(.cm-completionDetail) {
+                            color: var(--light-text);
+                        }
+
+                        :global(.completion-hint) {
+                            display: none;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

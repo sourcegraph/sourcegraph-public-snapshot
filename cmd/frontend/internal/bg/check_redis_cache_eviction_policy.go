@@ -14,30 +14,38 @@ import (
 const recommendedPolicy = "allkeys-lru"
 
 func CheckRedisCacheEvictionPolicy() {
-	cacheConn := redispool.Cache.Get()
+	cachePool, ok := redispool.Cache.Pool()
+	if !ok {
+		// Redis is disabled so can skip check
+		return
+	}
+
+	cacheConn := cachePool.Get()
 	defer cacheConn.Close()
 
-	storeConn := redispool.Store.Get()
-	defer storeConn.Close()
+	if storePool, ok := redispool.Store.Pool(); ok {
+		storeConn := storePool.Get()
+		defer storeConn.Close()
 
-	storeRunID, err := getRunID(storeConn)
-	if err != nil {
-		log15.Error("Reading run_id from redis-store failed", "error", err)
-		return
-	}
+		storeRunID, err := getRunID(storeConn)
+		if err != nil {
+			log15.Error("Reading run_id from redis-store failed", "error", err)
+			return
+		}
 
-	cacheRunID, err := getRunID(cacheConn)
-	if err != nil {
-		log15.Error("Reading run_id from redis-cache failed", "error", err)
-		return
-	}
+		cacheRunID, err := getRunID(cacheConn)
+		if err != nil {
+			log15.Error("Reading run_id from redis-cache failed", "error", err)
+			return
+		}
 
-	if cacheRunID == storeRunID {
-		// If users use the same instance for redis-store and redis-cache we
-		// don't want to recommend an LRU policy, because that could interfere
-		// with the functionality of redis-store, which expects to store items
-		// for longer term usage
-		return
+		if cacheRunID == storeRunID {
+			// If users use the same instance for redis-store and redis-cache we
+			// don't want to recommend an LRU policy, because that could interfere
+			// with the functionality of redis-store, which expects to store items
+			// for longer term usage
+			return
+		}
 	}
 
 	vals, err := redis.Strings(cacheConn.Do("CONFIG", "GET", "maxmemory-policy"))

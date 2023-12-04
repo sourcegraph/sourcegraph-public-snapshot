@@ -7,12 +7,6 @@ import (
 )
 
 const yamlTestInput = `
-shared_steps:
-  - root: /
-    image: node:12
-    commands:
-      - yarn install --frozen-lockfile --non-interactive
-
 index_jobs:
   -
     steps:
@@ -24,8 +18,8 @@ index_jobs:
       - --no-animation
   -
     root: web/
-    indexer: lsif-tsc
-    indexer_args: ['-p', '.']
+    indexer: scip-typescript
+    indexer_args: ['index', '--yarn-workspaces']
     outfile: lsif.dump
 `
 
@@ -36,13 +30,6 @@ func TestUnmarshalYAML(t *testing.T) {
 	}
 
 	expected := IndexConfiguration{
-		SharedSteps: []DockerStep{
-			{
-				Root:     "/",
-				Image:    "node:12",
-				Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
-			},
-		},
 		IndexJobs: []IndexJob{
 			{
 				Steps: []DockerStep{
@@ -58,8 +45,8 @@ func TestUnmarshalYAML(t *testing.T) {
 			{
 				Steps:       nil,
 				Root:        "web/",
-				Indexer:     "lsif-tsc",
-				IndexerArgs: []string{"-p", "."},
+				Indexer:     "scip-typescript",
+				IndexerArgs: []string{"index", "--yarn-workspaces"},
 				Outfile:     "lsif.dump",
 			},
 		},

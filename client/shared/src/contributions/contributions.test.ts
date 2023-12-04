@@ -1,5 +1,8 @@
-import { ActionItemAction } from '../actions/ActionItem'
-import { ContributableMenu } from '../api/protocol'
+import { describe, expect, test } from 'vitest'
+
+import { ContributableMenu } from '@sourcegraph/client-api'
+
+import type { ActionItemAction } from '../actions/ActionItem'
 
 import { getContributedActionItems } from './contributions'
 
@@ -14,14 +17,10 @@ describe('getContributedActionItems', () => {
                         { id: 'c', command: 'c', title: 'tc', description: 'dc' },
                     ],
                     menus: {
-                        commandPalette: [
-                            { action: 'a', group: '2' },
-                            { action: 'b', group: '1', alt: 'c' },
-                        ],
-                        'editor/title': [{ action: 'c' }],
+                        'editor/title': [{ action: 'b', alt: 'c' }, { action: 'a' }],
                     },
                 },
-                ContributableMenu.CommandPalette
+                ContributableMenu.EditorTitle
             )
         ).toEqual([
             {

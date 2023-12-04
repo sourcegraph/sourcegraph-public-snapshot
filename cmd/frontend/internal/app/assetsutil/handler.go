@@ -2,25 +2,22 @@
 package assetsutil
 
 import (
-	"log"
 	"net/http"
-	"net/url"
 	"path/filepath"
 	"strings"
 
 	"github.com/shurcooL/httpgzip"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
-// Mount mounts the static asset handler.
-func Mount(mux *http.ServeMux) {
-	const urlPathPrefix = "/.assets"
+// NewAssetHandler creates the static asset handler. The handler should be wrapped into a middleware
+// that enables cross-origin requests to allow the loading of the Phabricator native extension assets.
+func NewAssetHandler(mux *http.ServeMux) http.Handler {
+	fs := httpgzip.FileServer(assets.Provider.Assets(), httpgzip.FileServerOptions{DisableDirListing: true})
 
-	fs := httpgzip.FileServer(assets.Assets, httpgzip.FileServerOptions{DisableDirListing: true})
-	mux.Handle(urlPathPrefix+"/", http.StripPrefix(urlPathPrefix, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Kludge to set proper MIME type. Automatic MIME detection somehow detects text/xml under
 		// circumstances that couldn't be reproduced
 		if filepath.Ext(r.URL.Path) == ".svg" {
@@ -47,7 +44,7 @@ func Mount(mux *http.ServeMux) {
 		//
 		// Assets is backed by in-memory byte arrays, so this is a
 		// cheap operation.
-		f, err := assets.Assets.Open(r.URL.Path)
+		f, err := assets.Provider.Assets().Open(r.URL.Path)
 		if f != nil {
 			defer f.Close()
 		}
@@ -55,22 +52,12 @@ func Mount(mux *http.ServeMux) {
 			if isPhabricatorAsset(r.URL.Path) {
 				w.Header().Set("Cache-Control", "max-age=300, public")
 			} else {
-				w.Header().Set("Cache-Control", "immutable, max-age=172800, public")
+				w.Header().Set("Cache-Control", "immutable, max-age=31536000, public")
 			}
 		}
 
 		fs.ServeHTTP(w, r)
-	})))
-}
-
-var assetsRoot = env.Get("ASSETS_ROOT", "/.assets", "URL to web assets")
-
-func init() {
-	var err error
-	baseURL, err = url.Parse(assetsRoot)
-	if err != nil {
-		log.Fatalln("Parsing ASSETS_ROOT failed:", err)
-	}
+	})
 }
 
 func isPhabricatorAsset(path string) bool {

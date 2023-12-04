@@ -1,7 +1,15 @@
-import { BlobInfo, DiffInfo } from '../shared/codeHost'
+import { commitIDFromPermalink } from '../../util/dom'
+import type { BlobInfo, DiffInfo } from '../shared/codeHost'
 
-import { getCommitIDFromPermalink } from './scrape'
-import { getDiffFileName, getDiffResolvedRevision, getFilePath, parseURL } from './util'
+import {
+    getDiffFileName,
+    getDiffResolvedRevision,
+    getEmbeddedData,
+    getFilePath,
+    getFilePathFromURL,
+    isNewGitHubUI,
+    parseURL,
+} from './util'
 
 export const resolveDiffFileInfo = (codeView: HTMLElement): DiffInfo => {
     const { rawRepoName } = parseURL()
@@ -32,14 +40,30 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): DiffInfo => {
 }
 
 /**
- * Resolve file info entirely from the parsed URL, not relying on the DOM.
+ * Resolve file info by parsing URL and DOM.
  */
 export const resolveFileInfo = (): BlobInfo => {
     const parsedURL = parseURL()
     if (parsedURL.pageType !== 'blob' && parsedURL.pageType !== 'tree') {
         throw new Error(`Current URL does not match a blob or tree url: ${window.location.href}`)
     }
+
     const { revisionAndFilePath, rawRepoName } = parsedURL
+
+    if (isNewGitHubUI()) {
+        const {
+            refInfo: { name: revision, currentOid: commitID },
+        } = getEmbeddedData()
+
+        return {
+            blob: {
+                rawRepoName,
+                filePath: getFilePathFromURL(revision),
+                revision,
+                commitID,
+            },
+        }
+    }
 
     const filePath = getFilePath()
 
@@ -55,12 +79,16 @@ export const resolveFileInfo = (): BlobInfo => {
             `The file path ${filePathWithLeadingSlash} should always be a suffix of revAndFilePath ${revisionAndFilePath}, but isn't in this case.`
         )
     }
+
     return {
         blob: {
             rawRepoName,
             filePath,
             revision,
-            commitID: getCommitIDFromPermalink(),
+            commitID: commitIDFromPermalink({
+                selector: '.js-permalink-shortcut',
+                hrefRegex: /^\/.*?\/.*?\/(?:blob|tree)\/([\da-f]{40})/,
+            }),
         },
     }
 }

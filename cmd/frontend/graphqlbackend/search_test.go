@@ -9,35 +9,41 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/zoekt"
-	"github.com/google/zoekt/web"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegraph/zoekt/web"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearch(t *testing.T) {
 	type Results struct {
-		Results     []interface{}
-		ResultCount int
+		Results    []any
+		MatchCount int
 	}
 	tcs := []struct {
 		name                         string
 		searchQuery                  string
 		searchVersion                string
 		reposListMock                func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error)
-		repoRevsMock                 func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error)
+		repoRevsMock                 func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error)
 		externalServicesListMock     func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 		phabricatorGetRepoByNameMock func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error)
 		wantResults                  Results
@@ -48,7 +54,7 @@ func TestSearch(t *testing.T) {
 			reposListMock: func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error) {
 				return nil, nil
 			},
-			repoRevsMock: func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+			repoRevsMock: func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 				return "", nil
 			},
 			externalServicesListMock: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
@@ -58,8 +64,8 @@ func TestSearch(t *testing.T) {
 				return nil, nil
 			},
 			wantResults: Results{
-				Results:     nil,
-				ResultCount: 0,
+				Results:    nil,
+				MatchCount: 0,
 			},
 			searchVersion: "V1",
 		},
@@ -71,7 +77,7 @@ func TestSearch(t *testing.T) {
 
 					nil
 			},
-			repoRevsMock: func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+			repoRevsMock: func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 				return "", nil
 			},
 			externalServicesListMock: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
@@ -81,8 +87,8 @@ func TestSearch(t *testing.T) {
 				return nil, nil
 			},
 			wantResults: Results{
-				Results:     nil,
-				ResultCount: 0,
+				Results:    nil,
+				MatchCount: 0,
 			},
 			searchVersion: "V1",
 		},
@@ -91,43 +97,47 @@ func TestSearch(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			conf.Mock(&conf.Unified{})
 			defer conf.Mock(nil)
-			vars := map[string]interface{}{"query": tc.searchQuery, "version": tc.searchVersion}
+			vars := map[string]any{"query": tc.searchQuery, "version": tc.searchVersion}
 
-			mockDecodedViewerFinalSettings = &schema.Settings{}
-			defer func() { mockDecodedViewerFinalSettings = nil }()
+			settings.MockCurrentUserFinal = &schema.Settings{}
+			defer func() { settings.MockCurrentUserFinal = nil }()
 
-			repos := database.NewMockRepoStore()
+			repos := dbmocks.NewMockRepoStore()
 			repos.ListFunc.SetDefaultHook(tc.reposListMock)
 
-			ext := database.NewMockExternalServiceStore()
+			ext := dbmocks.NewMockExternalServiceStore()
 			ext.ListFunc.SetDefaultHook(tc.externalServicesListMock)
 
-			phabricator := database.NewMockPhabricatorStore()
+			phabricator := dbmocks.NewMockPhabricatorStore()
 			phabricator.GetByNameFunc.SetDefaultHook(tc.phabricatorGetRepoByNameMock)
 
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.ExternalServicesFunc.SetDefaultReturn(ext)
 			db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-			sr := &schemaResolver{db: db}
-			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{}))
+			gsClient := gitserver.NewMockClient()
+			gsClient.ResolveRevisionFunc.SetDefaultHook(tc.repoRevsMock)
+
+			sr := newSchemaResolver(db, gsClient)
+			gqlSchema, err := graphql.ParseSchema(mainSchema, sr,
+				graphql.Tracer(newRequestTracer(logtest.Scoped(t), db)),
+				graphql.MaxDepth(conf.RateLimits().GraphQLMaxDepth))
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			git.Mocks.ResolveRevision = tc.repoRevsMock
-			result := schema.Exec(context.Background(), testSearchGQLQuery, "", vars)
-			if len(result.Errors) > 0 {
-				t.Fatalf("graphQL query returned errors: %+v", result.Errors)
+			response := gqlSchema.Exec(context.Background(), testSearchGQLQuery, "", vars)
+			if len(response.Errors) > 0 {
+				t.Fatalf("graphQL query returned errors: %+v", response.Errors)
 			}
-			var search struct {
+			var searchStruct struct {
 				Results Results
 			}
-			if err := json.Unmarshal(result.Data, &search); err != nil {
+			if err := json.Unmarshal(response.Data, &searchStruct); err != nil {
 				t.Fatalf("parsing JSON response: %v", err)
 			}
-			gotResults := search.Results
+			gotResults := searchStruct.Results
 			if !reflect.DeepEqual(gotResults, tc.wantResults) {
 				t.Fatalf("results = %+v, want %+v", gotResults, tc.wantResults)
 			}
@@ -245,50 +255,12 @@ var testSearchGQLQuery = `
 					timedout {
 						name
 					}
-					resultCount
+					matchCount
 					elapsedMilliseconds
 				}
 			}
 		}
 `
-
-func TestDetectSearchType(t *testing.T) {
-	typeRegexp := "regexp"
-	typeLiteral := "literal"
-	testCases := []struct {
-		name        string
-		version     string
-		patternType *string
-		input       string
-		want        query.SearchType
-	}{
-		{"V1, no pattern type", "V1", nil, "", query.SearchTypeRegex},
-		{"V2, no pattern type", "V2", nil, "", query.SearchTypeLiteral},
-		{"V2, no pattern type, input does not produce parse error", "V2", nil, "/-/godoc", query.SearchTypeLiteral},
-		{"V1, regexp pattern type", "V1", &typeRegexp, "", query.SearchTypeRegex},
-		{"V2, regexp pattern type", "V2", &typeRegexp, "", query.SearchTypeRegex},
-		{"V1, literal pattern type", "V1", &typeLiteral, "", query.SearchTypeLiteral},
-		{"V2, override regexp pattern type", "V2", &typeLiteral, "patterntype:regexp", query.SearchTypeRegex},
-		{"V2, override regex variant pattern type", "V2", &typeLiteral, "patterntype:regex", query.SearchTypeRegex},
-		{"V2, override regex variant pattern type with double quotes", "V2", &typeLiteral, `patterntype:"regex"`, query.SearchTypeRegex},
-		{"V2, override regex variant pattern type with single quotes", "V2", &typeLiteral, `patterntype:'regex'`, query.SearchTypeRegex},
-		{"V1, override literal pattern type", "V1", &typeRegexp, "patterntype:literal", query.SearchTypeLiteral},
-		{"V1, override literal pattern type, with case-insensitive query", "V1", &typeRegexp, "pAtTErNTypE:literal", query.SearchTypeLiteral},
-	}
-
-	for _, test := range testCases {
-		t.Run(test.name, func(*testing.T) {
-			got, err := detectSearchType(test.version, test.patternType)
-			got = overrideSearchType(test.input, got)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got != test.want {
-				t.Errorf("failed %v, got %v, expected %v", test.name, got, test.want)
-			}
-		})
-	}
-}
 
 func TestExactlyOneRepo(t *testing.T) {
 	cases := []struct {
@@ -323,24 +295,39 @@ func TestExactlyOneRepo(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("exactly one repo", func(t *testing.T) {
-			if got := searchrepos.ExactlyOneRepo(c.repoFilters); got != c.want {
+			parsedFilters := make([]query.ParsedRepoFilter, len(c.repoFilters))
+			for i, repoFilter := range c.repoFilters {
+				parsedFilter, err := query.ParseRepositoryRevisions(repoFilter)
+				if err != nil {
+					t.Fatalf("unexpected error parsing repo filter %s", repoFilter)
+				}
+				parsedFilters[i] = parsedFilter
+			}
+
+			if got := searchrepos.ExactlyOneRepo(parsedFilters); got != c.want {
 				t.Errorf("got %t, want %t", got, c.want)
 			}
 		})
 	}
 }
 
-func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int32) *result.FileMatch {
-	var lines []*result.LineMatch
+func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int) *result.FileMatch {
+	var hms result.ChunkMatches
 	for _, n := range lineNumbers {
-		lines = append(lines, &result.LineMatch{LineNumber: n})
+		hms = append(hms, result.ChunkMatch{
+			Ranges: []result.Range{{
+				Start: result.Location{Line: n},
+				End:   result.Location{Line: n},
+			}},
+		})
 	}
+
 	return &result.FileMatch{
 		File: result.File{
 			Path: path,
 			Repo: repo,
 		},
-		LineMatches: lines,
+		ChunkMatches: hms,
 	}
 }
 
@@ -348,15 +335,15 @@ func BenchmarkSearchResults(b *testing.B) {
 	minimalRepos, zoektRepos := generateRepos(500_000)
 	zoektFileMatches := generateZoektMatches(1000)
 
-	z := zoektRPC(b, &searchbackend.FakeSearcher{
-		Repos:  zoektRepos,
-		Result: &zoekt.SearchResult{Files: zoektFileMatches},
+	z := zoektRPC(b, &searchbackend.FakeStreamer{
+		Repos:   zoektRepos,
+		Results: []*zoekt.SearchResult{{Files: zoektFileMatches}},
 	})
 
 	ctx := context.Background()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultReturn(minimalRepos, nil)
 	repos.CountFunc.SetDefaultReturn(len(minimalRepos), nil)
 	db.ReposFunc.SetDefaultReturn(repos)
@@ -370,13 +357,18 @@ func BenchmarkSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
+			client: client.Mocked(job.RuntimeClients{
+				Logger: logtest.Scoped(b),
+				DB:     db,
+				Zoekt:  z,
+			}),
 			db: db,
-			SearchInputs: &run.SearchInputs{
+			SearchInputs: &search.Inputs{
 				Plan:         plan,
-				Query:        plan.ToParseTree(),
+				Query:        plan.ToQ(),
+				Features:     &search.Features{},
 				UserSettings: &schema.Settings{},
 			},
-			zoekt: z,
 		}
 		results, err := resolver.Results(ctx)
 		if err != nil {
@@ -425,12 +417,8 @@ func generateZoektMatches(count int) []zoekt.FileMatch {
 			RepositoryID: uint32(i),
 			Repository:   repoName, // Important: this needs to match a name in `repos`
 			Branches:     []string{"master"},
-			LineMatches: []zoekt.LineMatch{
-				{
-					Line: nil,
-				},
-			},
-			Checksum: []byte{0, 1, 2},
+			ChunkMatches: make([]zoekt.ChunkMatch, 1),
+			Checksum:     []byte{0, 1, 2},
 		})
 	}
 	return zoektFileMatches

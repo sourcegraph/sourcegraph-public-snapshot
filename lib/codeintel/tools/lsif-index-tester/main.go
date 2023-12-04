@@ -14,7 +14,8 @@ import (
 	"sync"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/validation"
@@ -66,39 +67,41 @@ var debug bool
 // TODO: Do more monitoring of the process.
 // var monitor bool
 
-func logFatal(msg string, args ...interface{}) {
-	log15.Error(msg, args...)
-	os.Exit(1)
-}
-
 func main() {
 	flag.StringVar(&directory, "dir", ".", "The directory to run the test harness over")
 	flag.StringVar(&raw_indexer, "indexer", "", "The name of the indexer that you want to test")
 	flag.BoolVar(&debug, "debug", false, "Enable debugging")
-
 	flag.Parse()
 
+	// Initialize log format and level
 	if debug {
-		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlDebug, log15.StdoutHandler))
-	} else {
-		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.StdoutHandler))
+		os.Setenv("SRC_LOG_LEVEL", "debug")
 	}
+	if _, set := os.LookupEnv("SRC_LOG_FORMAT"); !set {
+		// Unless a custom log format is set, initialize to dev-friendly output
+		os.Setenv("SRC_LOG_FORMAT", "console")
+		os.Setenv("SRC_DEVELOPMENT", "true")
+	}
+	liblog := log.Init(log.Resource{Name: "lsif-index-tester"})
+	defer liblog.Sync()
+
+	logger := log.Scoped(raw_indexer).With(log.String("directory", directory))
 
 	if raw_indexer == "" {
-		logFatal("Indexer is required. Pass with --indexer")
+		logger.Fatal("Indexer is required. Pass with --indexer")
 	}
 
-	log15.Info("Starting Execution: ", "directory", directory, "indexer", raw_indexer)
+	logger.Info("Starting execution")
 
 	indexer := strings.Split(raw_indexer, " ")
-	if err := testDirectory(context.Background(), indexer, directory); err != nil {
-		logFatal("Failed with", "err", err)
+	if err := testDirectory(context.Background(), logger, indexer, directory); err != nil {
+		logger.Fatal("Tests failed", log.Error(err))
 		return
 	}
-	log15.Info("Tests passed:", "directory", directory, "indexer", raw_indexer)
+	logger.Info("Tests passed")
 }
 
-func testDirectory(ctx context.Context, indexer []string, directory string) error {
+func testDirectory(ctx context.Context, logger log.Logger, indexer []string, directory string) error {
 	files, err := os.ReadDir(directory)
 	if err != nil {
 		return err
@@ -119,7 +122,7 @@ func testDirectory(ctx context.Context, indexer []string, directory string) erro
 		go func(name string) {
 			defer wg.Done()
 
-			projResult, err := testProject(ctx, indexer, path.Join(directory, name), name)
+			projResult, err := testProject(ctx, logger, indexer, path.Join(directory, name), name)
 			resultChan <- channelResult{
 				name:   name,
 				result: projResult,
@@ -138,7 +141,7 @@ func testDirectory(ctx context.Context, indexer []string, directory string) erro
 		if res.err != nil {
 			successful = false
 
-			log15.Warn("Failed to run test.", "name", res.name)
+			logger.Warn("Failed to run test", log.String("name", res.name))
 			fmt.Println(res.err)
 			continue
 		}
@@ -167,14 +170,14 @@ func testDirectory(ctx context.Context, indexer []string, directory string) erro
 	return nil
 }
 
-func testProject(ctx context.Context, indexer []string, project, name string) (projectResult, error) {
+func testProject(ctx context.Context, logger log.Logger, indexer []string, project, name string) (projectResult, error) {
 	output, err := setupProject(project)
 	if err != nil {
 		return projectResult{name: name, output: string(output)}, err
 	}
 
-	log15.Debug("... Completed setup project", "command", indexer)
-	result, err := runIndexer(ctx, indexer, project, name)
+	logger.Debug("... Completed setup project")
+	result, err := runIndexer(ctx, logger.Scoped("run"), indexer, project, name)
 	if err != nil {
 		return projectResult{
 			name:   name,
@@ -182,21 +185,22 @@ func testProject(ctx context.Context, indexer []string, project, name string) (p
 		}, err
 	}
 
-	log15.Debug("... \t Resource Usage:", "usage", result.usage)
+	usageData, _ := json.Marshal(result.usage)
+	logger.Debug("... \t Resource usage", log.String("usage", string(usageData)))
 
 	bundleResult, err := validateDump(project)
 	if err != nil {
 		return projectResult{}, err
 	}
-	log15.Debug("... Validated dump.lsif")
+	logger.Debug("... Validated dump.lsif")
 
 	bundle, err := readBundle(project)
 	if err != nil {
 		return projectResult{name: name}, err
 	}
-	log15.Debug("... Read bundle")
+	logger.Debug("... Read bundle")
 
-	testResult, err := validateTestCases(project, bundle)
+	testResult, err := validateTestCases(logger.Scoped("validate"), project, bundle)
 	if err != nil {
 		return projectResult{name: name}, err
 	}
@@ -217,12 +221,12 @@ func setupProject(directory string) ([]byte, error) {
 	return cmd.CombinedOutput()
 }
 
-func runIndexer(ctx context.Context, indexer []string, directory, name string) (projectResult, error) {
+func runIndexer(ctx context.Context, logger log.Logger, indexer []string, directory, name string) (projectResult, error) {
 	command := indexer[0]
 	args := indexer[1:]
 
-	log15.Debug("... Generating dump.lsif")
-	cmd := exec.Command(command, args...)
+	logger.Debug("... Generating dump.lsif")
+	cmd := exec.CommandContext(ctx, command, args...)
 	cmd.Dir = directory
 
 	output, err := cmd.CombinedOutput()
@@ -257,23 +261,23 @@ func validateDump(directory string) (bundleResult, error) {
 	}
 
 	if len(ctx.Errors) > 0 {
-		errors := make([]string, len(ctx.Errors)+1)
-		errors[0] = fmt.Sprintf("Detected %d errors", len(ctx.Errors))
+		errs := make([]string, len(ctx.Errors)+1)
+		errs[0] = fmt.Sprintf("Detected %d errors", len(ctx.Errors))
 		for i, err := range ctx.Errors {
-			errors[i+1] = fmt.Sprintf("%d. %s", i, err)
+			errs[i+1] = fmt.Sprintf("%d. %s", i, err)
 		}
 
-		return bundleResult{Valid: false, Errors: errors}, nil
+		return bundleResult{Valid: false, Errors: errs}, nil
 	}
 
 	return bundleResult{Valid: true}, nil
 }
 
-func validateTestCases(projectRoot string, bundle *precise.GroupedBundleDataMaps) (testSuiteResult, error) {
+func validateTestCases(logger log.Logger, projectRoot string, bundle *precise.GroupedBundleDataMaps) (testSuiteResult, error) {
 	testFiles, err := os.ReadDir(filepath.Join(projectRoot, "lsif_tests"))
 	if err != nil {
 		if os.IsNotExist(err) {
-			log15.Warn("No lsif test directory exists here", "directory", projectRoot)
+			logger.Warn("No lsif test directory exists here", log.String("directory", projectRoot))
 			return testSuiteResult{}, nil
 		}
 
@@ -287,9 +291,9 @@ func validateTestCases(projectRoot string, bundle *precise.GroupedBundleDataMaps
 		}
 
 		testFileName := filepath.Join(projectRoot, "lsif_tests", file.Name())
-		fileResult, err := runOneTestFile(projectRoot, testFileName, bundle)
+		fileResult, err := runOneTestFile(logger, projectRoot, testFileName, bundle)
 		if err != nil {
-			logFatal("Had an error while we do the test file", "file", testFileName, "err", err)
+			logger.Fatal("Had an error while we do the test file", log.String("file", testFileName), log.Error(err))
 		}
 
 		fileResults = append(fileResults, fileResult)
@@ -298,7 +302,7 @@ func validateTestCases(projectRoot string, bundle *precise.GroupedBundleDataMaps
 	return testSuiteResult{FileResults: fileResults}, nil
 }
 
-func runOneTestFile(projectRoot, file string, bundle *precise.GroupedBundleDataMaps) (testFileResult, error) {
+func runOneTestFile(logger log.Logger, projectRoot, file string, bundle *precise.GroupedBundleDataMaps) (testFileResult, error) {
 	doc, err := os.ReadFile(file)
 	if err != nil {
 		return testFileResult{}, errors.Wrap(err, "Failed to read file")
@@ -312,7 +316,7 @@ func runOneTestFile(projectRoot, file string, bundle *precise.GroupedBundleDataM
 	fileResult := testFileResult{Name: file}
 
 	for _, definitionTest := range testCase.Definitions {
-		if err := runOneDefinitionRequest(projectRoot, bundle, definitionTest, &fileResult); err != nil {
+		if err := runOneDefinitionRequest(logger, projectRoot, bundle, definitionTest, &fileResult); err != nil {
 			return fileResult, err
 		}
 	}
@@ -473,14 +477,14 @@ func runOneReferencesRequest(projectRoot string, bundle *precise.GroupedBundleDa
 	return nil
 }
 
-func runOneDefinitionRequest(projectRoot string, bundle *precise.GroupedBundleDataMaps, testCase DefinitionTest, fileResult *testFileResult) error {
+func runOneDefinitionRequest(logger log.Logger, projectRoot string, bundle *precise.GroupedBundleDataMaps, testCase DefinitionTest, fileResult *testFileResult) error {
 	request := testCase.Request
 
-	path := request.TextDocument
+	docPath := request.TextDocument
 	line := request.Position.Line
 	character := request.Position.Character
 
-	results, err := precise.Query(bundle, path, line, character)
+	results, err := precise.Query(bundle, docPath, line, character)
 	if err != nil {
 		return err
 	}
@@ -502,11 +506,13 @@ func runOneDefinitionRequest(projectRoot string, bundle *precise.GroupedBundleDa
 	}
 
 	definitions := results[0].Definitions
+	definitionsData, _ := json.Marshal(definitions)
+	definitionsField := log.String("definitions", string(definitionsData))
 
 	if len(definitions) > 1 {
-		logFatal("Had too many definitions", "definitions", definitions)
+		logger.Fatal("Had too many definitions", definitionsField)
 	} else if len(definitions) == 0 {
-		logFatal("Found no definitions", "definitions", definitions)
+		logger.Fatal("Found no definitions", definitionsField)
 	}
 
 	response := transformLocationToResponse(definitions[0])

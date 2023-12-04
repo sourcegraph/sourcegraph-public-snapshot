@@ -1,5 +1,5 @@
-import { isArray } from 'lodash'
 import { useMemo } from 'react'
+
 import { Observable } from 'rxjs'
 import { catchError, debounceTime, map } from 'rxjs/operators'
 
@@ -74,12 +74,14 @@ export function useBreakpoint(size: keyof typeof breakpoints, debounceMs = 50): 
                     debounceTime(debounceMs),
                     map(entry => {
                         const borderBoxSize = normalizeResizeObserverSize(entry?.borderBoxSize)
+                        // contentRect used as fallback for versions of safari that does not support borderBoxSize
+                        const width = borderBoxSize?.inlineSize ?? entry?.contentRect.width
 
-                        if (!borderBoxSize) {
+                        if (!width) {
                             return false
                         }
 
-                        return borderBoxSize.inlineSize >= breakpoint
+                        return width >= breakpoint
                     }),
                     // TODO: debug log.
                     // On error, be conservative and report that the screen is smaller than the breakpoint
@@ -96,4 +98,16 @@ export function useBreakpoint(size: keyof typeof breakpoints, debounceMs = 50): 
  */
 const normalizeResizeObserverSize = (
     resizeObserverSize: undefined | readonly ResizeObserverSize[] | ResizeObserverSize
-): ResizeObserverSize | undefined => (!isArray(resizeObserverSize) ? resizeObserverSize : resizeObserverSize[0])
+): ResizeObserverSize | undefined => (!Array.isArray(resizeObserverSize) ? resizeObserverSize : resizeObserverSize[0])
+
+export function createElement<K extends keyof HTMLElementTagNameMap>(
+    tagName: K,
+    properties: Partial<HTMLElementTagNameMap[K]> | null = null,
+    ...children: (Node | string)[]
+): HTMLElementTagNameMap[K] {
+    const element = Object.assign(document.createElement(tagName), properties)
+    for (const child of children) {
+        element.append(typeof child === 'string' ? document.createTextNode(child) : child)
+    }
+    return element
+}

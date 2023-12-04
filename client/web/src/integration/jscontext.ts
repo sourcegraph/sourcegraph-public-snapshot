@@ -1,4 +1,6 @@
-import { SourcegraphContext } from '../jscontext'
+import { currentUserMock } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
+
+import type { SourcegraphContext } from '../jscontext'
 
 export const siteID = 'TestSiteID'
 export const siteGQLID = 'TestGQLSiteID'
@@ -13,17 +15,23 @@ export const builtinAuthProvider = {
 }
 
 export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: string }): SourcegraphContext => ({
+    currentUser: currentUserMock,
+    temporarySettings: null,
     externalURL: sourcegraphBaseUrl,
     accessTokensAllow: 'all-users-create',
     allowSignup: false,
     batchChangesEnabled: true,
     batchChangesDisableWebhooksWarning: false,
     batchChangesWebhookLogsEnabled: true,
+    codeInsightsEnabled: true,
     executorsEnabled: true,
+    codyEnabled: true,
+    codyEnabledForCurrentUser: true,
+    codyRequiresVerifiedEmail: false,
+    extsvcConfigAllowEdits: false,
+    extsvcConfigFileExists: false,
     codeIntelAutoIndexingEnabled: true,
     codeIntelAutoIndexingAllowGlobalPolicies: true,
-    codeInsightsGqlApiEnabled: false,
-    externalServicesUserMode: 'disabled',
     productResearchPageEnabled: true,
     assetsRoot: new URL('/.assets', sourcegraphBaseUrl).href,
     deployType: 'dev',
@@ -31,19 +39,30 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     emailEnabled: false,
     experimentalFeatures: {},
     isAuthenticatedUser: true,
-    likelyDockerOnMac: false,
+    licenseInfo: {
+        currentPlan: 'team-0',
+        batchChanges: {
+            maxNumChangesets: -1,
+            unrestricted: true,
+        },
+    },
     needServerRestart: false,
     needsSiteInit: false,
+    needsRepositoryConfiguration: false,
     resetPasswordEnabled: false,
     sentryDSN: null,
     site: {},
     siteID,
     siteGQLID,
     sourcegraphDotComMode: false,
-    githubAppCloudSlug: 'test-app',
-    githubAppCloudClientID: 'client-id',
+    codyAppMode: false,
     userAgentIsBot: false,
     version: '0.0.0',
     xhrHeaders: {},
     authProviders: [builtinAuthProvider],
+    authMinPasswordLength: 12,
+    embeddingsEnabled: false,
+    runningOnMacOS: true,
+    srcServeGitUrl: 'http://127.0.0.1:3434',
+    primaryLoginProvidersCount: 5,
 })

@@ -1,31 +1,33 @@
-import * as H from 'history'
-import * as React from 'react'
+import { forwardRef } from 'react'
 
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import classNames from 'classnames'
+import { useLocation } from 'react-router-dom'
+
+import { Markdown } from '@sourcegraph/wildcard'
 
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 
 import styles from './RenderedFile.module.scss'
 
 interface Props {
-    /**
-     * The rendered HTML contents of the file.
-     */
     dangerousInnerHTML: string
-
-    location: H.Location
+    className?: string
 }
 
 /**
  * Displays a file whose contents are rendered to HTML, such as a Markdown file.
  */
-export const RenderedFile: React.FunctionComponent<Props> = ({ dangerousInnerHTML, location }) => {
+export const RenderedFile = forwardRef<HTMLDivElement, Props>(function RenderedFile(props, reference) {
+    const { dangerousInnerHTML, className } = props
+
+    const location = useLocation()
     useScrollToLocationHash(location)
+
     return (
-        <div className={styles.renderedFile}>
+        <div ref={reference} className={classNames(styles.renderedFile, className)}>
             <div className={styles.container}>
                 <Markdown dangerousInnerHTML={dangerousInnerHTML} />
             </div>
         </div>
     )
-}
+})

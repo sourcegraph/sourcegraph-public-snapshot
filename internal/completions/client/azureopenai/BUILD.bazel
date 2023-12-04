@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "azureopenai",
+    srcs = ["openai.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client/azureopenai",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/completions/types",
+        "//lib/errors",
+        "@com_github_azure_azure_sdk_for_go_sdk_ai_azopenai//:azopenai",
+        "@com_github_azure_azure_sdk_for_go_sdk_azcore//:azcore",
+        "@com_github_azure_azure_sdk_for_go_sdk_azidentity//:azidentity",
+    ],
+)
+
+go_test(
+    name = "azureopenai_test",
+    srcs = ["openai_test.go"],
+    embed = [":azureopenai"],
+    deps = [
+        "//internal/completions/types",
+        "//lib/errors",
+        "@com_github_azure_azure_sdk_for_go_sdk_ai_azopenai//:azopenai",
+        "@com_github_azure_azure_sdk_for_go_sdk_azcore//:azcore",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

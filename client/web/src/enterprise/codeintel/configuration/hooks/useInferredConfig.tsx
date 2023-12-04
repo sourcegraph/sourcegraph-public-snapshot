@@ -1,26 +1,15 @@
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 
-import { gql, useQuery } from '@sourcegraph/http-client'
+import { useQuery } from '@sourcegraph/http-client'
 
-import { InferredIndexConfigurationResult } from '../../../../graphql-operations'
-
-export const INFERRED_CONFIGURATION = gql`
-    query InferredIndexConfiguration($id: ID!) {
-        node(id: $id) {
-            ...RepositoryInferredIndexConfigurationFields
-        }
-    }
-
-    fragment RepositoryInferredIndexConfigurationFields on Repository {
-        __typename
-        indexConfiguration {
-            inferredConfiguration
-        }
-    }
-`
+import type { InferredIndexConfigurationResult, AutoIndexJobDescriptionFields } from '../../../../graphql-operations'
+import { INFERRED_CONFIGURATION } from '../backend'
 
 interface UseInferredConfigResult {
-    inferredConfiguration: string
+    inferredConfiguration: {
+        raw: string
+        parsed: AutoIndexJobDescriptionFields[]
+    }
     loadingInferred: boolean
     inferredError: ApolloError | undefined
 }
@@ -31,7 +20,12 @@ export const useInferredConfig = (id: string): UseInferredConfigResult => {
     })
 
     const inferredConfiguration =
-        (data?.node?.__typename === 'Repository' && data.node.indexConfiguration?.inferredConfiguration) || ''
+        data?.node?.__typename === 'Repository' && data.node.indexConfiguration?.inferredConfiguration
+            ? {
+                  raw: data.node.indexConfiguration.inferredConfiguration.configuration,
+                  parsed: data.node.indexConfiguration.inferredConfiguration.parsedConfiguration ?? [],
+              }
+            : { raw: '', parsed: [] }
 
     return {
         inferredConfiguration,

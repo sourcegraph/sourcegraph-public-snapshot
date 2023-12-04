@@ -1,0 +1,130 @@
+.alert-overlay {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    :global(.theme-dark) & {
+        background: linear-gradient(180deg, rgba(25, 27, 37, 0.6) 0%, #191b25 51.56%, rgba(25, 27, 37, 0.6) 100%);
+    }
+
+    :global(.theme-light) & {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, #ffffff 51.04%, rgba(255, 255, 255, 0.8) 100%);
+    }
+
+    &--icon {
+        color: var(--gray-06);
+        margin-bottom: 0.25rem;
+    }
+
+    &--title {
+        color: var(--body-color);
+    }
+
+    &--description {
+        color: var(--text-muted);
+        text-align: center;
+    }
+}
+
+.alert {
+    &--icon {
+        display: flex;
+        align-self: center;
+        padding: 0 0.25rem;
+    }
+
+    &--popover {
+        display: flex;
+        // Point list is a scrollable so disable scroll on popover level
+        overflow: hidden;
+        padding: 0.75rem;
+        max-width: 310px;
+
+        &-small {
+            max-width: 240px;
+        }
+    }
+
+    &--popover-focus-container {
+        display: flex;
+        flex-direction: column;
+        // Point list is a scrollable so disable scroll on popover level
+        overflow: hidden;
+    }
+
+    &--description {
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    &--points-list-scroll {
+        max-height: 400px;
+    }
+
+    &--point-section-title {
+        margin-bottom: 0.5rem;
+        color: var(--text-muted);
+    }
+
+    &--points-list {
+        display: flex;
+        flex-direction: column;
+        row-gap: 0.5rem;
+        list-style: none;
+        padding: 0;
+        padding-bottom: 0.5rem;
+        margin-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+
+        &:last-of-type {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+    }
+
+    &--point {
+        display: flex;
+        align-items: flex-start;
+    }
+
+    &--point-dot-container {
+        display: flex;
+        align-items: center;
+
+        &::before {
+            // Render an invisible "a" symbol in order to improve non-symbol UI element (dot icon)
+            // alignment with (point description) text UI
+            content: 'a';
+            width: 0;
+            visibility: hidden;
+        }
+    }
+
+    &--point-dot {
+        width: 0.5rem;
+        height: 0.5rem;
+        flex-shrink: 0;
+        border-radius: 50%;
+        margin-right: 0.25rem;
+        line-height: 1.6;
+        position: relative;
+        display: flex;
+
+        &::before {
+            content: '';
+            width: 0.25rem;
+            height: 0.25rem;
+            background-color: var(--body-bg);
+            margin: auto;
+            border-radius: 50%;
+        }
+    }
+
+    &--point-description {
+        display: flex;
+        flex-direction: column;
+    }
+}

@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "tokenizer",
+    srcs = [
+        "claude.go",
+        "tokenizer.go",
+    ],
+    embedsrcs = ["claude.json"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = ["@com_github_pkoukk_tiktoken_go//:tiktoken-go"],
+)
+
+go_test(
+    name = "tokenizer_test",
+    srcs = ["tokenizer_test.go"],
+    deps = [
+        ":tokenizer",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//require",
+    ],
+)

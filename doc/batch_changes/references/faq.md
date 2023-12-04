@@ -28,13 +28,14 @@ Note: If you run memory-intensive jobs, you might need to reduce the number of p
 ### My batch change does not open changesets on all the repositories it should. Why?
 - Do you have enough permissions? Batch Changes will error on the repositories you don’t have access to. See [Repository permissions for Batch Changes](../explanations/permissions_in_batch_changes.md).
 - Does your `repositoriesMatchingQuery` contain all the necessary flags? If you copied the query from the sourcegraph UI, note that some flags are represented as buttons (case sensitivity, regex, structural search), and do not appear in the query unless you use the copy query button.
+- Are the files you are trying to change in your repository's `.gitignore`? Batch Changes respects .gitignore files when creating the diff.
 
 ### Can I create tickets or issues along with Batch Changes?
 Batch Changes does not support a declarative syntax for issues or tickets.
 However, [steps](../references/batch_spec_yaml_reference.md#steps-run) can be used to run any container. Some users have built scripts to create tickets at each apply:
 
-- [Jira tickets](https://github.com/sourcegraph/batch-change-examples/tree/main/jira-tickets)
-- [GitHub issues](https://github.com/sourcegraph/batch-change-examples/tree/main/github-issues)
+- [Jira tickets](https://github.com/sourcegraph/batch-change-examples/blob/main/ticketing-systems/jira-tickets/README.md)
+- [GitHub issues](https://github.com/sourcegraph/batch-change-examples/blob/main/ticketing-systems/github-issues/README.md)
 
 ### What happens to the preview page if the batch spec is not applied?
 Unapplied batch specs are removed from the database after 7 days.
@@ -57,6 +58,28 @@ Common language agnostic starting points:
 
 - `sed`, [`yq`](https://github.com/mikefarah/yq), `awk` are common utilities for changing text
 - [comby](https://comby.dev/docs/overview) is a language-aware structural code search and replace tool. It can match expressions and function blocks, and is great for more complex changes.
+
+### Why can't I run steps with different container user IDs in the same batch change?
+
+This is an artifact of [how Batch Changes executes batch specs](../explanations/how_src_executes_a_batch_spec.md). Consider this partial spec:
+
+```yaml
+steps:
+  - run: /do-it.sh
+    container: my-alpine-running-as-root
+
+  - run: /do-it.sh
+    container: my-alpine-running-as-uid-1000
+
+  - run: /do-it.sh
+    container: my-alpine-running-as-uid-500
+```
+
+Files created by the first step will be owned by UID 0 and (by default) have 0644 permissions, which means that the subsequent steps will be unable to modify or delete those files, as they are running as different, unprivileged users.
+
+Even if the first step is replaced by one that runs as UID 1000, the same scenario will occur when the final step runs as UID 500: files created by the previous steps cannot be modified or deleted.
+
+In theory, it's possible to run the first _n_ steps in a batch spec as an unprivileged user, and then run the last _n_ steps as root, but we don't recommend this due to the likelihood that later changes may cause issues. We strongly recommend only using containers that run as the same user in a single batch spec.
 
 ### How can I use [GitHub expression syntax](https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions) (`${{ }}` literally) in my batch spec?
 
@@ -85,3 +108,41 @@ The changeset may also be in a state that we cannot currently publish from: for 
 
 ### Why do my changesets take a long time to sync?
 Have you [set up webhooks](requirements.md#batch-changes-effect-on-code-host-rate-limits)?
+
+### Why has my changeset been archived?
+
+When re-running a batch spec on an existing batch change, the scope of repositories affected may change if you modify your `on` statement or if Sourcegraph simply finds a different set of results than it did last time. If the new batch spec no longer matches a repository that Sourcegraph has already published a changeset for, that changeset will be closed on the codehost and marked as *archived* in the batch change when you apply the new batch spec. You will be able to see these actions from the preview screen before you apply the batch spec. Archived changesets are still associated with the batch change, but they will appear under the "Archived" tab on the batch change page instead.
+
+See our [how-to guide](../how-tos/updating_a_batch_change.md#removing-changesets) to learn more about archiving changesets, including how to unarchive a changeset and how to remove a changeset from the batch change entirely.
+
+### Why is my changeset read-only?
+
+Unmerged changesets on repositories that have been archived on the code host will move into a *Read-Only* state, which reflects that they cannot be modified any further on the code host. Re-applying the batch change will result in no operations being performed on those changesets, even if they would otherwise be updated. The only exception is that changesets that would be [archived](#why-has-my-changeset-been-archived) due to the `on` statement or search results changing will still be archived.
+
+If the repository is unarchived, Batch Changes will move the changeset back into its previous state the next time Sourcegraph syncs the repository.
+
+### Why do I get different results counts when I run the same search query as a normal search vs. for my `repositoriesMatchingQuery` in a batch spec?
+
+By default, a normal Sourcegraph search will return the total number of _matches_ for a given query, counting matches in the same file or repository as separate results. However, when you use the search query in your batch spec, the results are grouped based on the repository (or "workspace", if you're [working with monorepos](../how-tos/creating_changesets_per_project_in_monorepos.md))  they belong to, giving you the total number of _repositories_ (or _workspaces_) that match the query. This is because Batch Changes produces one changeset for each matching repository (or workspace).
+
+So, if you have a search query that returns 10 results in a single repo, the batch spec will only return 1 result for that repo. This is the equivalent of supplying the `select:repo` aggregator parameter to your search query.
+
+### Why do I get fewer changes in my changeset diff when I run a batch spec than there are results when I run the same search query?
+
+Sourcegraph search shows you results on any repositories that you have read access to. However, Sourcegraph and Batch Changes do not know which repositories you have _write_ access to. This disparity most often stems from not having write access to one or more of the repositories where your search query returns results. Consider asking an admin to set up a [global service account token](../how-tos/configuring_credentials.md#global-service-account-tokens) if it's important that your batch change updates all matching repositories.
+
+### Why is my batch change preview hanging?
+
+When working with `src`, there are occurences where applying your batch spec might get stuck on a particular step. More so in the `Determining workspace type` step. The `Determining workspace type` is a simple step that decides if bind or volume modes should be used based on the command line flags, and the OS and architecture. If volume mode is used (which is default on Mac OS), then `src` will attempt to pull the `sourcegraph/src-batch-change-volume-workspace` Docker image from docker hub since that's required for the batch spec to be executed. The "hanging" is typically is caused by the local machine's CLI state. Restarting your computer and applying the batch spec again should fix this. 
+
+### Can I create a batch change and use a team's namespace so that the team owns the batch change?
+
+Yes, you can create a batch change under a team's namespace so that the team owns and manages the batch change. Here are the steps to achieve this:
+
+1. Create an [organization](../../admin/organizations.md) on Sourcegraph for your team.
+1. Add all members of your team to the organization.
+1. When creating the batch change, select the organization's namespace instead of your personal namespace. This can be done via the UI or using the `-namespace` flag with `src batch preview/apply`.
+1. The batch change will now be created under the organization's namespace.
+1. All members of the organization (your team) will have admin permissions to manage the batch change.
+
+So by using an organization's namespace, you can create a batch change that is owned and editable by the entire team, not just yourself.

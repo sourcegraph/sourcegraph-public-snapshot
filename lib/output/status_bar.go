@@ -10,7 +10,7 @@ type StatusBar struct {
 
 	label  string
 	format string
-	args   []interface{}
+	args   []any
 
 	initialized bool
 	startedAt   time.Time
@@ -18,7 +18,7 @@ type StatusBar struct {
 }
 
 // Completef sets the StatusBar to completed and updates its text.
-func (sb *StatusBar) Completef(format string, args ...interface{}) {
+func (sb *StatusBar) Completef(format string, args ...any) {
 	sb.completed = true
 	sb.format = format
 	sb.args = args
@@ -26,13 +26,13 @@ func (sb *StatusBar) Completef(format string, args ...interface{}) {
 }
 
 // Failf sets the StatusBar to completed and failed and updates its text.
-func (sb *StatusBar) Failf(format string, args ...interface{}) {
+func (sb *StatusBar) Failf(format string, args ...any) {
 	sb.Completef(format, args...)
 	sb.failed = true
 }
 
 // Resetf sets the status of the StatusBar to incomplete and updates its label and text.
-func (sb *StatusBar) Resetf(label, format string, args ...interface{}) {
+func (sb *StatusBar) Resetf(label, format string, args ...any) {
 	sb.initialized = true
 	sb.completed = false
 	sb.failed = false
@@ -44,7 +44,7 @@ func (sb *StatusBar) Resetf(label, format string, args ...interface{}) {
 }
 
 // Updatef updates the StatusBar's text.
-func (sb *StatusBar) Updatef(format string, args ...interface{}) {
+func (sb *StatusBar) Updatef(format string, args ...any) {
 	sb.initialized = true
 	sb.format = format
 	sb.args = args

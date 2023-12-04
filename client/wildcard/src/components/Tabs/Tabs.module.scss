@@ -1,18 +1,21 @@
 @import '@reach/tabs/styles';
 
 .wildcard-tabs {
+    --opacity-transition: 0.3s;
+    --scroll-gradient-color: var(--body-bg);
     --small-size-font: 0.75rem;
     --medium-size-font: 0.875rem;
     --large-size-font: 1rem;
 
-    [data-reach-tabs] {
+    &[data-reach-tabs] {
         background: transparent;
     }
 
     [data-reach-tab] {
         align-items: center;
         letter-spacing: normal;
-        margin: 0 0.375rem;
+        margin: 0;
+        min-height: 2rem;
         padding: 0 0.125rem;
         color: var(--body-color);
         text-transform: none;
@@ -52,7 +55,7 @@
             box-shadow: none;
             > .tab-label {
                 padding: 0.125rem;
-                margin: 0 -0.125rem;
+                margin: -0.125rem;
                 border-radius: var(--border-radius);
                 outline: 1px solid transparent;
                 box-shadow: var(--focus-box-shadow);
@@ -60,17 +63,66 @@
         }
     }
 
+    .tab-nowrap {
+        white-space: nowrap;
+    }
+
     [data-reach-tab-list] {
         background: transparent;
     }
 
     .tablist-wrapper {
-        min-height: 2rem;
+        position: relative;
         border-bottom: 1px solid var(--border-color-2);
         padding-bottom: 0;
         display: flex;
         align-items: stretch;
         justify-content: space-between;
+
+        &::after,
+        &::before {
+            content: '';
+            position: absolute;
+            width: 5rem;
+            top: 0;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity var(--opacity-transition) ease;
+
+            @media (prefers-reduced-motion: reduce) {
+                transition: none;
+            }
+        }
+
+        // Drawing gradient color changes on scroll
+        &::before {
+            left: 0;
+            background: linear-gradient(to right, var(--scroll-gradient-color) 15%, rgba(0, 0, 0, 0));
+        }
+        &::after {
+            right: 0;
+            background: linear-gradient(to left, var(--scroll-gradient-color) 15%, rgba(0, 0, 0, 0));
+        }
+
+        &-obscured-left::before {
+            opacity: 1;
+        }
+
+        &-obscured-right::after {
+            opacity: 1;
+        }
+    }
+
+    .tab-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .tab-list-scroll {
+        flex-wrap: nowrap;
+        overflow-x: scroll;
     }
 
     .small {

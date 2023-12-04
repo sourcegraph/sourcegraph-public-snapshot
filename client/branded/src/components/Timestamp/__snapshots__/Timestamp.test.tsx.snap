@@ -1,0 +1,51 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Timestamp > absolute time with formatting 1`] = `
+<DocumentFragment>
+  <span
+    class="timestamp"
+  >
+    01:02:00
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Timestamp > mocked current time 1`] = `
+<DocumentFragment>
+  <span
+    class="timestamp"
+  >
+    almost 18 years ago
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Timestamp > noAbout 1`] = `
+<DocumentFragment>
+  <span
+    class="timestamp"
+  >
+    almost 18 years ago
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Timestamp > noAgo 1`] = `
+<DocumentFragment>
+  <span
+    class="timestamp"
+  >
+    almost 18 years
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Timestamp > with time time 1`] = `
+<DocumentFragment>
+  <span
+    class="timestamp"
+  >
+    almost 18 years ago
+  </span>
+</DocumentFragment>
+`;

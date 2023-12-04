@@ -33,6 +33,14 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 	dec, err := time.Parse("2006-01-02 15:04:05 MST", s)
 	if err == nil {
 		t.Time = dec
+		return nil
 	}
+
+	dec, err = time.Parse("2006-01-02 15:04:05 -0700", s)
+	if err == nil {
+		t.Time = dec
+		return nil
+	}
+
 	return err
 }

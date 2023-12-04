@@ -1,0 +1,71 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
+
+go_library(
+    name = "searcher_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/searcher",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/searcher/shared",
+        "//internal/sanitycheck",
+        "//internal/service/svcmain",
+    ],
+)
+
+go_binary(
+    name = "searcher",
+    embed = [":searcher_lib"],
+    visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
+)
+
+pkg_tar(
+    name = "tar_searcher",
+    srcs = [":searcher"],
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_searcher_base",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/searcher",
+    ],
+    env = {
+        "CACHE_DIR": "/mnt/cache/searcher",
+    },
+    tars = [":tar_searcher"],
+    user = "sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["searcher:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("searcher"),
+)

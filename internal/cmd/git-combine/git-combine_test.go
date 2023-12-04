@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/go-git/go-git/v5/plumbing"
@@ -17,20 +18,47 @@ import (
 func TestCombine(t *testing.T) {
 	tmp := t.TempDir()
 
+	origin := filepath.Join(tmp, "origin")
 	dir := filepath.Join(tmp, "combined-repo.git")
+
+	// If we are running inside of the sourcegraph repo, use that as the
+	// origin rather than using a small synthetic repo. In practice this means
+	// when using go test we use the sg repo, in bazel we use a tiny synthetic
+	// repo.
+	if out, err := exec.Command("git", "rev-parse", "--show-toplevel").Output(); err == nil {
+		origin = strings.TrimSpace(string(out))
+		t.Log("using local repository instead of synthetic repo", origin)
+	}
 
 	setupPath := filepath.Join(tmp, "setup.sh")
 	if err := os.WriteFile(setupPath, []byte(`#!/usr/bin/env bash
 
 set -ex
 
-repo=$(git rev-parse --show-toplevel)
+## Setup origin repo if it doesn't exist.
+
+if [ ! -d "$ORIGIN" ]; then
+  mkdir -p "$ORIGIN"
+  cd "$ORIGIN"
+  git init
+
+  git config user.email test@sourcegraph.com
+  echo "foobar" > README.md
+  git add README.md
+  git commit -m "initial commit"
+  echo "foobar" >> README.md
+  git add README.md
+  git commit -m "second commit"
+fi
+
+## Setup git-combine repo
 
 mkdir -p "$DIR"
 cd "$DIR"
 git init --bare .
 
-git remote add --no-tags sourcegraph "$repo"
+git config user.email test@sourcegraph.com
+git remote add --no-tags sourcegraph "$ORIGIN"
 git config --replace-all remote.origin.fetch '+HEAD:refs/remotes/sourcegraph/master'
 
 git fetch --depth 100 sourcegraph
@@ -39,7 +67,12 @@ git fetch --depth 100 sourcegraph
 	}
 
 	cmd := exec.Command("sh", setupPath)
-	cmd.Env = append(os.Environ(), "DIR="+dir)
+	cmd.Dir = tmp
+	cmd.Env = append(
+		os.Environ(),
+		"DIR="+dir,
+		"ORIGIN="+origin,
+	)
 	if testing.Verbose() {
 		cmd.Stderr = os.Stderr
 	}
@@ -48,8 +81,7 @@ git fetch --depth 100 sourcegraph
 	}
 
 	opt := Options{
-		LimitRemote: 100,
-		Logger:      log.New(io.Discard, "", 0),
+		Logger: log.New(io.Discard, "", 0),
 	}
 	if testing.Verbose() {
 		opt.Logger = log.Default()

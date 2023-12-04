@@ -58,12 +58,15 @@
 {{end}}
 
 {{define "head"}}
-	{{if (or (contains .Content.Path "insights") (or (not .Content) .ContentVersion))}}<meta name="robots" content="noindex">{{end}}
+    {{ if .ContentVersion }}
+        <!-- don't index pages from older versions -->
+        <meta name="robots" content="noindex">
+    {{ end }}
 {{end}}
 
 {{define "content"}}
 	{{with .Content}}
-		<nav id="index">
+		<nav id="index" class="hidden xl:block">
 			{{if .Doc.Title}}{{template "index" .}}{{end}}
 		</nav>
 	{{end}}
@@ -73,11 +76,14 @@
 				{{range $index, $e := .Breadcrumbs}}
 					<a href="{{$e.URL}}" class="{{if $e.IsActive}}active{{end}}">
 						{{- if eq $index 0 -}}
-							Home
+							Docs
 						{{- else -}}
 							{{$e.Label}}
 						{{- end -}}
-					</a> {{if not $e.IsActive}}/{{end}}
+					{{/*  </a> {{if not $e.IsActive}}/{{end}}  */}}
+					</a> {{if not $e.IsActive}}
+                        <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24" style="color: currentcolor; width: 18px; height: 18px;"><path d="M9 18l6-6-6-6"></path></svg>
+                    {{end}}
 				{{end}}
 			</nav>
 			<div class="markdown-body">{{markdown .}}</div>
@@ -100,11 +106,13 @@
 
 {{define "index"}}
 	{{with (or (and (eq (len .Doc.Tree) 1) (index .Doc.Tree 0).Children) .Doc.Tree)}}
-		<h4>{{$.Doc.Title}}</h4>
-		<p class="on-this-page">On this page:</p>
+		{{/*  <h4>{{$.Doc.Title}}</h4>  */}}
+		{{/*  <p class="on-this-page">On this page:</p>  */}}
+		<h4>On this page</h4>
 		<ul>{{template "doc_nav" .}}</ul>
 	{{end}}
-    <a class="page-btn" href="https://github.com/sourcegraph/sourcegraph/edit/main/doc/{{.FilePath}}">Edit this page</a>
+    <div class="toc-bottom"></div>
+    <a class="page-btn" href="https://github.com/sourcegraph/sourcegraph/edit/main/doc/{{.FilePath}}" target="_blank" >Edit this page on GitHub <svg class="with-icon_icon__MHUeb" data-testid="geist-icon" fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24" style="color: currentcolor; width: 14px; height: 14px;"><path d="M7 17L17 7"></path><path d="M7 7h10v10"></path></svg></a>
 {{end}}
 {{define "doc_nav"}}
 	{{range .}}

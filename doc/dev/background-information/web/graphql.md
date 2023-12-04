@@ -14,7 +14,7 @@ Each query must have a globally unique name as per the [GraphQL specification](h
 
 Using each unique query, we can generate specific types so you can receive autocompletion, syntax highlighting, hover tooltips and validation in your IDE.
 
-Once you have built your query, `graphql-codegen` will generate the correct request and response types. This process should happen automatically through local development, you can also manually trigger this by running `yarn generate` or `yarn watch-generate`.
+Once you have built your query, `graphql-codegen` will generate the correct request and response types. This process should happen automatically through local development, you can also manually trigger this by running `pnpm generate`. Since the generator is lazy and won't generate types for fields that aren't used, if you're adding a new field then you **must** write at least one query that actually uses the field before running the generator.
 
 Using a `useQuery` hook, we can easily fire a request and handle the response correctly.
 
@@ -246,3 +246,93 @@ export const PEOPLE = gql`
 This is less safe as fields could be missing from the actual queries and it makes testing harder as hard-coded results need to be casted to the whole type.
 Some components also worked around this by redeclaring the type structure with complex `Pick<T, K>` expressions.
 When you need to interface with these, consider refactoring them to use a fragment type instead.
+
+## Pagination in GraphQL
+
+### Best-practices for paginating resources with GraphQL
+
+Every query thar returns more items than can be visible in the UI at any given point should implement a paginated response. This is important because some of our largest customers have vastly bigger amounts of data and we need to ensure that the interfaces become usable regardless of the size.
+
+For our GraphQL API we follow the Relay-style connection spec ([Relay spec](https://relay.dev/graphql/connections.htm), [Apollo spec](https://www.apollographql.com/docs/react/pagination/cursor-based/#relay-style-cursor-pagination)) and cursor-based pagination.
+
+**Cursor-based pagination** refers to a pagination API that _does not know about relative page numbers_. Instead, every API response contains a opaque _cursor_ that we can use to load the next or previous page of data. It's important that for the front-end, this _cursor_ is never introspected. It is handled as a generic `string` that is just passed from the API response directly into the next API request.
+
+In contrast to **offset-based pagination**, this approach brings us these benefits:
+
+- Adding a new item to the collection while someone else is paginating through the collection will avoid inconsistencies (no items are showed more than once or skipped entirely).
+- We can leverage postgres indexes to find the cursor quickly and avoid having to do a sequential scan through all rows ([learn more](https://use-the-index-luke.com/no-offset)).
+
+### Pagination UI patterns at Sourcegraph
+
+We currently have two accepted pagination patterns:
+
+- **Page switcher pagination**: Here, we only show one page of data (usually in the range of ~30 items) in the view at all times. The backend needs to allow pagination in both directions (forwards _and backwards_) for this to be possible. This is the preferred pagination pattern for elements that we can fetch from the postgres database.
+
+  To implement this, you can use the following abstractions:
+
+  - React hook for data loading: [`usePageSwitcherPagination()`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/components/FilteredConnection/hooks/usePageSwitcherPagination.ts)
+  - Go abstraction to build a bi-directional paginated resource: [`ConnectionResolver`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/graphqlutil/connection_resolver.go)
+  - Wildcard component for pagination UI: [`<PageSwitcher />`](https://storybook.sgdev.org/?path=/story/wildcard-pageswitcher--simple)
+  - Here are two example implementations: [#45705](https://github.com/sourcegraph/sourcegraph/pull/45705) for data served via Postgres, [#45070](https://github.com/sourcegraph/sourcegraph/pull/45070) for data served from git)
+
+- **Show more pagination** (a.k.a. infinite-scrolling): Items are appended to the bottom of the list for every page that is loaded. This is suited only for resources that do not bi-directional pagination.
+
+  We offer the following helpers for implementing a view with this pattern:
+
+  - React hook for data loading: [`useShowMorePagination()`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/components/FilteredConnection/hooks/useShowMorePagination.ts)
+  - React component "Show More" UI: [`<ShowMoreButton />`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/search/panels/ShowMoreButton.tsx)
+
+### Example query
+
+To better understand how the cursor pattern works in GraphQL, take a look at this example query:
+
+```graphql
+query MyPaginatedQuery($first: Int, $last: Int, $after: String, $before: String) {
+  myPaginatedQuery(
+    first: $first
+    last: $last
+    before: $before
+    after: $after
+  ) {
+    nodes {
+      ...NodeFields
+    }
+    totalCount
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+```
+
+When this query is run with `first: 10`, the first ten elements of the connection are returned and the result will look like this:
+
+```jsonc
+{
+  "data": {
+    "myPaginatedQuery": {
+      "nodes": [
+        // 10 nodes
+      ],
+      "totalCount": 100,
+      "pageInfo": {
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "startCursor": "aabbccdd",
+        "endCursor": "eeffgghh"
+      }
+    }
+  }
+}
+```
+
+You can see that this page has a next page but no previous page, which makes sense since it's the first page.
+The interesting bits are the `startCursor` and `endCursor`. These encode the first or last item of the result list in a way that the backend can efficiently query the next page.
+
+If we want to go to the next page, we can take this opaque token and set it as the `after` value of the query. The new pagination parameters would be `first: 10, after: 'eeffgghh'".
+
+This is not something you need to manually implement in the frontend though. [`usePageSwitcherPagination()`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/components/FilteredConnection/hooks/usePageSwitcherPagination.ts) and [`useShowMorePagination()`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/components/FilteredConnection/hooks/useShowMorePagination.ts) already do that for you.
+

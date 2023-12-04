@@ -1,0 +1,33 @@
+- steps: []
+  local_steps:
+    - if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi
+  root: a
+  indexer: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+  indexer_args:
+    - scip-typescript
+    - index
+  outfile: index.scip
+  requestedEnvVars:
+    - NPM_TOKEN
+- steps: []
+  local_steps:
+    - if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi
+  root: b
+  indexer: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+  indexer_args:
+    - scip-typescript
+    - index
+  outfile: index.scip
+  requestedEnvVars:
+    - NPM_TOKEN
+- steps: []
+  local_steps:
+    - if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi
+  root: c
+  indexer: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+  indexer_args:
+    - scip-typescript
+    - index
+  outfile: index.scip
+  requestedEnvVars:
+    - NPM_TOKEN

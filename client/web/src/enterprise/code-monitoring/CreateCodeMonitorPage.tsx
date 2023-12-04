@@ -1,14 +1,16 @@
-import * as H from 'history'
 import React, { useCallback, useEffect, useMemo } from 'react'
-import { Observable } from 'rxjs'
+
+import { VisuallyHidden } from '@reach/visually-hidden'
+import { useLocation } from 'react-router-dom'
+import type { Observable } from 'rxjs'
 
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
-import { CodeMonitorFields } from '../../graphql-operations'
+import type { CodeMonitorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { convertActionsForCreate } from './action-converters'
@@ -16,30 +18,31 @@ import { createCodeMonitor as _createCodeMonitor } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
 interface CreateCodeMonitorPageProps {
-    location: H.Location
-    history: H.History
     authenticatedUser: AuthenticatedUser
 
     createCodeMonitor?: typeof _createCodeMonitor
+
+    isSourcegraphDotCom: boolean
 }
 
-const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPageProps> = ({
-    authenticatedUser,
-    history,
-    location,
-    createCodeMonitor = _createCodeMonitor,
-}) => {
-    const triggerQuery = useMemo(() => new URLSearchParams(location.search).get('trigger-query') ?? undefined, [
-        location.search,
-    ])
+const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
+    React.PropsWithChildren<CreateCodeMonitorPageProps>
+> = ({ authenticatedUser, createCodeMonitor = _createCodeMonitor, isSourcegraphDotCom }) => {
+    const location = useLocation()
 
-    const description = useMemo(() => new URLSearchParams(location.search).get('description') ?? undefined, [
-        location.search,
-    ])
+    const triggerQuery = useMemo(
+        () => new URLSearchParams(location.search).get('trigger-query') ?? undefined,
+        [location.search]
+    )
+
+    const description = useMemo(
+        () => new URLSearchParams(location.search).get('description') ?? undefined,
+        [location.search]
+    )
 
     useEffect(
         () =>
-            eventLogger.logViewEvent('CreateCodeMonitorPage', {
+            eventLogger.logPageView('CreateCodeMonitorPage', {
                 hasTriggerQuery: !!triggerQuery,
                 hasDescription: !!description,
             }),
@@ -64,27 +67,35 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
     )
 
     return (
-        <div className="container col-8">
+        <div className="container col-sm-8">
             <PageTitle title="Create new code monitor" />
             <PageHeader
-                path={[{ icon: CodeMonitoringLogo, to: '/code-monitoring' }, { text: 'Create code monitor' }]}
                 description={
                     <>
                         Code monitors watch your code for specific triggers and run actions in response.{' '}
                         <Link to="/help/code_monitoring/how-tos/starting_points" target="_blank" rel="noopener">
-                            Learn more
+                            <VisuallyHidden>Learn more about code monitors</VisuallyHidden>
+                            <span aria-hidden={true}>Learn more</span>
                         </Link>
                     </>
                 }
-            />
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb
+                        icon={CodeMonitoringLogo}
+                        to="/code-monitoring"
+                        aria-label="Code monitoring"
+                    />
+                    <PageHeader.Breadcrumb>Create code monitor</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             <CodeMonitorForm
-                history={history}
-                location={location}
                 authenticatedUser={authenticatedUser}
                 onSubmit={createMonitorRequest}
                 triggerQuery={triggerQuery}
                 description={description}
                 submitButtonLabel="Create code monitor"
+                isSourcegraphDotCom={isSourcegraphDotCom}
             />
         </div>
     )

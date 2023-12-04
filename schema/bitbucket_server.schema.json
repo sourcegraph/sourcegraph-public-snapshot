@@ -70,7 +70,7 @@
       "type": "string"
     },
     "gitURLType": {
-      "description": "The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server / Bitbucket Data Center instance.\n\nIf \"http\", Sourcegraph will access Bitbucket Server / Bitbucket Data Center repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server / Bitbucket Data Center instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access Bitbucket Server / Bitbucket Data Center repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
+      "description": "The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server / Bitbucket Data Center instance.\n\nIf \"http\", Sourcegraph will access Bitbucket Server / Bitbucket Data Center repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server / Bitbucket Data Center instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access Bitbucket Server / Bitbucket Data Center repositories using Git URLs of the form ssh://git@example.bitbucket.org/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
       "type": "string",
       "enum": ["http", "ssh"],
       "default": "http",
@@ -100,6 +100,7 @@
       "properties": {
         "webhooks": {
           "title": "BitbucketServerPluginWebhooks",
+          "deprecationMessage": "Deprecated in favour of first class webhooks. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice",
           "type": "object",
           "required": ["secret"],
           "properties": {
@@ -154,6 +155,13 @@
         "pattern": "^~?[\\w-]+/[\\w.-]+$"
       },
       "examples": [["myproject/myrepo", "myproject/myotherrepo", "~USER/theirrepo"]]
+    },
+    "projectKeys": {
+      "description": "An array of project key strings that defines a collection of repositories related to their associated project keys",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "exclude": {
       "description": "A list of repositories to never mirror from this Bitbucket Server / Bitbucket Data Center instance. Takes precedence over \"repos\" and \"repositoryQuery\".\n\nSupports excluding by name ({\"name\": \"projectKey/repositorySlug\"}) or by ID ({\"id\": 42}).",

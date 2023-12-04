@@ -1,0 +1,20 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.form {
+    margin: 2rem auto;
+    padding-bottom: 3rem;
+    min-width: min(100%, 720px);
+    max-width: 720px;
+
+    @media (--md-breakpoint-down) {
+        width: 100%;
+    }
+}
+
+.cta-group {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.625rem;
+}

@@ -1,0 +1,43 @@
+---
+version: 1
+interactions:
+- request:
+    body: |
+      {"version":22,"title":"This is a new title","description":"This is a new body","toRef":{"id":"refs/heads/master","repository":{"id":0,"slug":"automation-testing","project":{"key":"SOUR"}}},"reviewers":[{"user":{"name":"batch-change-buddy","id":403,"slug":"batch-change-buddy"},"lastReviewedCommit":"7549846524f8aed2bd1c0249993ae1bf9d3c9998","role":"REVIEWER","approved":false,"status":"UNAPPROVED"}]}
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/154
+    method: PUT
+  response:
+    body: '{"id":154,"version":23,"title":"This is a new title","description":"This
+      is a new body","state":"DECLINED","open":false,"closed":true,"createdDate":1639582116883,"updatedDate":1679586242492,"closedDate":1642222747498,"fromRef":{"id":"refs/heads/hello-world","displayId":"hello-world","latestCommit":"fbb818b2ba432f906a8f5fa58cadcc74dc1bf865","type":"BRANCH","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"2046f48cd2633f58f1a4c2aa7b5b1b613e34a24c","type":"BRANCH","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"locked":false,"author":{"user":{"name":"thorsten","emailAddress":"thorsten@sourcegraph.com","id":104,"displayName":"thorsten","active":true,"slug":"thorsten","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/thorsten"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[{"user":{"name":"batch-change-buddy","emailAddress":"batch-changes@sourcegraph.com","id":403,"displayName":"Batch
+      Change Buddy","active":true,"slug":"batch-change-buddy","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/batch-change-buddy"}]}},"role":"REVIEWER","approved":false,"status":"UNAPPROVED"}],"participants":[{"user":{"name":"bitbucket.system-user","id":303,"displayName":"Bitbucket","active":true,"slug":"bitbucket.system-user","type":"SERVICE","links":{"self":[{"href":"https://bitbucket.sgdev.org/bots/bitbucket.system-user"}]}},"role":"PARTICIPANT","approved":false,"status":"UNAPPROVED"}],"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/154"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Thu, 23 Mar 2023 15:44:02 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@1OD3BOQx944x4694883x0'
+      X-Asessionid:
+      - 65rlgz
+      X-Auserid:
+      - "253"
+      X-Ausername:
+      - engineers
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""

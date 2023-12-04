@@ -1,0 +1,30 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    margin: 0 2rem;
+    border-top: solid 1px var(--border-color);
+    border-bottom: solid 1px var(--border-color);
+    justify-content: center;
+    align-items: center;
+    color: var(--icon-color);
+}
+
+.banner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1.25rem;
+}
+
+.banner span {
+    color: var(--violet-05);
+    text-transform: uppercase;
+    padding-right: 0.5rem;
+    margin-right: 0.5rem;
+    border-right: solid 1px var(--violet-02);
+}
+
+.banner small {
+    color: var(--text-muted);
+}

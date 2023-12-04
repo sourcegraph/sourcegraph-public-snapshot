@@ -1,6 +1,9 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .batch-change-node {
+    display: contents;
+
+    // Old state badge
     &__badge {
         justify-self: center;
         padding-left: 0.5rem;
@@ -9,6 +12,13 @@
             width: fit-content;
             // Make it full width in the current row.
             grid-column: 1 / -1;
+        }
+    }
+    // New SSBC state pill
+    &__pill {
+        justify-self: center;
+        @media (--xs-breakpoint-down) {
+            justify-self: flex-start;
         }
     }
     &__title {
@@ -31,6 +41,7 @@
         // Make it full width in the current row.
         grid-column: 1 / -1;
         border-top: 1px solid var(--border-color-2);
+
         @media (--xs-breakpoint-down) {
             margin-top: 1rem;
             padding-bottom: 1rem;

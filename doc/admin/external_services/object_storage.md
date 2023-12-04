@@ -1,24 +1,14 @@
 # Using a managed object storage service (S3 or GCS)
 
-By default, Sourcegraph will use a MinIO server bundled with the instance to temporarily store precise code intelligence indexes uploaded by users. MinIO shouldn’t be accessible outside of the cluster/docker-compose network so it shouldn’t need anything other than the default credentials. However, if you do want to change the default credentials, you can supply the following environment variables to the MinIO container in your deployment:
-
-- `MINIO_ACCESS_KEY=<access key>`
-- `MINIO_SECRET_KEY=<secret key>`
-
-Note that the access and secret keys are expected to be 20 and 40 characters in length, respectively, to match the format of AWS-generated keys.
-
-If you assign these environment variables, you will need to ensure that you set the following environment variables on the `frontend` and `precise-code-intel-worker` containers (as described [below](#using-s3)), otherwise they will be unable to authenticate.
-
-- `PRECISE_CODE_INTEL_UPLOAD_AWS_ACCESS_KEY_ID`
-- `PRECISE_CODE_INTEL_UPLOAD_AWS_SECRET_ACCESS_KEY`
+By default, Sourcegraph will use a `sourcegraph/blobstore` server bundled with the instance to temporarily store code graph indexes uploaded by users.
 
 You can alternatively configure your instance to instead store this data in an S3 or GCS bucket. Doing so may decrease your hosting costs as persistent volumes are often more expensive than the same storage space in an object store service.
 
-To target a managed object storage service, you will need to set a handful of environment variables for configuration and authentication to the target service. **If you are running a sourcegraph/server deployment, set the environment variables on the server container. Otherwise, if running via Docker-compose or Kubernetes, set the environment variables on the `frontend` and `precise-code-intel-worker` containers.**
+To target a managed object storage service, you will need to set a handful of environment variables for configuration and authentication to the target service. **If you are running a sourcegraph/server deployment, set the environment variables on the server container. Otherwise, if running via Docker-compose or Kubernetes, set the environment variables on the `frontend`, `worker`, and `precise-code-intel-worker` containers.**
 
 ### Using S3
 
-To target an S3 bucket you've already provisioned, set the following environment variables. Authentication is done through [an access and secret key pair](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys) (and optional session token).
+To target an S3 bucket you've already provisioned, set the following environment variables. Authentication can be done through [an access and secret key pair](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys) (and optional session token), or via the EC2 metadata API.
 
 **_Warning:_** Remember never to commit aws access keys in git. Consider using a secret handling service offered by your cloud provider. 
 
@@ -28,9 +18,13 @@ To target an S3 bucket you've already provisioned, set the following environment
 - `PRECISE_CODE_INTEL_UPLOAD_AWS_ACCESS_KEY_ID=<your access key>`
 - `PRECISE_CODE_INTEL_UPLOAD_AWS_SECRET_ACCESS_KEY=<your secret key>`
 - `PRECISE_CODE_INTEL_UPLOAD_AWS_SESSION_TOKEN=<your session token>` (optional)
+- `PRECISE_CODE_INTEL_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS=true` (optional; set to use EC2 metadata API over static credentials)
 - `PRECISE_CODE_INTEL_UPLOAD_AWS_REGION=us-east-1` (default)
 
 **_Note:_** If a non-default region is supplied, ensure that the subdomain of the endpoint URL (_the `AWS_ENDPOINT` value_) matches the target region.
+
+> NOTE: You don't need to set the `PRECISE_CODE_INTEL_UPLOAD_AWS_ACCESS_KEY_ID` environment variable when using `PRECISE_CODE_INTEL_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS=true` because role credentials will be automatically resolved. Attach the IAM role to the EC2 instances hosting the `frontend`, `worker`, and `precise-code-intel-worker` containers in a multi-node environment.
+
 
 ### Using GCS
 

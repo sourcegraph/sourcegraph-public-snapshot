@@ -1,0 +1,51 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SearchContextMenu > should filter list by spec when searching 1`] = `
+Array [
+  <li
+    aria-selected="false"
+    class="item"
+    data-reach-combobox-option=""
+    data-search-context-spec="@username/test-version-1.5"
+    data-testid="search-context-menu-item"
+    id="359872097"
+    role="option"
+    tabindex="-1"
+  >
+    <small
+      class="itemName"
+      data-testid="search-context-menu-item-name"
+    >
+      <span
+        data-reach-combobox-option-text=""
+        data-suggested-value="true"
+      >
+        @u
+      </span>
+      <span
+        data-reach-combobox-option-text=""
+        data-user-value="true"
+      >
+        ser
+      </span>
+      <span
+        data-reach-combobox-option-text=""
+        data-suggested-value="true"
+      >
+        name/test-version-1.5
+      </span>
+    </small>
+    <span
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      ,
+    </span>
+     
+    <small
+      class="itemDescription"
+    >
+      Only code in version 1.5
+    </small>
+  </li>,
+]
+`;

@@ -1,6 +1,6 @@
 import { createPoint } from '../../../models/geometry/point'
-import { createRectangleFromPoints, Rectangle } from '../../../models/geometry/rectangle'
-import { Position } from '../../../models/tether-models'
+import { createRectangleFromPoints, type Rectangle } from '../../../models/geometry/rectangle'
+import type { ElementPosition } from '../../../models/tether-models'
 import { POSITION_VARIANTS } from '../constants'
 
 /**
@@ -22,7 +22,7 @@ import { POSITION_VARIANTS } from '../constants'
  * @param marker - Marker (tail) rectangle.
  * @param position - Tooltip position relative to target element.
  */
-export function getTargetElement(target: Rectangle, marker: Rectangle, position: Position): Rectangle {
+export function getTargetElement(target: Rectangle, marker: Rectangle, position: ElementPosition): Rectangle {
     const offset = POSITION_VARIANTS[position].targetOffset
 
     const targetX = marker.width * offset.x

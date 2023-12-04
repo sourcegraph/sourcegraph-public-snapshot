@@ -1,0 +1,54 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "authz",
+    srcs = [
+        "consts.go",
+        "header.go",
+        "iface.go",
+        "mocks_temp.go",
+        "perms.go",
+        "register.go",
+        "scopes.go",
+        "sub_repo_perms.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/authz",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/collections",
+        "//internal/extsvc",
+        "//internal/testutil",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "authz_test",
+    timeout = "short",
+    srcs = [
+        "header_test.go",
+        "iface_test.go",
+        "perms_test.go",
+        "sub_repo_perms_test.go",
+    ],
+    embed = [":authz"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/fileutil",
+        "//lib/errors",
+        "@com_github_gobwas_glob//:glob",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

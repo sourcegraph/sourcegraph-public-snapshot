@@ -1,0 +1,167 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SyntaxHighlightedSearchQuery > should syntax highlight filter 1`] = `
+<DocumentFragment>
+  <span
+    class="text-monospace search-query-link"
+  >
+    <span
+      class="search-filter-keyword"
+    >
+      repo
+    </span>
+    <span
+      class="search-filter-separator"
+    >
+      :
+    </span>
+    <span
+      class="search-query-text"
+    >
+      sourcegraph
+    </span>
+    <span
+      class="search-query-text"
+    >
+       
+    </span>
+    <span
+      class="search-filter-keyword"
+    >
+      lang
+    </span>
+    <span
+      class="search-filter-separator"
+    >
+      :
+    </span>
+    <span
+      class="search-query-text"
+    >
+      go
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`SyntaxHighlightedSearchQuery > should syntax highlight filter and operator 1`] = `
+<DocumentFragment>
+  <span
+    class="text-monospace search-query-link"
+  >
+    <span
+      class="search-filter-keyword"
+    >
+      repo
+    </span>
+    <span
+      class="search-filter-separator"
+    >
+      :
+    </span>
+    <span
+      class="search-query-text"
+    >
+      sourcegraph
+    </span>
+    <span
+      class="search-query-text"
+    >
+       
+    </span>
+    <span
+      class="search-query-text"
+    >
+      test
+    </span>
+    <span
+      class="search-query-text"
+    >
+       
+    </span>
+    <span
+      class="search-keyword"
+    >
+      and
+    </span>
+    <span
+      class="search-query-text"
+    >
+       
+    </span>
+    <span
+      class="search-query-text"
+    >
+      spec
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`SyntaxHighlightedSearchQuery > should syntax highlight negated filter 1`] = `
+<DocumentFragment>
+  <span
+    class="text-monospace search-query-link"
+  >
+    <span
+      class="search-filter-keyword"
+    >
+      -lang
+    </span>
+    <span
+      class="search-filter-separator"
+    >
+      :
+    </span>
+    <span
+      class="search-query-text"
+    >
+      ts
+    </span>
+    <span
+      class="search-query-text"
+    >
+       
+    </span>
+    <span
+      class="search-query-text"
+    >
+      test
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`SyntaxHighlightedSearchQuery > should syntax highlight operator 1`] = `
+<DocumentFragment>
+  <span
+    class="text-monospace search-query-link"
+  >
+    <span
+      class="search-query-text"
+    >
+      test
+    </span>
+    <span
+      class="search-query-text"
+    >
+       
+    </span>
+    <span
+      class="search-keyword"
+    >
+      or
+    </span>
+    <span
+      class="search-query-text"
+    >
+       
+    </span>
+    <span
+      class="search-query-text"
+    >
+      spec
+    </span>
+  </span>
+</DocumentFragment>
+`;

@@ -1,0 +1,54 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "bg",
+    srcs = [
+        "app_ready.go",
+        "check_redis_cache_eviction_policy.go",
+        "delete_old_cache_data_in_redis.go",
+        "delete_old_event_logs_in_postgres.go",
+        "doc.go",
+        "update_permissions.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/globals",
+        "//internal/auth/userpasswd",
+        "//internal/collections",
+        "//internal/conf",
+        "//internal/conf/deploy",
+        "//internal/database",
+        "//internal/rbac",
+        "//internal/rbac/types",
+        "//internal/rcache",
+        "//internal/redispool",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_fatih_color//:color",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "bg_test",
+    timeout = "moderate",
+    srcs = ["update_permissions_test.go"],
+    embed = [":bg"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/rbac/types",
+        "//internal/types",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -10,7 +10,7 @@ import (
 
 func TestGenerateHistory(t *testing.T) {
 	day := time.Date(2006, 01, 02, 0, 0, 0, 0, time.UTC)
-	dayString := day.Format("2006/01/02")
+	dayString := day.Format("2006-01-02")
 
 	tests := []struct {
 		name                    string
@@ -134,6 +134,49 @@ func TestGenerateHistory(t *testing.T) {
 			})
 			assert.Equal(t, gotFlakes, tt.wantFlakes, "flakes")
 			assert.Equal(t, gotConsecutiveFailures, tt.wantConsecutiveFailures, "consecutive failures")
+		})
+	}
+}
+
+func TestMapToRecords(t *testing.T) {
+	tests := []struct {
+		name        string
+		arg         map[string]int
+		wantRecords [][]string
+	}{{
+		name: "sorted",
+		arg: map[string]int{
+			"2022-01-02": 2,
+			"2022-01-01": 1,
+			"2022-01-03": 3,
+		},
+		wantRecords: [][]string{
+			{"2022-01-01", "1"},
+			{"2022-01-02", "2"},
+			{"2022-01-03", "3"},
+		},
+	}, {
+		name: "gaps filled in",
+		arg: map[string]int{
+			"2022-01-01": 1,
+			"2022-01-03": 3,
+			"2022-01-06": 6,
+			"2022-01-07": 7,
+		},
+		wantRecords: [][]string{
+			{"2022-01-01", "1"},
+			{"2022-01-02", "0"},
+			{"2022-01-03", "3"},
+			{"2022-01-04", "0"},
+			{"2022-01-05", "0"},
+			{"2022-01-06", "6"},
+			{"2022-01-07", "7"},
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotRecords := mapToRecords(tt.arg)
+			assert.Equal(t, tt.wantRecords, gotRecords)
 		})
 	}
 }

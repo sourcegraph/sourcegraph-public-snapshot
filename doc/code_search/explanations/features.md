@@ -16,9 +16,9 @@ See the [structural search](../reference/structural.md) documentation for a deta
 
 Search over commit diffs using `type:diff` to see how your codebase has changed over time. This is often used to find changes to particular functions, classes, or areas of the codebase when debugging.
 
-You can also search within commit diffs on multiple branches by specifying the branches in a `repo:` field after the `@` sign. After the `@`, separate Git refs with `:`, specify Git ref globs by prefixing them with `*`, and exclude commits reachable from a ref by prefixing it with `^`. Diff searches can be further narrowed down with parameters that filter by author and time.
+You can also search within commit diffs on multiple branches by specifying the branches in a `repo:` field after the `@` sign. After the `@`, separate Git refs with `:`, specify Git ref globs by prefixing them with `*`, and exclude a commit reachable from a ref by prefixing it with `^`. Diff searches can be further narrowed down with parameters that filter by author and time.
 
-See the [query syntax](../reference/queries.md#diff-and-commit-searches-only) documentation for a comprehensive list of supported parameters.
+See the [query syntax](../reference/queries.md#keywords-diff-and-commit-searches-only) documentation for a comprehensive list of supported parameters.
 
 ## Commit message search
 
@@ -28,7 +28,31 @@ See our [query syntax](../reference/queries.md#diff-and-commit-searches-only) do
 
 ## Symbol search
 
-Searching for symbols makes it easier to find specific functions, variables, and more. Use the `type:symbol` filter to search for symbol results. Symbol results also appear in typeahead suggestions, so you can jump directly to symbols by name.
+Searching for symbols makes it easier to find specific functions, variables, and more. Use the `type:symbol` filter to search for symbol results. Symbol results also appear in typeahead suggestions, so you can jump directly to symbols by name. When on an [indexed](../../admin/search.md#indexed-search) commit, it uses Zoekt. Otherwise it uses the [symbols service](../../code_navigation/explanations/features.md#symbol-search)
+
+## Smart Search
+
+Smart Search helps find search results that are likely to be more useful than showing "no results" by trying slight variations of a user's original query. Smart Search automatically tries alternative queries based on a handful of rules (we know how easy it is to get tripped up by query syntax). When a query alternative finds results, those results are shown immediately. Smart Search is activated by toggling the lightning bolt <span style="display:inline-flex; vertical-align:middle; margin:2px"><img style="width:20px; height:20px" src="https://storage.googleapis.com/sourcegraph-assets/sourcegraph.com/blog/2022/smart-search-bar-lightning.png"/></span> in the search bar, and is on by default. Smart Search is only enabled in the web application and its results view (Search APIs remain the same and are unaffected).
+
+### Example
+
+Take a query like `go buf byte parser`, for example. Normally, Sourcegraph will search for the string "go buf byte parser" with those tokens in that order. If there are **_no_** results, Smart Search attempts variations of the query. One rule applies a `lang:` filter to known languages. For example, `go` may refer to the `Go` language, so we convert this token to a `lang:Go` filter. Another rule relaxes the ordering on remaining tokens so that we search for `buf AND byte AND parser` anywhere in the file. Here's an example of what Smart Search looks like in action:
+
+<img src="https://storage.googleapis.com/sourcegraph-assets/sourcegraph.com/blog/2022/smart-search-example.png" alt="Smart Search example"/>
+<br />
+
+Note that if the original query finds results (which depends on the code it runs on), Smart Search has no effect. Smart Search does not otherwise intervene or interfere with search queries if those queries return results, and Sourcegraph behaves as usual.
+
+### Configuration options
+
+It is sometimes useful to check for the _absence_ of results (we _want_ to see zero matches). In these cases, Smart Search can be disabled temporarily by toggling the lightning button in the search bar. To deactivate Smart Search by default, set `"search.defaultMode": "precise"` in settings.
+
+It is not possible to customize Smart Search rules at this time. So far a small number of rules are enabled based on feedback and utility. They affect the following query properties:
+
+- Separate patterns with `AND` (pattern order doesn't matter)
+- Patterns as filters (e.g., apply `lang:` or `type:symbol`  filters based on keywords)
+- Quotes in queries (run a literal search for quoted patterns)
+- Patterns as Regular Expressions (check patterns for likely regular expression syntax)
 
 ## Saved searches
 
@@ -48,35 +72,37 @@ Search contexts help you search the code you care about on Sourcegraph. A search
 
 Every search on Sourcegraph uses a search context. Search contexts can be defined with the contexts selector shown in the search input, or entered directly in a search query.
 
-**Sourcegraph Cloud** currently supports two pre-set search contexts: 
+If you currently use version contexts, you can automatically [convert your existing version contexts to search contexts](../../admin/how-to/converting-version-contexts-to-search-contexts.md). We recommend migrating to search contexts for a more intuitive, powerful search experience and the latest improvements and updates.
 
-- Your personal context, `context:@username`, which automatically includes all repositories you add to Sourcegraph Cloud.
-- The global context, `context:global`, which includes all repositories on Sourcegraph Cloud.
+See the [search contexts](../how-to/search_contexts.md) documentation to learn how to use and create search contexts.
 
-If no search context is specified, `context:global` is used.
+## Fuzzy search <span class="badge badge-primary">experimental</span>
 
-**Private Sourcegraph instances** support custom search contexts:
+> NOTE: This feature is still in active development. If you have any feedback on how we can improve this feature, please [let us know](https://github.com/sourcegraph/sourcegraph/discussions/42874).
 
-- Contexts owned by a user, such as `context:@username/context-name`, which can be private to the user or public to all users on the Sourcegraph instance.
-- Contexts at the global level, such as `context:example-context`, which can be private to site admins or public to all users on the Sourcegraph instance.
-- The global context, `context:global`, which includes all repositories on the Sourcegraph instance.
+Use the fuzzy finder to quickly navigate to a repository, symbol, or file.
 
-This feature is currently under active development for self-hosted Sourcegraph instances and is disabled by default.
+To open the fuzzy finder, press `Cmd+K` (macOS) or `Ctrl+K` (Linux/Windows) from any page. Use the dedicated Repos, Symbols, and Files tabs to search only for a repository, symbol, or file. Each tab has a dedicated shortcut:
 
-Your site admin can enable search contexts on your private instance in **global settings** using the following:
+- Repos: Cmd+I (macOS), Ctrl+K (Linux/Windows)
+- Symbols: Cmd+O (macOS), Cmd+Shift+O (macOS Safari), Ctrl+O (Linux/Windows)
+- Files: Cmd+P (macOS), Ctrl+P (Linux/Windows)
 
-```json
-"experimentalFeatures": {  
-  "showSearchContext": true,
-  "showSearchContextManagement": true
-}
-```
+<img src="https://storage.googleapis.com/sourcegraph-assets/Fuzzy%20Finder%20-%20All.png" alt="Fuzzy search">
 
-## Multi-branch indexing <span class="badge badge-primary">experimental</span>
+Use the "Searching everywhere" or "Searching in this repo" filter to determine whether to search for results only in the active repository or globally.
 
-> NOTE: This feature is still in active development and must be enabled by a Sourcegraph site admin in site configuration.
+<img src="https://storage.googleapis.com/sourcegraph-assets/Fuzzy%20Finder%20-%20Search%20Scope.png" alt="Fuzzy search">
 
-The most common branch to search is your default branch. To speed up this common operation Sourcegraph maintains an index of the source code on your default branch. Some organizations have other branches that are regularly searched. To speed up search for those branches Sourcegraph can be configured to index up to 64 branches per repository.
+## Multi-branch indexing
+
+<aside class="experimental">
+<p>
+<span style="margin-right:0.25rem;" class="badge badge-experimental">Experimental</span> Multi-branch indexing is in the experimental stage and must be enabled by a Sourcegraph site admin in site configuration.
+</p>
+</aside>
+
+The most common branch to search is your default branch. To speed up this common operation, Sourcegraph maintains an index of the source code on your default branch. Some organizations have other branches that are regularly searched. To speed up search for those branches, Sourcegraph can be configured to index up to 64 branches per repository.
 
 Your site admin can configure indexed branches in site configuration under the `experimentalFeatures.search.index.branches` setting. For example:
 
@@ -89,16 +115,8 @@ Your site admin can configure indexed branches in site configuration under the `
 }
 ```
 
-Indexing multiple branches will add additional resource requirements to Sourcegraph (particularly memory). The indexer will deduplicate documents between branches. So the size of your index will grow in relation to the number of unique documents. Refer to our [resource estimator](../../../admin/install/resource_estimator.md) to estimate whether additional resources are required.
+Indexing multiple branches will add additional resource requirements to Sourcegraph (particularly memory). The indexer will deduplicate documents between branches. So the size of your index will grow in relation to the number of unique documents. Refer to our [resource estimator](../../../admin/deploy/resource_estimator.md) to estimate whether additional resources are required.
 
 > NOTE: The default branch (`HEAD`) is always indexed.
 
 > NOTE: All revisions specified in version contexts are also indexed.
-
-**Note**: While version contexts are located in the site configuration, search contexts are enabled through the global settings.
-
-Reload the page after saving changes to see search contexts enabled.
-
-If you currently use [version contexts](#version-contexts), you can automatically [convert your existing version contexts to search contexts](../../admin/how-to/converting-version-contexts-to-search-contexts.md). We recommend migrating to search contexts for a more intuitive, powerful search experience and the latest improvements and updates.
-
-See the [search contexts](../how-to/search_contexts.md) documentation to learn how to use and create search contexts.

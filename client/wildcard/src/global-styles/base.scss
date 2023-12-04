@@ -1,0 +1,62 @@
+@import './colors';
+@import './variables';
+
+@import './functions';
+@import './mixins';
+@import './reboot';
+@import './utilities';
+@import './breakpoints';
+@import './icons';
+@import './dropdown';
+@import './meter';
+@import './popover';
+@import './nav';
+@import './list-group';
+@import './custom-forms';
+@import './typography';
+@import './tables';
+@import './code';
+@import './input-group';
+@import './forms';
+@import './tabs';
+@import './progress';
+@import './collapse';
+@import './grid';
+
+// Show a focus ring when performing keyboard navigation. Uses the polyfill at
+// https://github.com/WICG/focus-visible because few browsers support :focus-visible.
+:focus:not(.focus-visible) {
+    outline: none;
+}
+
+.focus-visible {
+    outline: 0;
+    box-shadow: var(--focus-box-shadow);
+}
+
+.cursor-pointer,
+input[type='radio'],
+input[type='checkbox'] {
+    &:not(:disabled) {
+        cursor: pointer;
+    }
+}
+
+@import 'react-resizable/css/styles';
+// Global styles provided by @reach packages. Should be imported once in the global scope.
+@import '@reach/combobox/styles';
+
+// stylelint-disable-next-line selector-max-id
+html,
+body,
+#root {
+    height: 100%;
+}
+
+:root {
+    // Skip Reach UI styles. See https://reacttraining.com/reach-ui/styling/.
+    --reach-menu-button: 1;
+    --reach-accordion: 1;
+    // Legacy media breakpoints
+    --media-xl: 1200px;
+}

@@ -1,52 +1,80 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Input Renders status 'error' correctly 1`] = `
-<label
-  class="w-100"
+exports[`Input > Renders status 'error' correctly 1`] = `
+<div
+  class="container loader-input loaderInput"
 >
-  <div
-    class="container d-flex"
-  >
-    <input
-      class="input form-control with-invalid-icon is-invalid"
-      type="text"
-      value=""
-    />
-  </div>
-</label>
+  <input
+    aria-invalid="true"
+    class="form-control with-invalid-icon is-invalid"
+    type="text"
+    value=""
+  />
+</div>
 `;
 
-exports[`Input Renders status 'loading' correctly 1`] = `
+exports[`Input > Renders status 'loading' correctly 1`] = `
+<div
+  class="container loader-input loaderInput"
+>
+  <input
+    class="inputLoading form-control with-invalid-icon"
+    type="text"
+    value=""
+  />
+  <div
+    aria-label="Loading"
+    aria-live="polite"
+    class="mdi-icon loadingSpinner spinner"
+    data-loading-spinner="true"
+    role="img"
+  />
+</div>
+`;
+
+exports[`Input > Renders status 'valid' correctly 1`] = `
+<div
+  class="container loader-input loaderInput"
+>
+  <input
+    class="form-control with-invalid-icon is-valid"
+    type="text"
+    value=""
+  />
+</div>
+`;
+
+exports[`Input > renders an input with label correctly 1`] = `
 <label
-  class="w-100"
+  class="label label"
 >
   <div
-    class="container d-flex"
+    class="mb-2"
+  >
+    Input label
+  </div>
+  <div
+    class="container loader-input loaderInput"
   >
     <input
-      class="input form-control with-invalid-icon"
+      class="inputLoading form-control with-invalid-icon"
+      placeholder="loading status input"
+      title="Input loading"
       type="text"
-      value=""
+      value="Input value"
     />
     <div
-      class="loadingSpinner spinner"
+      aria-label="Loading"
+      aria-live="polite"
+      class="mdi-icon loadingSpinner spinner"
+      data-loading-spinner="true"
+      role="img"
     />
   </div>
-</label>
-`;
-
-exports[`Input Renders status 'valid' correctly 1`] = `
-<label
-  class="w-100"
->
-  <div
-    class="container d-flex"
+  <small
+    class="text-muted form-text font-weight-normal descriptionBlock mt-2"
   >
-    <input
-      class="input form-control with-invalid-icon is-valid"
-      type="text"
-      value=""
-    />
-  </div>
+    random message
+  </small>
 </label>
 `;

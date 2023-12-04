@@ -7,6 +7,7 @@ on:
 
 jobs:
   run:
+    if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
 
     # secrets for this workflow are configured in the 'autobuildsherrif' environment.
@@ -15,9 +16,9 @@ jobs:
     environment: autobuildsherrif
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-go@v2
-        with: { go-version: '1.17' }
+        with: { go-version: '1.19' }
 
       - run: ./dev/buildchecker/run-check.sh
         env:

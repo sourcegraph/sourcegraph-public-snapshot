@@ -54,14 +54,14 @@ func TestParseChangesetSpec(t *testing.T) {
 				  "authorEmail": "mary@example.com"
 				}]
 			}`,
-			err: "4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRev is required\n\t* body is required\n\t* commits.0: message is required\n\n",
+			err: "4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRev is required\n\t* body is required\n\t* commits.0: message is required",
 		},
 		{
 			name: "missing fields in ExistingChangesetReference",
 			rawSpec: `{
 				"baseRepository": "graphql-id"
 			}`,
-			err: "2 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* externalID is required\n\n",
+			err: "2 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* externalID is required",
 		},
 		{
 			name: "headRepository in GitBranchChangesetDescription does not match baseRepository",
@@ -109,7 +109,27 @@ func TestParseChangesetSpec(t *testing.T) {
 				  }
 				]
 			}`,
-			err: "2 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* commits: Array must have at most 1 items\n\n",
+			err: "2 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* commits: Array must have at most 1 items",
+		},
+		{
+			name: "with fork",
+			rawSpec: `{
+				"baseRepository": "graphql-id",
+				"baseRef": "refs/heads/master",
+				"baseRev": "d34db33f",
+				"headRef": "refs/heads/my-branch",
+				"headRepository": "graphql-id",
+				"title": "my title",
+				"body": "my body",
+				"published": false,
+				"commits": [{
+				  "message": "commit message",
+				  "diff": "the diff",
+				  "authorName": "Mary McButtons",
+				  "authorEmail": "mary@example.com"
+				}],
+				"fork": true
+			}`,
 		},
 	}
 

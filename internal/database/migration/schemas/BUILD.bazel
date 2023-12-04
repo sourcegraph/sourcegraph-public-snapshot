@@ -1,0 +1,32 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "schemas",
+    srcs = [
+        "description.go",
+        "drift_schema.go",
+        "formatter.go",
+        "formatter_json.go",
+        "formatter_psql.go",
+        "names.go",
+        "schema.go",
+        "schemas.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/migration/definition",
+        "//internal/database/migration/shared",
+        "//internal/lazyregexp",
+        "//lib/errors",
+        "//migrations",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)
+
+go_test(
+    name = "schemas_test",
+    srcs = ["description_test.go"],
+    embed = [":schemas"],
+)

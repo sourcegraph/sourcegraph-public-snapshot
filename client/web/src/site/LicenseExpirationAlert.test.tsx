@@ -1,7 +1,7 @@
 import { subMonths, addDays } from 'date-fns'
-import React from 'react'
+import { describe, expect, test } from 'vitest'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { LicenseExpirationAlert } from './LicenseExpirationAlert'
 

@@ -1,8 +1,9 @@
 import * as React from 'react'
 
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Link } from '@sourcegraph/wildcard'
+
+import type { ProductSubscriptionFields } from '../../../graphql-operations'
 
 import { ProductSubscriptionLabel } from './ProductSubscriptionLabel'
 
@@ -19,13 +20,6 @@ export const productSubscriptionFragment = gql`
                 verified
             }
         }
-        invoiceItem {
-            plan {
-                nameWithBrand
-            }
-            userCount
-            expiresAt
-        }
         activeLicense {
             licenseKey
             info {
@@ -41,7 +35,7 @@ export const productSubscriptionFragment = gql`
     }
 `
 
-export const ProductSubscriptionNodeHeader: React.FunctionComponent = () => (
+export const ProductSubscriptionNodeHeader: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <thead>
         <tr>
             <th>ID</th>
@@ -51,10 +45,12 @@ export const ProductSubscriptionNodeHeader: React.FunctionComponent = () => (
 )
 
 export interface ProductSubscriptionNodeProps {
-    node: GQL.IProductSubscription
+    node: ProductSubscriptionFields
 }
 
-export const ProductSubscriptionNode: React.FunctionComponent<ProductSubscriptionNodeProps> = ({ node }) => (
+export const ProductSubscriptionNode: React.FunctionComponent<
+    React.PropsWithChildren<ProductSubscriptionNodeProps>
+> = ({ node }) => (
     <tr>
         <td className="text-nowrap">
             <Link to={node.url} className="mr-3 font-weight-bold">

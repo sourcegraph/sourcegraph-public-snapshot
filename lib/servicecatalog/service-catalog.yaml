@@ -1,0 +1,58 @@
+# This is the source of truth for services dependencies of Sourcegraph. All names
+# should correspond to published images.
+#
+# Cloud started this file to ensure we can correctly maintain Network Policies
+# to ensure only necessary services can talk to each other.
+#
+# This file is not owned by Cloud but the entire engineering department.
+
+protected_services:
+  # $ go run ./dev/depgraph/ summary internal/gitserver
+  # union of all dependent commands
+  gitserver:
+    consumers:
+      - frontend
+      - repo-updater
+      - searcher
+      - symbols
+      - worker
+      - migrator
+      - precise-code-intel-worker
+      # other stuff we just know about
+      - search-indexer
+      - indexed-searcher
+      # observability
+      - prometheus
+
+  # $ go run ./dev/depgraph/ summary internal/redispool
+  # $ go run ./dev/depgraph/ summary internal/rcache
+  # union of all dependent commands
+  redis:
+    consumers:
+      - blobstore
+      - frontend
+      - gitserver
+      - migrator
+      - repo-updater
+      - searcher
+      - symbols
+      - worker
+      # observability
+      - prometheus
+      - redis-exporter
+
+  # $ go run ./dev/depgraph/ summary internal/database
+  # the union of all dependent commands
+  postgres:
+    consumers:
+      - frontend
+      - gitserver
+      - migrator
+      - repo-updater
+      - searcher
+      - symbols
+      - worker
+      - precise-code-intel-worker
+      # observability
+      - prometheus
+      - postgres-exporter

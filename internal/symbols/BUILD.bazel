@@ -1,0 +1,52 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "symbols",
+    srcs = ["client.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/symbols",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/endpoint",
+        "//internal/grpc/defaults",
+        "//internal/httpcli",
+        "//internal/limiter",
+        "//internal/search",
+        "//internal/search/result",
+        "//internal/symbols/v1:symbols",
+        "//internal/trace",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+go_test(
+    name = "symbols_test",
+    timeout = "short",
+    srcs = ["client_test.go"],
+    embed = [":symbols"],
+    deps = [
+        "//internal/actor",
+        "//internal/authz",
+        "//internal/endpoint",
+        "//internal/grpc",
+        "//internal/grpc/defaults",
+        "//internal/search",
+        "//internal/search/result",
+        "//internal/symbols/v1:symbols",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

@@ -1,67 +1,79 @@
-import classNames from 'classnames'
-import * as H from 'history'
-import AccountIcon from 'mdi-react/AccountIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { mdiChevronRight } from '@mdi/js'
+import classNames from 'classnames'
 
-import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
+import { Icon, Link, H3, Text, Tooltip, Badge, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-interface ExternalServiceCardProps {
-    /**
-     * Title to show in the external service "button"
-     */
-    title: string
+import type { AddExternalServiceOptions } from './externalServices'
 
-    /**
-     * Icon to show in the external service "button"
-     */
-    icon: React.ComponentType<{ className?: string }>
+import styles from './ExternalServiceCard.module.scss'
+
+interface ExternalServiceCardProps extends AddExternalServiceOptions {
+    to?: string
 
     /**
-     * A short description that will appear in the external service "button" under the title
+     * ToIcon is an icon shown on the right-hand side of the card. Default value is right-pointed chevron.
      */
-    shortDescription?: string
-
-    kind: ExternalServiceKind
-
-    namespace?: ExternalServiceFields['namespace']
-
-    to?: H.LocationDescriptor
+    toIcon?: string | undefined | null
     className?: string
+    enabled?: boolean
+    badge?: string
+    tooltip?: string
+    bordered?: boolean
 }
 
-export const ExternalServiceCard: React.FunctionComponent<ExternalServiceCardProps> = ({
+export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildren<ExternalServiceCardProps>> = ({
     title,
-    icon: Icon,
+    icon: CardIcon,
     shortDescription,
     to,
+    toIcon = mdiChevronRight,
     kind,
-    namespace,
     className = '',
+    enabled = true,
+    badge = '',
+    tooltip = '',
+    bordered = true,
+    status,
 }) => {
+    let cardTitle = (
+        <H3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>
+            {title}
+            {status && <ProductStatusBadge status={status} className="ml-2" />}
+        </H3>
+    )
+    cardTitle = tooltip ? <Tooltip content={tooltip}>{cardTitle}</Tooltip> : cardTitle
     const children = (
-        <div className={classNames('p-3 d-flex align-items-start border', className)}>
-            <Icon className="icon-inline h3 mb-0 mr-3" />
-            <div className="flex-1">
-                <h3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>
-                    {title}
-                    {namespace && (
-                        <small>
-                            {' '}
-                            by
-                            <AccountIcon className="icon-inline" />
-                            <Link to={namespace.url}>{namespace.namespaceName}</Link>
-                        </small>
-                    )}
-                </h3>
-                {shortDescription && <p className="mb-0 text-muted">{shortDescription}</p>}
+        <div
+            className={classNames(
+                'd-flex align-items-start' + (bordered ? ' p-3 border' : ' p-1') + (enabled ? '' : ' text-muted'),
+                className
+            )}
+        >
+            <Icon
+                disabled={!enabled}
+                className={classNames('mb-0 mr-3', styles.icon)}
+                as={CardIcon}
+                aria-hidden={true}
+            />
+            <div>
+                {cardTitle}
+                {shortDescription && <Text className="mb-0 text-muted">{shortDescription}</Text>}
             </div>
-            {to && <ChevronRightIcon className="align-self-center" />}
+            <div className="flex-1 align-self-center">
+                {to && enabled && toIcon && (
+                    <Icon className="float-right" svgPath={toIcon} inline={false} aria-hidden={true} />
+                )}
+                {badge && (
+                    <Badge className="float-right" variant="outlineSecondary">
+                        {badge.toUpperCase()}
+                    </Badge>
+                )}
+            </div>
         </div>
     )
-    return to ? (
+    return to && enabled ? (
         <Link
             className="d-block text-left text-body text-decoration-none"
             to={to}

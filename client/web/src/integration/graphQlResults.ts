@@ -1,75 +1,76 @@
-import { SearchGraphQlOperations } from '@sourcegraph/search'
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { testUserID, sharedGraphQlResults } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { mergeSettings } from '@sourcegraph/shared/src/settings/settings'
+import { currentUserMock, sharedGraphQlResults } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import type { WebGraphQlOperations } from '../graphql-operations'
 
 import { builtinAuthProvider, siteGQLID, siteID } from './jscontext'
 
 /**
+ * Helper function for creating user and organization/site settings.
+ */
+export const createViewerSettingsGraphQLOverride = (
+    settings: { user?: Settings; site?: Settings } = {}
+): Pick<SharedGraphQlOperations, 'ViewerSettings'> => {
+    const { user: userSettings = {}, site: siteSettings = {} } = settings
+    return {
+        ViewerSettings: () => ({
+            viewerSettings: {
+                __typename: 'SettingsCascade',
+                subjects: [
+                    {
+                        __typename: 'DefaultSettings',
+                        id: 'TestDefaultSettingsID',
+                        settingsURL: null,
+                        viewerCanAdminister: false,
+                        latestSettings: {
+                            id: 0,
+                            contents: JSON.stringify(userSettings),
+                        },
+                    },
+                    {
+                        __typename: 'Site',
+                        id: siteGQLID,
+                        siteID,
+                        latestSettings: {
+                            id: 470,
+                            contents: JSON.stringify(siteSettings),
+                        },
+                        settingsURL: '/site-admin/global-settings',
+                        viewerCanAdminister: true,
+                        allowSiteSettingsEdits: true,
+                    },
+                ],
+                final: JSON.stringify(mergeSettings([siteSettings, userSettings])),
+            },
+        }),
+    }
+}
+
+/**
  * Predefined results for GraphQL requests that are made on almost every page.
  */
-export const commonWebGraphQlResults: Partial<
-    WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations
-> = {
+export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...sharedGraphQlResults,
     CurrentAuthState: () => ({
-        currentUser: {
-            __typename: 'User',
-            id: testUserID,
-            databaseID: 1,
-            username: 'test',
-            avatarURL: null,
-            email: 'felix@sourcegraph.com',
-            displayName: null,
-            siteAdmin: true,
-            tags: [],
-            tosAccepted: true,
-            url: '/users/test',
-            settingsURL: '/users/test/settings',
-            organizations: { nodes: [] },
-            session: { canSignOut: true },
-            viewerCanAdminister: true,
-        },
+        currentUser: currentUserMock,
     }),
-    ViewerSettings: () => ({
-        viewerSettings: {
-            __typename: 'SettingsCascade',
-            subjects: [
-                {
-                    __typename: 'DefaultSettings',
-                    settingsURL: null,
-                    viewerCanAdminister: false,
-                    latestSettings: {
-                        id: 0,
-                        contents: JSON.stringify({}),
-                    },
-                },
-                {
-                    __typename: 'Site',
-                    id: siteGQLID,
-                    siteID,
-                    latestSettings: {
-                        id: 470,
-                        contents: JSON.stringify({}),
-                    },
-                    settingsURL: '/site-admin/global-settings',
-                    viewerCanAdminister: true,
-                    allowSiteSettingsEdits: true,
-                },
-            ],
-            final: JSON.stringify({}),
-        },
-    }),
-    SiteFlags: () => ({
+    ...createViewerSettingsGraphQLOverride(),
+    GlobalAlertsSiteFlags: () => ({
         site: {
+            __typename: 'Site',
+            id: 'TestSiteID',
             needsRepositoryConfiguration: false,
+            externalServicesCounts: {
+                __typename: 'ExternalServicesCounts',
+                remoteExternalServicesCount: 1,
+            },
             freeUsersExceeded: false,
             alerts: [],
             authProviders: {
                 nodes: [builtinAuthProvider],
             },
-            disableBuiltInSearches: false,
             sendsEmailVerificationEmails: true,
             updateCheck: {
                 pending: false,
@@ -84,51 +85,11 @@ export const commonWebGraphQlResults: Partial<
             productVersion: '0.0.0+dev',
         },
         productVersion: '0.0.0+dev',
+        codeIntelligenceConfigurationPolicies: {
+            totalCount: 1,
+        },
     }),
 
-    StatusMessages: () => ({
-        statusMessages: [],
-    }),
-
-    SiteAdminActivationStatus: () => ({
-        externalServices: { totalCount: 3 },
-        repositoryStats: {
-            gitDirBytes: '1825299556',
-            indexedLinesCount: '2616264',
-        },
-        repositories: { totalCount: 9 },
-        viewerSettings: {
-            __typename: 'SettingsCascade',
-            subjects: [],
-            final: JSON.stringify({}),
-        },
-        users: { totalCount: 2 },
-        currentUser: {
-            usageStatistics: {
-                searchQueries: 171,
-                findReferencesActions: 14,
-                codeIntelligenceActions: 670,
-            },
-        },
-    }),
-    // Note this is the response not for the admin
-    ActivationStatus: () => ({
-        // externalServices: { totalCount: 3 },
-        // repositories: { totalCount: 9 },
-        // viewerSettings: {
-        //     __typename: 'SettingsCascade',
-        //     subjects: [],
-        //     final: JSON.stringify({}),
-        // },
-        // users: { totalCount: 2 },
-        currentUser: {
-            usageStatistics: {
-                searchQueries: 171,
-                findReferencesActions: 14,
-                codeIntelligenceActions: 670,
-            },
-        },
-    }),
     EventLogsData: () => ({
         node: {
             __typename: 'User',
@@ -142,54 +103,17 @@ export const commonWebGraphQlResults: Partial<
             },
         },
     }),
-    savedSearches: () => ({
-        savedSearches: [],
+    SavedSearches: () => ({
+        savedSearches: {
+            nodes: [],
+            totalCount: 0,
+            pageInfo: { startCursor: null, endCursor: null, hasNextPage: false, hasPreviousPage: false },
+        },
     }),
     LogEvents: () => ({
         logEvents: {
             alwaysNil: null,
         },
-    }),
-    LogUserEvent: () => ({
-        logUserEvent: {
-            alwaysNil: null,
-        },
-    }),
-    AutoDefinedSearchContexts: () => ({
-        autoDefinedSearchContexts: [
-            {
-                __typename: 'SearchContext',
-                id: '1',
-                spec: 'global',
-                name: 'global',
-                namespace: null,
-                autoDefined: true,
-                public: true,
-                description: 'All repositories on Sourcegraph',
-                updatedAt: '2021-03-15T19:39:11Z',
-                repositories: [],
-                query: '',
-                viewerCanManage: false,
-            },
-            {
-                __typename: 'SearchContext',
-                id: '2',
-                spec: '@test',
-                name: 'test',
-                namespace: {
-                    __typename: 'User',
-                    id: 'u1',
-                    namespaceName: 'test',
-                },
-                autoDefined: true,
-                public: true,
-                description: 'Your repositories on Sourcegraph',
-                updatedAt: '2021-03-15T19:39:11Z',
-                repositories: [],
-                query: '',
-                viewerCanManage: false,
-            },
-        ],
     }),
     ListSearchContexts: () => ({
         searchContexts: {
@@ -201,16 +125,6 @@ export const commonWebGraphQlResults: Partial<
     IsSearchContextAvailable: () => ({
         isSearchContextAvailable: false,
     }),
-    UserRepositories: () => ({
-        node: {
-            __typename: 'User',
-            repositories: {
-                totalCount: 0,
-                nodes: [],
-                pageInfo: { hasNextPage: false },
-            },
-        },
-    }),
     ExternalServices: () => ({
         externalServices: {
             totalCount: 0,
@@ -218,33 +132,25 @@ export const commonWebGraphQlResults: Partial<
             pageInfo: { hasNextPage: false, endCursor: null },
         },
     }),
-    ExternalServicesScopes: () => ({
-        externalServices: {
-            nodes: [],
-        },
-    }),
-    FetchFeatureFlags: () => ({
-        viewerFeatureFlags: [],
-    }),
-    OrgFeatureFlagValue: () => ({
-        organizationFeatureFlagValue: false,
+    EvaluateFeatureFlag: () => ({
+        evaluateFeatureFlag: false,
     }),
     OrgFeatureFlagOverrides: () => ({
         organizationFeatureFlagOverrides: [],
     }),
-    GetTemporarySettings: () => ({
-        temporarySettings: {
-            __typename: 'TemporarySettings',
-            contents: JSON.stringify({
-                'user.daysActiveCount': 1,
-                'user.lastDayActive': new Date().toDateString(),
-                'search.usedNonGlobalContext': true,
-            }),
+    SearchHistoryEventLogsQuery: () => ({
+        currentUser: {
+            __typename: 'User',
+            recentSearchLogs: {
+                __typename: 'EventLogsConnection',
+                nodes: [],
+            },
         },
     }),
-    EditTemporarySettings: () => ({
-        editTemporarySettings: {
-            alwaysNil: null,
+    DefaultSearchContextSpec: () => ({
+        defaultSearchContext: {
+            __typename: 'SearchContext',
+            spec: 'global',
         },
     }),
 }

@@ -1,0 +1,22 @@
+.node {
+    border: none;
+    padding: 0.5rem 0;
+    &:first-child {
+        padding-top: 0;
+    }
+    &:last-child {
+        padding-bottom: 0;
+    }
+    // Make sure the last node doesn't have a dividing border.
+    &:not(:last-child) {
+        border-bottom: 1px solid var(--border-color);
+    }
+}
+
+.no-child-node {
+    margin-left: 1.25rem;
+}
+
+.child-teams {
+    background-color: var(--body-bg);
+}

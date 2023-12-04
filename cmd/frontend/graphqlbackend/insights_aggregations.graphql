@@ -1,0 +1,167 @@
+extend type Query {
+    """
+    Returns information about aggregating the potential results of a search query.
+    """
+    searchQueryAggregate(query: String!, patternType: SearchPatternType!): SearchQueryAggregate!
+}
+
+"""
+Supported aggregation modes for search aggregations
+"""
+enum SearchAggregationMode {
+    REPO
+    PATH
+    AUTHOR
+    CAPTURE_GROUP
+    REPO_METADATA
+}
+
+"""
+Information about search aggregations
+"""
+type SearchQueryAggregate {
+    """
+    A list of the possible aggregation modes and if they are available
+    """
+    modeAvailability: [AggregationModeAvailability!]!
+
+    """
+    A result of aggregating a search query for the specified aggregation mode.
+    mode - the requested aggregation mode, if null a default will be selected based on the search query
+    limit - is the maximum number of aggregation groups to return, this limit will not override any internal limits.
+    extendedTimeout - indicates of the aggregation request should use an extended timeout.
+    """
+    aggregations(
+        mode: SearchAggregationMode
+        limit: Int = 50
+        extendedTimeout: Boolean = false
+    ): SearchAggregationResult!
+}
+
+"""
+Information regarding the availablity of a SearchAggregationMode
+"""
+type AggregationModeAvailability {
+    """
+    The SearchAggregationMode
+    """
+    mode: SearchAggregationMode!
+    """
+    Boolean indicating if the mode is available
+    """
+    available: Boolean!
+    """
+    If the mode is unavailable the reason why
+    """
+    reasonUnavailable: String
+}
+
+"""
+Information regarding the results of an exhaustive search aggregation
+"""
+type ExhaustiveSearchAggregationResult {
+    """
+    A list of the first [LIMIT] aggregation groups in decreasing order
+    """
+    groups: [AggregationGroup!]!
+
+    """
+    Boolean indicating if the search query supports being persisted as an insight on a dashboard
+    """
+    supportsPersistence: Boolean
+    """
+    A count to capture the number of results that are not included in the list of groups returned.
+    This includes result counts for groups that were excluded due to the requested limit
+    """
+    otherResultCount: Int
+    """
+    A count to represent the number of aggregation groups that were not returned due to the requested LIMIT
+    """
+    otherGroupCount: Int
+    """
+    The SearchAggregationMode the results relate to
+    """
+    mode: SearchAggregationMode!
+}
+
+"""
+Information regarding the results of an exhaustive search aggregation
+"""
+type NonExhaustiveSearchAggregationResult {
+    """
+    A list of the first [LIMIT] aggregation groups in decreasing order
+    """
+    groups: [AggregationGroup!]!
+
+    """
+    Boolean indicating if the search query support being persisted as an insight on a dashboard
+    """
+    supportsPersistence: Boolean
+    """
+    A count to capture the total number of results that are not included in the list of values returned.
+    """
+    otherResultCount: Int
+    """
+    An approximate count of the total number of aggregation groups that were not available in the values list
+    """
+    approximateOtherGroupCount: Int
+    """
+    The SearchAggregationMode the results relate to
+    """
+    mode: SearchAggregationMode!
+}
+
+"""
+Information regarding the availablity of a SearchAggregationMode
+"""
+type AggregationGroup {
+    """
+    A label associated with the Aggregation for example a Repo name or Author name
+    """
+    label: String!
+    """
+    The number of hits for this search
+    """
+    count: Int!
+    """
+    A modified search query that would filter the orginal query to just the selected group
+    """
+    query: String
+}
+
+"""
+Defines how the data series is generated.
+"""
+union SearchAggregationResult =
+      ExhaustiveSearchAggregationResult
+    | NonExhaustiveSearchAggregationResult
+    | SearchAggregationNotAvailable
+
+"""
+Indicates that a search aggregation is not available
+"""
+type SearchAggregationNotAvailable {
+    """
+    The specific reason a search aggregation is not available
+    """
+    reason: String!
+    """
+    The general reason a search aggregation is not available
+    """
+    reasonType: NotAvailableReasonType!
+    """
+    The SearchAggregationMode that is unavailable
+    """
+    mode: SearchAggregationMode!
+}
+
+"""
+An enum to describe the reasons why search aggregations are not available
+"""
+enum NotAvailableReasonType {
+    INVALID_QUERY
+    INVALID_AGGREGATION_MODE_FOR_QUERY
+    TIMEOUT_EXTENSION_AVAILABLE
+    TIMEOUT_NO_EXTENSION_AVAILABLE
+    OTHER_ERROR
+}

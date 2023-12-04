@@ -41,6 +41,9 @@
   - Apache-2.0
   - *2
 - - :permit
+  - Apache-2
+  - *2
+- - :permit
   - BSD-2-Clause
   - *2
 - - :permit
@@ -93,6 +96,9 @@
   - *2
 - - :permit
   - WTFPL
+  - *2
+- - :permit
+  - Public domain
   - *2
 - - :permit
   - Apache*
@@ -291,6 +297,10 @@
   - modernc.org/strutil
   - BSD-3-Clause
   - *3
+- - :license
+  - github.com/pjbgf/sha1cd
+  - Apache 2.0
+  - *3
 - - :ignore
   - github.com/OpenPeeDeeP/depguard
   - :who:
@@ -329,7 +339,7 @@
     :why: Used by caniuse-lite
     :when: 2020-09-23 12:14:34.205000000 Z
 - - :ignore
-  - "./enterprise/dev/ci/images"
+  - "./dev/ci/images"
   - :who:
     :why: Internal module
     :versions: []
@@ -353,3 +363,210 @@
     :why: Used by argparse
     :versions: []
     :when: 2021-10-12 11:17:37.706276000 Z
+- - :license
+  - github.com/DataDog/sketches-go
+  - Apache 2.0
+  - :who:
+    :why:
+    :versions: []
+    :when: 2022-02-18 21:09:06.289293214 Z
+- - :license
+  - github.com/layeh/gopher-json
+  - Public domain
+  - :who:
+    :why:
+    :versions: []
+    :when: 2022-04-18 21:25:36.854878000 Z
+- - :ignore
+  - root-workspace-0b6124
+  - :who:
+    :why:
+    :versions: []
+    :when: 2022-12-05 09:54:08.112251000 Z
+- - :ignore
+  - trim
+  - :who:
+    :why:
+    :versions: []
+    :when: 2022-12-05 09:54:31.944623000 Z
+- - :ignore
+  - "./monitoring"
+  - :who:
+    :why: Internal module
+    :versions: []
+    :when: 2022-12-16 22:04:46.864944000 Z
+- - :license
+  - "@atlassian/aui"
+  - Apache 2.0
+  - :who:
+    :why: Inference broken, LICENSE file lives at https://bitbucket.org/atlassian/aui/src/master/packages/core/LICENSE.md
+    :versions: []
+    :when: 2023-01-09 04:35:08.321179000 Z
+- - :license
+  - browser-assert
+  - MIT
+  - :who:
+    :why: Inference broken, LICENSE file lives at https://github.com/socialally/browser-assert/blob/master/LICENSE
+    :versions: []
+    :when: 2023-01-09 04:44:39.507826000 Z
+- - :ignore
+  - buffers
+  - :who:
+    :why: No LICENSE file, see https://www.npmjs.com/package/buffers
+    :versions: []
+    :when: 2023-01-09 04:47:26.508863000 Z
+- - :permit
+  - MIT/X11
+  - :who:
+    :why: The MIT license and the MIT/X11 license are actually the same thing. The
+      MIT/X11 license is just an older name for the MIT license, which was adopted
+      in the 1980s when the X Window System (also known as X11) was popular.
+    :versions: []
+    :when: 2023-01-09 04:50:14.994464000 Z
+- - :permit
+  - Public Domain
+  - :who:
+    :why: The Public Domain license is a legal designation that indicates that a work
+      is not protected by copyright and can be used freely by anyone, for any purpose.
+    :versions: []
+    :when: 2023-01-09 04:53:01.534607000 Z
+- - :ignore
+  - language-tags
+  - :who:
+    :why: Used by the `eslint-plugin-jsx-a11y` dependency.
+    :versions: []
+    :when: 2023-01-09 04:55:27.641853000 Z
+- - :ignore
+  - language-subtag-registry
+  - :who:
+    :why: Used by the `eslint-plugin-jsx-a11y` dependency.
+    :versions: []
+    :when: 2023-01-09 04:55:27.641853000 Z
+- - :license
+  - skatejs-template-html
+  - MIT
+  - :who:
+    :why: Inference broken, LICENSE file lives at https://www.npmjs.com/package/skatejs-template-html#license
+    :versions: []
+    :when: 2023-01-09 04:56:45.936694000 Z
+- - :license
+  - stdin
+  - MIT
+  - :who:
+    :why: Inference broken, LICENSE file lives at https://www.npmjs.com/package/stdin#license
+    :versions: []
+    :when: 2023-01-09 04:58:41.642155000 Z
+- - :ignore
+  - eslint-plugin-deprecation
+  - :who:
+    :why: dependency from backstage
+    :versions: []
+    :when: 2023-01-19 20:03:11.764982000 Z
+- - :ignore
+  - fast-shallow-equal
+  - :who:
+    :why: dependency from backstage
+    :versions: []
+    :when: 2023-01-19 20:03:33.000495000 Z
+- - :ignore
+  - pako
+  - :who:
+    :why: dependency from backstage
+    :versions: []
+    :when: 2023-01-19 20:03:51.213298000 Z
+- - :ignore
+  - react-universal-interface
+  - :who:
+    :why: dependency from backstage
+    :versions: []
+    :when: 2023-01-19 20:04:06.690991000 Z
+- - :ignore
+  - tosource
+  - :who:
+    :why: dependency from backstage
+    :versions: []
+    :when: 2023-01-19 20:25:48.126482000 Z
+- - :ignore
+  - rollup-plugin-dts
+  - :who:
+    :why: dependency from backstage
+    :versions: []
+    :when: 2023-01-19 20:26:01.138835000 Z
+- - :license
+  - github.com/xi2/xz
+  - Public domain
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-01-12 01:20:17.504279000 Z
+- - :license
+  - github.com/hashicorp/cronexpr
+  - Apache 2.0
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-06-02 13:33:29.979046000 Z
+- - :license
+  - "@jspm/core"
+  - Apache 2.0
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-06-19 14:46:26.158816000 Z
+- - :license
+  - require-like
+  - MIT
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-06-19 14:47:16.005983000 Z
+- - :license
+  - github.com/ricochet2200/go-disk-usage/du
+  - Unlicense
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-06-19 19:11:34.298774000 Z
+- - :license
+  - github.com/hashicorp/go-retryablehttp
+  - MPL-2.0
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-07-17 17:10:16.265371000 Z
+- - :approve
+  - github.com/hashicorp/go-retryablehttp
+  - &4
+    :who:
+    :why:
+    :versions: []
+    :when: 2023-07-17 18:09:46.313307000 Z
+- - :approve
+  - MPL-2.0
+  - *4
+- - :permit
+  - BlueOak-1.0.0
+  - :who:
+    :why: Approved permissive license (https://handbook.sourcegraph.com/departments/engineering/dev/process/licenses/#allowed-licenses-permissive-licenses)
+    :versions: []
+    :when: 2023-07-27 21:22:46.362043095 Z
+- - :license
+  - github.com/hashicorp/terraform-cdk-go/cdktf
+  - MPL-2.0
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-08-23 22:45:52.736440000 Z
+- - :license
+  - github.com/hashicorp/go-tfe
+  - MPL-2.0
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-09-06 22:04:27.722891000 Z
+- - :ignore
+  - "./lib/managedservicesplatform"
+  - :who:
+    :why: Internal module
+    :versions: []
+    :when: 2023-09-23 22:04:27.722891000 Z

@@ -1,58 +1,84 @@
 package ratelimit
 
 import (
-	"sync"
+	"context"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// DefaultRegistry is the default global rate limit registry. It will hold rate limit mappings
-// for each instance of our services.
-var DefaultRegistry = NewRegistry()
+type Limiter interface {
+	WaitN(context.Context, int) error
+}
 
-// NewRegistry creates a new empty registry.
-func NewRegistry() *Registry {
-	return &Registry{
-		rateLimiters: make(map[string]*rate.Limiter),
+type InspectableLimiter interface {
+	Limiter
+
+	Limit() rate.Limit
+	Burst() int
+}
+
+// InstrumentedLimiter wraps a Limiter with instrumentation.
+type InstrumentedLimiter struct {
+	Limiter
+
+	urn string
+}
+
+// NewInstrumentedLimiter creates new InstrumentedLimiter with given URN and Limiter,
+// usually a rate.Limiter.
+func NewInstrumentedLimiter(urn string, limiter Limiter) *InstrumentedLimiter {
+	return &InstrumentedLimiter{
+		urn:     urn,
+		Limiter: limiter,
 	}
 }
 
-// Registry keeps a mapping of external service URL to *rate.Limiter.
-// By default an infinite limiter is returned.
-type Registry struct {
-	mu sync.Mutex
-	// Rate limiter per code host, keys are the normalized base URL for a
-	// code host.
-	rateLimiters map[string]*rate.Limiter
+// Wait is shorthand for WaitN(ctx, 1).
+func (i *InstrumentedLimiter) Wait(ctx context.Context) error {
+	return i.WaitN(ctx, 1)
 }
 
-// Get fetches the rate limiter associated with the given code host. If none has been
-// configured an infinite limiter is returned.
-func (r *Registry) Get(baseURL string) *rate.Limiter {
-	return r.GetOrSet(baseURL, nil)
-}
-
-// GetOrSet fetches the rate limiter associated with the given code host. If none has been configured
-// yet, the provided limiter will be set. A nil limiter will fall back to an infinite limiter.
-func (r *Registry) GetOrSet(baseURL string, fallback *rate.Limiter) *rate.Limiter {
-	baseURL = normaliseURL(baseURL)
-	if fallback == nil {
-		// Burst is ignored when rate.Inf is used
-		fallback = rate.NewLimiter(rate.Inf, 1)
+// WaitN blocks until lim permits n events to happen.
+// It returns an error if n exceeds the Limiter's burst size, the Context is
+// canceled, or the expected wait time exceeds the Context's Deadline.
+// The burst limit is ignored if the rate limit is Inf.
+func (i *InstrumentedLimiter) WaitN(ctx context.Context, n int) error {
+	if il, ok := i.Limiter.(InspectableLimiter); ok {
+		if il.Limit() == 0 && il.Burst() == 0 {
+			// We're not allowing anything through the limiter, return a custom error so that
+			// we can handle it correctly.
+			return ErrBlockAll
+		}
 	}
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	l := r.rateLimiters[baseURL]
-	if l == nil {
-		l = fallback
-		r.rateLimiters[baseURL] = l
+
+	start := time.Now()
+	err := i.Limiter.WaitN(ctx, n)
+	// For GlobalLimiter instances, we return a special error type for BlockAll,
+	// since we don't want to make two preflight redis calls to check limit and burst
+	// above. We map it back to ErrBlockAll here then.
+	if err != nil && errors.HasType(err, AllBlockedError{}) {
+		return ErrBlockAll
 	}
-	return l
+	d := time.Since(start)
+	failedLabel := "false"
+	if err != nil {
+		failedLabel = "true"
+	}
+
+	metricWaitDuration.WithLabelValues(i.urn, failedLabel).Observe(d.Seconds())
+	return err
 }
 
-// Count returns the total number of rate limiters in the registry
-func (r *Registry) Count() int {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return len(r.rateLimiters)
-}
+// ErrBlockAll indicates that the limiter is set to block all requests
+var ErrBlockAll = errors.New("ratelimit: limit and burst are zero")
+
+var metricWaitDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "src_internal_rate_limit_wait_duration",
+	Help:    "Time spent waiting for our internal rate limiter",
+	Buckets: []float64{0.2, 0.5, 1, 2, 5, 10, 30, 60},
+}, []string{"urn", "failed"})

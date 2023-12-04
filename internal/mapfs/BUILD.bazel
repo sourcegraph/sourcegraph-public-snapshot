@@ -1,0 +1,22 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mapfs",
+    srcs = [
+        "directory.go",
+        "file.go",
+        "mapfs.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/mapfs",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/errors"],
+)
+
+go_test(
+    name = "mapfs_test",
+    timeout = "short",
+    srcs = ["mapfs_test.go"],
+    embed = [":mapfs"],
+    deps = ["@com_github_google_go_cmp//cmp"],
+)

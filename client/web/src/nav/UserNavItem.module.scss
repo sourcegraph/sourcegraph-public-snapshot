@@ -44,26 +44,14 @@
 
 .dropdown-menu {
     min-width: 12rem;
-
-    > :global(.dropdown-item) {
-        &:hover {
-            background-color: var(--link-color);
-            color: var(--light-text);
-        }
-    }
-
-    > :global(.dropdown-header) {
-        font-size: 0.75rem;
-    }
-
-    > :global(.dropdown-divider) {
-        border-top: 1px solid var(--border-color-2);
-    }
 }
 
-.tooltip {
-    opacity: 0;
-    animation: tooltip-fade-in-out 5s ease-out 100ms;
+.dropdown-header {
+    font-size: 0.75rem;
+}
+
+.dropdown-divider {
+    border-top: 1px solid var(--border-color-2);
 }
 
 .avatar {

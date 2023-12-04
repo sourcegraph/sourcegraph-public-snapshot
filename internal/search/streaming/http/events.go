@@ -20,6 +20,7 @@ type EventContentMatch struct {
 	Type MatchType `json:"type"`
 
 	Path            string           `json:"path"`
+	PathMatches     []Range          `json:"pathMatches,omitempty"`
 	RepositoryID    int32            `json:"repositoryID"`
 	Repository      string           `json:"repository"`
 	RepoStars       int              `json:"repoStars,omitempty"`
@@ -27,7 +28,9 @@ type EventContentMatch struct {
 	Branches        []string         `json:"branches,omitempty"`
 	Commit          string           `json:"commit,omitempty"`
 	Hunks           []DecoratedHunk  `json:"hunks"`
-	LineMatches     []EventLineMatch `json:"lineMatches"`
+	LineMatches     []EventLineMatch `json:"lineMatches,omitempty"`
+	ChunkMatches    []ChunkMatch     `json:"chunkMatches,omitempty"`
+	Debug           string           `json:"debug,omitempty"`
 }
 
 func (e *EventContentMatch) eventMatch() {}
@@ -41,12 +44,14 @@ type EventPathMatch struct {
 	Type MatchType `json:"type"`
 
 	Path            string     `json:"path"`
+	PathMatches     []Range    `json:"pathMatches,omitempty"`
 	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Branches        []string   `json:"branches,omitempty"`
 	Commit          string     `json:"commit,omitempty"`
+	Debug           string     `json:"debug,omitempty"`
 }
 
 func (e *EventPathMatch) eventMatch() {}
@@ -74,6 +79,12 @@ type DecoratedContent struct {
 	HTML      string `json:"html,omitempty"`
 }
 
+type ChunkMatch struct {
+	Content      string   `json:"content"`
+	ContentStart Location `json:"contentStart"`
+	Ranges       []Range  `json:"ranges"`
+}
+
 // EventLineMatch is a subset of zoekt.LineMatch for our Event API.
 type EventLineMatch struct {
 	Line             string     `json:"line"`
@@ -86,15 +97,18 @@ type EventRepoMatch struct {
 	// Type is always RepoMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	RepositoryID    int32      `json:"repositoryID"`
-	Repository      string     `json:"repository"`
-	Branches        []string   `json:"branches,omitempty"`
-	RepoStars       int        `json:"repoStars,omitempty"`
-	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
-	Description     string     `json:"description,omitempty"`
-	Fork            bool       `json:"fork,omitempty"`
-	Archived        bool       `json:"archived,omitempty"`
-	Private         bool       `json:"private,omitempty"`
+	RepositoryID       int32              `json:"repositoryID"`
+	Repository         string             `json:"repository"`
+	RepositoryMatches  []Range            `json:"repositoryMatches,omitempty"`
+	Branches           []string           `json:"branches,omitempty"`
+	RepoStars          int                `json:"repoStars,omitempty"`
+	RepoLastFetched    *time.Time         `json:"repoLastFetched,omitempty"`
+	Description        string             `json:"description,omitempty"`
+	DescriptionMatches []Range            `json:"descriptionMatches,omitempty"`
+	Fork               bool               `json:"fork,omitempty"`
+	Archived           bool               `json:"archived,omitempty"`
+	Private            bool               `json:"private,omitempty"`
+	Metadata           map[string]*string `json:"metadata,omitempty"`
 }
 
 func (e *EventRepoMatch) eventMatch() {}
@@ -122,6 +136,7 @@ type Symbol struct {
 	Name          string `json:"name"`
 	ContainerName string `json:"containerName"`
 	Kind          string `json:"kind"`
+	Line          int32  `json:"line"`
 }
 
 // EventCommitMatch is the generic results interface from GQL. There is a lot
@@ -137,6 +152,12 @@ type EventCommitMatch struct {
 	Detail          string     `json:"detail"`
 	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
+	OID             string     `json:"oid"`
+	Message         string     `json:"message"`
+	AuthorName      string     `json:"authorName"`
+	AuthorDate      time.Time  `json:"authorDate"`
+	CommitterName   string     `json:"committerName"`
+	CommitterDate   time.Time  `json:"committerDate"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Content         string     `json:"content"`
@@ -145,6 +166,39 @@ type EventCommitMatch struct {
 }
 
 func (e *EventCommitMatch) eventMatch() {}
+
+type EventPersonMatch struct {
+	// Type is always PersonMatchType. Included here for marshalling.
+	Type MatchType `json:"type"`
+
+	Handle string `json:"handle"`
+	Email  string `json:"email"`
+
+	// User will not be set if no user was matched.
+	User *UserMetadata `json:"user,omitempty"`
+}
+
+type UserMetadata struct {
+	Username    string `json:"username"`
+	DisplayName string `json:"displayName"`
+	AvatarURL   string `json:"avatarURL"`
+}
+
+func (e *EventPersonMatch) eventMatch() {}
+
+type EventTeamMatch struct {
+	// Type is always TeamMatchType. Included here for marshalling.
+	Type MatchType `json:"type"`
+
+	Handle string `json:"handle"`
+	Email  string `json:"email"`
+
+	// The following are a subset of types.Team fields.
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
+}
+
+func (e *EventTeamMatch) eventMatch() {}
 
 // EventFilter is a suggestion for a search filter. Currently has a 1-1
 // correspondance with the SearchFilter graphql type.
@@ -159,15 +213,22 @@ type EventFilter struct {
 // EventAlert is GQL.SearchAlert. It replaces when sent to match existing
 // behaviour.
 type EventAlert struct {
-	Title           string          `json:"title"`
-	Description     string          `json:"description,omitempty"`
-	ProposedQueries []ProposedQuery `json:"proposedQueries"`
+	Title           string             `json:"title"`
+	Description     string             `json:"description,omitempty"`
+	Kind            string             `json:"kind,omitempty"`
+	ProposedQueries []QueryDescription `json:"proposedQueries"`
 }
 
-// ProposedQuery is a suggested query to run when we emit an alert.
-type ProposedQuery struct {
-	Description string `json:"description,omitempty"`
-	Query       string `json:"query"`
+// QueryDescription describes queries emitted in alerts.
+type QueryDescription struct {
+	Description string       `json:"description,omitempty"`
+	Query       string       `json:"query"`
+	Annotations []Annotation `json:"annotations,omitempty"`
+}
+
+type Annotation struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 // EventError emulates a JavaScript error with a message property
@@ -184,6 +245,8 @@ const (
 	SymbolMatchType
 	CommitMatchType
 	PathMatchType
+	PersonMatchType
+	TeamMatchType
 )
 
 func (t MatchType) MarshalJSON() ([]byte, error) {
@@ -198,6 +261,10 @@ func (t MatchType) MarshalJSON() ([]byte, error) {
 		return []byte(`"commit"`), nil
 	case PathMatchType:
 		return []byte(`"path"`), nil
+	case PersonMatchType:
+		return []byte(`"person"`), nil
+	case TeamMatchType:
+		return []byte(`"team"`), nil
 	default:
 		return nil, errors.Errorf("unknown MatchType: %d", t)
 	}
@@ -214,6 +281,10 @@ func (t *MatchType) UnmarshalJSON(b []byte) error {
 		*t = CommitMatchType
 	} else if bytes.Equal(b, []byte(`"path"`)) {
 		*t = PathMatchType
+	} else if bytes.Equal(b, []byte(`"person"`)) {
+		*t = PersonMatchType
+	} else if bytes.Equal(b, []byte(`"team"`)) {
+		*t = TeamMatchType
 	} else {
 		return errors.Errorf("unknown MatchType: %s", b)
 	}

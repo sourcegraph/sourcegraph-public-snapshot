@@ -1,0 +1,56 @@
+{
+  "_base": {
+    "description": "Base config which all analyzers will inherit, unless a specific config is given",
+    "exclude_files": {
+      "rules_go.*/*": "ignore rules_go working directory",
+      "external/*": "no need to vet third party code",
+      "schema/schema.go": "ignore generated code",
+      ".*_generated\\.go$": "ignore generated code",
+      ".*_pb\\.go$": "ignore protobuff generated code",
+      "docker-images/*": "ignore all code under docker-images",
+      "main.go": "ignore main",
+      ".*_test\\.go$": "ignore test code",
+      "internal/batches/testing/*": "ignore batches testing code",
+      "internal/gitserver/mock.go": "ignore deprecation warning of P4Exec"
+    }
+  },
+  "bodyclose": {
+    "exclude_files": {
+      "external/*": "no need to vet third party code",
+      ".*_generated\\.go$": "ignore generated code",
+      ".*_pb\\.go$": "ignore protobuff generated code",
+      ".*_test\\.go": "exclude bodyclose lint from tests because leaking connections in tests is a non issue",
+      "internal/extsvc/": "ignore temporarily",
+      "cmd/frontend/internal/gosrc/import_path.go": "temp ignore till we support nolint: comment"
+    }
+  },
+  "forbidigo": {
+    "exclude_files": {
+      "rules_go.*/*": "ignore rules_go working directory",
+      "external/": "no need to vet third party code",
+      "schema/schema.go": "ignore generated code",
+      "errors/cockroach.go": "ignore generated code",
+      ".*_test\\.go$": "ignore test code",
+      ".*_generated\\.go$": "ignore generated code",
+      ".*_pb\\.go$": "ignore protobuff generated code",
+      "main.go": "ignore main files"
+    }
+  },
+  "ineffassign": {
+    "exclude_files": {
+      "external/*": "no need to vet third party code",
+      ".*_generated\\.go$": "ignore generated code",
+      ".*_pb\\.go$": "ignore protobuff generated code",
+      "dev/buildchecker/slack.go": "ignore false positive"
+    }
+  },
+  "exportloopref": {
+    "exclude_files": {
+      "lib/batches/env/var.go": "false positive",
+      "rules_go.*/*": "ignore rules_go working directory",
+      "external/*": "no need to vet third party code",
+      ".*_generated\\.go$": "ignore generated code",
+      ".*_pb\\.go$": "ignore protobuff generated code"
+    }
+  }
+}

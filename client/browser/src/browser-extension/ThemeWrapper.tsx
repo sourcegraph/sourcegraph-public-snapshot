@@ -1,6 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
-
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useEffect, useMemo, useState } from 'react'
 
 /**
  * Wrapper for the browser extension that listens to changes of the OS theme.
@@ -8,7 +6,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 export function ThemeWrapper({
     children,
 }: {
-    children: JSX.Element | null | ((props: ThemeProps) => JSX.Element | null)
+    children: JSX.Element | null | ((props: { isLightTheme: boolean }) => JSX.Element | null)
 }): JSX.Element | null {
     const darkThemeMediaList = useMemo(() => window.matchMedia('(prefers-color-scheme: dark)'), [])
     const [isLightTheme, setIsLightTheme] = useState(!darkThemeMediaList.matches)

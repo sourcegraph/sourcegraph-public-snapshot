@@ -5,15 +5,16 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,10 +23,11 @@ var goSymbolReg = lazyregexp.New("/info/GoPackage/(.+)$")
 // serveRepoLanding simply redirects the old (sourcegraph.com/<repo>/-/info) repo landing page
 // URLs directly to the repo itself (sourcegraph.com/<repo>).
 func serveRepoLanding(db database.DB) func(http.ResponseWriter, *http.Request) error {
+	logger := log.Scoped("serveRepoLanding")
 	return func(w http.ResponseWriter, r *http.Request) error {
 		legacyRepoLandingCounter.Inc()
 
-		repo, commitID, err := handlerutil.GetRepoAndRev(r.Context(), db, mux.Vars(r))
+		repo, commitID, err := handlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vars(r))
 		if err != nil {
 			if errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
 				return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
@@ -38,15 +40,9 @@ func serveRepoLanding(db database.DB) func(http.ResponseWriter, *http.Request) e
 }
 
 func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
-	span, ctx := ot.StartSpanFromContext(r.Context(), "serveDefLanding")
+	tr, ctx := trace.New(r.Context(), "serveDefLanding")
+	defer tr.EndWithErr(&err)
 	r = r.WithContext(ctx)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
 
 	legacyDefLandingCounter.Inc()
 

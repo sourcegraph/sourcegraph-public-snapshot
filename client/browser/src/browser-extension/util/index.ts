@@ -1,3 +1,5 @@
+import { getExtensionVersion } from '../../shared/util/context'
+
 export const checkUrlPermissions = (url: string): Promise<boolean> => {
     const { host, protocol } = new URL(url)
 
@@ -6,3 +8,5 @@ export const checkUrlPermissions = (url: string): Promise<boolean> => {
         origins: [`${protocol}//${host}/*`],
     })
 }
+
+export const IsProductionVersion = !getExtensionVersion().startsWith('0.0.0')

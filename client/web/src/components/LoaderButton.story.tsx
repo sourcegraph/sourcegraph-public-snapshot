@@ -1,41 +1,47 @@
-import { storiesOf } from '@storybook/react'
-import React from 'react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
+
+import { Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from './LoaderButton'
 import { WebStory } from './WebStory'
 
-const { add } = storiesOf('web/LoaderButton', module).addDecorator(story => (
+const decorator: Decorator = story => (
     <div className="container mt-3" style={{ width: 800 }}>
         {story()}
     </div>
-))
+)
 
-add('Inline', () => (
+const config: Meta = {
+    title: 'web/LoaderButton',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Inline: StoryFn = () => (
     <WebStory>
         {() => (
-            <p>
+            <Text>
                 <LoaderButton loading={true} label="loader button" variant="primary" />
-            </p>
+            </Text>
         )}
     </WebStory>
-))
+)
 
-add('Block', () => (
-    <WebStory>
-        {() => <LoaderButton loading={true} label="loader button" className="btn-block" variant="primary" />}
-    </WebStory>
-))
+export const Block: StoryFn = () => (
+    <WebStory>{() => <LoaderButton loading={true} label="loader button" display="block" variant="primary" />}</WebStory>
+)
 
-add('With label', () => (
+export const WithLabel: StoryFn = () => (
     <WebStory>
         {() => (
             <LoaderButton
                 alwaysShowLabel={true}
                 loading={true}
                 label="loader button"
-                className="btn-block"
+                display="block"
                 variant="primary"
             />
         )}
     </WebStory>
-))
+)

@@ -1,27 +1,19 @@
 import React from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
 
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Routes, Route } from 'react-router-dom'
+
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { Page } from '../../../components/Page'
-import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
 
-interface Props
-    extends RouteComponentProps<{}>,
-        ThemeProps,
-        ExtensionsControllerProps,
-        TelemetryProps,
-        PlatformContextProps,
-        SettingsCascadeProps,
-        FeatureFlagProps {
+interface Props extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
+    isCodyApp: boolean
 }
 
 const CodeMonitoringPage = lazyComponent(() => import('../CodeMonitoringPage'), 'CodeMonitoringPage')
@@ -31,26 +23,16 @@ const ManageCodeMonitorPage = lazyComponent(() => import('../ManageCodeMonitorPa
 /**
  * The global code monitoring area.
  */
-export const GlobalCodeMonitoringArea: React.FunctionComponent<Props> = ({ match, ...outerProps }) => (
+export const GlobalCodeMonitoringArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    ...outerProps
+}) => (
     <div className="w-100">
         <Page>
-            <Switch>
-                <Route
-                    path={match.url}
-                    render={props => <CodeMonitoringPage {...outerProps} {...props} />}
-                    exact={true}
-                />
-                <Route
-                    path={`${match.url}/new`}
-                    render={props => <CreateCodeMonitorPage {...outerProps} {...props} />}
-                    exact={true}
-                />
-                <Route
-                    path={`${match.path}/:id`}
-                    render={props => <ManageCodeMonitorPage {...outerProps} {...props} />}
-                    exact={true}
-                />
-            </Switch>
+            <Routes>
+                <Route path="" element={<CodeMonitoringPage {...outerProps} />} />
+                <Route path="new" element={<CreateCodeMonitorPage {...outerProps} />} />
+                <Route path=":id" element={<ManageCodeMonitorPage {...outerProps} />} />
+            </Routes>
         </Page>
     </div>
 )

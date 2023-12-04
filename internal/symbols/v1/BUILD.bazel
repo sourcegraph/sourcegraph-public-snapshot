@@ -1,0 +1,72 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_buf//buf:defs.bzl", "buf_lint_test")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+exports_files(["buf.gen.yaml"])
+
+proto_library(
+    name = "v1_proto",
+    srcs = ["symbols.proto"],
+    strip_import_prefix = "/internal",  # keep
+    visibility = ["//visibility:private"],
+    deps = ["@com_google_protobuf//:duration_proto"],
+)
+
+go_proto_library(
+    name = "v1_go_proto",
+    compilers = [
+        "//:gen-go-grpc",
+        "@io_bazel_rules_go//proto:go_proto",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/symbols/v1",
+    proto = ":v1_proto",
+    visibility = ["//visibility:private"],
+)
+
+go_library(
+    name = "symbols",
+    srcs = [
+        "conversion.go",
+        "doc.go",
+    ],
+    embed = [":v1_go_proto"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/symbols/v1",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/search",
+        "//internal/search/result",
+        "//internal/types",
+        "@org_golang_google_protobuf//types/known/durationpb",
+    ],
+)
+
+# See https://github.com/sourcegraph/sourcegraph/issues/50032
+# write_proto_stubs_to_source(
+#     name = "v1_go_proto_stubs",
+#     output_files = ["symbols.pb.go"],
+#     target = ":v1_go_proto",
+# )
+
+go_test(
+    name = "symbols_test",
+    timeout = "short",
+    srcs = ["conversion_test.go"],
+    embed = [":symbols"],
+    deps = [
+        "//internal/search",
+        "//internal/search/result",
+        "//internal/types",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+    ],
+)
+
+buf_lint_test(
+    name = "v1_proto_lint",
+    timeout = "short",
+    config = "//internal:buf.yaml",
+    targets = [":v1_proto"],
+)

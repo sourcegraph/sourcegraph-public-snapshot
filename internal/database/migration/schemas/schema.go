@@ -1,8 +1,6 @@
 package schemas
 
 import (
-	"io/fs"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 )
 
@@ -13,9 +11,6 @@ type Schema struct {
 
 	// MigrationsTableName is the name of the table that tracks the schema version.
 	MigrationsTableName string
-
-	// FS describes the raw migration assets of the schema.
-	FS fs.FS
 
 	// Definitions describes the parsed migration assets of the schema.
 	Definitions *definition.Definitions

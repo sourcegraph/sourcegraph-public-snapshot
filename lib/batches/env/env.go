@@ -68,7 +68,7 @@ func (e *Environment) UnmarshalJSON(data []byte) error {
 
 // UnmarshalYAML unmarshals an environment from one of the two supported YAML
 // forms: an array, or a string→string object.
-func (e *Environment) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (e *Environment) UnmarshalYAML(unmarshal func(any) error) error {
 	// data is either an array or object. (Or invalid.) Let's start by trying to
 	// unmarshal it as an array.
 	if err := unmarshal(&e.vars); err == nil {
@@ -105,6 +105,18 @@ func (e Environment) IsStatic() bool {
 		}
 	}
 	return true
+}
+
+// OuterVars returns the list of environment variables that depend on any
+// environment variable defined in the global env.
+func (e Environment) OuterVars() []string {
+	outer := []string{}
+	for _, v := range e.vars {
+		if v.value == nil {
+			outer = append(outer, v.name)
+		}
+	}
+	return outer
 }
 
 // Resolve resolves the environment, using values from the given outer

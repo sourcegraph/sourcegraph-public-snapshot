@@ -1,54 +1,58 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useCallback, useState } from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Navigate, Route, Routes } from 'react-router-dom'
 
-import { HeroPage } from '../../../components/HeroPage'
-import { CreateAccessTokenResult } from '../../../graphql-operations'
-import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
+import { NotFoundPage } from '../../../components/HeroPage'
+import type { CreateAccessTokenResult } from '../../../graphql-operations'
+import { PageRoutes } from '../../../routes.constants'
+import type { UserSettingsAreaRouteContext } from '../UserSettingsArea'
+
+import { UserSettingsCreateAccessTokenCallbackPage } from './UserSettingsCreateAccessTokenCallbackPage'
 import { UserSettingsCreateAccessTokenPage } from './UserSettingsCreateAccessTokenPage'
 import { UserSettingsTokensPage } from './UserSettingsTokensPage'
 
-const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+interface Props extends Pick<UserSettingsAreaRouteContext, 'user' | 'authenticatedUser'>, TelemetryProps {
+    isSourcegraphDotCom: boolean
+    isCodyApp: boolean
+}
 
-interface Props
-    extends Pick<UserSettingsAreaRouteContext, 'user' | 'authenticatedUser'>,
-        Pick<RouteComponentProps<{}>, 'history' | 'location' | 'match'>,
-        TelemetryProps {}
-
-export const UserSettingsTokensArea: React.FunctionComponent<Props> = outerProps => {
+export const UserSettingsTokensArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const [newToken, setNewToken] = useState<CreateAccessTokenResult['createAccessToken'] | undefined>()
+
     const onDidPresentNewToken = useCallback(() => {
         setNewToken(undefined)
     }, [])
+
+    if (props.isSourcegraphDotCom && props.authenticatedUser && !props.authenticatedUser.completedPostSignup) {
+        const returnTo = window.location.href
+        const params = new URLSearchParams()
+        params.set('returnTo', returnTo)
+        const navigateTo = PageRoutes.PostSignUp + '?' + params.toString()
+        return <Navigate to={navigateTo.toString()} replace={true} />
+    }
     return (
-        <Switch>
+        <Routes>
             <Route
-                exact={true}
-                path={outerProps.match.url + '/new'}
-                render={props => (
-                    <UserSettingsCreateAccessTokenPage
-                        {...outerProps}
-                        {...props}
-                        onDidCreateAccessToken={setNewToken}
-                    />
-                )}
+                path="new"
+                element={<UserSettingsCreateAccessTokenPage {...props} onDidCreateAccessToken={setNewToken} />}
             />
             <Route
-                exact={true}
-                path={outerProps.match.url}
-                render={props => (
+                path="new/callback"
+                element={<UserSettingsCreateAccessTokenCallbackPage {...props} onDidCreateAccessToken={setNewToken} />}
+            />
+            <Route
+                path=""
+                element={
                     <UserSettingsTokensPage
-                        {...outerProps}
                         {...props}
                         newToken={newToken}
                         onDidPresentNewToken={onDidPresentNewToken}
                     />
-                )}
+                }
             />
-            <Route component={NotFoundPage} key="hardcoded-key" />
-        </Switch>
+            <Route path="*" element={<NotFoundPage pageType="settings" />} />
+        </Routes>
     )
 }

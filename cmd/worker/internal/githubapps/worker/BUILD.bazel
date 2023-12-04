@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "worker",
+    srcs = ["installation_backfill.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/githubapps/worker",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/extsvc/github",
+        "//internal/github_apps/auth",
+        "//internal/github_apps/types",
+        "//internal/goroutine",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "worker_test",
+    srcs = ["installation_backfill_test.go"],
+    embed = [":worker"],
+    deps = [
+        "//internal/database/dbmocks",
+        "//internal/github_apps/store",
+        "//internal/github_apps/types",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_google_go_github_v55//github",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//mock",
+        "@com_github_stretchr_testify//require",
+    ],
+)

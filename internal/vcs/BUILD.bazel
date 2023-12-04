@@ -1,0 +1,24 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "vcs",
+    srcs = [
+        "url.go",
+        "url_posix.go",
+        "url_windows.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/vcs",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)
+
+go_test(
+    name = "vcs_test",
+    timeout = "short",
+    srcs = ["url_test.go"],
+    embed = [":vcs"],
+)

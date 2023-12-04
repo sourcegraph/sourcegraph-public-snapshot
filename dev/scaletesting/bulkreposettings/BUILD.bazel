@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "bulkreposettings_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/scaletesting/bulkreposettings",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//dev/scaletesting/internal/store",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_google_go_github_v55//github",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_urfave_cli_v2//:cli",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)
+
+go_binary(
+    name = "bulkreposettings",
+    embed = [":bulkreposettings_lib"],
+    visibility = ["//visibility:public"],
+)

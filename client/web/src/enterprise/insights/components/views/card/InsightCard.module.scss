@@ -1,0 +1,67 @@
+.view {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 1rem;
+    cursor: default;
+    outline: none;
+
+    &:focus-visible,
+    &:focus-within {
+        box-shadow: var(--focus-box-shadow);
+    }
+}
+
+.header {
+    margin-bottom: 0.75rem;
+}
+
+.header-content {
+    display: flex;
+}
+
+.title {
+    // Truncation for multiple lines
+    // stylelint-disable-next-line value-no-vendor-prefix
+    display: -webkit-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    margin-bottom: 0;
+
+    // Move title block in order to visually compensate action block y shift
+    margin-top: -0.1rem;
+    flex-grow: 1;
+
+    a {
+        color: inherit;
+    }
+}
+
+.action {
+    display: flex;
+    align-self: start;
+    align-items: center;
+    gap: 0.1rem;
+    // Move icons in action panel visually closer to card border
+    margin-right: -0.5rem;
+    margin-top: -0.25rem;
+}
+
+.subtitle {
+    margin-top: 0.25rem;
+    flex-basis: 100%;
+}
+
+.error-boundary {
+    padding-top: 0;
+}
+
+// Content states
+
+.loading-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

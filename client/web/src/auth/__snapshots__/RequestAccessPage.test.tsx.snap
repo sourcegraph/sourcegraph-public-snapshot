@@ -1,0 +1,122 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`RequestAccessPage > renders form if all conditions are met 1`] = `
+<DocumentFragment>
+  <div
+    class="wrapper"
+  >
+    <span
+      class=""
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo"
+        src="/img/sourcegraph-mark.svg?v2"
+      />
+    </span>
+    <h1
+      class="h1"
+    >
+      Request access to Sourcegraph
+    </h1>
+    <div
+      class="wrapper"
+    >
+      <div
+        class="container"
+      >
+        <form
+          autocapitalize="off"
+          autocomplete="name"
+          class="form-control with-invalid-icon"
+          name="<input id=\\"name\\">"
+          placeholder="Your name"
+          required=""
+          type="text"
+          value=""
+        >
+          " class="mb-0" data-testid="request-access-form"&gt;
+          <label
+            class="label label"
+          >
+            <div
+              class="mb-2"
+            >
+              Name
+            </div>
+            <div
+              class="container loader-input loaderInput"
+            >
+              <input
+                autocapitalize="off"
+                autocomplete="name"
+                class="form-control with-invalid-icon"
+                id="name"
+                placeholder="Your name"
+                required=""
+                type="text"
+                value=""
+              />
+            </div>
+          </label>
+          <label
+            class="label label"
+          >
+            <div
+              class="mb-2"
+            >
+              Email Address
+            </div>
+            <div
+              class="container loader-input loaderInput"
+            >
+              <input
+                autocapitalize="off"
+                autocomplete="email"
+                class="form-control with-invalid-icon"
+                id="email"
+                placeholder="Your work email to get access"
+                required=""
+                type="text"
+                value=""
+              />
+            </div>
+          </label>
+          <label
+            class="label label mb-3"
+          >
+            <div
+              class="mb-2"
+            >
+              Notes for administrator
+            </div>
+            <textarea
+              class="textarea form-control"
+              id="additionalInfo"
+              placeholder="Use this field to provide extra info for your access request"
+            />
+          </label>
+          <button
+            aria-disabled="false"
+            class="btn btnPrimary btnBlock d-flex justify-content-center align-items-center"
+            type="submit"
+          >
+            Request access
+          </button>
+        </form>
+      </div>
+      <p
+        class="text-center mt-3"
+      >
+        Already have an account? 
+        <a
+          class="anchorLink"
+          href="/sign-in"
+        >
+          Sign in
+        </a>
+      </p>
+    </div>
+  </div>
+</DocumentFragment>
+`;

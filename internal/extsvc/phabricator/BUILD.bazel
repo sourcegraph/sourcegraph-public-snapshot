@@ -1,0 +1,33 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "phabricator",
+    srcs = ["client.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/httpcli",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_uber_gonduit//:gonduit",
+        "@com_github_uber_gonduit//core",
+        "@com_github_uber_gonduit//requests",
+    ],
+)
+
+go_test(
+    name = "phabricator_test",
+    timeout = "short",
+    srcs = ["client_test.go"],
+    data = glob(["testdata/**"]),
+    deps = [
+        ":phabricator",
+        "//internal/httpcli",
+        "//internal/httptestutil",
+        "@com_github_dnaeon_go_vcr//cassette",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sergi_go_diff//diffmatchpatch",
+    ],
+)

@@ -1,0 +1,30 @@
+---
+source: crates/scip-syntax/src/locals.rs
+expression: dumped
+---
+  package main
+//        ^^^^ definition local 1
+  
+  func main() {
+//     ^^^^ reference local 1
+   local := true
+// ^^^^^ definition local 3
+   something := func(local int) int {
+// ^^^^^^^^^ definition local 4
+//                   ^^^^^ definition local 5
+    return local
+//         ^^^^^ reference local 5
+   }
+  
+   println(local, something)
+//         ^^^^^ reference local 3
+//                ^^^^^^^^^ reference local 4
+  }
+  
+  func Another(local int) int {
+//     ^^^^^^^ definition local 2
+//             ^^^^^ definition local 6
+   return local
+//        ^^^^^ reference local 6
+  }
+

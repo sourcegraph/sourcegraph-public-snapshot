@@ -1,6 +1,7 @@
 package query
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -15,8 +16,21 @@ func stringHumanPattern(nodes []Node) string {
 			if n.Annotation.Labels.IsSet(Quoted) {
 				v = strconv.Quote(v)
 			}
-			if n.Negated {
-				v = fmt.Sprintf("(not %s)", v)
+			if n.Annotation.Labels.IsSet(Regexp) {
+				v = Delimit(v, '/')
+			}
+			if _, _, ok := ScanBalancedPattern([]byte(v)); !ok && !n.Annotation.Labels.IsSet(IsAlias) && n.Annotation.Labels.IsSet(Literal) {
+				v = fmt.Sprintf(`content:%s`, strconv.Quote(v))
+				if n.Negated {
+					v = "-" + v
+				}
+			} else if n.Annotation.Labels.IsSet(IsAlias) {
+				v = fmt.Sprintf("content:%s", v)
+				if n.Negated {
+					v = "-" + v
+				}
+			} else if n.Negated {
+				v = fmt.Sprintf("(NOT %s)", v)
 			}
 			result = append(result, v)
 		case Operator:
@@ -27,9 +41,9 @@ func stringHumanPattern(nodes []Node) string {
 			var separator string
 			switch n.Kind {
 			case Or:
-				separator = " or "
+				separator = " OR "
 			case And:
-				separator = " and "
+				separator = " AND "
 			}
 			result = append(result, "("+strings.Join(nested, separator)+")")
 		}
@@ -44,10 +58,27 @@ func stringHumanParameters(parameters []Parameter) string {
 		if p.Annotation.Labels.IsSet(Quoted) {
 			v = strconv.Quote(v)
 		}
+		field := p.Field
+		if p.Annotation.Labels.IsSet(IsAlias) {
+			// Preserve alias for fields in the query for fields
+			// with only one alias. We don't know which alias was in
+			// the original query for fields that have multiple
+			// aliases.
+			switch p.Field {
+			case FieldRepo:
+				field = "r"
+			case FieldAfter:
+				field = "since"
+			case FieldBefore:
+				field = "until"
+			case FieldRev:
+				field = "revision"
+			}
+		}
 		if p.Negated {
-			result = append(result, fmt.Sprintf("-%s:%s", p.Field, v))
+			result = append(result, fmt.Sprintf("-%s:%s", field, v))
 		} else {
-			result = append(result, fmt.Sprintf("%s:%s", p.Field, v))
+			result = append(result, fmt.Sprintf("%s:%s", field, v))
 		}
 	}
 	return strings.Join(result, " ")
@@ -79,9 +110,9 @@ func StringHuman(nodes []Node) string {
 					s = append(s, StringHuman([]Node{operand}))
 				}
 				if term.Kind == Or {
-					v = append(v, "("+strings.Join(s, " or ")+")")
+					v = append(v, "("+strings.Join(s, " OR ")+")")
 				} else if term.Kind == And {
-					v = append(v, "("+strings.Join(s, " and ")+")")
+					v = append(v, "("+strings.Join(s, " AND ")+")")
 				}
 			}
 		}
@@ -103,4 +134,90 @@ func toString(nodes []Node) string {
 		result = append(result, node.String())
 	}
 	return strings.Join(result, " ")
+}
+
+func nodeToJSON(node Node) any {
+	switch n := node.(type) {
+	case Operator:
+		var jsons []any
+		for _, o := range n.Operands {
+			jsons = append(jsons, nodeToJSON(o))
+		}
+
+		switch n.Kind {
+		case And:
+			return struct {
+				And []any `json:"and"`
+			}{
+				And: jsons,
+			}
+		case Or:
+			return struct {
+				Or []any `json:"or"`
+			}{
+				Or: jsons,
+			}
+		case Concat:
+			// Concat should already be processed at this point, or
+			// the original query expresses something that is not
+			// supported. We just return the parse tree anyway.
+			return struct {
+				Concat []any `json:"concat"`
+			}{
+				Concat: jsons,
+			}
+		}
+	case Parameter:
+		return struct {
+			Field   string   `json:"field"`
+			Value   string   `json:"value"`
+			Negated bool     `json:"negated"`
+			Labels  []string `json:"labels"`
+			Range   Range    `json:"range"`
+		}{
+			Field:   n.Field,
+			Value:   n.Value,
+			Negated: n.Negated,
+			Labels:  n.Annotation.Labels.String(),
+			Range:   n.Annotation.Range,
+		}
+	case Pattern:
+		return struct {
+			Value   string   `json:"value"`
+			Negated bool     `json:"negated"`
+			Labels  []string `json:"labels"`
+			Range   Range    `json:"range"`
+		}{
+			Value:   n.Value,
+			Negated: n.Negated,
+			Labels:  n.Annotation.Labels.String(),
+			Range:   n.Annotation.Range,
+		}
+	}
+	// unreachable.
+	return struct{}{}
+}
+
+func nodesToJSON(q Q) []any {
+	var jsons []any
+	for _, node := range q {
+		jsons = append(jsons, nodeToJSON(node))
+	}
+	return jsons
+}
+
+func ToJSON(q Q) (string, error) {
+	j, err := json.Marshal(nodesToJSON(q))
+	if err != nil {
+		return "", err
+	}
+	return string(j), nil
+}
+
+func PrettyJSON(q Q) (string, error) {
+	j, err := json.MarshalIndent(nodesToJSON(q), "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(j), nil
 }

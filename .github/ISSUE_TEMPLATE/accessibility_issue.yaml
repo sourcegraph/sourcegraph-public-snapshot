@@ -1,0 +1,29 @@
+name: Accessibility issue
+description: Report problems and unexpected behavior related to accessibility.
+title: '[Accessibility]: '
+labels:
+- 'accessibility'
+- 'wcag/2.1'
+- 'wcag/2.1/fixing'
+body:
+  - type: textarea
+    id: problem-description
+    attributes:
+      label: Problem description
+      description: Please describe the issue and the steps required to replicate it.
+    validations:
+      required: true
+  - type: textarea
+    id: solution-description
+    attributes:
+      label: Expected behavior
+      description: Please describe the expected or accessibility-compliant behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: additional-details
+    attributes:
+      label: Additional details
+      description: Provide any notes, screenshots, and/or additional context here.
+    validations:
+      required: false

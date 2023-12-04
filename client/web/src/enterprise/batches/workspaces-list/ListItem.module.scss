@@ -1,0 +1,30 @@
+.list-group-item {
+    display: flex;
+    align-items: center;
+    padding: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-bottom: 1px solid var(--border-color);
+    &:nth-child(even) {
+        background-color: var(--subtle-bg-2);
+    }
+
+    &:nth-child(odd) {
+        background: none;
+    }
+}
+
+.button {
+    width: 100%;
+    border-width: 0;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    text-align: unset;
+    font-weight: unset;
+
+    &:hover {
+        background-color: var(--subtle-bg);
+    }
+}

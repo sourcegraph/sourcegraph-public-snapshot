@@ -1,0 +1,90 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.section {
+    display: grid;
+    max-width: var(--media-xl);
+    grid-template-rows: auto;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-areas:
+        'files files contributors'
+        'commits commits contributors';
+    column-gap: 1rem;
+    row-gap: 1rem;
+
+    @media (--md-breakpoint-down) {
+        grid-template-areas:
+            'files files files'
+            'contributors contributors contributors';
+    }
+}
+
+.files {
+    grid-area: files;
+}
+
+.contributors {
+    grid-area: contributors;
+    align-self: start;
+}
+
+.table-summary {
+    padding: 0.375rem 0.5rem 0.375rem 0.5rem;
+    margin: 0;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-top: 1px solid var(--border-color);
+}
+
+.table {
+    table-layout: fixed;
+}
+
+.link-dark {
+    &,
+    &:hover,
+    &:focus {
+        color: var(--light-blue);
+    }
+}
+
+.extra-info {
+    align-self: start;
+    grid-area: contributors;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+
+    @media (--lg-breakpoint-up) {
+        padding: 0.5rem 0 0.5rem 1.5rem;
+        border-top: none;
+        border-bottom: none;
+        border-right: none;
+    }
+
+    p {
+        margin: 0;
+    }
+
+    :global(.theme-dark) & {
+        background-color: transparent;
+    }
+}
+
+.extra-info-section-item {
+    &-header-icon {
+        opacity: 0;
+        transition: opacity 0.1s ease-in-out;
+    }
+
+    &:hover &-header-icon {
+        opacity: 1;
+    }
+}
+
+/** TODO(#51791): Extract common component or unify together with FileOwnershipEntry. */
+.badge {
+    text-transform: uppercase;
+    margin-right: 0.5rem;
+}

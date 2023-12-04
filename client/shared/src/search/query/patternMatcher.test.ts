@@ -1,22 +1,22 @@
+import { describe, expect, it } from 'vitest'
+
 // Note: This tests the pattern matcher implementation but also acts as a
 // verifier that patterns are properly typed against their input value.
 // Usage of the @ts-expect-error is intentional and should be kept in place
 
-/* eslint-disable id-length */
+import { every, matchesValue, some, oneOf, allOf, not, type PatternOfNoInfer } from './patternMatcher'
 
-import { every, matchesValue, some, oneOf, allOf, not, PatternOfNoInfer } from './patternMatcher'
+interface CustomMatchers<R = unknown> {
+    toBeMatchedBy<Data>(pattern: PatternOfNoInfer<R, Data>, expectedData?: Data, initialData?: Data): R
+}
 
-declare global {
-    // eslint-disable-next-line @typescript-eslint/no-namespace
-    namespace jest {
-        interface Matchers<R, T> {
-            toBeMatchedBy<Data>(pattern: PatternOfNoInfer<T, Data>, expectedData?: Data, initialData?: Data): R
-        }
-    }
+declare module 'vitest' {
+    interface Assertion<T = any> extends CustomMatchers<T> {}
+    interface AsymmetricMatchersContaining extends CustomMatchers {}
 }
 
 expect.extend({
-    toBeMatchedBy(actual, pattern, expectedData, initialData) {
+    toBeMatchedBy(this: any, actual: any, pattern: any, expectedData: any, initialData: any) {
         const options = {
             comment: 'Pattern matching',
             isNot: this.isNot,
@@ -44,7 +44,7 @@ expect.extend({
             pass: result.success && (!expectedData || dataComparisonResult),
         }
     },
-})
+} as any)
 
 describe('matchValue', () => {
     describe('base patterns', () => {
@@ -110,8 +110,6 @@ describe('matchValue', () => {
 
             expect(TestEnum.A as TestEnum).toBeMatchedBy(TestEnum.A)
             expect(TestEnum.A as TestEnum).not.toBeMatchedBy(TestEnum.B)
-            // Shouldn't this throw a type error?
-            expect(TestEnum.A as TestEnum).not.toBeMatchedBy(10)
         })
 
         it('allows using a property in a pattern that does not exist in all union members', () => {

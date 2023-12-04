@@ -1,63 +1,59 @@
+# Syntax Highlighter (And Associated Crates)
+
+Crates:
+
+- The main `syntect_server` executable
+- `crates/scip-treesitter-languages/`: All the grammars and parsers live here to make shipping parsers with the same tree-sitter version (and associated build tooling) very easy. All new grammars and parsers should be added here.
+- `crates/scip-treesitter/`: Associated utilities for tree-sitter and scip. Not required to be used for other projects
+- `crates/scip-treesitter-cli/`: Command line tool that produces a SCIP index file from the analysis performed by other `scip-*` crates in this project
+- `crates/scip-syntax/`: local navigation calculation (and some other utilities) live here.
+- `crates/sg-syntax/`: Sourcegraph code to glue together whatever from the above crates to be used for our purposes.
+
+# scip-ctags
+
+See [queries](./docs/queries.md)
+
 # Syntect Server
 
-This is an HTTP server that exposes the Rust [Syntect](https://github.com/trishume/syntect) syntax highlighting library for use by other services. Send it some code, and it'll send you syntax-highlighted code in response.
+This is an HTTP server that exposes the Rust [Syntect](https://github.com/trishume/syntect) syntax highlighting library for use by other services. Send it some code, and it'll send you syntax-highlighted code in response. This service is horizontally scalable, but please give [#21942](https://github.com/sourcegraph/sourcegraph/issues/21942) and [#32359](https://github.com/sourcegraph/sourcegraph/pull/32359#issuecomment-1063310638) a read before scaling it up.
 
-Technologies:
-
-- [Syntect](https://github.com/trishume/syntect) -> Syntax highlighting of code.
-- [Rocket.rs](https://rocket.rs) -> Web framework.
-- [Serde](https://serde.rs/) -> JSON serialization / deserialization .
-- [Rayon](https://github.com/nikomatsakis/rayon) -> data parallelism for `SyntaxSet` across Rocket server threads.
-- [lazy_static](https://crates.io/crates/lazy_static) -> lazily evaluated static `ThemeSet` (like a global).
-
-## Usage
+### Cargo Usage
 
 ```bash
-docker run --detach --name=syntect_server -p 9238:9238 sourcegraph/syntect_server
+cargo run --bin syntect_server
+```
+
+You can set the `SRC_SYNTECT_SERVER` environment var to whatever port this
+connects to and test against local Sourcegraph instance.
+
+### Docker Usage (can be used with `sg start`)
+
+```bash
+docker run --detach --name=syntax-highlighter -p 9238:9238 sourcegraph/syntax-highlighter
 ```
 
 You can then e.g. `GET` http://localhost:9238/health or http://host.docker.internal:9238/health to confirm it is working.
 
 ## API
 
-- `POST` to `/` with `Content-Type: application/json`. The following fields are required:
-  - `filepath` string, e.g. `the/file.go` or `file.go` or `Dockerfile`, see "Supported file extensions" section below.
-  - `theme` string, e.g. `Solarized (dark)`, see "Embedded themes" section below.
-  - `code` string, i.e. the literal code to highlight.
-- The response is a JSON object of either:
-  - A successful response (`data` field):
-    - `data` string with syntax highlighted response. The input `code` string [is properly escaped](https://github.com/sourcegraph/syntect_server/blob/ee3810f70e5701b961b7249393dbac8914c162ce/syntect/src/html.rs#L6) and as such can be directly rendered in the browser safely.
-    - `plaintext` boolean indicating whether a syntax could not be found for the file and instead it was rendered as plain text.
-  - An error response (`error` field), one of:
-    - `{"error": "invalid theme", "code": "invalid_theme"}`
-    - `{"error": "resource not found", "code": "resource_not_found"}`
-- `GET` to `/health` to receive an `OK` health check response / ensure the service is alive.
-
-## Client
-
-[gosyntect](https://github.com/sourcegraph/gosyntect) is a Go package + CLI program to make requests against syntect_server.
+See [API](./docs/api.md)
 
 ## Configuration
 
-By default on startup, `syntect_server` will list all features (themes + file types) it supports. This can be disabled by setting `QUIET=true` in the environment.
+By default on startup, `syntect_server` will list all file types it supports. This can be disabled by setting `QUIET=true` in the environment.
 
 ## Development
 
-1. [Install Rust **nightly**](https://rocket.rs/guide/getting-started/#installing-rust).
-2. `git clone` this repository anywhere on your filesystem.
-3. Use `cargo run` to download dependencies + compile + run the server.
-
-## Building
-
-Invoke `cargo build --release` and an optimized binary will be built (e.g. to `./target/release/syntect_server`).
+1. Use `cargo test --workspace` to run all the tests.
+   To update snapshots, run `cargo insta review`.
+2. Use `cargo run --bin syntect_server` to run the server locally.
+3. You can change the `SRC_SYNTECT_SERVER` option in your `sg.config.yaml` to point to whatever port you're running on (usually 8000) and test against that without building the docker image.
 
 ## Building docker image
 
-`./build.sh` will build your current repository checkout into a final Docker image.
+`./build.sh` will build your current repository checkout into a final Docker image. You **DO NOT** need to do this when you push to get it publish. But, you should do this to make sure that it is possible to build the image :smile:.
 
-## Publishing docker image
-
-This will happen automatically via CI. You don't need to do anything after merging to main.
+**AGAIN NOTE**: The docker image will be published automatically via CI.
 
 ## Updating Sourcegraph
 
@@ -68,22 +64,15 @@ Once published, the image version will need to be updated in the following locat
 
 Additionally, it's worth doing a [search](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+sourcegraph/syntect_server:&patternType=literal) for other uses in case this list is stale.
 
-## Code hygiene
+## Adding languages (tree-sitter):
 
-- Use `cargo fmt` or an editor extension to format code.
+See [scip-treesitter-languages](./crates/scip-treesitter-languages/README.md)
 
-## Adding themes
-
-- Copy a `.tmTheme` file anywhere under `./syntect/testdata` (make a new dir if needed) [in our fork](https://github.com/slimsag/syntect).
-- `cd syntect && make assets`
-- In this repo, `cargo update -p syntect`.
-- Build a new binary.
-
-## Adding languages:
+## Adding languages (syntect -- outdated):
 
 #### 1) Find an open-source `.tmLanguage` or `.sublime-syntax` file and send a PR to our package registry
 
-https://github.com/slimsag/Packages is the package registry we use which holds all of the syntax definitions we use in syntect_server and Sourcegraph. Send a PR there by following [these steps](https://github.com/slimsag/Packages/blob/master/README.md#adding-a-new-language)
+https://github.com/sourcegraph/Packages is the package registry we use which holds all of the syntax definitions we use in syntect_server and Sourcegraph. Send a PR there by following [these steps](https://github.com/sourcegraph/Packages/blob/master/README.md#adding-a-new-language)
 
 #### 2) Update our temporary fork of `syntect`
 
@@ -100,177 +89,6 @@ Run the following in this directory.
 $ cargo update -p syntect
 ```
 
-## Embedded themes:
+## Supported languages:
 
-- `InspiredGitHub`
-- `Monokai`
-- `Solarized (dark)`
-- `Solarized (light)`
-- `Sourcegraph`
-- `Sourcegraph (light)`
-- `TypeScript`
-- `TypeScriptReact`
-- `Visual Studio`
-- `Visual Studio Dark`
-- `base16-eighties.dark`
-- `base16-mocha.dark`
-- `base16-ocean.dark`
-- `base16-ocean.light`
-
-## Supported file extensions:
-
-- Plain Text (`txt`)
-- ASP (`asa`)
-- HTML (ASP) (`asp`)
-- ASP vb.NET (`vb`)
-- HTML (ASP.net) (`aspx`, `ascx`, `master`)
-- ActionScript (`as`)
-- Apex (`apex`, `cls`, `trigger`)
-- AppleScript (`applescript`, `script editor`)
-- Batch File (`bat`, `cmd`)
-- NAnt Build File (`build`)
-- C# (`cs`, `csx`)
-- C++ (`cpp`, `cc`, `cp`, `cxx`, `c++`, `C`, `h`, `hh`, `hpp`, `hxx`, `h++`, `inl`, `ipp`)
-- C (`c`, `h`)
-- CMake Cache (`CMakeCache.txt`)
-- CMake Listfile (`CMakeLists.txt`, `cmake`)
-- ACUCOBOL (``)
-- COBOL (`cbl`, `cpy`, `cob`, `dds`, `ss`, `wks`, `pco`)
-- OpenCOBOL (``)
-- jcl (`jcl`)
-- CSS (`css`, `css.erb`, `css.liquid`)
-- Cap’n Proto (`capnp`)
-- Cg (`cg`)
-- Clojure (`clj`, `cljc`, `cljs`, `cljx`, `edn`)
-- Coq (`v`)
-- Crontab (`crontab`)
-- CUDA C++ (`cu`, `cuh`)
-- D (`d`, `di`)
-- DMD Output (``)
-- Dart Doc Comments (``)
-- Dart (`dart`)
-- Diff (`diff`, `patch`)
-- Dockerfile (`Dockerfile`)
-- DM (`dm`, `dme`)
-- Elixir (EEx) (`ex.eex`, `exs.eex`)
-- Elixir (`ex`, `exs`)
-- HTML (EEx) (`html.eex`, `html.leex`)
-- Regular Expressions (Elixir) (`ex.re`)
-- SQL (Elixir) (`ex.sql`)
-- Elm (`elm`)
-- Erlang (`erl`, `hrl`, `Emakefile`, `emakefile`, `escript`)
-- HTML (Erlang) (`yaws`)
-- Solidity (`sol`)
-- Vyper (`vy`)
-- F Sharp (`fs`)
-- friendly interactive shell (fish) (`fish`)
-- Forth (`frt`, `fs`)
-- ESSL (`essl`, `f.essl`, `v.essl`, `_v.essl`, `_f.essl`, `_vs.essl`, `_fs.essl`)
-- GLSL (`vs`, `fs`, `gs`, `vsh`, `fsh`, `gsh`, `vshader`, `fshader`, `gshader`, `vert`, `frag`, `geom`, `tesc`, `tese`, `comp`, `glsl`)
-- Git Attributes (`attributes`, `gitattributes`, `.gitattributes`)
-- Git Commit (`COMMIT_EDITMSG`, `MERGE_MSG`, `TAG_EDITMSG`)
-- Git Common (``)
-- Git Config (`gitconfig`, `.gitconfig`, `.gitmodules`)
-- Git Ignore (`exclude`, `gitignore`, `.gitignore`)
-- Git Link (`.git`)
-- Git Log (`gitlog`)
-- Git Mailmap (`.mailmap`, `mailmap`)
-- Git Rebase Todo (`git-rebase-todo`)
-- Go (`go`)
-- GraphQL (`graphql`, `graphqls`, `gql`, `graphcool`)
-- Graphviz (DOT) (`dot`, `DOT`, `gv`)
-- Groovy (`groovy`, `gvy`, `gradle`, `Jenkinsfile`)
-- HLSL (`fx`, `fxh`, `hlsl`, `hlsli`, `usf`)
-- HTML (`html`, `htm`, `shtml`, `xhtml`)
-- Haskell (`hs`)
-- Literate Haskell (`lhs`)
-- INI (`cfg`, `conf`, `ini`, `lng`, `url`, `.buckconfig`, `.flowconfig`, `.hgrc`)
-- REG (`reg`)
-- JSON (`json`, `sublime-settings`, `sublime-menu`, `sublime-keymap`, `sublime-mousemap`, `sublime-theme`, `sublime-build`, `sublime-project`, `sublime-completions`, `sublime-commands`, `sublime-macro`, `sublime-color-scheme`, `ipynb`, `Pipfile.lock`)
-- Java Server Page (JSP) (`jsp`)
-- Java (`java`, `bsh`)
-- Javadoc (``)
-- Java Properties (`properties`)
-- JS Custom - Default (`js`, `htc`)
-- JS Custom - React (`js`, `jsx`)
-- Regular Expressions (Javascript) (``)
-- JS Custom (Embedded) (``)
-- Julia (`jl`)
-- Kotlin (`kt`, `kts`)
-- LESS (`less`)
-- BibTeX (`bib`)
-- LaTeX Log (``)
-- LaTeX (`tex`, `ltx`)
-- TeX (`sty`, `cls`)
-- Lisp (`lisp`, `cl`, `clisp`, `l`, `mud`, `el`, `scm`, `ss`, `lsp`, `fasl`)
-- Lua (`lua`)
-- MSBuild (`proj`, `targets`, `msbuild`, `csproj`, `vbproj`, `fsproj`, `vcxproj`)
-- Make Output (``)
-- Makefile (`make`, `GNUmakefile`, `makefile`, `Makefile`, `makefile.am`, `Makefile.am`, `makefile.in`, `Makefile.in`, `OCamlMakefile`, `mak`, `mk`)
-- Man (`man`)
-- Markdown (`md`, `mdown`, `markdown`, `markdn`)
-- MultiMarkdown (``)
-- MATLAB (`matlab`)
-- Maven POM (`pom.xml`)
-- Mediawiki (`mediawiki`, `wikipedia`, `wiki`)
-- Move (`move`)
-- Ninja (`ninja`)
-- Nix (`nix`)
-- OCaml (`ml`, `mli`)
-- OCamllex (`mll`)
-- OCamlyacc (`mly`)
-- camlp4 (``)
-- Objective-C++ (`mm`, `M`, `h`)
-- Objective-C (`m`, `h`)
-- PHP Source (``)
-- PHP (`php`, `php3`, `php4`, `php5`, `php7`, `phps`, `phpt`, `phtml`)
-- Regular Expressions (PHP) (``)
-- Pascal (`pas`, `p`, `dpr`)
-- Perl (`pl`, `pc`, `pm`, `pmc`, `pod`, `t`)
-- Property List (XML) (``)
-- Postscript (`ps`, `eps`)
-- PowerShell (`ps1`, `psm1`, `psd1`)
-- Protocol Buffer (`proto`)
-- Puppet (`pp`, `epp`)
-- Python (`py`, `py3`, `pyw`, `pyi`, `pyx`, `pyx.in`, `pxd`, `pxd.in`, `pxi`, `pxi.in`, `rpy`, `cpy`, `SConstruct`, `Sconstruct`, `sconstruct`, `SConscript`, `pyst`, `pyst-include`, `gyp`, `gypi`, `Snakefile`, `vpy`, `wscript`, `bazel`, `bzl`)
-- Regular Expressions (Python) (``)
-- R Console (``)
-- R (`R`, `r`, `Rprofile`)
-- Rd (R Documentation) (`rd`)
-- RPM Spec (`spec`)
-- HTML (Rails) (`rails`, `rhtml`, `erb`, `html.erb`)
-- JavaScript (Rails) (`js.erb`)
-- Ruby Haml (`haml`)
-- Ruby on Rails (`rxml`, `builder`)
-- SQL (Rails) (`erbsql`, `sql.erb`)
-- Regular Expression (`re`)
-- reStructuredText (`rst`, `rest`)
-- Ruby (`rb`, `Appfile`, `Appraisals`, `Berksfile`, `Brewfile`, `capfile`, `cgi`, `Cheffile`, `config.ru`, `Deliverfile`, `Fastfile`, `fcgi`, `Gemfile`, `gemspec`, `Guardfile`, `irbrc`, `jbuilder`, `Podfile`, `podspec`, `prawn`, `rabl`, `rake`, `Rakefile`, `Rantfile`, `rbx`, `rjs`, `ruby.rail`, `Scanfile`, `simplecov`, `Snapfile`, `thor`, `Thorfile`, `Vagrantfile`)
-- Cargo Build Results (``)
-- Rust Enhanced (`rs`)
-- Sass (`sass`, `scss`)
-- SQL (`sql`, `ddl`, `dml`)
-- Scala (`scala`, `sbt`, `sc`)
-- Bourne Again Shell (bash) (`sh`, `bash`, `zsh`, `ash`, `.bash_aliases`, `.bash_completions`, `.bash_functions`, `.bash_login`, `.bash_logout`, `.bash_profile`, `.bash_variables`, `.bashrc`, `.profile`, `.textmate_init`, `.zlogin`, `.zlogout`, `.zprofile `, `.zshenv`, `.zshrc`, `PKGBUILD`, `.ebuild`, `.eclass`)
-- Shell-Unix-Generic (``)
-- commands-builtin-shell-bash (``)
-- Smalltalk (`st`)
-- Smarty (`tpl`)
-- Starlark (`build_defs`, `BUILD.in`, `BUILD`, `WORKSPACE`, `bzl`, `sky`, `star`, `BUILD.bazel`, `WORKSPACE`, `WORKSPACE.bazel`)
-- Stylus (`styl`, `stylus`)
-- Swift (`swift`)
-- HTML (Tcl) (`adp`)
-- Tcl (`tcl`)
-- TOML (`toml`)
-- Terraform (`tf`, `tfvars`, `hcl`)
-- Textile (`textile`)
-- Thrift (`thrift`, `frugal`)
-- TypeScript (`ts`)
-- TypeScriptReact (`tsx`)
-- vhdl.tmLanguage (``)
-- verilog.tmLanguage (``)
-- VimL (`vim`, `.vimrc`, `.gvimrc`)
-- Vue Component (`vue`)
-- XML (`xml`, `xsd`, `xslt`, `tld`, `dtml`, `rng`, `rss`, `opml`, `svg`)
-- YAML (`yaml`, `yml`, `sublime-syntax`)
-- Zig (`zig`)
+Run: `cargo run --bin syntect_server` to see supported languages.

@@ -1,0 +1,2 @@
+ALTER TABLE IF EXISTS lsif_references
+    ALTER COLUMN filter DROP NOT NULL;

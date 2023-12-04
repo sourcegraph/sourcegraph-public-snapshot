@@ -1,20 +1,27 @@
-.connection-popover-node-link {
-    display: flex;
-    align-items: center;
+.connection-popover-node {
     padding: 0.25rem 1rem;
-    color: var(--text-muted);
     text-decoration: none;
     border: none !important;
 
     &:hover,
     &:focus {
-        background-color: var(--primary);
         color: var(--light-text);
-        text-decoration: none;
+        background-color: var(--primary);
     }
 
     &--active {
         font-weight: inherit;
         background-color: var(--color-bg-3);
+    }
+}
+
+.connection-popover-node-link {
+    display: flex;
+    align-items: center;
+    color: inherit;
+
+    &:hover {
+        color: var(--light-text);
+        text-decoration: none;
     }
 }

@@ -1,8 +1,8 @@
-import { Position } from '@sourcegraph/extension-api-types'
+import type { Position } from '@sourcegraph/extension-api-types'
 
 import { convertNode } from '../tokenPosition'
 
-import { CodeViewProps } from './dom'
+import type { CodeViewProps } from './dom'
 
 interface Coordinates {
     x: number

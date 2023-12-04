@@ -1,0 +1,60 @@
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "npm_package", "ts_project")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
+
+npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root()
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/extension-api:tsconfig",
+        "//client/extension-api-types:tsconfig",
+        "//client/template-parser:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "client-api_lib",
+    srcs = [
+        "src/contribution.ts",
+        "src/hover.ts",
+        "src/index.ts",
+        "src/reference.ts",
+        "src/textDocument.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":node_modules/@sourcegraph/extension-api-types",
+        ":node_modules/@sourcegraph/template-parser",
+        ":node_modules/sourcegraph",
+        "//:node_modules/@sourcegraph/extension-api-classes",
+        "//:node_modules/utility-types",
+    ],
+)
+
+ts_project(
+    name = "client-api_tests",
+    testonly = True,
+    srcs = ["src/hover.test.ts"],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":client-api_lib",
+        ":node_modules/@sourcegraph/extension-api-types",
+        "//:node_modules/@sourcegraph/extension-api-classes",
+        "//:node_modules/vitest",
+    ],
+)
+
+npm_package(
+    name = "client-api_pkg",
+    srcs = [
+        "package.json",
+        ":client-api_lib",
+    ],
+)

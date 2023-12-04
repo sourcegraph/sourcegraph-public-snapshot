@@ -1,0 +1,217 @@
+{
+  "git.blame.decorations": "none",
+  "experimentalFeatures": {
+    "codeInsightsAllRepos": true,
+    "codeInsights": true,
+    "codeInsightsGqlApi": true,
+    "codeInsightsLandingPage": true,
+    "codeInsightsCompute": true
+  },
+  "extensions": {
+    "sourcegraph/search-insights": true
+  },
+  "insights.allrepos": {
+    "searchInsights.insight.soManyInsights": {
+      "title": "So many insights",
+      "series": [
+        {
+          "name": "\"insights\" insights",
+          "stroke": "var(--oc-blue-7)",
+          "query": "insights"
+        }
+      ]
+    },
+    "searchInsights.insight.test93CampaignsInSrcSrcToMatchFrontendFixedAddedContext": {
+      "title": "[Test 9.3] \"Campaigns\" in src/src to match frontend (fixed, added context)",
+      "series": [
+        {
+          "name": "campaigns file:. context:@joel/src/src",
+          "query": "campaigns file:. context:@joel/src/src",
+          "stroke": "var(--oc-blue-7)"
+        }
+      ]
+    },
+    "searchInsights.insight.sourcegraphInsights": {
+      "title": "sourcegraph insights",
+      "series": [
+        {
+          "name": "\"insights\" insights",
+          "stroke": "var(--oc-blue-7)",
+          "query": "insights"
+        }
+      ],
+      "filters": {
+        "includeRepoRegexp": "sourcegraph/sourcegraph",
+        "excludeRepoRegexp": ""
+      }
+    },
+    "searchInsights.insight.todosInSrcSrc": {
+      "title": "Todos in src/src",
+      "series": [
+        {
+          "name": "TODOs",
+          "stroke": "var(--oc-teal-7)",
+          "query": "todo"
+        }
+      ],
+      "filters": {
+        "includeRepoRegexp": "^github\\.com/sourcegraph/sourcegraph$",
+        "excludeRepoRegexp": ""
+      }
+    },
+    "searchInsights.insight.commitsOverAllRepos": {
+      "title": "Commits over all repos",
+      "series": [
+        {
+          "name": "Revert",
+          "query": "type:commit revert",
+          "stroke": "var(--oc-lime-7)"
+        },
+        {
+          "name": "Fix",
+          "query": "type:commit fix",
+          "stroke": "var(--oc-cyan-7)"
+        }
+      ]
+    },
+    "searchInsights.insight.mismatchedDates": {
+      "title": "mismatched dates?",
+      "series": [
+        {
+          "name": "Fix 2",
+          "query": "type:commit fix ",
+          "stroke": "var(--oc-green-7)"
+        },
+        {
+          "name": "Revert 2",
+          "query": "type:commit revert 2",
+          "stroke": "var(--oc-grape-7)"
+        }
+      ]
+    },
+    "searchInsights.insight.testingMismatchedDates": {
+      "title": "testing mismatched dates",
+      "series": [
+        {
+          "name": "fix 3",
+          "query": "type:commit fix ",
+          "stroke": "var(--oc-grape-7)"
+        },
+        {
+          "name": "revert 3",
+          "query": "type:commit revert ",
+          "stroke": "var(--oc-green-7)"
+        }
+      ]
+    },
+    "searchInsights.insight.commitsOverTime": {
+      "title": "commits over time",
+      "series": [
+        {
+          "name": "label123",
+          "query": "label213",
+          "stroke": "var(--oc-grape-7)"
+        }
+      ]
+    }
+  },
+  "searchInsights.insight.extensionBasedInsights": {
+    "title": "extension based 'insights'",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "insights",
+        "stroke": "var(--oc-grape-7)",
+        "query": "insights"
+      }
+    ],
+    "step": {
+      "months": 1
+    }
+  },
+  "searchInsights.insight.campaignsExtension": {
+    "title": "campaigns extension",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "campaigns extension",
+        "stroke": "var(--oc-grape-7)",
+        "query": "campaigns file:. context:@joel/src/src"
+      }
+    ],
+    "step": {
+      "months": 5
+    }
+  },
+  "insights.dashboards": {
+    "demoDashboard": {
+      "id": "2bf387e4-42c7-4695-a90f-8dbd194b35fe",
+      "title": "Demo Dashboard",
+      "insightIds": [
+        "searchInsights.insight.soManyInsights"
+      ]
+    },
+    "demoDashboard2": {
+      "id": "a7399bc3-d502-4aa0-9371-488dec5864ee",
+      "title": "demo dashboard 2",
+      "insightIds": [
+        "searchInsights.insight.todosInAllRepos",
+        "searchInsights.insight.todosInSrcSrc"
+      ]
+    },
+    "testingDbCreation": {
+      "id": "a47974c9-9b98-4043-a547-e78eb7cfb22b",
+      "title": "testing db creation",
+      "insightIds": [
+        "searchInsights.insight.extensionBasedInsights",
+        "searchInsights.insight.test435"
+      ]
+    }
+  },
+  "searchInsights.insight.commitsOverTime": {
+    "title": "Commits over time",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Fix",
+        "stroke": "var(--oc-grape-7)",
+        "query": "context:global type:commit fix"
+      },
+      {
+        "name": "Total",
+        "stroke": "var(--oc-blue-7)",
+        "query": "context:global type:commit"
+      },
+      {
+        "name": "Revert",
+        "stroke": "var(--oc-pink-7)",
+        "query": "context:global type:commit revert"
+      }
+    ],
+    "step": {
+      "weeks": 3
+    }
+  },
+  "searchInsights.insight.test435": {
+    "title": "test435",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "test435",
+        "query": "test435",
+        "stroke": "var(--oc-grape-7)"
+      }
+    ],
+    "step": {
+      "months": 2
+    }
+  }
+}

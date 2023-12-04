@@ -1,8 +1,7 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
-import { GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { type GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 /**
  * A GraphQL client to be used from regression test scripts.
@@ -13,14 +12,20 @@ export interface GraphQLClient {
      * in CLI-read HTTP headers rather than use the ones in the browser context (which doesn't
      * exist).
      */
-    mutateGraphQL(request: string, variables?: {}): Observable<GraphQLResult<GQL.IMutation>>
+    mutateGraphQL<MutationResultType, MutationVariablesType>(
+        request: string,
+        variables?: MutationVariablesType
+    ): Observable<GraphQLResult<MutationResultType>>
 
     /**
      * mimics the `queryGraphQL` function used by the Sourcegraph backend, but substitutes
      * in CLI-read HTTP headers rather than use the ones in the browser context (which doesn't
      * exist).
      */
-    queryGraphQL(request: string, variables?: {}): Observable<GraphQLResult<GQL.IQuery>>
+    queryGraphQL<QueryResultType, QueryVariablesType>(
+        request: string,
+        variables?: QueryVariablesType
+    ): Observable<GraphQLResult<QueryResultType>>
 
     /**
      * Mimics the {@link PlatformContext#requestGraphQL} function that is injected in shared backend functions,

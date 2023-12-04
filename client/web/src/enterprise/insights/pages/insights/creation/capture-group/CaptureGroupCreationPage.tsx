@@ -1,26 +1,39 @@
-import React, { useEffect } from 'react'
+import { type FC, useEffect, useMemo } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link } from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import {
+    Link,
+    PageHeader,
+    useObservable,
+    FORM_ERROR,
+    type FormChangeEvent,
+    type SubmissionErrors,
+} from '@sourcegraph/wildcard'
 
-import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
-import { FormChangeEvent, SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { CaptureGroupInsight } from '../../../../core/types'
+import { CodeInsightsIcon } from '../../../../../../insights/Icons'
+import { CodeInsightCreationMode, CodeInsightsCreationActions, CodeInsightsPage } from '../../../../components'
+import type { MinimalCaptureGroupInsightData } from '../../../../core'
+import { useUiFeatures } from '../../../../hooks'
+import { CodeInsightTrackType } from '../../../../pings'
 
 import { CaptureGroupCreationContent } from './components/CaptureGroupCreationContent'
 import { useCaptureInsightInitialValues } from './hooks/use-capture-insight-initial-values'
-import { CaptureGroupFormFields } from './types'
+import type { CaptureGroupFormFields } from './types'
 import { getSanitizedCaptureGroupInsight } from './utils/capture-group-insight-sanitizer'
 
 interface CaptureGroupCreationPageProps extends TelemetryProps {
-    onInsightCreateRequest: (event: { insight: CaptureGroupInsight }) => Promise<unknown>
-    onSuccessfulCreation: (insight: CaptureGroupInsight) => void
+    backUrl: string
+    onInsightCreateRequest: (event: { insight: MinimalCaptureGroupInsightData }) => Promise<unknown>
+    onSuccessfulCreation: () => void
     onCancel: () => void
 }
 
-export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreationPageProps> = props => {
-    const { telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
+export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props => {
+    const { backUrl, telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
+
+    const { licensed, insight } = useUiFeatures()
+    const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
 
     const [initialFormValues, setInitialFormValues] = useCaptureInsightInitialValues()
 
@@ -37,11 +50,11 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
         telemetryService.log('CodeInsightsCaptureGroupCreationPageSubmitClick')
         telemetryService.log(
             'InsightAddition',
-            { insightType: 'captureGroupInsights' },
-            { insightType: 'captureGroupInsights' }
+            { insightType: CodeInsightTrackType.CaptureGroupInsight },
+            { insightType: CodeInsightTrackType.CaptureGroupInsight }
         )
 
-        onSuccessfulCreation(insight)
+        onSuccessfulCreation()
     }
 
     const handleCancel = (): void => {
@@ -57,28 +70,50 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
     }
 
     return (
-        <Page>
-            <PageTitle title="Create new capture group code insight" />
+        <CodeInsightsPage>
+            <PageTitle title="Create detect and track patterns insight - Code Insights" />
 
-            <header className="mb-5">
-                <h2>Create new code insight</h2>
-
-                <p className="text-muted">
-                    Search-based code insights analyze your code based on any search query.{' '}
-                    <Link to="/help/code_insights" target="_blank" rel="noopener">
-                        Learn more.
-                    </Link>
-                </p>
-            </header>
+            <PageHeader
+                className="mb-5"
+                path={[
+                    { icon: CodeInsightsIcon, to: '/insights', ariaLabel: 'Code insights dashboard page' },
+                    { text: 'Create', to: backUrl },
+                    { text: 'Detect and track patterns insight' },
+                ]}
+                description={
+                    <span className="text-muted">
+                        Capture group code insights analyze your code based on generated data series queries.{' '}
+                        <Link
+                            to="/help/code_insights/explanations/automatically_generated_data_series"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            Learn more.
+                        </Link>
+                    </span>
+                }
+            />
 
             <CaptureGroupCreationContent
-                mode="creation"
-                className="pb-5"
+                touched={false}
                 initialValues={initialFormValues}
+                className="pb-5"
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
                 onChange={handleChange}
-            />
-        </Page>
+            >
+                {form => (
+                    <CodeInsightsCreationActions
+                        mode={CodeInsightCreationMode.Creation}
+                        licensed={licensed}
+                        available={creationPermission?.available}
+                        submitting={form.submitting}
+                        errors={form.submitErrors?.[FORM_ERROR]}
+                        clear={form.isFormClearActive}
+                        onCancel={handleCancel}
+                    />
+                )}
+            </CaptureGroupCreationContent>
+        </CodeInsightsPage>
     )
 }

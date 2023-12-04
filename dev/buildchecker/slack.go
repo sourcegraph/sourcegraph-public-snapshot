@@ -16,7 +16,7 @@ func slackMention(slackUserID string) string {
 	return fmt.Sprintf("<@%s>", slackUserID)
 }
 
-func slackSummary(locked bool, branch string, discussionChannel string, failedCommits []CommitInfo) string {
+func generateBranchEventSummary(locked bool, branch string, discussionChannel string, failedCommits []CommitInfo) string {
 	branchStr := fmt.Sprintf("`%s`", branch)
 	if !locked {
 		return fmt.Sprintf(":white_check_mark: Pipeline healthy - %s unlocked!", branchStr)
@@ -45,16 +45,29 @@ The authors of the following failed commits who are Sourcegraph teammates have b
 
 The branch will automatically be unlocked once a green build has run on %s.
 Please head over to %s for relevant discussion about this branch lock.
-Refer to the <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci|CI incident playbook> for help.
+:bulb: First time being mentioned by this bot? :point_right: <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci/#build-has-failed-on-the-main-branch|Follow this step by step guide!>.
 
-If unable to resolve the issue, please start an incident with the '/incident' Slack command.
+For more, refer to the <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci|CI incident playbook> for help.
 
-cc: @dev-experience-support`, branchStr, discussionChannel)
+If unable to resolve the issue, please start an incident with the '/incident' Slack command.`, branchStr, discussionChannel)
 	return message
+}
+
+func generateWeeklySummary(dateFrom, dateTo string, builds, flakes int, avgFlakes float64, downtime time.Duration) string {
+	return fmt.Sprintf(`:bar_chart: Welcome to the weekly CI report for period *%s* to *%s*!
+
+• Total builds: *%d*
+• Total flakes: *%d*
+• Average %% of build flakes: *%v%%*
+• Total incident duration: *%v*
+
+For a more detailed breakdown, view the dashboards in <https://sourcegraph.grafana.net/d/iBBWbxFnk/buildkite?orgId=1&from=now-7d&to=now|Grafana>.
+`, dateFrom, dateTo, builds, flakes, avgFlakes, downtime)
 }
 
 // postSlackUpdate attempts to send the given summary to at each of the provided webhooks.
 func postSlackUpdate(webhooks []string, summary string) (bool, error) {
+	log.Printf("postSlackUpdate. len(webhooks)=%d\n", len(webhooks))
 	if len(webhooks) == 0 {
 		return false, nil
 	}
@@ -87,7 +100,6 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 	log.Println("slackBody: ", string(body))
 
 	// Attempt to send a message out to each
-	var errs error
 	var oneSucceeded bool
 	for i, webhook := range webhooks {
 		if len(webhook) == 0 {
@@ -98,7 +110,7 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 
 		req, err := http.NewRequest(http.MethodPost, webhook, bytes.NewBuffer(body))
 		if err != nil {
-			errs = errors.CombineErrors(errs, errors.Newf("%s: NewRequest: %w", webhook, err))
+			err = errors.CombineErrors(err, errors.Newf("%s: NewRequest: %w", webhook, err))
 			continue
 		}
 		req.Header.Add("Content-Type", "application/json")
@@ -107,7 +119,7 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 		client := &http.Client{Timeout: 10 * time.Second}
 		resp, err := client.Do(req)
 		if err != nil {
-			errs = errors.CombineErrors(errs, errors.Newf("%s: client.Do: %w", webhook, err))
+			err = errors.CombineErrors(err, errors.Newf("%s: client.Do: %w", webhook, err))
 			continue
 		}
 
@@ -115,12 +127,12 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 		buf := new(bytes.Buffer)
 		_, err = buf.ReadFrom(resp.Body)
 		if err != nil {
-			errs = errors.CombineErrors(errs, errors.Newf("%s: buf.ReadFrom(resp.Body): %w", webhook, err))
+			err = errors.CombineErrors(err, errors.Newf("%s: buf.ReadFrom(resp.Body): %w", webhook, err))
 			continue
 		}
 		defer resp.Body.Close()
-		if buf.String() != "ok" {
-			errs = errors.CombineErrors(errs, errors.Newf("%s: non-ok response from Slack: %s", webhook, buf.String()))
+		if resp.StatusCode != 200 {
+			err = errors.CombineErrors(err, errors.Newf("%s: Status code %d response from Slack: %s", webhook, resp.StatusCode, buf.String()))
 			continue
 		}
 

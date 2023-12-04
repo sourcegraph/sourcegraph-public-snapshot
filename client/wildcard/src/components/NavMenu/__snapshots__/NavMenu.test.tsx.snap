@@ -1,0 +1,162 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`<NavMenu /> > Should render Menu Items Correctly 1`] = `
+<body>
+  <div>
+    <button
+      aria-controls=""
+      aria-expanded="true"
+      aria-haspopup="true"
+      class="btn"
+      data-reach-menu-button=""
+      id="menu-button-test-id"
+      type="button"
+    >
+      menu trigger
+    </button>
+  </div>
+  <div
+    aria-labelledby="menu-button-test-id"
+    aria-modal="true"
+    class="floatingPanel popover py-1 menuList"
+    data-reach-menu-items=""
+    data-reach-menu-popover=""
+    id="menu-test-id"
+    role="dialog"
+    tabindex="-1"
+  >
+    <div>
+      <h6
+        class="h6 dropdownHeader"
+      >
+         Signed in as @ralph
+      </h6>
+      <a
+        class="anchorLink dropdownItem"
+        data-reach-menu-item=""
+        data-reach-menu-link=""
+        data-valuetext="Settings"
+        href="/users/ralph/settings/organizations"
+        id="option-0--menu-test-id"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Settings
+      </a>
+      <a
+        class="anchorLink dropdownItem"
+        data-reach-menu-item=""
+        data-reach-menu-link=""
+        data-valuetext="Your repositories"
+        href="/users/ralph/settings/repositories"
+        id="option-1--menu-test-id"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Your repositories
+      </a>
+      <a
+        class="anchorLink dropdownItem"
+        data-reach-menu-item=""
+        data-reach-menu-link=""
+        data-valuetext="Saved searches"
+        href="/users/ralph/searches"
+        id="option-2--menu-test-id"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Saved searches
+      </a>
+    </div>
+    <div>
+      <div
+        class="dropdownDivider"
+      />
+      <h6
+        class="h6 dropdownHeader"
+      >
+        Your organizations
+      </h6>
+      <a
+        class="anchorLink dropdownItem"
+        data-reach-menu-item=""
+        data-reach-menu-link=""
+        data-valuetext="Sourcegraph"
+        href="/users/ralph/settings/organizations"
+        id="option-3--menu-test-id"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Sourcegraph
+      </a>
+      <a
+        class="anchorLink dropdownItem"
+        data-reach-menu-item=""
+        data-reach-menu-link=""
+        data-valuetext="Gitstart"
+        href="/users/ralph/settings/repositories"
+        id="option-4--menu-test-id"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Gitstart
+      </a>
+    </div>
+    <div>
+      <div
+        class="dropdownDivider"
+      />
+      <div
+        class="dropdownItem"
+        data-reach-menu-item=""
+        data-valuetext="Keyboard shortcuts"
+        id="option-5--menu-test-id"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Keyboard shortcuts
+      </div>
+      <div
+        aria-disabled="true"
+        class="dropdownItem"
+        data-reach-menu-item=""
+        data-valuetext="Help"
+        id="option-6--menu-test-id"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Help
+      </div>
+    </div>
+    <div>
+      <div
+        class="dropdownDivider"
+      />
+      <a
+        class="anchorLink dropdownItem"
+        data-reach-menu-item=""
+        data-reach-menu-link=""
+        data-valuetext="About Sourcegraph"
+        href="https://sourcegraph.com"
+        id="option-7--menu-test-id"
+        role="menuitem"
+        tabindex="-1"
+      >
+        About Sourcegraph
+      </a>
+      <a
+        class="anchorLink dropdownItem"
+        data-reach-menu-item=""
+        data-reach-menu-link=""
+        data-valuetext="Browser Extension"
+        href="https://docs.sourcegraph.com/integration/browser_extension"
+        id="option-8--menu-test-id"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Browser Extension
+      </a>
+    </div>
+  </div>
+</body>
+`;

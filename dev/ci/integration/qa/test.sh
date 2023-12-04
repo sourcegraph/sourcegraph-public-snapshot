@@ -6,7 +6,7 @@ export SOURCEGRAPH_BASE_URL="${1:-"http://localhost:7080"}"
 source /root/.profile
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
-set -ex
+set -e
 
 echo "--- init sourcegraph"
 pushd internal/cmd/init-sg
@@ -17,7 +17,6 @@ popd
 set +x
 # shellcheck disable=SC1091
 source /root/.sg_envrc
-set -x
 
 echo "--- TEST: Checking Sourcegraph instance is accessible"
 curl -f http://localhost:7080
@@ -26,6 +25,6 @@ echo "--- TEST: Running tests"
 # Run all tests, and error if one fails
 test_status=0
 pushd client/web
-yarn run test:regression || test_status=1
+pnpm run test:regression || test_status=1
 popd
 exit $test_status

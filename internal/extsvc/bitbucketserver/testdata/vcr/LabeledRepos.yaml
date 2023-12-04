@@ -10,7 +10,7 @@ interactions:
     url: https://bitbucket.sgdev.org/rest/api/1.0/labels/archived/labeled?REPOSITORY=
     method: GET
   response:
-    body: '{"size":1,"limit":25,"isLastPage":true,"values":[{"slug":"archived-repo","id":10073,"name":"archived-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"PUBLIC","id":4,"name":"Public","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC"}]}},"public":false,"labelableType":"REPOSITORY","links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/public/archived-repo.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC/repos/archived-repo/browse"}]}}],"start":0}'
+    body: '{"size":1,"limit":25,"isLastPage":true,"values":[{"slug":"archived-repo","id":10073,"name":"archived-repo","hierarchyId":"05788c1a4ffadf0ff5d8","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"PUBLIC","id":4,"name":"Public","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC"}]}},"public":false,"labelableType":"REPOSITORY","links":{"clone":[{"href":"ssh://git@bitbucket.sgdev.org:7999/public/archived-repo.git","name":"ssh"},{"href":"https://bitbucket.sgdev.org/scm/public/archived-repo.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC/repos/archived-repo/browse"}]}}],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -18,23 +18,21 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Wed, 18 Dec 2019 15:07:54 GMT
+      - Mon, 23 Jan 2023 11:25:49 GMT
       Pragma:
       - no-cache
       Server:
       - Caddy
       Vary:
-      - X-AUSERNAME,Accept-Encoding
+      - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@1JRK3O7x907x470273x0'
-      X-Asen:
-      - SEN-11363689
+      - '@TCJ96Jx685x1583734x5'
       X-Asessionid:
-      - 12pburx
+      - ikk4rp
       X-Auserid:
-      - "107"
+      - "253"
       X-Ausername:
-      - keegan
+      - engineers
       X-Content-Type-Options:
       - nosniff
     status: 200 OK
@@ -57,23 +55,21 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Wed, 18 Dec 2019 15:07:54 GMT
+      - Mon, 23 Jan 2023 11:25:50 GMT
       Pragma:
       - no-cache
       Server:
       - Caddy
       Vary:
-      - X-AUSERNAME,Accept-Encoding
+      - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@1JRK3O7x907x470274x0'
-      X-Asen:
-      - SEN-11363689
+      - '@TCJ96Jx685x1583752x10'
       X-Asessionid:
-      - 1dkjtq1
+      - 1myg02k
       X-Auserid:
-      - "107"
+      - "253"
       X-Ausername:
-      - keegan
+      - engineers
       X-Content-Type-Options:
       - nosniff
     status: 404 Not Found

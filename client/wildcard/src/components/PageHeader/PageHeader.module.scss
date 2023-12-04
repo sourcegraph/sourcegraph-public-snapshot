@@ -1,45 +1,15 @@
 @import '../../global-styles/breakpoints';
 
-// Scale icon size with heading size. 26px font size (h1) -> 22px icon size
-$path-icon-size: (22em / 26);
-
 .container {
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
     justify-content: space-between;
+    gap: 1rem;
 
     @media (--md-breakpoint-up) {
         flex-direction: row;
         align-items: flex-end;
-    }
-}
-
-.heading {
-    display: flex;
-    flex-wrap: wrap;
-    flex-grow: 1;
-    align-items: center;
-    margin: 0;
-}
-
-.divider {
-    margin-right: 0.5rem;
-    color: var(--icon-color);
-    font-weight: 400;
-}
-
-.path {
-    display: inline-flex;
-    align-items: center;
-
-    &-icon {
-        margin-right: 0.5rem;
-        height: $path-icon-size;
-        width: $path-icon-size;
-    }
-    &-text {
-        margin-right: 0.5rem;
     }
 }
 
@@ -59,10 +29,6 @@ $path-icon-size: (22em / 26);
     margin-bottom: 0;
 }
 
-.actions {
-    margin-top: 1rem;
-
-    @media (--md-breakpoint-up) {
-        margin-top: 0;
-    }
+.breadcrumb svg {
+    flex-shrink: 0;
 }

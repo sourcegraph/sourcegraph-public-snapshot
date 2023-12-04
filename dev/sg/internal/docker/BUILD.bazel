@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "docker",
+    srcs = [
+        "docker.go",
+        "parse.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/docker",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_docker_docker_credential_helpers//client",
+        "@com_github_docker_docker_credential_helpers//credentials",
+        "@com_github_moby_buildkit//frontend/dockerfile/instructions",
+        "@com_github_moby_buildkit//frontend/dockerfile/parser",
+    ],
+)

@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "otlpadapter",
+    srcs = [
+        "adapter.go",
+        "host.go",
+        "otlp.go",
+        "register.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/otlpadapter",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//internal/otlpenv",
+        "//lib/errors",
+        "@com_github_gorilla_mux//:mux",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//std",
+        "@io_opentelemetry_go_collector_component//:component",
+        "@io_opentelemetry_go_collector_config_confighttp//:confighttp",
+        "@io_opentelemetry_go_collector_config_configtelemetry//:configtelemetry",
+        "@io_opentelemetry_go_collector_config_configtls//:configtls",
+        "@io_opentelemetry_go_collector_exporter//:exporter",
+        "@io_opentelemetry_go_collector_exporter_otlpexporter//:otlpexporter",
+        "@io_opentelemetry_go_collector_exporter_otlphttpexporter//:otlphttpexporter",
+        "@io_opentelemetry_go_collector_receiver//:receiver",
+        "@io_opentelemetry_go_collector_receiver_otlpreceiver//:otlpreceiver",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel_sdk_metric//:metric",
+        "@org_uber_go_atomic//:atomic",
+        "@org_uber_go_zap//:zap",
+    ],
+)

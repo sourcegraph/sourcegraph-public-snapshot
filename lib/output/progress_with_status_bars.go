@@ -3,10 +3,10 @@ package output
 type ProgressWithStatusBars interface {
 	Progress
 
-	StatusBarUpdatef(i int, format string, args ...interface{})
-	StatusBarCompletef(i int, format string, args ...interface{})
-	StatusBarFailf(i int, format string, args ...interface{})
-	StatusBarResetf(i int, label, format string, args ...interface{})
+	StatusBarUpdatef(i int, format string, args ...any)
+	StatusBarCompletef(i int, format string, args ...any)
+	StatusBarFailf(i int, format string, args ...any)
+	StatusBarResetf(i int, label, format string, args ...any)
 }
 
 func newProgressWithStatusBars(bars []ProgressBar, statusBars []*StatusBar, o *Output, opts *ProgressOpts) ProgressWithStatusBars {

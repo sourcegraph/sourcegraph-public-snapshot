@@ -1,5 +1,7 @@
+import { describe, expect, test } from 'vitest'
+
 import { escapeSpaces, validateFilter } from './filters'
-import { Literal, createLiteral } from './token'
+import { type Literal, createLiteral } from './token'
 
 expect.addSnapshotSerializer({
     serialize: value => value as string,

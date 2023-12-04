@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "protocol",
+    srcs = ["repoupdater.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/extsvc",
+        "//internal/extsvc/awscodecommit",
+        "//internal/extsvc/bitbucketcloud",
+        "//internal/extsvc/bitbucketserver",
+        "//internal/extsvc/github",
+        "//internal/extsvc/gitlab",
+        "//internal/repoupdater/v1:repoupdater",
+        "//internal/types",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)

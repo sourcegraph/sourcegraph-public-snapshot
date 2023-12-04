@@ -1,6 +1,6 @@
-import { Point } from '../models/geometry/point'
-import { Rectangle } from '../models/geometry/rectangle'
-import { Constraint, Flipping, Overlapping, Position, Strategy } from '../models/tether-models'
+import type { Point } from '../models/geometry/point'
+import type { Rectangle } from '../models/geometry/rectangle'
+import type { Constraint, ElementPosition, Flipping, Overlapping, Padding, Strategy } from '../models/tether-models'
 
 export interface Tether {
     /** Reference on target HTML element in the DOM. */
@@ -10,7 +10,7 @@ export interface Tether {
     element: HTMLElement
 
     /** Reference on tooltip tail (marker) HTML element in the DOM. */
-    marker?: HTMLElement | null
+    marker?: MarkerElement | null
 
     /**
      * In case if consumer wants to position not by target but
@@ -24,7 +24,7 @@ export interface Tether {
      * during position calculation that takes into account layout data (constraints,
      * viewport space, paddings, etc)
      */
-    position?: Position
+    position?: ElementPosition
 
     /**
      * Position flipping strategy. With active flipping tooltip tries to find other
@@ -49,12 +49,15 @@ export interface Tether {
      */
     strategy?: Strategy
 
-    windowPadding?: Rectangle
-    constraintPadding?: Rectangle
+    targetPadding?: Rectangle
+    windowPadding?: Partial<Padding>
+    constraintPadding?: Partial<Padding>
 
     overflowToScrollParents?: boolean
     constrainToScrollParents?: boolean
 }
+
+export type MarkerElement = HTMLElement | SVGElement
 
 export interface TetherLayout {
     /** Tooltip target element */
@@ -67,7 +70,7 @@ export interface TetherLayout {
     marker: Rectangle
 
     /** Tooltip position relative to target */
-    position: Position
+    position: ElementPosition
 
     /** Position flipping strategy */
     flipping: Flipping
@@ -80,4 +83,5 @@ export interface TetherLayout {
 
     strategy: Strategy
     anchorOffset: Point
+    targetPadding: Rectangle
 }

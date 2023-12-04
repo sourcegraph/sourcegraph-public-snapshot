@@ -1,0 +1,785 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Refined Github > Split view > line number 80 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "// field of the match argument.",
+  "selector": "TR:nth-child(3) > TD.code-review.blob-code.blob-code-context:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Refined Github > Split view > line number 80 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "// field of the match argument.",
+  "selector": "TR:nth-child(3) > TD.code-review.blob-code.blob-code-context:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Refined Github > Split view > line number 82 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "-	fmt.Println(\\"hello world!\\")",
+  "selector": "TD.code-review.blob-code.blob-code-deletion > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Refined Github > Split view > line number 82 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "-	fmt.Println(\\"hello world!\\")",
+  "selector": "TD.code-review.blob-code.blob-code-deletion",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Refined Github > Split view > line number 82 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "+	fmt.Println(\\"hello world!!\\")",
+  "selector": "TD.code-review.blob-code.blob-code-addition > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Refined Github > Split view > line number 82 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "+	fmt.Println(\\"hello world!!\\")",
+  "selector": "TD.code-review.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Refined Github > Unified view > line number 80 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "// field of the match argument.",
+  "selector": "TR:nth-child(3) > TD.blob-code.blob-code-context > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Refined Github > Unified view > line number 80 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "// field of the match argument.",
+  "selector": "TR:nth-child(3) > TD.blob-code.blob-code-context",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Refined Github > Unified view > line number 82 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "-	fmt.Println(\\"hello world!\\")",
+  "selector": "TD.blob-code.blob-code-deletion > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Refined Github > Unified view > line number 82 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "-	fmt.Println(\\"hello world!\\")",
+  "selector": "TD.blob-code.blob-code-deletion",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Refined Github > Unified view > line number 82 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "+	fmt.Println(\\"hello world!!\\")",
+  "selector": "TD.blob-code.blob-code-addition > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Refined Github > Unified view > line number 82 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "+	fmt.Println(\\"hello world!!\\")",
+  "selector": "TD.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Vanilla > Split view > line number 80 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "// field of the match argument.",
+  "selector": "TR:nth-child(3) > TD.code-review.blob-code.blob-code-context:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Vanilla > Split view > line number 80 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "// field of the match argument.",
+  "selector": "TR:nth-child(3) > TD.code-review.blob-code.blob-code-context:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Vanilla > Split view > line number 82 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "-	fmt.Println(\\"hello world!\\")",
+  "selector": "TD.code-review.blob-code.blob-code-deletion > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Vanilla > Split view > line number 82 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "-	fmt.Println(\\"hello world!\\")",
+  "selector": "TD.code-review.blob-code.blob-code-deletion",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Vanilla > Split view > line number 82 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "+	fmt.Println(\\"hello world!!\\")",
+  "selector": "TD.code-review.blob-code.blob-code-addition > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Vanilla > Split view > line number 82 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "+	fmt.Println(\\"hello world!!\\")",
+  "selector": "TD.code-review.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Vanilla > Unified view > line number 80 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "// field of the match argument.",
+  "selector": "TR:nth-child(3) > TD.blob-code.blob-code-context > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Vanilla > Unified view > line number 80 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "// field of the match argument.",
+  "selector": "TR:nth-child(3) > TD.blob-code.blob-code-context",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Vanilla > Unified view > line number 82 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "-	fmt.Println(\\"hello world!\\")",
+  "selector": "TD.blob-code.blob-code-deletion > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Vanilla > Unified view > line number 82 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "-	fmt.Println(\\"hello world!\\")",
+  "selector": "TD.blob-code.blob-code-deletion",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Vanilla > Unified view > line number 82 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "+	fmt.Println(\\"hello world!!\\")",
+  "selector": "TD.blob-code.blob-code-addition > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Commit page > Vanilla > Unified view > line number 82 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "+	fmt.Println(\\"hello world!!\\")",
+  "selector": "TD.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request Discussion page > Refined Github > line number 64 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "+	// Another field",
+  "selector": "TD.blob-code.blob-code-addition > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request Discussion page > Refined Github > line number 64 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "+	// Another field",
+  "selector": "TD.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request Discussion page > Vanilla > line number 64 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "+	// Another field",
+  "selector": "TD.blob-code.blob-code-addition > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request Discussion page > Vanilla > line number 64 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "+	// Another field",
+  "selector": "TD.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Refined Github > Split view > line number 63 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "KeepContext bool",
+  "selector": "TR:nth-child(4) > TD.code-review.blob-code.blob-code-context:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Refined Github > Split view > line number 63 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "KeepContext bool",
+  "selector": "TR:nth-child(4) > TD.code-review.blob-code.blob-code-context:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Refined Github > Split view > line number 64 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "+	// Another field",
+  "selector": "TR:nth-child(5) > TD.code-review.blob-code.blob-code-addition > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Refined Github > Split view > line number 64 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "+	// Another field",
+  "selector": "TR:nth-child(5) > TD.code-review.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Refined Github > Unified view > line number 63 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "KeepContext bool",
+  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-context > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Refined Github > Unified view > line number 63 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "KeepContext bool",
+  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-context",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Refined Github > Unified view > line number 64 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "+	// Another field",
+  "selector": "TR:nth-child(5) > TD.blob-code.blob-code-addition > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Refined Github > Unified view > line number 64 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "+	// Another field",
+  "selector": "TR:nth-child(5) > TD.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Vanilla > Split view > line number 63 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "KeepContext bool",
+  "selector": "TR:nth-child(4) > TD.code-review.blob-code.blob-code-context:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Vanilla > Split view > line number 63 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "KeepContext bool",
+  "selector": "TR:nth-child(4) > TD.code-review.blob-code.blob-code-context:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Vanilla > Split view > line number 64 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "+	// Another field",
+  "selector": "TR:nth-child(5) > TD.code-review.blob-code.blob-code-addition > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Vanilla > Split view > line number 64 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "+	// Another field",
+  "selector": "TR:nth-child(5) > TD.code-review.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Vanilla > Unified view > line number 63 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "KeepContext bool",
+  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-context > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Vanilla > Unified view > line number 63 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "KeepContext bool",
+  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-context",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Vanilla > Unified view > line number 64 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "+	// Another field",
+  "selector": "TR:nth-child(5) > TD.blob-code.blob-code-addition > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > ghe-2.14.11 > Pull Request page > Vanilla > Unified view > line number 64 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "+	// Another field",
+  "selector": "TR:nth-child(5) > TD.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Refined Github > Split view > line number 41 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "- You can find out who is on-call by typing \`/genie whoisoncall\` in Slack.",
+  "selector": "TR:nth-child(4) > TD.code-review.blob-code.blob-code-context:nth-child(4) > SPAN.blob-code-inner.blob-code-marker",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Refined Github > Split view > line number 41 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "- You can find out who is on-call by typing \`/genie whoisoncall\` in Slack.",
+  "selector": "TR:nth-child(4) > TD.code-review.blob-code.blob-code-context:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Refined Github > Split view > line number 42 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie <description of incident and link to Slack thread> with ops_team\`.",
+  "selector": "TD.code-review.blob-code.blob-code-deletion > SPAN.blob-code-inner.blob-code-marker",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Refined Github > Split view > line number 42 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie <description of incident and link to Slack thread> with ops_team\`.",
+  "selector": "TD.code-review.blob-code.blob-code-deletion",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Refined Github > Split view > line number 42 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie alert \\"description of incident and link to Slack thread\\" for ops_team\`.",
+  "selector": "TD.code-review.blob-code.blob-code-addition > SPAN.blob-code-inner.blob-code-marker",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Refined Github > Split view > line number 42 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie alert \\"description of incident and link to Slack thread\\" for ops_team\`.",
+  "selector": "TD.code-review.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Refined Github > Unified view > line number 41 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "- You can find out who is on-call by typing \`/genie whoisoncall\` in Slack.",
+  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-context:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Refined Github > Unified view > line number 41 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "- You can find out who is on-call by typing \`/genie whoisoncall\` in Slack.",
+  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-context:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Refined Github > Unified view > line number 42 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie <description of incident and link to Slack thread> with ops_team\`.",
+  "selector": "TD.blob-code.blob-code-deletion:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Refined Github > Unified view > line number 42 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie <description of incident and link to Slack thread> with ops_team\`.",
+  "selector": "TD.blob-code.blob-code-deletion:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Refined Github > Unified view > line number 42 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie alert \\"description of incident and link to Slack thread\\" for ops_team\`.",
+  "selector": "TD.blob-code.blob-code-addition:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Refined Github > Unified view > line number 42 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie alert \\"description of incident and link to Slack thread\\" for ops_team\`.",
+  "selector": "TD.blob-code.blob-code-addition:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Vanilla > Split view > line number 41 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "- You can find out who is on-call by typing \`/genie whoisoncall\` in Slack.",
+  "selector": "TR:nth-child(4) > TD.code-review.blob-code.blob-code-context:nth-child(4) > SPAN.blob-code-inner.blob-code-marker",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Vanilla > Split view > line number 41 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "- You can find out who is on-call by typing \`/genie whoisoncall\` in Slack.",
+  "selector": "TR:nth-child(4) > TD.code-review.blob-code.blob-code-context:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Vanilla > Split view > line number 42 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie <description of incident and link to Slack thread> with ops_team\`.",
+  "selector": "TD.code-review.blob-code.blob-code-deletion > SPAN.blob-code-inner.blob-code-marker",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Vanilla > Split view > line number 42 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie <description of incident and link to Slack thread> with ops_team\`.",
+  "selector": "TD.code-review.blob-code.blob-code-deletion",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Vanilla > Split view > line number 42 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie alert \\"description of incident and link to Slack thread\\" for ops_team\`.",
+  "selector": "TD.code-review.blob-code.blob-code-addition > SPAN.blob-code-inner.blob-code-marker",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Vanilla > Split view > line number 42 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie alert \\"description of incident and link to Slack thread\\" for ops_team\`.",
+  "selector": "TD.code-review.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Vanilla > Unified view > line number 41 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "- You can find out who is on-call by typing \`/genie whoisoncall\` in Slack.",
+  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-context:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Vanilla > Unified view > line number 41 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "- You can find out who is on-call by typing \`/genie whoisoncall\` in Slack.",
+  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-context:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Vanilla > Unified view > line number 42 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie <description of incident and link to Slack thread> with ops_team\`.",
+  "selector": "TD.blob-code.blob-code-deletion:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Vanilla > Unified view > line number 42 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie <description of incident and link to Slack thread> with ops_team\`.",
+  "selector": "TD.blob-code.blob-code-deletion:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Vanilla > Unified view > line number 42 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie alert \\"description of incident and link to Slack thread\\" for ops_team\`.",
+  "selector": "TD.blob-code.blob-code-addition:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Commit page > Vanilla > Unified view > line number 42 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "- If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing \`/genie alert \\"description of incident and link to Slack thread\\" for ops_team\`.",
+  "selector": "TD.blob-code.blob-code-addition:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request Discussion page > Refined Github > line number 13 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "export class TestResourceManager {",
+  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-addition > SPAN.blob-code-inner.blob-code-marker-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request Discussion page > Refined Github > line number 13 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "export class TestResourceManager {",
+  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request Discussion page > Vanilla > line number 13 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "export class TestResourceManager {",
+  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-addition > SPAN.blob-code-inner.blob-code-marker-addition.annotated",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request Discussion page > Vanilla > line number 13 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "export class TestResourceManager {",
+  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Refined Github > Split view > line number 570 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "export interface CodeEditor {",
+  "selector": "TR:nth-child(3) > TD.code-review.blob-code.blob-code-context:nth-child(4) > SPAN.blob-code-inner.blob-code-marker",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Refined Github > Split view > line number 570 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "export interface CodeEditor {",
+  "selector": "TR:nth-child(3) > TD.code-review.blob-code.blob-code-context:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Refined Github > Split view > line number 572 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "type: 'CodeEditor'",
+  "selector": "TD.code-review.blob-code.blob-code-deletion > SPAN.blob-code-inner.blob-code-marker",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Refined Github > Split view > line number 572 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "type: 'CodeEditor'",
+  "selector": "TD.code-review.blob-code.blob-code-deletion",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Refined Github > Split view > line number 572 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "readonly type: 'CodeEditor'",
+  "selector": "TD.code-review.blob-code.blob-code-addition > SPAN.blob-code-inner.blob-code-marker",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Refined Github > Split view > line number 572 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "readonly type: 'CodeEditor'",
+  "selector": "TD.code-review.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Refined Github > Unified view > line number 570 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "export interface CodeEditor {",
+  "selector": "TR:nth-child(3) > TD.blob-code.blob-code-context:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Refined Github > Unified view > line number 570 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "export interface CodeEditor {",
+  "selector": "TR:nth-child(3) > TD.blob-code.blob-code-context:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Refined Github > Unified view > line number 572 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "type: 'CodeEditor'",
+  "selector": "TD.blob-code.blob-code-deletion:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Refined Github > Unified view > line number 572 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "type: 'CodeEditor'",
+  "selector": "TD.blob-code.blob-code-deletion:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Refined Github > Unified view > line number 572 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "readonly type: 'CodeEditor'",
+  "selector": "TD.blob-code.blob-code-addition:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Refined Github > Unified view > line number 572 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "readonly type: 'CodeEditor'",
+  "selector": "TD.blob-code.blob-code-addition:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Vanilla > Split view > line number 570 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "export interface CodeEditor {",
+  "selector": "TR:nth-child(3) > TD.code-review.blob-code.blob-code-context:nth-child(4) > SPAN.blob-code-inner.blob-code-marker",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Vanilla > Split view > line number 570 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "export interface CodeEditor {",
+  "selector": "TR:nth-child(3) > TD.code-review.blob-code.blob-code-context:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Vanilla > Split view > line number 572 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "type: 'CodeEditor'",
+  "selector": "TD.code-review.blob-code.blob-code-deletion > SPAN.blob-code-inner.blob-code-marker",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Vanilla > Split view > line number 572 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "type: 'CodeEditor'",
+  "selector": "TD.code-review.blob-code.blob-code-deletion",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Vanilla > Split view > line number 572 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "readonly type: 'CodeEditor'",
+  "selector": "TD.code-review.blob-code.blob-code-addition > SPAN.blob-code-inner.blob-code-marker",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Vanilla > Split view > line number 572 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "readonly type: 'CodeEditor'",
+  "selector": "TD.code-review.blob-code.blob-code-addition",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Vanilla > Unified view > line number 570 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "export interface CodeEditor {",
+  "selector": "TR:nth-child(3) > TD.blob-code.blob-code-context:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Vanilla > Unified view > line number 570 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "export interface CodeEditor {",
+  "selector": "TR:nth-child(3) > TD.blob-code.blob-code-context:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Vanilla > Unified view > line number 572 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "type: 'CodeEditor'",
+  "selector": "TD.blob-code.blob-code-deletion:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Vanilla > Unified view > line number 572 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "type: 'CodeEditor'",
+  "selector": "TD.blob-code.blob-code-deletion:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Vanilla > Unified view > line number 572 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "readonly type: 'CodeEditor'",
+  "selector": "TD.blob-code.blob-code-addition:nth-child(4) > SPAN.blob-code-inner",
+}
+`;
+
+exports[`GitHub DOM functions > diffDomFunctions > github.com > Pull Request page > Vanilla > Unified view > line number 572 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "readonly type: 'CodeEditor'",
+  "selector": "TD.blob-code.blob-code-addition:nth-child(4)",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > ghe-2.14.11 > Refined Github > line number 1 > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "// Copyright 2012 The Gorilla Authors. All rights reserved.",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > ghe-2.14.11 > Refined Github > line number 1 > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "// Copyright 2012 The Gorilla Authors. All rights reserved.",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > ghe-2.14.11 > Refined Github > line number 2 > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "// Use of this source code is governed by a BSD-style",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > ghe-2.14.11 > Refined Github > line number 2 > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "// Use of this source code is governed by a BSD-style",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > ghe-2.14.11 > Vanilla > line number 1 > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "// Copyright 2012 The Gorilla Authors. All rights reserved.",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > ghe-2.14.11 > Vanilla > line number 1 > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "// Copyright 2012 The Gorilla Authors. All rights reserved.",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > ghe-2.14.11 > Vanilla > line number 2 > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "// Use of this source code is governed by a BSD-style",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > ghe-2.14.11 > Vanilla > line number 2 > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "// Use of this source code is governed by a BSD-style",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > github.com > Refined Github > line number 1 > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "export const isURL = (value: any): value is URL =>",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > github.com > Refined Github > line number 1 > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "export const isURL = (value: any): value is URL =>",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > github.com > Refined Github > line number 2 > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "!!value && typeof value.toString === 'function' && value.href === value.toString()",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > github.com > Refined Github > line number 2 > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "!!value && typeof value.toString === 'function' && value.href === value.toString()",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > github.com > Vanilla > line number 1 > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "export const isURL = (value: any): value is URL =>",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > github.com > Vanilla > line number 1 > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "export const isURL = (value: any): value is URL =>",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > github.com > Vanilla > line number 2 > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+Object {
+  "content": "!!value && typeof value.toString === 'function' && value.href === value.toString()",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;
+
+exports[`GitHub DOM functions > singleFileDOMFunctions > github.com > Vanilla > line number 2 > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+Object {
+  "content": "!!value && typeof value.toString === 'function' && value.href === value.toString()",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
+}
+`;

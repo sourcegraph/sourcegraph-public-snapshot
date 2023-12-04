@@ -1,10 +1,10 @@
-import { MockedProviderProps } from '@apollo/client/testing'
-import { Meta } from '@storybook/react'
-import React from 'react'
+import type { MockedProviderProps } from '@apollo/client/testing'
+import type { Meta } from '@storybook/react'
 
-import { RevisionsProps, TabIndex } from '@sourcegraph/search-ui'
-import sidebarStyles from '@sourcegraph/search-ui/src/results/sidebar/SearchSidebar.module.scss'
+import { type RevisionsProps, TabIndex } from '@sourcegraph/branded'
+import sidebarStyles from '@sourcegraph/branded/src/search-ui/results/sidebar/SearchSidebar.module.scss'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
 
@@ -21,14 +21,16 @@ import {
     GRAPHQL_ERROR_MOCKS,
 } from './Revisions.mocks'
 
-export default {
+const meta: Meta = {
     title: 'web/search/results/sidebar/Revisions',
     component: Revisions,
     argTypes: { onFilterClick: { action: 'onFilterClick' } },
     parameters: {
         chromatic: { disableSnapshot: false },
     },
-} as Meta
+}
+
+export default meta
 
 const examples: (RevisionsProps & Partial<Pick<MockedProviderProps, 'mocks'>> & { title: string })[] = [
     TabIndex.BRANCHES,
@@ -93,8 +95,8 @@ export function RevisionsSection() {
                             key={title}
                             style={{ border: '1px solid #AAA', borderRadius: '3px', padding: '1rem', margin: '1rem' }}
                         >
-                            <h2>{title}</h2>
-                            <div className={sidebarStyles.searchSidebar}>
+                            <H2>{title}</H2>
+                            <div className={sidebarStyles.sidebar}>
                                 <MockedTestProvider mocks={mocks}>
                                     <Revisions {...props} />
                                 </MockedTestProvider>

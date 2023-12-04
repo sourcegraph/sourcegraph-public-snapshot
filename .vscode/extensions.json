@@ -2,18 +2,19 @@
   // See http://go.microsoft.com/fwlink/?LinkId=827846
   // for the documentation about the extensions.json format
   "recommendations": [
-    "EditorConfig.editorconfig",
+    "sourcegraph.sourcegraph",
+    "sourcegraph.cody-ai",
+    "editorconfig.editorconfig",
     "esbenp.prettier-vscode",
     "graphql.vscode-graphql",
     "golang.go",
     "exiasr.hadolint",
     "bierner.markdown-mermaid",
     "ecmel.vscode-html-css",
-    "orta.vscode-jest",
     "dbaeumer.vscode-eslint",
     "foxundermoon.shell-format",
     "timonwong.shellcheck",
-    "felixfbecker.css-stacking-contexts",
+    "felixfbecker.css-stacking-contexts"
   ],
-  "unwantedRecommendations": ["ms-vscode.vscode-typescript-tslint-plugin", "eg2.tslint"],
+  "unwantedRecommendations": ["ms-vscode.vscode-typescript-tslint-plugin", "eg2.tslint"]
 }

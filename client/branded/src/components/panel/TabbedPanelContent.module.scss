@@ -1,0 +1,52 @@
+.panel {
+    --panel-header-height: 2rem;
+
+    flex: 1 1 50%;
+    min-height: 0;
+
+    overflow-x: auto;
+
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    [data-reach-tab-panels] {
+        // Ensure wrapper spans entire height of panel, and that the scrollable area does not include the header height
+        height: calc(100% - var(--panel-header-height));
+    }
+
+    [data-reach-tab-panel] {
+        height: 100%;
+    }
+
+    background-color: var(--color-bg-1);
+    border-top: 2px solid var(--border-color-2);
+    width: 100%;
+
+    &--header {
+        padding: 0 1rem;
+        background-color: var(--color-bg-1);
+        height: var(--panel-header-height);
+    }
+}
+
+.dismiss-button {
+    color: var(--icon-color);
+}
+
+.tabs-content {
+    flex: 1;
+}
+
+.action-item-unconstrained {
+    max-width: none;
+}
+
+.action-item {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: inherit;
+    letter-spacing: inherit;
+}

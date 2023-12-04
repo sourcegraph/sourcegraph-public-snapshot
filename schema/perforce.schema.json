@@ -19,7 +19,7 @@
       "examples": ["admin"]
     },
     "p4.passwd": {
-      "description": "The ticket value for the user (P4PASSWD).",
+      "description": "The ticket value for the user (P4PASSWD). You can get this by running `p4 login -p` or `p4 login -pa`. It should look like `6211C5E719EDE6925855039E8F5CC3D2`.",
       "type": "string"
     },
     "p4.client": {
@@ -41,29 +41,6 @@
       "default": 1000,
       "minimum": 1
     },
-    "rateLimit": {
-      "description": "Rate limit applied when making background API requests to Perforce.",
-      "title": "PerforceRateLimit",
-      "type": "object",
-      "required": ["enabled", "requestsPerHour"],
-      "properties": {
-        "enabled": {
-          "description": "true if rate limiting is enabled.",
-          "type": "boolean",
-          "default": true
-        },
-        "requestsPerHour": {
-          "description": "Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.",
-          "type": "number",
-          "default": 5000,
-          "minimum": 0
-        }
-      },
-      "default": {
-        "enabled": true,
-        "requestsPerHour": 5000
-      }
-    },
     "authorization": {
       "title": "PerforceAuthorization",
       "description": "If non-null, enforces Perforce depot permissions.",
@@ -71,6 +48,11 @@
       "properties": {
         "subRepoPermissions": {
           "description": "Experimental: infer sub-repository permissions from protection rules.",
+          "type": "boolean",
+          "default": false
+        },
+        "ignoreRulesWithHost": {
+          "description": "Ignore host-based protection rules (any rule with something other than a wildcard in the Host field).",
           "type": "boolean",
           "default": false
         }
@@ -85,7 +67,7 @@
       "type": "object",
       "description": "Configuration for the experimental p4-fusion client",
       "additionalProperties": false,
-      "required": ["enabled", "lookAhead"],
+      "required": ["enabled"],
       "properties": {
         "enabled": {
           "description": "Enable the p4-fusion client for cloning and fetching repos",
@@ -107,7 +89,7 @@
         "printBatch": {
           "description": "The p4 print batch size",
           "type": "integer",
-          "default": 10,
+          "default": 100,
           "minimum": 1
         },
         "retries": {
@@ -119,7 +101,7 @@
         "refresh": {
           "description": "How many times a connection should be reused before it is refreshed",
           "type": "integer",
-          "default": 100,
+          "default": 1000,
           "minimum": 1
         },
         "lookAhead": {
@@ -135,6 +117,11 @@
         },
         "includeBinaries": {
           "description": "Whether to include binary files",
+          "type": "boolean",
+          "default": false
+        },
+        "fsyncEnable": {
+          "description": " Enable fsync() while writing objects to disk to ensure they get written to permanent storage immediately instead of being cached. This is to mitigate data loss in events of hardware failure.",
           "type": "boolean",
           "default": false
         }

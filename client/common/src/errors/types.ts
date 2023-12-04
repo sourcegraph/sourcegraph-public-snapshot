@@ -1,4 +1,4 @@
-import { AGGREGATE_ERROR_NAME } from './constants'
+import type { AGGREGATE_ERROR_NAME } from './constants'
 
 export interface ErrorLike {
     message: string

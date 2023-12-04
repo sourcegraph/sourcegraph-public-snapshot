@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -13,87 +12,56 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
+	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
-	routeHome                    = "home"
-	routeSearch                  = "search"
-	routeSearchBadge             = "search-badge"
-	routeRepo                    = "repo"
-	routeRepoSettings            = "repo-settings"
-	routeRepoCodeIntelligence    = "repo-code-intelligence"
-	routeRepoCommit              = "repo-commit"
-	routeRepoBranches            = "repo-branches"
-	routeRepoBatchChanges        = "repo-batch-changes"
-	routeRepoDocs                = "repo-docs"
-	routeRepoCommits             = "repo-commits"
-	routeRepoTags                = "repo-tags"
-	routeRepoCompare             = "repo-compare"
-	routeRepoStats               = "repo-stats"
-	routeInsights                = "insights"
-	routeBatchChanges            = "batch-changes"
-	routeWelcome                 = "welcome"
-	routeCodeMonitoring          = "code-monitoring"
-	routeContexts                = "contexts"
-	routeThreads                 = "threads"
-	routeTree                    = "tree"
-	routeBlob                    = "blob"
-	routeRaw                     = "raw"
-	routeOrganizations           = "org"
-	routeSettings                = "settings"
-	routeSiteAdmin               = "site-admin"
-	routeAPIConsole              = "api-console"
-	routeUser                    = "user"
-	routeUserSettings            = "user-settings"
-	routeUserRedirect            = "user-redirect"
-	routeAboutSubdomain          = "about-subdomain"
-	aboutRedirectScheme          = "https"
-	aboutRedirectHost            = "about.sourcegraph.com"
-	routeSurvey                  = "survey"
-	routeSurveyScore             = "survey-score"
-	routeRegistry                = "registry"
-	routeExtensions              = "extensions"
-	routeHelp                    = "help"
-	routeCommunitySearchContexts = "community-search-contexts"
-	routeCncf                    = "community-search-contexts.cncf"
-	routeSnippets                = "snippets"
-	routeSubscriptions           = "subscriptions"
-	routeStats                   = "stats"
-	routeViews                   = "views"
-	routeDevToolTime             = "devtooltime"
-	routeEmbed                   = "embed"
+	routeHome             = "home"
+	routeSearch           = "search"
+	routeSearchBadge      = "search-badge"
+	routeRepo             = "repo"
+	routeRepoSettings     = "repo-settings"
+	routeRepoCodeGraph    = "repo-code-intelligence"
+	routeRepoCommit       = "repo-commit"
+	routeRepoBranches     = "repo-branches"
+	routeRepoBatchChanges = "repo-batch-changes"
+	routeRepoCommits      = "repo-commits"
+	routeRepoTags         = "repo-tags"
+	routeRepoCompare      = "repo-compare"
+	routeRepoStats        = "repo-stats"
+	routeRepoOwn          = "repo-own"
+	routeTree             = "tree"
+	routeBlob             = "blob"
+	routeRaw              = "raw"
+	routeSettings         = "settings"
+	routeSiteAdmin        = "site-admin"
 
-	routeSearchStream  = "search.stream"
-	routeSearchConsole = "search.console"
-	routeNotebooks     = "search.notebook"
+	routeAboutSubdomain = "about-subdomain"
+	aboutRedirectScheme = "https"
+	aboutRedirectHost   = "sourcegraph.com"
 
 	// Legacy redirects
-	routeLegacyLogin                   = "login"
-	routeLegacyCareers                 = "careers"
-	routeLegacyDefLanding              = "page.def.landing"
-	routeLegacyOldRouteDefLanding      = "page.def.landing.old"
-	routeLegacyRepoLanding             = "page.repo.landing"
-	routeLegacyDefRedirectToDefLanding = "page.def.redirect"
+	routeLegacyLogin      = "login"
+	routeLegacyCareers    = "careers"
+	routeLegacyDefLanding = "page.def.landing"
 )
 
 // aboutRedirects contains map entries, each of which indicates that
-// sourcegraph.com/$KEY should redirect to about.sourcegraph.com/$VALUE.
+// sourcegraph.com/$KEY should redirect to sourcegraph.com/$VALUE.
 var aboutRedirects = map[string]string{
 	"about":      "about",
 	"blog":       "blog",
@@ -119,115 +87,8 @@ func Router() *mux.Router {
 // InitRouter create the router that serves pages for our web app
 // and assigns it to uirouter.Router.
 // The router can be accessed by calling Router().
-func InitRouter(db database.DB, codeIntelResolver graphqlbackend.CodeIntelResolver) {
-	router := newRouter()
-	initRouter(db, router, codeIntelResolver)
-}
-
-var mockServeRepo func(w http.ResponseWriter, r *http.Request)
-
-func newRouter() *mux.Router {
-	r := mux.NewRouter()
-	r.StrictSlash(true)
-
-	// Top-level routes.
-	r.Path("/").Methods("GET").Name(routeHome)
-	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
-	r.Path("/search").Methods("GET").Name(routeSearch)
-	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
-	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
-	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
-	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
-	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
-	r.Path("/welcome").Methods("GET").Name(routeWelcome)
-	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
-	r.PathPrefix("/batch-changes").Methods("GET").Name(routeBatchChanges)
-	r.PathPrefix("/code-monitoring").Methods("GET").Name(routeCodeMonitoring)
-	r.PathPrefix("/contexts").Methods("GET").Name(routeContexts)
-	r.PathPrefix("/notebooks").Methods("GET").Name(routeNotebooks)
-	r.PathPrefix("/organizations").Methods("GET").Name(routeOrganizations)
-	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
-	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
-	r.Path("/password-reset").Methods("GET").Name(uirouter.RoutePasswordReset)
-	r.Path("/api/console").Methods("GET").Name(routeAPIConsole)
-	r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
-	r.PathPrefix("/users/{username}/settings").Methods("GET").Name(routeUserSettings)
-	r.PathPrefix("/users/{username}").Methods("GET").Name(routeUser)
-	r.PathPrefix("/user").Methods("GET").Name(routeUserRedirect)
-	r.Path("/survey").Methods("GET").Name(routeSurvey)
-	r.Path("/survey/{score}").Methods("GET").Name(routeSurveyScore)
-	r.PathPrefix("/registry").Methods("GET").Name(routeRegistry)
-	r.PathPrefix("/extensions").Methods("GET").Name(routeExtensions)
-	r.PathPrefix("/help").Methods("GET").Name(routeHelp)
-	r.PathPrefix("/snippets").Methods("GET").Name(routeSnippets)
-	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
-	r.PathPrefix("/stats").Methods("GET").Name(routeStats)
-	r.PathPrefix("/views").Methods("GET").Name(routeViews)
-	r.PathPrefix("/devtooltime").Methods("GET").Name(routeDevToolTime)
-	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
-
-	if envvar.SourcegraphDotComMode() {
-		// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
-		// Any changes to the embedding route could have security implications. Please consult the security team
-		// before making changes. See the `serveEmbed` function for further details.
-		r.PathPrefix("/embed").Methods("GET").Name(routeEmbed)
-	}
-
-	// Community search contexts pages. Must mirror client/web/src/communitySearchContexts/routes.tsx
-	if envvar.SourcegraphDotComMode() {
-		communitySearchContexts := []string{"kubernetes", "stanford", "stackstorm", "temporal", "o3de", "chakraui"}
-		r.Path("/{Path:(?:" + strings.Join(communitySearchContexts, "|") + ")}").Methods("GET").Name(routeCommunitySearchContexts)
-		r.Path("/cncf").Methods("GET").Name(routeCncf)
-	}
-
-	// Legacy redirects
-	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
-	r.Path("/careers").Methods("GET").Name(routeLegacyCareers)
-
-	// repo
-	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
-	r.Path(repoRevPath).Methods("GET").Name(routeRepo)
-
-	// tree
-	repoRev := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
-	repoRev.Path("/tree{Path:.*}").Methods("GET").Name(routeTree)
-
-	repoRev.PathPrefix("/docs{Path:.*}").Methods("GET").Name(routeRepoDocs)
-	repoRev.PathPrefix("/commits").Methods("GET").Name(routeRepoCommits)
-
-	// blob
-	repoRev.Path("/blob{Path:.*}").Methods("GET").Name(routeBlob)
-
-	// raw
-	repoRev.Path("/raw{Path:.*}").Methods("GET", "HEAD").Name(routeRaw)
-
-	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
-	repo.PathPrefix("/settings").Methods("GET").Name(routeRepoSettings)
-	repo.PathPrefix("/code-intelligence").Methods("GET").Name(routeRepoCodeIntelligence)
-	repo.PathPrefix("/commit").Methods("GET").Name(routeRepoCommit)
-	repo.PathPrefix("/branches").Methods("GET").Name(routeRepoBranches)
-	repo.PathPrefix("/batch-changes").Methods("GET").Name(routeRepoBatchChanges)
-	repo.PathPrefix("/tags").Methods("GET").Name(routeRepoTags)
-	repo.PathPrefix("/compare").Methods("GET").Name(routeRepoCompare)
-	repo.PathPrefix("/stats").Methods("GET").Name(routeRepoStats)
-
-	// legacy redirects
-	repo.Path("/info").Methods("GET").Name(routeLegacyRepoLanding)
-	repoRev.Path("/{dummy:def|refs}/" + routevar.Def).Methods("GET").Name(routeLegacyDefRedirectToDefLanding)
-	repoRev.Path("/info/" + routevar.Def).Methods("GET").Name(routeLegacyDefLanding)
-	repoRev.Path("/land/" + routevar.Def).Methods("GET").Name(routeLegacyOldRouteDefLanding)
-	return r
-}
-
-// brandNameSubtitle returns a string with the specified title sequence and the brand name as the
-// last title component. This function indirectly calls conf.Get(), so should not be invoked from
-// any function that is invoked by an init function.
-func brandNameSubtitle(titles ...string) string {
-	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
-}
-
-func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbackend.CodeIntelResolver) {
-	uirouter.Router = router // make accessible to other packages
+func InitRouter(db database.DB) {
+	logger := log.Scoped("router")
 
 	brandedIndex := func(titles string) http.Handler {
 		return handler(db, serveBrandedPageString(db, titles, nil, index))
@@ -237,104 +98,148 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 		return handler(db, serveBrandedPageString(db, titles, nil, noIndex))
 	}
 
-	// basic pages with static titles
-	router.Get(routeHome).Handler(handler(db, serveHome(db)))
-	router.Get(routeThreads).Handler(brandedNoIndex("Threads"))
-	router.Get(routeInsights).Handler(brandedIndex("Insights"))
-	router.Get(routeBatchChanges).Handler(brandedIndex("Batch Changes"))
-	router.Get(routeCodeMonitoring).Handler(brandedIndex("Code Monitoring"))
-	router.Get(routeContexts).Handler(brandedNoIndex("Search Contexts"))
-	router.Get(uirouter.RouteSignIn).Handler(handler(db, serveSignIn(db)))
-	router.Get(uirouter.RouteSignUp).Handler(brandedIndex("Sign up"))
-	router.Get(routeWelcome).Handler(brandedNoIndex("Welcome"))
-	router.Get(routeOrganizations).Handler(brandedNoIndex("Organization"))
-	router.Get(routeSettings).Handler(brandedNoIndex("Settings"))
-	router.Get(routeSiteAdmin).Handler(brandedNoIndex("Admin"))
-	router.Get(uirouter.RoutePasswordReset).Handler(brandedNoIndex("Reset password"))
-	router.Get(routeAPIConsole).Handler(brandedIndex("API console"))
-	router.Get(routeRepoSettings).Handler(brandedNoIndex("Repository settings"))
-	router.Get(routeRepoCodeIntelligence).Handler(brandedNoIndex("Code intelligence"))
-	router.Get(routeRepoCommit).Handler(brandedNoIndex("Commit"))
-	router.Get(routeRepoBranches).Handler(brandedNoIndex("Branches"))
-	router.Get(routeRepoBatchChanges).Handler(brandedIndex("Batch Changes"))
-	router.Get(routeRepoDocs).Handler(handler(db, serveRepoDocs(db, codeIntelResolver)))
-	router.Get(routeRepoCommits).Handler(brandedNoIndex("Commits"))
-	router.Get(routeRepoTags).Handler(brandedNoIndex("Tags"))
-	router.Get(routeRepoCompare).Handler(brandedNoIndex("Compare"))
-	router.Get(routeRepoStats).Handler(brandedNoIndex("Stats"))
-	router.Get(routeSurvey).Handler(brandedNoIndex("Survey"))
-	router.Get(routeSurveyScore).Handler(brandedNoIndex("Survey"))
-	router.Get(routeRegistry).Handler(brandedNoIndex("Registry"))
-	router.Get(routeExtensions).Handler(brandedIndex("Extensions"))
-	router.Get(routeHelp).HandlerFunc(serveHelp)
-	router.Get(routeSnippets).Handler(brandedNoIndex("Snippets"))
-	router.Get(routeSubscriptions).Handler(brandedNoIndex("Subscriptions"))
-	router.Get(routeStats).Handler(brandedNoIndex("Stats"))
-	router.Get(routeViews).Handler(brandedNoIndex("View"))
-	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
+	r := mux.NewRouter()
+	r.StrictSlash(true)
 
-	if envvar.SourcegraphDotComMode() {
-		// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
-		// Any changes to the embedding route could have security implications. Please consult the security team
-		// before making changes. See the `serveEmbed` function for further details.
-		router.Get(routeEmbed).Handler(handler(db, serveEmbed(db)))
+	// Top-level routes.
+	r.Path("/").Methods(http.MethodGet, http.MethodHead).Name(routeHome).Handler(handler(db, serveHome(db)))
+
+	r.Path("/sign-in").Methods(http.MethodGet, http.MethodHead).Name(uirouter.RouteSignIn).Handler(handler(db, serveSignIn(db)))
+	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
+
+	// Basic pages with static titles
+	for _, p := range []struct {
+		// Specify either path OR pathPrefix.
+		path, pathPrefix string
+		name, title      string
+		index            bool
+	}{
+		// with index:
+		{pathPrefix: "/insights", name: "insights", title: "Insights", index: true},
+		{pathPrefix: "/search-jobs", name: "search-jobs", title: "Search Jobs", index: true},
+		{pathPrefix: "/setup", name: "setup", title: "Setup", index: true},
+		{pathPrefix: "/batch-changes", name: "batch-changes", title: "Batch Changes", index: true},
+		{pathPrefix: "/code-monitoring", name: "code-monitoring", title: "Code Monitoring", index: true},
+		{pathPrefix: "/notebooks", name: "search.notebook", title: "Notebooks", index: true},
+		{pathPrefix: "/request-access", name: uirouter.RouteRequestAccess, title: "Request access", index: true},
+		{path: "/search/console", name: "search.console", title: "Search console", index: true},
+		{path: "/api/console", name: "api-console", title: "API console", index: true},
+		{path: "/sign-up", name: uirouter.RouteSignUp, title: "Sign up", index: true},
+
+		// without index:
+		{pathPrefix: "/threads", name: "threads", title: "Threads", index: false},
+		{pathPrefix: "/organizations", name: "org", title: "Organization", index: false},
+		{pathPrefix: "/teams", name: "team", title: "Team", index: false},
+		{pathPrefix: "/settings", name: routeSettings, title: "Settings", index: false},
+		{pathPrefix: "/site-admin", name: routeSiteAdmin, title: "Admin", index: false},
+		{pathPrefix: "/snippets", name: "snippets", title: "Snippets", index: false},
+		{pathPrefix: "/subscriptions", name: "subscriptions", title: "Subscriptions", index: false},
+		{pathPrefix: "/views", name: "views", title: "View", index: false},
+		{pathPrefix: "/own", name: "own", title: "Own", index: false},
+		{pathPrefix: "/contexts", name: "contexts", title: "Search Contexts", index: false},
+		{pathPrefix: "/registry", name: "registry", title: "Registry", index: false},
+		{path: "/search/cody", name: "cody-search", title: "Search (Cody)", index: false},
+		{path: "/app/coming-soon", name: "app-coming-soon", title: "Coming soon", index: false},
+		{path: "/app/auth/callback", name: "app-auth-callback", title: "Auth callback", index: false},
+		{path: "/cody/manage", name: "cody", title: "Cody Manage", index: false},
+		{path: "/cody/subscription", name: "cody", title: "Cody Pricing", index: false},
+		{path: "/cody/chat", name: "cody", title: "Cody", index: false},
+		{path: "/cody/chat/{chatID}", name: "cody-chat", title: "Cody", index: false},
+		// TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
+		{path: "/cody", name: "cody", title: "Cody", index: false},
+		// TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
+		{path: "/cody/{chatID}", name: "cody-chat", title: "Cody", index: false},
+		{path: "/get-cody", name: "get-cody", title: "Cody", index: false},
+		{path: "/post-sign-up", name: "post-sign-up", title: "Cody", index: false},
+		{path: "/unlock-account/{token}", name: uirouter.RouteUnlockAccount, title: "Unlock Your Account", index: false},
+		{path: "/password-reset", name: uirouter.RoutePasswordReset, title: "Reset password", index: false},
+		{path: "/survey", name: "survey", title: "Survey", index: false},
+		{path: "/survey/{score}", name: "survey-score", title: "Survey", index: false},
+		{path: "/welcome", name: "welcome", title: "Welcome", index: false},
+	} {
+		var handler http.Handler
+		if p.index {
+			handler = brandedIndex(p.title)
+		} else {
+			handler = brandedNoIndex(p.title)
+		}
+
+		if p.pathPrefix != "" {
+			r.Methods("GET").PathPrefix(p.pathPrefix).Name(p.name).Handler(handler)
+		} else {
+			r.Methods("GET").Path(p.path).Name(p.name).Handler(handler)
+		}
 	}
 
-	router.Get(routeUserSettings).Handler(brandedNoIndex("User settings"))
-	router.Get(routeUserRedirect).Handler(brandedNoIndex("User"))
-	router.Get(routeUser).Handler(handler(db, serveBasicPage(db, func(c *Common, r *http.Request) string {
-		return brandNameSubtitle(mux.Vars(r)["username"])
-	}, nil, noIndex)))
-	router.Get(routeSearchConsole).Handler(brandedIndex("Search console"))
-	router.Get(routeNotebooks).Handler(brandedIndex("Notebooks"))
+	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
+	// Any changes to the embedding route could have security implications. Please consult the security team
+	// before making changes. See the `serveEmbed` function for further details.
+	r.PathPrefix("/embed").Methods("GET").Name("embed").Handler(handler(db, serveEmbed(db)))
 
-	// Legacy redirects
-	if envvar.SourcegraphDotComMode() {
-		router.Get(routeLegacyLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
-		router.Get(routeLegacyCareers).Handler(staticRedirectHandler("https://about.sourcegraph.com/jobs", http.StatusMovedPermanently))
-		router.Get(routeLegacyOldRouteDefLanding).Handler(http.HandlerFunc(serveOldRouteDefLanding))
-		router.Get(routeLegacyDefRedirectToDefLanding).Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
-		router.Get(routeLegacyDefLanding).Handler(handler(db, serveDefLanding))
-		router.Get(routeLegacyRepoLanding).Handler(handler(db, serveRepoLanding(db)))
-	}
+	// users
+	r.PathPrefix("/users/{username}/settings").Methods("GET").Name("user-settings").Handler(brandedNoIndex("User settings"))
+	r.PathPrefix("/user").Methods("GET").Name("user-redirect").Handler(brandedNoIndex("User"))
+	r.PathPrefix("/users/{username}").Methods("GET").
+		Name("user").
+		Handler(handler(db, serveBasicPage(db, func(c *Common, r *http.Request) string {
+			return brandNameSubtitle(mux.Vars(r)["username"])
+		}, nil, noIndex)))
 
 	// search
-	router.Get(routeSearch).Handler(handler(db, serveBasicPage(db, func(c *Common, r *http.Request) string {
-		shortQuery := limitString(r.URL.Query().Get("q"), 25, true)
-		if shortQuery == "" {
-			return globals.Branding().BrandName
-		}
-		// e.g. "myquery - Sourcegraph"
-		return brandNameSubtitle(shortQuery)
-	}, nil, index)))
-
+	r.Path("/search").Methods("GET").Name(routeSearch).
+		Handler(handler(db, serveBasicPage(db, func(_ *Common, r *http.Request) string {
+			shortQuery := limitString(r.URL.Query().Get("q"), 25, true)
+			if shortQuery == "" {
+				return globals.Branding().BrandName
+			}
+			// e.g. "myquery - Sourcegraph"
+			return brandNameSubtitle(shortQuery)
+		}, nil, index)))
 	// streaming search
-	router.Get(routeSearchStream).Handler(search.StreamHandler(db))
-
+	r.Path("/search/stream").Methods("GET").Name("search.stream").Handler(search.StreamHandler(db))
 	// search badge
-	router.Get(routeSearchBadge).Handler(searchBadgeHandler())
+	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge).Handler(searchBadgeHandler())
 
 	if envvar.SourcegraphDotComMode() {
-		// about subdomain
-		router.Get(routeAboutSubdomain).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r.URL.Scheme = aboutRedirectScheme
-			r.URL.User = nil
-			r.URL.Host = aboutRedirectHost
-			r.URL.Path = "/" + aboutRedirects[mux.Vars(r)["Path"]]
-			http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
-		}))
-		router.Get(routeCommunitySearchContexts).Handler(brandedNoIndex("Community search context"))
+		// sourcegraph.com subdomain
+		r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").
+			Name(routeAboutSubdomain).
+			Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r.URL.Scheme = aboutRedirectScheme
+				r.URL.User = nil
+				r.URL.Host = aboutRedirectHost
+				r.URL.Path = "/" + aboutRedirects[mux.Vars(r)["Path"]]
+				http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
+			}))
+
+		// Community search contexts pages. Must mirror client/web/src/communitySearchContexts/routes.tsx
+		communitySearchContexts := []string{"kubernetes", "stanford", "stackstorm", "temporal", "o3de", "chakraui", "julia", "backstage"}
+		r.Path("/{Path:(?:" + strings.Join(communitySearchContexts, "|") + ")}").Methods("GET").Name("community-search-contexts").Handler(brandedNoIndex("Community search context"))
+
 		cncfDescription := "Search all repositories in the Cloud Native Computing Foundation (CNCF)."
-		router.Get(routeCncf).Handler(handler(db, serveBrandedPageString(db, "CNCF code search", &cncfDescription, index)))
-		router.Get(routeDevToolTime).Handler(staticRedirectHandler("https://info.sourcegraph.com/dev-tool-time", http.StatusMovedPermanently))
+		r.Path("/cncf").Methods("GET").Name("community-search-contexts.cncf").Handler(handler(db, serveBrandedPageString(db, "CNCF code search", &cncfDescription, index)))
+		r.PathPrefix("/devtooltime").Methods("GET").Name("devtooltime").Handler(staticRedirectHandler("https://info.sourcegraph.com/dev-tool-time", http.StatusMovedPermanently))
+
+		// legacy routes
+		r.Path("/login").Methods("GET").Name(routeLegacyLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
+		r.Path("/careers").Methods("GET").Name(routeLegacyCareers).Handler(staticRedirectHandler("https://sourcegraph.com/jobs", http.StatusMovedPermanently))
+
+		r.PathPrefix("/extensions").Methods("GET").Name("extensions").
+			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				http.Redirect(w, r, "/", http.StatusMovedPermanently)
+			})
 	}
 
-	// repo
+	// Help, has to be defined after about subdomain
+	r.PathPrefix("/help").Methods("GET").Name("help").HandlerFunc(serveHelp)
+
+	// repo, has to come last
 	serveRepoHandler := handler(db, serveRepoOrBlob(db, routeRepo, func(c *Common, r *http.Request) string {
 		// e.g. "gorilla/mux - Sourcegraph"
 		return brandNameSubtitle(repoShortName(c.Repo.Name))
 	}))
-	router.Get(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
+	r.Path(repoRevPath).Methods("GET").Name(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
 		if env.InsecureDev && r.URL.Path == "/__errorTest" {
 			handler(db, serveErrorTest(db)).ServeHTTP(w, r)
@@ -349,26 +254,71 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 	}))
 
 	// tree
-	router.Get(routeTree).Handler(handler(db, serveTree(db, func(c *Common, r *http.Request) string {
-		// e.g. "src - gorilla/mux - Sourcegraph"
-		dirName := path.Base(mux.Vars(r)["Path"])
-		return brandNameSubtitle(dirName, repoShortName(c.Repo.Name))
-	})))
+	repoRev := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
+	repoRev.PathPrefix("/commits").Methods("GET").Name("repo-commits").Handler(brandedNoIndex("Commits"))
+	// tree
+	repoRev.Path("/tree{Path:.*}").Methods("GET").
+		Name(routeTree).
+		Handler(handler(db, serveTree(db, func(c *Common, r *http.Request) string {
+			// e.g. "src - gorilla/mux - Sourcegraph"
+			dirName := path.Base(mux.Vars(r)["Path"])
+			return brandNameSubtitle(dirName, repoShortName(c.Repo.Name))
+		})))
 
 	// blob
-	router.Get(routeBlob).Handler(handler(db, serveRepoOrBlob(db, routeBlob, func(c *Common, r *http.Request) string {
-		// e.g. "mux.go - gorilla/mux - Sourcegraph"
-		fileName := path.Base(mux.Vars(r)["Path"])
-		return brandNameSubtitle(fileName, repoShortName(c.Repo.Name))
-	})))
+	repoRev.Path("/blob{Path:.*}").Methods("GET").
+		Name(routeBlob).
+		Handler(handler(db, serveRepoOrBlob(db, routeBlob, func(c *Common, r *http.Request) string {
+			// e.g. "mux.go - gorilla/mux - Sourcegraph"
+			fileName := path.Base(mux.Vars(r)["Path"])
+			return brandNameSubtitle(fileName, repoShortName(c.Repo.Name))
+		})))
 
 	// raw
-	router.Get(routeRaw).Handler(handler(db, serveRaw(db)))
+	repoRev.Path("/raw{Path:.*}").Methods("GET", "HEAD").Name(routeRaw).Handler(handler(db, serveRaw(logger, db, gitserver.NewClient("http.raw"))))
+
+	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
+
+	repo.PathPrefix("/batch-changes").Methods("GET").Name("repo-batch-changes").Handler(brandedIndex("Batch Changes"))
+
+	for _, p := range []struct {
+		pathPrefix, name, title string
+	}{
+		{pathPrefix: "/settings", name: "repo-settings", title: "Repository settings"},
+		{pathPrefix: "/code-graph", name: "repo-code-intelligence", title: "Code graph"},
+		{pathPrefix: "/commit", name: "repo-commit", title: "Commit"},
+		{pathPrefix: "/branches", name: "repo-branches", title: "Branches"},
+		{pathPrefix: "/tags", name: "repo-tags", title: "Tags"},
+		{pathPrefix: "/compare", name: "repo-compare", title: "Compare"},
+		{pathPrefix: "/stats", name: "repo-stats", title: "Stats"},
+		{pathPrefix: "/own", name: "repo-own", title: "Ownership"},
+	} {
+		repo.PathPrefix(p.pathPrefix).Methods("GET").Name(p.name).Handler(brandedNoIndex(p.title))
+	}
+
+	// legacy redirects
+	if envvar.SourcegraphDotComMode() {
+		repo.Path("/info").Methods("GET").Name("page.repo.landing").Handler(handler(db, serveRepoLanding(db)))
+		repoRev.Path("/{dummy:def|refs}/" + routevar.Def).Methods("GET").Name("page.def.redirect").Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
+		repoRev.Path("/info/" + routevar.Def).Methods("GET").Name(routeLegacyDefLanding).Handler(handler(db, serveDefLanding))
+		repoRev.Path("/land/" + routevar.Def).Methods("GET").Name("page.def.landing.old").Handler(http.HandlerFunc(serveOldRouteDefLanding))
+	}
 
 	// All other routes that are not found.
-	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		serveError(w, r, db, errors.New("route not found"), http.StatusNotFound)
 	})
+
+	uirouter.Router = r // make accessible to other packages
+}
+
+var mockServeRepo func(w http.ResponseWriter, r *http.Request)
+
+// brandNameSubtitle returns a string with the specified title sequence and the brand name as the
+// last title component. This function indirectly calls conf.Get(), so should not be invoked from
+// any function that is invoked by an init function.
+func brandNameSubtitle(titles ...string) string {
+	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
 // staticRedirectHandler returns an HTTP handler that redirects all requests to
@@ -377,9 +327,8 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 // The scheme, host, and path in the specified url override ones in the incoming
 // request. For example:
 //
-// 	staticRedirectHandler("http://google.com") serving "https://sourcegraph.com/foobar?q=foo" -> "http://google.com/foobar?q=foo"
-// 	staticRedirectHandler("/foo") serving "https://sourcegraph.com/bar?q=foo" -> "https://sourcegraph.com/foo?q=foo"
-//
+//	staticRedirectHandler("http://google.com") serving "https://sourcegraph.com/foobar?q=foo" -> "http://google.com/foobar?q=foo"
+//	staticRedirectHandler("/foo") serving "https://sourcegraph.com/bar?q=foo" -> "https://sourcegraph.com/foo?q=foo"
 func staticRedirectHandler(u string, code int) http.Handler {
 	target, err := url.Parse(u)
 	if err != nil {
@@ -419,9 +368,8 @@ func limitString(s string, n int, ellipsis bool) string {
 // Clients that wish to return their own HTTP status code should use this from
 // their handler:
 //
-// 	serveError(w, r, err, http.MyStatusCode)
-//  return nil
-//
+//	serveError(w, r, err, http.MyStatusCode)
+//	return nil
 func handler(db database.DB, f handlerFunc) http.Handler {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
@@ -437,7 +385,7 @@ func handler(db database.DB, f handlerFunc) http.Handler {
 }
 
 type recoverError struct {
-	recover interface{}
+	recover any
 	stack   []byte
 }
 
@@ -473,23 +421,45 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 	w.WriteHeader(statusCode)
 	errorID := randstring.NewLen(6)
 
+	logger := log.Scoped("ui")
+
 	// Determine trace URL and log the error.
 	var traceURL string
-	if span := opentracing.SpanFromContext(r.Context()); span != nil {
-		ext.Error.Set(span, true)
-		span.SetTag("err", err)
-		span.SetTag("error-id", errorID)
-		traceURL = trace.URL(trace.IDFromSpan(span), conf.ExternalURL())
+	if tr := trace.FromContext(r.Context()); tr.IsRecording() {
+		tr.SetError(err)
+		tr.SetAttributes(attribute.String("error-id", errorID))
+		traceURL = trace.URL(trace.ID(r.Context()), conf.DefaultClient())
 	}
-	log15.Error("ui HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", statusCode, "error", err, "error_id", errorID, "trace", traceURL)
+	logFields := []log.Field{
+		log.String("method", r.Method),
+		log.String("request_uri", r.URL.RequestURI()),
+		log.Int("status_code", statusCode),
+		log.Error(err),
+		log.String("error_id", errorID),
+		log.String("trace", traceURL),
+	}
+	if statusCode >= 400 && statusCode < 500 {
+		logger.Warn(
+			"ui HTTP handler error response",
+			logFields...,
+		)
+	} else {
+		logger.Error(
+			"ui HTTP handler error response",
+			logFields...,
+		)
+	}
 
 	// In the case of recovering from a panic, we nicely include the stack
 	// trace in the error that is shown on the page. Additionally, we log it
-	// separately (since log15 prints the escaped sequence).
+	// separately.
 	var e recoverError
 	if errors.As(err, &e) {
-		err = errors.Errorf("ui: recovered from panic %v\n\n%s", e.recover, e.stack)
-		log.Println(err)
+		err = errors.Errorf("%v\n\n%s", e.recover, e.stack)
+		logger.Error(
+			"recovered from panic",
+			log.Error(err),
+		)
 	}
 
 	var errorIfDebug string
@@ -526,7 +496,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 			Common: common,
 		})
 		if fancyErr != nil {
-			log15.Error("ui: error while serving fancy error template", "error", fancyErr)
+			logger.Error("ui: error while serving fancy error template", log.Error(fancyErr))
 			// continue onto fallback below..
 		} else {
 			return
@@ -536,14 +506,14 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 	// Fallback to ugly / reliable error template.
 	stdErr := renderTemplate(w, "error.html", pageErrorContext)
 	if stdErr != nil {
-		log15.Error("ui: error while serving final error template", "error", stdErr)
+		logger.Error("error while serving final error template", log.Error(stdErr))
 	}
 }
 
 // serveErrorTest makes it easy to test styling/layout of the error template by
 // visiting:
 //
-// 	http://localhost:3080/__errorTest?nodebug=true&error=theerror&status=500
+//	http://localhost:3080/__errorTest?nodebug=true&error=theerror&status=500
 //
 // The `nodebug=true` parameter hides error messages (which is ALWAYS the case
 // in production), `error` controls the error message text, and status controls

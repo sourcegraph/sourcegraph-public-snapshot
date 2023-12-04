@@ -9,12 +9,11 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,6 +23,7 @@ import (
 // direction or 0% in the reverse direction.
 type Runner struct {
 	store         storeIface
+	logger        log.Logger
 	refreshTicker glock.Ticker
 	operations    *operations
 	migrators     map[int]migratorAndOption
@@ -37,13 +37,15 @@ type migratorAndOption struct {
 	migratorOptions
 }
 
-var _ goroutine.BackgroundRoutine = &Runner{}
-
-func NewRunnerWithDB(db dbutil.DB, refreshInterval time.Duration, observationContext *observation.Context) *Runner {
-	return newRunner(NewStoreWithDB(db), glock.NewRealTicker(refreshInterval), observationContext)
+func NewRunnerWithDB(observationCtx *observation.Context, db database.DB, refreshInterval time.Duration) *Runner {
+	return NewRunner(observationCtx, NewStoreWithDB(db), refreshInterval)
 }
 
-func newRunner(store storeIface, refreshTicker glock.Ticker, observationContext *observation.Context) *Runner {
+func NewRunner(observationCtx *observation.Context, store *Store, refreshInterval time.Duration) *Runner {
+	return newRunner(observationCtx, &storeShim{store}, glock.NewRealTicker(refreshInterval))
+}
+
+func newRunner(observationCtx *observation.Context, store storeIface, refreshTicker glock.Ticker) *Runner {
 	// IMPORTANT: actor.WithInternalActor prevents issues caused by
 	// database-level authz checks: migration tasks should always be
 	// privileged.
@@ -51,18 +53,15 @@ func newRunner(store storeIface, refreshTicker glock.Ticker, observationContext 
 
 	return &Runner{
 		store:         store,
+		logger:        observationCtx.Logger.Scoped("oobmigration"),
 		refreshTicker: refreshTicker,
-		operations:    newOperations(observationContext),
+		operations:    newOperations(observationCtx),
 		migrators:     map[int]migratorAndOption{},
 		ctx:           ctx,
 		cancel:        cancel,
 		finished:      make(chan struct{}),
 	}
 }
-
-// ErrMigratorConflict occurs when multiple migrator instances are registered to the same
-// out-of-band migration identifier.
-var ErrMigratorConflict = errors.New("migrator already registered")
 
 // MigratorOptions configures the behavior of a registered migrator.
 type MigratorOptions struct {
@@ -73,11 +72,15 @@ type MigratorOptions struct {
 	ticker glock.Ticker
 }
 
+func (r *Runner) SynchronizeMetadata(ctx context.Context) error {
+	return r.store.SynchronizeMetadata(ctx)
+}
+
 // Register correlates the given migrator with the given migration identifier. An error is
 // returned if a migrator is already associated with this migration.
 func (r *Runner) Register(id int, migrator Migrator, options MigratorOptions) error {
 	if _, ok := r.migrators[id]; ok {
-		return ErrMigratorConflict
+		return errors.Newf("migrator %d already registered", id)
 	}
 
 	if options.Interval == 0 {
@@ -130,10 +133,7 @@ func (r *Runner) Validate(ctx context.Context, currentVersion, firstVersion Vers
 
 	errs := make([]error, 0, len(migrations))
 	for _, migration := range migrations {
-		currentVersionCmpIntroduced, err := compareVersions(currentVersion, migration.Introduced)
-		if err != nil {
-			return err
-		}
+		currentVersionCmpIntroduced := CompareVersions(currentVersion, migration.Introduced)
 		if currentVersionCmpIntroduced == VersionOrderBefore && migration.Progress != 0 {
 			// Unfinished rollback: currentVersion before introduced version and progress > 0
 			errs = append(errs, newMigrationStatusError(migration.ID, 0, migration.Progress))
@@ -143,19 +143,13 @@ func (r *Runner) Validate(ctx context.Context, currentVersion, firstVersion Vers
 			continue
 		}
 
-		firstVersionCmpDeprecated, err := compareVersions(firstVersion, *migration.Deprecated)
-		if err != nil {
-			return err
-		}
+		firstVersionCmpDeprecated := CompareVersions(firstVersion, *migration.Deprecated)
 		if firstVersionCmpDeprecated != VersionOrderBefore {
 			// Edge case: sourcegraph instance booted on or after deprecation version
 			continue
 		}
 
-		currentVersionCmpDeprecated, err := compareVersions(currentVersion, *migration.Deprecated)
-		if err != nil {
-			return err
-		}
+		currentVersionCmpDeprecated := CompareVersions(currentVersion, *migration.Deprecated)
 		if currentVersionCmpDeprecated != VersionOrderBefore && migration.Progress != 1 {
 			// Unfinished migration: currentVersion on or after deprecated version, progress < 1
 			errs = append(errs, newMigrationStatusError(migration.ID, 1, migration.Progress))
@@ -182,9 +176,54 @@ func wrapMigrationErrors(errs ...error) error {
 	)
 }
 
+// UpdateDirection sets the direction for each of the given migrations atomically.
+func (r *Runner) UpdateDirection(ctx context.Context, ids []int, applyReverse bool) (err error) {
+	tx, err := r.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, id := range ids {
+		if err := tx.UpdateDirection(ctx, id, applyReverse); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Start runs registered migrators on a loop until they complete. This method will periodically
 // re-read from the database in order to refresh its current view of the migrations.
-func (r *Runner) Start() {
+func (r *Runner) Start(currentVersion Version) {
+	r.startInternal(func(migration Migration) bool {
+		if CompareVersions(currentVersion, migration.Introduced) == VersionOrderBefore {
+			// current version before migration introduction
+			return false
+		}
+
+		// migration not yet deprecated or current version is before deprecated version
+		return migration.Deprecated == nil || CompareVersions(currentVersion, *migration.Deprecated) == VersionOrderBefore
+	})
+}
+
+// StartPartial runs registered migrators matching one of the given identifiers on a loop until
+// they complete. This method will periodically re-read from the database in order to refresh its
+// current view of the migrations. When the given set of identifiers is empty, all migrations in
+// the database with a registered migrator will be considered active.
+func (r *Runner) StartPartial(ids []int) {
+	idMap := make(map[int]struct{}, len(ids))
+	for _, id := range ids {
+		idMap[id] = struct{}{}
+	}
+
+	r.startInternal(func(m Migration) bool {
+		_, ok := idMap[m.ID]
+		return ok
+	})
+}
+
+func (r *Runner) startInternal(shouldRunMigration func(m Migration) bool) {
 	defer close(r.finished)
 
 	ctx := r.ctx
@@ -194,15 +233,18 @@ func (r *Runner) Start() {
 	// Periodically read the complete set of out-of-band migrations from the database
 	for migrations := range r.listMigrations(ctx) {
 		for i := range migrations {
-			id := migrations[i].ID
-			migrator, ok := r.migrators[id]
+			migration := migrations[i]
+			migrator, ok := r.migrators[migration.ID]
 			if !ok {
+				continue
+			}
+			if !shouldRunMigration(migration) {
 				continue
 			}
 
 			// Ensure we have a migration routine running for this migration
-			r.ensureProcessorIsRunning(&wg, migrationProcesses, id, func(ch <-chan Migration) {
-				runMigrator(ctx, r.store, migrator.Migrator, ch, migrator.migratorOptions, r.operations)
+			r.ensureProcessorIsRunning(&wg, migrationProcesses, migration.ID, func(ch <-chan Migration) {
+				runMigrator(ctx, r.store, migrator.Migrator, ch, migrator.migratorOptions, r.logger, r.operations)
 			})
 
 			// Send the new migration to the processor routine. This loop guarantees
@@ -218,9 +260,9 @@ func (r *Runner) Start() {
 		loop:
 			for {
 				select {
-				case migrationProcesses[id] <- migrations[i]:
+				case migrationProcesses[migration.ID] <- migrations[i]:
 					break loop
-				case <-migrationProcesses[id]:
+				case <-migrationProcesses[migration.ID]:
 				}
 			}
 		}
@@ -247,13 +289,15 @@ func (r *Runner) listMigrations(ctx context.Context) <-chan []Migration {
 		for {
 			migrations, err := r.store.List(ctx)
 			if err != nil {
-				log15.Error("Failed to list out-of-band migrations", "error", err)
-			}
-
-			select {
-			case ch <- migrations:
-			case <-ctx.Done():
-				return
+				if !errors.Is(err, ctx.Err()) {
+					r.logger.Error("Failed to list out-of-band migrations", log.Error(err))
+				}
+			} else {
+				select {
+				case ch <- migrations:
+				case <-ctx.Done():
+					return
+				}
 			}
 
 			select {
@@ -300,7 +344,7 @@ type migratorOptions struct {
 // runMigrator runs the given migrator function periodically (on each read from ticker)
 // while the migration is not complete. We will periodically (on each read from migrations)
 // update our current view of the migration progress and (more importantly) its direction.
-func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migrations <-chan Migration, options migratorOptions, operations *operations) {
+func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migrations <-chan Migration, options migratorOptions, logger log.Logger, operations *operations) {
 	// Get initial migration. This channel will close when the context
 	// is canceled, so we don't need to do any more complex select here.
 	migration, ok := <-migrations
@@ -310,24 +354,34 @@ func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migra
 
 	// We're just starting up - refresh our progress before migrating
 	if err := updateProgress(ctx, store, &migration, migrator); err != nil {
-		log15.Error("Failed to determine migration progress", "migrationID", migration.ID, "error", err)
+		if !errors.Is(err, ctx.Err()) {
+			logger.Error("Failed to determine migration progress", log.Error(err), log.Int("migrationID", migration.ID))
+		}
 	}
 
 	for {
 		select {
-		case migration = <-migrations:
+		case migration, ok = <-migrations:
+			if !ok {
+				return
+			}
+
 			// We just got a new version of the migration from the database. We need to check
 			// the actual progress based on the migrator in case the progress as stored in the
 			// migrations table has been de-synchronized from the actual progress.
 			if err := updateProgress(ctx, store, &migration, migrator); err != nil {
-				log15.Error("Failed to determine migration progress", "migrationID", migration.ID, "error", err)
+				if !errors.Is(err, ctx.Err()) {
+					logger.Error("Failed to determine migration progress", log.Error(err), log.Int("migrationID", migration.ID))
+				}
 			}
 
 		case <-options.ticker.Chan():
 			if !migration.Complete() {
 				// Run the migration only if there's something left to do
-				if err := runMigrationFunction(ctx, store, &migration, migrator, operations); err != nil {
-					log15.Error("Failed migration action", "migrationID", migration.ID, "error", err)
+				if err := runMigrationFunction(ctx, store, &migration, migrator, logger, operations); err != nil {
+					if !errors.Is(err, ctx.Err()) {
+						logger.Error("Failed migration action", log.Error(err), log.Int("migrationID", migration.ID))
+					}
 				}
 			}
 
@@ -341,14 +395,16 @@ func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migra
 // direction. If an error occurs, it will be associated in the database with the migration record.
 // Regardless of the success of the migration function, the progress function on the migrator will be
 // invoked and the progress written to the database.
-func runMigrationFunction(ctx context.Context, store storeIface, migration *Migration, migrator Migrator, operations *operations) error {
+func runMigrationFunction(ctx context.Context, store storeIface, migration *Migration, migrator Migrator, logger log.Logger, operations *operations) error {
 	migrationFunc := runMigrationUp
 	if migration.ApplyReverse {
 		migrationFunc = runMigrationDown
 	}
 
-	if migrationErr := migrationFunc(ctx, migration, migrator, operations); migrationErr != nil {
-		log15.Error("Failed to perform migration", "migrationID", migration.ID, "error", migrationErr)
+	if migrationErr := migrationFunc(ctx, migration, migrator, logger, operations); migrationErr != nil {
+		if !errors.Is(migrationErr, ctx.Err()) {
+			logger.Error("Failed to perform migration", log.Error(migrationErr), log.Int("migrationID", migration.ID))
+		}
 
 		// Migration resulted in an error. All we'll do here is add this error to the migration's error
 		// message list. Unless _that_ write to the database fails, we'll continue along the happy path
@@ -365,7 +421,7 @@ func runMigrationFunction(ctx context.Context, store storeIface, migration *Migr
 // updateProgress invokes the Progress method on the given migrator, updates the Progress field of the
 // given migration record, and updates the record in the database.
 func updateProgress(ctx context.Context, store storeIface, migration *Migration, migrator Migrator) error {
-	progress, err := migrator.Progress(ctx)
+	progress, err := migrator.Progress(ctx, migration.ApplyReverse)
 	if err != nil {
 		return err
 	}
@@ -378,22 +434,22 @@ func updateProgress(ctx context.Context, store storeIface, migration *Migration,
 	return nil
 }
 
-func runMigrationUp(ctx context.Context, migration *Migration, migrator Migrator, operations *operations) (err error) {
-	ctx, endObservation := operations.upForMigration(migration.ID).With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("migrationID", migration.ID),
+func runMigrationUp(ctx context.Context, migration *Migration, migrator Migrator, logger log.Logger, operations *operations) (err error) {
+	ctx, _, endObservation := operations.upForMigration(migration.ID).With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("migrationID", migration.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	log15.Debug("Running up migration", "migrationID", migration.ID)
+	logger.Debug("Running up migration", log.Int("migrationID", migration.ID))
 	return migrator.Up(ctx)
 }
 
-func runMigrationDown(ctx context.Context, migration *Migration, migrator Migrator, operations *operations) (err error) {
-	ctx, endObservation := operations.downForMigration(migration.ID).With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("migrationID", migration.ID),
+func runMigrationDown(ctx context.Context, migration *Migration, migrator Migrator, logger log.Logger, operations *operations) (err error) {
+	ctx, _, endObservation := operations.downForMigration(migration.ID).With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("migrationID", migration.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	log15.Debug("Running down migration", "migrationID", migration.ID)
+	logger.Debug("Running down migration", log.Int("migrationID", migration.ID))
 	return migrator.Down(ctx)
 }

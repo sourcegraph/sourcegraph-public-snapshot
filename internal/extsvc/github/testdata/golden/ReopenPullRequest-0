@@ -5,10 +5,11 @@
   "State": "OPEN",
   "URL": "https://github.com/sourcegraph/automation-testing/pull/356",
   "HeadRefOid": "4fc28c316ec75bd1c6f71938a7b285f41cd3ef96",
-  "BaseRefOid": "6274d04b734de9f057bb5f196a5046a9e86ba992",
+  "BaseRefOid": "58dd8da9d9099a823c814c528b29b72c9b2ac98b",
   "HeadRefName": "demo/267-in-2",
   "BaseRefName": "master",
   "Number": 356,
+  "ReviewDecision": "REVIEW_REQUIRED",
   "Author": {
    "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
    "Login": "mrnugget",
@@ -16,12 +17,14 @@
   },
   "BaseRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Name": "automation-testing",
    "Owner": {
     "Login": "sourcegraph"
    }
   },
   "HeadRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Name": "automation-testing",
    "Owner": {
     "Login": "sourcegraph"
    }
@@ -38,9 +41,19 @@
     "URL": "https://github.com/LawnGnome"
    },
    {
+    "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+    "Login": "davejrt",
+    "URL": "https://github.com/davejrt"
+   },
+   {
     "AvatarURL": "https://avatars.githubusercontent.com/u/23356519?u=314e3cc368638ce1f8117c4377b62ce158127302\u0026v=4",
     "Login": "bobheadxi",
     "URL": "https://github.com/bobheadxi"
+   },
+   {
+    "AvatarURL": "https://avatars.githubusercontent.com/u/63290851?v=4",
+    "Login": "sourcegraph-vcr",
+    "URL": "https://github.com/sourcegraph-vcr"
    }
   ],
   "Labels": {
@@ -215,6 +228,52 @@
      },
      "CreatedAt": "2021-12-30T22:46:44Z"
     }
+   },
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+      "Login": "mrnugget",
+      "URL": "https://github.com/mrnugget"
+     },
+     "CreatedAt": "2022-02-11T09:50:47Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/356#event-6049917860"
+    }
+   },
+   {
+    "Type": "ReopenedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/63290851?v=4",
+      "Login": "sourcegraph-vcr",
+      "URL": "https://github.com/sourcegraph-vcr"
+     },
+     "CreatedAt": "2023-02-07T08:15:27Z"
+    }
+   },
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+      "Login": "mrnugget",
+      "URL": "https://github.com/mrnugget"
+     },
+     "CreatedAt": "2023-06-06T07:44:03Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/356#event-9442706751"
+    }
+   },
+   {
+    "Type": "ReopenedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "CreatedAt": "2023-06-23T19:29:16Z"
+    }
    }
   ],
   "Commits": {
@@ -223,26 +282,7 @@
      "Commit": {
       "OID": "4fc28c316ec75bd1c6f71938a7b285f41cd3ef96",
       "CheckSuites": {
-       "Nodes": [
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUxMjA2MzA3OTU4",
-         "Status": "COMPLETED",
-         "Conclusion": "STALE",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        },
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUxMjA2MzA3OTYx",
-         "Status": "COMPLETED",
-         "Conclusion": "STALE",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        }
-       ]
+       "Nodes": []
       },
       "Status": {
        "State": "",
@@ -255,5 +295,5 @@
   },
   "IsDraft": false,
   "CreatedAt": "2020-09-17T11:53:51Z",
-  "UpdatedAt": "2021-12-30T22:46:44Z"
+  "UpdatedAt": "2023-06-23T19:29:16Z"
  }

@@ -1,11 +1,10 @@
-import { ApolloClient } from '@apollo/client'
-import { from, Observable } from 'rxjs'
+import type { ApolloClient } from '@apollo/client'
+import { from, type Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { getDocumentNode, gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
-import {
+import type {
     CodeIntelligenceConfigurationPoliciesResult,
     CodeIntelligenceConfigurationPoliciesVariables,
     CodeIntelligenceConfigurationPolicyFields,
@@ -25,16 +24,20 @@ export const POLICIES_CONFIGURATION = gql`
         $query: String
         $forDataRetention: Boolean
         $forIndexing: Boolean
+        $forEmbeddings: Boolean
         $first: Int
         $after: String
+        $protected: Boolean
     ) {
         codeIntelligenceConfigurationPolicies(
             repository: $repository
             query: $query
             forDataRetention: $forDataRetention
             forIndexing: $forIndexing
+            forEmbeddings: $forEmbeddings
             first: $first
             after: $after
+            protected: $protected
         ) {
             nodes {
                 ...CodeIntelligenceConfigurationPolicyFields
@@ -57,23 +60,27 @@ export const queryPolicies = (
         query,
         forDataRetention,
         forIndexing,
+        forEmbeddings,
         after,
-    }: GQL.ICodeIntelligenceConfigurationPoliciesOnQueryArguments,
+        protected: varProtected,
+    }: Partial<CodeIntelligenceConfigurationPoliciesVariables>,
     client: ApolloClient<object>
 ): Observable<PolicyConnection> => {
-    const vars: CodeIntelligenceConfigurationPoliciesVariables = {
+    const variables: CodeIntelligenceConfigurationPoliciesVariables = {
         repository: repository ?? null,
         query: query ?? null,
         forDataRetention: forDataRetention ?? null,
         forIndexing: forIndexing ?? null,
+        forEmbeddings: forEmbeddings ?? null,
         first: first ?? null,
         after: after ?? null,
+        protected: varProtected ?? null,
     }
 
     return from(
         client.query<CodeIntelligenceConfigurationPoliciesResult>({
             query: getDocumentNode(POLICIES_CONFIGURATION),
-            variables: vars,
+            variables,
         })
     ).pipe(
         map(({ data }) => data),

@@ -1,0 +1,34 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "npm_package")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
+
+package(default_visibility = ["//visibility:public"])
+
+# .dts-only library done manually
+# gazelle:js disabled
+
+npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root()
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/extension-api:tsconfig",
+    ],
+)
+
+npm_package(
+    name = "extension-api-types_pkg",
+    srcs = [
+        "package.json",
+        "src/hover.d.ts",
+        "src/index.d.ts",
+        "src/location.d.ts",
+        "src/workspace.d.ts",
+    ],
+)

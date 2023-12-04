@@ -1,9 +1,14 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { createLocation } from 'history'
-import React from 'react'
+import { useEffect } from 'react'
+
+import { cleanup, fireEvent, render, screen, waitFor, act } from '@testing-library/react'
+import type * as H from 'history'
+import { MemoryRouter, useLocation } from 'react-router-dom'
+import { BehaviorSubject } from 'rxjs'
 import sinon from 'sinon'
+import { afterAll, describe, expect, it } from 'vitest'
 
 import { ConnectionNodes } from './ConnectionNodes'
+import { FilteredConnection } from './FilteredConnection'
 
 function fakeConnection<N>({
     hasNextPage,
@@ -28,7 +33,6 @@ function fakeConnection<N>({
 const defaultConnectionNodesProps = {
     connectionQuery: '',
     first: 0,
-    location: createLocation('/'),
     noSummaryIfAllNodesVisible: true,
     nodeComponent: () => null,
     nodeComponentProps: {},
@@ -37,6 +41,52 @@ const defaultConnectionNodesProps = {
     pluralNoun: 'cats',
     query: '',
 }
+
+describe('FilteredConnection', () => {
+    afterAll(cleanup)
+
+    describe('useURLQuery', () => {
+        it('does not update the history if searchFragment didnt change', () => {
+            let currentLocation: null | H.Location = null
+            function ExtractCurrentPathname(): null {
+                const location = useLocation()
+                useEffect(() => {
+                    currentLocation = location
+                }, [location])
+                return null
+            }
+
+            // This is the fake connection
+            const connection = fakeConnection({ hasNextPage: true, totalCount: 2, nodes: [{}] })
+            const connectionSubject = new BehaviorSubject(connection)
+
+            render(
+                <MemoryRouter initialEntries={['/?foo=bar']}>
+                    <FilteredConnection
+                        {...defaultConnectionNodesProps}
+                        useURLQuery={true}
+                        queryConnection={() => connectionSubject}
+                    />
+                    <ExtractCurrentPathname />
+                </MemoryRouter>
+            )
+
+            act(() => {
+                // Emulate polling by re-emiting the connection again.
+                // This should not lead to history being updated
+                connectionSubject.next(connection)
+                connectionSubject.next(connection)
+                connectionSubject.next(connection)
+            })
+
+            // Click "Show more" button, should cause history to be updated
+            fireEvent.click(screen.getByRole('button')!)
+            expect(currentLocation!.search).toEqual('?foo=bar&first=40')
+            fireEvent.click(screen.getByRole('button')!)
+            expect(currentLocation!.search).toEqual('?foo=bar&first=80')
+        })
+    })
+})
 
 describe('ConnectionNodes', () => {
     afterAll(cleanup)

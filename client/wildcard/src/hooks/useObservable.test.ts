@@ -1,11 +1,14 @@
 // causes false positive on act()
-/* eslint-disable @typescript-eslint/no-floating-promises */
 
-import { renderHook, act } from '@testing-library/react-hooks'
+import { fail } from 'assert'
+
 import { useMemo, useCallback } from 'react'
-import { Observable, Subscriber } from 'rxjs'
+
+import { renderHook, act } from '@testing-library/react'
+import { Observable, type Subscriber } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as sinon from 'sinon'
+import { describe, expect, it } from 'vitest'
 
 import { useObservable, useEventObservable } from './useObservable'
 
@@ -45,9 +48,14 @@ describe('useObservable()', () => {
         const subscribe = sinon.spy((subscriber: Subscriber<number>) => {
             subscriber.error(error)
         })
-        const { result } = renderHook(() => useObservable(useMemo(() => new Observable<number>(subscribe), [])))
-        expect(result.error).toBe(error)
-        sinon.assert.calledOnce(subscribe)
+
+        try {
+            renderHook(() => useObservable(useMemo(() => new Observable<number>(subscribe), [])))
+            fail('expected error to be thrown')
+        } catch (error) {
+            expect(error).toBe(error)
+            sinon.assert.calledOnce(subscribe)
+        }
     })
 
     it('should subscribe if component rerenders and observable changed', () => {

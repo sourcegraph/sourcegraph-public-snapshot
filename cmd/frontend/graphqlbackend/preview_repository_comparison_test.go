@@ -6,19 +6,22 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestPreviewRepositoryComparisonResolver(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(nil)
+	db := database.NewDB(logger, nil)
 
 	const testDiffFiles = 3
 	const testOldFile = `First
@@ -35,7 +38,7 @@ Line 9
 Line 10
 `
 
-	const testDiff = `diff --git INSTALL.md INSTALL.md
+	var testDiff = []byte(`diff --git INSTALL.md INSTALL.md
 index e5af166..d44c3fc 100644
 --- INSTALL.md
 +++ INSTALL.md
@@ -91,14 +94,40 @@ index 9bd8209..d2acfa9 100644
  Line 9
  Line 10
 +Another line
-`
+`)
+
 	wantBaseRef := "refs/heads/master"
 	wantHeadRevision := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
-	mockBackendCommits(t, api.CommitID(wantBaseRef), wantHeadRevision)
 
 	repo := &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph", CreatedAt: time.Now()}
 
-	previewComparisonResolver, err := NewPreviewRepositoryComparisonResolver(ctx, db, NewRepositoryResolver(db, repo), string(wantHeadRevision), testDiff)
+	t.Run("EmptyCommit", func(t *testing.T) {
+		gitserverClient := gitserver.NewMockClient()
+		gitserverClient.ResolveRevisionFunc.SetDefaultReturn("", &gitdomain.RevisionNotFoundError{})
+		_, err := NewPreviewRepositoryComparisonResolver(ctx, db, gitserverClient, NewRepositoryResolver(db, gitserverClient, repo), string(wantHeadRevision), testDiff)
+		if err == nil {
+			t.Fatal("unexpected empty err")
+		}
+		if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			t.Fatalf("incorrect err returned %T", err)
+		}
+	})
+
+	gitserverClient := gitserver.NewMockClient()
+
+	byRev := map[api.CommitID]struct{}{
+		api.CommitID(wantBaseRef): {},
+		wantHeadRevision:          {},
+	}
+
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, rev string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		if _, ok := byRev[api.CommitID(rev)]; !ok {
+			t.Fatalf("ResolveRev received unexpected rev: %q", rev)
+		}
+		return api.CommitID(rev), nil
+	})
+
+	previewComparisonResolver, err := NewPreviewRepositoryComparisonResolver(ctx, db, gitserverClient, NewRepositoryResolver(db, gitserverClient, repo), string(wantHeadRevision), testDiff)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -210,14 +239,12 @@ index 9bd8209..d2acfa9 100644
 		}
 		fileDiff := fileDiffs[0]
 
-		git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
+		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, name string) ([]byte, error) {
 			if name != "INSTALL.md" {
 				t.Fatalf("ReadFile received call for wrong file: %s", name)
 			}
-
 			return []byte(testOldFile), nil
-		}
-		defer func() { git.Mocks.ReadFile = nil }()
+		})
 
 		newFile := fileDiff.NewFile()
 		if newFile == nil {
@@ -238,7 +265,7 @@ Line 9
 Line 10
 `
 
-		haveContent, err := newFile.Content(ctx)
+		haveContent, err := newFile.Content(ctx, &GitTreeContentPageArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -358,43 +385,187 @@ index 0000000..122f5d9
 			wantFile: `filecontent
 `,
 		},
+		{
+			name: "New file without newline",
+			file: "",
+			patch: `diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..373ae20
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1 @@
++No newline after this
+\ No newline at end of file
+`,
+			// Note: No newline.
+			wantFile: `No newline after this`,
+		},
+		{
+			name: "Add newline to file without newline",
+			// Note: No newline.
+			file: `No newline after this`,
+			patch: `diff --git a/README.md b/README.md
+index 373ae20..7e17295 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1 @@
+-No newline after this
+\ No newline at end of file
++No newline after this
+`,
+			// Note: Has a newline now.
+			wantFile: `No newline after this
+`,
+		},
+		{
+			name: "Remove newline at end of file",
+			file: `No newline after this
+`,
+			patch: `diff --git a/README.md b/README.md
+index 7e17295..373ae20 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1 @@
+-No newline after this
++No newline after this
+\ No newline at end of file
+`,
+			// Note: Has no newline anymore.
+			wantFile: `No newline after this`,
+		},
+		{
+			name: "Add line without newline to file that ended with no newline",
+			file: `No newline after this`,
+			patch: `diff --git a/README.md b/README.md
+index 373ae20..89ad131 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1,2 @@
+-No newline after this
+\ No newline at end of file
++No newline after this
++Also no newline after this
+\ No newline at end of file
+`,
+			// Note: Has no newline at the end.
+			wantFile: `No newline after this
+Also no newline after this`,
+		},
+		{
+			name: "Add line without newline to file that ended with no newline",
+			file: `No newline after this`,
+			patch: `diff --git a/README.md b/README.md
+index 373ae20..89ad131 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1,2 @@
+-No newline after this
+\ No newline at end of file
++No newline after this
++Also no newline after this
+\ No newline at end of file
+`,
+			// Note: Has no newline at the end.
+			wantFile: `No newline after this
+Also no newline after this`,
+		},
+		{
+			name: "No newline and last hunk ends before EOF",
+			file: `1
+3
+4
+5
+6
+7
+8
+9
+10`,
+			patch: `diff --git a/README.md b/README.md
+index 373ae20..89ad131 100644
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,5 @@
+ 1
++2
+ 3
+ 4
+ 5
+`,
+			// Note: Has no newline at the end.
+			wantFile: `1
+2
+3
+4
+5
+6
+7
+8
+9
+10`,
+		},
+		{
+			name: "Multiple hunks and no newline at the end",
+			file: `1
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12`,
+			patch: `diff --git a/README.md b/README.md
+index 373ae20..89ad131 100644
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,5 @@
+ 1
++2
+ 3
+ 4
+ 5
+@@ -6,6 +7,7 @@
+ 7
+ 8
+ 9
++9.5
+ 10
+ 11
+ 12
+\ No newline at end of file
+`,
+			// Note: Has no newline at the end.
+			wantFile: `1
+2
+3
+4
+5
+6
+7
+8
+9
+9.5
+10
+11
+12`,
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			fileDiff, err := diff.ParseFileDiff([]byte(tc.patch))
+			fileDiff, err := godiff.ParseFileDiff([]byte(tc.patch))
 			if err != nil {
 				t.Fatal(err)
 			}
-			have := applyPatch(tc.file, fileDiff)
+			have, err := applyPatch(tc.file, fileDiff)
+			if err != nil {
+				t.Fatal(err)
+			}
 			if have != tc.wantFile {
 				t.Fatalf("wrong patched file content %q, want=%q", have, tc.wantFile)
 			}
 		})
 	}
-}
-
-func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
-	t.Helper()
-
-	byRev := map[api.CommitID]struct{}{}
-	for _, r := range revs {
-		byRev[r] = struct{}{}
-	}
-
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (api.CommitID, error) {
-		if _, ok := byRev[api.CommitID(rev)]; !ok {
-			t.Fatalf("ResolveRev received unexpected rev: %q", rev)
-		}
-		return api.CommitID(rev), nil
-	}
-	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
-
-	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*gitdomain.Commit, error) {
-		if _, ok := byRev[id]; !ok {
-			t.Fatalf("GetCommit received unexpected ID: %s", id)
-		}
-		return &gitdomain.Commit{ID: id}, nil
-	}
-	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
 }

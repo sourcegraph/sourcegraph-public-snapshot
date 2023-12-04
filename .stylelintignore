@@ -4,3 +4,5 @@
 **/*.tsx
 **/*.svg
 node_modules/
+__mocks__/
+client/backstage-common

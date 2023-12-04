@@ -1,0 +1,39 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "batch",
+    srcs = [
+        "batch.go",
+        "observability.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/batch",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/basestore",
+        "//internal/database/dbconn",
+        "//internal/database/dbutil",
+        "//internal/honey",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "batch_test",
+    timeout = "moderate",
+    srcs = ["batch_test.go"],
+    embed = [":batch"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/database/dbtest",
+        "//internal/database/dbutil",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

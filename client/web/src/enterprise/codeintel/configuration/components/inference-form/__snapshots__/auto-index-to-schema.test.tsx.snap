@@ -1,0 +1,137 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`autoIndexToAutoIndexSchema > should build form data as expected 1`] = `
+Object {
+  "dirty": false,
+  "index_jobs": Array [
+    Object {
+      "indexer": "indexer-1@123",
+      "indexer_args": Array [
+        Object {
+          "meta": Object {
+            "id": "test-id",
+          },
+          "value": "arg-1",
+        },
+        Object {
+          "meta": Object {
+            "id": "test-id",
+          },
+          "value": "arg-2",
+        },
+      ],
+      "local_steps": Array [
+        Object {
+          "meta": Object {
+            "id": "test-id",
+          },
+          "value": "command-1",
+        },
+        Object {
+          "meta": Object {
+            "id": "test-id",
+          },
+          "value": "command-2",
+        },
+      ],
+      "meta": Object {
+        "id": "key-1",
+      },
+      "outfile": "outfile-1",
+      "requestedEnvVars": Array [
+        Object {
+          "meta": Object {
+            "id": "test-id",
+          },
+          "value": "ENV_VAR",
+        },
+        Object {
+          "meta": Object {
+            "id": "test-id",
+          },
+          "value": "ENV_VAR_2",
+        },
+      ],
+      "root": "root-1",
+      "steps": Array [
+        Object {
+          "commands": Array [
+            Object {
+              "meta": Object {
+                "id": "test-id",
+              },
+              "value": "pre-command-1",
+            },
+            Object {
+              "meta": Object {
+                "id": "test-id",
+              },
+              "value": "pre-command-2",
+            },
+          ],
+          "image": "indexer-1@123",
+          "meta": Object {
+            "id": "test-id",
+          },
+          "root": "pre-root-1",
+        },
+      ],
+    },
+    Object {
+      "indexer": "",
+      "indexer_args": Array [],
+      "local_steps": Array [],
+      "meta": Object {
+        "id": "key-2",
+      },
+      "outfile": "",
+      "requestedEnvVars": Array [],
+      "root": "",
+      "steps": Array [],
+    },
+  ],
+}
+`;
+
+exports[`autoIndexToAutoIndexSchema > should build schema data as expected 1`] = `
+Object {
+  "index_jobs": Array [
+    Object {
+      "indexer": "indexer-1@123",
+      "indexer_args": Array [
+        "arg-1",
+        "arg-2",
+      ],
+      "local_steps": Array [
+        "command-1",
+        "command-2",
+      ],
+      "outfile": "outfile-1",
+      "requestedEnvVars": Array [
+        "ENV_VAR",
+        "ENV_VAR_2",
+      ],
+      "root": "root-1",
+      "steps": Array [
+        Object {
+          "commands": Array [
+            "pre-command-1",
+            "pre-command-2",
+          ],
+          "image": "indexer-1@123",
+          "root": "pre-root-1",
+        },
+      ],
+    },
+    Object {
+      "indexer": "",
+      "indexer_args": Array [],
+      "local_steps": Array [],
+      "outfile": "",
+      "requestedEnvVars": Array [],
+      "root": "",
+      "steps": Array [],
+    },
+  ],
+}
+`;

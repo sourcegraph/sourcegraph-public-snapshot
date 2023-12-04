@@ -1,0 +1,55 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`CommitMessageWithLinks > works with a commit link 1`] = `
+<DocumentFragment>
+  <a
+    class="anchorLink"
+    data-testid="git-commit-node-message-subject"
+    href="/foo/bar"
+  >
+    dev/sg: migrate to urfave/cli (
+  </a>
+  <a
+    class="anchorLink"
+    href="https://github.com/sourcegraph/sourcegraph/pull/1234"
+    rel="noreferrer noopener"
+    target="_blank"
+  >
+    #1234
+  </a>
+  <a
+    class="anchorLink"
+    data-testid="git-commit-node-message-subject"
+    href="/foo/bar"
+  >
+    )
+  </a>
+</DocumentFragment>
+`;
+
+exports[`CommitMessageWithLinks > works with a repo link 1`] = `
+<DocumentFragment>
+  <a
+    class="anchorLink"
+    data-testid="git-commit-node-message-subject"
+    href="/foo/bar"
+  >
+    dev/sg: migrate to urfave/cli (
+  </a>
+  <a
+    class="anchorLink"
+    href="https://github.com/sourcegraph/sourcegraph/pull/1234"
+    rel="noreferrer noopener"
+    target="_blank"
+  >
+    #1234
+  </a>
+  <a
+    class="anchorLink"
+    data-testid="git-commit-node-message-subject"
+    href="/foo/bar"
+  >
+    )
+  </a>
+</DocumentFragment>
+`;

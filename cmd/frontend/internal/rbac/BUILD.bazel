@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "rbac",
+    srcs = ["init.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/rbac",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/enterprise",
+        "//cmd/frontend/internal/rbac/resolvers",
+        "//internal/codeintel",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/observation",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

@@ -1,0 +1,75 @@
+.count {
+    font-size: 1.625rem;
+}
+
+.calculator-list {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr 1fr 1fr 1fr 4fr;
+    padding-left: 2rem;
+}
+
+.calculator-input {
+    width: 4rem;
+    margin: 0 auto;
+}
+
+.chart-y-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-left: 1px solid var(--color-bg-2);
+    margin-right: 0.5rem;
+    padding-left: 0.5rem;
+    writing-mode: tb-rl;
+    transform: rotate(-180deg);
+    white-space: pre;
+}
+
+.chart-x-label {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.text-wrap {
+    white-space: pre-wrap;
+}
+
+.count-box-value {
+    padding: 0.6rem;
+}
+
+.link-color {
+    color: var(--link-color);
+}
+
+.purple-color {
+    color: var(--purple);
+}
+
+.legend {
+    display: flex;
+    overflow-x: auto;
+    gap: 1.25rem;
+    justify-content: space-between;
+
+    &-left-panel {
+        display: flex;
+        gap: 1.25rem;
+        margin-right: auto;
+    }
+
+    &-right-panel {
+        display: flex;
+        gap: 1.25rem;
+    }
+
+    &-item {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+}

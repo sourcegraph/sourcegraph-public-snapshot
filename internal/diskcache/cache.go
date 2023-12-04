@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentracing/opentracing-go/ext"
-	otelog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	internaltrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -60,7 +60,7 @@ type store struct {
 // It can optionally be configured with a background timeout
 // (with `diskcache.WithBackgroundTimeout`), a pre-evict callback
 // (with `diskcache.WithBeforeEvict`) and with a configured observation context
-// (with `diskcache.WithObservationContext`).
+// (with `diskcache.WithobservationCtx`).
 func NewStore(dir, component string, opts ...StoreOpt) Store {
 	s := &store{
 		dir:       dir,
@@ -88,7 +88,7 @@ func WithBeforeEvict(f func(string, observation.TraceLogger)) func(*store) {
 	return func(s *store) { s.beforeEvict = f }
 }
 
-func WithObservationContext(ctx *observation.Context) func(*store) {
+func WithobservationCtx(ctx *observation.Context) func(*store) {
 	return func(s *store) { s.observe = newOperations(ctx, s.component) }
 }
 
@@ -114,7 +114,7 @@ func (s *store) Open(ctx context.Context, key []string, fetcher Fetcher) (file *
 		if err != nil {
 			return err
 		}
-		file, err := os.OpenFile(path, os.O_WRONLY, 0600)
+		file, err := os.OpenFile(path, os.O_WRONLY, 0o600)
 		if err != nil {
 			readCloser.Close()
 			return errors.Wrap(err, "failed to open temporary archive cache item")
@@ -128,8 +128,8 @@ func (s *store) Open(ctx context.Context, key []string, fetcher Fetcher) (file *
 }
 
 func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherWithPath) (file *File, err error) {
-	ctx, trace, endObservation := s.observe.cachedFetch.WithAndLogger(ctx, &err, observation.Args{LogFields: []otelog.Field{
-		otelog.String(string(ext.Component), s.component),
+	ctx, trace, endObservation := s.observe.cachedFetch.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("component", s.component),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -146,7 +146,7 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 	}
 
 	path := s.path(key)
-	trace.Log(otelog.String("key", fmt.Sprint(key)), otelog.String("path", path))
+	trace.AddEvent("TODO Domain Owner", attribute.String("key", fmt.Sprint(key)), attribute.String("path", path))
 
 	err = os.MkdirAll(filepath.Dir(path), os.ModePerm)
 	if err != nil {
@@ -156,12 +156,12 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 	// First do a fast-path, assume already on disk
 	f, err := os.Open(path)
 	if err == nil {
-		trace.Tag(otelog.String("source", "fast"))
+		trace.SetAttributes(attribute.String("source", "fast"))
 		return &File{File: f, Path: path}, nil
 	}
 
 	// We (probably) have to fetch
-	trace.Tag(otelog.String("source", "fetch"))
+	trace.SetAttributes(attribute.String("source", "fetch"))
 
 	// Do the fetch in another goroutine so we can respect ctx cancellation.
 	type result struct {
@@ -172,8 +172,8 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 	go func(ctx context.Context) {
 		var err error
 		var f *File
-		ctx, trace, endObservation := s.observe.backgroundFetch.WithAndLogger(ctx, &err, observation.Args{LogFields: []otelog.Field{
-			otelog.Bool("withBackgroundTimeout", s.backgroundTimeout != 0),
+		ctx, trace, endObservation := s.observe.backgroundFetch.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Bool("withBackgroundTimeout", s.backgroundTimeout != 0),
 		}})
 		defer endObservation(1, observation.Args{})
 
@@ -199,17 +199,18 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 
 // path returns the path for key.
 func (s *store) path(key []string) string {
-	encoded := []string{s.dir}
-	for _, k := range key {
-		encoded = append(encoded, EncodeKeyComponent(k))
-	}
+	encoded := append([]string{s.dir}, EncodeKeyComponents(key)...)
 	return filepath.Join(encoded...) + ".zip"
 }
 
-// EncodeKeyComponent uses a sha256 hash of the key since we want to use it for the disk name.
-func EncodeKeyComponent(component string) string {
-	h := sha256.Sum256([]byte(component))
-	return hex.EncodeToString(h[:])
+// EncodeKeyComponents uses a sha256 hash of the key since we want to use it for the disk name.
+func EncodeKeyComponents(components []string) []string {
+	encoded := []string{}
+	for _, component := range components {
+		h := sha256.Sum256([]byte(component))
+		encoded = append(encoded, hex.EncodeToString(h[:]))
+	}
+	return encoded
 }
 
 func doFetch(ctx context.Context, path string, fetcher FetcherWithPath, trace observation.TraceLogger) (file *File, err error) {
@@ -220,10 +221,7 @@ func doFetch(ctx context.Context, path string, fetcher FetcherWithPath, trace ob
 	urlMu.Lock()
 	defer urlMu.Unlock()
 
-	trace.Log(
-		otelog.Event("acquired url lock"),
-		otelog.Int64("urlLock.durationMs", time.Since(t).Milliseconds()),
-	)
+	trace.AddEvent("acquired url lock", attribute.Int64("urlLock.durationMs", time.Since(t).Milliseconds()))
 
 	// Since we acquired the lock we may have timed out.
 	if ctx.Err() != nil {
@@ -240,7 +238,7 @@ func doFetch(ctx context.Context, path string, fetcher FetcherWithPath, trace ob
 	_ = os.Remove(path)
 
 	// Fetch since we still can't open up the file
-	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return nil, errors.Wrap(err, "could not create archive cache dir")
 	}
 
@@ -248,7 +246,7 @@ func doFetch(ctx context.Context, path string, fetcher FetcherWithPath, trace ob
 	// partially written file. We ensure the file is writeable and truncate
 	// it.
 	tmpPath := path + ".part"
-	f, err = os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	f, err = os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temporary archive cache item")
 	}
@@ -295,8 +293,8 @@ type EvictStats struct {
 }
 
 func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
-	_, trace, endObservation := s.observe.evict.WithAndLogger(context.Background(), &err, observation.Args{LogFields: []otelog.Field{
-		otelog.Int64("maxCacheSizeBytes", maxCacheSizeBytes),
+	_, trace, endObservation := s.observe.evict.With(context.Background(), &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int64("maxCacheSizeBytes", maxCacheSizeBytes),
 	}})
 	endObservation(1, observation.Args{})
 
@@ -312,9 +310,18 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 	err = filepath.Walk(s.dir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
+				if os.IsNotExist(err) {
+					// we can race with diskcache renaming tmp files to final
+					// destination. Just ignore these files rather than returning
+					// early.
+					return nil
+				}
+
 				return err
 			}
-			entries = append(entries, absFileInfo{absPath: path, info: info})
+			if !info.IsDir() {
+				entries = append(entries, absFileInfo{absPath: path, info: info})
+			}
 			return nil
 		})
 	if err != nil {
@@ -327,9 +334,7 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 	// Sum up the total size of all zips
 	var size int64
 	for _, entry := range entries {
-		if isZip(entry.info) {
-			size += entry.info.Size()
-		}
+		size += entry.info.Size()
 	}
 	stats.CacheSize = size
 
@@ -356,7 +361,7 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 		}
 		err = os.Remove(path)
 		if err != nil {
-			trace.Log(otelog.Message("failed to remove disk cache entry"), otelog.String("path", path), otelog.Error(err))
+			trace.AddEvent("failed to remove disk cache entry", attribute.String("path", path), internaltrace.Error(err))
 			log.Printf("failed to remove %s: %s", path, err)
 			continue
 		}
@@ -364,10 +369,10 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 		size -= entry.info.Size()
 	}
 
-	trace.Tag(
-		otelog.Int("evicted", stats.Evicted),
-		otelog.Int64("beforeSizeBytes", stats.CacheSize),
-		otelog.Int64("afterSizeBytes", size),
+	trace.SetAttributes(
+		attribute.Int("evicted", stats.Evicted),
+		attribute.Int64("beforeSizeBytes", stats.CacheSize),
+		attribute.Int64("afterSizeBytes", size),
 	)
 
 	return stats, nil

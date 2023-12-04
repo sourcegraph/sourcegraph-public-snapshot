@@ -1,0 +1,101 @@
+# Perforce Protections Specification.
+#
+#  SubPath:     The root path of the sub-protections table (only used when
+#               editing a sub-prorections table).
+#
+#  Update:      The date this specification was last modified (read-only).
+#
+#  Protections:
+#      Each line contains a protection mode, a group/user indicator, the
+#      group/user name, client host id and a depot file path pattern.
+#      A user gets the highest privilege granted on any line.
+#
+#      Mode:    The permission level or right being granted or denied.  Each
+#               permission level includes all the permissions above it, except
+#               for 'review' and 'owner'.  Each permission right only includes
+#               the specific right and not all the lesser rights. Modes
+#               preceded by '=' are rights; all other modes are levels.
+#
+#               list   - users can see names but not contents of files;
+#                        users can see all non-file related metadata
+#                        (clients, users, changelists, jobs, etc.)
+#
+#               read   - users can sync, diff, and print files
+#
+#               open   - users can add, edit, delete, and integrate files
+#
+#               write  - users can submit open files
+#
+#               admin  - permits those administrative commands and command
+#                        options that don't affect the server's security
+#
+#               owner  - allows access to the 'p4 protect' command, for
+#                        the specified path.
+#
+#               super  - allows access to the 'p4 protect' command
+#
+#               review - allows access to the 'p4 review' command; implies
+#                        read access
+#
+#               =read  - if this right is denied, users cannot sync, diff,
+#                        or print files
+#
+#               =branch - if this right is denied, users are not permitted
+#                         to use files as a source for 'p4 integrate'
+#
+#               =open   - if this right is denied, users cannot open files
+#                         (add, edit, delete, integrate)
+#
+#               =write  - if this right is denied, users cannot submit open
+#                         files
+#
+#               readstreamspec  - users can display a stream spec with
+#                                 with 'p4 stream -o'.
+#
+#               openstreamspec  - users can revert, resolve, shelve, or
+#                                 open for edit a stream spec
+#
+#               writestreamspec  - users can submit or modify a stream
+#                                 spec
+#
+#               =readstreamspec  - if this right is denied, users cannot
+#                                  execute 'p4 stream -o'
+#
+#               =openstreamspec  - if this right is denied, users cannot
+#                                  revert, resolve, shelve, or open for edit
+#                                  a stream spec
+#
+#               =writestreamspec  - if this right is denied, users cannot
+#                                   submit or modify a stream
+#
+#      Group/User indicator: either 'group' or 'user'.
+#
+#      Name:    A Perforce group or user name; may be wildcarded.
+#
+#      Host:    The IP address of a client host (IPv6 and IPv4 addresses
+#               supported); may be wildcarded, or may instead use CIDR syntax,
+#               e.g. 172.16.0.0/16 would match all IPv4 addresses which
+#               start with 172.16.
+#
+#      Path:    The part of the depot being granted access.
+
+Protections:
+	list user * * -//...	## DO NOT DELETE This is used for backend integration tests
+	super user admin * //...	## DO NOT DELETE This is used for backend integration tests
+	super user buildkite * //...	## DO NOT DELETE This is used for backend integration tests
+	list user buildkite * -//spec/...	## DO NOT DELETE  Allow buildkite to access all depots except editing server specifications
+	read user alice * //test-perms/...	## DO NOT DELETE This is used for backend integration tests
+	write group Frontend * //test-perms/Frontend/...	## DO NOT DELETE This is used for backend integration tests
+	write group Backend * //test-perms/Backend/...	## DO NOT DELETE This is used for backend integration tests
+	=read user alice * -//test-perms/Security/...	## DO NOT DELETE This is used for backend integration tests
+	write group Backend * //test-perms/Security/...
+	=read group DocSiteDenyPath * -//dax-docsite/cmd/docsite/build.go
+	write group DocSiteWritePath * //dax-docsite/cmd/docsite/build.go
+	list group TestGroup * -//mike-test/...	## edge case testing
+	write group TestGroup * //mike-test/branches/cygnus/boehm-gc/...	## edge case testing
+# AWK-START ## (place protection rules for integration tests below me)
+	=read group all * -//${DEPOT_NAME}/...
+    read group foo * //${DEPOT_NAME}/...
+    read group bar * //${DEPOT_NAME}/src/dev/cmd/storage/redis/...
+    read group sql * //${DEPOT_NAME}/src/*/cmd/storage/redis/...
+# AWK-END ## (place protection rules for integration tests above me)

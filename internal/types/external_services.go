@@ -4,10 +4,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+type AzureDevOpsConnection struct {
+	URN string
+	*schema.AzureDevOpsConnection
+}
+
+type BitbucketCloudConnection struct {
+	// The unique resource identifier of the external service.
+	URN string
+	*schema.BitbucketCloudConnection
+}
+
 type BitbucketServerConnection struct {
 	// The unique resource identifier of the external service.
 	URN string
 	*schema.BitbucketServerConnection
+}
+
+type GerritConnection struct {
+	// The unique resource identifier of the external service.
+	URN string
+	*schema.GerritConnection
 }
 
 type GitHubConnection struct {

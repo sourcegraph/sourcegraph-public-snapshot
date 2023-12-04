@@ -1,0 +1,27 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`<StackedMeter /> > renders correctly 1`] = `
+<DocumentFragment>
+  <svg
+    class="myclass"
+    height="10"
+    width="100"
+  >
+    <g
+      class="visx-group"
+      transform="scale(-1, 1) translate(-100, 0)"
+    >
+      <path
+        class="visx-bar-rounded"
+        d="M5,0 h10 h5v5 v0 v5h-5 h-10 a5,5 0 0 1 -5,-5 v0 a5,5 0 0 1 5,-5z"
+        fill="red"
+      />
+      <path
+        class="visx-bar-rounded"
+        d="M25,0 h20 a5,5 0 0 1 5,5 v0 a5,5 0 0 1 -5,5 h-20 h-5v-5 v0 v-5h5z"
+        fill="blue"
+      />
+    </g>
+  </svg>
+</DocumentFragment>
+`;

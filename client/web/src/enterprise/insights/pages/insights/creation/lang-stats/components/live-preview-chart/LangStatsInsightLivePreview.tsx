@@ -1,54 +1,90 @@
-import React from 'react'
+import type { FC, HTMLAttributes } from 'react'
 
-import { LivePreviewContainer } from '../../../../../../components/creation-ui-kit/live-preview-container/LivePreviewContainer'
-import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
+import { useDebounce, useDeepMemo, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { useLangStatsPreviewContent } from './hooks/use-lang-stats-preview-content'
-import { DEFAULT_PREVIEW_MOCK } from './live-preview-mock-data'
+import {
+    CategoricalBasedChartTypes,
+    CategoricalChart,
+    LivePreviewBanner,
+    LivePreviewBlurBackdrop,
+    LivePreviewCard,
+    LivePreviewChart,
+    LivePreviewLoading,
+    LivePreviewUpdateButton,
+} from '../../../../../../components'
+import type { CategoricalChartContent } from '../../../../../../core'
+import { LivePreviewStatus, useLivePreviewLangStatsInsight } from '../../../../../../core/hooks/live-preview-insight'
 
-export interface LangStatsInsightLivePreviewProps {
-    /** Custom className for the root element of live preview. */
-    className?: string
+import { DEFAULT_PREVIEW_MOCK } from './constants'
 
-    /** List of repositories for insights. */
-    repository: string
-
-    /** Step value for cut off other small values. */
-    threshold: number
-
+export interface LangStatsInsightLivePreviewProps extends HTMLAttributes<HTMLElement> {
     /**
      * Disable prop to disable live preview.
      * Used in a consumer of this component when some required fields
      * for live preview are invalid.
      */
     disabled?: boolean
+    repository: string
+    threshold: number
 }
 
 /**
- * Displays live preview chart for creation UI with latest insights settings
+ * Displays live preview chart for creation UI with the latest insights settings
  * from creation UI form.
- * */
-export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsightLivePreviewProps> = props => {
-    const { repository = '', threshold, disabled = false, className } = props
+ */
+export const LangStatsInsightLivePreview: FC<LangStatsInsightLivePreviewProps> = props => {
+    const { repository = '', threshold, disabled = false, ...attributes } = props
 
-    const previewSetting = useDistinctValue({
+    const settings = useDeepMemo({
         repository: repository.trim(),
         otherThreshold: threshold / 100,
+        skip: disabled,
     })
 
-    const { loading, dataOrError, update } = useLangStatsPreviewContent({ disabled, previewSetting })
+    const debouncedSettings = useDebounce(settings, 500)
+    const { state, refetch } = useLivePreviewLangStatsInsight(debouncedSettings)
 
     return (
-        <LivePreviewContainer
-            dataOrError={dataOrError}
-            disabled={disabled}
-            className={className}
-            loading={loading}
-            defaultMock={DEFAULT_PREVIEW_MOCK}
-            onUpdateClick={update}
-            mockMessage={
-                <span>The chart preview will be shown here once you have filled out the repository field.</span>
-            }
-        />
+        <aside {...attributes}>
+            <LivePreviewUpdateButton disabled={disabled} onClick={refetch} />
+
+            <LivePreviewCard>
+                {state.status === LivePreviewStatus.Loading ? (
+                    <LivePreviewLoading>Loading code insight</LivePreviewLoading>
+                ) : state.status === LivePreviewStatus.Error ? (
+                    <ErrorAlert error={state.error} className="m-0" />
+                ) : (
+                    <LivePreviewChart>
+                        {parent =>
+                            state.status === LivePreviewStatus.Data ? (
+                                <CategoricalChart
+                                    type={CategoricalBasedChartTypes.Pie}
+                                    width={parent.width}
+                                    height={parent.height}
+                                    {...state.data}
+                                />
+                            ) : (
+                                <>
+                                    <LivePreviewBlurBackdrop
+                                        as={CategoricalChart}
+                                        type={CategoricalBasedChartTypes.Pie}
+                                        width={parent.width}
+                                        height={parent.height}
+                                        // We cast to unknown here because ForwardReferenceComponent
+                                        // doesn't support inferring as component with generic.
+                                        {...(DEFAULT_PREVIEW_MOCK as CategoricalChartContent<unknown>)}
+                                    />
+
+                                    <LivePreviewBanner>
+                                        The chart preview will be shown here once you have filled out the repository
+                                        field.
+                                    </LivePreviewBanner>
+                                </>
+                            )
+                        }
+                    </LivePreviewChart>
+                )}
+            </LivePreviewCard>
+        </aside>
     )
 }

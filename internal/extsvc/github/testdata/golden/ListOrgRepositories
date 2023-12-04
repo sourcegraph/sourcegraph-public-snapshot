@@ -10,7 +10,11 @@
    "IsArchived": false,
    "IsLocked": false,
    "IsDisabled": false,
-   "ViewerPermission": "ADMIN"
+   "ViewerPermission": "ADMIN",
+   "RepositoryTopics": {
+    "Nodes": []
+   },
+   "DiskUsage": 1
   },
   {
    "ID": "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
@@ -23,6 +27,10 @@
    "IsArchived": false,
    "IsLocked": false,
    "IsDisabled": false,
-   "ViewerPermission": "ADMIN"
+   "ViewerPermission": "ADMIN",
+   "RepositoryTopics": {
+    "Nodes": []
+   },
+   "DiskUsage": 1
   }
  ]

@@ -5,9 +5,10 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -40,8 +41,14 @@ type FeatureFlagBooleanResolver struct {
 
 func (f *FeatureFlagBooleanResolver) Name() string { return f.inner.Name }
 func (f *FeatureFlagBooleanResolver) Value() bool  { return f.inner.Bool.Value }
+func (f *FeatureFlagBooleanResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: f.inner.CreatedAt}
+}
+func (f *FeatureFlagBooleanResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: f.inner.UpdatedAt}
+}
 func (f *FeatureFlagBooleanResolver) Overrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
-	overrides, err := database.FeatureFlags(f.db).GetOverridesForFlag(ctx, f.inner.Name)
+	overrides, err := f.db.FeatureFlags().GetOverridesForFlag(ctx, f.inner.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +63,14 @@ type FeatureFlagRolloutResolver struct {
 
 func (f *FeatureFlagRolloutResolver) Name() string              { return f.inner.Name }
 func (f *FeatureFlagRolloutResolver) RolloutBasisPoints() int32 { return f.inner.Rollout.Rollout }
+func (f *FeatureFlagRolloutResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: f.inner.CreatedAt}
+}
+func (f *FeatureFlagRolloutResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: f.inner.UpdatedAt}
+}
 func (f *FeatureFlagRolloutResolver) Overrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
-	overrides, err := database.FeatureFlags(f.db).GetOverridesForFlag(ctx, f.inner.Name)
+	overrides, err := f.db.FeatureFlags().GetOverridesForFlag(ctx, f.inner.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -127,9 +140,18 @@ func (e *EvaluatedFeatureFlagResolver) Value() bool {
 	return e.value
 }
 
-func (r *schemaResolver) ViewerFeatureFlags(ctx context.Context) []*EvaluatedFeatureFlagResolver {
-	f := featureflag.FromContext(ctx)
-	return evaluatedFlagsToResolvers(f)
+func (r *schemaResolver) EvaluateFeatureFlag(ctx context.Context, args *struct {
+	FlagName string
+}) *bool {
+	flagSet := featureflag.FromContext(ctx)
+	if v, ok := flagSet.GetBool(args.FlagName); ok {
+		return &v
+	}
+	return nil
+}
+
+func (r *schemaResolver) EvaluatedFeatureFlags(ctx context.Context) []*EvaluatedFeatureFlagResolver {
+	return evaluatedFlagsToResolvers(featureflag.GetEvaluatedFlagSet(ctx))
 }
 
 func evaluatedFlagsToResolvers(input map[string]bool) []*EvaluatedFeatureFlagResolver {
@@ -149,7 +171,7 @@ func (r *schemaResolver) OrganizationFeatureFlagValue(ctx context.Context, args 
 		return false, err
 	}
 	// same behavior as if the flag does not exist
-	if err := backend.CheckOrgAccess(ctx, r.db, org); err != nil {
+	if err := auth.CheckOrgAccess(ctx, r.db, org); err != nil {
 		return false, nil
 	}
 
@@ -161,7 +183,7 @@ func (r *schemaResolver) OrganizationFeatureFlagValue(ctx context.Context, args 
 }
 
 func (r *schemaResolver) OrganizationFeatureFlagOverrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
@@ -175,8 +197,23 @@ func (r *schemaResolver) OrganizationFeatureFlagOverrides(ctx context.Context) (
 	return overridesToResolvers(r.db, flags), nil
 }
 
+func (r *schemaResolver) FeatureFlag(ctx context.Context, args struct {
+	Name string
+}) (*FeatureFlagResolver, error) {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	ff, err := r.db.FeatureFlags().GetFeatureFlag(ctx, args.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &FeatureFlagResolver{r.db, ff}, nil
+}
+
 func (r *schemaResolver) FeatureFlags(ctx context.Context) ([]*FeatureFlagResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	flags, err := r.db.FeatureFlags().GetFeatureFlags(ctx)
@@ -199,11 +236,11 @@ func (r *schemaResolver) CreateFeatureFlag(ctx context.Context, args struct {
 	Value              *bool
 	RolloutBasisPoints *int32
 }) (*FeatureFlagResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	ff := database.FeatureFlags(r.db)
+	ff := r.db.FeatureFlags()
 
 	var res *featureflag.FeatureFlag
 	var err error
@@ -221,10 +258,10 @@ func (r *schemaResolver) CreateFeatureFlag(ctx context.Context, args struct {
 func (r *schemaResolver) DeleteFeatureFlag(ctx context.Context, args struct {
 	Name string
 }) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	return &EmptyResponse{}, database.FeatureFlags(r.db).DeleteFeatureFlag(ctx, args.Name)
+	return &EmptyResponse{}, r.db.FeatureFlags().DeleteFeatureFlag(ctx, args.Name)
 }
 
 func (r *schemaResolver) UpdateFeatureFlag(ctx context.Context, args struct {
@@ -232,7 +269,7 @@ func (r *schemaResolver) UpdateFeatureFlag(ctx context.Context, args struct {
 	Value              *bool
 	RolloutBasisPoints *int32
 }) (*FeatureFlagResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	ff := &featureflag.FeatureFlag{Name: args.Name}
@@ -244,7 +281,7 @@ func (r *schemaResolver) UpdateFeatureFlag(ctx context.Context, args struct {
 		return nil, errors.Errorf("either 'value' or 'rolloutBasisPoints' must be set")
 	}
 
-	res, err := database.FeatureFlags(r.db).UpdateFeatureFlag(ctx, ff)
+	res, err := r.db.FeatureFlags().UpdateFeatureFlag(ctx, ff)
 	return &FeatureFlagResolver{r.db, res}, err
 }
 
@@ -253,7 +290,7 @@ func (r *schemaResolver) CreateFeatureFlagOverride(ctx context.Context, args str
 	FlagName  string
 	Value     bool
 }) (*FeatureFlagOverrideResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -272,28 +309,28 @@ func (r *schemaResolver) CreateFeatureFlagOverride(ctx context.Context, args str
 	} else if oid != 0 {
 		fo.OrgID = &oid
 	}
-	res, err := database.FeatureFlags(r.db).CreateOverride(ctx, fo)
+	res, err := r.db.FeatureFlags().CreateOverride(ctx, fo)
 	return &FeatureFlagOverrideResolver{r.db, res}, err
 }
 
 func (r *schemaResolver) DeleteFeatureFlagOverride(ctx context.Context, args struct {
 	ID graphql.ID
 }) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	spec, err := unmarshalOverrideID(args.ID)
 	if err != nil {
 		return &EmptyResponse{}, err
 	}
-	return &EmptyResponse{}, database.FeatureFlags(r.db).DeleteOverride(ctx, spec.OrgID, spec.UserID, spec.FlagName)
+	return &EmptyResponse{}, r.db.FeatureFlags().DeleteOverride(ctx, spec.OrgID, spec.UserID, spec.FlagName)
 }
 
 func (r *schemaResolver) UpdateFeatureFlagOverride(ctx context.Context, args struct {
 	ID    graphql.ID
 	Value bool
 }) (*FeatureFlagOverrideResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	spec, err := unmarshalOverrideID(args.ID)
@@ -301,6 +338,6 @@ func (r *schemaResolver) UpdateFeatureFlagOverride(ctx context.Context, args str
 		return nil, err
 	}
 
-	res, err := database.FeatureFlags(r.db).UpdateOverride(ctx, spec.OrgID, spec.UserID, spec.FlagName, args.Value)
+	res, err := r.db.FeatureFlags().UpdateOverride(ctx, spec.OrgID, spec.UserID, spec.FlagName, args.Value)
 	return &FeatureFlagOverrideResolver{r.db, res}, err
 }

@@ -7,24 +7,63 @@
 set -e # Not -u because $SOFT_FAIL_EXIT_CODES may not be bound
 
 if [[ "$BUILDKITE_PIPELINE_NAME" != "sourcegraph" ]]; then
-    exit 0
+  exit 0
+fi
+
+# The bazel queue is running stateful agents, so we need to ensure we're cleaning after us.
+if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" == "bazel" ]]; then
+  # Ensure all test databases are wiped, in case a test process was interrupted.
+  for db in $(psql -c '\l' | grep "sourcegraph-" | cut -d '|' -f 1); do psql -c "drop database \"$db\""; done
+
+  # Remove any hanging containers and/or volumes to ensure the next tests are able to run.
+  if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
+    echo "Removing docker containers..."
+    mapfile -t containers < <(docker ps -aq)
+    for c in "${containers[@]}"; do docker rm -f "$c"; done
+  fi
+  if [[ $(docker volume ls -q) -gt 0 ]]; then
+    docker volume rm "$(docker volume ls -q)"
+  fi
+
+  # If disk space is over %85, clean up the docker cache
+  volume="/dev/sda1"
+  threshold=85
+
+  # Get disk usage percentage for the volume
+  usage=$(df -h | grep "$volume" | awk '{print $5}' | cut -d'%' -f1)
+
+  # Compare disk usage with the threshold
+  if ((usage > threshold)); then
+    echo "Disk space on $volume is more than $threshold% full. Cleaning up docker cache."
+    docker system prune -f
+  fi
 fi
 
 if [ "$BUILDKITE_BRANCH" == "main" ]; then
-    if [ "$BUILDKITE_COMMAND_EXIT_STATUS" -eq 0 ]; then
-        # If the job exit code is either 0 or a soft failt exit code defined by that step, do nothing.
-        exit 0
+  # It's possible for the exit status to be unset, in the case of an earlier hook failed, so we need to
+  # account for that.
+  if [ -n "$BUILDKITE_COMMAND_EXIT_STATUS" ] && [ "$BUILDKITE_COMMAND_EXIT_STATUS" -eq "0" ]; then
+    # If the job exit code is either 0 or a soft failed exit code defined by that step, do nothing.
+    exit 0
+  fi
+
+  # Turn the string of exit codes "1 2 3 4" into an array of strings
+  IFS=' ' read -ra codes <<<"$SOFT_FAIL_EXIT_CODES"
+  for code in "${codes[@]}"; do
+    if [ "$code" == "*" ] || [ "$code" == "$BUILDKITE_COMMAND_EXIT_STATUS" ]; then
+      # If the Buildkite exit code is a soft fail, do nothing either.
+      exit 0
     fi
+  done
 
-    # Turn the string of exit codes "1 2 3 4" into an array of strings
-    IFS=' ' read -ra codes <<<"$SOFT_FAIL_EXIT_CODES"
-    for code in "${codes[@]}"; do
-        if [ "$code" == "$BUILDKITE_COMMAND_EXIT_STATUS" ]; then
-            # If the Buildkite exit code is a soft fail, do nothing either.
-            exit 0
-        fi
-    done
+  # Please see: https://github.com/sourcegraph/sourcegraph/issues/43934
+  echo "--- ⚠️A TEMPORARILY DISABLED: Logs will not be uploaded to Grafana. Please reach out to #discuss-dev-infra"
+  # Non-zero exit code and not a soft fail: upload the logs.
+  # echo "--- Uploading build logs: this only runs if your build has already failed, check the logs above, NOT below!"
+  # ./dev/ci/scripts/upload-build-logs.sh
+fi
 
-    # Non-zero exit code and not a soft fail: upload the logs.
-    ./enterprise/dev/ci/scripts/upload-build-logs.sh
+# upload raw annotations as artifacts if they are available for easier access
+if [ -d "./annotations" ]; then
+  buildkite-agent artifact upload --job "$BUILDKITE_JOB_ID" --content-type "text/plain" "./annotations/*-annotation.md"
 fi

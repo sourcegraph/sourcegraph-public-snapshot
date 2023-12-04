@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "honey",
+    srcs = [
+        "context.go",
+        "dataset.go",
+        "event.go",
+        "honey.go",
+        "noop.go",
+        "slice_wrapper.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/honey",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/env",
+        "//internal/hostname",
+        "@com_github_honeycombio_libhoney_go//:libhoney-go",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)

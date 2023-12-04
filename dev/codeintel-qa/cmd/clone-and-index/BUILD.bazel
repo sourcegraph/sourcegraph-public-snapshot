@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
+
+go_library(
+    name = "clone-and-index_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/codeintel-qa/cmd/clone-and-index",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//dev/codeintel-qa/internal",
+        "//dev/sg/root",
+        "//lib/errors",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_run//:run",
+    ],
+)
+
+go_binary(
+    name = "clone-and-index",
+    embed = [":clone-and-index_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_cross_binary(
+    name = "clone-and-index-darwin-arm64",
+    platform = "@io_bazel_rules_go//go/toolchain:darwin_arm64",
+    tags = ["manual"],
+    target = ":clone-and-index",
+    visibility = ["//testing:__pkg__"],
+)

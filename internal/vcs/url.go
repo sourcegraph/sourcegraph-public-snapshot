@@ -19,6 +19,7 @@ package vcs
 import (
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -35,6 +36,7 @@ import (
 // Code copied and modified from github.com/whilp/git-urls to support perforce scheme.
 func ParseURL(rawurl string) (u *URL, err error) {
 	parsers := []func(string) (*URL, error){
+		parseFile,
 		parseScheme,
 		parseScp,
 		parseLocal,
@@ -122,6 +124,19 @@ func parseScp(rawurl string) (*URL, error) {
 	}, nil
 }
 
+func parseFile(rawurl string) (*URL, error) {
+	if !strings.HasPrefix(rawurl, "file://") {
+		return nil, errors.Errorf("no file scheme found in %q", rawurl)
+	}
+	return &URL{
+		format: formatStdlib,
+		URL: url.URL{
+			Scheme: "file",
+			Path:   strings.TrimPrefix(rawurl, "file://"),
+		},
+	}, nil
+}
+
 // parseLocal parses rawurl into a URL object with a "file"
 // scheme. This will effectively never return an error.
 func parseLocal(rawurl string) (*URL, error) {
@@ -154,34 +169,47 @@ const (
 	formatLocal
 )
 
-// String will return standard url.URL.String() if the url has a .Scheme set, but if
-// not it will produce an rsync format URL, eg `git@foo.com:foo/bar.git`
-func (u *URL) String() string {
-	// only use custom String() implementation for rsync format URLs
-	if u.format != formatRsync {
-		return u.URL.String()
+// JoinPath returns a new URL with the provided path elements joined to
+// any existing path and the resulting path cleaned of any ./ or ../ elements.
+// Any sequences of multiple / characters will be reduced to a single /.
+func (u *URL) JoinPath(elem ...string) *URL {
+	// Until our minimum version is go1.19 we copy-pasta the implementation of
+	// URL.JoinPath
+
+	// START copy from go stdlib URL.JoinPath
+	elem = append([]string{u.EscapedPath()}, elem...)
+	var p string
+	if !strings.HasPrefix(elem[0], "/") {
+		// Return a relative path if u is relative,
+		// but ensure that it contains no ../ elements.
+		elem[0] = "/" + elem[0]
+		p = path.Join(elem...)[1:]
+	} else {
+		p = path.Join(elem...)
 	}
-	// otherwise attempt to marshal scp style URLs
-	var buf strings.Builder
-	if u.User != nil {
-		buf.WriteString(u.User.String())
-		buf.WriteByte('@')
+	// path.Join will remove any trailing slashes.
+	// Preserve at least one.
+	if strings.HasSuffix(elem[len(elem)-1], "/") && !strings.HasSuffix(p, "/") {
+		p += "/"
 	}
-	if h := u.Host; h != "" {
-		buf.WriteString(h)
-		// key difference here, add : and don't add a leading / to the path
-		buf.WriteByte(':')
+	// END copy from go stdlib URL.JoinPath
+
+	// We don't have access to URL.setPath, so we work around it by parsing
+	// the URL as a path. This is extremely ugly hacks, but it makes the
+	// stdlib tests from go1.19 pass.
+	up, err := url.Parse("file:///" + p)
+	if err != nil {
+		u2 := *u
+		u2.Path = p
+		u2.RawPath = ""
+		return &u2
 	}
-	buf.WriteString(u.EscapedPath())
-	if u.RawQuery != "" {
-		buf.WriteByte('?')
-		buf.WriteString(u.RawQuery)
-	}
-	if u.Fragment != "" {
-		buf.WriteByte('#')
-		buf.WriteString(u.EscapedFragment())
-	}
-	return buf.String()
+
+	u2 := *u
+	u2.Path = strings.TrimPrefix(up.Path, "/")
+	u2.RawPath = strings.TrimPrefix(up.RawPath, "/")
+
+	return &u2
 }
 
 // IsSSH returns whether this URL is SSH based, which for vcs.URL means

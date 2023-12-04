@@ -2,40 +2,31 @@ package conf
 
 import (
 	"context"
-	"log"
-	"math/rand"
 	"sync"
-	"time"
-
-	"github.com/sourcegraph/jsonx"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ConfigurationSource provides direct access to read and write to the
 // "raw" configuration.
 type ConfigurationSource interface {
 	// Write updates the configuration. The Deployment field is ignored.
-	Write(ctx context.Context, data conftypes.RawUnified) error
+	Write(ctx context.Context, data conftypes.RawUnified, lastID int32, authorUserID int32) error
 	Read(ctx context.Context) (conftypes.RawUnified, error)
 }
 
 // Server provides access and manages modifications to the site configuration.
 type Server struct {
-	Source ConfigurationSource
-
-	store *store
+	source ConfigurationSource
+	// sourceWrites signals when our app writes to the configuration source. The
+	// received channel should be closed when server.Raw() would return the new
+	// configuration that has been written to disk.
+	sourceWrites chan chan struct{}
 
 	needRestartMu sync.RWMutex
 	needRestart   bool
 
-	// fileWrite signals when our app writes to the configuration file. The
-	// secondary channel is closed when server.Raw() would return the new
-	// configuration that has been written to disk.
-	fileWrite chan chan struct{}
-
-	once sync.Once
+	startOnce sync.Once
 }
 
 // NewServer returns a new Server instance that mangages the site config file
@@ -43,22 +34,14 @@ type Server struct {
 //
 // The server must be started with Start() before it can handle requests.
 func NewServer(source ConfigurationSource) *Server {
-	fileWrite := make(chan chan struct{}, 1)
 	return &Server{
-		Source:    source,
-		store:     newStore(),
-		fileWrite: fileWrite,
+		source:       source,
+		sourceWrites: make(chan chan struct{}, 1),
 	}
 }
 
-// Raw returns the raw text of the configuration file.
-func (s *Server) Raw() conftypes.RawUnified {
-	return s.store.Raw()
-}
-
-// Write writes the JSON config file to the config file's path. If the JSON configuration is
-// invalid, an error is returned.
-func (s *Server) Write(ctx context.Context, input conftypes.RawUnified) error {
+// Write validates and writes input to the server's source.
+func (s *Server) Write(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID int32) error {
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
 	_, err := ParseConfig(input)
@@ -66,7 +49,7 @@ func (s *Server) Write(ctx context.Context, input conftypes.RawUnified) error {
 		return err
 	}
 
-	err = s.Source.Write(ctx, input)
+	err = s.source.Write(ctx, input, lastID, authorUserID)
 	if err != nil {
 		return err
 	}
@@ -75,115 +58,42 @@ func (s *Server) Write(ctx context.Context, input conftypes.RawUnified) error {
 	// we would return to the caller earlier than server.Raw() would return the
 	// new configuration.
 	doneReading := make(chan struct{}, 1)
-	s.fileWrite <- doneReading
+	// Notify that we've written an update
+	s.sourceWrites <- doneReading
+	// Get notified that the update has been read (it gets closed) - don't write
+	// until this is done.
 	<-doneReading
 
 	return nil
 }
 
-// Edits describes some JSON edits to apply to site configuration.
-type Edits struct {
-	Site []jsonx.Edit
-}
-
-// Edit invokes the provided function to compute edits to the site
-// configuration. It then applies and writes them.
-//
-// The computation function is provided the current configuration, which should
-// NEVER be modified in any way. Always copy values.
-//
-// TODO(slimsag): Currently, edits may only be applied via the frontend. It may
-// make sense to allow non-frontend services to apply edits as well. To do this
-// we would need to pipe writes through the frontend's internal httpapi.
-func (s *Server) Edit(ctx context.Context, computeEdits func(current *Unified, raw conftypes.RawUnified) (Edits, error)) error {
-	// TODO@ggilmore: There is a race condition here (also present in the existing library).
-	// Current and raw could be inconsistent. Another thing to offload to configStore?
-	// Snapshot method?
-	current := s.store.LastValid()
-	raw := s.store.Raw()
-
-	// Compute edits.
-	edits, err := computeEdits(current, raw)
-	if err != nil {
-		return errors.Wrap(err, "computeEdits")
-	}
-
-	// Apply edits and write out new configuration.
-	newSite, err := jsonx.ApplyEdits(raw.Site, edits.Site...)
-	if err != nil {
-		return errors.Wrap(err, "jsonx.ApplyEdits Site")
-	}
-
-	// TODO@ggilmore: Another race condition (also present in the existing library). Locks
-	// aren't held between applying the edits and writing the config file,
-	// so the newConfig could be outdated.
-	err = s.Write(ctx, conftypes.RawUnified{Site: newSite})
-	if err != nil {
-		return errors.Wrap(err, "conf.Write")
-	}
-	return nil
-}
-
 // Start initializes the server instance.
 func (s *Server) Start() {
-	s.once.Do(func() {
-		go s.watchSource()
+	s.startOnce.Do(func() {
+		// We prepare to watch for config updates in order to mark the config server as
+		// needing a restart (or not). This must be in a goroutine, since Watch must
+		// happen after conf initialization (which may have not happened yet)
+		go func() {
+			var oldConfig *Unified
+			Watch(func() {
+				// Don't indicate restarts if this is the first update (initial configuration
+				// after service startup).
+				if oldConfig == nil {
+					oldConfig = Get()
+					return
+				}
+
+				// Update global "needs restart" state.
+				newConfig := Get()
+				if needRestartToApply(oldConfig, newConfig) {
+					s.markNeedServerRestart()
+				}
+
+				// Update old value
+				oldConfig = newConfig
+			})
+		}()
 	})
-}
-
-// watchSource reloads the configuration from the source at least every five seconds or whenever
-// server.Write() is called.
-func (s *Server) watchSource() {
-	ctx := context.Background()
-	for {
-		err := s.updateFromSource(ctx)
-		if err != nil {
-			log.Printf("failed to read configuration: %s. Fix your Sourcegraph configuration to resolve this error. Visit https://docs.sourcegraph.com/ to learn more.", err)
-		}
-
-		jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
-
-		var signalDoneReading chan struct{}
-		select {
-		case signalDoneReading = <-s.fileWrite:
-			// File was changed on FS, so check now.
-		case <-time.After(jitter):
-			// File possibly changed on FS, so check now.
-		}
-
-		if signalDoneReading != nil {
-			close(signalDoneReading)
-		}
-	}
-}
-
-func (s *Server) updateFromSource(ctx context.Context) error {
-	rawConfig, err := s.Source.Read(ctx)
-	if err != nil {
-		return errors.Wrap(err, "unable to read configuration")
-	}
-
-	configChange, err := s.store.MaybeUpdate(rawConfig)
-	if err != nil {
-		return err
-	}
-
-	// Don't need to restart if the configuration hasn't changed.
-	if !configChange.Changed {
-		return nil
-	}
-
-	// Don't restart if the configuration was empty before (this only occurs during initialization).
-	if configChange.Old == nil {
-		return nil
-	}
-
-	// Update global "needs restart" state.
-	if NeedRestartToApply(configChange.Old, configChange.New) {
-		s.markNeedServerRestart()
-	}
-
-	return nil
 }
 
 // NeedServerRestart tells if the server needs to restart for pending configuration

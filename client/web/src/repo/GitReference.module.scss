@@ -1,11 +1,6 @@
 .git-ref-node {
     --git-ref-divider-color: var(--border-color-2);
     color: var(--text-muted);
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;
     border-left: none;
@@ -16,4 +11,12 @@
     &:first-of-type {
         border-top: 1px solid var(--git-ref-divider-color);
     }
+}
+
+.git-ref-node-link {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    color: inherit;
 }

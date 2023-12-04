@@ -1,0 +1,28 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "limiter",
+    srcs = [
+        "historical.go",
+        "search_query.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/insights/background/limiter",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//internal/ratelimit",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_time//rate",
+    ],
+)
+
+go_test(
+    name = "limiter_test",
+    timeout = "short",
+    srcs = [
+        "historical_test.go",
+        "search_query_test.go",
+    ],
+    deps = [":limiter"],
+)

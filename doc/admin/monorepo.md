@@ -3,7 +3,7 @@
 Sourcegraph can be used on Git [monorepos](https://trunkbaseddevelopment.com/monorepos/) and provides functionality that developers may be missing:
 
 - Indexed code search across projects in the monorepo.
-- Code intelligence across projects in the monorepo.
+- Code navigation across projects in the monorepo.
 
 The tools on a developer's local machine often can't cope with the scale of a monorepo. For example, a developer often cannot load the whole monorepo into their IDE, and therefore has to do without code exploration functionality useful when doing cross-project work. Sourcegraph brings this functionality back to developers, enabling them to work efficiently at the day-to-day task of understanding code.
 
@@ -24,3 +24,30 @@ Sourcegraph's code search index scales horizontally with the number of files bei
 Sourcegraph clones code from your code host via the usual `git clone` or `git fetch` commands. Some organisations use custom `git` binaries or commands to speed up these operations. Sourcegraph supports using alternative git binaries to allow cloning. This can be done by inheriting from the `gitserver` docker image and installing the custom `git` onto the `$PATH`.
 
 Some monorepos use a custom command for `git fetch` to speed up fetch. Sourcegraph provides the `experimentalFeatures.customGitFetch` site setting to specify the custom command.
+
+## Statistics
+
+You can help the Sourcegraph developers understand the scale of your monorepo by sharing some statistics with the team. The bash script [`git-stats`](https://github.com/sourcegraph/sourcegraph/blob/main/dev/git-stats) when run in your git repository will calculate these statistics.
+
+Example output on the Sourcegraph repository:
+
+``` shellsession
+$ wget https://github.com/sourcegraph/sourcegraph/raw/main/dev/git-stats
+$ chmod +x git-stats
+$ ./git-stats
+725M	. gitdir
+19671 commits
+
+HEAD statistics
+0.096GiB
+8638 files
+histogram:
+10^0	6
+10^1	69
+10^2	667
+10^3	2236
+10^4	4589
+10^5	971
+10^6	86
+10^7	14
+```

@@ -1,0 +1,172 @@
+:root {
+    --code-font-family: sfmono-regular, consolas, menlo, dejavu sans mono, monospace;
+    --code-font-size: #{(12/14)}em;
+}
+
+// ------------------- Start reboot.scss styles imported from Bootstrap ----------------------
+
+pre {
+    font-size: 1em;
+    font-family: var(--monospace-font-family);
+    // Remove browser default top margin
+    margin-top: 0;
+    // Reset browser default of `1em` to use `rem`s
+    margin-bottom: 1rem;
+    // Don't allow content to break outside
+    overflow: auto;
+    // Disable auto-hiding scrollbar in IE & legacy Edge to avoid overlap,
+    // making it impossible to interact with the content
+    -ms-overflow-style: scrollbar;
+}
+
+// ------------------- End reboot.scss styles imported from Bootstrap ----------------------
+
+code,
+.text-code {
+    font-family: var(--code-font-family);
+    font-size: var(--code-font-size);
+    line-height: 1rem;
+    white-space: pre;
+}
+
+.bg-code {
+    background-color: var(--code-bg);
+}
+
+kbd {
+    font-family: var(--font-family-base);
+    font-size: var(--code-font-size);
+    display: inline-block;
+    line-height: (16/12);
+    height: 1.2rem;
+    width: 1.2rem;
+    text-align: center;
+    padding-top: 0.1rem;
+    margin: 0 0.125rem;
+    vertical-align: middle;
+    border-radius: 3px;
+    color: var(--body-color);
+    background-color: var(--color-bg-3);
+}
+
+// Search examples that link to the results page should use this class.
+.search-query-link {
+    color: var(--body-color);
+}
+
+.search-filter-keyword {
+    color: var(--search-filter-keyword-color);
+}
+
+.search-keyword {
+    color: var(--search-keyword-color);
+}
+
+// Color of the `:` separator of the context dropdown, for example.
+.search-filter-separator {
+    color: var(--search-filter-separator-color);
+}
+
+.search-path-separator {
+    color: var(--search-filter-separator-color);
+}
+
+.search-regexp-meta-assertion {
+    color: var(--search-regexp-meta-assertion-color);
+}
+
+.search-regexp-meta-alternative {
+    color: var(--search-regexp-meta-alternative-color);
+}
+
+.search-regexp-meta-delimited {
+    color: var(--search-regexp-meta-delimited-color);
+}
+
+.search-regexp-meta-escaped-character {
+    color: var(--search-regexp-meta-escaped-character-color);
+}
+
+.search-regexp-meta-character-set {
+    color: var(--search-regexp-meta-character-set-color);
+}
+
+.search-regexp-meta-character-class {
+    color: var(--search-regexp-meta-character-class-color);
+}
+
+.search-regexp-meta-character-class-range {
+    color: var(--search-regexp-meta-character-class-range-color);
+}
+
+.search-regexp-meta-character-class-range-hyphen {
+    color: var(--search-regexp-meta-character-class-range-hyphen-color);
+}
+
+.search-regexp-meta-character-class-member {
+    color: var(--search-regexp-meta-character-class-member-color);
+}
+
+.search-regexp-meta-lazy-quantifier {
+    color: var(--search-regexp-meta-lazy-quantifier-color);
+}
+
+.search-regexp-meta-range-quantifier {
+    color: var(--search-regexp-meta-range-quantifier-color);
+}
+
+.search-revision-separator {
+    color: var(--search-revision-separator-color);
+}
+
+.search-revision-include-glob-marker {
+    color: var(--search-revision-include-glob-marker-color);
+}
+
+.search-revision-exclude-glob-marker {
+    color: var(--search-revision-exclude-glob-marker-color);
+}
+
+.search-revision-commit-hash {
+    color: var(--search-revision-commit-hash-color);
+}
+
+.search-revision-label {
+    color: var(--search-revision-label-color);
+}
+
+.search-revision-reference-path {
+    color: var(--search-revision-reference-path-color);
+}
+
+.search-revision-wildcard {
+    color: var(--search-revision-wildcard-color);
+}
+
+.search-predicate-name-access {
+    color: var(--search-predicate-name-access-color);
+}
+
+.search-predicate-dot {
+    color: var(--search-predicate-dot-color);
+}
+
+.search-predicate-parenthesis {
+    color: var(--search-predicate-parenthesis-color);
+}
+
+.search-structural-hole {
+    color: var(--search-structural-hole-color);
+}
+
+.search-structural-regexp-hole {
+    color: var(--search-structural-regexp-hole-color);
+}
+
+.search-structural-variable {
+    color: var(--search-structural-variable-color);
+}
+
+.search-structural-regexp-separator {
+    color: var(--search-structural-regexp-separator-color);
+}

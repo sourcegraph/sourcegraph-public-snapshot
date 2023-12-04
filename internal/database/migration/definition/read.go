@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,14 +17,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func ReadDefinitions(fs fs.FS) (*Definitions, error) {
-	migrationDefinitions, err := readDefinitions(fs)
+func ReadDefinitions(fs fs.FS, schemaBasePath string) (*Definitions, error) {
+	migrationDefinitions, err := readDefinitions(fs, schemaBasePath)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "readDefinitions")
 	}
 
 	if err := reorderDefinitions(migrationDefinitions); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "reorderDefinitions")
 	}
 
 	return newDefinitions(migrationDefinitions), nil
@@ -39,7 +40,7 @@ func (e instructionalError) Error() string {
 	return fmt.Sprintf("%s: %s\n\n%s\n", e.class, e.description, e.instructions)
 }
 
-func readDefinitions(fs fs.FS) ([]Definition, error) {
+func readDefinitions(fs fs.FS, schemaBasePath string) ([]Definition, error) {
 	root, err := http.FS(fs).Open("/")
 	if err != nil {
 		return nil, err
@@ -51,31 +52,30 @@ func readDefinitions(fs fs.FS) ([]Definition, error) {
 		return nil, err
 	}
 
-	versions := make([]int, 0, len(migrations))
+	definitions := make([]Definition, 0, len(migrations))
 	for _, file := range migrations {
-		if version, err := strconv.Atoi(file.Name()); err == nil {
-			versions = append(versions, version)
-		}
-	}
-	sort.Ints(versions)
-
-	definitions := make([]Definition, 0, len(versions))
-	for _, version := range versions {
-		definition, err := readDefinition(fs, version)
+		version, err := ParseRawVersion(file.Name())
 		if err != nil {
-			return nil, errors.Wrapf(err, "malformed migration definition %d", version)
+			continue // not a versioned migration file, ignore
 		}
 
+		definition, err := readDefinition(fs, schemaBasePath, version, file.Name())
+		if err != nil {
+			return nil, errors.Wrapf(err, "malformed migration definition at '%s'",
+				filepath.Join(schemaBasePath, file.Name()))
+		}
 		definitions = append(definitions, definition)
 	}
+
+	sort.Slice(definitions, func(i, j int) bool { return definitions[i].ID < definitions[j].ID })
 
 	return definitions, nil
 }
 
-func readDefinition(fs fs.FS, version int) (Definition, error) {
-	upFilename := fmt.Sprintf("%d/up.sql", version)
-	downFilename := fmt.Sprintf("%d/down.sql", version)
-	metadataFilename := fmt.Sprintf("%d/metadata.yaml", version)
+func readDefinition(fs fs.FS, schemaBasePath string, version int, filename string) (Definition, error) {
+	upFilename := fmt.Sprintf("%s/up.sql", filename)
+	downFilename := fmt.Sprintf("%s/down.sql", filename)
+	metadataFilename := fmt.Sprintf("%s/metadata.yaml", filename)
 
 	upQuery, err := readQueryFromFile(fs, upFilename)
 	if err != nil {
@@ -87,7 +87,7 @@ func readDefinition(fs fs.FS, version int) (Definition, error) {
 		return Definition{}, err
 	}
 
-	return hydrateMetadataFromFile(fs, metadataFilename, Definition{
+	return hydrateMetadataFromFile(fs, schemaBasePath, upFilename, metadataFilename, Definition{
 		ID:        version,
 		UpQuery:   upQuery,
 		DownQuery: downQuery,
@@ -96,8 +96,8 @@ func readDefinition(fs fs.FS, version int) (Definition, error) {
 
 // hydrateMetadataFromFile populates the given definition with metdata parsed
 // from the given file. The mutated definition is returned.
-func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (_ Definition, _ error) {
-	file, err := fs.Open(filepath)
+func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, upFilename, metadataFilename string, definition Definition) (_ Definition, _ error) {
+	file, err := fs.Open(metadataFilename)
 	if err != nil {
 		return Definition{}, err
 	}
@@ -113,12 +113,16 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 		Parent                  int    `yaml:"parent"`
 		Parents                 []int  `yaml:"parents"`
 		CreateIndexConcurrently bool   `yaml:"createIndexConcurrently"`
+		Privileged              bool   `yaml:"privileged"`
+		NonIdempotent           bool   `yaml:"nonIdempotent"`
 	}
 	if err := yaml.Unmarshal(contents, &payload); err != nil {
 		return Definition{}, err
 	}
 
 	definition.Name = payload.Name
+	definition.Privileged = payload.Privileged
+	definition.NonIdempotent = payload.NonIdempotent
 
 	parents := payload.Parents
 	if payload.Parent != 0 {
@@ -127,24 +131,37 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 	sort.Ints(parents)
 	definition.Parents = parents
 
+	schemaPath := filepath.Join(schemaBasePath, strconv.Itoa(definition.ID))
+	upPath := filepath.Join(schemaBasePath, upFilename)
+	metadataPath := filepath.Join(schemaBasePath, metadataFilename)
+
 	if _, ok := parseIndexMetadata(definition.DownQuery.Query(sqlf.PostgresBindVar)); ok {
 		return Definition{}, instructionalError{
 			class:       "malformed concurrent index creation",
-			description: "did not expect down migration to contain concurrent creation of an index",
+			description: fmt.Sprintf("did not expect down query of migration at '%s' to contain concurrent creation of an index", schemaPath),
 			instructions: strings.Join([]string{
-				"Remove `CONCURRENTLY` when re-creating an old index in down migrations.",
+				"Remove `CONCURRENTLY` when re-creating an old index in down migrations (if you're seeing this in a local dev environment, try running `sg update` to see if it fixes the issue first).",
 				"Downgrades indicate an instance stability error which generally requires a maintenance window.",
 			}, " "),
 		}
 	}
 
-	if indexMetadata, ok := parseIndexMetadata(definition.UpQuery.Query(sqlf.PostgresBindVar)); ok {
+	upQueryText := definition.UpQuery.Query(sqlf.PostgresBindVar)
+	if indexMetadata, ok := parseIndexMetadata(upQueryText); ok {
 		if !payload.CreateIndexConcurrently {
 			return Definition{}, instructionalError{
 				class:       "malformed concurrent index creation",
-				description: "did not expect up migration to contain concurrent creation of an index",
+				description: fmt.Sprintf("did not expect up query of migration at '%s' to contain concurrent creation of an index", schemaPath),
 				instructions: strings.Join([]string{
-					"Add `createIndexConcurrently: true` to this migration's metadata.yaml file.",
+					fmt.Sprintf("Add `createIndexConcurrently: true` to the metadata file '%s'.", metadataPath),
+				}, " "),
+			}
+		} else if removeConcurrentIndexCreation(upQueryText) != "" {
+			return Definition{}, instructionalError{
+				class:       "malformed concurrent index creation",
+				description: fmt.Sprintf("did not expect up query of migration at '%s' to contain additional statements", schemaPath),
+				instructions: strings.Join([]string{
+					fmt.Sprintf("Split the index creation from '%s' into a new migration file.", upPath),
 				}, " "),
 			}
 		}
@@ -154,10 +171,22 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 	} else if payload.CreateIndexConcurrently {
 		return Definition{}, instructionalError{
 			class:       "malformed concurrent index creation",
-			description: "expected up migration to contain concurrent creation of an index",
+			description: fmt.Sprintf("expected up query of migration at '%s' to contain concurrent creation of an index", schemaPath),
 			instructions: strings.Join([]string{
-				"Remove `createIndexConcurrently: true` from this migration's metadata.yaml file.",
+				fmt.Sprintf("Remove `createIndexConcurrently: true` from the metadata file '%s'.", metadataPath),
 			}, " "),
+		}
+	}
+
+	if isPrivileged(definition.UpQuery.Query(sqlf.PostgresBindVar)) || isPrivileged(definition.DownQuery.Query(sqlf.PostgresBindVar)) {
+		if !payload.Privileged {
+			return Definition{}, instructionalError{
+				class:       "malformed Postgres extension modification",
+				description: fmt.Sprintf("did not expect queries of migration at '%s' to require elevated permissions", schemaPath),
+				instructions: strings.Join([]string{
+					fmt.Sprintf("Add `privileged: true` to the metadata file '%s'.", metadataPath),
+				}, " "),
+			}
 		}
 	}
 
@@ -177,13 +206,40 @@ func readQueryFromFile(fs fs.FS, filepath string) (*sqlf.Query, error) {
 		return nil, err
 	}
 
-	// Stringify -> SQL-ify the contents of the file. We first replace any
-	// SQL placeholder values with an escaped version so that the sqlf.Sprintf
-	// call does not try to interpolate the text with variables we don't have.
-	return sqlf.Sprintf(strings.ReplaceAll(string(contents), "%", "%%")), nil
+	return queryFromString(string(contents)), nil
 }
 
-var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)
+// queryFromString creates a sqlf Query object from the conetents of a file or serialized
+// string literal. The resulting query is canonicalized. SQL placeholder values are also
+// escaped, so when sqlf.Query renders it the placeholders will be valid and not replaced
+// by a "missing" parameterized value.
+func queryFromString(query string) *sqlf.Query {
+	return sqlf.Sprintf(strings.ReplaceAll(CanonicalizeQuery(query), "%", "%%"))
+}
+
+// CanonicalizeQuery removes old cruft from historic definitions to make them conform to
+// the new standards. This includes YAML metadata frontmatter as well as explicit tranaction
+// blocks around golang-migrate-era migration definitions.
+func CanonicalizeQuery(query string) string {
+	// Strip out embedded yaml frontmatter (existed temporarily)
+	parts := strings.SplitN(query, "-- +++\n", 3)
+	if len(parts) == 3 {
+		query = parts[2]
+	}
+
+	// Strip outermost transactions
+	return strings.TrimSpace(
+		strings.TrimSuffix(
+			strings.TrimPrefix(
+				strings.TrimSpace(query),
+				"BEGIN;",
+			),
+			"COMMIT;",
+		),
+	)
+}
+
+var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+(?:UNIQUE\s+)?INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)
 
 func parseIndexMetadata(queryText string) (*IndexMetadata, bool) {
 	matches := createIndexConcurrentlyPattern.FindStringSubmatch(queryText)
@@ -195,6 +251,35 @@ func parseIndexMetadata(queryText string) (*IndexMetadata, bool) {
 		TableName: matches[2],
 		IndexName: matches[1],
 	}, true
+}
+
+var createIndexConcurrentlyFullPattern = lazyregexp.New(createIndexConcurrentlyPattern.Re().String() + `[^;]+;`)
+
+func removeConcurrentIndexCreation(query string) string {
+	if matches := createIndexConcurrentlyFullPattern.FindStringSubmatch(query); len(matches) > 0 {
+		query = strings.Replace(query, matches[0], "", 1)
+	}
+
+	return removeComments(query)
+}
+
+func removeComments(query string) string {
+	filtered := []string{}
+	for _, line := range strings.Split(query, "\n") {
+		l := strings.TrimSpace(strings.Split(line, "--")[0])
+		if l != "" {
+			filtered = append(filtered, l)
+		}
+	}
+
+	return strings.TrimSpace(strings.Join(filtered, "\n"))
+}
+
+var alterExtensionPattern = lazyregexp.New(`(CREATE|COMMENT ON|DROP)\s+EXTENSION`)
+
+func isPrivileged(queryText string) bool {
+	matches := alterExtensionPattern.FindStringSubmatch(queryText)
+	return len(matches) != 0
 }
 
 // reorderDefinitions will re-order the given migration definitions in-place so that
@@ -284,7 +369,7 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 			// We're currently processing the descendants of this node, so we have a paths in
 			// both directions between these two nodes.
 
-			// Peel off the head of the parent list until we reach the target  node. This leaves
+			// Peel off the head of the parent list until we reach the target node. This leaves
 			// us with a slice starting with the target node, followed by the path back to itself.
 			// We'll use this instance of a cycle in the error description.
 			for len(parents) > 0 && parents[0] != id {
@@ -369,7 +454,7 @@ func root(migrationDefinitions []Definition) (int, error) {
 
 		return 0, instructionalError{
 			class:       "multiple roots",
-			description: fmt.Sprintf("expected exactly one migration to have no parent but found %d", len(roots)),
+			description: fmt.Sprintf("expected exactly one migration to have no parent but found %d (%v)", len(roots), roots),
 			instructions: strings.Join([]string{
 				`There are multiple migrations defined in this schema that do not declare a parent.`,
 				`This indicates a new migration that did not correctly attach itself to an existing migration.`,
@@ -399,4 +484,14 @@ func intsToStrings(ints []int) []string {
 	}
 
 	return strs
+}
+
+// ParseRawVersion returns the migration version for a given 'raw version', i.e. the
+// filename of a mgiration.
+//
+// For example, for migration '1648115472_do_the_thing', we discard everything after
+// the first '_' as a name, and return the verison 1648115472.
+func ParseRawVersion(rawVersion string) (int, error) {
+	nameParts := strings.SplitN(rawVersion, "_", 2)
+	return strconv.Atoi(nameParts[0])
 }

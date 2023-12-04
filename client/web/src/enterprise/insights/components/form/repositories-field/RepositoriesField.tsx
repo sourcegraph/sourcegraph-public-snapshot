@@ -1,137 +1,135 @@
-import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
-import React, {
-    ChangeEvent,
-    FocusEvent,
-    forwardRef,
-    MouseEvent,
-    Ref,
-    useImperativeHandle,
-    useRef,
-    useState,
-} from 'react'
+import { type ClipboardEvent, forwardRef, type ReactElement, useCallback, useState } from 'react'
 
-import { FlexTextArea } from '@sourcegraph/wildcard'
+import { mdiSourceRepository } from '@mdi/js'
+import { identity } from 'lodash'
+import { useMergeRefs } from 'use-callback-ref'
 
-import { SuggestionsPanel } from './components/suggestion-panel/SuggestionPanel'
+import type { ErrorLike } from '@sourcegraph/common'
+import {
+    MultiCombobox,
+    MultiComboboxInput,
+    MultiComboboxPopover,
+    MultiComboboxList,
+    MultiComboboxOption,
+    MultiComboboxOptionText,
+    type ForwardReferenceComponent,
+    Icon,
+    type InputStatus,
+    ErrorMessage,
+    useDebounce,
+} from '@sourcegraph/wildcard'
+
 import { useRepoSuggestions } from './hooks/use-repo-suggestions'
+
 import styles from './RepositoriesField.module.scss'
-import { RepositoryFieldProps } from './types'
-import { getSuggestionsSearchTerm } from './utils/get-suggestions-search-term'
+
+interface RepositoriesFieldProps {
+    value: string[]
+    description: string
+    status?: InputStatus | `${InputStatus}`
+    error?: ErrorLike | string
+    onChange: (value: string[]) => void
+}
 
 /**
- * Renders multi repositories input with suggestions.
+ * Renders MultiCombobox UI repositories input with async-resolved suggestions.
  */
-const RepositoriesField = forwardRef((props: RepositoryFieldProps, reference: Ref<HTMLInputElement | null>) => {
-    const { value, onChange, onBlur, ...otherProps } = props
+export const RepositoriesField = forwardRef(function RepositoriesField(props, reference) {
+    const { value, description, className, status, error, onChange, ...attributes } = props
 
-    const inputReference = useRef<HTMLInputElement>(null)
+    const inputRef = useMergeRefs([reference])
+    const [search, setSearch] = useState('')
+    const debouncedSearch = useDebounce(search, 500)
 
-    const [caretPosition, setCaretPosition] = useState<number | null>(null)
-    const [panel, setPanel] = useState(false)
-
-    const { repositories, value: search, index: searchTermIndex } = getSuggestionsSearchTerm({
-        value,
-        caretPosition,
-    })
-    const { searchValue, suggestions } = useRepoSuggestions({
-        search,
-        disable: !panel,
+    const { suggestions, loading } = useRepoSuggestions({
+        search: debouncedSearch,
+        selectedRepositories: value,
     })
 
-    // Support top level reference prop
-    useImperativeHandle(reference, () => inputReference.current)
+    const handleSelect = useCallback(
+        (repositories: string[]) => {
+            setSearch('')
+            onChange(repositories)
+        },
+        [onChange]
+    )
 
-    const handleInputChange = (event: ChangeEvent<HTMLInputElement>): void => {
-        onChange(event.target.value)
-        setCaretPosition(event.target.selectionStart)
-        setPanel(true)
-    }
+    const handleInputPaste = useCallback(
+        (event: ClipboardEvent) => {
+            const target = event.target as HTMLInputElement
+            const currentValue = target.value
+            const selectionStart = target.selectionStart
+            const selectionEnd = target.selectionEnd
 
-    const handleSelect = (selectValue: string): void => {
-        const separatorString = ', '
+            if (!currentValue.trim() || selectionStart !== selectionEnd) {
+                return
+            }
 
-        if (searchTermIndex !== null) {
-            const newRepositoriesSerializedValue =
-                [
-                    ...repositories.slice(0, searchTermIndex),
-                    selectValue,
-                    ...repositories.slice(searchTermIndex + 1),
-                ].join(separatorString) + separatorString
+            const paste = event.clipboardData.getData('text')
+            const elements = paste.split(/[ ,]+/)
 
-            onChange(newRepositoriesSerializedValue)
-            setPanel(false)
-
-            /**
-             * Setting the value ('onChange' above) triggers the reset selection of the input
-             * if the user selects a value from suggestion panel for some sub-string of
-             * the input value we need to preserve the selection at the end of the sub-string
-             * and avoid resetting and putting the selection at the end of input string.
-             */
-            setTimeout(() => {
-                if (!inputReference.current) {
-                    return
-                }
-
-                const isLastItemEdited = searchTermIndex === repositories.length - 1
-                const endOfSelectedItem = [...repositories.slice(0, searchTermIndex), selectValue].join(separatorString)
-                    .length
-
-                const nextCaretPosition = isLastItemEdited
-                    ? // Put cursor at the end the input value
-                      newRepositoriesSerializedValue.length
-                    : endOfSelectedItem
-
-                inputReference.current.setSelectionRange(nextCaretPosition, nextCaretPosition)
-            }, 0)
-        }
-    }
-
-    const trackInputCursorChange = (event: MouseEvent | KeyboardEvent | FocusEvent): void => {
-        const target = event.target as HTMLInputElement
-
-        if (caretPosition !== target.selectionStart) {
-            /**
-             * After the moment when user selected the value from the suggestion panel we closed
-             * this panel by setPanel(false) but if the user is changing the cursor position we
-             * need to re-open suggestion panel for the new suggestions.
-             */
-            setPanel(true)
-            setCaretPosition(target.selectionStart)
-        }
-    }
-
-    const handleInputFocus = (event: FocusEvent): void => {
-        setPanel(true)
-        trackInputCursorChange(event)
-    }
-
-    const handleInputBlur = (event: FocusEvent<HTMLInputElement>): void => {
-        onBlur?.(event)
-    }
+            if (elements.length > 1) {
+                event.preventDefault()
+                onChange(elements)
+            }
+        },
+        [onChange]
+    )
 
     return (
-        <Combobox openOnFocus={true} onSelect={handleSelect} className={styles.combobox}>
-            <ComboboxInput
-                {...otherProps}
-                as={FlexTextArea}
-                ref={inputReference}
-                autocomplete={false}
-                value={value}
-                onChange={handleInputChange}
-                onFocus={handleInputFocus}
-                onBlur={handleInputBlur}
-                onClick={trackInputCursorChange}
+        <MultiCombobox
+            selectedItems={value}
+            getItemName={identity}
+            getItemKey={identity}
+            onSelectedItemsChange={handleSelect}
+            className={className}
+        >
+            <MultiComboboxInput
+                {...attributes}
+                ref={inputRef}
+                value={search}
+                autoComplete="off"
+                status={loading ? 'loading' : status}
+                onChange={event => setSearch(event.target.value)}
+                onPaste={handleInputPaste}
             />
 
-            {panel && (
-                <ComboboxPopover className={styles.comboboxPopover}>
-                    <SuggestionsPanel value={searchValue} suggestions={suggestions} />
-                </ComboboxPopover>
+            {error && status === 'error' && (
+                <small role="alert" aria-live="polite" className={styles.errorMessage}>
+                    <ErrorMessage error={error} />
+                </small>
             )}
-        </Combobox>
+
+            {!error && <small className={styles.description}>{description}</small>}
+
+            <MultiComboboxPopover>
+                <MultiComboboxList items={suggestions}>
+                    {items => items.map((item, index) => <RepositoryOption key={item} value={item} index={index} />)}
+                </MultiComboboxList>
+            </MultiComboboxPopover>
+        </MultiCombobox>
     )
-})
+}) as ForwardReferenceComponent<'input', RepositoriesFieldProps>
 
-RepositoriesField.displayName = 'RepositoriesField'
+interface RepositoryOptionProps {
+    value: string
+    index: number
+}
 
-export { RepositoriesField }
+function RepositoryOption(props: RepositoryOptionProps): ReactElement {
+    const { value, index } = props
+
+    return (
+        <MultiComboboxOption value={value} index={index} className={styles.suggestionsListItem}>
+            <Icon
+                className="mr-1"
+                svgPath={mdiSourceRepository}
+                inline={false}
+                aria-hidden={true}
+                height="1rem"
+                width="1rem"
+            />
+            <MultiComboboxOptionText />
+        </MultiComboboxOption>
+    )
+}

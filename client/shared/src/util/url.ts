@@ -1,21 +1,23 @@
+import { parseURL } from 'whatwg-url'
+
 import {
     addLineRangeQueryParameter,
     encodeURIPathComponent,
     escapeRevspecForURL,
     findLineKeyInSearchParameters,
     formatSearchParameters,
-    LineOrPositionOrRange,
-    replaceRange,
+    type LineOrPositionOrRange,
     toPositionOrRangeQueryParameter,
     toViewStateHash,
 } from '@sourcegraph/common'
-import { Position } from '@sourcegraph/extension-api-types'
+import type { Position } from '@sourcegraph/extension-api-types'
 
-import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
-import { SearchPatternType } from '../graphql-operations'
+import type { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
+import type { SearchPatternType } from '../graphql-operations'
 import { discreteValueAliases } from '../search/query/filters'
 import { findFilter, FilterKind } from '../search/query/query'
-import { appendContextFilter } from '../search/query/transformer'
+import { appendContextFilter, omitFilter } from '../search/query/transformer'
+import { SearchMode } from '../search/searchQueryState'
 
 export interface RepoSpec {
     /**
@@ -71,7 +73,7 @@ interface ComparisonSpec {
  * 1-indexed position in a blob.
  * Positions in URLs are 1-indexed.
  */
-interface UIPosition {
+export interface UIPosition {
     /** 1-indexed line number */
     line: number
 
@@ -83,7 +85,7 @@ interface UIPosition {
  * 1-indexed range in a blob.
  * Ranges in URLs are 1-indexed.
  */
-interface UIRange {
+export interface UIRange {
     start: UIPosition
     end: UIPosition
 }
@@ -111,7 +113,7 @@ export interface ModeSpec {
 }
 
 // `panelID` is intended for substitution (e.g. `sub(panel.url, 'panelID', 'implementations')`)
-type BlobViewState = 'def' | 'references' | 'panelID'
+export type BlobViewState = 'def' | 'references' | 'panelID'
 
 export interface ViewStateSpec {
     /**
@@ -174,18 +176,25 @@ const parsePosition = (string: string): Position => {
  * These URIs were used when communicating with language servers over LSP and with extensions. They are being
  * phased out in favor of URLs to resources in the Sourcegraph raw API, which do not require out-of-band
  * information to fetch the contents of.
- *
  * @deprecated Migrate to using URLs to the Sourcegraph raw API (or other concrete URLs) instead.
  */
 export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
-    const parsed = new URL(uri)
-    const repoName = parsed.hostname + decodeURIComponent(parsed.pathname)
-    const revision = decodeURIComponent(parsed.search.slice('?'.length)) || undefined
+    // We are not using the environments URL constructor because Chrome and Firefox do
+    // not correctly parse out the hostname for URLs . We have a polyfill for the main web app
+    // (see client/shared/src/polyfills/configure-core-js.ts) but that might not be used in all apps.
+    const parsed = parseURL(uri)
+    if (!parsed?.host) {
+        throw new Error('Unable to parse repo URI: ' + uri)
+    }
+    const pathname =
+        typeof parsed.path === 'string' ? parsed.path : parsed.path.length === 0 ? '' : '/' + parsed.path.join('/')
+    const repoName = String(parsed.host) + decodeURIComponent(pathname)
+    const revision = parsed.query ? decodeURIComponent(parsed.query) : undefined
     let commitID: string | undefined
     if (revision?.match(/[\dA-f]{40}/)) {
         commitID = revision
     }
-    const fragmentSplit = parsed.hash.slice('#'.length).split(':').map(decodeURIComponent)
+    const fragmentSplit = parsed.fragment ? parsed.fragment.split(':').map(decodeURIComponent) : []
     let filePath: string | undefined
     let position: UIPosition | undefined
     let range: UIRange | undefined
@@ -208,7 +217,7 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
         }
     }
     if (fragmentSplit.length > 2) {
-        throw new Error('unexpected fragment: ' + parsed.hash)
+        throw new Error('unexpected fragment: ' + parsed.fragment)
     }
 
     return { repoName, revision, commitID, filePath: filePath || undefined, position, range }
@@ -228,14 +237,6 @@ export interface RepoRevision extends RepoSpec, RevisionSpec {}
  * A repo resolved to an exact commit
  */
 export interface AbsoluteRepo extends RepoSpec, RevisionSpec, ResolvedRevisionSpec {}
-
-/**
- * A documentation page in a repo
- */
-export interface DocumentationPathID {
-    pathID: string
-}
-export interface RepoDocumentation extends RepoSpec, RevisionSpec, Partial<ResolvedRevisionSpec>, DocumentationPathID {}
 
 /**
  * A file in a repo
@@ -261,7 +262,6 @@ export interface AbsoluteRepoFilePosition
 
 /**
  * Tells if the given fragment component is a legacy blob hash component or not.
- *
  * @param hash The URL fragment.
  */
 export function isLegacyFragment(hash: string): boolean {
@@ -282,7 +282,6 @@ export function isLegacyFragment(hash: string): boolean {
 /**
  * Parses the URL search (query) portion and looks for a parameter which matches a line, position, or range in the file. If not found, it
  * falls back to parsing the hash for backwards compatibility.
- *
  * @template V The type that describes the view state (typically a union of string constants). There is no runtime check that the return value satisfies V.
  */
 export function parseQueryAndHash<V extends string>(
@@ -302,7 +301,6 @@ export function parseQueryAndHash<V extends string>(
  * optional "viewState" parameter (that encodes other view state, such as for the panel).
  *
  * For example, in the URL fragment "#L17:19-21:23$foo:bar", the "viewState" is "foo:bar".
- *
  * @template V The type that describes the view state (typically a union of string constants). There is no runtime check that the return value satisfies V.
  */
 export function parseHash<V extends string>(hash: string): LineOrPositionOrRange & { viewState?: V } {
@@ -364,11 +362,11 @@ function parseLineOrPositionOrRange(lineChar: string): LineOrPositionOrRange {
         }
     }
     let lpr = { line, character, endLine, endCharacter } as LineOrPositionOrRange
-    if (typeof line === 'undefined' || (typeof endLine !== 'undefined' && typeof character !== typeof endCharacter)) {
+    if (line === undefined || (endLine !== undefined && typeof character !== typeof endCharacter)) {
         lpr = {}
-    } else if (typeof character === 'undefined') {
-        lpr = typeof endLine === 'undefined' ? { line } : { line, endLine }
-    } else if (typeof endLine === 'undefined' || typeof endCharacter === 'undefined') {
+    } else if (character === undefined) {
+        lpr = endLine === undefined ? { line } : { line, endLine }
+    } else if (endLine === undefined || endCharacter === undefined) {
         lpr = { line, character }
     } else {
         lpr = { line, character, endLine, endCharacter }
@@ -389,7 +387,6 @@ function addRenderModeQueryParameter(
 /**
  * Finds the URL search parameter which has a key like "L1-2:3" without any
  * value.
- *
  * @param searchParameters The URLSearchParams to look for the line in.
  */
 function findLineInSearchParameters(searchParameters: URLSearchParams): LineOrPositionOrRange | undefined {
@@ -414,7 +411,7 @@ function parseLineOrPosition(
     }
     line = typeof line === 'number' && isNaN(line) ? undefined : line
     character = typeof character === 'number' && isNaN(character) ? undefined : character
-    if (typeof line === 'undefined') {
+    if (line === undefined) {
         return { line: undefined, character: undefined }
     }
     return { line, character }
@@ -440,9 +437,10 @@ export function toPrettyBlobURL(
         toPositionOrRangeQueryParameter(target)
     )
     const searchQuery = [...searchParameters].length > 0 ? `?${formatSearchParameters(searchParameters)}` : ''
-    return `/${encodeRepoRevision({ repoName: target.repoName, revision: target.revision })}/-/blob/${
-        target.filePath
-    }${searchQuery}${toViewStateHash(target.viewState)}`
+    return `/${encodeRepoRevision({
+        repoName: target.repoName,
+        revision: target.revision,
+    })}/-/blob/${encodeURIPathComponent(target.filePath)}${searchQuery}${toViewStateHash(target.viewState)}`
 }
 
 /**
@@ -517,18 +515,17 @@ export function withWorkspaceRootInputRevision(
 
 /**
  * Builds a URL query for the given query (without leading `?`).
- *
  * @param query the search query
  * @param patternType the pattern type this query should be interpreted in.
  * Having a `patternType:` filter in the query overrides this argument.
- *
  */
 export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
     caseSensitive: boolean,
+
     searchContextSpec?: string,
-    searchParametersList?: { key: string; value: string }[]
+    searchMode?: SearchMode
 ): string {
     const searchParameters = new URLSearchParams()
     let queryParameter = query
@@ -537,9 +534,8 @@ export function buildSearchURLQuery(
 
     const globalPatternType = findFilter(queryParameter, 'patterntype', FilterKind.Global)
     if (globalPatternType?.value) {
-        const { start, end } = globalPatternType.range
         patternTypeParameter = globalPatternType.value.value
-        queryParameter = replaceRange(queryParameter, { start: Math.max(0, start - 1), end }).trim()
+        queryParameter = omitFilter(queryParameter, globalPatternType)
     }
 
     const globalCase = findFilter(queryParameter, 'case', FilterKind.Global)
@@ -547,7 +543,7 @@ export function buildSearchURLQuery(
         // When case:value is explicit in the query, override any previous value of caseParameter.
         const globalCaseParameterValue = globalCase.value.value
         caseParameter = discreteValueAliases.yes.includes(globalCaseParameterValue) ? 'yes' : 'no'
-        queryParameter = replaceRange(queryParameter, globalCase.range)
+        queryParameter = omitFilter(queryParameter, globalCase)
     }
 
     if (searchContextSpec) {
@@ -561,24 +557,83 @@ export function buildSearchURLQuery(
         searchParameters.set('case', caseParameter)
     }
 
-    if (searchParametersList) {
-        for (const queryParameter of searchParametersList) {
-            searchParameters.set(queryParameter.key, queryParameter.value)
-        }
-    }
+    searchParameters.set('sm', (searchMode || SearchMode.Precise).toString())
 
-    return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
+    return searchParameters.toString().replaceAll('%2F', '/').replaceAll('%3A', ':')
 }
 
-export function buildGetStartedURL(source: string, returnTo?: string): string {
-    const url = new URL('https://about.sourcegraph.com/get-started')
-    url.searchParams.set('utm_medium', 'inproduct')
-    url.searchParams.set('utm_source', source)
-    url.searchParams.set('utm_campaign', 'inproduct-cta')
+/**
+ * Takes an input URL and adds Cody App specific query parameters to it. This includes the UTM parameters and app_os.
+ * @param url Original URL
+ * @param campaign Optional utm_campaign value to add to the query params.
+ * @returns URL string with appended query parameters
+ */
+export const addSourcegraphAppOutboundUrlParameters = (url: string, campaign?: string): string => {
+    const urlObject = new URL(url)
+    urlObject.searchParams.append('utm_source', 'sg_app')
+    urlObject.searchParams.append('utm_medium', 'referral')
 
-    if (returnTo !== undefined) {
-        url.searchParams.set('returnTo', returnTo)
+    if (campaign) {
+        urlObject.searchParams.append('utm_campaign', campaign)
     }
 
-    return url.toString()
+    const os = detectOS()
+    if (os) {
+        urlObject.searchParams.append('app_os', os)
+    }
+
+    const version = window.context?.version as string | undefined
+    if (version) {
+        urlObject.searchParams.append('app_version', version)
+    }
+    return urlObject.toString()
+}
+
+/*
+ * Detect the user's OS, for analytics purposes and not for feature detection.
+ * Do not rely on this for any feature functionality. Returns undefined if unknown.
+ */
+function detectOS(): 'windows' | 'mac' | 'linux' | undefined {
+    const userAgent = window.navigator.userAgent
+
+    if (userAgent.includes('Windows')) {
+        return 'windows'
+    }
+    if (userAgent.includes('Mac')) {
+        return 'mac'
+    }
+    if (userAgent.includes('Linux')) {
+        return 'linux'
+    }
+
+    return undefined
+}
+
+/** The results of parsing a repo-revision string like "my/repo@my/revision". */
+export interface ParsedRepoRevision {
+    repoName: string
+
+    /** The URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
+    revision?: string
+
+    /** The raw revision (e.g., "my%23branch" in "my/repo@my%23branch"). */
+    rawRevision?: string
+}
+
+/**
+ * Parses a repo-revision string like "my/repo@my/revision" to the repo and revision components.
+ */
+export function parseRepoRevision(repoRevision: string): ParsedRepoRevision {
+    const firstAtSign = repoRevision.indexOf('@')
+    if (firstAtSign === -1) {
+        return { repoName: decodeURIComponent(repoRevision) }
+    }
+
+    const repository = repoRevision.slice(0, firstAtSign)
+    const revision = repoRevision.slice(firstAtSign + 1)
+    return {
+        repoName: decodeURIComponent(repository),
+        revision: revision && decodeURIComponent(revision),
+        rawRevision: revision,
+    }
 }

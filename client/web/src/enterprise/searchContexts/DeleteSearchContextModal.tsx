@@ -1,33 +1,31 @@
 import React, { useCallback } from 'react'
-import { useHistory } from 'react-router'
-import { Observable } from 'rxjs'
+
+import { useNavigate } from 'react-router-dom'
+import type { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { SearchContextProps } from '@sourcegraph/search'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ISearchContext } from '@sourcegraph/shared/src/schema'
-import { ALLOW_NAVIGATION } from '@sourcegraph/web/src/components/AwayPrompt'
-import { Button, LoadingSpinner, useEventObservable, Modal, Alert } from '@sourcegraph/wildcard'
+import type { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { Button, LoadingSpinner, useEventObservable, Modal, Alert, H3, Text } from '@sourcegraph/wildcard'
+
+import { ALLOW_NAVIGATION } from '../../components/AwayPrompt'
 
 interface DeleteSearchContextModalProps
     extends Pick<SearchContextProps, 'deleteSearchContext'>,
         PlatformContextProps<'requestGraphQL'> {
     isOpen: boolean
-    searchContext: ISearchContext
+    searchContext: SearchContextFields
     toggleDeleteModal: () => void
 }
 
-export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchContextModalProps> = ({
-    isOpen,
-    deleteSearchContext,
-    toggleDeleteModal,
-    searchContext,
-    platformContext,
-}) => {
+export const DeleteSearchContextModal: React.FunctionComponent<
+    React.PropsWithChildren<DeleteSearchContextModalProps>
+> = ({ isOpen, deleteSearchContext, toggleDeleteModal, searchContext, platformContext }) => {
     const LOADING = 'loading' as const
     const deleteLabelId = 'deleteSearchContextId'
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const [onDelete, deleteCompletedOrError] = useEventObservable(
         useCallback(
@@ -36,14 +34,14 @@ export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchConte
                     mergeMap(() =>
                         deleteSearchContext(searchContext.id, platformContext).pipe(
                             tap(() => {
-                                history.push('/contexts', ALLOW_NAVIGATION)
+                                navigate('/contexts', { state: ALLOW_NAVIGATION })
                             }),
                             startWith(LOADING),
                             catchError(error => [asError(error)])
                         )
                     )
                 ),
-            [deleteSearchContext, history, searchContext, platformContext]
+            [deleteSearchContext, navigate, searchContext, platformContext]
         )
     )
 
@@ -55,13 +53,13 @@ export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchConte
             aria-labelledby={deleteLabelId}
             data-testid="delete-search-context-modal"
         >
-            <h3 className="text-danger" id={deleteLabelId}>
+            <H3 className="text-danger" id={deleteLabelId}>
                 Delete search context?
-            </h3>
+            </H3>
 
-            <p>
+            <Text>
                 <strong>This action cannot be undone.</strong>
-            </p>
+            </Text>
             {(!deleteCompletedOrError || isErrorLike(deleteCompletedOrError)) && (
                 <div className="text-right">
                     <Button className="mr-2" onClick={toggleDeleteModal} outline={true} variant="secondary">

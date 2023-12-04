@@ -1,31 +1,57 @@
-import { Observable } from 'rxjs'
-import { map, mapTo } from 'rxjs/operators'
+import type { Dispatch, SetStateAction } from 'react'
 
-import { createAggregateError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { QueryTuple, MutationTuple, QueryResult } from '@apollo/client'
+import { parse } from 'jsonc-parser'
+import type { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
+
+import { createAggregateError } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors, useMutation, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
-import {
+import type {
     UpdateExternalServiceResult,
     UpdateExternalServiceVariables,
     Scalars,
     AddExternalServiceVariables,
     AddExternalServiceResult,
-    ExternalServiceFields,
-    ExternalServiceVariables,
-    ExternalServiceResult,
     DeleteExternalServiceVariables,
     DeleteExternalServiceResult,
     ExternalServicesVariables,
     ExternalServicesResult,
-    SetExternalServiceReposVariables,
-    SetExternalServiceReposResult,
-    AffiliatedRepositoriesVariables,
-    AffiliatedRepositoriesResult,
+    ExternalServiceCheckConnectionByIdVariables,
+    ExternalServiceCheckConnectionByIdResult,
+    SyncExternalServiceResult,
+    SyncExternalServiceVariables,
+    ExternalServiceSyncJobsVariables,
+    ExternalServiceSyncJobConnectionFields,
+    ExternalServiceSyncJobsResult,
+    CancelExternalServiceSyncVariables,
+    CancelExternalServiceSyncResult,
+    ListExternalServiceFields,
+    ExternalServiceFields,
+    ExternalServiceResult,
+    ExternalServiceVariables,
 } from '../../graphql-operations'
+import {
+    useShowMorePagination,
+    type UseShowMorePaginationResult,
+} from '../FilteredConnection/hooks/useShowMorePagination'
+
+const RATE_LIMITER_STATE_FRAGMENT = gql`
+    fragment RateLimiterStateFields on RateLimiterState {
+        __typename
+        currentCapacity
+        burst
+        limit
+        interval
+        lastReplenishment
+        infinite
+    }
+`
 
 export const externalServiceFragment = gql`
+    ${RATE_LIMITER_STATE_FRAGMENT}
     fragment ExternalServiceFields on ExternalService {
         id
         kind
@@ -33,68 +59,52 @@ export const externalServiceFragment = gql`
         config
         warning
         lastSyncError
+        rateLimiterState {
+            ...RateLimiterStateFields
+        }
         repoCount
-        webhookURL
         lastSyncAt
         nextSyncAt
         updatedAt
         createdAt
-        grantedScopes
-        namespace {
-            id
-            namespaceName
-            url
-        }
+        webhookURL
+        hasConnectionCheck
+        unrestricted
     }
 `
 
-export async function addExternalService(
-    variables: AddExternalServiceVariables,
-    eventLogger: TelemetryService
-): Promise<AddExternalServiceResult['addExternalService']> {
-    return requestGraphQL<AddExternalServiceResult, AddExternalServiceVariables>(
-        gql`
-            mutation AddExternalService($input: AddExternalServiceInput!) {
-                addExternalService(input: $input) {
-                    ...ExternalServiceFields
-                }
-            }
+export const ADD_EXTERNAL_SERVICE = gql`
+    mutation AddExternalService($input: AddExternalServiceInput!) {
+        addExternalService(input: $input) {
+            ...ExternalServiceFields
+        }
+    }
 
-            ${externalServiceFragment}
-        `,
-        variables
-    )
-        .pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.addExternalService || (errors && errors.length > 0)) {
-                    eventLogger.log('AddExternalServiceFailed')
-                    throw createAggregateError(errors)
-                }
-                eventLogger.log('AddExternalServiceSucceeded')
-                return data.addExternalService
-            })
-        )
-        .toPromise()
-}
+    ${externalServiceFragment}
+`
 
-export function isExternalService(
-    externalServiceOrError?: ExternalServiceFields | ErrorLike
-): externalServiceOrError is ExternalServiceFields {
-    return !!externalServiceOrError && !isErrorLike(externalServiceOrError)
-}
+export const useAddExternalService = (): MutationTuple<AddExternalServiceResult, AddExternalServiceVariables> =>
+    useMutation<AddExternalServiceResult, AddExternalServiceVariables>(ADD_EXTERNAL_SERVICE)
+
+export const UPDATE_EXTERNAL_SERVICE = gql`
+    mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
+        updateExternalService(input: $input) {
+            ...ExternalServiceFields
+        }
+    }
+    ${externalServiceFragment}
+`
+
+export const useUpdateExternalService = (
+    onCompleted: (result: UpdateExternalServiceResult) => void
+): MutationTuple<UpdateExternalServiceResult, UpdateExternalServiceVariables> =>
+    useMutation(UPDATE_EXTERNAL_SERVICE, { onCompleted })
 
 export function updateExternalService(
     variables: UpdateExternalServiceVariables
 ): Promise<UpdateExternalServiceResult['updateExternalService']> {
     return requestGraphQL<UpdateExternalServiceResult, UpdateExternalServiceVariables>(
-        gql`
-            mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
-                updateExternalService(input: $input) {
-                    ...ExternalServiceFields
-                }
-            }
-            ${externalServiceFragment}
-        `,
+        UPDATE_EXTERNAL_SERVICE,
         variables
     )
         .pipe(
@@ -102,74 +112,6 @@ export function updateExternalService(
             map(data => data.updateExternalService)
         )
         .toPromise()
-}
-
-export function setExternalServiceRepos(variables: SetExternalServiceReposVariables): Promise<void> {
-    return requestGraphQL<SetExternalServiceReposResult, SetExternalServiceReposVariables>(
-        gql`
-            mutation SetExternalServiceRepos($id: ID!, $allRepos: Boolean!, $repos: [String!]) {
-                setExternalServiceRepos(id: $id, allRepos: $allRepos, repos: $repos) {
-                    alwaysNil
-                }
-            }
-        `,
-        variables
-    )
-        .pipe(map(dataOrThrowErrors), mapTo(undefined))
-        .toPromise()
-}
-
-export function fetchExternalService(id: Scalars['ID']): Observable<ExternalServiceFields> {
-    return requestGraphQL<ExternalServiceResult, ExternalServiceVariables>(
-        gql`
-            query ExternalService($id: ID!) {
-                node(id: $id) {
-                    __typename
-                    ...ExternalServiceFields
-                }
-            }
-            ${externalServiceFragment}
-        `,
-        { id }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error('External service not found')
-            }
-            if (node.__typename !== 'ExternalService') {
-                throw new Error(`Node is a ${node.__typename}, not a ExternalService`)
-            }
-            return node
-        })
-    )
-}
-
-export function listAffiliatedRepositories(
-    args: AffiliatedRepositoriesVariables
-): Observable<NonNullable<AffiliatedRepositoriesResult>> {
-    return requestGraphQL<AffiliatedRepositoriesResult, AffiliatedRepositoriesVariables>(
-        gql`
-            query AffiliatedRepositories($namespace: ID!, $codeHost: ID, $query: String) {
-                affiliatedRepositories(namespace: $namespace, codeHost: $codeHost, query: $query) {
-                    nodes {
-                        name
-                        codeHost {
-                            kind
-                            id
-                            displayName
-                        }
-                        private
-                    }
-                }
-            }
-        `,
-        {
-            namespace: args.namespace,
-            codeHost: args.codeHost ?? null,
-            query: args.query ?? null,
-        }
-    ).pipe(map(dataOrThrowErrors))
 }
 
 export async function deleteExternalService(externalService: Scalars['ID']): Promise<void> {
@@ -186,11 +128,89 @@ export async function deleteExternalService(externalService: Scalars['ID']): Pro
     dataOrThrowErrors(result)
 }
 
-export const listExternalServiceFragment = gql`
+export const EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID = gql`
+    query ExternalServiceCheckConnectionById($id: ID!) {
+        node(id: $id) {
+            __typename
+            ... on ExternalService {
+                id
+                hasConnectionCheck
+                checkConnection {
+                    __typename
+                    ... on ExternalServiceUnavailable {
+                        suspectedReason
+                    }
+                }
+            }
+        }
+    }
+`
+
+export const useExternalServiceCheckConnectionByIdLazyQuery = (
+    id: string
+): QueryTuple<ExternalServiceCheckConnectionByIdResult, ExternalServiceCheckConnectionByIdVariables> =>
+    useLazyQuery<ExternalServiceCheckConnectionByIdResult, ExternalServiceCheckConnectionByIdVariables>(
+        EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID,
+        {
+            variables: { id },
+        }
+    )
+
+const EXTERNAL_SERVICE_SYNC_JOB_LIST_FIELDS_FRAGMENT = gql`
+    fragment ExternalServiceSyncJobListFields on ExternalServiceSyncJob {
+        __typename
+        id
+        state
+        startedAt
+        finishedAt
+        failureMessage
+        reposSynced
+        repoSyncErrors
+        reposAdded
+        reposDeleted
+        reposModified
+        reposUnmodified
+    }
+`
+
+const EXTERNAL_SERVICE_SYNC_JOB_CONNECTION_FIELDS_FRAGMENT = gql`
+    ${EXTERNAL_SERVICE_SYNC_JOB_LIST_FIELDS_FRAGMENT}
+    fragment ExternalServiceSyncJobConnectionFields on ExternalServiceSyncJobConnection {
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+        nodes {
+            ...ExternalServiceSyncJobListFields
+        }
+    }
+`
+
+export const EXTERNAL_SERVICE_SYNC_JOBS = gql`
+    ${EXTERNAL_SERVICE_SYNC_JOB_CONNECTION_FIELDS_FRAGMENT}
+    query ExternalServiceSyncJobs($first: Int, $externalService: ID!) {
+        node(id: $externalService) {
+            __typename
+            ... on ExternalService {
+                syncJobs(first: $first) {
+                    ...ExternalServiceSyncJobConnectionFields
+                }
+            }
+        }
+    }
+`
+
+export const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
+    ${EXTERNAL_SERVICE_SYNC_JOB_CONNECTION_FIELDS_FRAGMENT}
+    ${RATE_LIMITER_STATE_FRAGMENT}
     fragment ListExternalServiceFields on ExternalService {
         id
         kind
         displayName
+        rateLimiterState {
+            ...RateLimiterStateFields
+        }
         config
         warning
         lastSyncError
@@ -199,47 +219,28 @@ export const listExternalServiceFragment = gql`
         nextSyncAt
         updatedAt
         createdAt
-        namespace {
-            id
-            namespaceName
-            url
+        webhookURL
+        hasConnectionCheck
+        syncJobs(first: 1) {
+            ...ExternalServiceSyncJobConnectionFields
         }
-        grantedScopes
-    }
-`
-export const listExternalServiceInvitableCollaboratorsFragment = gql`
-    fragment ListExternalServiceInvitableCollaboratorsFields on ExternalService {
-        invitableCollaborators {
-            email
-            displayName
-            name
-            avatarURL
-        }
+        unrestricted
     }
 `
 
-export const EXTERNAL_SERVICES_WITH_COLLABORATORS = gql`
-    query ExternalServicesWithCollaborators($first: Int, $after: String, $namespace: ID) {
-        externalServices(first: $first, after: $after, namespace: $namespace) {
-            nodes {
-                ...ListExternalServiceFields
-                ...ListExternalServiceInvitableCollaboratorsFields
-            }
-            totalCount
-            pageInfo {
-                endCursor
-                hasNextPage
-            }
+export const FETCH_EXTERNAL_SERVICE = gql`
+    query ExternalService($id: ID!) {
+        node(id: $id) {
+            __typename
+            ...ListExternalServiceFields
         }
     }
-
-    ${listExternalServiceFragment}
-    ${listExternalServiceInvitableCollaboratorsFragment}
+    ${LIST_EXTERNAL_SERVICE_FRAGMENT}
 `
 
 export const EXTERNAL_SERVICES = gql`
-    query ExternalServices($first: Int, $after: String, $namespace: ID) {
-        externalServices(first: $first, after: $after, namespace: $namespace) {
+    query ExternalServices($first: Int, $after: String, $repo: ID) {
+        externalServices(first: $first, after: $after, repo: $repo) {
             nodes {
                 ...ListExternalServiceFields
             }
@@ -251,58 +252,131 @@ export const EXTERNAL_SERVICES = gql`
         }
     }
 
-    ${listExternalServiceFragment}
+    ${LIST_EXTERNAL_SERVICE_FRAGMENT}
 `
 
-export function queryExternalServices(
-    variables: ExternalServicesVariables
-): Observable<ExternalServicesResult['externalServices']> {
-    return requestGraphQL<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, variables).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.externalServices || errors) {
-                throw createAggregateError(errors)
+export const EXTERNAL_SERVICE_IDS_AND_NAMES = gql`
+    query ExternalServiceIDsAndNames {
+        externalServices {
+            nodes {
+                id
+                displayName
             }
-            return data.externalServices
-        })
+        }
+    }
+`
+
+export const useExternalServicesConnection = (
+    vars: ExternalServicesVariables
+): UseShowMorePaginationResult<ExternalServicesResult, ListExternalServiceFields> =>
+    useShowMorePagination<ExternalServicesResult, ExternalServicesVariables, ListExternalServiceFields>({
+        query: EXTERNAL_SERVICES,
+        variables: { after: vars.after, first: vars.first ?? 10, repo: vars.repo },
+        getConnection: result => {
+            const { externalServices } = dataOrThrowErrors(result)
+            return externalServices
+        },
+        options: {
+            fetchPolicy: 'cache-and-network',
+            pollInterval: 15000,
+        },
+    })
+
+export const SYNC_EXTERNAL_SERVICE = gql`
+    mutation SyncExternalService($id: ID!) {
+        syncExternalService(id: $id) {
+            alwaysNil
+        }
+    }
+`
+
+export function useSyncExternalService(): MutationTuple<SyncExternalServiceResult, SyncExternalServiceVariables> {
+    return useMutation<SyncExternalServiceResult, SyncExternalServiceVariables>(SYNC_EXTERNAL_SERVICE)
+}
+
+export const CANCEL_EXTERNAL_SERVICE_SYNC = gql`
+    mutation CancelExternalServiceSync($id: ID!) {
+        cancelExternalServiceSync(id: $id) {
+            alwaysNil
+        }
+    }
+`
+
+export function useCancelExternalServiceSync(): MutationTuple<
+    CancelExternalServiceSyncResult,
+    CancelExternalServiceSyncVariables
+> {
+    return useMutation<CancelExternalServiceSyncResult, CancelExternalServiceSyncVariables>(
+        CANCEL_EXTERNAL_SERVICE_SYNC
     )
 }
 
-interface ExternalServicesScopeVariables {
-    namespace: Scalars['ID']
-}
-
-interface ExternalServicesScopeResult {
-    externalServices: {
-        nodes: {
-            id: ExternalServiceFields['id']
-            kind: ExternalServiceFields['kind']
-            grantedScopes: string[]
-        }[]
-    }
-}
-
-export function queryExternalServicesScope(
-    variables: ExternalServicesScopeVariables
-): Observable<ExternalServicesScopeResult['externalServices']> {
-    return requestGraphQL<ExternalServicesScopeResult, ExternalServicesScopeVariables>(
-        gql`
-            query ExternalServicesScopes($namespace: ID!) {
-                externalServices(first: null, after: null, namespace: $namespace) {
-                    nodes {
-                        id
-                        kind
-                        grantedScopes
-                    }
-                }
-            }
-        `,
+export function queryExternalServiceSyncJobs(
+    variables: ExternalServiceSyncJobsVariables
+): Observable<ExternalServiceSyncJobConnectionFields> {
+    return requestGraphQL<ExternalServiceSyncJobsResult, ExternalServiceSyncJobsVariables>(
+        EXTERNAL_SERVICE_SYNC_JOBS,
         variables
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.externalServices || errors) {
+            if (errors) {
                 throw createAggregateError(errors)
             }
-            return data.externalServices
+            if (!data) {
+                throw new Error('No data found')
+            }
+            if (!data.node) {
+                throw new Error('External service not found')
+            }
+            if (data.node.__typename !== 'ExternalService') {
+                throw new Error(`Node is a ${data.node.__typename}, not ExternalService`)
+            }
+            return data.node.syncJobs
         })
     )
 }
+
+export const getExternalService = (
+    data?: ExternalServiceFields | null
+): ExternalServiceFieldsWithConfig | undefined => {
+    if (!data) {
+        return undefined
+    }
+    const node: ExternalServiceFieldsWithConfig = data
+    node.parsedConfig = parse(node.config) as ExternalServiceFieldsWithConfig['parsedConfig']
+    return node
+}
+
+export const useFetchExternalService = (
+    externalServiceID: string,
+    setExternalService: Dispatch<SetStateAction<ExternalServiceFieldsWithConfig | undefined>>
+): QueryResult<ExternalServiceResult, ExternalServiceVariables> =>
+    useQuery<ExternalServiceResult, ExternalServiceVariables>(FETCH_EXTERNAL_SERVICE, {
+        variables: { id: externalServiceID },
+        notifyOnNetworkStatusChange: false,
+        fetchPolicy: 'no-cache',
+        onCompleted: (result: ExternalServiceResult) => {
+            if (result?.node?.__typename !== 'ExternalService') {
+                return
+            }
+            const data = getExternalService(result?.node)
+            if (data) {
+                setExternalService(data)
+            }
+        },
+    })
+
+export interface GitHubAppDetails {
+    appID: number
+    baseURL: string
+    installationID: number
+}
+
+export interface ExternalServiceFieldsWithConfig extends ExternalServiceFields {
+    parsedConfig?: {
+        gitHubAppDetails?: GitHubAppDetails
+        url: string
+    }
+}
+
+export type RateLimiterState = NonNullable<ExternalServiceFields['rateLimiterState']>

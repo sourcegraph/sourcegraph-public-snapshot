@@ -1,15 +1,14 @@
 import { readFile } from 'mz/fs'
-import { Observable, throwError, of } from 'rxjs'
+import { type Observable, throwError, of } from 'rxjs'
+import { beforeEach, describe, expect, test } from 'vitest'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
-import { SuccessGraphQLResult } from '@sourcegraph/http-client'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { IMutation, IQuery } from '@sourcegraph/shared/src/schema'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { DiffOrBlobInfo } from '../shared/codeHost'
-import { GraphQLResponseMap, mockRequestGraphQL } from '../shared/testHelpers'
+import type { DiffOrBlobInfo } from '../shared/codeHost'
+import { type GraphQLResponseMap, mockRequestGraphQL } from '../shared/testHelpers'
 
-import { QueryConduitHelper } from './backend'
+import type { QueryConduitHelper } from './backend'
 import { resolveDiffusionFileInfo, resolveRevisionFileInfo, resolveDiffFileInfo } from './fileInfo'
 
 interface ConduitResponseMap {
@@ -96,19 +95,19 @@ const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
         of({
             data: {},
             errors: undefined,
-        } as SuccessGraphQLResult<IMutation>),
+        }),
     ResolveRepo: () =>
         of({
             data: {
                 repository: null,
             },
             errors: undefined,
-        } as SuccessGraphQLResult<IQuery>),
+        }),
     ResolveStagingRev: () =>
         of({
             data: { resolvePhabricatorDiff: { oid: 'staging-revision' } },
             errors: undefined,
-        } as SuccessGraphQLResult<IMutation>),
+        }),
 }
 
 function mockQueryConduit(responseMap?: ConduitResponseMap): QueryConduitHelper<any> {
@@ -124,7 +123,8 @@ function mockQueryConduit(responseMap?: ConduitResponseMap): QueryConduitHelper<
 type Resolver = (
     codeView: HTMLElement,
     requestGraphQL: PlatformContext['requestGraphQL'],
-    queryConduit: QueryConduitHelper<any>
+    queryConduit: QueryConduitHelper<any>,
+    windowLocation__testingOnly: Location | URL
 ) => Observable<DiffOrBlobInfo>
 
 interface Fixture {
@@ -141,7 +141,6 @@ const resolveFileInfoFromFixture = async (
 ): Promise<DiffOrBlobInfo> => {
     const fixtureContent = await readFile(`${__dirname}/__fixtures__/pages/${htmlFixture}`, 'utf-8')
     document.body.innerHTML = fixtureContent
-    jsdom.reconfigure({ url })
     const codeView = document.querySelector(codeViewSelector)
     if (!codeView) {
         throw new Error(`Code view matching selector ${codeViewSelector} not found`)
@@ -150,9 +149,10 @@ const resolveFileInfoFromFixture = async (
         codeView as HTMLElement,
         mockRequestGraphQL({
             ...DEFAULT_GRAPHQL_RESPONSES,
-            ...(graphQLResponseMap || {}),
+            ...graphQLResponseMap,
         }),
-        mockQueryConduit(conduitResponseMap)
+        mockQueryConduit(conduitResponseMap),
+        new URL(url)
     ).toPromise()
 }
 
@@ -385,7 +385,7 @@ describe('Phabricator file info', () => {
                                         },
                                     },
                                     errors: undefined,
-                                } as SuccessGraphQLResult<IQuery>),
+                                }),
                         },
                     },
                     resolveDiffFileInfo
@@ -411,7 +411,7 @@ describe('Phabricator file info', () => {
                                         },
                                     },
                                     errors: undefined,
-                                } as SuccessGraphQLResult<IMutation>),
+                                }),
                         },
                         conduitResponseMap: {
                             '/api/differential.getrawdiff': parameters =>
@@ -451,7 +451,7 @@ describe('Phabricator file info', () => {
                                         },
                                     },
                                     errors: undefined,
-                                } as SuccessGraphQLResult<IQuery>),
+                                }),
                         },
                     },
                     resolveDiffFileInfo

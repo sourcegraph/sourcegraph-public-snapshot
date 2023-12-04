@@ -1,12 +1,18 @@
 package ui
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
 
+	"github.com/coreos/go-semver/semver"
+
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -18,13 +24,35 @@ func serveHelp(w http.ResponseWriter, r *http.Request) {
 	page := strings.TrimPrefix(r.URL.Path, "/help")
 	versionStr := version.Version()
 
-	// For release builds, use the version string. Otherwise, don't use any version string because:
+	logger := sglog.Scoped("serveHelp")
+	logger.Info("redirecting to docs", sglog.String("page", page), sglog.String("versionStr", versionStr))
+
+	// For Cody App, help links are handled in the frontend. We should never get here.
+	if deploy.IsApp() {
+		// This should never happen, but if it does, we want to know about it.
+		logger.Error("help link was clicked in App and handled in the backend, this should never happer")
+
+		// Redirect back to the homepage. We don't want App to ever leave the locally-hosted frontend.
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
+	// For release builds, use the version string. Otherwise, don't use any
+	// version string because:
 	//
 	// - For unreleased dev builds, we serve the contents from the working tree.
-	// - Sourcegraph.com users probably want the latest docs on the default branch.
+	// - Sourcegraph.com users probably want the latest docs on the default
+	//   branch.
 	var docRevPrefix string
 	if !version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() {
-		docRevPrefix = "@v" + versionStr
+		v, err := semver.NewVersion(versionStr)
+		if err != nil {
+			// If not a semver, just use the version string and hope for the best
+			docRevPrefix = "@" + versionStr
+		} else {
+			// Otherwise, send viewer to the major.minor branch of this version
+			docRevPrefix = fmt.Sprintf("@%d.%d", v.Major, v.Minor)
+		}
 	}
 
 	// Note that the URI fragment (e.g., #some-section-in-doc) *should* be preserved by most user

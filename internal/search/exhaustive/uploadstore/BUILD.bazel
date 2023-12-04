@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "uploadstore",
+    srcs = ["store.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/exhaustive/uploadstore",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf/deploy",
+        "//internal/env",
+        "//internal/observation",
+        "//internal/uploadstore",
+        "//lib/errors",
+    ],
+)

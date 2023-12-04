@@ -1,0 +1,181 @@
+// This rule needs to be disabled so that we can override CodeMirror's classes
+/* stylelint-disable selector-class-pattern */
+@import 'wildcard/src/global-styles/breakpoints';
+
+.root {
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+
+    :global(.cm-editor) {
+        &:global(.cm-focused) {
+            // Codemirror shows a focus ring by default. Since we handle that
+            // differently, disable it here.
+            outline: none;
+
+            :global(.sg-query-filter-placeholder) {
+                display: inline;
+            }
+
+            // The placeholder needs to explicilty have the same background color because it
+            // appears to be placed outside of active filter decoration rather than within it.
+            :global(.sg-query-filter-placeholder),
+            :global(.sg-query-filter-active) {
+                background-color: var(--gray-02);
+
+                :global(.theme-dark) & {
+                    background-color: var(--gray-08);
+                }
+            }
+        }
+
+        :global(.sg-query-filter-placeholder) {
+            display: none;
+        }
+
+        :global(.cm-scroller) {
+            // Codemirror shows a vertical scroll bar by default (when
+            // overflowing). This disables it.
+            overflow-x: hidden;
+        }
+
+        :global(.cm-content) {
+            &:global(.focus-visible),
+            &:focus-visible {
+                box-shadow: none;
+            }
+
+            @media (--xs-breakpoint-down) {
+                // Automatically enable line wrapping on small screens.
+                // CodeMirror's own lineWrapping extension does the same
+                // (also see https://codemirror.net/examples/styling/)
+                white-space: pre-wrap; // For IE
+                white-space: break-spaces;
+                word-break: break-word; // For Safari, which doesn't support overflow-wrap: anywhere
+                overflow-wrap: anywhere;
+                flex-shrink: 1;
+            }
+        }
+
+        :global(.cm-placeholder) {
+            // CodeMirror uses display: inline-block by default, but that causes
+            // Chrome to render a larger cursor if the placeholder holder spans
+            // multiple lines. Firefox doesn't have this problem (but
+            // setting display: inline doesn't seem to have a negative effect
+            // either)
+            display: inline;
+            // Once again, Chrome renders the placeholder differently than
+            // Firefox. CodeMirror sets 'word-break: break-word' (which is
+            // deprecated) and 'overflow-wrap: anywhere' but they don't seem to
+            // have an effect in Chrome (at least not in this instance).
+            // Setting 'word-break: break-all' explicitly makes appearances a
+            // bit better for example queries with long tokens.
+            word-break: break-all;
+        }
+
+        :global(.cm-tooltip-autocomplete) {
+            /* Resets padding added above to .cm-tooltip */
+            padding: 0;
+            color: var(--search-query-text-color);
+            background-color: var(--color-bg-1);
+            // Default is 50vw
+            max-width: 70vw;
+            margin-top: 0.25rem; // Position is controlled absolutely but needs to be shifted down a bit from the default
+
+            > ul {
+                font-size: var(--code-font-size);
+                font-family: var(--code-font-family);
+                max-height: 15rem;
+
+                > li {
+                    align-items: center;
+                    box-sizing: content-box;
+                    padding: 0.25rem 0.375rem;
+                    display: flex;
+                    height: 1.25rem;
+
+                    svg {
+                        flex-shrink: 0;
+
+                        path {
+                            fill: var(--search-query-text-color);
+                        }
+                    }
+
+                    :global(.cm-completionLabel) {
+                        flex-shrink: 0;
+                    }
+
+                    :global(.cm-completionDetail) {
+                        padding-left: 0.25rem;
+                        font-size: 0.675rem;
+                        color: var(--gray-06);
+                        flex: 1;
+                        min-width: 0;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        font-style: initial;
+                        text-align: right;
+                    }
+
+                    :global(.cm-completionMatchedText) {
+                        // Reset
+                        text-decoration: none;
+
+                        // Our style
+                        color: var(--search-filter-keyword-color);
+                        font-weight: bold;
+                    }
+
+                    &[aria-selected] {
+                        color: var(--search-query-text-color);
+                        background-color: var(--color-bg-2);
+
+                        :global(.theme-dark) & {
+                            background-color: var(--color-bg-3);
+                        }
+
+                        .tabStyle {
+                            display: inline-block;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    :global(.sg-query-filter-placeholder) {
+        color: var(--text-muted);
+        font-style: italic;
+    }
+}
+
+// Copied and adapted from the Wildcard LoadingSpinner component
+.loading-spinner {
+    :global(.theme-light) & {
+        --loading-spinner-outer-color: var(--gray-05);
+        --loading-spinner-inner-color: var(--gray-08);
+    }
+    :global(.theme-dark) & {
+        --loading-spinner-outer-color: var(--gray-07);
+        --loading-spinner-inner-color: var(--white);
+    }
+
+    flex-shrink: 0;
+    margin: 0.125rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    animation: loading-spinner-spin 1s linear infinite;
+    border: 2px solid var(--loading-spinner-outer-color, rgba(0, 0, 0, 0.3));
+    border-top: 2px solid var(--loading-spinner-inner-color, rgba(0, 0, 0, 1));
+}
+
+@keyframes loading-spinner-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}

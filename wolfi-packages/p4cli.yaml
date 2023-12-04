@@ -1,0 +1,35 @@
+package:
+  name: p4cli
+  version: 23.1
+  epoch: 0
+  description: "Command line interface for Perforce"
+  target-architecture:
+    - x86_64
+  copyright:
+    - paths:
+      - "*"
+      attestation: 'Copyright (c) 1995-2021, Perforce Software, Inc.'
+      license: 'BSD-2-Clause'
+  dependencies:
+    runtime:
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - wolfi-base
+
+pipeline:
+  - uses: fetch
+    with:
+      uri: https://cdist2.perforce.com/perforce/r${{package.version}}/bin.linux26x86_64/p4
+      # Hash occasionally changes, available at https://filehost.perforce.com/perforce/r23.1/bin.linux26x86_64/SHA256SUMS (check version)
+      expected-sha256: d63f0e38c6c6bce469ce584d64792ea06112ba7dfbe8bcdffd216c5b710421e8
+      extract: false
+  - runs: |
+      chmod +x p4
+      mkdir -p ${{targets.destdir}}/usr/local/bin/
+      cp p4 ${{targets.destdir}}/usr/local/bin/p4

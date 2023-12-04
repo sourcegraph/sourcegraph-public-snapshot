@@ -1,5 +1,6 @@
 import { from, defer } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
+import { describe, expect, it } from 'vitest'
 
 import { repeatUntil } from './repeatUntil'
 
@@ -8,11 +9,9 @@ const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toE
 describe('repeatUntil()', () => {
     it('completes if the emitted value matches select', () => {
         scheduler().run(({ cold, expectObservable }) => {
-            expectObservable(
-                from(
-                    cold<number>('a|', { a: 5 }).pipe(repeatUntil(value => value === 5))
-                )
-            ).toBe('(a|)', { a: 5 })
+            expectObservable(from(cold<number>('a|', { a: 5 }).pipe(repeatUntil(value => value === 5)))).toBe('(a|)', {
+                a: 5,
+            })
         })
     })
 

@@ -1,0 +1,591 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n\trepositoryTopics(first:100)
+      {\n\t\tnodes {\n\t\t\ttopic {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n}\n\t\nquery($query:
+      String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
+      $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
+      { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
+      } }\n\t}\n}","variables":{"first":10,"query":"stars:10000..10100","type":"REPOSITORY"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: "{\"data\":{\"search\":{\"repositoryCount\":40,\"pageInfo\":{\"hasNextPage\":true,\"endCursor\":\"Y3Vyc29yOjEw\"},\"nodes\":[{\"id\":\"MDEwOlJlcG9zaXRvcnk1NTc5Nzc=\",\"databaseId\":557977,\"nameWithOwner\":\"socketio/socket.io-client\",\"description\":\"Realtime
+      application framework (client)\",\"url\":\"https://github.com/socketio/socket.io-client\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10098,\"forkCount\":3106,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"browser\"}},{\"topic\":{\"name\":\"javascript\"}},{\"topic\":{\"name\":\"nodejs\"}},{\"topic\":{\"name\":\"socket-io\"}},{\"topic\":{\"name\":\"websocket\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkxNTE5Nzc4MTg=\",\"databaseId\":151977818,\"nameWithOwner\":\"felangel/bloc\",\"description\":\"A
+      predictable state management library that helps implement the BLoC design pattern\",\"url\":\"https://github.com/felangel/bloc\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10097,\"forkCount\":3110,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"flutter\"}},{\"topic\":{\"name\":\"dart\"}},{\"topic\":{\"name\":\"dartlang\"}},{\"topic\":{\"name\":\"flutter-package\"}},{\"topic\":{\"name\":\"bloc\"}},{\"topic\":{\"name\":\"dart-web\"}},{\"topic\":{\"name\":\"dart-library\"}},{\"topic\":{\"name\":\"state-management\"}},{\"topic\":{\"name\":\"library\"}},{\"topic\":{\"name\":\"angulardart\"}},{\"topic\":{\"name\":\"concurrency\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkxMjA1MjYzMA==\",\"databaseId\":12052630,\"nameWithOwner\":\"Zulko/moviepy\",\"description\":\"Video
+      editing with Python\",\"url\":\"https://github.com/Zulko/moviepy\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10091,\"forkCount\":1335,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"python\"}},{\"topic\":{\"name\":\"video\"}},{\"topic\":{\"name\":\"gif\"}},{\"topic\":{\"name\":\"animation\"}},{\"topic\":{\"name\":\"video-editing\"}},{\"topic\":{\"name\":\"video-processing\"}},{\"topic\":{\"name\":\"hacktoberfest\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkxMzYyMjE4OQ==\",\"databaseId\":13622189,\"nameWithOwner\":\"tariqbuilds/linux-dash\",\"description\":\"A
+      beautiful web dashboard for Linux\",\"url\":\"https://github.com/tariqbuilds/linux-dash\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10088,\"forkCount\":1245,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"linux\"}},{\"topic\":{\"name\":\"dashboard\"}},{\"topic\":{\"name\":\"monitoring\"}},{\"topic\":{\"name\":\"server\"}},{\"topic\":{\"name\":\"web\"}},{\"topic\":{\"name\":\"ui\"}},{\"topic\":{\"name\":\"linux-dash\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkxOTkzMjg3NTQ=\",\"databaseId\":199328754,\"nameWithOwner\":\"cmiscm/leonsans\",\"description\":\"Leon
+      Sans is a geometric sans-serif typeface made with code in 2019 by Jongmin Kim.\",\"url\":\"https://github.com/cmiscm/leonsans\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10086,\"forkCount\":529,\"repositoryTopics\":{\"nodes\":[]}},{\"id\":\"MDEwOlJlcG9zaXRvcnk3MTc4MTU1\",\"databaseId\":7178155,\"nameWithOwner\":\"svgdotjs/svg.js\",\"description\":\"The
+      lightweight library for manipulating and animating SVG\",\"url\":\"https://github.com/svgdotjs/svg.js\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10082,\"forkCount\":1062,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"svg\"}},{\"topic\":{\"name\":\"javascript\"}},{\"topic\":{\"name\":\"svgjs\"}},{\"topic\":{\"name\":\"animation\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkyNDk1Njc3Mg==\",\"databaseId\":24956772,\"nameWithOwner\":\"Hammerspoon/hammerspoon\",\"description\":\"Staggeringly
+      powerful macOS desktop automation with Lua\",\"url\":\"https://github.com/Hammerspoon/hammerspoon\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10079,\"forkCount\":527,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"macos\"}},{\"topic\":{\"name\":\"objective-c\"}},{\"topic\":{\"name\":\"lua\"}},{\"topic\":{\"name\":\"hammerspoon\"}},{\"topic\":{\"name\":\"osx\"}},{\"topic\":{\"name\":\"automation\"}},{\"topic\":{\"name\":\"mjolnir\"}},{\"topic\":{\"name\":\"irc\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnk3Mzk2NDg5NQ==\",\"databaseId\":73964895,\"nameWithOwner\":\"botpress/botpress\",\"description\":\"\U0001F916
+      Dev tools to reliably understand text and automate conversations. Built-in NLU.
+      \ Connect & deploy on any messaging channel (Slack, MS Teams, website, Telegram,
+      etc).\",\"url\":\"https://github.com/botpress/botpress\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10077,\"forkCount\":1365,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"chatbot\"}},{\"topic\":{\"name\":\"bot\"}},{\"topic\":{\"name\":\"botpress\"}},{\"topic\":{\"name\":\"bot-framework\"}},{\"topic\":{\"name\":\"sdk\"}},{\"topic\":{\"name\":\"bot-builder\"}},{\"topic\":{\"name\":\"microsoft-bot-framework\"}},{\"topic\":{\"name\":\"botkit\"}},{\"topic\":{\"name\":\"botkit-bots\"}},{\"topic\":{\"name\":\"bots\"}},{\"topic\":{\"name\":\"conversation\"}},{\"topic\":{\"name\":\"conversational-ui\"}},{\"topic\":{\"name\":\"nlu\"}},{\"topic\":{\"name\":\"nlp\"}},{\"topic\":{\"name\":\"machine-learning-algorithms\"}},{\"topic\":{\"name\":\"chatbot-framework\"}},{\"topic\":{\"name\":\"chatbots\"}},{\"topic\":{\"name\":\"conversational-ai\"}},{\"topic\":{\"name\":\"rasa\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkxNzUzOTg1OTQ=\",\"databaseId\":175398594,\"nameWithOwner\":\"sindresorhus/type-fest\",\"description\":\"A
+      collection of essential TypeScript types\",\"url\":\"https://github.com/sindresorhus/type-fest\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10061,\"forkCount\":374,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"typescript-definitions\"}},{\"topic\":{\"name\":\"typescript\"}},{\"topic\":{\"name\":\"types\"}},{\"topic\":{\"name\":\"utilities\"}},{\"topic\":{\"name\":\"npm-package\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkxNTQzNQ==\",\"databaseId\":15435,\"nameWithOwner\":\"Shopify/liquid\",\"description\":\"Liquid
+      markup language. Safe, customer facing template language for flexible web apps.
+      \",\"url\":\"https://github.com/Shopify/liquid\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10059,\"forkCount\":1309,\"repositoryTopics\":{\"nodes\":[]}}]}}}"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 15 Feb 2023 23:07:36 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - 9180:3F59:1DC5E68:3D14D7C:63ED65B8
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4971"
+      X-Ratelimit-Reset:
+      - "1676505052"
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "29"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n\trepositoryTopics(first:100)
+      {\n\t\tnodes {\n\t\t\ttopic {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n}\n\t\nquery($query:
+      String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
+      $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
+      { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
+      } }\n\t}\n}","variables":{"first":10,"query":"stars:10000..10100 created:2007-06-01T00:00:00+00:00..2015-04-09T11:33:48+00:00","type":"REPOSITORY"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"search":{"repositoryCount":16,"pageInfo":{"hasNextPage":true,"endCursor":"Y3Vyc29yOjEw"},"nodes":[{"id":"MDEwOlJlcG9zaXRvcnk1NTc5Nzc=","databaseId":557977,"nameWithOwner":"socketio/socket.io-client","description":"Realtime
+      application framework (client)","url":"https://github.com/socketio/socket.io-client","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10098,"forkCount":3106,"repositoryTopics":{"nodes":[{"topic":{"name":"browser"}},{"topic":{"name":"javascript"}},{"topic":{"name":"nodejs"}},{"topic":{"name":"socket-io"}},{"topic":{"name":"websocket"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkxMjA1MjYzMA==","databaseId":12052630,"nameWithOwner":"Zulko/moviepy","description":"Video
+      editing with Python","url":"https://github.com/Zulko/moviepy","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10091,"forkCount":1335,"repositoryTopics":{"nodes":[{"topic":{"name":"python"}},{"topic":{"name":"video"}},{"topic":{"name":"gif"}},{"topic":{"name":"animation"}},{"topic":{"name":"video-editing"}},{"topic":{"name":"video-processing"}},{"topic":{"name":"hacktoberfest"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkxMzYyMjE4OQ==","databaseId":13622189,"nameWithOwner":"tariqbuilds/linux-dash","description":"A
+      beautiful web dashboard for Linux","url":"https://github.com/tariqbuilds/linux-dash","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10088,"forkCount":1245,"repositoryTopics":{"nodes":[{"topic":{"name":"linux"}},{"topic":{"name":"dashboard"}},{"topic":{"name":"monitoring"}},{"topic":{"name":"server"}},{"topic":{"name":"web"}},{"topic":{"name":"ui"}},{"topic":{"name":"linux-dash"}}]}},{"id":"MDEwOlJlcG9zaXRvcnk3MTc4MTU1","databaseId":7178155,"nameWithOwner":"svgdotjs/svg.js","description":"The
+      lightweight library for manipulating and animating SVG","url":"https://github.com/svgdotjs/svg.js","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10082,"forkCount":1062,"repositoryTopics":{"nodes":[{"topic":{"name":"svg"}},{"topic":{"name":"javascript"}},{"topic":{"name":"svgjs"}},{"topic":{"name":"animation"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkyNDk1Njc3Mg==","databaseId":24956772,"nameWithOwner":"Hammerspoon/hammerspoon","description":"Staggeringly
+      powerful macOS desktop automation with Lua","url":"https://github.com/Hammerspoon/hammerspoon","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10079,"forkCount":527,"repositoryTopics":{"nodes":[{"topic":{"name":"macos"}},{"topic":{"name":"objective-c"}},{"topic":{"name":"lua"}},{"topic":{"name":"hammerspoon"}},{"topic":{"name":"osx"}},{"topic":{"name":"automation"}},{"topic":{"name":"mjolnir"}},{"topic":{"name":"irc"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkxNTQzNQ==","databaseId":15435,"nameWithOwner":"Shopify/liquid","description":"Liquid
+      markup language. Safe, customer facing template language for flexible web apps.
+      ","url":"https://github.com/Shopify/liquid","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10059,"forkCount":1309,"repositoryTopics":{"nodes":[]}},{"id":"MDEwOlJlcG9zaXRvcnk3OTYxOTkx","databaseId":7961991,"nameWithOwner":"square/javapoet","description":"A
+      Java API for generating .java source files.","url":"https://github.com/square/javapoet","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10054,"forkCount":1304,"repositoryTopics":{"nodes":[]}},{"id":"MDEwOlJlcG9zaXRvcnk2NDA1MzQ=","databaseId":640534,"nameWithOwner":"sympy/sympy","description":"A
+      computer algebra system written in pure Python","url":"https://github.com/sympy/sympy","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10052,"forkCount":3848,"repositoryTopics":{"nodes":[{"topic":{"name":"python"}},{"topic":{"name":"math"}},{"topic":{"name":"computer-algebra"}},{"topic":{"name":"science"}},{"topic":{"name":"hacktoberfest"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkyOTA1MDMzOA==","databaseId":29050338,"nameWithOwner":"mementum/backtrader","description":"Python
+      Backtesting library for trading strategies","url":"https://github.com/mementum/backtrader","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10044,"forkCount":3135,"repositoryTopics":{"nodes":[{"topic":{"name":"python"}},{"topic":{"name":"trading"}},{"topic":{"name":"backtesting"}},{"topic":{"name":"metaclass"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkyODM1MTEx","databaseId":2835111,"nameWithOwner":"pyinstaller/pyinstaller","description":"Freeze
+      (package) Python programs into stand-alone executables","url":"https://github.com/pyinstaller/pyinstaller","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10034,"forkCount":1857,"repositoryTopics":{"nodes":[{"topic":{"name":"python"}},{"topic":{"name":"python-3"}},{"topic":{"name":"bundle"}},{"topic":{"name":"package"}},{"topic":{"name":"pyinstaller"}},{"topic":{"name":"python-to-exe"}},{"topic":{"name":"py2exe"}},{"topic":{"name":"py2app"}}]}}]}}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 15 Feb 2023 23:07:37 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - 9180:3F59:1DC5F2D:3D14F0F:63ED65B8
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4970"
+      X-Ratelimit-Reset:
+      - "1676505052"
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "30"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n\trepositoryTopics(first:100)
+      {\n\t\tnodes {\n\t\t\ttopic {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n}\n\t\nquery($query:
+      String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
+      $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
+      { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
+      } }\n\t}\n}","variables":{"after":"Y3Vyc29yOjEw","first":10,"query":"stars:10000..10100
+      created:2007-06-01T00:00:00+00:00..2015-04-09T11:33:48+00:00","type":"REPOSITORY"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"search":{"repositoryCount":16,"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOjE2"},"nodes":[{"id":"MDEwOlJlcG9zaXRvcnkxNzE0MTYw","databaseId":1714160,"nameWithOwner":"NaturalNode/natural","description":"general
+      natural language facilities for node","url":"https://github.com/NaturalNode/natural","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10029,"forkCount":874,"repositoryTopics":{"nodes":[]}},{"id":"MDEwOlJlcG9zaXRvcnk0MDMwNTc0","databaseId":4030574,"nameWithOwner":"ksky521/nodeppt","description":"This
+      is probably the best web presentation tool so far!","url":"https://github.com/ksky521/nodeppt","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10026,"forkCount":2102,"repositoryTopics":{"nodes":[{"topic":{"name":"presentation"}},{"topic":{"name":"ppt"}},{"topic":{"name":"webslide"}},{"topic":{"name":"markdown-it"}},{"topic":{"name":"posthtml"}},{"topic":{"name":"animation"}},{"topic":{"name":"slides"}},{"topic":{"name":"slideshow"}},{"topic":{"name":"keynote"}},{"topic":{"name":"markdown"}},{"topic":{"name":"html5"}},{"topic":{"name":"css3"}},{"topic":{"name":"javascript"}},{"topic":{"name":"javascript-library"}},{"topic":{"name":"webpack"}},{"topic":{"name":"html-presentation"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkxODY5NjI1Nw==","databaseId":18696257,"nameWithOwner":"qrohlf/trianglify","description":"Algorithmically
+      generated triangle art","url":"https://github.com/qrohlf/trianglify","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10021,"forkCount":719,"repositoryTopics":{"nodes":[]}},{"id":"MDEwOlJlcG9zaXRvcnkxMDIzMDM2OQ==","databaseId":10230369,"nameWithOwner":"google/auto","description":"A
+      collection of source code generators for Java.","url":"https://github.com/google/auto","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10017,"forkCount":1180,"repositoryTopics":{"nodes":[]}},{"id":"MDEwOlJlcG9zaXRvcnkyNjk5OTM1","databaseId":2699935,"nameWithOwner":"squizlabs/PHP_CodeSniffer","description":"PHP_CodeSniffer
+      tokenizes PHP files and detects violations of a defined set of coding standards.","url":"https://github.com/squizlabs/PHP_CodeSniffer","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10014,"forkCount":1504,"repositoryTopics":{"nodes":[{"topic":{"name":"php"}},{"topic":{"name":"coding-standards"}},{"topic":{"name":"automation"}},{"topic":{"name":"cli"}},{"topic":{"name":"qa"}},{"topic":{"name":"static-analysis"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkzNTAyMTIw","databaseId":3502120,"nameWithOwner":"scottjehl/picturefill","description":"A
+      responsive image polyfill for <picture>, srcset, sizes, and more","url":"https://github.com/scottjehl/picturefill","isPrivate":false,"isFork":false,"isArchived":true,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10008,"forkCount":1120,"repositoryTopics":{"nodes":[]}}]}}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 15 Feb 2023 23:07:38 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - 9180:3F59:1DC6001:3D150D1:63ED65B9
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4969"
+      X-Ratelimit-Reset:
+      - "1676505052"
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "31"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n\trepositoryTopics(first:100)
+      {\n\t\tnodes {\n\t\t\ttopic {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n}\n\t\nquery($query:
+      String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
+      $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
+      { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
+      } }\n\t}\n}","variables":{"first":10,"query":"stars:10000..10100 created:2015-04-09T11:33:49+00:00..2023-02-15T23:07:36+00:00","type":"REPOSITORY"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: "{\"data\":{\"search\":{\"repositoryCount\":24,\"pageInfo\":{\"hasNextPage\":true,\"endCursor\":\"Y3Vyc29yOjEw\"},\"nodes\":[{\"id\":\"MDEwOlJlcG9zaXRvcnkxNTE5Nzc4MTg=\",\"databaseId\":151977818,\"nameWithOwner\":\"felangel/bloc\",\"description\":\"A
+      predictable state management library that helps implement the BLoC design pattern\",\"url\":\"https://github.com/felangel/bloc\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10097,\"forkCount\":3110,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"flutter\"}},{\"topic\":{\"name\":\"dart\"}},{\"topic\":{\"name\":\"dartlang\"}},{\"topic\":{\"name\":\"flutter-package\"}},{\"topic\":{\"name\":\"bloc\"}},{\"topic\":{\"name\":\"dart-web\"}},{\"topic\":{\"name\":\"dart-library\"}},{\"topic\":{\"name\":\"state-management\"}},{\"topic\":{\"name\":\"library\"}},{\"topic\":{\"name\":\"angulardart\"}},{\"topic\":{\"name\":\"concurrency\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkxOTkzMjg3NTQ=\",\"databaseId\":199328754,\"nameWithOwner\":\"cmiscm/leonsans\",\"description\":\"Leon
+      Sans is a geometric sans-serif typeface made with code in 2019 by Jongmin Kim.\",\"url\":\"https://github.com/cmiscm/leonsans\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10086,\"forkCount\":529,\"repositoryTopics\":{\"nodes\":[]}},{\"id\":\"MDEwOlJlcG9zaXRvcnk3Mzk2NDg5NQ==\",\"databaseId\":73964895,\"nameWithOwner\":\"botpress/botpress\",\"description\":\"\U0001F916
+      Dev tools to reliably understand text and automate conversations. Built-in NLU.
+      \ Connect & deploy on any messaging channel (Slack, MS Teams, website, Telegram,
+      etc).\",\"url\":\"https://github.com/botpress/botpress\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10077,\"forkCount\":1365,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"chatbot\"}},{\"topic\":{\"name\":\"bot\"}},{\"topic\":{\"name\":\"botpress\"}},{\"topic\":{\"name\":\"bot-framework\"}},{\"topic\":{\"name\":\"sdk\"}},{\"topic\":{\"name\":\"bot-builder\"}},{\"topic\":{\"name\":\"microsoft-bot-framework\"}},{\"topic\":{\"name\":\"botkit\"}},{\"topic\":{\"name\":\"botkit-bots\"}},{\"topic\":{\"name\":\"bots\"}},{\"topic\":{\"name\":\"conversation\"}},{\"topic\":{\"name\":\"conversational-ui\"}},{\"topic\":{\"name\":\"nlu\"}},{\"topic\":{\"name\":\"nlp\"}},{\"topic\":{\"name\":\"machine-learning-algorithms\"}},{\"topic\":{\"name\":\"chatbot-framework\"}},{\"topic\":{\"name\":\"chatbots\"}},{\"topic\":{\"name\":\"conversational-ai\"}},{\"topic\":{\"name\":\"rasa\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkxNzUzOTg1OTQ=\",\"databaseId\":175398594,\"nameWithOwner\":\"sindresorhus/type-fest\",\"description\":\"A
+      collection of essential TypeScript types\",\"url\":\"https://github.com/sindresorhus/type-fest\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10061,\"forkCount\":374,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"typescript-definitions\"}},{\"topic\":{\"name\":\"typescript\"}},{\"topic\":{\"name\":\"types\"}},{\"topic\":{\"name\":\"utilities\"}},{\"topic\":{\"name\":\"npm-package\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkxODIwMzQ3NDg=\",\"databaseId\":182034748,\"nameWithOwner\":\"MSWorkers/support.996.ICU\",\"description\":\"Microsoft
+      and GitHub Workers Support 996.ICU\",\"url\":\"https://github.com/MSWorkers/support.996.ICU\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10057,\"forkCount\":661,\"repositoryTopics\":{\"nodes\":[]}},{\"id\":\"MDEwOlJlcG9zaXRvcnk4NjEzMjgzMg==\",\"databaseId\":86132832,\"nameWithOwner\":\"learnbyexample/Command-line-text-processing\",\"description\":\":zap:
+      From finding text to search and replace, from sorting to beautifying text and
+      more :art:\",\"url\":\"https://github.com/learnbyexample/Command-line-text-processing\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":true,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10055,\"forkCount\":722,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"command-line\"}},{\"topic\":{\"name\":\"linux\"}},{\"topic\":{\"name\":\"text-processing\"}},{\"topic\":{\"name\":\"ebook\"}},{\"topic\":{\"name\":\"sed\"}},{\"topic\":{\"name\":\"grep\"}},{\"topic\":{\"name\":\"perl\"}},{\"topic\":{\"name\":\"awk\"}},{\"topic\":{\"name\":\"ruby\"}},{\"topic\":{\"name\":\"regex\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkzNTE0MzIzOTc=\",\"databaseId\":351432397,\"nameWithOwner\":\"microsoft/Swin-Transformer\",\"description\":\"This
+      is an official implementation for \\\"Swin Transformer: Hierarchical Vision
+      Transformer using Shifted Windows\\\".\",\"url\":\"https://github.com/microsoft/Swin-Transformer\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10054,\"forkCount\":1671,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"swin-transformer\"}},{\"topic\":{\"name\":\"image-classification\"}},{\"topic\":{\"name\":\"object-detection\"}},{\"topic\":{\"name\":\"semantic-segmentation\"}},{\"topic\":{\"name\":\"imagenet\"}},{\"topic\":{\"name\":\"mscoco\"}},{\"topic\":{\"name\":\"ade20k\"}},{\"topic\":{\"name\":\"mask-rcnn\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkxNzk0OTI4NjE=\",\"databaseId\":179492861,\"nameWithOwner\":\"encode/httpx\",\"description\":\"A
+      next generation HTTP client for Python. \U0001F98B\",\"url\":\"https://github.com/encode/httpx\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10044,\"forkCount\":663,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"python\"}},{\"topic\":{\"name\":\"http\"}},{\"topic\":{\"name\":\"trio\"}},{\"topic\":{\"name\":\"asyncio\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkyNTA3NjEyNDY=\",\"databaseId\":250761246,\"nameWithOwner\":\"aristocratos/bashtop\",\"description\":\"Linux/OSX/FreeBSD
+      resource monitor\",\"url\":\"https://github.com/aristocratos/bashtop\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10036,\"forkCount\":531,\"repositoryTopics\":{\"nodes\":[]}},{\"id\":\"MDEwOlJlcG9zaXRvcnk3MDAzODQzNw==\",\"databaseId\":70038437,\"nameWithOwner\":\"vnotex/vnote\",\"description\":\"A
+      pleasant note-taking platform.\",\"url\":\"https://github.com/vnotex/vnote\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10032,\"forkCount\":1055,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"vnote\"}},{\"topic\":{\"name\":\"vim\"}},{\"topic\":{\"name\":\"markdown\"}},{\"topic\":{\"name\":\"note-taking\"}},{\"topic\":{\"name\":\"note\"}},{\"topic\":{\"name\":\"editor\"}},{\"topic\":{\"name\":\"uml\"}},{\"topic\":{\"name\":\"mathjax\"}}]}}]}}}"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 15 Feb 2023 23:07:38 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - 9180:3F59:1DC609A:3D1520A:63ED65B9
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4968"
+      X-Ratelimit-Reset:
+      - "1676505052"
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "32"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n\trepositoryTopics(first:100)
+      {\n\t\tnodes {\n\t\t\ttopic {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n}\n\t\nquery($query:
+      String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
+      $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
+      { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
+      } }\n\t}\n}","variables":{"first":10,"query":"stars:10000..10100 created:2015-04-09T11:33:49+00:00..2019-03-14T05:20:43+00:00","type":"REPOSITORY"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"search":{"repositoryCount":15,"pageInfo":{"hasNextPage":true,"endCursor":"Y3Vyc29yOjI="},"nodes":[{"id":"MDEwOlJlcG9zaXRvcnkxNTE5Nzc4MTg=","databaseId":151977818,"nameWithOwner":"felangel/bloc","description":"A
+      predictable state management library that helps implement the BLoC design pattern","url":"https://github.com/felangel/bloc","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10097,"forkCount":3110,"repositoryTopics":{"nodes":[{"topic":{"name":"flutter"}},{"topic":{"name":"dart"}},{"topic":{"name":"dartlang"}},{"topic":{"name":"flutter-package"}},{"topic":{"name":"bloc"}},{"topic":{"name":"dart-web"}},{"topic":{"name":"dart-library"}},{"topic":{"name":"state-management"}},{"topic":{"name":"library"}},{"topic":{"name":"angulardart"}},{"topic":{"name":"concurrency"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkxNTk1NDA0NDA=","databaseId":159540440,"nameWithOwner":"google/wire","description":"Compile-time
+      Dependency Injection for Go","url":"https://github.com/google/wire","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10008,"forkCount":550,"repositoryTopics":{"nodes":[{"topic":{"name":"go"}},{"topic":{"name":"golang"}},{"topic":{"name":"dependency-injection"}},{"topic":{"name":"codegen"}},{"topic":{"name":"initialization"}}]}}]}}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 15 Feb 2023 23:07:39 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - 9180:3F59:1DC61C7:3D15483:63ED65BA
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4967"
+      X-Ratelimit-Reset:
+      - "1676505052"
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "33"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n\trepositoryTopics(first:100)
+      {\n\t\tnodes {\n\t\t\ttopic {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n}\n\t\nquery($query:
+      String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
+      $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
+      { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
+      } }\n\t}\n}","variables":{"after":"Y3Vyc29yOjI=","first":10,"query":"stars:10000..10100
+      created:2015-04-09T11:33:49+00:00..2019-03-14T05:20:43+00:00","type":"REPOSITORY"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"search":{"repositoryCount":15,"pageInfo":{"hasNextPage":true,"endCursor":"Y3Vyc29yOjEy"},"nodes":[{"id":"MDEwOlJlcG9zaXRvcnkxNzUzOTg1OTQ=","databaseId":175398594,"nameWithOwner":"sindresorhus/type-fest","description":"A
+      collection of essential TypeScript types","url":"https://github.com/sindresorhus/type-fest","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10061,"forkCount":374,"repositoryTopics":{"nodes":[{"topic":{"name":"typescript-definitions"}},{"topic":{"name":"typescript"}},{"topic":{"name":"types"}},{"topic":{"name":"utilities"}},{"topic":{"name":"npm-package"}}]}},{"id":"MDEwOlJlcG9zaXRvcnk4NjEzMjgzMg==","databaseId":86132832,"nameWithOwner":"learnbyexample/Command-line-text-processing","description":":zap:
+      From finding text to search and replace, from sorting to beautifying text and
+      more :art:","url":"https://github.com/learnbyexample/Command-line-text-processing","isPrivate":false,"isFork":false,"isArchived":true,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10055,"forkCount":722,"repositoryTopics":{"nodes":[{"topic":{"name":"command-line"}},{"topic":{"name":"linux"}},{"topic":{"name":"text-processing"}},{"topic":{"name":"ebook"}},{"topic":{"name":"sed"}},{"topic":{"name":"grep"}},{"topic":{"name":"perl"}},{"topic":{"name":"awk"}},{"topic":{"name":"ruby"}},{"topic":{"name":"regex"}}]}},{"id":"MDEwOlJlcG9zaXRvcnk3MDAzODQzNw==","databaseId":70038437,"nameWithOwner":"vnotex/vnote","description":"A
+      pleasant note-taking platform.","url":"https://github.com/vnotex/vnote","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10032,"forkCount":1055,"repositoryTopics":{"nodes":[{"topic":{"name":"vnote"}},{"topic":{"name":"vim"}},{"topic":{"name":"markdown"}},{"topic":{"name":"note-taking"}},{"topic":{"name":"note"}},{"topic":{"name":"editor"}},{"topic":{"name":"uml"}},{"topic":{"name":"mathjax"}}]}},{"id":"MDEwOlJlcG9zaXRvcnk3NTg5MDk2Mg==","databaseId":75890962,"nameWithOwner":"bailicangdu/vue2-happyfri","description":"vue2
+      + vue-router + vuex  入门项目","url":"https://github.com/bailicangdu/vue2-happyfri","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10026,"forkCount":2878,"repositoryTopics":{"nodes":[{"topic":{"name":"vue"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkxMDIyMjI5Mjc=","databaseId":102222927,"nameWithOwner":"hmemcpy/milewski-ctfp-pdf","description":"Bartosz
+      Milewski''s ''Category Theory for Programmers'' unofficial PDF and LaTeX source","url":"https://github.com/hmemcpy/milewski-ctfp-pdf","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10026,"forkCount":527,"repositoryTopics":{"nodes":[{"topic":{"name":"haskell"}},{"topic":{"name":"category-theory"}},{"topic":{"name":"functional-programming"}},{"topic":{"name":"pdf"}},{"topic":{"name":"latex"}},{"topic":{"name":"cpp"}},{"topic":{"name":"scala"}},{"topic":{"name":"ocaml"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkxMjY0ODY3MDE=","databaseId":126486701,"nameWithOwner":"Unity-Technologies/UnityCsReference","description":"Unity
+      C# reference source code.","url":"https://github.com/Unity-Technologies/UnityCsReference","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10019,"forkCount":2243,"repositoryTopics":{"nodes":[]}},{"id":"MDEwOlJlcG9zaXRvcnkxMjE0NzAzODM=","databaseId":121470383,"nameWithOwner":"solana-labs/solana","description":"Web-Scale
+      Blockchain for fast, secure, scalable, decentralized apps and marketplaces.","url":"https://github.com/solana-labs/solana","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10016,"forkCount":2763,"repositoryTopics":{"nodes":[{"topic":{"name":"ledger"}},{"topic":{"name":"blockchain"}},{"topic":{"name":"solana"}},{"topic":{"name":"performance-blockchain"}},{"topic":{"name":"rustc"}},{"topic":{"name":"bitcoin"}},{"topic":{"name":"rust"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkxMjM4MDc3Mjk=","databaseId":123807729,"nameWithOwner":"jaakkopasanen/AutoEq","description":"Automatic
+      headphone equalization from frequency responses","url":"https://github.com/jaakkopasanen/AutoEq","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10013,"forkCount":2331,"repositoryTopics":{"nodes":[]}},{"id":"MDEwOlJlcG9zaXRvcnkxNDI0MjI3Mzk=","databaseId":142422739,"nameWithOwner":"google/dopamine","description":"Dopamine
+      is a research framework for fast prototyping of reinforcement learning algorithms.
+      ","url":"https://github.com/google/dopamine","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10012,"forkCount":1340,"repositoryTopics":{"nodes":[{"topic":{"name":"rl"}},{"topic":{"name":"ml"}},{"topic":{"name":"ai"}},{"topic":{"name":"google"}},{"topic":{"name":"tensorflow"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkxNTk1NDA0NDA=","databaseId":159540440,"nameWithOwner":"google/wire","description":"Compile-time
+      Dependency Injection for Go","url":"https://github.com/google/wire","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10008,"forkCount":550,"repositoryTopics":{"nodes":[{"topic":{"name":"go"}},{"topic":{"name":"golang"}},{"topic":{"name":"dependency-injection"}},{"topic":{"name":"codegen"}},{"topic":{"name":"initialization"}}]}}]}}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 15 Feb 2023 23:07:40 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - 9180:3F59:1DC62E4:3D156BB:63ED65BB
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4966"
+      X-Ratelimit-Reset:
+      - "1676505052"
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "34"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n\trepositoryTopics(first:100)
+      {\n\t\tnodes {\n\t\t\ttopic {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n}\n\t\nquery($query:
+      String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
+      $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
+      { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
+      } }\n\t}\n}","variables":{"after":"Y3Vyc29yOjEy","first":10,"query":"stars:10000..10100
+      created:2015-04-09T11:33:49+00:00..2019-03-14T05:20:43+00:00","type":"REPOSITORY"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: "{\"data\":{\"search\":{\"repositoryCount\":15,\"pageInfo\":{\"hasNextPage\":false,\"endCursor\":\"Y3Vyc29yOjE1\"},\"nodes\":[{\"id\":\"MDEwOlJlcG9zaXRvcnkzNjk2MDMyMQ==\",\"databaseId\":36960321,\"nameWithOwner\":\"opencontainers/runc\",\"description\":\"CLI
+      tool for spawning and running containers according to the OCI specification\",\"url\":\"https://github.com/opencontainers/runc\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10007,\"forkCount\":1898,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"containers\"}},{\"topic\":{\"name\":\"docker\"}},{\"topic\":{\"name\":\"oci\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkxNDg4OTI4ODQ=\",\"databaseId\":148892884,\"nameWithOwner\":\"vueComponent/ant-design-vue-pro\",\"description\":\"\U0001F468\U0001F3FB‍\U0001F4BB\U0001F469\U0001F3FB‍\U0001F4BB
+      Use Ant Design Vue like a Pro!   (vue2)\",\"url\":\"https://github.com/vueComponent/ant-design-vue-pro\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10006,\"forkCount\":2995,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"antd\"}},{\"topic\":{\"name\":\"vue\"}},{\"topic\":{\"name\":\"vuex\"}},{\"topic\":{\"name\":\"admin\"}},{\"topic\":{\"name\":\"dashboard\"}},{\"topic\":{\"name\":\"css\"}},{\"topic\":{\"name\":\"antd-pro\"}},{\"topic\":{\"name\":\"ant-design\"}},{\"topic\":{\"name\":\"vue-admin\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnk0NjYxMTg4OQ==\",\"databaseId\":46611889,\"nameWithOwner\":\"ttroy50/cmake-examples\",\"description\":\"Useful
+      CMake Examples\",\"url\":\"https://github.com/ttroy50/cmake-examples\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10000,\"forkCount\":2235,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"cmake\"}},{\"topic\":{\"name\":\"cpp\"}},{\"topic\":{\"name\":\"tutorial\"}},{\"topic\":{\"name\":\"clang\"}},{\"topic\":{\"name\":\"cppcheck\"}},{\"topic\":{\"name\":\"static-analysis\"}},{\"topic\":{\"name\":\"clang-format\"}},{\"topic\":{\"name\":\"unit-testing\"}},{\"topic\":{\"name\":\"google-test\"}},{\"topic\":{\"name\":\"catch\"}},{\"topic\":{\"name\":\"boost\"}},{\"topic\":{\"name\":\"cpack\"}},{\"topic\":{\"name\":\"ctest\"}}]}}]}}}"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 15 Feb 2023 23:07:41 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - 9180:3F59:1DC63B5:3D1586F:63ED65BC
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4965"
+      X-Ratelimit-Reset:
+      - "1676505052"
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "35"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n\trepositoryTopics(first:100)
+      {\n\t\tnodes {\n\t\t\ttopic {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n}\n\t\nquery($query:
+      String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
+      $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
+      { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
+      } }\n\t}\n}","variables":{"first":10,"query":"stars:10000..10100 created:2019-03-14T05:20:44+00:00..2023-02-15T23:07:36+00:00","type":"REPOSITORY"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: "{\"data\":{\"search\":{\"repositoryCount\":9,\"pageInfo\":{\"hasNextPage\":false,\"endCursor\":\"Y3Vyc29yOjk=\"},\"nodes\":[{\"id\":\"MDEwOlJlcG9zaXRvcnkxOTkzMjg3NTQ=\",\"databaseId\":199328754,\"nameWithOwner\":\"cmiscm/leonsans\",\"description\":\"Leon
+      Sans is a geometric sans-serif typeface made with code in 2019 by Jongmin Kim.\",\"url\":\"https://github.com/cmiscm/leonsans\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10086,\"forkCount\":529,\"repositoryTopics\":{\"nodes\":[]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkxODIwMzQ3NDg=\",\"databaseId\":182034748,\"nameWithOwner\":\"MSWorkers/support.996.ICU\",\"description\":\"Microsoft
+      and GitHub Workers Support 996.ICU\",\"url\":\"https://github.com/MSWorkers/support.996.ICU\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10057,\"forkCount\":661,\"repositoryTopics\":{\"nodes\":[]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkzNTE0MzIzOTc=\",\"databaseId\":351432397,\"nameWithOwner\":\"microsoft/Swin-Transformer\",\"description\":\"This
+      is an official implementation for \\\"Swin Transformer: Hierarchical Vision
+      Transformer using Shifted Windows\\\".\",\"url\":\"https://github.com/microsoft/Swin-Transformer\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10054,\"forkCount\":1671,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"swin-transformer\"}},{\"topic\":{\"name\":\"image-classification\"}},{\"topic\":{\"name\":\"object-detection\"}},{\"topic\":{\"name\":\"semantic-segmentation\"}},{\"topic\":{\"name\":\"imagenet\"}},{\"topic\":{\"name\":\"mscoco\"}},{\"topic\":{\"name\":\"ade20k\"}},{\"topic\":{\"name\":\"mask-rcnn\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkxNzk0OTI4NjE=\",\"databaseId\":179492861,\"nameWithOwner\":\"encode/httpx\",\"description\":\"A
+      next generation HTTP client for Python. \U0001F98B\",\"url\":\"https://github.com/encode/httpx\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10044,\"forkCount\":663,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"python\"}},{\"topic\":{\"name\":\"http\"}},{\"topic\":{\"name\":\"trio\"}},{\"topic\":{\"name\":\"asyncio\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkyNTA3NjEyNDY=\",\"databaseId\":250761246,\"nameWithOwner\":\"aristocratos/bashtop\",\"description\":\"Linux/OSX/FreeBSD
+      resource monitor\",\"url\":\"https://github.com/aristocratos/bashtop\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10036,\"forkCount\":531,\"repositoryTopics\":{\"nodes\":[]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkyODM0MTAxMDI=\",\"databaseId\":283410102,\"nameWithOwner\":\"sogou/workflow\",\"description\":\"C++
+      Parallel Computing and Asynchronous Networking Engine\",\"url\":\"https://github.com/sogou/workflow\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10026,\"forkCount\":1967,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"tasking\"}},{\"topic\":{\"name\":\"http\"}},{\"topic\":{\"name\":\"redis\"}},{\"topic\":{\"name\":\"mysql\"}},{\"topic\":{\"name\":\"kafka\"}},{\"topic\":{\"name\":\"asychronous\"}},{\"topic\":{\"name\":\"embedded\"}},{\"topic\":{\"name\":\"parallel\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkyNDMxODE3MzU=\",\"databaseId\":243181735,\"nameWithOwner\":\"amusi/CVPR2022-Papers-with-Code\",\"description\":\"CVPR
+      2022 论文和开源项目合集\",\"url\":\"https://github.com/amusi/CVPR2022-Papers-with-Code\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10021,\"forkCount\":1968,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"cvpr\"}},{\"topic\":{\"name\":\"cvpr2020\"}},{\"topic\":{\"name\":\"computer-vision\"}},{\"topic\":{\"name\":\"deep-learning\"}},{\"topic\":{\"name\":\"machine-learning\"}},{\"topic\":{\"name\":\"object-detection\"}},{\"topic\":{\"name\":\"image-segmentation\"}},{\"topic\":{\"name\":\"paper\"}},{\"topic\":{\"name\":\"image-processing\"}},{\"topic\":{\"name\":\"visual-tracking\"}},{\"topic\":{\"name\":\"python\"}},{\"topic\":{\"name\":\"cvpr2021\"}},{\"topic\":{\"name\":\"semantic-segmentation\"}},{\"topic\":{\"name\":\"cvpr2022\"}},{\"topic\":{\"name\":\"transformer\"}},{\"topic\":{\"name\":\"transformers\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkyMjcwMTk3MTU=\",\"databaseId\":227019715,\"nameWithOwner\":\"Loyalsoldier/v2ray-rules-dat\",\"description\":\"\U0001F984
+      \U0001F383 \U0001F47B V2Ray 路由规则文件加强版，可代替 V2Ray 官方 geoip.dat 和 geosite.dat，兼容
+      Shadowsocks-windows、Xray-core、Trojan-Go 和 leaf。Enhanced edition of V2Ray rules
+      dat files, compatible with Xray-core, Shadowsocks-windows, Trojan-Go and leaf.\",\"url\":\"https://github.com/Loyalsoldier/v2ray-rules-dat\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10013,\"forkCount\":1069,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"v2ray\"}},{\"topic\":{\"name\":\"geoip\"}},{\"topic\":{\"name\":\"geosite\"}},{\"topic\":{\"name\":\"routing\"}},{\"topic\":{\"name\":\"gfw\"}},{\"topic\":{\"name\":\"gfwlist\"}},{\"topic\":{\"name\":\"chinalist\"}},{\"topic\":{\"name\":\"adblock\"}},{\"topic\":{\"name\":\"greatfire-analyzer\"}},{\"topic\":{\"name\":\"dnsmasq\"}},{\"topic\":{\"name\":\"adguard\"}},{\"topic\":{\"name\":\"trojan-go\"}},{\"topic\":{\"name\":\"shadowsocks\"}},{\"topic\":{\"name\":\"xray\"}},{\"topic\":{\"name\":\"anticensorship\"}},{\"topic\":{\"name\":\"trojan\"}},{\"topic\":{\"name\":\"proxy\"}},{\"topic\":{\"name\":\"easylist\"}},{\"topic\":{\"name\":\"ssr\"}},{\"topic\":{\"name\":\"ss\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkyOTIwMTQyMjk=\",\"databaseId\":292014229,\"nameWithOwner\":\"zellij-org/zellij\",\"description\":\"A
+      terminal workspace with batteries included\",\"url\":\"https://github.com/zellij-org/zellij\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":10010,\"forkCount\":307,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"workspace\"}},{\"topic\":{\"name\":\"terminal\"}},{\"topic\":{\"name\":\"multiplexer\"}},{\"topic\":{\"name\":\"hacktoberfest\"}}]}}]}}}"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 15 Feb 2023 23:07:41 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - 9180:3F59:1DC643D:3D15984:63ED65BC
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4964"
+      X-Ratelimit-Reset:
+      - "1676505052"
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "36"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""

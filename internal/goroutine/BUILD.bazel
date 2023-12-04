@@ -1,0 +1,40 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "goroutine",
+    srcs = [
+        "background.go",
+        "goroutine.go",
+        "periodic.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/goroutine",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/env",
+        "//internal/goroutine/recorder",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/background",
+        "//lib/errors",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_sourcegraph_conc//:conc",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel_trace//:trace",
+    ],
+)
+
+go_test(
+    name = "goroutine_test",
+    timeout = "short",
+    srcs = [
+        "example_test.go",
+        "mocks_test.go",
+        "periodic_test.go",
+    ],
+    embed = [":goroutine"],
+    deps = [
+        "//lib/errors",
+        "@com_github_derision_test_glock//:glock",
+    ],
+)

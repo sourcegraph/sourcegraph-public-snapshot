@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "svcmain",
+    srcs = ["svcmain.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/service/svcmain",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//internal/conf/deploy",
+        "//internal/debugserver",
+        "//internal/env",
+        "//internal/hostname",
+        "//internal/logging",
+        "//internal/observation",
+        "//internal/profiler",
+        "//internal/service",
+        "//internal/singleprogram",
+        "//internal/tracer",
+        "//internal/version",
+        "@com_github_getsentry_sentry_go//:sentry-go",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//output",
+        "@com_github_urfave_cli_v2//:cli",
+    ],
+)

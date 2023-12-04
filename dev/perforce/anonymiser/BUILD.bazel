@@ -1,0 +1,25 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "anonymiser_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/perforce/anonymiser",
+    visibility = ["//visibility:private"],
+    deps = ["//lib/errors"],
+)
+
+go_binary(
+    name = "anonymiser",
+    embed = [":anonymiser_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "anonymiser_test",
+    timeout = "short",
+    srcs = ["main_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":anonymiser_lib"],
+    deps = ["@com_github_hexops_autogold_v2//:autogold"],
+)

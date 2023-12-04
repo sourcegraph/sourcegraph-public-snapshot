@@ -7,8 +7,6 @@ import (
 	"net/http"
 
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -24,11 +22,10 @@ func Handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 		Error: func(w http.ResponseWriter, req *http.Request, status int, err error) {
 			if status < 200 || status >= 400 {
 				var traceURL, traceID string
-				if span := opentracing.SpanFromContext(req.Context()); span != nil {
-					ext.Error.Set(span, true)
-					span.SetTag("err", err)
-					traceID = trace.IDFromSpan(span)
-					traceURL = trace.URL(traceID, conf.ExternalURL())
+				if tr := trace.FromContext(req.Context()); tr.IsRecording() {
+					tr.SetError(err)
+					traceID = trace.ID(req.Context())
+					traceURL = trace.URL(traceID, conf.DefaultClient())
 				}
 				log15.Error(
 					"App HTTP handler error response",

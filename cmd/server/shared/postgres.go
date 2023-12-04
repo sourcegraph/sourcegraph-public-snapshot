@@ -14,6 +14,10 @@ var databases = map[string]string{
 }
 
 func maybePostgresProcFile() (string, error) {
+	if AllowSingleDockerCodeInsights {
+		databases["CODEINSIGHTS_"] = "sourcegraph-codeinsights"
+	}
+
 	missingExternalConfig := false
 	for prefix := range databases {
 		if !isPostgresConfigured(prefix) {
@@ -51,6 +55,15 @@ func maybePostgresProcFile() (string, error) {
 	return procfile, nil
 }
 
+func postgresDataPath() string {
+	dataDir := os.Getenv("DATA_DIR")
+	return filepath.Join(dataDir, "postgresql")
+}
+
+func postgresReindexMarkerFile() string {
+	return filepath.Join(postgresDataPath(), "5.1-reindex.completed")
+}
+
 func postgresProcfile() (string, error) {
 	// Postgres needs to be able to write to run
 	var output bytes.Buffer
@@ -63,7 +76,7 @@ func postgresProcfile() (string, error) {
 	}
 
 	dataDir := os.Getenv("DATA_DIR")
-	path := filepath.Join(dataDir, "postgresql")
+	path := postgresDataPath()
 	markersPath := filepath.Join(dataDir, "postgresql-markers")
 
 	if ok, err := fileExists(markersPath); err != nil {
@@ -107,6 +120,19 @@ func postgresProcfile() (string, error) {
 			os.RemoveAll(path)
 			return "", err
 		}
+
+		// Create the 5.1-reindex file; DB was initialized by Sourcegraph >=5.1 so reindexing is not required
+		f, err := os.Create(postgresReindexMarkerFile())
+		if err != nil {
+			return "", err
+		}
+		defer f.Close()
+
+		_, err = f.WriteString("Database initialised by Sourcegraph 5.1 or later\n")
+		if err != nil {
+			return "", err
+		}
+
 	} else {
 		// Between restarts the owner of the volume may have changed. Ensure
 		// postgres can still read it.
@@ -188,7 +214,7 @@ func isPostgresConfigured(prefix string) bool {
 	return os.Getenv(prefix+"PGHOST") != "" || os.Getenv(prefix+"PGDATASOURCE") != ""
 }
 
-func pgPrintf(format string, args ...interface{}) {
+func pgPrintf(format string, args ...any) {
 	_, _ = fmt.Fprintf(os.Stderr, "✱ "+format+"\n", args...)
 }
 

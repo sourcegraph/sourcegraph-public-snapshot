@@ -1,0 +1,82 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
+
+filegroup(
+    name = "config",
+    srcs = ["//docker-images/postgres-12-alpine/rootfs:files"] + glob(["config/postgresql.conf.sample"]),
+)
+
+pkg_tar(
+    name = "config_tar",
+    srcs = [
+        ":config",
+    ],
+    remap_paths = {
+        "/rootfs": "/",
+        "/postgresql.conf.sample": "/usr/share/postgresql/postgresql.conf.sample",
+    },
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_postgresql-12_base",
+    entrypoint = ["/postgres-wolfi.sh"],
+    env = {
+        "POSTGRES_PASSWORD": "",
+        "POSTGRES_USER": "sg",
+        "POSTGRES_DB": "sg",
+        "PGDATA": "/data/pgdata-12",
+        "LANG": "en_US.utf8",
+        "PGHOST": "/var/run/postgresql",
+    },
+    tars = [":config_tar"],
+    user = "postgres",
+    visibility = ["//visibility:public"],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["postgres-12:candidate"],
+    visibility = ["//visibility:public"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+# RFC 793: We are not publishing those images for the 5.1 release, but will the next minor version.
+# oci_push(
+#     name = "candidate_push",
+#     image = ":image",
+#     repository = image_repository("postgres-12-alpine"),  # TODO careful, this is not an alpine
+# )
+
+# The above postgres-12-alpine image is built from the wolfi base image. Where as we're still shipping the legacy
+# image built, postgres-12-alpine, for backwards compatibility.
+oci_image(
+    name = "legacy_image",
+    base = "@legacy_postgres-12-alpine_base",
+)
+
+oci_tarball(
+    name = "legacy_tarball",
+    image = ":legacy_image",
+    repo_tags = ["postgres-12-alpine:candidate"],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":legacy_image",
+    repository = image_repository("postgres-12-alpine"),
+)

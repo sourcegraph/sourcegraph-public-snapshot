@@ -2,14 +2,13 @@
 <html lang="en" class="base">
 
 <head>
-
 	{{.Injected.HeadTop}}
 	<meta charset="utf-8">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
 	<meta name="google" content="notranslate">
 	<meta http-equiv="Content-Language" content="en">
 	<meta name="viewport" content="width=device-width, viewport-fit=cover" />
-	<meta name="referrer" content="origin-when-cross-origin"/>
+	<meta name="referrer" content="strict-origin-when-cross-origin"/>
 	<meta name="color-scheme" content="light dark"/>
 	{{with .Metadata}}
 	<meta name='description' content="{{.Description}}" />
@@ -29,9 +28,14 @@
 		{{end}}
 	{{end}}
 	<title>{{.Title}}</title>
-	{{if .Manifest.AppCSSBundlePath}}<link rel="stylesheet" href="{{.Manifest.AppCSSBundlePath}}">{{end}}
+	{{if .Manifest.MainCSSBundlePath}}<link rel="stylesheet" href="{{assetURL .Manifest.MainCSSBundlePath}}">{{end}}
 	<link id='sourcegraph-chrome-webstore-item' rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
 	<link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Sourcegraph Search">
+	{{if .PreloadedAssets}}
+	{{range .PreloadedAssets}}
+	<link rel="preload" href="{{.Href}}" as="{{.As}}" />
+	{{end}}
+	{{end}}
 	{{ if .Context.SourcegraphDotComMode }}
 	<!-- Google Tag Manager -->
 	<script ignore-csp>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -40,20 +44,18 @@
 	'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 	})(window,document,'script','dataLayer','GTM-TB4NLS7');</script>
 	<!-- End Google Tag Manager -->
+	<!-- Sentry -->
 	<script src='https://js.sentry-cdn.com/ae2f74442b154faf90b5ff0f7cd1c618.min.js' crossorigin="anonymous"></script>
+	<!-- End Sentry -->
+	<!-- Plausible -->
+	<script src="https://plausible.io/js/plausible.js" defer data-domain="sourcegraph.com"></script>
+	<!-- End Plausible -->
 	{{ end }}
 	<script ignore-csp>
 		window.context = {{.Context }}
 		window.pageError = {{.Error }}
 	</script>
 	{{.Injected.HeadBottom}}
-</head>
-
-<body>
-	{{ if .Context.SourcegraphDotComMode }}
-	<!-- Google Tag Manager (noscript) -->
-	<noscript><iframe ignore-csp src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-	<!-- End Google Tag Manager (noscript) -->
 
 	<!-- Google Search Result SearchBox -->
 	<!-- See https://developers.google.com/search/docs/advanced/structured-data/sitelinks-searchbox -->
@@ -61,6 +63,7 @@
 		{
 			"@context": "https://schema.org",
 			"@type": "WebSite",
+			"name": "Sourcegraph",
 			"url": "https://sourcegraph.com",
 			"potentialAction": {
 				"@type": "SearchAction",
@@ -73,10 +76,29 @@
 		}
 	</script>
 	<!-- End Google Search Result SearchBox -->
+</head>
+
+<body>
+	{{ if .Context.SourcegraphDotComMode }}
+	<!-- Google Tag Manager (noscript) -->
+	<noscript><iframe ignore-csp src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+	<!-- End Google Tag Manager (noscript) -->
 
 	{{ end }}
 	{{.Injected.BodyTop}}
-	<div id="root"></div>
+	<div id="root">
+		{{ if .Context.RedirectUnsupportedBrowser }}
+			 <script ignore-csp>
+				function canRunSourceGraph(){"use strict";if("undefined"==typeof Symbol)return!1;try{eval("class Foo {}"),eval("var bar = (x) => x+1")}catch(r){return!1}return!0}
+				if (!canRunSourceGraph()) {
+					document.write("<h1 ignore-csp style=\"padding: 10px;\">It looks like Sourcegraph does not support your browser. Upgrade or install a JavaScript ES6 supported browser (<a href=\"https://www.microsoft.com/en-us/edge\">Edge</a>, <a href=\"https://www.apple.com/safari/\">Safari</a>, <a href=\"https://www.google.com/chrome/downloads\">Chrome</a>, <a href=\"https://www.mozilla.org/en-US/firefox/new/\">Firefox</a>)</h1>")
+
+					// makes everything below disabled so no crashes
+					document.write('<!--');
+				}
+			</script>
+		{{ end }}
+	</div>
 	<noscript>
 		<p>Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.</p>
 
@@ -85,9 +107,7 @@
 		<br>
 		You need to enable JavaScript to run this app.
 	</noscript>
-	{{if .Manifest.AppJSRuntimeBundlePath}}<script src="{{.Manifest.AppJSRuntimeBundlePath}}"></script>{{end}}
-	<script src="{{.Manifest.ReactJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
-	<script src="{{.Manifest.AppJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
+	<script src="{{assetURL .Manifest.MainJSBundlePath}}" type="module"></script>
 	{{.Injected.BodyBottom}}
 </body>
 

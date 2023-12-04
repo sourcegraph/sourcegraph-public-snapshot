@@ -1,16 +1,76 @@
 [package]
 name = "syntect_server"
-version = "1.0.0"
-authors = ["Stephen Gutekanst <stephen.gutekanst@gmail.com>"]
-edition = "2018"
+version = "1.0.1"
+authors = [
+    "TJ DeVries <devries.timothyj@gmail.com>",
+    "Stephen Gutekanst <stephen.gutekanst@gmail.com>"
+]
+edition = "2021"
 license = "MIT"
 
 [dependencies]
-syntect = { git = "https://github.com/slimsag/syntect" }
-rocket = { git = "https://github.com/SergioBenitez/Rocket" } # Rocket 0.5 is not released yet: https://github.com/SergioBenitez/Rocket/issues/19#issuecomment-684122645
-rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket" } # Rocket 0.5 is not released yet: https://github.com/SergioBenitez/Rocket/issues/19#issuecomment-684122645
-serde = "1.0"
+clap.workspace = true
+rocket.workspace = true
+scip.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+syntect.workspace = true
+protobuf.workspace = true
+
+rustyline = "9.1.2"
+base64 = "0.13.0"
+
+sg-syntax = { path = "./crates/sg-syntax" }
+scip-treesitter = { path = "./crates/scip-treesitter" }
+scip-treesitter-languages = { path = "./crates/scip-treesitter-languages" }
+scip-syntax = { path = "./crates/scip-syntax" }
+# March 20, 2023 - Pinned explicitly with features that match the features
+# required by rocket. Once bazel rules correctly roll up all the features,
+# we can remove this, but until then, this works just fine for building
+# with bazel (and we rarely update rocket, so this is fine).
+futures = { version = "^0.3.27", features = ["std"], default-features = false }
+futures-util = { version = "^0.3.27", features = ["std"], default-features = false }
+futures-task = { version = "^0.3.27", features = ["std"], default-features = false }
+
+# Prior version do not build when cross-compiling. It's needed by transitive deps
+# and this forces to bump it.
+rustix = { version = "0.38.8", features = ["std", "use-libc"] }
+
+[workspace]
+members = [
+    "crates/sg-syntax",
+
+    # later, these will be pulled out to a separate repo
+    "crates/scip-macros",
+    "crates/scip-syntax",
+    "crates/scip-treesitter",
+    "crates/scip-treesitter-languages",
+    "crates/scip-treesitter-cli",
+]
+
+[workspace.dependencies]
+anyhow = "1"
+# "cargo" feature is enabled for using the `crate_version` macro
+clap = { version = "4.1.11", features = [ "derive", "cargo"] }
+itertools = "0.10.5"
+rocket = { version = "0.5.0-rc.1", features = ["json"] }
+# See https://stackoverflow.com/questions/76905691/bazel-unable-to-build-external-rust-dependency-with-feature-serde1
+serde = { version = "=1.0.164", features = ["derive"] }
 serde_json = "1.0"
-serde_derive = "1.0"
-rayon = "1.0"
-lazy_static = "1.0"
+string-interner = "0.14.0"
+# Since there is no version tag, we pin the dependency to a specific revision
+syntect = { git = "https://github.com/sourcegraph/syntect", rev = "7e02c5b4085e6d935b960b8106cdd85da04532d2" }
+tree-sitter = "0.20.9"
+tree-sitter-highlight = "0.20.1"
+walkdir = "2"
+
+scip = "0.3.2"
+protobuf = "3"
+
+[profile.release]
+# Enabled debug symbols in release build, so if we have a crash
+# we can inspect the coredump.
+debug = true
+
+[dev-dependencies]
+criterion = { version = "0.4", features = [ "html_reports" ] }

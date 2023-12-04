@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "client",
+    srcs = [
+        "client.go",
+        "observe.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/completions/client/anthropic",
+        "//internal/completions/client/awsbedrock",
+        "//internal/completions/client/azureopenai",
+        "//internal/completions/client/codygateway",
+        "//internal/completions/client/fireworks",
+        "//internal/completions/client/openai",
+        "//internal/completions/types",
+        "//internal/conf/conftypes",
+        "//internal/httpcli",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/telemetry",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)

@@ -6,9 +6,8 @@ Noticing problems with <code>node_modules/</code> or package versions? Try
 running this command to clear the local package cache.
 
 ```bash
-yarn cache clean
-rm -rf node_modules
-yarn
+rm -rf node_modules ./client/*/node_modules
+pnpm install --force
 ```
 
 ## Node version out of date
@@ -21,26 +20,17 @@ If you see an error like this you need to upgrade the version of node installed.
 
 ## dial tcp 127.0.0.1:3090: connect: connection refused
 
-This means the `frontend` server failed to start, for some reason. Look through
-the previous logs for possible explanations, such as failure to contact the
-`redis` server, or database migrations failing.
-
-
-
-
-
-
-
+This means the `frontend` server failed to start, for some reason. Look through the previous logs for possible explanations, such as failure to contact the `redis` server, or database migrations failing.
 
 ## Internal Server Error
 
 If you see this error when opening the app:
 
-`500 Internal Server Error template: app.html:21:70: executing "app.html" at <version "styles/styl...>: error calling version: open ui/assets/styles/app.bundle.css: no such file or directory`
+```
+500 Internal Server Error template: app.html:21:70: executing "app.html" at <version "styles/styl...>: error calling version: open client/web/dist/main-ABCD.css: no such file or directory
+```
 
-that means Webpack hasn't finished compiling the styles yet (it takes about 3 minutes).
-Simply wait a little while for a message from webpack like `web | Time: 180000ms` to appear
-in the terminal.
+that means the web builder hasn't finished compiling the styles yet (it takes about 3 minutes).
 
 ## Increase maximum available file descriptors.
 
@@ -54,8 +44,7 @@ permanent for every shell session by adding the following line to your
 ulimit -n 10000
 ```
 
-On Linux, it may also be necessary to increase `sysctl -n fs.inotify.max_user_watches`, which can be
-done by running one of the following:
+On Linux, it may also be necessary to increase `sysctl -n fs.inotify.max_user_watches`, which can be done by running one of the following:
 
 ```bash
 echo 524288 | sudo tee -a /proc/sys/fs/inotify/max_user_watches
@@ -97,7 +86,7 @@ Firefox on Windows and macOS will not look for enterprise roots by default. If y
 
 If you see a certificate expiry warning you may need to delete your certificate and restart your server.
 
-On MaCOS, the certificate can be removed from here: `~/Library/Application\ Support/Caddy/certificates/local/sourcegraph.test`
+On macOS, the certificate can be removed from here: `~/Library/Application\ Support/Caddy/certificates/local/sourcegraph.test`
 
 ## Running out of disk space
 
@@ -117,16 +106,9 @@ SRC_REPOS_DESIRED_PERCENT_FREE=5
 
 ## CPU/RAM/bandwidth/battery usage
 
-On first install, the program will use quite a bit of bandwidth to concurrently
-download all of the Go and Node packages. After packages have been installed,
-the Javascript assets will be compiled into a single Javascript file, which
-can take up to 5 minutes, and can be heavy on the CPU at times.
+On first install, the program will use quite a bit of bandwidth to concurrently download all the Go and Node packages. After packages have been installed, the Javascript assets will be compiled into a single Javascript file, which can take up to 5 minutes, and can be heavy on the CPU at times.
 
-After the initial install/compile is complete, the Docker for Mac binary uses
-about 1.5GB of RAM. The numerous different Go binaries don't use that much RAM
-or CPU each, about 5MB of RAM each.
-
-If you notice heavy battery and CPU usage running `gulp --color watch`, please first [double check that Spotlight is not indexing your Sourcegraph repository](https://www.macobserver.com/tips/how-to/stop-spotlight-indexing/), as this can lead to additional, unnecessary, poll events.
+After the initial install/compile is complete, the Docker for Mac binary uses about 1.5GB of RAM. The numerous different Go binaries don't use that much RAM or CPU each, about 5MB of RAM each.
 
 If you're running macOS 10.15.x (Catalina) reinstalling the Xcode Command Line Tools may be necessary as follows:
 
@@ -137,8 +119,7 @@ If you're running macOS 10.15.x (Catalina) reinstalling the Xcode Command Line T
 
 ## Permission errors for Grafana and Prometheus containers
 
-The Grafana and Prometheus containers need group read access for specific files.
-Otherwise you will see errors such as
+The Grafana and Prometheus containers need group read access for specific files. Otherwise, you will see errors such as:
 
 ```
 grafana | standard_init_linux.go:228: exec user process caused: permission denied
@@ -152,8 +133,7 @@ prometheus | t=2021-05-26T10:05:26+0000 lvl=eror msg="command [/prometheus.sh --
 prometheus | t=2021-05-26T10:05:26+0000 lvl=eror msg="command [/alertmanager.sh --config.file=/sg_config_prometheus/alertmanag
 ```
 
-If files do not normally have group permissions in your environment
-(e.g. if you set `umask 077`), then you need to
+If files do not normally have group permissions in your environment (e.g. if you set `umask 077`), then you need to:
 
 1. Set group read permissions for the Grafana and Prometheus docker images, with
 

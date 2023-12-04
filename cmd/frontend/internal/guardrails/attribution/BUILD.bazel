@@ -1,0 +1,44 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "attribution",
+    srcs = [
+        "attribution.go",
+        "observability.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/attribution",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/internal/guardrails/dotcom",
+        "//internal/api",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/search",
+        "//internal/search/client",
+        "//internal/search/streaming",
+        "//lib/errors",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "attribution_test",
+    srcs = ["attribution_test.go"],
+    embed = [":attribution"],
+    deps = [
+        "//cmd/frontend/internal/guardrails/dotcom",
+        "//internal/database/dbmocks",
+        "//internal/observation",
+        "//internal/search/backend",
+        "//internal/search/client",
+        "//internal/search/job",
+        "//internal/types",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_khan_genqlient//graphql",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_sourcegraph_zoekt//:zoekt",
+    ],
+)

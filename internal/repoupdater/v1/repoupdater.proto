@@ -1,0 +1,149 @@
+syntax = "proto3";
+
+package repoupdater.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1";
+
+service RepoUpdaterService {
+  // RepoUpdateSchedulerInfo returns information about the state of the repo in the update scheduler.
+  rpc RepoUpdateSchedulerInfo(RepoUpdateSchedulerInfoRequest) returns (RepoUpdateSchedulerInfoResponse);
+  // RepoLookup retrieves information about the repository on repoupdater.
+  rpc RepoLookup(RepoLookupRequest) returns (RepoLookupResponse);
+  // EnqueueRepoUpdate requests that the named repository be updated in the near
+  // future. It does not wait for the update.
+  rpc EnqueueRepoUpdate(EnqueueRepoUpdateRequest) returns (EnqueueRepoUpdateResponse);
+  rpc EnqueueChangesetSync(EnqueueChangesetSyncRequest) returns (EnqueueChangesetSyncResponse);
+}
+
+message RepoUpdateSchedulerInfoRequest {
+  // The ID of the repo to lookup the schedule for.
+  int32 id = 1;
+}
+
+message RepoUpdateSchedulerInfoResponse {
+  RepoScheduleState schedule = 1;
+  RepoQueueState queue = 2;
+}
+
+message RepoScheduleState {
+  int64 index = 1;
+  int64 total = 2;
+  int64 interval_seconds = 3;
+  google.protobuf.Timestamp due = 4;
+}
+
+message RepoQueueState {
+  int64 index = 1;
+  int64 total = 2;
+  bool updating = 3;
+  int64 priority = 4;
+}
+
+message RepoLookupRequest {
+  reserved 2;
+  reserved "update";
+
+  // Repo is the repository name to look up.
+  string repo = 1;
+}
+
+message RepoLookupResponse {
+  // Repo contains information about the repository, if it is found. If an error occurred, it is nil.
+  RepoInfo repo = 1;
+
+  // the repository host reported that the repository was not found
+  bool error_not_found = 2;
+  // the repository host rejected the client's authorization
+  bool error_unauthorized = 3;
+  // the repository host was temporarily unavailable (e.g., rate limit exceeded)
+  bool error_temporarily_unavailable = 4;
+}
+
+message RepoInfo {
+  // ID is the unique numeric ID for this repository.
+  int32 id = 1;
+
+  // Name the canonical name of the repository. Its case (uppercase/lowercase) may differ from the name arg used
+  // in the lookup. If the repository was renamed on the external service, this name is the new name.
+  string name = 2;
+
+  // repository description (from the external service)
+  string description = 3;
+
+  // whether this repository is a fork of another repository (from the external service)
+  bool fork = 4;
+  // whether this repository is archived (from the external service)
+  bool archived = 5;
+  // whether this repository is private (from the external service)
+  bool private = 6;
+
+  // VCS-related information (for cloning/updating)
+  VCSInfo vcs_info = 7;
+
+  // link URLs related to this repository
+  RepoLinks links = 8;
+
+  // ExternalRepo specifies this repository's ID on the external service where it resides (and the external
+  // service itself).
+  ExternalRepoSpec external_repo = 9;
+}
+
+// VCSInfo describes how to access an external repository's Git data (to clone or update it).
+message VCSInfo {
+  // the Git remote URL
+  string url = 1;
+}
+
+// RepoLinks contains URLs and URL patterns for objects in this repository.
+message RepoLinks {
+  // the repository's main (root) page URL
+  string root = 1;
+  // the URL to a tree, with {rev} and {path} substitution variables
+  string tree = 2;
+  // the URL to a blob, with {rev} and {path} substitution variables
+  string blob = 3;
+  // the URL to a commit, with {commit} substitution variable
+  string commit = 4;
+}
+
+// ExternalRepoSpec specifies a repository on an external service (such as GitHub or GitLab).
+message ExternalRepoSpec {
+  // ID is the repository's ID on the external service. Its value is opaque except to the repo-updater.
+  //
+  // For GitHub, this is the GitHub GraphQL API's node ID for the repository.
+  string id = 1;
+  // ServiceType is the type of external service. Its value is opaque except to the repo-updater.
+  //
+  // Example: "github", "gitlab", etc.
+  string service_type = 2;
+  // ServiceID is the particular instance of the external service where this repository resides. Its value is
+  // opaque but typically consists of the canonical base URL to the service.
+  //
+  // Implementations must take care to normalize this URL. For example, if different GitHub.com repository code
+  // paths used slightly different values here (such as "https://github.com/" and "https://github.com", note the
+  // lack of trailing slash), then the same logical repository would be incorrectly treated as multiple distinct
+  // repositories depending on the code path that provided its ServiceID value.
+  //
+  // Example: "https://github.com/", "https://github-enterprise.example.com/"
+  string service_id = 3;
+}
+
+message EnqueueRepoUpdateRequest {
+  string repo = 1;
+}
+
+// EnqueueRepoUpdateResponse is a response type to a EnqueueRepoUpdateResponse
+message EnqueueRepoUpdateResponse {
+  // ID of the repo that got an update request.
+  int32 id = 1;
+  // Name of the repo that got an update request.
+  string name = 2;
+}
+
+message EnqueueChangesetSyncRequest {
+  repeated int64 ids = 1;
+}
+
+message EnqueueChangesetSyncResponse {}

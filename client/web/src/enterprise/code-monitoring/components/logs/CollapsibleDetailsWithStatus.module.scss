@@ -1,0 +1,18 @@
+.wrapper {
+    margin-left: 1.5rem;
+}
+
+.expand-button {
+    margin-left: -0.5rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+}
+
+.message {
+    padding: 1rem;
+    background-color: var(--color-bg-1);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    font-size: 0.75rem;
+    white-space: pre-wrap;
+}

@@ -1,8 +1,6 @@
-import { boolean } from '@storybook/addon-knobs'
 import { useMemo, useCallback } from '@storybook/addons'
-import { storiesOf } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 import { subDays } from 'date-fns'
-import React from 'react'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../components/WebStory'
@@ -11,9 +9,12 @@ import {
     ChangesetReviewState,
     ChangesetSpecType,
     ChangesetState,
-    BatchChangeFields,
+    type BatchChangeFields,
+    BatchSpecState,
+    BatchChangeState,
+    BatchSpecSource,
 } from '../../../graphql-operations'
-import {
+import type {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
     fetchBatchChangeByNamespace,
@@ -21,14 +22,20 @@ import {
 
 import { BatchChangeClosePage } from './BatchChangeClosePage'
 
-const { add } = storiesOf('web/batches/close/BatchChangeClosePage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/close/BatchChangeClosePage',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
             disableSnapshot: false,
         },
-    })
+    },
+}
+
+export default config
 
 const now = new Date()
 
@@ -41,9 +48,15 @@ const batchChangeDefaults: BatchChangeFields = {
         merged: 2,
         draft: 1,
         open: 2,
-        total: 10,
+        total: 29,
         archived: 18,
         unpublished: 4,
+        isCompleted: false,
+        percentComplete: 30,
+        failed: 0,
+        retrying: 0,
+        scheduled: 0,
+        processing: 0,
     },
     createdAt: subDays(now, 5).toISOString(),
     creator: {
@@ -53,10 +66,14 @@ const batchChangeDefaults: BatchChangeFields = {
     id: 'specid',
     url: '/users/alice/batch-changes/specid',
     namespace: {
+        __typename: 'User',
+        id: '1234',
+        displayName: null,
+        username: 'alice',
         namespaceName: 'alice',
         url: '/users/alice',
     },
-    diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
+    diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
     viewerCanAdminister: true,
     closedAt: null,
     description: '## What this batch change does\n\nTruly awesome things for example.',
@@ -71,11 +88,26 @@ const batchChangeDefaults: BatchChangeFields = {
         id: 'specID1',
         originalInput: 'name: awesome-batch-change\ndescription: somestring',
         supersedingBatchSpec: null,
+        source: BatchSpecSource.REMOTE,
         codeHostsWithoutWebhooks: {
             nodes: [],
             pageInfo: { hasNextPage: false },
             totalCount: 0,
         },
+        viewerBatchChangesCodeHosts: {
+            __typename: 'BatchChangesCodeHostConnection',
+            totalCount: 0,
+            nodes: [],
+        },
+        files: null,
+        description: {
+            __typename: 'BatchChangeDescription',
+            name: 'Spec Description',
+        },
+    },
+    batchSpecs: {
+        nodes: [{ state: BatchSpecState.COMPLETED }],
+        pageInfo: { hasNextPage: false },
     },
     bulkOperations: {
         __typename: 'BulkOperationConnection',
@@ -86,6 +118,7 @@ const batchChangeDefaults: BatchChangeFields = {
         totalCount: 0,
         nodes: [],
     },
+    state: BatchChangeState.OPEN,
 }
 
 const queryChangesets: typeof _queryChangesets = () =>
@@ -136,7 +169,6 @@ const queryChangesets: typeof _queryChangesets = () =>
                 diffStat: {
                     __typename: 'DiffStat',
                     added: 10,
-                    changed: 9,
                     deleted: 1,
                 },
                 externalID: '123',
@@ -176,6 +208,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                     },
                     forkTarget: null,
                 },
+                commitVerification: null,
             },
             {
                 __typename: 'ExternalChangeset',
@@ -184,7 +217,6 @@ const queryChangesets: typeof _queryChangesets = () =>
                 diffStat: {
                     __typename: 'DiffStat',
                     added: 10,
-                    changed: 9,
                     deleted: 1,
                 },
                 externalID: null,
@@ -215,6 +247,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                     },
                     forkTarget: null,
                 },
+                commitVerification: null,
             },
         ],
     })
@@ -234,8 +267,8 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
         },
     })
 
-add('Overview', () => {
-    const viewerCanAdminister = boolean('viewerCanAdminister', true)
+export const Overview: StoryFn = args => {
+    const viewerCanAdminister = args.viewerCanAdminister
     const batchChange: BatchChangeFields = useMemo(
         () => ({
             ...batchChangeDefaults,
@@ -245,24 +278,29 @@ add('Overview', () => {
     )
     const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
     return (
-        <WebStory>
+        <WebStory path="/:batchChangeName" initialEntries={['/c123']}>
             {props => (
                 <BatchChangeClosePage
                     {...props}
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                     namespaceID="n123"
-                    batchChangeName="c123"
                     fetchBatchChangeByNamespace={fetchBatchChange}
-                    extensionsController={{} as any}
-                    platformContext={{} as any}
                 />
             )}
         </WebStory>
     )
-})
+}
+Overview.argTypes = {
+    viewerCanAdminister: {
+        control: { type: 'boolean' },
+    },
+}
+Overview.args = {
+    viewerCanAdminister: true,
+}
 
-add('No open changesets', () => {
+export const NoOpenChangesets: StoryFn = () => {
     const batchChange: BatchChangeFields = useMemo(() => batchChangeDefaults, [])
     const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
     const queryEmptyChangesets = useCallback(
@@ -279,19 +317,18 @@ add('No open changesets', () => {
         []
     )
     return (
-        <WebStory>
+        <WebStory path="/:batchChangeName" initialEntries={['/c123']}>
             {props => (
                 <BatchChangeClosePage
                     {...props}
                     queryChangesets={queryEmptyChangesets}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                     namespaceID="n123"
-                    batchChangeName="c123"
                     fetchBatchChangeByNamespace={fetchBatchChange}
-                    extensionsController={{} as any}
-                    platformContext={{} as any}
                 />
             )}
         </WebStory>
     )
-})
+}
+
+NoOpenChangesets.storyName = 'No open changesets'

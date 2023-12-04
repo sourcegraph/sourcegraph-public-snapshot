@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "buf",
+    srcs = ["buf.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/buf",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/sg/root",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_sourcegraph_run//:run",
+    ],
+)

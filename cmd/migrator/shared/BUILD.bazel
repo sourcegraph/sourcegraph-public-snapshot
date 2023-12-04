@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/migrator/shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/database/migration",
+        "//internal/database/migration/cliutil",
+        "//internal/database/migration/runner",
+        "//internal/database/migration/schemas",
+        "//internal/database/migration/store",
+        "//internal/observation",
+        "//internal/oobmigration/migrations/register",
+        "//internal/version",
+        "//lib/output",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_urfave_cli_v2//:cli",
+    ],
+)

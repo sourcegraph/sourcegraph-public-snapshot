@@ -1,0 +1,8 @@
+.node {
+    border: none;
+    padding: 0.5rem 0;
+    // Make sure the last node doesn't have a dividing border.
+    &:not(:last-child) {
+        border-bottom: 1px solid var(--border-color);
+    }
+}

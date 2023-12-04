@@ -1,27 +1,26 @@
-import classNames from 'classnames'
-import * as H from 'history'
-import { isEqual } from 'lodash'
 import React, { useCallback, useMemo, useState } from 'react'
-import { Observable } from 'rxjs'
+
+import classNames from 'classnames'
+import { isEqual } from 'lodash'
+import { useNavigate } from 'react-router-dom'
+import type { Observable } from 'rxjs'
 import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Container, Button, useEventObservable, Alert, Link } from '@sourcegraph/wildcard'
+import { Container, Button, useEventObservable, Alert, Link, Select, Input, Form } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
-import { CodeMonitorFields } from '../../../graphql-operations'
+import type { AuthenticatedUser } from '../../../auth'
+import type { CodeMonitorFields } from '../../../graphql-operations'
 import { deleteCodeMonitor as _deleteCodeMonitor } from '../backend'
 
-import styles from './CodeMonitorForm.module.scss'
 import { DeleteMonitorModal } from './DeleteMonitorModal'
 import { FormActionArea } from './FormActionArea'
 import { FormTriggerArea } from './FormTriggerArea'
 
+import styles from './CodeMonitorForm.module.scss'
+
 export interface CodeMonitorFormProps {
-    history: H.History
-    location: H.Location
     authenticatedUser: AuthenticatedUser
     /**
      * A function that takes in a code monitor and emits an Observable with all or some
@@ -40,6 +39,8 @@ export interface CodeMonitorFormProps {
     description?: string
 
     deleteCodeMonitor?: typeof _deleteCodeMonitor
+
+    isSourcegraphDotCom: boolean
 }
 
 interface FormCompletionSteps {
@@ -47,18 +48,20 @@ interface FormCompletionSteps {
     actionCompleted: boolean
 }
 
-export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
+export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<CodeMonitorFormProps>> = ({
     authenticatedUser,
     onSubmit,
-    history,
     submitButtonLabel,
     codeMonitor,
     showDeleteButton,
     deleteCodeMonitor = _deleteCodeMonitor,
     triggerQuery,
     description,
+    isSourcegraphDotCom,
 }) => {
     const LOADING = 'loading' as const
+
+    const navigate = useNavigate()
 
     const [currentCodeMonitorState, setCodeMonitor] = useState<CodeMonitorFields>(
         codeMonitor ?? {
@@ -68,6 +71,11 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
             trigger: { id: '', query: triggerQuery ?? '' },
             actions: {
                 nodes: [],
+            },
+            owner: {
+                id: '',
+                namespaceName: '',
+                url: '',
             },
         }
     )
@@ -113,13 +121,13 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             catchError(error => [asError(error)]),
                             tap(successOrError => {
                                 if (!isErrorLike(successOrError) && successOrError !== LOADING) {
-                                    history.push('/code-monitoring')
+                                    navigate('/code-monitoring')
                                 }
                             })
                         )
                     )
                 ),
-            [onSubmit, currentCodeMonitorState, history, formCompletion]
+            [onSubmit, currentCodeMonitorState, navigate, formCompletion]
         )
     )
 
@@ -135,12 +143,12 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     const onCancel = useCallback(() => {
         if (hasChangedFields) {
             if (window.confirm('Leave page? All unsaved changes will be lost.')) {
-                history.push('/code-monitoring')
+                navigate('/code-monitoring')
             }
         } else {
-            history.push('/code-monitoring')
+            navigate('/code-monitoring')
         }
-    }, [history, hasChangedFields])
+    }, [navigate, hasChangedFields])
 
     const [showDeleteModal, setShowDeleteModal] = useState(false)
 
@@ -151,16 +159,15 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
             <Form className="my-4 pb-5" data-testid="monitor-form" onSubmit={requestOnSubmit}>
                 <Container className="mb-3">
                     <div className="form-group">
-                        <label htmlFor="code-monitor-form-name">Name</label>
-                        <input
+                        <Input
                             id="code-monitor-form-name"
-                            type="text"
-                            className="form-control mb-2 test-name-input"
+                            className="mb-2"
                             data-testid="name-input"
                             required={true}
                             onChange={event => {
                                 onNameChange(event.target.value)
                             }}
+                            label="Name"
                             value={currentCodeMonitorState.description}
                             autoFocus={true}
                             spellCheck={false}
@@ -178,22 +185,26 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             .
                         </small>
                     </div>
-                    <div className="form-group">
-                        <label htmlFor="code-monitor-form-owner">Owner</label>
-                        <select
-                            id="code-monitor-form-owner"
-                            className={classNames('form-control mb-2 w-auto', styles.ownerDropdown)}
-                            disabled={true}
+
+                    <Select
+                        id="code-monitor-select-owner"
+                        label="Owner"
+                        className="w-100"
+                        selectClassName={classNames('mb-2 w-auto', styles.ownerDropdown)}
+                        disabled={true}
+                        message="Event history and configuration will not be shared. Code monitoring currently only supports individual owners."
+                    >
+                        <option
+                            value={
+                                currentCodeMonitorState.owner.namespaceName ||
+                                authenticatedUser.displayName ||
+                                authenticatedUser.username
+                            }
                         >
-                            <option value={authenticatedUser.displayName || authenticatedUser.username}>
-                                {authenticatedUser.username}
-                            </option>
-                        </select>
-                        <small className="text-muted">
-                            Event history and configuration will not be shared. Code monitoring currently only supports
-                            individual owners.
-                        </small>
-                    </div>
+                            {currentCodeMonitorState.owner.namespaceName || authenticatedUser.username}
+                        </option>
+                    </Select>
+
                     <hr className={classNames('my-3', styles.horizontalRule)} />
                     <div className="mb-4">
                         <FormTriggerArea
@@ -205,9 +216,20 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             cardBtnClassName={styles.cardButton}
                             cardLinkClassName={styles.cardLink}
                             cardClassName={styles.card}
+                            isSourcegraphDotCom={isSourcegraphDotCom}
                         />
                     </div>
-                    <div className={classNames(!formCompletion.triggerCompleted && styles.actionsDisabled)}>
+                    {/*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */}
+                    <div
+                        className={classNames(
+                            !formCompletion.triggerCompleted && styles.actionsDisabled,
+                            'a11y-ignore'
+                        )}
+                    >
                         <FormActionArea
                             actions={currentCodeMonitorState.actions}
                             setActionsCompleted={setActionsCompleted}
@@ -276,7 +298,10 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         )}
                     </div>
                     {isErrorLike(codeMonitorOrError) && (
-                        <Alert variant="danger">Failed to create monitor: {codeMonitorOrError.message}</Alert>
+                        <Alert variant="danger">
+                            Failed to {currentCodeMonitorState.id === '' ? 'create' : 'update'} monitor:{' '}
+                            {codeMonitorOrError.message}
+                        </Alert>
                     )}
                 </div>
             </Form>
@@ -284,7 +309,6 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                 <DeleteMonitorModal
                     isOpen={showDeleteModal}
                     deleteCodeMonitor={deleteCodeMonitor}
-                    history={history}
                     codeMonitor={codeMonitor}
                     toggleDeleteModal={toggleDeleteModal}
                 />

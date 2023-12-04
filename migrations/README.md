@@ -4,7 +4,7 @@ The children of this directory contain migrations for each Postgres database ins
 
 - `frontend` is the main database (things should go here unless there is a good reason)
 - `codeintel` is a database containing only processed LSIF data (which can become extremely large)
-- `codeinsights` is a TimescaleDB database, containing only Code Insights time series data
+- `codeinsights` is a database containing only Code Insights time series data
 
 The migration path for each database instance is the same and is described below. Each of the database instances described here are deployed separately, but are designed to be _overlayable_ to reduce friction during development. That is, we assume that the names in each database do not overlap so that the same connection parameters can be used for both database instances.
 
@@ -18,11 +18,11 @@ Up migrations will happen automatically in development on service startup. In pr
 
 ## Adding a migration
 
-**IMPORTANT:** All migrations must be backwards-compatible, meaning that _existing_ code must be able to operate successfully against the _new_ (post-migration) database schema. Consult [_Writing database migrations_](https://docs.sourcegraph.com/dev/background-information/sql/migrations.md) in our developer documentation for additional context.
+**IMPORTANT:** All migrations must be backwards-compatible, meaning that _existing_ code must be able to operate successfully against the _new_ (post-migration) database schema. Consult [_Writing database migrations_](https://docs.sourcegraph.com/dev/background-information/sql/migrations) in our developer documentation for additional context.
 
 To create a new migration file, run the following command.
 
-```
+```sh
 $ sg migration add -db=<db_name> <my_migration_name>
 Migration files created
  Up query file: ~/migrations/codeintel/1644260831/up.sql
@@ -30,7 +30,7 @@ Migration files created
  Metadata file: ~/migrations/codeintel/1644260831/metadata.yaml
 ```
 
-This will create an _up_ and _down_ pair of migration files (whose path is printed by the following command). Add SQL statements to these files that will perform the desired migration. After adding SQL statements to those files, update the schema doc via `go generate ./internal/database/` (or regenerate everything via `./dev/generate.sh`).
+This will create an _up_ and _down_ pair of migration files (whose path is printed by the following command). Add SQL statements to these files that will perform the desired migration. After adding SQL statements to those files, update the schema doc via `go generate ./internal/database/` (or regenerate everything via `sg generate`).
 
 To pass CI, you'll additionally need to:
 

@@ -1,0 +1,137 @@
+- filename: dev/team/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/dev/team
+  interfaces:
+    - TeammateResolver
+- filename: internal/insights/discovery/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/insights/discovery
+  interfaces:
+    - IndexableReposLister
+    - RepoStore
+- filename: internal/insights/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/insights/store
+  interfaces:
+    - DataSeriesStore
+    - InsightMetadataStore
+    - Interface
+- filename: internal/authz/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/authz
+  interfaces:
+    - SubRepoPermissionChecker
+- filename: internal/authz/subrepoperms/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms
+  interfaces:
+    - SubRepoPermissionsGetter
+- filename: internal/database/dbmocks/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/database
+  interfaces:
+    - AccessRequestStore
+    - AccessTokenStore
+    - AssignedOwnersStore
+    - AssignedTeamsStore
+    - AuthzStore
+    - BitbucketProjectPermissionsStore
+    - CodeHostStore
+    - CodeMonitorStore
+    - CodeownersStore
+    - ConfStore
+    - DB
+    - EventLogStore
+    - ExecutorSecretAccessLogStore
+    - ExecutorSecretStore
+    - ExecutorStore
+    - ExternalServiceStore
+    - FeatureFlagStore
+    - GitserverLocalCloneStore
+    - GitserverRepoStore
+    - GlobalStateStore
+    - NamespaceStore
+    - OrgInvitationStore
+    - OrgMemberStore
+    - OrgStore
+    - OutboundWebhookJobStore
+    - OutboundWebhookLogStore
+    - OutboundWebhookStore
+    - OwnershipStatsStore
+    - PermissionStore
+    - PermissionSyncJobStore
+    - PermsStore
+    - PhabricatorStore
+    - RecentContributionSignalStore
+    - RecentViewSignalStore
+    - RepoCommitsChangelistsStore
+    - RepoPathStore
+    - RepoStatisticsStore
+    - RepoStore
+    - RolePermissionStore
+    - RoleStore
+    - SavedSearchStore
+    - SearchContextsStore
+    - SecurityEventLogsStore
+    - SettingsStore
+    - SignalConfigurationStore
+    - SubRepoPermsStore
+    - TeamStore
+    - TemporarySettingsStore
+    - UserCredentialsStore
+    - UserEmailsStore
+    - UserExternalAccountsStore
+    - UserRoleStore
+    - UserStore
+    - WebhookLogStore
+    - WebhookStore
+    - ZoektReposStore
+- filename: internal/gitserver/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/gitserver
+  interfaces:
+    - Client
+- filename: internal/repos/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/repos
+  interfaces:
+    - Store
+- filename: internal/search/client/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/search/client
+  interfaces:
+    - SearchClient
+- filename: internal/search/job/mockjob/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/search/job
+  interfaces:
+    - Job
+- filename: internal/uploadstore/mocks/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/uploadstore
+  interfaces:
+    - Store
+- filename: internal/workerutil/dbworker/store/mocks/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
+  interfaces:
+    - Store
+- filename: internal/metrics/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/metrics/store
+  interfaces:
+    - Store
+    - DistributedStore
+- filename: cmd/frontend/backend/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/cmd/frontend/backend
+  interfaces:
+    - UserEmailsService
+    - ReposService
+    - ExternalServicesService
+- filename: internal/executor/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/executor/store
+  interfaces:
+    - JobTokenStore
+- filename: internal/github_apps/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/github_apps/store
+  interfaces:
+    - GitHubAppsStore
+- filename: internal/embeddings/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/embeddings
+  interfaces:
+    - Client
+- filename: internal/embeddings/background/repo/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo
+  interfaces:
+    - RepoEmbeddingJobsStore
+- filename: internal/gitserver/mock.go
+  path: github.com/sourcegraph/sourcegraph/internal/gitserver/v1
+  interfaces:
+    - GitserverServiceClient

@@ -1,0 +1,138 @@
+.table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    tbody {
+        tr {
+            border-bottom: 1px solid var(--card-border-color);
+        }
+    }
+}
+
+.header {
+    display: flex;
+    height: 1.75rem;
+    align-items: flex-start;
+
+    &.align-right {
+        justify-content: end;
+    }
+
+    &.align-center {
+        justify-content: center;
+    }
+
+    &.sortable {
+        cursor: pointer;
+        justify-content: space-between;
+    }
+
+    &.sortable.align-right {
+        justify-content: end;
+    }
+
+    &.sorted-asc {
+        .sort-asc-icon {
+            fill: var(--gray-05);
+        }
+    }
+
+    &.sorted-desc {
+        .sort-desc-icon {
+            fill: var(--gray-05);
+        }
+    }
+
+    &.selection-header {
+        height: 1.25rem;
+
+        input {
+            margin-left: -0.75rem !important;
+        }
+    }
+}
+
+.sortable-icons {
+    svg {
+        fill: var(--card-border-color);
+        width: 2.25rem;
+        height: 2.25rem;
+    }
+}
+
+.sort-asc-icon {
+    margin-top: -1rem;
+}
+
+.sort-desc-icon {
+    margin-top: -1.5rem;
+}
+
+.cell {
+    padding: 0.5rem;
+
+    &.align-left {
+        padding-left: 0;
+    }
+
+    &.align-right {
+        padding-right: 0;
+    }
+
+    &.selection {
+        text-align: center;
+
+        input {
+            position: static;
+        }
+
+        > div {
+            padding-left: 0;
+        }
+    }
+}
+
+.selection-td {
+    width: 1.875rem;
+}
+
+.actions-arrow-icon {
+    color: var(--gray-06);
+}
+
+.link-color {
+    color: var(--link-color);
+}
+
+.pagination {
+    width: 20rem;
+}
+
+.action-item {
+    display: flex;
+    cursor: pointer;
+    padding: var(--dropdown-item-padding);
+    clear: both;
+    font-weight: 400;
+    color: var(--dropdown-link-color);
+    text-align: inherit;
+    text-decoration: none;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+
+    &:hover,
+    &:focus {
+        color: var(--dropdown-link-color) !important;
+        text-decoration: none !important;
+        background-color: var(--dropdown-link-hover-bg);
+    }
+
+    &.active,
+    &:active {
+        color: var(--dropdown-link-color) !important;
+        text-decoration: none !important;
+        background-color: var(--dropdown-link-active-bg);
+    }
+}

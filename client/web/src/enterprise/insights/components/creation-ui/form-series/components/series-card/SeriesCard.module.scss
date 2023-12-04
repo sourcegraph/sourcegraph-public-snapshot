@@ -1,0 +1,42 @@
+.card {
+    display: flex;
+    flex-direction: row;
+    padding: 1rem;
+
+    &--disabled {
+        color: var(--text-muted) !important;
+    }
+
+    &:hover {
+        box-shadow: 0 0 0 0.1875rem var(--primary);
+        border-color: transparent;
+    }
+
+    &__info {
+        flex-grow: 1;
+        // A hack to make flex box parent treat truncated flex child
+        // properly, see https://css-tricks.com/using-flexbox-and-text-ellipsis-together/
+        min-width: 0;
+    }
+
+    &__title {
+        display: flex;
+        min-width: 0;
+    }
+
+    &__color-mark {
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
+        align-self: center;
+        flex-grow: 0;
+        border-radius: 50%;
+        background-color: currentColor;
+    }
+
+    &__name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}

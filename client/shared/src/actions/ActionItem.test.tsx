@@ -1,20 +1,21 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
-import React from 'react'
 import { NEVER } from 'rxjs'
+import { afterEach, describe, expect, it, test, vi } from 'vitest'
 
-import { createBarrier } from '../api/integration-test/testHelpers'
+import { assertAriaEnabled, createBarrier } from '@sourcegraph/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { renderWithBrandedContext } from '../testing'
 
-import { ActionItem } from './ActionItem'
+import { ActionItem, windowLocation__testingOnly } from './ActionItem'
 
-jest.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
+vi.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
 
 describe('ActionItem', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve(undefined) }
-    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER }
+    const NOOP_PLATFORM_CONTEXT = { settings: NEVER }
     const history = H.createMemoryHistory()
 
     test('non-actionItem variant', () => {
@@ -161,7 +162,9 @@ describe('ActionItem', () => {
         // Finish execution. (Use setTimeout to wait for the executeCommand resolution to result in the setState
         // call.)
         done()
-        await new Promise<void>(resolve => setTimeout(resolve))
+        await waitFor(() => {
+            expect(screen.queryByTestId('action-item-spinner')).not.toBeInTheDocument()
+        })
         expect(asFragment()).toMatchSnapshot()
     })
 
@@ -186,40 +189,19 @@ describe('ActionItem', () => {
         // to result in the setState call.)
         userEvent.click(screen.getByRole('button'))
 
-        await new Promise<void>(resolve => setTimeout(resolve))
-
-        expect(asFragment()).toMatchSnapshot()
-    })
-
-    test('run command with error with showInlineError', async () => {
-        const { asFragment } = render(
-            <ActionItem
-                active={true}
-                action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-                variant="actionItem"
-                showInlineError={true}
-                location={history.location}
-                extensionsController={{
-                    ...NOOP_EXTENSIONS_CONTROLLER,
-                    executeCommand: () => Promise.reject(new Error('x')),
-                }}
-                platformContext={NOOP_PLATFORM_CONTEXT}
-            />
-        )
-
-        // Run command (which will reject with an error). (Use setTimeout to wait for the executeCommand resolution
-        // to result in the setState call.)
-        userEvent.click(screen.getByRole('button'))
-
-        await new Promise<void>(resolve => setTimeout(resolve))
+        // we should wait for the button to be enabled again after got errors. Otherwise, it will be flaky
+        await waitFor(() => assertAriaEnabled(screen.getByLabelText('d')))
 
         expect(asFragment()).toMatchSnapshot()
     })
 
     describe('"open" command', () => {
+        afterEach(() => {
+            windowLocation__testingOnly.value = null
+        })
+
         it('renders as link', () => {
-            jsdom.reconfigure({ url: 'https://example.com/foo' })
+            windowLocation__testingOnly.value = new URL('https://example.com/foo')
 
             const { asFragment } = renderWithBrandedContext(
                 <ActionItem
@@ -235,7 +217,7 @@ describe('ActionItem', () => {
         })
 
         it('renders as link with icon and opens a new tab for a different origin', () => {
-            jsdom.reconfigure({ url: 'https://example.com/foo' })
+            windowLocation__testingOnly.value = new URL('https://example.com/foo')
 
             const { asFragment } = renderWithBrandedContext(
                 <ActionItem
@@ -251,7 +233,7 @@ describe('ActionItem', () => {
         })
 
         it('renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined', () => {
-            jsdom.reconfigure({ url: 'https://example.com/foo' })
+            windowLocation__testingOnly.value = new URL('https://example.com/foo')
 
             const { asFragment } = renderWithBrandedContext(
                 <ActionItem

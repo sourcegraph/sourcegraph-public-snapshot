@@ -1,0 +1,13 @@
+.empty-draft-changeset-list-element {
+    &__body {
+        text-align: center;
+        margin: 3rem 0;
+    }
+
+    &__content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+}

@@ -1,46 +1,54 @@
-import * as H from 'history'
-import React, { FunctionComponent, useEffect } from 'react'
+import { type FunctionComponent, useEffect, useState } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { PageHeader, Link } from '@sourcegraph/wildcard'
+import { useLocation } from 'react-router-dom'
 
-import { AuthenticatedUser } from '../../../../auth'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { PageHeader, Link, Tabs, TabList, Tab, TabPanels, TabPanel } from '@sourcegraph/wildcard'
+
+import type { AuthenticatedUser } from '../../../../auth'
+import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelConfigurationPageHeader } from '../components/CodeIntelConfigurationPageHeader'
 import { ConfigurationEditor } from '../components/ConfigurationEditor'
+import { ConfigurationForm } from '../components/ConfigurationForm'
 
-export interface CodeIntelRepositoryIndexConfigurationPageProps extends ThemeProps, TelemetryProps {
+export interface CodeIntelRepositoryIndexConfigurationPageProps extends TelemetryProps {
     repo: { id: string }
     authenticatedUser: AuthenticatedUser | null
-    history: H.History
 }
 
-export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<CodeIntelRepositoryIndexConfigurationPageProps> = ({
-    repo,
-    authenticatedUser,
-    history,
-    telemetryService,
-    ...props
-}) => {
+export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
+    CodeIntelRepositoryIndexConfigurationPageProps
+> = ({ repo, authenticatedUser, telemetryService, ...props }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelRepositoryIndexConfiguration'), [telemetryService])
+    const location = useLocation()
+
+    const [activeTabIndex, setActiveTabIndex] = useState<number>(0)
+
+    useEffect(() => {
+        const tab = new URLSearchParams(location.search).get('tab')
+        if (tab === 'form') {
+            setActiveTabIndex(0)
+        } else if (tab === 'raw') {
+            setActiveTabIndex(1)
+        }
+    }, [location.search])
 
     return (
         <>
-            <PageTitle title="Precise code intelligence repository index configuration" />
+            <PageTitle title="Code graph data repository index configuration" />
             <CodeIntelConfigurationPageHeader>
                 <PageHeader
                     headingElement="h2"
                     path={[
                         {
-                            text: <>Precise code intelligence repository index configuration</>,
+                            text: <>Code graph data repository index configuration</>,
                         },
                     ]}
                     description={
                         <>
                             Provide explicit index job configuration to customize how this repository is indexed. See
                             the{' '}
-                            <Link to="https://docs.sourcegraph.com/code_intelligence/references/auto_indexing_configuration">
+                            <Link to="/help/code_navigation/references/auto_indexing_configuration">
                                 reference guide
                             </Link>{' '}
                             for more information.
@@ -49,14 +57,33 @@ export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<CodeIn
                     className="mb-3"
                 />
             </CodeIntelConfigurationPageHeader>
-
-            <ConfigurationEditor
-                repoId={repo.id}
-                authenticatedUser={authenticatedUser}
-                history={history}
-                telemetryService={telemetryService}
-                {...props}
-            />
+            <Tabs size="large" index={activeTabIndex} lazy={true}>
+                <TabList>
+                    <Tab as={Link} to="?tab=form" key="form" className="text-decoration-none">
+                        Form
+                    </Tab>
+                    <Tab as={Link} to="?tab=raw" key="raw" className="text-decoration-none">
+                        Raw
+                    </Tab>
+                </TabList>
+                <TabPanels className="mb-3">
+                    <TabPanel>
+                        <ConfigurationForm
+                            repoId={repo.id}
+                            authenticatedUser={authenticatedUser}
+                            telemetryService={telemetryService}
+                        />
+                    </TabPanel>
+                    <TabPanel>
+                        <ConfigurationEditor
+                            repoId={repo.id}
+                            authenticatedUser={authenticatedUser}
+                            telemetryService={telemetryService}
+                            {...props}
+                        />
+                    </TabPanel>
+                </TabPanels>
+            </Tabs>
         </>
     )
 }

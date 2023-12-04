@@ -1,7 +1,5 @@
 # Configuring credentials
 
-> NOTE: This page describes functionality added in Sourcegraph 3.22. Older Sourcegraph versions only allow batch changes to be applied and managed by site admins.
-
 Interacting with a code host (such as creating, updating, or syncing changesets) is made possible by configuring an access token for that code host. Sourcegraph uses these tokens to manage changesets on your behalf, and with your specific permissions.
 
 ## Requirements
@@ -11,11 +9,10 @@ Interacting with a code host (such as creating, updating, or syncing changesets)
 
 ## Types of access tokens used by Batch Changes
 
-There are three types of access token that can be configured for use with Batch Changes:
+There are two types of access token that can be configured for use with Batch Changes:
 
 1. [**Personal access token**](#personal-access-tokens) - A token set by an individual Batch Changes user for their personal code host user account.
-1. [**Global service account token**](#global-service-account-tokens) (*Admins only*) - A token that can be used by any Batch Changes user who does not have a personal access token configured.
-1. [**Sourcegraph code host connection token**](#code-host-connection-tokens) (*Admins only*) - A token that is typically set when connecting Sourcegraph to a code host for the first time and is used across the entire Sourcegraph instance. **Using the code host connection token with Batch Changes will be deprecated in the future.**
+1. [**Global service account token**](#global-service-account-tokens) (*Configurable by admins only*) - A token that can be used by any Batch Changes user who does not have a personal access token configured. These are also required for [importing changesets](./tracking_existing_changesets.md) and syncing changeset state from the code host when webhooks are not configured. Although currently importing changesets is not supported without a global access token, if you’re concerned about individual user permissions, we would not advise using a global access token.
 
 Different tokens are used for different types of operations, as is illustrated in the hierarchy table below.
 
@@ -25,24 +22,22 @@ Different tokens are used for different types of operations, as is illustrated i
 
 🔴  **Unsupported** - Sourcegraph cannot use this token for this operation.
 
-Operation | [Personal Access Token](#personal-access-tokens) | [Global Service Account Token](#global-service-account-tokens) | [Code Host Connection Token](#code-host-connection-tokens)
---------- | :-: | :-: | :-:
-Pushing a branch with the changes | 🟢 | 🟡 | 🔴
-[Publishing a changeset](./publishing_changesets.md) | 🟢 | 🟡 | 🔴
-Updating a changeset | 🟢 | 🟡 | 🔴
-Closing a changeset | 🟢 | 🟡 | 🔴
-[Importing a changeset](./tracking_existing_changesets.md) | 🔴 | 🟢 | 🟡
-Syncing a changeset | 🔴 | 🟢 | 🟡
+Operation | [Personal Access Token](#personal-access-tokens) | [Global Service Account Token](#global-service-account-tokens)
+--------- | :-: | :-:
+Pushing a branch with the changes | 🟢 | 🟡
+[Publishing a changeset](./publishing_changesets.md) | 🟢 | 🟡
+Updating a changeset | 🟢 | 🟡
+Closing a changeset | 🟢 | 🟡
+[Importing a changeset](./tracking_existing_changesets.md) | 🔴 | 🟢
+Syncing a changeset | 🔴 | 🟢
 
 When writing a changeset to the code host, the author will reflect the token used (e.g., on GitHub, the pull request author will be you). It is for this reason that a personal access token is preferred for most operations.
-
-> WARNING: Using the code host connection token with Batch Changes will be deprecated in the future; therefore, we highly recommend that admins configure a global service account token for Batch Changes instead.
 
 ## Personal access tokens
 
 ### Do I need to add a personal access token?
 
-Personal access tokens are not required if a global access token has also been configured, but users should add one if they want Sourcegraph to create changesets under their name.
+Personal access tokens are not strictly required if a global access token has also been configured, but users should add one if they want Sourcegraph to create changesets under their name.
 
 > NOTE: Commit author is determined by your spec file or local git config at the time of running `src batch [apply|preview]`, completely independent from code host credentials.
 
@@ -75,13 +70,13 @@ The code host's indicator should revert to the empty red circle once the token i
 
 ## Global service account tokens
 
-> NOTE: This section describes functionality added in Sourcegraph 3.27, and which is only accessible to **site administrators**.
-
 ### Do I need to add a global service account token?
 
-Global credentials are usable by all users of the Sourcegraph instance who have not added their own personal access tokens for Batch Changes. This makes them a handy fallback, but not strictly required if users are adding their own tokens.
+Global credentials are usable by all users of the Sourcegraph instance who have not added their own personal access tokens for Batch Changes. This makes them a handy fallback, but not strictly required if users are adding their own tokens for publishing changesets.
 
-Sourcegraph also uses the global service account to [track existing changesets](./tracking_existing_changesets.md) and keep changesets up to date. If no global service account token is set, we can currently fall back to the [token configured for the code host connection](#code-host-connection-tokens). However, this fallback will be deprecated in the future, so for this reason we highly recommend setting up a global service account.
+However, currently a global service account token is required for [importing existing changesets](./tracking_existing_changesets.md) on your code hosts into batch changes.
+
+Additionally, if you have not [configured webhooks](../../admin/config/batch_changes.md#incoming-webhooks) from your code host,  Sourcegraph requires a global service account keep changesets up to date.
 
 If [forks are enabled](../../admin/config/batch_changes.md#forks), then note that repositories will also be forked into the service account.
 
@@ -91,7 +86,7 @@ Adding a global service account token is done through the Batch Changes section 
 
 1. From any Sourcegraph page, click on your avatar at the top right of the page.
 1. Select **Site admin** from the dropdown menu.
-1. Click **Batch Changes** on the sidebar menu.
+1. Click **Settings** under the **Batch Changes** sub-heading on the sidebar menu.
 1. Click **Add credentials** and follow the steps to [create a new token](#creating-a-code-host-token) for the code host
 
 Code hosts with tokens configured are indicated by a green tick to the left of the code host name, while code hosts without tokens have an empty red circle next to them.
@@ -99,14 +94,6 @@ Code hosts with tokens configured are indicated by a green tick to the left of t
 ### Removing a token
 
 To remove a token, navigate back to the same section of the site admin area, then click **Remove**. The code host's indicator should revert to the empty red circle once the token is removed.
-
-## Code host connection tokens
-
-> WARNING: Using code host connection tokens with Batch Changes will be deprecated and removed in future versions of Sourcegraph.
-
-[Code host connection tokens](../../admin/external_service.md) are typically configured the first time a site administrator is connecting Sourcegraph to the external code host. Within Batch Changes, they are only used for syncing and importing changesets when a global service account token is not configured.
-
-> NOTE: Prior to Sourcegraph 3.29, admin users were also able to use the code host connection token as a fallback for other Batch Changes operations, such as creating and updating changesets. However, non-admin users were unable to apply batch changes without another form of access token being configured.
 
 ## Creating a code host token
 
@@ -116,7 +103,22 @@ To finish configuring the new credentials, you will need to create a new persona
 
 ### GitHub
 
-Follow the steps to [create a personal access token](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token) on GitHub. Batch Changes requires the following scopes:
+#### GitHub.com
+
+On GitHub.com, [create a personal access token (classic) with the correct scopes](https://github.com/settings/tokens/new?scopes=repo,read:org,user:email,read:discussion,workflow).
+
+The `workflow` scope is technically only required if your batch changes modify files in the `.github` directory of a repository, but we recommend enabling it regardless to avoid confusing errors at a later time.
+
+When working with organizations that have SAML SSO (Single Sign On) enabled, configuring credentials requires an additional step that [involves white-listing the token for use in that organization](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-saml-single-sign-on/authorizing-a-personal-access-token-for-use-with-saml-single-sign-on).
+
+> NOTE: At present, only classic personal access tokens (PATs) are supported. The following alternative token types are untested or unsupported:
+> * OAuth Access Tokens (e.g. OAuth Apps)
+> * Installation Access Token (e.g. GitHub Apps)
+> * Fine-grained personal access tokens (PATv2)
+
+#### GitHub Enterprise
+
+Follow the steps to [create a personal access token (classic)](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token) on GitHub Enterprise. Batch Changes requires the following scopes:
 
 - `repo`
 - `read:org`
@@ -128,7 +130,16 @@ This is done by selecting the relevant checkboxes when creating the token:
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/github-token.png" alt="The GitHub token creation page, with the repo scope selected">
 
-> NOTE: `workflow` is technically only required if your batch changes modify files in the `.github` directory of a repository, but we recommend enabling it regardless to avoid confusing errors at a later time.
+The `workflow` scope is technically only required if your batch changes modify files in the `.github` directory of a repository, but we recommend enabling it regardless to avoid confusing errors at a later time.
+
+When working with organizations that have SAML SSO (Single Sign On) enabled, configuring credentials requires an additional step that [involves white-listing the token for use in that organization](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-saml-single-sign-on/authorizing-a-personal-access-token-for-use-with-saml-single-sign-on).
+
+> WARNING: Currently, for customers on an instance of GitHub Enterprise Cloud that uses [SSH certificate authorities](https://docs.github.com/en/enterprise-cloud@latest/organizations/managing-git-access-to-your-organizations-repositories/about-ssh-certificate-authorities) and requires SSH certificates to authenticate, we are unable to provide a means of authenticating Batch Changes to your code host.
+
+> NOTE: At present, only classic personal access tokens (PATs) are supported. The following alternative token types are untested or unsupported:
+> * OAuth Access Tokens (e.g. OAuth Apps)
+> * Installation Access Token (e.g. GitHub Apps)
+> * Fine-grained personal access tokens (PATv2)
 
 ### GitLab
 
@@ -150,10 +161,41 @@ Batch Changes requires the access token to have the `write` permission on both p
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/bb-token.png" alt="The Bitbucket Server / Bitbucket Data Center token creation page, with Write permissions selected on both the Project and Repository dropdowns">
 
+### Bitbucket Cloud
+
+Follow the steps to [create an app password](https://support.atlassian.com/bitbucket-cloud/docs/app-passwords/) on Bitbucket. Batch Changes requires the following scopes:
+
+- `account:read`
+- `repo:read`
+- `repo:write`
+- `pr:write`
+- `pipeline:read`
+
+<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/bb-cloud-app-password.png" alt="The Bitbucket Cloud app password creation page">
+
+### Azure DevOps
+
+Follow the steps to [create a PAT](https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows#create-a-pat) on Azure DevOps. Batch Changes requires the following scopes:
+
+- `Organization:All accessible organizations`
+- `Code:Full`
+- `Code:Status`
+- `Pull Request Thread:Read & Write`
+- `User Profile:Read`
+
+> NOTE: Click "Show all scopes" at the bottom of the "Create a new PAT" popup to get the full list of available scopes.
+
+<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/ado-create-pat.png" alt="The Azure DevOps PAT creation page">
+
+### Gerrit
+
+- Permissions to create, comment, close, merge, and delete a Change in Gerrit.
+- Create an HTTP password in the user settings page.
+
+<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/gerrit-batches-password.png" alt="Gerrit Password Creation">
+
 ### SSH access to code host
 
-When Sourcegraph is configured to [clone repositories using SSH via the `gitURLType` setting](../../admin/repo/auth.md), an SSH keypair will be generated for you and the public key needs to be added to the code host to allow push access. In the process of adding your personal access token you will be given that public key. You can also come back later and copy it to paste it in your code hosts SSH access settings page.
+When Sourcegraph is configured to [clone repositories using SSH via the `gitURLType` setting](../../admin/repo/auth.md), an SSH keypair will be generated for you and the public key needs to be added to the code host to allow push access. In the process of adding your personal access token you will be given that public key. You can also come back later and copy it to paste it in your code host's SSH access settings page.
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/create-credential-ssh-key.png" alt="Credentials setup process, showing the SSH public key to be copied">
-
-

@@ -1,35 +1,30 @@
-import React from 'react'
-import { RouteComponentProps } from 'react-router'
+import type { FC } from 'react'
 
+import { Navigate } from 'react-router-dom'
+
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { Text } from '@sourcegraph/wildcard'
 
-import { Scalars } from '../../graphql-operations'
+import type { AuthenticatedUser } from '../../auth'
+import { canWriteBatchChanges } from '../../batches/utils'
+import { SHOW_BUSINESS_FEATURES } from '../../enterprise/dotcom/productSubscriptions/features'
+import type { ExecutorsUserAreaProps } from '../../enterprise/executors/ExecutorsUserArea'
+import type { UserEventLogsPageProps } from '../../enterprise/user/settings/UserEventLogsPage'
+import type { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 
-import { showPasswordsPage, showAccountSecurityPage, userExternalServicesEnabled } from './cloud-ga'
-import type { UserAddCodeHostsPageContainerProps } from './UserAddCodeHostsPageContainer'
-import { UserSettingsAreaRoute, UserSettingsAreaRouteContext } from './UserSettingsArea'
+import type { UserSettingsAreaRoute } from './UserSettingsArea'
+
+const ExecutorsUserArea = lazyComponent<ExecutorsUserAreaProps, 'ExecutorsUserArea'>(
+    () => import('../../enterprise/executors/ExecutorsUserArea'),
+    'ExecutorsUserArea'
+)
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
-
-const SettingsRepositoriesPage = lazyComponent(
-    () => import('./repositories/SettingsRepositoriesPage'),
-    'SettingsRepositoriesPage'
-)
-const UserSettingsManageRepositoriesPage = lazyComponent(
-    () => import('./repositories/UserSettingsManageRepositoriesPage'),
-    'UserSettingsManageRepositoriesPage'
-)
-
-const UserAddCodeHostsPageContainer = lazyComponent<
-    UserAddCodeHostsPageContainerProps,
-    'UserAddCodeHostsPageContainer'
->(() => import('./UserAddCodeHostsPageContainer'), 'UserAddCodeHostsPageContainer')
-
-const ExternalServicePage = lazyComponent(
-    () => import('../../components/externalServices/ExternalServicePage'),
-    'ExternalServicePage'
-)
 
 const UserSettingsSecurityPage = lazyComponent(
     () => import('./auth/UserSettingsSecurityPage'),
@@ -39,122 +34,125 @@ const UserSettingsSecurityPage = lazyComponent(
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '',
-        exact: true,
-        render: props => {
-            if (props.isSourcegraphDotCom && props.authenticatedUser && props.user.id !== props.authenticatedUser.id) {
-                return (
-                    <SiteAdminAlert className="sidebar__alert" variant="danger">
-                        Only the user may access their individual settings.
-                    </SiteAdminAlert>
-                )
-            }
-            return (
-                <SettingsArea
-                    {...props}
-                    subject={props.user}
-                    isLightTheme={props.isLightTheme}
-                    extraHeader={
-                        <>
-                            {props.authenticatedUser && props.user.id !== props.authenticatedUser.id && (
-                                <SiteAdminAlert className="sidebar__alert">
-                                    Viewing settings for <strong>{props.user.username}</strong>
-                                </SiteAdminAlert>
-                            )}
-                            <p>User settings override global and organization settings.</p>
-                        </>
-                    }
-                />
-            )
-        },
+        render: props => <UserSettingAreaIndexPage {...props} />,
     },
     {
-        path: '/profile',
-        exact: true,
+        path: 'profile',
         render: lazyComponent(() => import('./profile/UserSettingsProfilePage'), 'UserSettingsProfilePage'),
     },
     {
-        path: '/password',
-        exact: true,
-        render: lazyComponent(() => import('./auth/UserSettingsPasswordPage'), 'UserSettingsPasswordPage'),
-        condition: showPasswordsPage,
+        path: 'password',
+        render: () => <Navigate to="../security" replace={true} />,
     },
     {
-        path: '/emails',
-        exact: true,
+        path: 'quota',
+        render: lazyComponent(() => import('./quota/UserQuotaProfilePage'), 'UserQuotaProfilePage'),
+        condition: ({ authenticatedUser }) => authenticatedUser.siteAdmin,
+    },
+    {
+        path: 'emails',
         render: lazyComponent(() => import('./emails/UserSettingsEmailsPage'), 'UserSettingsEmailsPage'),
     },
     {
-        path: '/tokens',
+        path: 'tokens/*',
         render: lazyComponent(() => import('./accessTokens/UserSettingsTokensArea'), 'UserSettingsTokensArea'),
         condition: () => window.context.accessTokensAllow !== 'none',
     },
     // future GA Cloud routes
     {
-        path: '/security',
-        exact: true,
+        path: 'security',
         render: props => <UserSettingsSecurityPage {...props} context={window.context} />,
-        condition: showAccountSecurityPage,
     },
     {
-        path: '/repositories',
-        render: props => (
-            <SettingsRepositoriesPage
-                {...props}
-                owner={{ id: props.user.id, type: 'user', tags: props.authenticatedUser.tags }}
-                routingPrefix={props.user.url + '/settings'}
-            />
-        ),
-        exact: true,
-        condition: userExternalServicesEnabled,
-    },
-    {
-        path: '/repositories/manage',
-        render: props => (
-            <UserSettingsManageRepositoriesPage
-                {...props}
-                owner={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags, type: 'user' }}
-                routingPrefix={props.user.url + '/settings'}
-            />
-        ),
-        exact: true,
-        condition: userExternalServicesEnabled,
-    },
-    {
-        path: '/code-hosts',
-        render: props => (
-            <UserAddCodeHostsPageContainer
-                owner={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags, type: 'user' }}
-                context={window.context}
-                routingPrefix={props.user.url + '/settings'}
-                onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
-                telemetryService={props.telemetryService}
-                authenticatedUser={props.authenticatedUser}
-            />
-        ),
-        exact: true,
-        condition: userExternalServicesEnabled,
-    },
-    {
-        path: '/external-services/:id',
-        render: ({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }> & UserSettingsAreaRouteContext) => (
-            <ExternalServicePage
-                {...props}
-                externalServiceID={match.params.id}
-                afterUpdateRoute={props.user.url + '/settings/external-services'}
-            />
-        ),
-        exact: true,
-        condition: userExternalServicesEnabled,
-    },
-    {
-        path: '/product-research',
-        exact: true,
+        path: 'product-research',
         render: lazyComponent(() => import('./research/ProductResearch'), 'ProductResearchPage'),
         condition: () => window.context.productResearchPageEnabled,
     },
     {
-        path: '/about-organizations',
-        exact: true,
+        path: 'about-organizations',
         render: lazyComponent(() => import('./aboutOrganization/AboutOrganizationPage'), 'AboutOrganizationPage'),
     },
+    {
+        path: 'permissions',
+        render: lazyComponent(
+            () => import('../../enterprise/user/settings/auth/UserSettingsPermissionsPage'),
+            'UserSettingsPermissionsPage'
+        ),
+    },
+    {
+        path: 'event-log',
+        render: lazyComponent<UserEventLogsPageProps, 'UserEventLogsPage'>(
+            () => import('../../enterprise/user/settings/UserEventLogsPage'),
+            'UserEventLogsPage'
+        ),
+    },
+    {
+        path: 'executors/*',
+        render: props => <ExecutorsUserArea {...props} namespaceID={props.user.id} />,
+        condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
+            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
+    },
+    {
+        path: 'batch-changes',
+        render: lazyComponent(
+            () => import('../../enterprise/batches/settings/BatchChangesSettingsArea'),
+            'BatchChangesSettingsArea'
+        ),
+        condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
+            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
+    },
+    {
+        path: 'subscriptions/:subscriptionUUID',
+        render: lazyComponent(
+            () => import('../../enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionPage'),
+            'UserSubscriptionsProductSubscriptionPage'
+        ),
+        condition: () => SHOW_BUSINESS_FEATURES,
+    },
+    {
+        path: 'subscriptions',
+        render: lazyComponent(
+            () => import('../../enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionsPage'),
+            'UserSubscriptionsProductSubscriptionsPage'
+        ),
+        condition: () => SHOW_BUSINESS_FEATURES,
+    },
 ]
+
+interface UserSettingAreaIndexPageProps extends PlatformContextProps, SettingsCascadeProps, TelemetryProps {
+    isSourcegraphDotCom: boolean
+    authenticatedUser: AuthenticatedUser
+    user: UserSettingsAreaUserFields
+    extraHeader?: JSX.Element
+    className?: string
+}
+
+const UserSettingAreaIndexPage: FC<UserSettingAreaIndexPageProps> = props => {
+    const { isSourcegraphDotCom, authenticatedUser, user } = props
+    const isLightTheme = useIsLightTheme()
+
+    if (isSourcegraphDotCom && authenticatedUser && user.id !== authenticatedUser.id) {
+        return (
+            <SiteAdminAlert className="sidebar__alert" variant="danger">
+                Only the user may access their individual settings.
+            </SiteAdminAlert>
+        )
+    }
+    return (
+        <SettingsArea
+            {...props}
+            subject={props.user}
+            isLightTheme={isLightTheme}
+            extraHeader={
+                <>
+                    {authenticatedUser && user.id !== authenticatedUser.id && (
+                        <SiteAdminAlert className="sidebar__alert">
+                            Viewing settings for <strong>{user.username}</strong>
+                        </SiteAdminAlert>
+                    )}
+                    <Text>User settings override global and organization settings.</Text>
+                </>
+            }
+        />
+    )
+}

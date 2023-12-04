@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -24,10 +24,11 @@ import (
 // A BitbucketServerSource yields repositories from a single BitbucketServer connection configured
 // in Sourcegraph via the external services configuration.
 type BitbucketServerSource struct {
-	svc     *types.ExternalService
-	config  *schema.BitbucketServerConnection
-	exclude excludeFunc
-	client  *bitbucketserver.Client
+	svc      *types.ExternalService
+	config   *schema.BitbucketServerConnection
+	excluder repoExcluder
+	client   *bitbucketserver.Client
+	logger   log.Logger
 }
 
 var _ Source = &BitbucketServerSource{}
@@ -36,15 +37,19 @@ var _ VersionSource = &BitbucketServerSource{}
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
 // rl is optional
-func NewBitbucketServerSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
-	var c schema.BitbucketServerConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+func NewBitbucketServerSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newBitbucketServerSource(svc, &c, cf)
+	var c schema.BitbucketServerConnection
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+	return newBitbucketServerSource(logger, svc, &c, cf)
 }
 
-func newBitbucketServerSource(svc *types.ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+func newBitbucketServerSource(logger log.Logger, svc *types.ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
 	if cf == nil {
 		cf = httpcli.ExternalClientFactory
 	}
@@ -59,28 +64,41 @@ func newBitbucketServerSource(svc *types.ExternalService, c *schema.BitbucketSer
 		return nil, err
 	}
 
-	var eb excludeBuilder
+	var ex repoExcluder
 	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Exact(strconv.Itoa(r.Id))
-		eb.Pattern(r.Pattern)
+		rule := ex.AddRule()
+		rule.
+			Exact(r.Name).
+			Pattern(r.Pattern)
+
+		if r.Id != 0 {
+			rule.Exact(strconv.Itoa(r.Id))
+		}
 	}
-	exclude, err := eb.Build()
-	if err != nil {
+	if err := ex.RuleErrors(); err != nil {
 		return nil, err
 	}
 
-	client, err := bitbucketserver.NewClient(c, cli)
+	client, err := bitbucketserver.NewClient(svc.URN(), c, cli)
 	if err != nil {
 		return nil, err
 	}
 
 	return &BitbucketServerSource{
-		svc:     svc,
-		config:  c,
-		exclude: exclude,
-		client:  client,
+		svc:      svc,
+		config:   c,
+		excluder: ex,
+		client:   client,
+		logger:   logger,
 	}, nil
+}
+
+func (s BitbucketServerSource) CheckConnection(ctx context.Context) error {
+	_, err := s.AuthenticatedUsername(ctx)
+	if err != nil {
+		return errors.Wrap(err, "connection check failed. could not fetch authenticated user")
+	}
+	return nil
 }
 
 // ListRepos returns all BitbucketServer repositories accessible to all connections configured
@@ -135,7 +153,15 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 			break
 		}
 		if l.Name == "http" {
-			cloneURL = setUserinfoBestEffort(l.Href, s.config.Username, "")
+			cloneURL = l.Href
+			// If the config contains a username, we set the url user field to it.
+			if s.config.Username != "" {
+				u, err := url.Parse(l.Href)
+				if err == nil {
+					u.User = url.User(s.config.Username)
+					cloneURL = u.String()
+				}
+			}
 			// No break, so that we fallback to http in case of ssh missing
 			// with GitURLType == "ssh"
 		}
@@ -161,7 +187,7 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 			ServiceType: extsvc.TypeBitbucketServer,
 			ServiceID:   host.String(),
 		},
-		Description: repo.Name,
+		Description: repo.Description,
 		Fork:        repo.Origin != nil,
 		Archived:    isArchived,
 		Private:     !repo.Public,
@@ -181,8 +207,8 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 		name = r.Project.Key + "/" + name
 	}
 	if r.State != "AVAILABLE" ||
-		s.exclude(name) ||
-		s.exclude(strconv.Itoa(r.ID)) ||
+		s.excluder.ShouldExclude(name) ||
+		s.excluder.ShouldExclude(strconv.Itoa(r.ID)) ||
 		(s.config.ExcludePersonalRepositories && r.IsPersonalRepository()) {
 		return true
 	}
@@ -191,10 +217,9 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 }
 
 func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan SourceResult) {
-	// "archived" label is a convention used at some customers for indicating
-	// a repository is archived (like github's archived state). This is not
-	// returned in the normal repository listing endpoints, so we need to
-	// fetch it separately.
+	// "archived" label is a convention used at some customers for indicating a
+	// repository is archived (like github's archived state). This is not returned in
+	// the normal repository listing endpoints, so we need to fetch it separately.
 	archived, err := s.listAllLabeledRepos(ctx, "archived")
 	if err != nil {
 		results <- SourceResult{Source: s, Err: errors.Wrap(err, "failed to list repos with archived label")}
@@ -214,9 +239,14 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 	go func() {
 		defer wg.Done()
 
-		// Admins normally add to end of lists, so end of list most likely has
-		// new repos => stream them first.
+		// Admins normally add to end of lists, so end of list most likely has new repos
+		// => stream them first.
 		for i := len(s.config.Repos) - 1; i >= 0; i-- {
+			if err := ctx.Err(); err != nil {
+				ch <- batch{err: err}
+				break
+			}
+
 			name := s.config.Repos[i]
 			ps := strings.SplitN(name, "/", 2)
 			if len(ps) != 2 {
@@ -230,7 +260,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 				// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
 				// 404 errors on external service config validation.
 				if bitbucketserver.IsNotFound(err) {
-					log15.Warn("skipping missing bitbucketserver.repos entry:", "name", name, "err", err)
+					s.logger.Warn("skipping missing bitbucketserver.repos entry:", log.String("name", name), log.Error(err))
 					continue
 				}
 				ch <- batch{err: errors.Wrapf(err, "bitbucketserver.repos: name: %q", name)}
@@ -263,6 +293,24 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 				ch <- batch{repos: repos}
 				next = page
 			}
+		}(q)
+	}
+
+	for _, q := range s.config.ProjectKeys {
+		wg.Add(1)
+		go func(q string) {
+			defer wg.Done()
+
+			repos, err := s.client.ProjectRepos(ctx, q)
+			if err != nil {
+				// Getting a "fatal" error for a single project key is not a strong
+				// enough reason to stop syncing, instead wrap this error as a warning
+				// so that the sync can continue.
+				ch <- batch{err: errors.NewWarningError(errors.Wrapf(err, "bitbucketserver.projectKeys: query=%q", q))}
+				return
+			}
+
+			ch <- batch{repos: repos}
 		}(q)
 	}
 

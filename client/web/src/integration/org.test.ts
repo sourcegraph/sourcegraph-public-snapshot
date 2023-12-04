@@ -1,17 +1,20 @@
 import assert from 'assert'
 
+import { afterEach, beforeEach, describe, it } from 'mocha'
+
 import { subtypeOf } from '@sourcegraph/common'
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
+import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
-import { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
+import type { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { percySnapshotWithVariants } from './utils'
+import { createEditorAPI, percySnapshotWithVariants } from './utils'
 
 describe('Organizations', () => {
     const testOrg = subtypeOf<OrganizationResult['organization']>()({
@@ -61,8 +64,15 @@ describe('Organizations', () => {
                 SettingsCascade: () => ({
                     settingsSubject: {
                         settingsCascade: {
+                            final: '',
                             subjects: [
                                 {
+                                    __typename: 'Org',
+                                    id: '123',
+                                    settingsURL: '#',
+                                    name: 'testorg',
+                                    displayName: 'Test org',
+                                    viewerCanAdminister: true,
                                     latestSettings: {
                                         id: settingsID,
                                         contents: JSON.stringify({}),
@@ -87,15 +97,16 @@ describe('Organizations', () => {
             await driver.page.waitForSelector('.test-create-org-button')
 
             await percySnapshotWithVariants(driver.page, 'Site admin org page')
+            await accessibilityAudit(driver.page)
 
             await driver.page.click('.test-create-org-button')
 
             await driver.replaceText({
-                selector: '.test-new-org-name-input',
+                selector: '[data-testid="test-new-org-name-input"]',
                 newText: testOrg.name,
             })
             await driver.replaceText({
-                selector: '.test-new-org-display-name-input',
+                selector: '[data-testid="test-new-org-display-name-input"]',
                 newText: testOrg.displayName,
             })
 
@@ -127,8 +138,15 @@ describe('Organizations', () => {
                     SettingsCascade: () => ({
                         settingsSubject: {
                             settingsCascade: {
+                                final: '',
                                 subjects: [
                                     {
+                                        __typename: 'Org',
+                                        id: '123',
+                                        settingsURL: '#',
+                                        name: 'testorg',
+                                        displayName: 'Test org',
+                                        viewerCanAdminister: true,
                                         latestSettings: {
                                             id: settingsID,
                                             contents: JSON.stringify({}),
@@ -146,15 +164,13 @@ describe('Organizations', () => {
                         },
                     }),
                 })
-                await driver.page.goto(testContext.driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings')
+                await driver.page.goto(driver.sourcegraphBaseUrl + `/organizations/${testOrg.name}/settings`)
                 const updatedSettings = '// updated'
-                await driver.page.waitForSelector('.test-settings-file .monaco-editor')
-                await driver.replaceText({
-                    selector: '.test-settings-file .monaco-editor',
-                    newText: updatedSettings,
-                    selectMethod: 'keyboard',
-                    enterTextMethod: 'paste',
-                })
+                const editor = await createEditorAPI(driver, '.test-settings-file .test-editor')
+
+                // Take snapshot before updating text in the editor to avoid flakiness.
+                await percySnapshotWithVariants(driver.page, 'Organization settings page')
+                await editor.replace(updatedSettings, 'paste')
 
                 const variables = await testContext.waitForGraphQLRequest(async () => {
                     await driver.page.click('.test-save-toolbar-save')
@@ -166,34 +182,45 @@ describe('Organizations', () => {
                     contents: updatedSettings,
                 })
 
-                await percySnapshotWithVariants(driver.page, 'Organization settings page')
+                await accessibilityAudit(driver.page)
             })
         })
         describe('Members tab', () => {
             it('allows to remove a member', async () => {
                 const testMember = {
+                    __typename: 'User' as any,
                     id: 'TestMember',
                     displayName: 'Test member',
                     username: 'testmember',
                     avatarURL: null,
+                    siteAdmin: false,
                 }
                 const testMember2 = {
+                    __typename: 'User' as any,
                     id: 'TestMember2',
                     displayName: 'Test member 2',
                     username: 'testmember2',
                     avatarURL: null,
+                    siteAdmin: false,
                 }
                 const graphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
                     ...commonWebGraphQlResults,
                     Organization: () => ({
                         organization: testOrg,
                     }),
-                    OrganizationMembers: () => ({
+                    OrganizationSettingsMembers: () => ({
                         node: {
+                            __typename: 'Org',
                             viewerCanAdminister: true,
                             members: {
                                 totalCount: 2,
                                 nodes: [testMember, testMember2],
+                                pageInfo: {
+                                    startCursor: testMember.id,
+                                    endCursor: testMember2.id,
+                                    hasNextPage: false,
+                                    hasPreviousPage: false,
+                                },
                             },
                         },
                     }),
@@ -203,9 +230,7 @@ describe('Organizations', () => {
                 }
                 testContext.overrideGraphQL(graphQlResults)
 
-                await driver.page.goto(
-                    testContext.driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings/members'
-                )
+                await driver.page.goto(driver.sourcegraphBaseUrl + `/organizations/${testOrg.name}/settings/members`)
 
                 await driver.page.waitForSelector('.test-remove-org-member')
 
@@ -218,16 +243,28 @@ describe('Organizations', () => {
                 )
 
                 await percySnapshotWithVariants(driver.page, 'Organization members list')
+                await accessibilityAudit(driver.page)
 
                 // Override for the fetch post-removal
                 testContext.overrideGraphQL({
                     ...graphQlResults,
-                    OrganizationMembers: () => ({
+                    OrganizationSettingsMembers: () => ({
                         node: {
+                            __typename: 'Org',
                             viewerCanAdminister: true,
                             members: {
                                 totalCount: 1,
                                 nodes: [testMember2],
+                                pageInfo: {
+                                    startCursor: testMember2.id,
+                                    endCursor: testMember2.id,
+                                    hasNextPage: false,
+                                    hasPreviousPage: false,
+                                },
+                            },
+                            pageInfo: {
+                                endCursor: null,
+                                hasNextPage: false,
                             },
                         },
                     }),

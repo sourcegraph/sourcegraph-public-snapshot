@@ -1,0 +1,59 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "npm_package", "ts_project")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
+
+# gazelle:js_ignore_imports ../../../../postcss.config
+# gazelle:js_ignore_imports ../../../../../../../../postcss.config
+
+npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root()
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "build-config_lib",
+    srcs = [
+        "src/esbuild/monacoPlugin.ts",
+        "src/esbuild/packageResolutionPlugin.ts",
+        "src/esbuild/plugins.ts",
+        "src/esbuild/stylePlugin.ts",
+        "src/esbuild/workerPlugin.ts",
+        "src/index.ts",
+        "src/monaco-editor.ts",
+        "src/paths.ts",
+        "src/utils/environment-config.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":node_modules/@types/sass",
+        ":node_modules/buffer",  #keep
+        ":node_modules/enhanced-resolve",
+        ":node_modules/esbuild",
+        ":node_modules/monaco-editor-webpack-plugin",
+        ":node_modules/postcss",
+        ":node_modules/postcss-modules",
+        ":node_modules/process",  #keep
+        ":node_modules/sass",
+        "//:node_modules/@types/node",
+        "//:node_modules/monaco-editor",  #keep
+        "//:node_modules/monaco-yaml",  #keep
+    ],
+)
+
+npm_package(
+    name = "build-config_pkg",
+    srcs = [
+        "package.json",
+        ":build-config_lib",
+    ],
+    type = "commonjs",
+)

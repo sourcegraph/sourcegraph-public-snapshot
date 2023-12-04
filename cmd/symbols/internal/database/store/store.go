@@ -5,11 +5,11 @@ import (
 	"database/sql"
 
 	"github.com/inconshreveable/log15"
-	"github.com/jmoiron/sqlx"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -18,7 +18,7 @@ type Store interface {
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 
-	Search(ctx context.Context, args types.SearchArgs) ([]result.Symbol, error)
+	Search(ctx context.Context, args search.SymbolsParameters) ([]result.Symbol, error)
 
 	CreateMetaTable(ctx context.Context) error
 	GetCommit(ctx context.Context) (string, bool, error)
@@ -32,19 +32,19 @@ type Store interface {
 }
 
 type store struct {
-	db *sqlx.DB
+	db *sql.DB
 	*basestore.Store
 }
 
-func NewStore(dbFile string) (Store, error) {
-	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
+func NewStore(observationCtx *observation.Context, dbFile string) (Store, error) {
+	db, err := sql.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return nil, err
 	}
 
 	return &store{
 		db:    db,
-		Store: basestore.NewWithDB(db, sql.TxOptions{}),
+		Store: basestore.NewWithHandle(basestore.NewHandleWithDB(observationCtx.Logger, db, sql.TxOptions{})),
 	}, nil
 }
 
@@ -61,8 +61,8 @@ func (s *store) Transact(ctx context.Context) (Store, error) {
 	return &store{db: s.db, Store: tx}, nil
 }
 
-func WithSQLiteStore(dbFile string, callback func(db Store) error) error {
-	db, err := NewStore(dbFile)
+func WithSQLiteStore(observationCtx *observation.Context, dbFile string, callback func(db Store) error) error {
+	db, err := NewStore(observationCtx, dbFile)
 	if err != nil {
 		return err
 	}
@@ -75,8 +75,8 @@ func WithSQLiteStore(dbFile string, callback func(db Store) error) error {
 	return callback(db)
 }
 
-func WithSQLiteStoreTransaction(ctx context.Context, dbFile string, callback func(db Store) error) error {
-	return WithSQLiteStore(dbFile, func(db Store) (err error) {
+func WithSQLiteStoreTransaction(ctx context.Context, observationCtx *observation.Context, dbFile string, callback func(db Store) error) error {
+	return WithSQLiteStore(observationCtx, dbFile, func(db Store) (err error) {
 		tx, err := db.Transact(ctx)
 		if err != nil {
 			return err

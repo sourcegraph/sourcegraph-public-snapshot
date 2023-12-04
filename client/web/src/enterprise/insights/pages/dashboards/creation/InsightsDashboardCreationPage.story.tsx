@@ -1,16 +1,17 @@
-import { Meta, Story } from '@storybook/react'
-import React from 'react'
+import type { Meta, StoryFn } from '@storybook/react'
+import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../components/WebStory'
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { CodeInsightsSettingsCascadeBackend } from '../../../core/backend/setting-based-api/code-insights-setting-cascade-backend'
-import { SETTINGS_CASCADE_MOCK } from '../../../mocks/settings-cascade'
+import { CodeInsightsBackendStoryMock } from '../../../CodeInsightsBackendStoryMock'
+import type { CodeInsightsGqlBackend } from '../../../core/backend/gql-backend/code-insights-gql-backend'
+import { InsightsDashboardOwnerType } from '../../../core/types'
+import { useCodeInsightsLicenseState } from '../../../stores'
 
-import { InsightsDashboardCreationPage as InsightsDashboardCreationPageComponent } from './InsightsDashboardCreationPage'
+import { InsightsDashboardCreationPage } from './InsightsDashboardCreationPage'
 
-export default {
+const config: Meta = {
     title: 'web/insights/InsightsDashboardCreationPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
     parameters: {
@@ -19,19 +20,36 @@ export default {
             disableSnapshot: false,
         },
     },
-} as Meta
-
-const PLATFORM_CONTEXT = {
-    // eslint-disable-next-line @typescript-eslint/require-await
-    updateSettings: async (...args: any[]) => {
-        console.log('PLATFORM CONTEXT update settings with', { ...args })
-    },
 }
 
-const codeInsightsBackend = new CodeInsightsSettingsCascadeBackend(SETTINGS_CASCADE_MOCK, PLATFORM_CONTEXT)
+export default config
 
-export const InsightsDashboardCreationPage: Story = () => (
-    <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
-        <InsightsDashboardCreationPageComponent telemetryService={NOOP_TELEMETRY_SERVICE} />
-    </CodeInsightsBackendContext.Provider>
-)
+const codeInsightsBackend: Partial<CodeInsightsGqlBackend> = {
+    getDashboardOwners: () =>
+        of([
+            { type: InsightsDashboardOwnerType.Personal, id: '001', title: 'Personal' },
+            { type: InsightsDashboardOwnerType.Organization, id: '002', title: 'Organization 1' },
+            { type: InsightsDashboardOwnerType.Organization, id: '003', title: 'Organization 2' },
+            { type: InsightsDashboardOwnerType.Global, id: '004', title: 'Global' },
+        ]),
+}
+
+export const InsightsDashboardCreationLicensed: StoryFn = () => {
+    useCodeInsightsLicenseState.setState({ licensed: true, insightsLimit: null })
+
+    return (
+        <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
+            <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+        </CodeInsightsBackendStoryMock>
+    )
+}
+
+export const InsightsDashboardCreationUnlicensed: StoryFn = () => {
+    useCodeInsightsLicenseState.setState({ licensed: false, insightsLimit: 2 })
+
+    return (
+        <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
+            <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+        </CodeInsightsBackendStoryMock>
+    )
+}

@@ -10,8 +10,7 @@ func TimeSince(start time.Time) time.Duration {
 	return time.Since(start) / time.Second * time.Second
 }
 
-// MakeTestRepoName returns the given repo name as a fully qualified repository name in the
-// sourcegraph-testing GitHub organization.
-func MakeTestRepoName(repoName string) string {
-	return fmt.Sprintf("github.com/%s/%s", "sourcegraph-testing", repoName)
+// MakeTestRepoName returns the given repo name as a fully qualified repository name.
+func MakeTestRepoName(orgAndRepoName string) string {
+	return fmt.Sprintf("github.com/%s", orgAndRepoName)
 }

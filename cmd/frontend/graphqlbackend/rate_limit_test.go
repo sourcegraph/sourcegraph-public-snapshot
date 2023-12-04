@@ -1,23 +1,23 @@
 package graphqlbackend
 
 import (
+	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/throttled/throttled/v2"
 	"github.com/throttled/throttled/v2/store/memstore"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestEstimateQueryCost(t *testing.T) {
 	for _, tc := range []struct {
 		name      string
 		query     string
-		variables map[string]interface{}
+		variables map[string]any
 		want      QueryCost
 	}{
 		{
@@ -69,33 +69,6 @@ query{
 			},
 		},
 		{
-			name: "Query with variables",
-			query: `
-query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
-                    extensionRegistry {
-                        extensions(first: $first, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
-                            nodes {
-                                id
-                                extensionID
-                                url
-                                manifest {
-                                    raw
-                                }
-                                viewerCanAdminister
-                            }
-                        }
-                    }
-                }
-`,
-			variables: map[string]interface{}{
-				"first": 10,
-			},
-			want: QueryCost{
-				FieldCount: 62,
-				MaxDepth:   5,
-			},
-		},
-		{
 			name: "Query with default variables",
 			query: `
 query fetchExternalServices($first: Int = 10){
@@ -107,7 +80,7 @@ query fetchExternalServices($first: Int = 10){
   }
 }
 `,
-			variables: map[string]interface{}{
+			variables: map[string]any{
 				"first": 5,
 			},
 			want: QueryCost{
@@ -127,7 +100,7 @@ query fetchExternalServices($first: Int = 10){
   }
 }
 `,
-			variables: map[string]interface{}{},
+			variables: map[string]any{},
 			want: QueryCost{
 				FieldCount: 21,
 				MaxDepth:   3,
@@ -354,7 +327,7 @@ fragment FileDiffFields on FileDiff {
 				FieldCount: 7,
 				MaxDepth:   5,
 			},
-			variables: map[string]interface{}{
+			variables: map[string]any{
 				"base": "a46cf4a8b6dc42ea7b7b716e53c49dd3508a8678",
 				"head": "0fd3fb1f4e41ae1f95970beeec1c1f7b2d8a7d06",
 				"repo": "github.com/presslabs/mysql-operator",
@@ -418,171 +391,6 @@ fragment UsableFields on Usable {
 	}
 }
 
-func TestRatelimitFromConfig(t *testing.T) {
-	testCases := []struct {
-		name   string
-		config *schema.ApiRatelimit
-
-		uid  string
-		isIP bool
-		cost int
-
-		enabled bool
-
-		wantLimited bool
-		wantResult  throttled.RateLimitResult
-	}{
-		{
-			name:   "Nil config",
-			config: nil,
-
-			enabled: false,
-		},
-		{
-			name: "Disabled config",
-			config: &schema.ApiRatelimit{
-				Enabled: false,
-			},
-			enabled: false,
-		},
-		{
-			name: "No overrides",
-			config: &schema.ApiRatelimit{
-				Enabled:   true,
-				Overrides: nil,
-				PerIP:     5000,
-				PerUser:   5000,
-			},
-			enabled: true,
-
-			uid:  "test",
-			isIP: false,
-			cost: 1,
-
-			wantLimited: false,
-			wantResult: throttled.RateLimitResult{
-				Limit:      1001,
-				Remaining:  1000,
-				ResetAfter: 720 * time.Millisecond,
-				RetryAfter: -1,
-			},
-		},
-		{
-			name: "With value override",
-			config: &schema.ApiRatelimit{
-				Enabled: true,
-				PerIP:   5000,
-				PerUser: 5000,
-				Overrides: []*schema.Overrides{
-					{
-						Key:   "test",
-						Limit: 2500,
-					},
-				},
-			},
-			enabled: true,
-
-			uid:  "test",
-			isIP: false,
-			cost: 1,
-
-			wantLimited: false,
-			wantResult: throttled.RateLimitResult{
-				Limit:      501,
-				Remaining:  500,
-				ResetAfter: 720 * time.Millisecond * 2,
-				RetryAfter: -1,
-			},
-		},
-		{
-			name: "With blocked override",
-			config: &schema.ApiRatelimit{
-				Enabled: true,
-				PerIP:   5000,
-				PerUser: 5000,
-				Overrides: []*schema.Overrides{
-					{
-						Key:   "test",
-						Limit: "blocked",
-					},
-				},
-			},
-			enabled: true,
-
-			uid:  "test",
-			isIP: false,
-			cost: 1,
-
-			wantLimited: true,
-			wantResult: throttled.RateLimitResult{
-				Limit:      0,
-				Remaining:  0,
-				ResetAfter: 0,
-				RetryAfter: 0,
-			},
-		},
-		{
-			name: "With unlimited override",
-			config: &schema.ApiRatelimit{
-				Enabled: true,
-				PerIP:   5000,
-				PerUser: 5000,
-				Overrides: []*schema.Overrides{
-					{
-						Key:   "test",
-						Limit: "unlimited",
-					},
-				},
-			},
-			enabled: true,
-
-			uid:  "test",
-			isIP: false,
-			cost: 1,
-
-			wantLimited: false,
-			wantResult: throttled.RateLimitResult{
-				Limit:      100000,
-				Remaining:  100000,
-				ResetAfter: 0,
-				RetryAfter: 0,
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			store, err := memstore.New(1024)
-			if err != nil {
-				t.Fatal(err)
-			}
-			rlw := &RateLimitWatcher{
-				store: store,
-			}
-
-			rlw.updateFromConfig(tc.config)
-			rl, enabled := rlw.Get()
-
-			if tc.enabled != enabled {
-				t.Fatalf("Want %v, got %v", tc.enabled, enabled)
-			}
-			if !tc.enabled {
-				return
-			}
-			limited, result, err := rl.RateLimit(tc.uid, tc.cost, LimiterArgs{IsIP: tc.isIP})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if limited != tc.wantLimited {
-				t.Fatalf("Limited, want %v got %v", tc.wantLimited, limited)
-			}
-			if diff := cmp.Diff(tc.wantResult, result); diff != "" {
-				t.Fatal(diff)
-			}
-		})
-	}
-}
-
 func TestBasicLimiterEnabled(t *testing.T) {
 	tests := []struct {
 		limit       int
@@ -608,12 +416,15 @@ func TestBasicLimiterEnabled(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("limit:%d", tt.limit), func(t *testing.T) {
-			store, err := memstore.New(1)
+			store, err := memstore.NewCtx(1)
 			if err != nil {
 				t.Fatal(err)
 			}
-			bl := BasicLimitWatcher{store: store}
-			bl.updateFromConfig(tt.limit)
+
+			logger := logtest.Scoped(t)
+
+			bl := NewBasicLimitWatcher(logger, store)
+			bl.updateFromConfig(logger, tt.limit)
 
 			_, enabled := bl.Get()
 
@@ -625,12 +436,15 @@ func TestBasicLimiterEnabled(t *testing.T) {
 }
 
 func TestBasicLimiter(t *testing.T) {
-	store, err := memstore.New(1)
+	store, err := memstore.NewCtx(1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	bl := BasicLimitWatcher{store: store}
-	bl.updateFromConfig(1)
+
+	logger := logtest.Scoped(t)
+
+	bl := NewBasicLimitWatcher(logger, store)
+	bl.updateFromConfig(logger, 1)
 
 	limiter, enabled := bl.Get()
 	if !enabled {
@@ -645,7 +459,7 @@ func TestBasicLimiter(t *testing.T) {
 	}
 
 	// 1st call should not be limited.
-	limited, _, err := limiter.RateLimit("", 1, limiterArgs)
+	limited, _, err := limiter.RateLimit(context.Background(), "", 1, limiterArgs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -654,7 +468,7 @@ func TestBasicLimiter(t *testing.T) {
 	}
 
 	// 2nd call should be limited.
-	limited, _, err = limiter.RateLimit("", 1, limiterArgs)
+	limited, _, err = limiter.RateLimit(context.Background(), "", 1, limiterArgs)
 	if err != nil {
 		t.Fatal(err)
 	}

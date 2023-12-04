@@ -1,0 +1,80 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/labels/archived/labeled?REPOSITORY=&limit=1000
+    method: GET
+  response:
+    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"slug":"archived-repo","id":10073,"name":"archived-repo","hierarchyId":"05788c1a4ffadf0ff5d8","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"PUBLIC","id":4,"name":"Public","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC"}]}},"public":false,"labelableType":"REPOSITORY","links":{"clone":[{"href":"ssh://git@bitbucket.sgdev.org:7999/public/archived-repo.git","name":"ssh"},{"href":"https://bitbucket.sgdev.org/scm/public/archived-repo.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC/repos/archived-repo/browse"}]}}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 24 Jan 2023 14:16:30 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@TCJ96Jx856x13037147x1'
+      X-Asessionid:
+      - 1jutytf
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOURCEGRAPH/repos?limit=1000
+    method: GET
+  response:
+    body: '{"size":2,"limit":1000,"isLastPage":true,"values":[{"slug":"empty-repo-1","id":10193,"name":"empty-repo-1","description":"This
+      repo is fast to clone and is intended to be used for e2e tests","hierarchyId":"a04e257492de47c8f071","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOURCEGRAPH","id":28,"name":"Sourcegraph
+      e2e testing","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOURCEGRAPH"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@bitbucket.sgdev.org:7999/sourcegraph/empty-repo-1.git","name":"ssh"},{"href":"https://bitbucket.sgdev.org/scm/sourcegraph/empty-repo-1.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOURCEGRAPH/repos/empty-repo-1/browse"}]}},{"slug":"jsonrpc2","id":10066,"name":"jsonrpc2","hierarchyId":"baae97879aa9c31e1fe9","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOURCEGRAPH","id":28,"name":"Sourcegraph
+      e2e testing","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOURCEGRAPH"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@bitbucket.sgdev.org:7999/sourcegraph/jsonrpc2.git","name":"ssh"},{"href":"https://bitbucket.sgdev.org/scm/sourcegraph/jsonrpc2.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOURCEGRAPH/repos/jsonrpc2/browse"}]}}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 24 Jan 2023 14:16:30 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@TCJ96Jx856x13037216x13'
+      X-Asessionid:
+      - 1y3gq2p
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""

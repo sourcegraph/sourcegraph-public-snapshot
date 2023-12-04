@@ -1,6 +1,7 @@
 package debugserver
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,7 +13,6 @@ import (
 	"github.com/felixge/fgprof"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"golang.org/x/net/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -49,6 +49,9 @@ type Endpoint struct {
 	Name string
 	// Path is passed to http.Mux.Handle as the pattern.
 	Path string
+	// IsPrefix, if true, indicates that the Path should be treated as a prefix matcher. All
+	// requests with the given prefix should be routed to Handler.
+	IsPrefix bool
 	// Handler is the debug handler
 	Handler http.Handler
 }
@@ -73,7 +76,7 @@ type Service struct {
 // Dumper is a service which can dump its state for debugging.
 type Dumper interface {
 	// DebugDump returns a snapshot of the current state.
-	DebugDump() interface{}
+	DebugDump(ctx context.Context) any
 }
 
 // NewServerRoutine returns a background routine that exposes pprof and metrics endpoints.
@@ -82,11 +85,6 @@ type Dumper interface {
 func NewServerRoutine(ready <-chan struct{}, extra ...Endpoint) goroutine.BackgroundRoutine {
 	if addr == "" {
 		return goroutine.NoopRoutine()
-	}
-
-	// we're protected by adminOnly on the front of this
-	trace.AuthRequest = func(req *http.Request) (any, sensitive bool) {
-		return true, true
 	}
 
 	handler := httpserver.NewHandler(func(router *mux.Router) {
@@ -122,14 +120,17 @@ func NewServerRoutine(ready <-chan struct{}, extra ...Endpoint) goroutine.Backgr
 		router.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
 		router.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
 		router.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
-		router.Handle("/debug/requests", http.HandlerFunc(trace.Traces))
-		router.Handle("/debug/events", http.HandlerFunc(trace.Events))
 		router.Handle("/metrics", promhttp.Handler())
 
 		// This path acts as a wildcard and should appear after more specific entries.
 		router.PathPrefix("/debug/pprof").HandlerFunc(pprof.Index)
 
 		for _, e := range extra {
+			if e.IsPrefix {
+				router.PathPrefix(e.Path).Handler(e.Handler)
+				continue
+			}
+
 			router.Handle(e.Path, e.Handler)
 		}
 	})

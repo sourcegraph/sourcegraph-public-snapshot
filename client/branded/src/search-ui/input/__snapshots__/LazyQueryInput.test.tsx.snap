@@ -1,0 +1,31 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`PlainQueryInput > empty 1`] = `
+<DocumentFragment>
+  <div
+    class="container loader-input loaderInput w-100"
+  >
+    <input
+      class="text-code intermediateInput form-control with-invalid-icon"
+      spellcheck="false"
+      type="text"
+      value=""
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`PlainQueryInput > with query 1`] = `
+<DocumentFragment>
+  <div
+    class="container loader-input loaderInput w-100"
+  >
+    <input
+      class="text-code intermediateInput form-control with-invalid-icon"
+      spellcheck="false"
+      type="text"
+      value="repo:jsonrpc2 file:async.go asyncHandler"
+    />
+  </div>
+</DocumentFragment>
+`;

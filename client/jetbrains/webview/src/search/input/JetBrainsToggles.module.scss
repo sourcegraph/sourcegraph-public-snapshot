@@ -1,0 +1,88 @@
+// This file is a fork from JetBrainsToggles.module.scss and contains JetBrains specific UI changes
+
+.toggle-container {
+    display: flex;
+    align-items: center;
+    color: var(--jb-icon-color);
+}
+
+.separator {
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+    width: 1px;
+    height: 1.125rem;
+    margin: 0 0.5rem 0 0.375rem;
+    background-color: var(--border-color-2);
+}
+
+.copy-query-button {
+    padding: 0.125rem;
+}
+
+.cancel-button {
+    &:not(:disabled) {
+        cursor: default;
+    }
+
+    font-size: 1rem;
+    color: var(--jb-icon-color);
+}
+
+.toggle-wrapper {
+    &:not(:last-child) {
+        margin-right: 0.125rem;
+    }
+}
+
+.toggle {
+    display: flex;
+    cursor: default;
+    border-radius: 4px;
+    border: 2px solid transparent;
+
+    &:hover {
+        background-color: var(--jb-hover-button-bg);
+    }
+
+    &:focus-visible {
+        box-shadow: none;
+    }
+
+    &:active {
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+        border: 2px solid var(--primary);
+    }
+
+    &.disabled,
+    &.disabled:hover {
+        background-color: var(--color-bg-3);
+        color: var(--text-muted);
+        cursor: default;
+        opacity: 1;
+
+        :global(.theme-light) & {
+            background-color: var(--jb-hover-button-bg);
+        }
+
+        &:active {
+            border-color: transparent;
+        }
+    }
+
+    &--active {
+        background-color: var(--primary);
+        color: #ffffff !important;
+
+        &:hover {
+            background-color: var(--primary);
+        }
+    }
+
+    &--non-interactive {
+        /* marked !important to overwrite .btn's cursor property */
+        cursor: unset !important;
+
+        &:not(.toggle--active):hover {
+            background-color: transparent;
+        }
+    }
+}

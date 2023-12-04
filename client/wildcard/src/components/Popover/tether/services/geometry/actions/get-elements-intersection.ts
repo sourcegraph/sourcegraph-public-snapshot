@@ -3,9 +3,9 @@ import {
     createRectangle,
     createRectangleFromPoints,
     getIntersection,
-    Rectangle,
+    type Rectangle,
 } from '../../../models/geometry/rectangle'
-import { Constraint, Padding } from '../../../models/tether-models'
+import type { Constraint, Padding } from '../../../models/tether-models'
 
 import { getRoundedElement } from './rectangle-position-helpers'
 

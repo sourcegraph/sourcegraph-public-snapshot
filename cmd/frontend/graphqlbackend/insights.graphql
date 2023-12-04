@@ -1,35 +1,3 @@
-extend type Query {
-    """
-    [Experimental] Query for all insights and return their aggregations.
-    """
-    insights(
-        """
-        An (optional) array of insight unique ids that will filter the results by the provided values. If omitted, all available insights will return.
-        """
-        ids: [ID!]
-    ): InsightConnection
-}
-
-"""
-A list of insights.
-"""
-type InsightConnection {
-    """
-    A list of insights.
-    """
-    nodes: [Insight!]!
-
-    """
-    The total number of insights in the connection.
-    """
-    totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
 """
 An insight about code.
 """
@@ -72,13 +40,8 @@ type InsightsSeries {
     """
     Data points over a time range (inclusive)
 
-    If no 'from' time range is specified, the last 90 days of data is assumed.
-
-    If no 'to' time range is specified, the current point in time is assumed.
-
-    includeRepoRegex will include in the aggregation any repository names that match the provided regex
-
-    excludeRepoRegex will exclude in the aggregation any repository names that match the provided regex
+    The 'from', 'to', 'includeRepoRegex' and 'excludeRepoRegex' arguments have been deprecated.
+    They will have no affect on the points returned and will be removed in a future version.
     """
     points(from: DateTime, to: DateTime, includeRepoRegex: String, excludeRepoRegex: String): [InsightDataPoint!]!
 
@@ -86,11 +49,6 @@ type InsightsSeries {
     The status of this series of data, e.g. progress collecting it.
     """
     status: InsightSeriesStatus!
-
-    """
-    Metadata for any data points that are flagged as dirty due to partially or wholly unsuccessfully queries.
-    """
-    dirtyMetadata: [InsightDirtyQueryMetadata!]!
 }
 
 """
@@ -106,26 +64,11 @@ type InsightDataPoint {
     The value of the insight at this point in time.
     """
     value: Float!
-}
-
-"""
-An insight query that has been marked dirty (some form of partially or wholly unsuccessful state).
-"""
-type InsightDirtyQueryMetadata {
-    """
-    The number of dirty queries for this data point and reason combination.
-    """
-    count: Int!
 
     """
-    The reason the query was marked dirty.
+    A search query that will show the diff between this point and the previous point
     """
-    reason: String!
-
-    """
-    The time in the data series that is marked dirty.
-    """
-    time: DateTime!
+    diffQuery: String
 }
 
 """
@@ -184,6 +127,51 @@ type InsightSeriesStatus {
     effectively be used as a status that the insight is still processing if returned null.
     """
     backfillQueuedAt: DateTime
+
+    """
+    Indicates if the series is currently loading additional data
+    """
+    isLoadingData: Boolean
+
+    """
+    Data points that are flagged terminally incomplete for this series.
+    """
+    incompleteDatapoints: [IncompleteDatapointAlert!]!
+}
+
+"""
+Represents a terminally incomplete data point at a specific time, and optionally for a specific repository.
+"""
+interface IncompleteDatapointAlert {
+    """
+    The data point that is incomplete.
+    """
+    time: DateTime!
+}
+
+"""
+Represents a terminally incomplete data point at a specific time, and optionally for a specific repository.
+"""
+type TimeoutDatapointAlert implements IncompleteDatapointAlert {
+    """
+    The data point that is incomplete.
+    """
+    time: DateTime!
+}
+
+"""
+Represents a terminally incomplete data point at a specific time. Only returns alerts that do not satisfy a specific implementation.
+"""
+type GenericIncompleteDatapointAlert implements IncompleteDatapointAlert {
+    """
+    The data point that is incomplete.
+    """
+    time: DateTime!
+
+    """
+    A message describing why the datapoint was marked incomplete.
+    """
+    reason: String!
 }
 
 extend type Query {
@@ -195,12 +183,32 @@ extend type Query {
     """
     Return all insight views visible to the authenticated user.
     """
-    insightViews(first: Int, after: String, id: ID, filters: InsightViewFiltersInput): InsightViewConnection!
+    insightViews(
+        first: Int
+        after: String
+        id: ID
+        """
+        Allow you to exclude subset of insights by their ids.
+        """
+        excludeIds: [ID!]
+        """
+        Allow you to search insight views by their title or data series labels.
+        """
+        find: String
+        isFrozen: Boolean
+        filters: InsightViewFiltersInput
+        seriesDisplayOptions: SeriesDisplayOptionsInput
+    ): InsightViewConnection!
 
     """
     Generate an ephemeral time series for a Search based code insight, generally for the purposes of live preview.
     """
     searchInsightLivePreview(input: SearchInsightLivePreviewInput!): [SearchInsightLivePreviewSeries!]!
+
+    """
+    Generate an ephemeral set of time series for a code insight, generally for the purposes of live preview.
+    """
+    searchInsightPreview(input: SearchInsightPreviewInput!): [SearchInsightLivePreviewSeries!]!
 }
 
 extend type Mutation {
@@ -341,12 +349,17 @@ type InsightViewConnection {
     """
     A list of insights.
     """
-    nodes: [InsightView!]!
+    nodes: [InsightView]!
 
     """
     Pagination information.
     """
     pageInfo: PageInfo!
+
+    """
+    The total number of insights in the connection.
+    """
+    totalCount: Int
 }
 
 """
@@ -446,6 +459,21 @@ extend type Query {
     Retrieve information about queued insights series and their breakout by status. Restricted to admins only.
     """
     insightSeriesQueryStatus: [InsightSeriesQueryStatus!]!
+
+    """
+    Retrieve information about an insight view and its status. Restricted to admins only.
+    """
+    insightViewDebug(id: ID!): InsightViewDebug
+}
+
+"""
+Debugging information related to an InsightView
+"""
+type InsightViewDebug {
+    """
+    A JSON dump of debug information for series on the insight view
+    """
+    raw: [String!]!
 }
 
 """
@@ -543,6 +571,11 @@ input RepositoryScopeInput {
     The list of repositories included in this scope.
     """
     repositories: [String!]!
+
+    """
+    A search query to select repositories for this scope.
+    """
+    repositoryCriteria: String
 }
 
 """
@@ -565,6 +598,16 @@ input LineChartSearchInsightInput {
     dataSeries: [LineChartSearchInsightDataSeriesInput!]!
 
     """
+    The scope of repositories for the insight. If provided here it will apply to all series unless overwritten.
+    """
+    repositoryScope: RepositoryScopeInput
+
+    """
+    The scope of time for the insight view. If provided here it will apply to all series unless overwritten.
+    """
+    timeScope: TimeScopeInput
+
+    """
     The options for this line chart.
     """
     options: LineChartOptionsInput!
@@ -573,6 +616,11 @@ input LineChartSearchInsightInput {
     The dashboard IDs to associate this insight with once created.
     """
     dashboards: [ID!]
+
+    """
+    The default values for filters and aggregates for this line chart.
+    """
+    viewControls: InsightViewControlsInput
 }
 
 """
@@ -583,6 +631,16 @@ input UpdateLineChartSearchInsightInput {
     The complete list of data series on this line chart. Note: excluding a data series will remove it.
     """
     dataSeries: [LineChartSearchInsightDataSeriesInput!]!
+
+    """
+    The scope of repositories for the insight, this scope will apply to all dataSeries unless another scope is provided by a series.
+    """
+    repositoryScope: RepositoryScopeInput
+
+    """
+    The time scope for this insight, this scope will apply to all dataSeries unless another scope is provided by a series.
+    """
+    timeScope: TimeScopeInput
 
     """
     The presentation options for this line chart.
@@ -603,6 +661,91 @@ input InsightViewControlsInput {
     Input for the default filters for an insight.
     """
     filters: InsightViewFiltersInput!
+    """
+    Input for series' sort order.
+    """
+    seriesDisplayOptions: SeriesDisplayOptionsInput!
+}
+
+"""
+Options that affect which series to display for an insight.
+"""
+type SeriesDisplayOptions {
+    """
+    Sort options for the series.
+    """
+    sortOptions: SeriesSortOptions!
+    """
+    Max number of series to return.
+    """
+    limit: Int
+    """
+    Max number of samples to return for all the series on the view.
+    """
+    numSamples: Int
+}
+
+"""
+Input type for series display options.
+"""
+input SeriesDisplayOptionsInput {
+    """
+    Sort options for the series.
+    """
+    sortOptions: SeriesSortOptionsInput
+    """
+    Max number of series to return.
+    """
+    limit: Int
+    """
+    Max number of samples to return.
+    """
+    numSamples: Int
+}
+
+"""
+Sort mode for series.
+"""
+enum SeriesSortMode {
+    RESULT_COUNT
+    LEXICOGRAPHICAL
+    DATE_ADDED
+}
+
+"""
+Sort direction for series.
+"""
+enum SeriesSortDirection {
+    ASC
+    DESC
+}
+
+"""
+Series sort options.
+"""
+type SeriesSortOptions {
+    """
+    Sort mode for series.
+    """
+    mode: SeriesSortMode
+    """
+    Sort direction for series.
+    """
+    direction: SeriesSortDirection
+}
+
+"""
+Input type for series sort options.
+"""
+input SeriesSortOptionsInput {
+    """
+    Sort mode for series.
+    """
+    mode: SeriesSortMode!
+    """
+    Sort direction for series.
+    """
+    direction: SeriesSortDirection!
 }
 
 """
@@ -617,6 +760,11 @@ input InsightViewFiltersInput {
     A regex string for which to exclude repositories in a filter.
     """
     excludeRepoRegex: String
+
+    """
+    A list of query based search contexts to include in the filters for the view.
+    """
+    searchContexts: [String!]
 }
 
 """
@@ -636,18 +784,37 @@ input LineChartSearchInsightDataSeriesInput {
     """
     options: LineChartDataSeriesOptionsInput!
     """
-    The scope of repositories.
+    The scope of repositories. The repository scope can be provided at the LineChartSearchInsightInput level.
+    If scope is provided here will take priority of any other scope provide at a higher level in the input.
     """
-    repositoryScope: RepositoryScopeInput!
+    repositoryScope: RepositoryScopeInput
+
     """
-    The scope of time.
+    The scope of time. This time scope can also be provided at the LineChartSearchInsightInput level.
+    If the scope is provided here it will take priority over any other scope provided at a higher level in the input.
     """
-    timeScope: TimeScopeInput!
+    timeScope: TimeScopeInput
 
     """
     Whether or not to generate the timeseries results from the query capture groups. Defaults to false if not provided.
     """
     generatedFromCaptureGroups: Boolean
+
+    """
+    The field to group results by. (For compute powered insights only.) This field is experimental and should be considered unstable in the API.
+    """
+    groupBy: GroupByField
+}
+
+"""
+Fields that can be grouped on for compute powered insights.
+"""
+enum GroupByField {
+    REPO
+    LANG
+    PATH
+    AUTHOR
+    DATE
 }
 
 """
@@ -760,6 +927,11 @@ extend type Mutation {
     Delete an insight view given the graphql ID.
     """
     deleteInsightView(id: ID!): EmptyResponse!
+
+    """
+    Create a new insight view from an existing view.
+    """
+    saveInsightAsNewView(input: SaveInsightAsNewViewInput!): InsightViewPayload!
 }
 
 """
@@ -800,6 +972,41 @@ type InsightView implements Node {
     The total number of dashboards on which this insight is referenced. The count is global and disregards permissions.
     """
     dashboardReferenceCount: Int!
+
+    """
+    Represents if this insight is in a frozen state or not. A frozen state is relevant when a license is downgraded and the number of insights exceed the free plan limits.
+    """
+    isFrozen: Boolean!
+
+    """
+    The default series display options saved on the insight. This will differ from the applied options if they are overwritten but not saved.
+    """
+    defaultSeriesDisplayOptions: SeriesDisplayOptions!
+
+    """
+    The series display options currently applied to the insight.
+    """
+    appliedSeriesDisplayOptions: SeriesDisplayOptions!
+
+    """
+    Dashboards this insight has been added to that the current user has permission to view
+    """
+    dashboards(first: Int, after: String, id: ID): InsightsDashboardConnection
+
+    """
+    The total number of series on this insight.
+    """
+    seriesCount: Int
+
+    """
+    The Repositories the dataSeries on this insight will operate over.
+    """
+    repositoryDefinition: InsightRepositoryDefinition!
+
+    """
+    The scope of time for which the insight data is generated.
+    """
+    timeScope: InsightTimeScope!
 }
 
 """
@@ -854,9 +1061,14 @@ type SearchInsightDataSeriesDefinition {
     query: String!
 
     """
-    A scope of repositories defined for this insight.
+    A scope of repositories defined for this series. Series with repository scopes defined by a search query are not identifiable via this field
     """
-    repositoryScope: InsightRepositoryScope!
+    repositoryScope: InsightRepositoryScope! @deprecated(reason: "use repositoryDefinition instead")
+
+    """
+    A definition of Repositories this series will operate over.
+    """
+    repositoryDefinition: InsightRepositoryDefinition!
 
     """
     The scope of time for which the insight data is generated.
@@ -873,7 +1085,31 @@ type SearchInsightDataSeriesDefinition {
     for the code insights webapp, and should be considered unstable (planned to be deprecated in a future release).
     """
     isCalculated: Boolean!
+
+    """
+    The field to group results by. (For compute powered insights only.) This field is experimental and should be considered unstable in the API.
+    """
+    groupBy: GroupByField
 }
+
+"""
+Describes a scope of repositories, this type is used for both the search based scopes and all repositories
+"""
+type RepositorySearchScope {
+    """
+    The user provided search used to generate the list of repositories the insight runs over.
+    """
+    search: String!
+    """
+    Indicates if this search scope represents all repositories
+    """
+    allRepositories: Boolean!
+}
+
+"""
+Defines how the scope of repositories was generated
+"""
+union InsightRepositoryDefinition = RepositorySearchScope | InsightRepositoryScope
 
 """
 View presentation for a line chart insight
@@ -936,6 +1172,11 @@ type InsightViewFilters {
     A regex string for which to exclude repositories from a filter.
     """
     excludeRepoRegex: String
+
+    """
+    The names of query based search contexts that are used as a filter.
+    """
+    searchContexts: [String!]
 }
 
 """
@@ -965,6 +1206,55 @@ input SearchInsightLivePreviewInput {
     Whether or not to generate the timeseries results from the query capture groups.
     """
     generatedFromCaptureGroups: Boolean!
+
+    """
+    Use this field to specify a compute insight. Note: this is experimental and should be considered unstable
+    """
+    groupBy: GroupByField
+}
+
+"""
+Required input to generate a live preview for an insight.
+"""
+input SearchInsightPreviewInput {
+    """
+    The scope of repositories.
+    """
+    repositoryScope: RepositoryScopeInput!
+    """
+    The scope of time.
+    """
+    timeScope: TimeScopeInput!
+
+    """
+    The series to generate previews for
+    """
+    series: [SearchSeriesPreviewInput!]!
+}
+
+"""
+Required input to generate a live preview for a series.
+"""
+input SearchSeriesPreviewInput {
+    """
+    The query string.
+    """
+    query: String!
+
+    """
+    The desired label for the series. Will be overwritten when series are dynamically generated.
+    """
+    label: String!
+
+    """
+    Whether or not to generate the timeseries results from the query capture groups.
+    """
+    generatedFromCaptureGroups: Boolean!
+
+    """
+    Use this field to specify a compute insight. Note: this is experimental and should be considered unstable
+    """
+    groupBy: GroupByField
 }
 
 """
@@ -980,4 +1270,241 @@ type SearchInsightLivePreviewSeries {
     The label for the data series.
     """
     label: String!
+}
+
+"""
+Input for saving a new view on an insight.
+"""
+input SaveInsightAsNewViewInput {
+    """
+    The insight view ID we are creating a new view from.
+    """
+    insightViewId: ID!
+
+    """
+    The options for this line chart.
+    """
+    options: LineChartOptionsInput!
+
+    """
+    The dashboard ID to associate this insight with once created.
+    """
+    dashboard: ID
+
+    """
+    The default values for filters and aggregates for this line chart.
+    """
+    viewControls: InsightViewControlsInput
+}
+
+extend type Query {
+    """
+    Validates a query for determining insight scope and returns the number of repositories it matches for the caller.
+    """
+    validateScopedInsightQuery(query: String!): ScopedInsightQueryPayload!
+    """
+    Returns the number of repositories matched given a valid query.
+    """
+    previewRepositoriesFromQuery(query: String!): RepositoryPreviewPayload!
+}
+
+"""
+Information about scope query validity
+"""
+type ScopedInsightQueryPayload {
+    """
+    The original query.
+    """
+    query: String!
+    """
+    Whether the query is valid.
+    """
+    isValid: Boolean!
+    """
+    The reason why the query is invalid.
+    """
+    invalidReason: String
+}
+
+"""
+Information about the number of repositories matched from a query
+"""
+type RepositoryPreviewPayload {
+    """
+    The query used to find number of repository matches.
+    """
+    query: String!
+    """
+    The number of repositories matched.
+    """
+    numberOfRepositories: Int
+}
+
+extend type Query {
+    """
+    Fetch information related to the queue of backfilling insights.
+    """
+    insightAdminBackfillQueue(
+        """
+        Returns the first n queue items from the list.
+        """
+        first: Int
+        """
+        Returns the last n queue items from the list.
+        """
+        last: Int
+        """
+        An opaque cursor that is used for pagination.
+        """
+        after: String
+        """
+        An opaque cursor that is used for pagination.
+        """
+        before: String
+        """
+        How to order the list.
+        """
+        orderBy: BackfillQueueOrderBy = STATE
+        """
+        Sort direction.
+        """
+        descending: Boolean = false
+        """
+        List of states to filter list by.
+        """
+        states: [InsightQueueItemState!]
+        """
+        Text to filter the list, checking the Insight Title and Series Label
+        """
+        textSearch: String
+    ): InsightBackfillQueueItemConnection!
+}
+
+"""
+BackfillQueueOrderBy enumerates the ways a backfill queue list can be ordered.
+"""
+enum BackfillQueueOrderBy {
+    STATE
+    QUEUE_POSITION
+}
+
+"""
+Returns information regarding the insights backfill queue to admin users.
+"""
+type InsightBackfillQueueItemConnection implements Connection {
+    """
+    A list of insight backfill queue items.
+    """
+    nodes: [InsightBackfillQueueItem!]!
+
+    """
+    The total number of insight backfill queue items in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+Information about an item in the insights backfill queue
+"""
+type InsightBackfillQueueItem {
+    """
+    The ID of the Backfill item
+    """
+    id: ID!
+    """
+    The title of the insight view
+    """
+    insightViewTitle: String!
+    """
+    The user that originally created the insight view
+    """
+    creator: User
+    """
+    The name of the series on the associated insight view
+    """
+    seriesLabel: String!
+    """
+    The search query for the series
+    """
+    seriesSearchQuery: String!
+    """
+    Information on the current backfill status
+    """
+    backfillQueueStatus: BackfillStatus!
+}
+
+"""
+The status of an insights backfill
+"""
+type BackfillStatus {
+    """
+    The current backfill queue state
+    """
+    state: InsightQueueItemState!
+    """
+    If the item is queued the position in the queue of
+    """
+    queuePosition: Int
+    """
+    A list of errors that have occurred during backfilling
+    """
+    errors: [String!]
+    """
+    The estimated cost of the backfill process
+    """
+    cost: Int
+    """
+    The percent complete of the backfill
+    """
+    percentComplete: Int
+    """
+    The date/time when the backfill was created
+    """
+    createdAt: DateTime
+    """
+    The date/time when the backfill started processing
+    """
+    startedAt: DateTime
+    """
+    The date/time when the backfill completed processing
+    """
+    completedAt: DateTime
+    """
+    The actual runtime duration spent processing the backfill
+    """
+    runtime: String
+}
+
+"""
+Possible queue states
+"""
+enum InsightQueueItemState {
+    NEW
+    QUEUED
+    COMPLETED
+    PROCESSING
+    FAILED
+    UNKNOWN
+}
+
+extend type Mutation {
+    """
+    Retry the backfill for a failed insight series given the graphql ID of the InsightBackfillQueueItem. Can only be used by a site admin.
+    """
+    retryInsightSeriesBackfill(id: ID!): InsightBackfillQueueItem!
+
+    """
+    Updates the priority of an insight series backfill making it the highest priority given the graphql ID of the InsightBackfillQueueItem.
+    """
+    moveInsightSeriesBackfillToFrontOfQueue(id: ID!): InsightBackfillQueueItem!
+
+    """
+    Updates the priority of an insight series backfill making it the lowest priority given the graphql ID of the InsightBackfillQueueItem
+    """
+    moveInsightSeriesBackfillToBackOfQueue(id: ID!): InsightBackfillQueueItem!
 }

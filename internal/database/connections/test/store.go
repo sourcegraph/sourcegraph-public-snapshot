@@ -8,7 +8,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // memoryStore implements runner.Store but writes to migration metadata are
@@ -34,8 +36,16 @@ func (s *memoryStore) Done(err error) error {
 	return err
 }
 
+func (s *memoryStore) Describe(ctx context.Context) (map[string]schemas.SchemaDescription, error) {
+	return nil, errors.Newf("unimplemented")
+}
+
 func (s *memoryStore) Versions(ctx context.Context) (appliedVersions, pendingVersions, failedVersions []int, _ error) {
 	return s.appliedVersions, s.pendingVersions, s.failedVersions, nil
+}
+
+func (s *memoryStore) RunDDLStatements(ctx context.Context, statements []string) error {
+	return nil
 }
 
 func (s *memoryStore) TryLock(ctx context.Context) (bool, func(err error) error, error) {
@@ -54,8 +64,8 @@ func (s *memoryStore) WithMigrationLog(_ context.Context, _ definition.Definitio
 	return f()
 }
 
-func (s *memoryStore) IndexStatus(_ context.Context, _, _ string) (storetypes.IndexStatus, bool, error) {
-	return storetypes.IndexStatus{}, false, nil
+func (s *memoryStore) IndexStatus(_ context.Context, _, _ string) (shared.IndexStatus, bool, error) {
+	return shared.IndexStatus{}, false, nil
 }
 
 func (s *memoryStore) exec(ctx context.Context, migration definition.Definition, query *sqlf.Query) error {

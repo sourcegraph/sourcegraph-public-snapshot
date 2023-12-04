@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { getInsightDataFromQuery } from './use-url-query-insight'
 
 describe('getInsightDataFromQuery', () => {
@@ -5,7 +7,7 @@ describe('getInsightDataFromQuery', () => {
         const result = getInsightDataFromQuery('')
 
         expect(result).toStrictEqual({
-            repositories: [],
+            repoQuery: '',
             seriesQuery: '',
         })
     })
@@ -17,7 +19,7 @@ describe('getInsightDataFromQuery', () => {
             const result = getInsightDataFromQuery(queryString)
 
             expect(result).toStrictEqual({
-                repositories: ['^github\\.com/sourcegraph/sourcegraph$'],
+                repoQuery: 'repo:^github\\.com/sourcegraph/sourcegraph$',
                 seriesQuery: 'test patterntype:literal',
             })
         })
@@ -28,19 +30,19 @@ describe('getInsightDataFromQuery', () => {
             const result = getInsightDataFromQuery(queryString)
 
             expect(result).toStrictEqual({
-                repositories: ['^github\\.com/sourcegraph/sourcegraph$'],
+                repoQuery: 'repo:^github\\.com/sourcegraph/sourcegraph$',
                 seriesQuery: 'test patterntype:literal',
             })
         })
 
         it('with multiple repo: filters and "test" pattern query', () => {
             const queryString =
-                'context:global test repo:^github\\.com/sourcegraph/sourcegraph$ repo:^github\\.com/sourcegraph/about patterntype:literal'
+                'test repo:^github\\.com/sourcegraph/sourcegraph$ repo:^github\\.com/sourcegraph/about patterntype:literal'
 
             const result = getInsightDataFromQuery(queryString)
 
             expect(result).toStrictEqual({
-                repositories: ['^github\\.com/sourcegraph/sourcegraph$', '^github\\.com/sourcegraph/about'],
+                repoQuery: 'repo:^github\\.com/sourcegraph/sourcegraph$ repo:^github\\.com/sourcegraph/about',
                 seriesQuery: 'test patterntype:literal',
             })
         })
@@ -52,7 +54,7 @@ describe('getInsightDataFromQuery', () => {
             const result = getInsightDataFromQuery(queryString)
 
             expect(result).toStrictEqual({
-                repositories: ['^github\\.com/sourcegraph/sourcegraph$|^github\\.com/sourcegraph/about'],
+                repoQuery: 'repo:^github\\.com/sourcegraph/sourcegraph$|^github\\.com/sourcegraph/about',
                 seriesQuery: 'test patterntype:literal',
             })
         })
@@ -64,7 +66,7 @@ describe('getInsightDataFromQuery', () => {
             const result = getInsightDataFromQuery(queryString)
 
             expect(result).toStrictEqual({
-                repositories: ['^github\\.com/sourcegraph/sourcegraph$'],
+                repoQuery: 'repo:^github\\.com/sourcegraph/sourcegraph$',
                 seriesQuery: '"repo: " patterntype:literal',
             })
         })

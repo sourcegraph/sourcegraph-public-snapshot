@@ -2,27 +2,66 @@ package httpapi
 
 import (
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"net/http"
-	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/audit"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func serveGraphQL(schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
+const costEstimationMetricActorTypeLabel = "actor_type"
+
+var (
+	costHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_graphql_cost_distribution",
+		Help:    "The maximum cost seen from a GraphQL query",
+		Buckets: prometheus.ExponentialBucketsRange(1, 500_000, 8),
+	}, []string{costEstimationMetricActorTypeLabel})
+)
+
+func actorTypeLabel(isInternal, anonymous bool, requestSource trace.SourceType) string {
+	if isInternal {
+		return "internal"
+	}
+	if anonymous {
+		return "anonymous"
+	}
+	if requestSource != "" {
+		return string(requestSource)
+	}
+	return "unknown"
+}
+
+func writeViolationError(w http.ResponseWriter, message string) error {
+	w.WriteHeader(http.StatusBadRequest) // 400 because retrying won't help
+	return writeJSON(w, graphql.Response{
+		Errors: []*gqlerrors.QueryError{
+			{
+				Message: message,
+			},
+		},
+	})
+}
+
+func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
 	return func(w http.ResponseWriter, r *http.Request) (err error) {
 		if r.Method != "POST" {
 			// The URL router should not have routed to this handler if method is not POST, but just in
@@ -45,7 +84,7 @@ func serveGraphQL(schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInt
 		if r.Header.Get("Content-Encoding") == "gzip" {
 			gzipReader, err := gzip.NewReader(r.Body)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to decompress request body")
 			}
 
 			r.Body = gzipReader
@@ -55,7 +94,7 @@ func serveGraphQL(schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInt
 
 		var params graphQLQueryParams
 		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-			return err
+			return errors.Wrapf(err, "failed to decode request")
 		}
 
 		traceData := traceData{
@@ -67,7 +106,7 @@ func serveGraphQL(schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInt
 
 		defer func() {
 			instrumentGraphQL(traceData)
-			traceGraphQL(traceData)
+			recordAuditLog(r.Context(), logger, traceData)
 		}()
 
 		uid, isIP, anonymous := getUID(r)
@@ -83,29 +122,47 @@ func serveGraphQL(schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInt
 		if len(validationErrs) == 0 {
 			cost, costErr = graphqlbackend.EstimateQueryCost(params.Query, params.Variables)
 			if costErr != nil {
-				// We send errors to Honeycomb, no need to spam logs
-				log15.Debug("estimating GraphQL cost", "error", costErr)
-			}
-			traceData.costError = costErr
-			traceData.cost = cost
+				logger.Debug("failed to estimate GraphQL cost",
+					log.Error(costErr))
+				traceData.costError = costErr
+			} else if cost != nil {
+				traceData.cost = cost
 
-			if rl, enabled := rlw.Get(); enabled && cost != nil {
-				limited, result, err := rl.RateLimit(uid, cost.FieldCount, graphqlbackend.LimiterArgs{
-					IsIP:          isIP,
-					Anonymous:     anonymous,
-					RequestName:   requestName,
-					RequestSource: requestSource,
-				})
-				if err != nil {
-					log15.Error("checking GraphQL rate limit", "error", err)
-					traceData.limitError = err
-				} else {
-					traceData.limited = limited
-					traceData.limitResult = result
-					if limited {
-						w.Header().Set("Retry-After", strconv.Itoa(int(result.RetryAfter.Seconds())))
-						w.WriteHeader(http.StatusTooManyRequests)
-						return nil
+				// Track the cost distribution of requests in a histogram.
+				costHistogram.WithLabelValues(actorTypeLabel(isInternal, anonymous, requestSource)).Observe(float64(cost.FieldCount))
+
+				rl := conf.RateLimits()
+
+				if !isInternal && (cost.AliasCount > rl.GraphQLMaxAliases) {
+					return writeViolationError(w, "query exceeds maximum query cost")
+				}
+
+				if !isInternal && (cost.FieldCount > rl.GraphQLMaxFieldCount) {
+					if envvar.SourcegraphDotComMode() { // temporarily logging queries that exceed field count limit on Sourcegraph.com
+						logger.Warn("GQL cost limit exceeded", log.String("query", params.Query))
+					}
+
+					return writeViolationError(w, "query exceeds maximum query cost")
+				}
+
+				if rl, enabled := rlw.Get(); enabled {
+					limited, result, err := rl.RateLimit(r.Context(), uid, cost.FieldCount, graphqlbackend.LimiterArgs{
+						IsIP:          isIP,
+						Anonymous:     anonymous,
+						RequestName:   requestName,
+						RequestSource: requestSource,
+					})
+					if err != nil {
+						logger.Error("checking GraphQL rate limit", log.Error(err))
+						traceData.limitError = err
+					} else {
+						traceData.limited = limited
+						traceData.limitResult = result
+						if limited {
+							w.Header().Set("Retry-After", strconv.Itoa(int(result.RetryAfter.Seconds())))
+							w.WriteHeader(http.StatusTooManyRequests)
+							return nil
+						}
 					}
 				}
 			}
@@ -116,20 +173,20 @@ func serveGraphQL(schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInt
 		traceData.queryErrors = response.Errors
 		responseJSON, err := json.Marshal(response)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to marshal GraphQL response")
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(responseJSON)
+		_, _ = w.Write(responseJSON)
 
 		return nil
 	}
 }
 
 type graphQLQueryParams struct {
-	Query         string                 `json:"query"`
-	OperationName string                 `json:"operationName"`
-	Variables     map[string]interface{} `json:"variables"`
+	Query         string         `json:"query"`
+	OperationName string         `json:"operationName"`
+	Variables     map[string]any `json:"variables"`
 }
 
 type traceData struct {
@@ -150,57 +207,6 @@ type traceData struct {
 	limitResult throttled.RateLimitResult
 }
 
-func traceGraphQL(data traceData) {
-	if !honey.Enabled() || traceGraphQLQueriesSample <= 0 {
-		return
-	}
-
-	duration := time.Since(data.execStart)
-
-	ev := honey.NewEvent("graphql-cost")
-	ev.SetSampleRate(uint(traceGraphQLQueriesSample))
-
-	ev.AddField("query", data.queryParams.Query)
-	ev.AddField("variables", data.queryParams.Variables)
-	ev.AddField("operationName", data.queryParams.OperationName)
-
-	ev.AddField("anonymous", data.anonymous)
-	ev.AddField("uid", data.uid)
-	ev.AddField("isInternal", data.isInternal)
-	// Honeycomb has built in support for latency if you use milliseconds. We
-	// multiply seconds by 1000 here instead of using d.Milliseconds() so that we
-	// don't truncate durations of less than 1 millisecond.
-	ev.AddField("durationMilliseconds", duration.Seconds()*1000)
-	ev.AddField("hasQueryErrors", len(data.queryErrors) > 0)
-	ev.AddField("requestName", data.requestName)
-	ev.AddField("requestSource", data.requestSource)
-
-	if data.costError != nil {
-		ev.AddField("hasCostError", true)
-		ev.AddField("costError", data.costError.Error())
-	} else if data.cost != nil {
-		ev.AddField("hasCostError", false)
-		ev.AddField("cost", data.cost.FieldCount)
-		ev.AddField("depth", data.cost.MaxDepth)
-		ev.AddField("costVersion", data.cost.Version)
-	}
-
-	ev.AddField("rateLimited", data.limited)
-	if data.limitError != nil {
-		ev.AddField("rateLimitError", data.limitError.Error())
-	} else {
-		ev.AddField("rateLimit", data.limitResult.Limit)
-		ev.AddField("rateLimitRemaining", data.limitResult.Remaining)
-	}
-
-	_ = ev.Send()
-}
-
-var traceGraphQLQueriesSample = func() int {
-	rate, _ := strconv.Atoi(os.Getenv("TRACE_GRAPHQL_QUERIES_SAMPLE"))
-	return rate
-}()
-
 func getUID(r *http.Request) (uid string, ip bool, anonymous bool) {
 	a := actor.FromContext(r.Context())
 	anonymous = !a.IsAuthenticated()
@@ -215,4 +221,32 @@ func getUID(r *http.Request) (uid string, ip bool, anonymous bool) {
 		return ip, true, anonymous
 	}
 	return "unknown", false, anonymous
+}
+
+func recordAuditLog(ctx context.Context, logger log.Logger, data traceData) {
+	if !audit.IsEnabled(conf.SiteConfig(), audit.GraphQL) {
+		return
+	}
+
+	audit.Log(ctx, logger, audit.Record{
+		Entity: "GraphQL",
+		Action: "request",
+		Fields: []log.Field{
+			log.Object("request",
+				log.String("name", data.requestName),
+				log.String("source", data.requestSource),
+				log.String("variables", toJson(data.queryParams.Variables)),
+				log.String("query", data.queryParams.Query)),
+			log.Bool("mutation", strings.Contains(data.queryParams.Query, "mutation")),
+			log.Bool("successful", len(data.queryErrors) == 0),
+		},
+	})
+}
+
+func toJson(variables map[string]any) string {
+	encoded, err := json.Marshal(variables)
+	if err != nil {
+		return "query variables marshalling failure"
+	}
+	return string(encoded)
 }

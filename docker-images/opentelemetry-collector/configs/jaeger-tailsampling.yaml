@@ -1,0 +1,59 @@
+# Export traces to a Jaeger instance, with tail sampling configured.
+#
+# Variables:
+#
+# - $JAEGER_HOST
+
+receivers:
+  otlp:
+    protocols:
+      grpc: # port 4317
+      http: # port 4318
+
+exporters:
+  jaeger:
+    # Default Jaeger GRPC server
+    endpoint: "$JAEGER_HOST:14250"
+    tls:
+      insecure: true
+
+extensions:
+  health_check:
+    endpoint: ":13133"
+  zpages:
+   endpoint: ":55679"
+
+service:
+  extensions: [health_check,zpages]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [tail_sampling]
+      exporters: [jaeger]
+
+processors:
+  tail_sampling:
+    # Wait time since the first span of a trace before making a sampling decision
+    decision_wait: 30s # default value = 30s
+    # Number of traces kept in memory
+    num_traces: 50000 # default value = 50000
+    # Expected number of new traces (helps in allocating data structures)
+    expected_new_traces_per_sec: 10 # default value = 0
+    # Recommended reading to understand how the policies are applied:
+    # https://sourcegraph.com/github.com/open-telemetry/opentelemetry-collector-contrib@71dd19d2e59cd1f8aa9844461089d5c17efaa0ca/-/blob/processor/tailsamplingprocessor/processor.go?L214
+    policies:
+      [
+          {
+            # If a span contains `sampling_retain: true`, it will always be sampled (not dropped),
+            # regardless of the probabilistic sampling.
+            name: policy-retain,
+            type: string_attribute,
+            string_attribute: {key: sampling.retain, values: ['true']},
+          },
+          {
+            # Only keep 10% of the traces.
+            name: policy-probalistic,
+            type: probabilistic,
+            probabilistic: {sampling_percentage: 10}
+          }
+        ]

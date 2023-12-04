@@ -2,5 +2,8 @@
 
 external* @eseliger
 namespaces* @eseliger
-repos* @eseliger @unknwon
-external_services* @unknwon
+repos* @eseliger
+permissions* @BolajiOlajide
+user_roles* @BolajiOlajide
+roles* @BolajiOlajide
+role_permissions* @BolajiOlajide

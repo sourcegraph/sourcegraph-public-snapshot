@@ -1,97 +1,120 @@
 # How to troubleshoot a dirty database
 
-This document will take you through how to resolve a 'dirty database' error. During an upgrade, the `pgsql`, `codeintel-db`, and `codeinsights-db` databases must be migrated. If the upgrade was interrupted during the migration, this can result in a 'dirty database' error.
+> NOTE: If you are on a version **strictly lower than** Sourcegraph 3.37.0, see the [legacy dirty database documentation](./dirty_database_pre_3_37.md). The following documentation applies only to Sourcegraph instances version 3.37.0 and above.
 
-The error will look something like this:
+This document will take you through how to resolve a 'dirty database' error.
+
+During instance startup, the `migrator` process will run any schema migrations necessary to bring the database up to the shape the code expects. If an error is encountered during this startup sequence or a multi-version upgrade, or if execution of either actions were interrupted, the schema will be marked as dirty and will require some form of user intervention.
+
+Such an error will look something like this:
 
 ```log
-ERROR: Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance: Dirty database version 1528395797. Fix and force version.
+INFO[02-08|00:40:55] Checked current version
+  schema=frontend
+  appliedVersions=[1528395834 1528395835 ... 1528395970 1528395971]
+  pendingVersions=[1644515056]
+  failedVersions=[]
+  error: 1 error occurred:
+	  * dirty database: schema "frontend" marked the following migrations as failed: 1644515056
+
+The target schema is marked as dirty and no other migration operation is seen running on this schema. The last migration operation over this schema has failed (or, at least, the migrator instance issuing that migration has died). Please contact support@sourcegraph.com for further assistance.
 ```
-Resolving this error requires discovering which migration file failed to run, and manually attempting to run that migration. 
 
 ## Prerequisites
 
-* This document assumes that you are installing Sourcegraph or were attempting an upgrade when an error occurred. 
+* This document assumes that you are installing Sourcegraph or were attempting an upgrade when an error occurred.
 * **NOTE: If you encountered this error during an upgrade, ensure you followed the [proper step upgrade process documented here.](https://docs.sourcegraph.com/admin/updates) If you skipped a minor version during an upgrade, you will need to revert back to the last minor version your instance was on before following the steps in this document.**
 
-The following procedure requires that you are able to execute commands from inside the database container. Learn more about shelling into [kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/operations#access-the-database), [docker-compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations#access-the-database), and [Sourcegraph single-container](https://docs.sourcegraph.com/admin/install/docker/operations#access-the-database) instances at these links. 
+The following procedure requires that you are able to execute commands from inside the database container. Learn more about shelling into [kubernetes](../deploy/kubernetes/operations.md#access-the-database), [docker-compose](../deploy/docker-compose/index.md#access-the-database), and [Sourcegraph single-container](../deploy/docker-single-container/index.md#access-the-database) instances at these links.
 
-## TL;DR Steps to resolve
+## Steps to resolve
 
-_These steps pertain to the frontend database (pgsql) and are meant as a quick read for admins familiar with sql and database administration, for more explanation and details see the [detailed steps to resolution](#detailed-steps-to-resolve) below._
+### 0. Attempt re-application
 
-1. **Check the schema version in `psql` using the following query: `SELECT * FROM schema_migrations;`. If it's dirty, note the version number.**
-2. **Find the up migration with that version in [https://github.com/sourcegraph/sourcegraph/tree/main/migrations/frontend](https://github.com/sourcegraph/sourcegraph/tree/main/migrations/frontend)** 
-   * _Note: migrations in this directory are specific to the `pgsql` frontend database, learn about other databases in the [detailed steps to resolution](#detailed-steps-to-resolve)_
-3. **Run the code there explicitly.**
-4. **Manually clear the dirty flag on the `schema_migrations` table.**
-5. **Start up again and the remaining migrations should succeed, otherwise repeat.**
+Some classes of errors can be successfully retried via a manual invocation of the failed `migrator` command. If the previous operation was interrupted due to a network issue, a timeout, or a crashed/restarted database host, or if the error that occurred was due to a transient error such as a SQL deadlock, then re-application of the migration is likely to succeed.
 
-## Detailed Steps to resolve
+When [re-running the migrator](../updates/migrator/migrator-operations.md), add the optional flag `--ignore-single-dirty-log` to attempt re-application of a previously failed migration, and add the optional flag `--ignore-single-pending-log` to to attempt re-application of a migration which was never completed by a previous invocation of the `migrator`. Both flags apply to the `migrator` commands `up`, `upto`, `downto`, `upgrade`, and `downgrade`. These flags only allow re-application of the **next** migration in the sequence (and multiple sequential failures will require multiple invocations).
+
+**DO NOT** set either of these flags permanently on a `migrator` attached as an init container (in Kubernetes) or as a dependent container (in Docker Compose), as it may allow mutation of the database schema with non-mutual access. Concurrent modification may result in greater error frequency (at best) and data corruption (at worst). These flags should only be used on a manual invocation of a `migrator` command.
 
 ### 1. Identify incomplete migration
 
-When migrations run, the `schema_migrations` table is updated to show the state of migrations. The `dirty` column, when set `t` (true), _indicates a migration was attempted but did not complete successfully_ (either did not yet complete or failed to complete), and the `version` column indicates the version of the migration the database is on (when not dirty), or attempted to migrate to (when dirty). On startup, the frontend will not start if the `schema_migrations` `dirty` column is set to `t`.
+_First, some background:_
 
-**Check schema version, by querying the database version table:** `SELECT * FROM schema_migrations;` **If it's dirty, then note the version number for use in step 2.**
+When migrations run, the `migration_logs` table is updated. Before each migration attempt, a new row is inserted indicating the migration version and direction and the start time. Once the migration is complete (or fails), the row is updated with the finished time and message with details about any error that occurred.
 
-Example:
-```sql
-SELECT * FROM schema_migrations;
-version | dirty
-------------+-------
-1528395539 | t
-(1 row)
+A failed migration may have explicitly failed due to a SQL/environment error, which allowed the migrator instance to write an error message to the `migration_logs` table. A failed migration may also be left _pending_ if the migrator instance running that migration has disappeared. To handle this case, the validation mechanism that runs on app startup will wait for running migrators to complete their current work. If we do not detect a migrator instance performing any work, we'll correctly interpret those migration logs as implicitly failed. The following example does just this (note the values of the `pendingVersions` and `failedVersions` log fields).
+
+_End background!_
+
+In order to identify the migration that needs to be run, note the particular versions called out by the error message in the `migrator` or one of the application servers on startup.
+
 ```
-This indicates that migration `1528395539` was running, but has not yet completed. 
+INFO[02-08|00:40:55] Checked current version
+  schema=frontend
+  appliedVersions=[1528395834 1528395835 ... 1528395970 1528395971]
+  pendingVersions=[1644515056]
+  failedVersions=[]
+  error: 1 error occurred:
+	  * dirty database: schema "frontend" marked the following migrations as failed: 1644515056
 
-_Note: for codeintel the schema version table is called `codeintel_schema_migrations` and for codeinsights its called `codeinsights_schema_migrations`_
+The target schema is marked as dirty and no other migration operation is seen running on this schema. The last migration operation over this schema has failed (or, at least, the migrator instance issuing that migration has died). Please contact support@sourcegraph.com for further assistance.
+```
+
+In this example, we need to re-apply the migration `1644515056` on the `frontend` schema, which is explicitly called out in the error message. **We'll note this number for use in step 2.**
+
+The `migration_logs` table can also be queried directly. The following query gives an overview of the most recent migration attempts broken down by version.
+
+```sql
+WITH ranked_migration_logs AS (
+	SELECT
+		migration_logs.*,
+		ROW_NUMBER() OVER (PARTITION BY schema, version ORDER BY started_at DESC) AS row_number
+	FROM migration_logs
+)
+SELECT *
+FROM ranked_migration_logs
+WHERE row_number = 1
+ORDER BY version
+```
 
 ### 2. Run the sql queries to finish incomplete migrations
 
-Sourcegraph's migration files take for form of `sql` files following the snake case naming schema `<version>_<description>.<up or down>.sql` and can be found [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/migrations) in subdirectories for the specific database. _Note frontend is the pgsql database_.
+Migration definitions for each database schema can be found in the children of the [`migrations/` directory](https://github.com/sourcegraph/sourcegraph/tree/main/migrations).
 
-1. **Find the up migration starting with the version number identified in [step 1](#1-identify-incomplete-migration):** [https://github.com/sourcegraph/sourcegraph/tree/main/migrations](https://github.com/sourcegraph/sourcegraph/tree/main/migrations)
+**Find the target migration with the version number identified in [step 1](#1-identify-incomplete-migration)**.
 
-2. **Run the code from the identified migration _up_ file explicitly using the `psql` CLI:**
-   * It’s possible that one or more commands from the migration ran successfully already. In these cases you may need to run the sql transaction in pieces. For example if a migration file creates multiple indexes and one index already exists you'll need to manually run this transaction skipping that line or adding `IF NOT EXISTS` to the transaction.
-   * If you’re running into unique index creation errors because of duplicate values please let us know at support@sourcegraph.com or via your enterprise support channel.
-   * There may be other error cases that don't have an easy admin-only resolution, in these cases please let us know at support@sourcegraph.com or via your enterprise support channel.
+**Run the code from the identified `<version>/up.sql` file explicitly using the `psql` CLI**. For example, if we take `version=1644515056` as an example, we can run the contents of [up migration file](https://github.com/sourcegraph/sourcegraph/blob/b20107113548ed7eeb8ba22d1fdb41e8d692cf18/migrations/frontend/1644515056/up.sql) via psql.
 
-### 3. Verify database is clean and declare `dirty=false`
+```bash
+$ psql -h ... -U sg
+sg@sourcegraph > BEGIN;
 
-1. **Ensure the migration applied, and manually clear the dirty flag on the `schema_migrations` table.**
-   * example `psql` query: `UPDATE schema_migrations SET version=1528395918, dirty=false;`
-   * **Do not mark the migration table as clean if you have not verified that the migration was successfully completed.**
-   * Checking to see if a migration ran successfully requires looking at the migration’s `sql` file, and verifying that `sql` queries contained in the migration file have been applied to tables in the database. 
-   * _Note: Many migrations do nothing but create tables and/or indexes or alter them._
-   * You can get a description of a table and its associated indexes quickly using the `\d <table name>` `psql` shell command (note lack of semicolon). Using this information, you can determine whether a table exists, what columns it contains, and what indexes on it exist. Use this information to determine if commands in a migration ran successfully before setting `dirty=false`.
+ALTER TABLE IF EXISTS org_invitations ALTER COLUMN recipient_user_id DROP NOT NULL;
+ALTER TABLE IF EXISTS org_invitations
+  ADD CONSTRAINT either_user_id_or_email_defined CHECK ((recipient_user_id IS NULL) != (recipient_email IS NULL));
 
-2. **Start Sourcegraph again and the remaining migrations should succeed, otherwise repeat this procedure again starting from the [Identify incomplete migration](#1-identify-incomplete-migration) step.**
-
-## Additional Information
-
-### `CREATE_INDEX_CONCURRENTLY`
-Some migrations utilize the `CREATE INDEX CONCURRENTLY` migration option which runs a query to create a table index as a background process ([learn more here](https://www.postgresql.org/docs/12/sql-createindex.html)). If one of these migrations fails to complete, the database will register that a table index has been created, however the index will be unusable. If you use `\d <table name>` you will see the index for the table, but there will be nothing to tell you the indexing operation has failed. This database state can lead to poor search query performance, with searches attempting to utilize the incomplete table index.
-
-To resolve this, you will then need to run the migration that creates the relevant index again, replacing `CREATE INDEX CONCURRENTLY` with `REINDEX CONCURRENTLY`. You can also drop and recreate the index.
-
-To discover if such a damaged index exists by run the following query:
-
-```sql
-SELECT
-    current_database() AS datname,
-    pc.relname AS relname,
-    1 AS count
-FROM pg_class pc
-JOIN pg_index pi ON pi.indexrelid = pc.oid
-WHERE
-    NOT indisvalid AND
-    NOT EXISTS (SELECT 1 FROM pg_stat_progress_create_index pci WHERE pci.index_relid = pi.indexrelid)
+COMMIT;
+Time: 0.283 ms
+Time: 32.646 ms
+Time: 25.477 ms
+Time: 0.762 ms
 ```
-Additionally Grafana will alert you of an index is in this state. _The Grafana alert can be found under it's database's charts._ Ex: `Site Admin > Monitoring > Postgres > Invalid Indexes (unusable by query planner)`
 
-## Further resources
+It’s possible that one or more commands from the migration ran successfully already. In these cases you may need to run the sql transaction in pieces. For example if a migration file creates multiple indexes and one index already exists you'll need to manually run this transaction skipping that line or adding `IF NOT EXISTS` to the transaction.
 
-* [Sourcegraph - Upgrading Sourcegraph to a new version](https://docs.sourcegraph.com/admin/updates)
-* [Migrations README.md](https://github.com/sourcegraph/sourcegraph/blob/main/migrations/README.md) (Note some of the info contained here pertains to running Sourcegraphs development environment and should not be used on production instances)
+If you're running into errors such as being unable to create a unique index due to duplicate values, please contact support at <mailto:support@sourcegraph.com> or via your enterprise support channel for further assistance. There may be other error cases that don't have an easy admin-only resolution, in these cases please contact us for engineering support.
+
+### 3. Add a migration log entry
+
+**Ensure the migration applied, then signal that the migration has been run**. Run the `migrator` instance against your database to create an explicit migration log. For the following, consult the [Kubernetes](../updates/migrator/migrator-operations.md#kubernetes), [Docker-compose](../updates/migrator/migrator-operations.md#docker--docker-compose), or [local development](../updates/migrator/migrator-operations.md#local-development) instructions on how to manually run database operations. The specific migrator command to run is:
+
+- For Kubernetes: replace container args with `["add-log", "-db=<schema>", "-version=<version>"]`
+- For Docker-compose: replace container args with `"add-log" "-db=<schema>" "-version=<version>"`
+- For local development: run `sg add-log -db=<schema> -version=<version>` in a clone of [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph)
+
+Adding this migration log entry indicates to future migrator and application instances that a complete application of the migration at that version has been run.
+
+**Do not mark the migration table as clean if you have not verified that the migration was successfully completed.** Checking to see if a migration ran successfully requires looking at the migration’s `sql` file, and verifying that `sql` queries contained in the migration file have been applied to tables in the database. You can get a description of a table and its associated indexes quickly using the `\d <table name>` `psql` shell command (note lack of semicolon). Using this information, you can determine whether a table exists, what columns it contains, and what indexes on it exist. Use this information to determine if commands in a migration ran successfully before adding a migration log entry.
+
+**Start Sourcegraph again and any remaining migrations should apply automatically, otherwise repeat this procedure again starting from the [Identify incomplete migration](#1-identify-incomplete-migration) step.**

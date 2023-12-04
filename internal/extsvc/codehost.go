@@ -13,6 +13,14 @@ type CodeHost struct {
 	BaseURL     *url.URL
 }
 
+func (c *CodeHost) IsPackageHost() bool {
+	switch c.ServiceType {
+	case TypeNpmPackages, TypeJVMPackages, TypeGoModules, TypePythonPackages, TypeRustPackages, TypeRubyPackages:
+		return true
+	}
+	return false
+}
+
 // Known public code hosts and their URLs
 var (
 	GitHubDotComURL = mustParseURL("https://github.com")
@@ -21,13 +29,35 @@ var (
 	GitLabDotComURL = mustParseURL("https://gitlab.com")
 	GitLabDotCom    = NewCodeHost(GitLabDotComURL, TypeGitLab)
 
+	BitbucketOrgURL = mustParseURL("https://bitbucket.org")
+
 	MavenURL    = &url.URL{Host: "maven"}
 	JVMPackages = NewCodeHost(MavenURL, TypeJVMPackages)
+
+	NpmURL      = &url.URL{Host: "npm"}
+	NpmPackages = NewCodeHost(NpmURL, TypeNpmPackages)
+
+	GoURL     = &url.URL{Host: "go"}
+	GoModules = NewCodeHost(GoURL, TypeGoModules)
+
+	PythonURL      = &url.URL{Host: "python"}
+	PythonPackages = NewCodeHost(PythonURL, TypePythonPackages)
+
+	RustURL      = &url.URL{Host: "crates"}
+	RustPackages = NewCodeHost(RustURL, TypeRustPackages)
+
+	RubyURL      = &url.URL{Host: "rubygems"}
+	RubyPackages = NewCodeHost(RubyURL, TypeRubyPackages)
 
 	PublicCodeHosts = []*CodeHost{
 		GitHubDotCom,
 		GitLabDotCom,
 		JVMPackages,
+		NpmPackages,
+		GoModules,
+		PythonPackages,
+		RustPackages,
+		RubyPackages,
 	}
 )
 

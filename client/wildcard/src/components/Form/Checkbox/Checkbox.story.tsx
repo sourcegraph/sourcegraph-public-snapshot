@@ -1,32 +1,24 @@
-import { Meta } from '@storybook/react'
 import React, { useCallback } from 'react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import type { Meta, StoryFn } from '@storybook/react'
 
+import { H1, H2 } from '../..'
+import { BrandedStory } from '../../../stories/BrandedStory'
 import { Grid } from '../../Grid'
 
-import { Checkbox, CheckboxProps } from './Checkbox'
+import { Checkbox, type CheckboxProps } from './Checkbox'
 
 const config: Meta = {
     title: 'wildcard/Checkbox',
 
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
 
     parameters: {
         component: Checkbox,
-        chromatic: {
-            enableDarkMode: true,
-        },
         design: {
             type: 'figma',
             name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A1353',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=860%3A79469',
         },
     },
 }
@@ -54,26 +46,33 @@ const BaseCheckbox = ({ name, ...props }: { name: string } & Pick<CheckboxProps,
     )
 }
 
-export const CheckboxExamples: React.FunctionComponent = () => (
+export const CheckboxExamples: StoryFn = () => (
     <>
-        <h1>Checkbox</h1>
+        <H1>Checkbox</H1>
         <Grid columnCount={4}>
             <div>
-                <h2>Standard</h2>
+                <H2>Standard</H2>
                 <BaseCheckbox name="standard-example" />
             </div>
             <div>
-                <h2>Valid</h2>
+                <H2>Valid</H2>
                 <BaseCheckbox name="valid-example" isValid={true} />
             </div>
             <div>
-                <h2>Invalid</h2>
+                <H2>Invalid</H2>
                 <BaseCheckbox name="invalid-example" isValid={false} />
             </div>
             <div>
-                <h2>Disabled</h2>
+                <H2>Disabled</H2>
                 <BaseCheckbox name="disabled-example" disabled={true} />
             </div>
         </Grid>
     </>
 )
+
+CheckboxExamples.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}

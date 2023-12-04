@@ -1,0 +1,29 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pathexistence",
+    srcs = [
+        "directory_contents.go",
+        "dirtree.go",
+        "existence_checker.go",
+        "git.go",
+        "paths.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence",
+    visibility = ["//visibility:public"],
+    deps = ["//lib/errors"],
+)
+
+go_test(
+    name = "pathexistence_test",
+    timeout = "short",
+    srcs = [
+        "directory_contents_test.go",
+        "dirtree_test.go",
+        "git_test.go",
+        "paths_test.go",
+    ],
+    embed = [":pathexistence"],
+    deps = ["@com_github_google_go_cmp//cmp"],
+)

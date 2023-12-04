@@ -1,0 +1,176 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 616
+expression: "snapshot_sciptect_documents(&document, &contents)"
+---
+  package foobar
+//^^^^^^^ Keyword keyword.other.kotlin
+//        ^^^^^^ Identifier entity.name.package.kotlin
+  
+  import java.nio.channels.FileChannel
+//^^^^^^ Keyword keyword.other.kotlin
+  
+  fun Mat.put(indices: IntArray, data: UShortArray)  = this.put(indices, data.asShortArray())
+//^^^ Keyword keyword.other.kotlin
+//        ^^^ IdentifierFunction entity.name.function.kotlin
+//            ^^^^^^^ Identifier variable.parameter.function.kotlin
+//                   ^ IdentifierOperator keyword.operator.declaration.kotlin
+//                     ^^^^^^^^ IdentifierType storage.type.buildin.array.kotlin
+//                               ^^^^ Keyword storage.modifier.kotlin
+//                                   ^ IdentifierOperator keyword.operator.declaration.kotlin
+//                                                   ^ IdentifierOperator keyword.operator.assignment.kotlin
+//                                                     ^^^^ IdentifierBuiltin constant.language.kotlin
+//                                                         ^ IdentifierOperator keyword.operator.dot.kotlin
+//                                                                       ^^^^ Keyword storage.modifier.kotlin
+//                                                                           ^ IdentifierOperator keyword.operator.dot.kotlin
+  
+  /***
+//^^^^ Comment 6:0..12:3 comment.block.kotlin
+   *  Example use:
+   *
+   *  val (b, g, r) = mat.at<UByte>(50, 50).v3c
+   *  mat.at<UByte>(50, 50).val = T3(245u, 113u, 34u)
+   *
+   */
+  @Suppress("UNCHECKED_CAST")
+//          ^^^^^^^^^^^^^^^^ StringLiteral string.quoted.double.kotlin
+  inline fun <reified T> Mat.at(row: Int, col: Int) : Atable<T> =
+//^^^^^^ Keyword storage.modifier.kotlin
+//       ^^^ Keyword keyword.other.kotlin
+//            ^^^^^^^ Keyword storage.modifier.kotlin
+//                    ^ IdentifierType storage.type.generic.kotlin
+//                           ^^ IdentifierFunction entity.name.function.kotlin
+//                              ^^^ Identifier variable.parameter.function.kotlin
+//                                 ^ IdentifierOperator keyword.operator.declaration.kotlin
+//                                   ^^^ IdentifierType storage.type.buildin.kotlin
+//                                        ^^^ Identifier variable.parameter.function.kotlin
+//                                           ^ IdentifierOperator keyword.operator.declaration.kotlin
+//                                             ^^^ IdentifierType storage.type.buildin.kotlin
+//                                                  ^ IdentifierOperator keyword.operator.declaration.kotlin
+//                                                              ^ IdentifierOperator keyword.operator.assignment.kotlin
+      when (T::class) {
+//    ^^^^ Keyword keyword.control.kotlin
+//           ^^ IdentifierOperator keyword.operator.kotlin
+          UShort::class -> AtableUShort(this, row, col) as Atable<T>
+//              ^^ IdentifierOperator keyword.operator.kotlin
+//                      ^^ IdentifierOperator keyword.operator.declaration.kotlin
+//                                      ^^^^ IdentifierBuiltin constant.language.kotlin
+//                                                      ^^ IdentifierOperator keyword.operator.kotlin
+          else -> throw RuntimeException("Unsupported class type")
+//        ^^^^ Keyword keyword.control.kotlin
+//             ^^ IdentifierOperator keyword.operator.declaration.kotlin
+//                ^^^^^ Keyword keyword.control.catch-exception.kotlin
+//                                       ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral string.quoted.double.kotlin
+      }
+  
+  
+  /**
+//^^^ Comment 21:0..24:3 comment.block.kotlin
+   * Implementation of [DataAccess] which handles access and interactions with file and data
+   * under scoped storage via the MediaStore API.
+   */
+  @RequiresApi(Build.VERSION_CODES.Q)
+//                  ^ IdentifierOperator keyword.operator.dot.kotlin
+//                                ^ IdentifierOperator keyword.operator.dot.kotlin
+  internal class MediaStoreData(context: Context, filePath: String, accessFlag: FileAccessFlags) :
+//^^^^^^^^ Keyword storage.modifier.kotlin
+//         ^^^^^ Keyword storage.modifier.kotlin
+//               ^^^^^^^^^^^^^^ IdentifierType entity.name.type.class.kotlin
+//                              ^^^^^^^ Identifier variable.parameter.function.kotlin
+//                                     ^ IdentifierOperator keyword.operator.declaration.kotlin
+//                                                ^^^^^^^^ Identifier variable.parameter.function.kotlin
+//                                                        ^ IdentifierOperator keyword.operator.declaration.kotlin
+//                                                          ^^^^^^ IdentifierType storage.type.buildin.kotlin
+//                                                                  ^^^^^^^^^^ Identifier variable.parameter.function.kotlin
+//                                                                            ^ IdentifierOperator keyword.operator.declaration.kotlin
+//                                                                                               ^ IdentifierOperator keyword.operator.declaration.kotlin
+   DataAccess(filePath) {
+  
+   private data class DataItem(
+// ^^^^^^^ Keyword storage.modifier.kotlin
+//         ^^^^ Keyword storage.modifier.kotlin
+//              ^^^^^ Keyword storage.modifier.kotlin
+//                    ^^^^^^^^ IdentifierType entity.name.type.class.kotlin
+    val id: Long,
+//  ^^^ Keyword storage.modifier.kotlin
+//      ^^ Identifier variable.parameter.function.kotlin
+//        ^ IdentifierOperator keyword.operator.declaration.kotlin
+//          ^^^^ IdentifierType storage.type.buildin.kotlin
+    val mediaType: String
+//  ^^^ Keyword storage.modifier.kotlin
+//      ^^^^^^^^^ Identifier variable.parameter.function.kotlin
+//               ^ IdentifierOperator keyword.operator.declaration.kotlin
+//                 ^^^^^^ IdentifierType storage.type.buildin.kotlin
+   )
+  
+   companion object {
+// ^^^^^^^^^^ Keyword storage.modifier.kotlin
+//           ^^^^^^ Keyword storage.modifier.kotlin
+  
+    private val PROJECTION = arrayOf(
+//  ^^^^^^^ Keyword storage.modifier.kotlin
+//          ^^^ Keyword keyword.other.kotlin
+//              ^^^^^^^^^^ Identifier entity.name.variable.kotlin
+//                         ^ IdentifierOperator keyword.operator.assignment.kotlin
+     MediaStore.Files.FileColumns._ID
+//             ^ IdentifierOperator keyword.operator.dot.kotlin
+//                   ^ IdentifierOperator keyword.operator.dot.kotlin
+//                               ^ IdentifierOperator keyword.operator.dot.kotlin
+    )
+  
+    private const val SELECTION_BY_PATH = "${MediaStore.Files.FileColumns.DISPLAY_NAME} = ? " +
+//  ^^^^^^^ Keyword storage.modifier.kotlin
+//          ^^^^^ Keyword storage.modifier.kotlin
+//                ^^^ Keyword keyword.other.kotlin
+//                    ^^^^^^^^^^^^^^^^^ Identifier entity.name.variable.kotlin
+//                                      ^ IdentifierOperator keyword.operator.assignment.kotlin
+//                                        ^ StringLiteral variable.parameter.template.kotlin
+//                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier variable.parameter.template.kotlin
+//                                                                                     ^^^^^^ StringLiteral string.quoted.double.kotlin
+//                                                                                            ^ IdentifierOperator keyword.operator.arithmetic.kotlin
+     " AND ${MediaStore.Files.FileColumns.RELATIVE_PATH} = ?"
+//   ^^^^^^ StringLiteral variable.parameter.template.kotlin
+//         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier variable.parameter.template.kotlin
+//                                                      ^^^^^ StringLiteral string.quoted.double.kotlin
+  
+    private fun getSelectionByPathArguments(path: String): Array<String> {
+//  ^^^^^^^ Keyword storage.modifier.kotlin
+//          ^^^ Keyword keyword.other.kotlin
+//              ^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction entity.name.function.kotlin
+//                                          ^^^^ Identifier variable.parameter.function.kotlin
+//                                              ^ IdentifierOperator keyword.operator.declaration.kotlin
+//                                                ^^^^^^ IdentifierType storage.type.buildin.kotlin
+//                                                       ^ IdentifierOperator keyword.operator.declaration.kotlin
+//                                                         ^^^^^ IdentifierType storage.type.buildin.collection.kotlin
+//                                                               ^^^^^^ IdentifierType storage.type.buildin.kotlin
+     return arrayOf(getMediaStoreDisplayName(path), getMediaStoreRelativePath(path))
+//   ^^^^^^ Keyword keyword.control.kotlin
+    }
+   }
+   override val fileChannel: FileChannel
+// ^^^^^^^^ Keyword storage.modifier.kotlin
+//          ^^^ Keyword keyword.other.kotlin
+//              ^^^^^^^^^^^ Identifier entity.name.variable.kotlin
+//                         ^ IdentifierOperator keyword.operator.declaration.kotlin
+  
+   init {
+    val contentResolver = context.contentResolver
+//  ^^^ Keyword keyword.other.kotlin
+//      ^^^^^^^^^^^^^^^ Identifier entity.name.variable.kotlin
+//                      ^ IdentifierOperator keyword.operator.assignment.kotlin
+//                               ^ IdentifierOperator keyword.operator.dot.kotlin
+    val dataItems = queryByPath(context, filePath)
+//  ^^^ Keyword keyword.other.kotlin
+//      ^^^^^^^^^ Identifier entity.name.variable.kotlin
+//                ^ IdentifierOperator keyword.operator.assignment.kotlin
+  
+  
+    id = dataItem.id
+//     ^ IdentifierOperator keyword.operator.assignment.kotlin
+//               ^ IdentifierOperator keyword.operator.dot.kotlin
+    uri = dataItem.uri
+//      ^ IdentifierOperator keyword.operator.assignment.kotlin
+//                ^ IdentifierOperator keyword.operator.dot.kotlin
+   }
+  }
+

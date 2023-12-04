@@ -65,18 +65,23 @@ var (
 		router.Favicon:            {},
 		router.Logout:             {},
 		router.SignUp:             {},
+		router.RequestAccess:      {},
 		router.SiteInit:           {},
 		router.SignIn:             {},
 		router.SignOut:            {},
+		router.UnlockAccount:      {},
 		router.ResetPasswordInit:  {},
 		router.ResetPasswordCode:  {},
 		router.CheckUsernameTaken: {},
+		router.AppUpdateCheck:     {},
 	}
 	anonymousAccessibleUIRoutes = map[string]struct{}{
 		uirouter.RouteSignIn:             {},
+		uirouter.RouteUnlockAccount:      {},
 		uirouter.RouteSignUp:             {},
 		uirouter.RoutePasswordReset:      {},
 		uirouter.RoutePingFromSelfHosted: {},
+		uirouter.RouteRequestAccess:      {},
 	}
 	// Some routes return non-standard HTTP responses when a user is not
 	// signed in.
@@ -95,6 +100,18 @@ func matchedRouteName(req *http.Request, router *mux.Router) string {
 	return m.Route.GetName()
 }
 
+// checks the `auth.public` site configuration
+// and `AllowAnonymousRequestContextKey` context key value
+func isAllowAnonymousUsageEnabled(req *http.Request) bool {
+	if !conf.Get().AuthPublic {
+		return false
+	}
+
+	allowAnonymousRequest, ok := req.Context().Value(AllowAnonymousRequestContextKey).(bool)
+
+	return ok && allowAnonymousRequest
+}
+
 // AllowAnonymousRequest reports whether handling of the HTTP request (which is from an anonymous
 // user) should proceed. The eventual handler for the request may still perform other authn/authz
 // checks.
@@ -103,6 +120,10 @@ func matchedRouteName(req *http.Request, router *mux.Router) string {
 // users to perform undesired actions.
 func AllowAnonymousRequest(req *http.Request) bool {
 	if conf.AuthPublic() {
+		return true
+	}
+
+	if isAllowAnonymousUsageEnabled(req) {
 		return true
 	}
 
@@ -115,6 +136,10 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		return true
 	}
 
+	if strings.HasPrefix(req.URL.Path, "/.api/scip/upload") {
+		return true
+	}
+
 	// This is just a redirect to a public download
 	if strings.HasPrefix(req.URL.Path, "/.api/src-cli") {
 		return true
@@ -122,9 +147,11 @@ func AllowAnonymousRequest(req *http.Request) bool {
 
 	// Authentication is performed in the webhook handler itself.
 	for _, prefix := range []string{
+		"/.api/webhooks",
 		"/.api/github-webhooks",
 		"/.api/gitlab-webhooks",
 		"/.api/bitbucket-server-webhooks",
+		"/.api/bitbucket-cloud-webhooks",
 	} {
 		if strings.HasPrefix(req.URL.Path, prefix) {
 			return true
@@ -133,6 +160,11 @@ func AllowAnonymousRequest(req *http.Request) bool {
 
 	// Permission is checked by a shared token
 	if strings.HasPrefix(req.URL.Path, "/.executors") {
+		return true
+	}
+
+	// Permission is checked by a shared token for SCIM
+	if strings.HasPrefix(req.URL.Path, "/.api/scim/v2") {
 		return true
 	}
 
@@ -160,3 +192,7 @@ func anonymousStatusCode(req *http.Request, defaultCode int) int {
 
 	return defaultCode
 }
+
+type key int
+
+const AllowAnonymousRequestContextKey key = iota

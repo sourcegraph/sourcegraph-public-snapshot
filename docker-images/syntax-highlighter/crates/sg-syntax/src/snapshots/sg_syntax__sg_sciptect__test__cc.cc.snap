@@ -1,0 +1,31 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 616
+expression: "snapshot_sciptect_documents(&document, &contents)"
+---
+  #include "common/common.h"
+//^^^^^^^^ Keyword keyword.control.import.include.c++
+//        ^ IdentifierNamespace string.quoted.double.include.c++
+//         ^^^^^^^^^^^^^^^^^ StringLiteral string.quoted.double.include.c++
+  #include <csignal>
+//^^^^^^^^ Keyword keyword.control.import.include.c++
+//        ^ IdentifierNamespace string.quoted.other.lt-gt.include.c++
+//         ^^^^^^^^^ StringLiteral string.quoted.other.lt-gt.include.c++
+  
+  int main() {
+//^^^ IdentifierType storage.type.c
+//    ^^^^ IdentifierFunction entity.name.function.c++
+//        ^ PunctuationBracket punctuation.section.group.begin.c++
+//         ^ PunctuationBracket punctuation.section.group.end.c++
+//           ^ PunctuationBracket punctuation.section.block.begin.c++
+      syntect::Exception::raise("oops");
+//           ^^ PunctuationBracket punctuation.accessor.double-colon.c++
+//                      ^^ PunctuationBracket punctuation.accessor.double-colon.c++
+//                        ^^^^^ IdentifierFunction support.function.C99.c
+//                             ^ PunctuationBracket punctuation.section.group.begin.c++
+//                              ^^^^^^ StringLiteral string.quoted.double.c
+//                                    ^ PunctuationBracket punctuation.section.group.end.c++
+//                                     ^ PunctuationDelimiter punctuation.terminator.c++
+  }
+//^ PunctuationBracket punctuation.section.block.end.c++
+

@@ -1,0 +1,17 @@
+.DS_Store
+node_modules
+/build
+/.svelte-kit
+/package
+.env
+.env.*
+!.env.example
+package.json
+
+# Ignore generated files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+/static/mockServiceWorker.js
+
+tsconfig.json

@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
+
+go_library(
+    name = "upload-gcs_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/codeintel-qa/cmd/upload-gcs",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//dev/codeintel-qa/internal",
+        "//dev/sg/root",
+        "//lib/errors",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_google_cloud_go_storage//:storage",
+    ],
+)
+
+go_binary(
+    name = "upload-gcs",
+    embed = [":upload-gcs_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_cross_binary(
+    name = "upload-gcs-darwin-arm64",
+    platform = "@io_bazel_rules_go//go/toolchain:darwin_arm64",
+    tags = ["manual"],
+    target = ":upload-gcs",
+    visibility = ["//testing:__pkg__"],
+)

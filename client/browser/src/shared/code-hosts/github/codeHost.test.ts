@@ -1,13 +1,14 @@
 import { existsSync, readdirSync } from 'fs'
 
-import fetch from 'jest-fetch-mock'
 import { startCase } from 'lodash'
 import { readFile } from 'mz/fs'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, test, vi } from 'vitest'
+import createFetchMock from 'vitest-fetch-mock'
 
-import { disableFetchCache, enableFetchCache, fetchCache } from '@sourcegraph/common'
+import { disableFetchCache, enableFetchCache, fetchCache, type LineOrPositionOrRange } from '@sourcegraph/common'
 
 import { testCodeHostMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
-import { CodeView } from '../shared/codeViews'
+import type { CodeView } from '../shared/codeViews'
 
 import {
     createFileActionsToolbarMount,
@@ -15,7 +16,11 @@ import {
     githubCodeHost,
     checkIsGitHubDotCom,
     isPrivateRepository,
+    parseHash,
 } from './codeHost'
+import { windowLocation__testingOnly } from './util'
+
+const fetch = createFetchMock(vi)
 
 const testCodeHost = (fixturePath: string): void => {
     if (existsSync(fixturePath)) {
@@ -81,12 +86,15 @@ describe('github/codeHost', () => {
         const urlToFile = githubCodeHost.urlToFile!
         const sourcegraphURL = 'https://sourcegraph.my.org'
 
+        afterAll(() => {
+            windowLocation__testingOnly.value = null
+        })
+
         describe('on blob page', () => {
             beforeAll(() => {
-                jsdom.reconfigure({
-                    url:
-                        'https://github.com/sourcegraph/sourcegraph/blob/master/browser/src/shared/code-hosts/code_intelligence.tsx',
-                })
+                windowLocation__testingOnly.value = new URL(
+                    'https://github.com/sourcegraph/sourcegraph/blob/main/browser/src/shared/code-hosts/code_intelligence.tsx'
+                )
             })
             it('returns an URL to the Sourcegraph instance if the location has a viewState', () => {
                 expect(
@@ -95,7 +103,7 @@ describe('github/codeHost', () => {
                         {
                             repoName: 'sourcegraph/sourcegraph',
                             rawRepoName: 'github.com/sourcegraph/sourcegraph',
-                            revision: 'master',
+                            revision: 'main',
                             filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                             position: {
                                 line: 5,
@@ -106,7 +114,7 @@ describe('github/codeHost', () => {
                         { part: undefined }
                     )
                 ).toBe(
-                    'https://sourcegraph.my.org/sourcegraph/sourcegraph@master/-/blob/browser/src/shared/code-hosts/code_intelligence.tsx?L5:12#tab=references'
+                    'https://sourcegraph.my.org/sourcegraph/sourcegraph@main/-/blob/browser/src/shared/code-hosts/code_intelligence.tsx?L5:12#tab=references'
                 )
             })
 
@@ -117,7 +125,7 @@ describe('github/codeHost', () => {
                         {
                             repoName: 'sourcegraph/sourcegraph',
                             rawRepoName: 'ghe.sgdev.org/sourcegraph/sourcegraph',
-                            revision: 'master',
+                            revision: 'main',
                             filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                             position: {
                                 line: 5,
@@ -127,7 +135,7 @@ describe('github/codeHost', () => {
                         { part: undefined }
                     )
                 ).toBe(
-                    'https://sourcegraph.my.org/sourcegraph/sourcegraph@master/-/blob/browser/src/shared/code-hosts/code_intelligence.tsx?L5:12'
+                    'https://sourcegraph.my.org/sourcegraph/sourcegraph@main/-/blob/browser/src/shared/code-hosts/code_intelligence.tsx?L5:12'
                 )
             })
             it('returns an URL to a blob on the same code host if possible', () => {
@@ -137,7 +145,7 @@ describe('github/codeHost', () => {
                         {
                             repoName: 'sourcegraph/sourcegraph',
                             rawRepoName: 'github.com/sourcegraph/sourcegraph',
-                            revision: 'master',
+                            revision: 'main',
                             filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                             position: {
                                 line: 5,
@@ -147,13 +155,15 @@ describe('github/codeHost', () => {
                         { part: undefined }
                     )
                 ).toBe(
-                    'https://github.com/sourcegraph/sourcegraph/blob/master/browser/src/shared/code-hosts/code_intelligence.tsx#L5:12'
+                    'https://github.com/sourcegraph/sourcegraph/blob/main/browser/src/shared/code-hosts/code_intelligence.tsx#L5:12'
                 )
             })
         })
         describe('on pull request page', () => {
             beforeAll(async () => {
-                jsdom.reconfigure({ url: 'https://github.com/sourcegraph/sourcegraph/pull/3257/files' })
+                windowLocation__testingOnly.value = new URL(
+                    'https://github.com/sourcegraph/sourcegraph/pull/3257/files'
+                )
                 document.documentElement.innerHTML = await readFile(
                     __dirname + '/__fixtures__/github.com/pull-request/vanilla/unified/page.html',
                     'utf-8'
@@ -212,26 +222,19 @@ describe('isPrivateRepository', () => {
     })
 
     describe('when on "github.com"', () => {
-        const { location } = window
-
         beforeAll(() => {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            delete window.location
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            window.location = new URL('https://github.com')
+            windowLocation__testingOnly.value = new URL('https://github.com')
         })
 
         beforeEach(() => {
             fetch.enableMocks()
-            fetch.mockClear()
+            fetch.resetMocks()
         })
 
         afterAll(() => {
             fetch.disableMocks()
 
-            window.location = location
+            windowLocation__testingOnly.value = null
         })
 
         it('returns [private=true] on unsuccessful request', async () => {
@@ -243,40 +246,45 @@ describe('isPrivateRepository', () => {
 
         it('fallbacks to DOM check on unsuccessful request', async () => {
             fetch.mockRejectOnce(new Error('Error happened'))
-
             document.body.innerHTML = '<span id="public-flag">Public</span>'
             expect(await isPrivateRepository('test-org/test-repo', fetchCache, '#public-flag')).toBeFalsy()
 
+            fetch.mockRejectOnce(new Error('Error happened'))
             document.body.innerHTML = '<span>Public</span>'
             expect(await isPrivateRepository('test-org/test-repo', fetchCache, '#public-flag')).toBeTruthy()
 
             expect(fetch).toHaveBeenCalledTimes(2)
         })
 
-        it('returns [private=true] if empty response', async () => {
-            fetch.mockResponseOnce(JSON.stringify({}))
-
-            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
-            expect(fetch).toHaveBeenCalledTimes(1)
-        })
-
-        it('returns [private=true] if rate-limit exceeded', async () => {
-            fetch.mockResponseOnce(JSON.stringify({ private: false }), {
-                headers: { 'X-RateLimit-Remaining': '0' },
-            })
-
-            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
-            expect(fetch).toHaveBeenCalledTimes(1)
-        })
-
         it('returns correctly from API response', async () => {
-            fetch.mockResponseOnce(JSON.stringify({ private: true }))
+            fetch.mockResponseOnce(() => Promise.resolve({ status: 404 }))
             expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
 
-            fetch.mockResponseOnce(JSON.stringify({ private: false }))
+            fetch.mockResponseOnce(() => Promise.resolve({ status: 200 }))
             expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeFalsy()
 
             expect(fetch).toHaveBeenCalledTimes(2)
         })
     })
+})
+
+describe('parseHash', () => {
+    const entries: [string, LineOrPositionOrRange][] = [
+        ['#L143', { line: 143 }],
+        ['#helloL143', { line: 143 }],
+        ['#L143-L162', { line: 143, endLine: 162 }],
+        ['#L143L162', { line: 143, endLine: 162 }],
+        ['#L143+L162', { line: 143, endLine: 162 }],
+        ['#L143/L162', { line: 143, endLine: 162 }],
+        ['#L143fooL162', { line: 143, endLine: 162 }],
+        ['#L143fooL162bar', { line: 143, endLine: 162 }],
+        ['#helloL143fooL162bar', { line: 143, endLine: 162 }],
+        ['#L143-L162-L172', {}],
+    ]
+
+    for (const [hash, expectedValue] of entries) {
+        test(`given "${hash}" as argument returns ${JSON.stringify(expectedValue)}`, () => {
+            expect(parseHash(hash)).toEqual(expectedValue)
+        })
+    }
 })

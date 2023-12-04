@@ -1,0 +1,116 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+:root {
+    --blame-decoration-width: 300px;
+    --blame-recency-width: 5px;
+}
+
+@media (--lg-breakpoint-up) {
+    :root {
+        --blame-decoration-width: 400px;
+    }
+}
+
+.blame {
+    display: flex;
+    height: 100%;
+    user-select: none;
+}
+
+.popover {
+    &-trigger {
+        display: inline-flex;
+        width: calc(100% - var(--blame-recency-width));
+        max-width: calc(var(--blame-decoration-width) - var(--blame-recency-width));
+
+        color: var(--text-muted);
+        &:hover {
+            color: var(--text-muted);
+            text-decoration: none;
+            .content {
+                text-decoration: underline;
+            }
+        }
+
+        .avatar {
+            min-width: 1rem;
+            width: 1rem;
+            min-height: 1rem;
+            height: 1rem;
+            font-size: 0.5rem;
+            vertical-align: text-top;
+        }
+
+        .author {
+            margin: 0 0.5rem;
+            margin-right: 0.25rem;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .content {
+            flex-shrink: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .date {
+            min-width: 80px;
+            display: inline-block;
+        }
+
+        .content,
+        .author,
+        .date {
+            white-space: pre;
+            color: var(--text-muted);
+            font-family: var(--font-family-base);
+            height: 1.5rem;
+        }
+    }
+
+    &-content {
+        max-width: 348px;
+
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+
+        .head {
+            line-height: 1rem;
+        }
+
+        .author {
+            font-weight: 500;
+        }
+
+        .separator {
+            color: var(--color-bg-2);
+        }
+
+        .block {
+            margin-top: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .body {
+            padding-left: 0.625rem;
+            padding-right: 1rem;
+            line-height: 1.3333333333;
+            color: var(--body-color);
+        }
+
+        .icon {
+            font-size: 1rem;
+        }
+
+        .link {
+            color: var(--body-color);
+        }
+
+        .footer-link {
+            font-weight: 500;
+        }
+    }
+}

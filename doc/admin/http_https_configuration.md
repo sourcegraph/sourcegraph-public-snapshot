@@ -37,12 +37,12 @@ docker container run \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:3.36.3
+  sourcegraph/server:5.2.3
 ```
 
 ### Sourcegraph Cluster (Kubernetes)
 
-We use the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) for Sourcegraph Cluster running on Kubernetes. Refer to the [deploy-sourcegraph Configuration](https://docs.sourcegraph.com/admin/install/kubernetes/configure) documentation for more information.
+We use the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) for Sourcegraph Cluster running on Kubernetes. Refer to the [deploy-sourcegraph Configuration](deploy/kubernetes/configure.md#network-access) documentation for more information.
 
 ### NGINX SSL/HTTPS configuration
 
@@ -109,7 +109,7 @@ There are a few options:
 
 **[2. Generate a self-signed certificate](ssl_https_self_signed_cert_nginx.md)**<br />
 
-_For instances that don't yet have a certificate from a [globally trusted Certificate Authority (CA) provider](https://en.wikipedia.org/wiki/Certificate_authority#Providers)._
+_This step can be skipped if you already have a certificate from a [globally trusted Certificate Authority (CA) provider](https://en.wikipedia.org/wiki/Certificate_authority#Providers)._
 
 **3. Use your CDN's HTTPS proxy feature**<br />
 
@@ -155,7 +155,7 @@ You should configure Sourcegraph's `externalURL` in the [site configuration](con
 
 ## Sourcegraph via Docker Compose: Caddy 2
 
-Sourcegraph's [Docker Compose deployment](../admin/install/docker-compose/index.md) uses [Caddy 2](https://caddyserver.com/) as its reverse proxy. The Docker Compose deployment ships with a few builtin templates that cover common scenarios for exposing Sourcegraph:
+Sourcegraph's [Docker Compose deployment](deploy/docker-compose/index.md) uses [Caddy 2](https://caddyserver.com/) as its reverse proxy. The Docker Compose deployment ships with a few builtin templates that cover common scenarios for exposing Sourcegraph:
 
 - plain HTTP
 - HTTPS with automatically provisioned Let's Encrypt certificates
@@ -167,7 +167,9 @@ Usage instructions are provided via [the `caddy` service's inline comments insid
 
 ### HTTPS with Custom Certificates in Docker Compose
 
-In https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml:
+**Important:**  [https.custom-cert.Caddyfile](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/caddy/builtins/https.custom-cert.Caddyfile) should not require any updates and should remain untouched. Updates should be made in the [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) file only and as described below.
+
+In your [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) within the caddy section:
     
 1. In the Environment section of the compose file uncomment & update this line with your Sourcegraph Site Address:
 
@@ -194,9 +196,10 @@ In https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-c
    ```
    - '/LOCAL/KEY/PATH.key:/sourcegraph.key'
    ```
+**NOTE**: When adding your certs to your instance, make sure they are in the `deploy-sourcegraph-docker` folder, not outside of it. They will not be recognized otherwise.
 
 ## Other Sourcegraph clusters (e.g. pure-Docker)
 
-NGINX is not included in the ([pure-Docker deployment](https://github.com/sourcegraph/deploy-sourcegraph-docker) as it's designed to be minimal and not tied to any specific reverse proxy.
+NGINX is not included in the [pure-Docker deployment](https://github.com/sourcegraph/deploy-sourcegraph-docker) as it's designed to be minimal and not tied to any specific reverse proxy.
 
 If NGINX is your preferred reverse proxy, we suggest using [the official NGINX docker images](https://hub.docker.com/_/nginx) and following their instructions for [securing HTTP traffic with a proxied server](https://docs.nginx.com/nginx/admin-guide/security-controls/securing-http-traffic-upstream/).

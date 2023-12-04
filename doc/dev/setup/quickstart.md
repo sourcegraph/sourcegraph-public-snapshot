@@ -2,7 +2,7 @@
 
 This is the quickstart guide for [developing Sourcegraph](../index.md).
 
-> NOTE: If you run into any troubles, you can alternatively consult the [deprecated quickstart instructions without `sg`](deprecated_quickstart.md) or reach out on Slack:
+> NOTE: If you run into any troubles, reach out on Slack:
 >
 > - [As an open source contributor](https://sourcegraph-community.slack.com/archives/C02BG0M0ZJ7)
 > - [As a Sourcegraph employee](https://sourcegraph.slack.com/archives/C01N83PS4TU)
@@ -27,42 +27,38 @@ curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
 
 See the [`sg` documentation](../background-information/sg/index.md) for more information or ask in the `#dev-experience` Slack channel.
 
+## Ensure you have SSH setup for GitHub
+
+Follow the instructions on [Adding a new SSH key to your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) for checking if you have an existing SSH for your current machine and setting one up if not.
+
 ## Run `sg setup`
 
-Open a terminal and run the following command:
+In the directory where you want the `sourcegraph` repository to be checked out, open a terminal and run the following command:
 
 ```sh
 sg setup
 ```
 
-Follow the printed instructions.
+Follow the printed instructions, which will guide you through the installation of all the necessary dependencies to start the local development environment.
 
-They will guide you through the installation of all the necessary dependencies to start the local development environment.
+## Run databases
 
-## Starting the databases
+If you chose to run PostgreSQL and Redis **without Docker** (recommended) they should already be running. You can jump to the next section.
 
-If you chose to run PostgreSQL and Redis **without Docker** (recommended) they should already be running. You can jump the next section.
-
-If you chose to run Redis and PostgreSQL **with Docker** to then we need to run them:
+If you chose to run Redis and PostgreSQL **with Docker**, we need to run them:
 
 ```sh
 sg run redis-postgres
 ```
 
-Keep this process running in a terminal window to keep the databases running. Follow the rest of the instructions in another terminal.
+Keep this process running and follow the rest of the instructions in another terminal.
 
-## Start the server
+## Start Sourcegraph
 
-**If you are a Sourcegraph employee**: start the local development server for Sourcegraph Enterprise with the following command:
+**If you are a Sourcegraph employee**, start the local development server for Sourcegraph Enterprise with the following command:
 
 ```sh
 sg start
-```
-
-**If you are not a Sourcegraph employee and don't have access to [the `dev-private` repository](https://github.com/sourcegraph/dev-private)**: you want to start Sourcegraph OSS, do this:
-
-```sh
-sg start oss
 ```
 
 This will continuously compile your code and live reload your locally running instance of Sourcegraph.
@@ -71,9 +67,9 @@ Navigate your browser to https://sourcegraph.test:3443 to see if everything work
 
 Congratulations on making it to the end of the quickstart guide!
 
-## Running the server in different configurations
+### Running Sourcegraph in different configurations
 
-If you want to run the server in different configurations (with the monitoring stack, with code insights enabled, Sourcegraph OSS, ...), run the following:
+If you want to run Sourcegraph in different configurations (with the monitoring stack, with code insights enabled...), run the following:
 
 ```sh
 sg start -help
@@ -98,4 +94,5 @@ sg start monitoring
 Here are some additional resources to help you go further:
 
 - [Troubleshooting local development](troubleshooting.md)
-- [Background information](../background-information/index.md) for more context on various topics.
+- [Continuous integration](../background-information/ci/index.md)
+- [Background information](../index.md#background-information) for more context on various topics.

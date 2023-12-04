@@ -1,35 +1,33 @@
-import classNames from 'classnames'
-import React, { useCallback } from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import React, { useCallback, useEffect } from 'react'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
+import classNames from 'classnames'
+import { useNavigate, useParams } from 'react-router-dom'
+
+import { logger } from '@sourcegraph/common'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
-import { Maybe, OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
-import { IEmptyResponse, IOrganizationInvitation } from '@sourcegraph/shared/src/schema'
-import { Alert, AnchorLink, Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
+import { Alert, AnchorLink, Button, LoadingSpinner, Link, H2, H3, Form } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { ModalPage } from '../../components/ModalPage'
 import { PageTitle } from '../../components/PageTitle'
+import type {
+    InvitationByTokenResult,
+    InvitationByTokenVariables,
+    RespondToOrgInvitationResult,
+    RespondToOrgInvitationVariables,
+} from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
-import { UserAvatar } from '../../user/UserAvatar'
 import { OrgAvatar } from '../OrgAvatar'
 
 import styles from './OrgInvitationPage.module.scss'
 
-interface Props extends RouteComponentProps<{ token: string }> {
+interface Props {
     authenticatedUser: AuthenticatedUser
     className?: string
-}
-
-interface RespondToOrgInvitationResult {
-    respondToOrganizationInvitation: Maybe<IEmptyResponse>
-}
-
-interface RespondToOrgInvitationVariables {
-    id: string
-    response: OrganizationInvitationResponseType
 }
 
 export const RESPOND_TO_ORG_INVITATION = gql`
@@ -40,30 +38,27 @@ export const RESPOND_TO_ORG_INVITATION = gql`
     }
 `
 
-interface InviteResult {
-    invitationByToken: Maybe<IOrganizationInvitation>
-}
-
-interface InviteVariables {
-    token: string
-}
-
 export const INVITATION_BY_TOKEN = gql`
     query InvitationByToken($token: String!) {
         invitationByToken(token: $token) {
-            createdAt
+            ...OrganizationInvitationFields
+        }
+    }
+
+    fragment OrganizationInvitationFields on OrganizationInvitation {
+        createdAt
+        id
+        isVerifiedEmail
+        organization {
             id
-            isVerifiedEmail
-            organization {
-                displayName
-                name
-            }
-            recipientEmail
-            sender {
-                avatarURL
-                displayName
-                username
-            }
+            displayName
+            name
+        }
+        recipientEmail
+        sender {
+            avatarURL
+            displayName
+            username
         }
     }
 `
@@ -71,56 +66,120 @@ export const INVITATION_BY_TOKEN = gql`
 /**
  * Displays the organization invitation for the user, based on the token in the invite URL.
  */
-export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticatedUser, className, history, match }) => {
-    const token = match.params.token
+export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    authenticatedUser,
+    className,
+}) => {
+    const { token } = useParams<{ token: string }>()
+    const navigate = useNavigate()
 
-    const { data: inviteData, loading: inviteLoading, error: inviteError } = useQuery<InviteResult, InviteVariables>(
-        INVITATION_BY_TOKEN,
-        {
-            skip: !authenticatedUser || !token,
-            variables: {
-                token,
-            },
-        }
-    )
+    const {
+        data: inviteData,
+        loading: inviteLoading,
+        error: inviteError,
+    } = useQuery<InvitationByTokenResult, InvitationByTokenVariables>(INVITATION_BY_TOKEN, {
+        skip: !authenticatedUser || !token,
+        variables: {
+            token: token!,
+        },
+    })
 
     const data = inviteData?.invitationByToken
     const orgName = data?.organization.name
+    const orgId = data?.organization.id
     const sender = data?.sender
     const orgDisplayName = data?.organization.displayName || orgName
+    const willVerifyEmail = data?.recipientEmail && !data?.isVerifiedEmail
+
+    useEffect(() => {
+        eventLogger.logPageView('OrganizationInvitation', { organizationId: orgId, invitationId: data?.id })
+    }, [orgId, data?.id])
 
     const [respondToInvitation, { loading: respondLoading, error: respondError }] = useMutation<
         RespondToOrgInvitationResult,
         RespondToOrgInvitationVariables
     >(RESPOND_TO_ORG_INVITATION, {
         onError: apolloError => {
-            console.error('Error when responding to invitation', apolloError)
+            logger.error('Error when responding to invitation', apolloError)
         },
     })
 
     const acceptInvitation = useCallback(async () => {
-        await respondToInvitation({
-            variables: {
-                id: data?.id || '',
-                response: OrganizationInvitationResponseType.ACCEPT,
+        eventLogger.log(
+            'OrganizationInvitationAcceptClicked',
+            {
+                organizationId: orgId,
+                invitationId: data?.id,
+                willVerifyEmail,
             },
-        })
+            {
+                organizationId: orgId,
+                invitationId: data?.id,
+                willVerifyEmail,
+            }
+        )
+        try {
+            await respondToInvitation({
+                variables: {
+                    id: data?.id || '',
+                    response: OrganizationInvitationResponseType.ACCEPT,
+                },
+            })
+            eventLogger.log(
+                'OrganizationInvitationAcceptSucceeded',
+                { organizationId: orgId, invitationId: data?.id },
+                { organizationId: orgId, invitationId: data?.id }
+            )
+        } catch {
+            eventLogger.log(
+                'OrganizationInvitationAcceptFailed',
+                { organizationId: orgId, invitationId: data?.id },
+                { organizationId: orgId, invitationId: data?.id }
+            )
+            return
+        }
 
         if (orgName) {
-            history.push(orgURL(orgName))
+            navigate(orgURL(orgName))
         }
-    }, [data?.id, history, orgName, respondToInvitation])
+    }, [data?.id, navigate, orgId, orgName, respondToInvitation, willVerifyEmail])
 
     const declineInvitation = useCallback(async () => {
-        await respondToInvitation({
-            variables: {
-                id: data?.id || '',
-                response: OrganizationInvitationResponseType.REJECT,
+        eventLogger.log(
+            'OrganizationInvitationDeclineClicked',
+            {
+                organizationId: orgId,
+                invitationId: data?.id,
+                willVerifyEmail,
             },
-        })
+            {
+                organizationId: orgId,
+                invitationId: data?.id,
+                willVerifyEmail,
+            }
+        )
+        try {
+            await respondToInvitation({
+                variables: {
+                    id: data?.id || '',
+                    response: OrganizationInvitationResponseType.REJECT,
+                },
+            })
+            eventLogger.log(
+                'OrganizationInvitationDeclineSucceeded',
+                { organizationId: orgId, invitationId: data?.id },
+                { organizationId: orgId, invitationId: data?.id }
+            )
+        } catch {
+            eventLogger.log(
+                'OrganizationInvitationDeclineFailed',
+                { organizationId: orgId, invitationId: data?.id },
+                { organizationId: orgId, invitationId: data?.id }
+            )
+        }
 
-        history.push(userURL(authenticatedUser.username))
-    }, [authenticatedUser.username, data?.id, history, respondToInvitation])
+        navigate(userURL(authenticatedUser.username))
+    }, [authenticatedUser.username, data?.id, navigate, orgId, respondToInvitation, willVerifyEmail])
 
     const loading = inviteLoading || respondLoading
     const error = inviteError?.message || respondError?.message
@@ -134,9 +193,9 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
                     icon={<OrgAvatar org={orgName} className="mt-3 mb-4" size="lg" />}
                 >
                     <Form className="text-center pr-4 pl-4 pb-4">
-                        <h3>You've been invited to join the {orgDisplayName} organization.</h3>
+                        <H2>You've been invited to join the {orgDisplayName} organization</H2>
                         <div className="mt-4">
-                            <UserAvatar className="mr-2" user={sender} size={24} />
+                            <UserAvatar className={classNames('mr-2', styles.userAvatar)} user={sender} size={24} />
                             <span>
                                 Invited by{' '}
                                 <Link to={userURL(sender.username)}>{sender.displayName || `@${sender.username}`}</Link>
@@ -149,16 +208,22 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
                                 {orgDisplayName} organization will add this as a verified email on your account.
                             </div>
                         )}
-                        <div className="mt-4 mb-4">
+                        <div className="mt-4">
                             <Button className="mr-sm-2" disabled={loading} onClick={acceptInvitation} variant="primary">
                                 Join {orgDisplayName}
                             </Button>
-                            <Button disabled={loading} onClick={declineInvitation} variant="secondary">
+                            <Button
+                                disabled={loading}
+                                className={styles.declineButton}
+                                onClick={declineInvitation}
+                                variant="secondary"
+                                outline={true}
+                            >
                                 Decline
                             </Button>
                         </div>
                         {data.isVerifiedEmail === false && data.recipientEmail && (
-                            <small className="mt-4 text-muted">
+                            <small className="mt-4 text-muted d-inline-block">
                                 <AnchorLink to="/-/sign-out">Or sign out and create a new account</AnchorLink>
                                 <br />
                                 to join the {orgDisplayName} organization
@@ -169,7 +234,7 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
             )}
             {error && (
                 <ModalPage className={classNames(styles.orgInvitationPage, className, 'p-4')}>
-                    <h3>You've been invited to join an organization.</h3>
+                    <H3>You've been invited to join an organization.</H3>
                     <Alert variant="danger" className="mt-3">
                         Error: {error}
                     </Alert>

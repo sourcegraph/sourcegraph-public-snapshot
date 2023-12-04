@@ -10,13 +10,10 @@
 steps:
   - group: "Pipeline setup"
     steps:
-      - label: ':hammer_and_wrench: :pipeline: Generate pipeline'
+      - label: ':bazel::pipeline: Generate pipeline'
+        key: 'pipeline-gen'
+        agents: { queue: bazel }
         # Prioritize generating pipelines so that jobs can get generated and queued up as soon
         # as possible, so as to better assess pipeline load e.g. to scale the Buildkite fleet.
         priority: 10
-        command: |
-          echo "--- generate pipeline"
-          go run ./enterprise/dev/ci/gen-pipeline.go | tee generated-pipeline.yml
-          echo ""
-          echo "--- upload pipeline"
-          buildkite-agent pipeline upload generated-pipeline.yml
+        command: './dev/ci/gen-pipeline.sh'

@@ -11,13 +11,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/go-github/v31/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/oauth2"
-	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -27,7 +27,7 @@ func newGHEClient(ctx context.Context, baseURL, uploadURL, token string) (*githu
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
-	return github.NewEnterpriseClient(baseURL, uploadURL, tc)
+	return github.NewClient(tc).WithEnterpriseURLs(baseURL, uploadURL)
 }
 
 func init() {
@@ -101,7 +101,7 @@ type worker struct {
 	logger log15.Logger
 
 	// rate limiter for the GHE API calls
-	rateLimiter *rate.Limiter
+	rateLimiter *ratelimit.InstrumentedLimiter
 	// how many simultaneous `git push` operations to the GHE
 	pushSem chan struct{}
 	// how many simultaneous `git clone` operations from github.com
@@ -119,7 +119,9 @@ type worker struct {
 func (wkr *worker) run(ctx context.Context) {
 	defer wkr.wg.Done()
 
-	wkr.currentOrg, wkr.currentMaxRepos = randomOrgNameAndSize()
+	if wkr.currentOrg == "" {
+		wkr.currentOrg, wkr.currentMaxRepos = randomOrgNameAndSize()
+	}
 
 	wkr.logger.Debug("switching to org", "org", wkr.currentOrg)
 
@@ -244,7 +246,7 @@ func (wkr *worker) cloneRepo(ctx context.Context, owner, repo string) error {
 		}()
 
 		ownerDir := filepath.Join(wkr.scratchDir, owner)
-		err := os.MkdirAll(ownerDir, 0777)
+		err := os.MkdirAll(ownerDir, 0o777)
 		if err != nil {
 			wkr.logger.Error("failed to create owner dir", "ownerDir", ownerDir, "error", err)
 			return err

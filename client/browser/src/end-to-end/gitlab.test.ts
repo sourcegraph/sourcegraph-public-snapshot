@@ -1,6 +1,8 @@
+import { describe } from 'mocha'
+
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { testSingleFilePage } from './shared'
@@ -23,7 +25,7 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
 
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             if (restConfig.testUserPassword) {
-                await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+                await driver.ensureSignedIn({ username: 'test', password: restConfig.testUserPassword })
             }
             await driver.setExtensionSourcegraphUrl()
             await driver.ensureHasExternalService({
@@ -32,9 +34,9 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
                 config: JSON.stringify({
                     url: GITLAB_BASE_URL,
                     token: GITLAB_TOKEN,
-                    projectQuery: ['groups/sourcegraph/projects?search=jsonrpc2'],
+                    projectQuery: ['groups/SourcegraphCody/projects?search=jsonrpc2'],
                 }),
-                ensureRepos: [REPO_PATH_PREFIX + '/sourcegraph/jsonrpc2'],
+                ensureRepos: [REPO_PATH_PREFIX + '/SourcegraphCody/jsonrpc2'],
             })
             await driver.ensureHasCORSOrigin({ corsOriginURL: GITLAB_BASE_URL })
         }
@@ -47,8 +49,10 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
     // Take a screenshot when a test fails.
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
+    // gitlab.com/sourcegraph now redirects to gitlab.com/SourcegraphCody, so that's
+    // the URL that will be generated on hover.
     const url = new URL(
-        '/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go',
+        '/SourcegraphCody/jsonrpc2/blob/dbf20885e7ff39b0d5b64878148113e8433571f1/call_opt.go',
         GITLAB_BASE_URL
     )
     testSingleFilePage({
@@ -56,8 +60,9 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
         url: url.href,
         // Other than GitHub, the URL must not include the column in the hash.
         goToDefinitionURL: new URL('#L5', url.href).href,
-        repoName: `${REPO_PATH_PREFIX}/sourcegraph/jsonrpc2`,
+        repoName: `${REPO_PATH_PREFIX}/SourcegraphCody/jsonrpc2`,
+        commitID: 'dbf20885e7ff39b0d5b64878148113e8433571f1',
         sourcegraphBaseUrl,
-        lineSelector: '.line',
+        getLineSelector: lineNumber => `#LC${lineNumber}`,
     })
 })

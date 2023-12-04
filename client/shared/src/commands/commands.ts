@@ -1,17 +1,16 @@
-import { Remote } from 'comlink'
-import { concat, from, of, Subscription, Unsubscribable } from 'rxjs'
+import type { Remote } from 'comlink'
+import { concat, from, of, Subscription, type Unsubscribable } from 'rxjs'
 import { first } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
 
+import type { ActionContributionClientCommandUpdateConfiguration, Evaluated, KeyPath } from '@sourcegraph/client-api'
 import { formatSearchParameters } from '@sourcegraph/common'
-import { Position } from '@sourcegraph/extension-api-types'
+import type { Position } from '@sourcegraph/extension-api-types'
 
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { CommandEntry } from '../api/client/mainthread-api'
-import { KeyPath, SettingsEdit, updateSettings } from '../api/client/services/settings'
-import { FlatExtensionHostAPI } from '../api/contract'
-import { ActionContributionClientCommandUpdateConfiguration, Evaluated } from '../api/protocol'
-import { PlatformContext } from '../platform/context'
+import type { CommandEntry } from '../api/client/mainthread-api'
+import { type SettingsEdit, updateSettings } from '../api/client/services/settings'
+import type { FlatExtensionHostAPI } from '../api/contract'
+import type { PlatformContext } from '../platform/context'
 
 /**
  * Registers the builtin client commands that are required for Sourcegraph extensions. See
@@ -21,7 +20,7 @@ import { PlatformContext } from '../platform/context'
 export function registerBuiltinClientCommands(
     context: Pick<PlatformContext, 'requestGraphQL' | 'telemetryService' | 'settings' | 'updateSettings'>,
     extensionHost: Remote<FlatExtensionHostAPI>,
-    registerCommand: (entryToRegister: CommandEntry) => sourcegraph.Unsubscribable
+    registerCommand: (entryToRegister: CommandEntry) => Unsubscribable
 ): Unsubscribable {
     const subscription = new Subscription()
 
@@ -38,6 +37,13 @@ export function registerBuiltinClientCommands(
                 window.open(url, '_blank')
                 return Promise.resolve()
             },
+        })
+    )
+
+    subscription.add(
+        registerCommand({
+            command: 'invokeFunction',
+            run: (handler: () => Promise<void>) => handler(),
         })
     )
 
@@ -75,7 +81,8 @@ export function registerBuiltinClientCommands(
         registerCommand({
             command: 'updateConfiguration',
             run: (...anyArguments: any[]): Promise<void> => {
-                const args = anyArguments as Evaluated<ActionContributionClientCommandUpdateConfiguration>['commandArguments']
+                const args =
+                    anyArguments as Evaluated<ActionContributionClientCommandUpdateConfiguration>['commandArguments']
                 return updateSettings(context, convertUpdateConfigurationCommandArguments(args))
             },
         })

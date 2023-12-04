@@ -1,17 +1,34 @@
 package dbworker
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/derision-test/glock"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	storemocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 )
 
+type TestRecord struct {
+	ID int
+}
+
+func (v TestRecord) RecordID() int {
+	return v.ID
+}
+
+func (v TestRecord) RecordUID() string {
+	return strconv.Itoa(v.ID)
+}
+
 func TestResetter(t *testing.T) {
-	store := storemocks.NewMockStore()
+	logger := logtest.Scoped(t)
+	s := storemocks.NewMockStore[*TestRecord]()
 	clock := glock.NewMockClock()
 	options := ResetterOptions{
 		Name:     "test",
@@ -23,12 +40,12 @@ func TestResetter(t *testing.T) {
 		},
 	}
 
-	resetter := newResetter(store, options, clock)
+	resetter := newResetter(logger, store.Store[*TestRecord](s), options, clock)
 	go func() { resetter.Start() }()
 	clock.BlockingAdvance(time.Second)
 	resetter.Stop()
 
-	if callCount := len(store.ResetStalledFunc.History()); callCount < 1 {
+	if callCount := len(s.ResetStalledFunc.History()); callCount < 1 {
 		t.Errorf("unexpected reset stalled call count. want>=%d have=%d", 1, callCount)
 	}
 }

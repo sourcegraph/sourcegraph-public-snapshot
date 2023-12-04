@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 
@@ -33,6 +33,7 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.BuildkiteToken, "buildkite.token", "", "mandatory buildkite token")
 	flag.StringVar(&f.Pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
 	flag.StringVar(&f.Branch, "branch", "main", "name of the branch to inspect")
+
 	flag.IntVar(&f.FailuresThreshold, "failures.threshold", 3, "failures required to trigger an incident")
 	flag.IntVar(&f.FailuresTimeoutMins, "failures.timeout", 60, "duration of a run required to be considered a failure (minutes)")
 	flag.Parse()
@@ -46,16 +47,20 @@ func main() {
 
 	checkFlags := &cmdCheckFlags{}
 	flag.StringVar(&checkFlags.githubToken, "github.token", "", "mandatory github token")
-	flag.StringVar(&checkFlags.slackToken, "slack.token", "", "mandatory slack api token")
 	flag.StringVar(&checkFlags.slackAnnounceWebhooks, "slack.announce-webhook", "", "Slack Webhook URL to post the results on (comma-delimited for multiple values)")
+	flag.StringVar(&checkFlags.slackToken, "slack.token", "", "Slack token used for resolving Slack handles to mention")
 	flag.StringVar(&checkFlags.slackDebugWebhook, "slack.debug-webhook", "", "Slack Webhook URL to post debug results on")
 	flag.StringVar(&checkFlags.slackDiscussionChannel, "slack.discussion-channel", "#buildkite-main", "Slack channel to ask everyone to head over to for discusison")
 
 	historyFlags := &cmdHistoryFlags{}
 	flag.StringVar(&historyFlags.createdFromDate, "created.from", "", "date in YYYY-MM-DD format")
 	flag.StringVar(&historyFlags.createdToDate, "created.to", "", "date in YYYY-MM-DD format")
-	flag.StringVar(&historyFlags.loadFrom, "load-from", "", "file to load builds from")
-	flag.StringVar(&historyFlags.writeTo, "write-to", "builds.json", "file to write builds to (unused if loading from file)")
+	flag.StringVar(&historyFlags.buildsLoadFrom, "builds.load-from", "", "file to load builds from - if unset, fetches from Buildkite")
+	flag.StringVar(&historyFlags.buildsWriteTo, "builds.write-to", "", "file to write builds to (unused if loading from file)")
+	flag.StringVar(&historyFlags.resultsCsvPath, "csv", "", "path for CSV results exports")
+	flag.StringVar(&historyFlags.honeycombDataset, "honeycomb.dataset", "", "honeycomb dataset to publish to")
+	flag.StringVar(&historyFlags.honeycombToken, "honeycomb.token", "", "honeycomb API token")
+	flag.StringVar(&historyFlags.slackReportWebHook, "slack.report-webhook", "", "Slack Webhook URL to post weekly report on ")
 
 	flags.Parse()
 
@@ -75,9 +80,9 @@ func main() {
 }
 
 type cmdCheckFlags struct {
-	slackToken  string
 	githubToken string
 
+	slackToken             string
 	slackAnnounceWebhooks  string
 	slackDebugWebhook      string
 	slackDiscussionChannel string
@@ -95,9 +100,6 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 	ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: checkFlags.githubToken},
 	)))
-
-	// Slack client
-	slc := slack.New(checkFlags.slackToken)
 
 	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
 	builds, _, err := bkc.Builds.ListByPipeline("sourcegraph", flags.Pipeline, &buildkite.BuildsListOptions{
@@ -118,7 +120,7 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 	results, err := CheckBuilds(
 		ctx,
 		NewBranchLocker(ghc, "sourcegraph", "sourcegraph", flags.Branch),
-		team.NewTeammateResolver(ghc, slc),
+		team.NewTeammateResolver(ghc, slack.New(checkFlags.slackToken)),
 		builds,
 		opts,
 	)
@@ -130,7 +132,7 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 	// Only post an update if the lock has been modified
 	lockModified := results.Action != nil
 	if lockModified {
-		summary := slackSummary(results.LockBranch, flags.Branch, checkFlags.slackDiscussionChannel, results.FailedCommits)
+		summary := generateBranchEventSummary(results.LockBranch, flags.Branch, checkFlags.slackDiscussionChannel, results.FailedCommits)
 		announceWebhooks := strings.Split(checkFlags.slackAnnounceWebhooks, ",")
 
 		// Post update first to avoid invisible changes
@@ -162,12 +164,20 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 type cmdHistoryFlags struct {
 	createdFromDate string
 	createdToDate   string
-	loadFrom        string
-	writeTo         string
+
+	buildsLoadFrom string
+	buildsWriteTo  string
+
+	resultsCsvPath   string
+	honeycombDataset string
+	honeycombToken   string
+
+	okayHQToken string
+
+	slackReportWebHook string
 }
 
 func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags) {
-
 	// Time range
 	var err error
 	createdFrom := time.Now().Add(-24 * time.Hour)
@@ -188,7 +198,8 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 
 	// Get builds
 	var builds []buildkite.Build
-	if historyFlags.loadFrom == "" {
+	if historyFlags.buildsLoadFrom == "" {
+		// Load builds from Buildkite if no cached builds configured
 		log.Println("fetching builds from Buildkite")
 
 		// Buildkite client
@@ -199,10 +210,12 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 		bkc := buildkite.NewClient(config.Client())
 
 		// Paginate results
-		var nextPage = 1
+		nextPage := 1
 		var pages int
+		log.Printf("request paging progress:")
 		for nextPage > 0 {
 			pages++
+			fmt.Printf(" %d", pages)
 
 			// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
 			pageBuilds, resp, err := bkc.Builds.ListByPipeline("sourcegraph", flags.Pipeline, &buildkite.BuildsListOptions{
@@ -211,10 +224,8 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 				CreatedTo:          createdTo,
 				IncludeRetriedJobs: false,
 				ListOptions: buildkite.ListOptions{
-					Page: nextPage,
-					// Fix to high page size just in case, default is 30
-					// https://buildkite.com/docs/apis/rest-api#pagination
-					PerPage: 99,
+					Page:    nextPage,
+					PerPage: 50,
 				},
 			})
 			if err != nil {
@@ -224,20 +235,24 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 			builds = append(builds, pageBuilds...)
 			nextPage = resp.NextPage
 		}
+		fmt.Println() // end line for progress spinner
 
-		buildsJSON, err := json.Marshal(&builds)
-		if err != nil {
-			log.Fatal("json.Marshal(&builds): ", err)
-		}
-		if historyFlags.writeTo != "" {
-			if err := os.WriteFile(historyFlags.writeTo, buildsJSON, os.ModePerm); err != nil {
+		if historyFlags.buildsWriteTo != "" {
+			// Cache builds for ease of re-running analyses
+			log.Printf("Caching discovered builds in %s\n", historyFlags.buildsWriteTo)
+			buildsJSON, err := json.Marshal(&builds)
+			if err != nil {
+				log.Fatal("json.Marshal(&builds): ", err)
+			}
+			if err := os.WriteFile(historyFlags.buildsWriteTo, buildsJSON, os.ModePerm); err != nil {
 				log.Fatal("os.WriteFile: ", err)
 			}
-			log.Println("wrote to " + historyFlags.writeTo)
+			log.Println("wrote to " + historyFlags.buildsWriteTo)
 		}
 	} else {
-		log.Printf("loading builds from %s\n", historyFlags.loadFrom)
-		data, err := os.ReadFile(historyFlags.loadFrom)
+		// Load builds from configured path
+		log.Printf("loading builds from %s\n", historyFlags.buildsLoadFrom)
+		data, err := os.ReadFile(historyFlags.buildsLoadFrom)
 		if err != nil {
 			log.Fatal("os.ReadFile: ", err)
 		}
@@ -268,18 +283,30 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 	log.Printf("inferred %d builds as failed", inferredFail)
 
 	// Generate history
-	totals, flakes, incidents := generateHistory(builds, createdTo, CheckOptions{
+	checkOpts := CheckOptions{
 		FailuresThreshold: flags.FailuresThreshold,
 		BuildTimeout:      time.Duration(flags.FailuresTimeoutMins) * time.Minute,
-	})
+	}
+	log.Printf("running analysis with options: %+v\n", checkOpts)
+	totals, flakes, incidents := generateHistory(builds, createdTo, checkOpts)
 
-	// Write to files
-	var errs error
-	errs = errors.CombineErrors(errs, writeCSV("./totals.csv", mapToRecords(totals)))
-	errs = errors.CombineErrors(errs, writeCSV("./flakes.csv", mapToRecords(flakes)))
-	errs = errors.CombineErrors(errs, writeCSV("./incidents.csv", mapToRecords(incidents)))
-	if errs != nil {
-		log.Fatal("csv.WriteAll: ", errs)
+	// Prepare history reporting destinations
+	reporters := []reporter{}
+	if historyFlags.resultsCsvPath != "" {
+		reporters = append(reporters, reportToCSV)
+	}
+	if historyFlags.honeycombDataset != "" {
+		reporters = append(reporters, reportToHoneycomb)
+	}
+	if historyFlags.slackReportWebHook != "" {
+		reporters = append(reporters, reportToSlack)
+	}
+
+	// Deliver reports
+	log.Printf("sending reports to %d reporters", len(reporters))
+	var mErrs error
+	for _, report := range reporters {
+		mErrs = errors.Append(mErrs, report(ctx, *historyFlags, totals, incidents, flakes))
 	}
 
 	log.Println("done!")

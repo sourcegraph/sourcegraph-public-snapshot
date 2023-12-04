@@ -1,42 +1,40 @@
-import * as React from 'react'
+import type React from 'react'
+import { useEffect } from 'react'
 
-interface Props {
+import { logger } from '@sourcegraph/common'
+import { screenReaderAnnounce } from '@sourcegraph/wildcard'
+
+interface PageTitleProps {
     title?: string
 }
 
-export class PageTitle extends React.Component<Props, {}> {
-    public static titleSet = false
+const getBrandName = (): string => {
+    if (!window.context) {
+        return 'Sourcegraph'
+    }
+    const { branding } = window.context
+    return branding ? branding.brandName : 'Sourcegraph'
+}
 
-    public componentDidMount(): void {
-        if (PageTitle.titleSet) {
-            console.error('more than one PageTitle used at the same time')
+let titleSet = false
+
+export const PageTitle: React.FunctionComponent<React.PropsWithChildren<PageTitleProps>> = ({ title }) => {
+    useEffect(() => {
+        if (titleSet) {
+            logger.error('more than one PageTitle used at the same time')
         }
-        PageTitle.titleSet = true
-        this.updateTitle(this.props.title)
-    }
+        titleSet = true
+        document.title = title ? `${title} - ${getBrandName()}` : getBrandName()
+        screenReaderAnnounce(document.title)
 
-    public componentDidUpdate(): void {
-        this.updateTitle(this.props.title)
-    }
+        return () => {
+            titleSet = false
 
-    public componentWillUnmount(): void {
-        PageTitle.titleSet = false
-        document.title = this.brandName()
-    }
-
-    public render(): JSX.Element | null {
-        return null
-    }
-
-    private brandName(): string {
-        if (!window.context) {
-            return 'Sourcegraph'
+            // This is a fallback, in case the next page does *not* set the title.
+            // Ideally, we should always overwrite this, so we don't announce it to screen readers to reduce noise.
+            document.title = getBrandName()
         }
-        const { branding } = window.context
-        return branding ? branding.brandName : 'Sourcegraph'
-    }
+    }, [title])
 
-    private updateTitle(title?: string): void {
-        document.title = title ? `${title} - ${this.brandName()}` : this.brandName()
-    }
+    return null
 }

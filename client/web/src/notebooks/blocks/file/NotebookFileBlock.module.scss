@@ -1,0 +1,28 @@
+.block {
+    background-color: var(--color-bg-1);
+}
+
+.header {
+    margin-bottom: 0.25rem;
+    a {
+        color: var(--text-muted);
+    }
+    font-size: 0.75rem;
+
+    display: flex;
+    align-items: center;
+}
+
+.separator {
+    margin: 0 0.25rem;
+    border-right: 1px solid var(--border-color);
+    height: 1rem;
+}
+
+.code > div {
+    border: 1px solid var(--border-color-2);
+    border-radius: var(--border-radius);
+    padding: 0.5rem;
+    overflow: auto;
+    max-height: 32rem;
+}

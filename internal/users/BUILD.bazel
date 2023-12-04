@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "users",
+    srcs = [
+        "stats.go",
+        "update_aggregated_stats_job.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/users",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/eventlogger",
+        "//internal/featureflag",
+        "//lib/errors",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

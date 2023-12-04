@@ -16,25 +16,26 @@ type s3API interface {
 	UploadPartCopy(ctx context.Context, input *s3.UploadPartCopyInput) (*s3.UploadPartCopyOutput, error)
 	CompleteMultipartUpload(ctx context.Context, input *s3.CompleteMultipartUploadInput) (*s3.CompleteMultipartUploadOutput, error)
 	CreateBucket(ctx context.Context, input *s3.CreateBucketInput) (*s3.CreateBucketOutput, error)
-	PutBucketLifecycleConfiguration(ctx context.Context, input *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error)
+	DeleteObjects(ctx context.Context, params *s3.DeleteObjectsInput, optFns ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error)
+	NewListObjectsV2Paginator(input *s3.ListObjectsV2Input) *s3.ListObjectsV2Paginator
 }
 
 type s3Uploader interface {
 	Upload(ctx context.Context, input *s3.PutObjectInput) error
 }
 
-type s3APIShim struct{ *s3.Client }
-type s3UploaderShim struct{ *manager.Uploader }
+type (
+	s3APIShim      struct{ *s3.Client }
+	s3UploaderShim struct{ *manager.Uploader }
+)
 
-var _ s3API = &s3APIShim{}
-var _ s3Uploader = &s3UploaderShim{}
+var (
+	_ s3API      = &s3APIShim{}
+	_ s3Uploader = &s3UploaderShim{}
+)
 
 func (s *s3APIShim) CreateBucket(ctx context.Context, input *s3.CreateBucketInput) (*s3.CreateBucketOutput, error) {
 	return s.Client.CreateBucket(ctx, input)
-}
-
-func (s *s3APIShim) PutBucketLifecycleConfiguration(ctx context.Context, input *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error) {
-	return s.Client.PutBucketLifecycleConfiguration(ctx, input)
 }
 
 func (s *s3APIShim) HeadObject(ctx context.Context, input *s3.HeadObjectInput) (*s3.HeadObjectOutput, error) {
@@ -63,6 +64,14 @@ func (s *s3APIShim) UploadPartCopy(ctx context.Context, input *s3.UploadPartCopy
 
 func (s *s3APIShim) CompleteMultipartUpload(ctx context.Context, input *s3.CompleteMultipartUploadInput) (*s3.CompleteMultipartUploadOutput, error) {
 	return s.Client.CompleteMultipartUpload(ctx, input)
+}
+
+func (s *s3APIShim) DeleteObjects(ctx context.Context, params *s3.DeleteObjectsInput, optFns ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error) {
+	return s.Client.DeleteObjects(ctx, params, optFns...)
+}
+
+func (s *s3APIShim) NewListObjectsV2Paginator(input *s3.ListObjectsV2Input) *s3.ListObjectsV2Paginator {
+	return s3.NewListObjectsV2Paginator(s.Client, input)
 }
 
 func (s *s3UploaderShim) Upload(ctx context.Context, input *s3.PutObjectInput) error {

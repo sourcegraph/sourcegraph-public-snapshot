@@ -1,21 +1,21 @@
 import React from 'react'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { describe, expect, test, vi } from 'vitest'
+
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { ErrorBoundary } from './ErrorBoundary'
 
-jest.mock('mdi-react/AlertCircleIcon', () => 'AlertCircleIcon')
-jest.mock('mdi-react/ReloadIcon', () => 'ReloadIcon')
+vi.mock('mdi-react/AlertCircleIcon', () => ({ default: () => 'AlertCircleIcon' }))
+vi.mock('mdi-react/ReloadIcon', () => ({ default: () => 'ReloadIcon' }))
 
-const ThrowError: React.FunctionComponent = () => {
+const ThrowError: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     throw new Error('x')
 }
 
-/** Throws an error that resembles the Webpack error when chunk loading fails.  */
-const ThrowChunkError: React.FunctionComponent = () => {
-    const ChunkError = new Error('Loading chunk 123 failed.')
-    ChunkError.name = 'ChunkLoadError'
-    throw ChunkError
+/** Throws an error that resembles the  error when a dynamic import(...) fails.  */
+const ThrowDynamicImportError: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
+    throw new TypeError('Failed to fetch dynamically imported module: https://example.com/x.js')
 }
 
 describe('ErrorBoundary', () => {
@@ -37,11 +37,11 @@ describe('ErrorBoundary', () => {
             ).asFragment()
         ).toMatchSnapshot())
 
-    test('renders reload page if chunk error', () =>
+    test('renders reload page if dynamic import error', () =>
         expect(
             renderWithBrandedContext(
                 <ErrorBoundary location={null}>
-                    <ThrowChunkError />
+                    <ThrowDynamicImportError />
                 </ErrorBoundary>
             ).asFragment()
         ).toMatchSnapshot())

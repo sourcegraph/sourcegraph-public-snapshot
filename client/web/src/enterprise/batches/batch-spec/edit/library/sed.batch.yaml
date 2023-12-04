@@ -1,0 +1,23 @@
+name: apply-regex-sed
+description: Apply a regex using sed
+
+on:
+  - repositoriesMatchingQuery: <<CHANGE_ME>>
+
+steps:
+  # In each repo, iterate over search results files using templating
+  # https://docs.sourcegraph.com/batch_changes/references/batch_spec_templating
+  - run: |
+      while read -r file
+      do
+        sed -i 's/replace-me/by-me/g;' "${file}"
+      done < <(echo '${{ join repository.search_result_paths "\n" }}')
+    container: alpine:3
+
+changesetTemplate:
+  title: Apply a regex
+  body: Apply a regex using sed
+  branch: batch-changes/regex
+  commit:
+    message: batch changes -  apply regex
+

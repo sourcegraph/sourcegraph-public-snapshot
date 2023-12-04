@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -10,17 +9,8 @@ import (
 // the golden output file.
 var now = time.Now
 
-// formatTimeSince will return a string containing the number of days since the
+// formatTime will return a string containing the number of days since the
 // given time.
-func formatTimeSince(t time.Time) string {
-	days := now().UTC().Sub(t.UTC()) / time.Hour / 24
-
-	switch days {
-	case 0:
-		return "today"
-	case 1:
-		return "1 day ago"
-	default:
-		return fmt.Sprintf("%d days ago", days)
-	}
+func formatTime(t time.Time) string {
+	return t.Format(time.DateOnly)
 }

@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "search",
+    srcs = ["search.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/honey/search",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/honey",
+        "@io_opentelemetry_go_otel_trace//:trace",
+    ],
+)

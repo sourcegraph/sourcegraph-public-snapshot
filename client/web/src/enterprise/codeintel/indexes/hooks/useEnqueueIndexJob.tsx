@@ -1,24 +1,24 @@
-import { MutationFunctionOptions, FetchResult, useMutation } from '@apollo/client'
+import { type MutationFunctionOptions, type FetchResult, useMutation } from '@apollo/client'
 
 import { gql, getDocumentNode } from '@sourcegraph/http-client'
 
-import {
+import type {
     QueueAutoIndexJobsForRepoVariables,
     Exact,
     Maybe,
     QueueAutoIndexJobsForRepoResult,
 } from '../../../../graphql-operations'
 
-import { lsifIndexFieldsFragment } from './types'
+import { preciseIndexFieldsFragment } from './types'
 
 const QUEUE_AUTO_INDEX_JOBS = gql`
     mutation QueueAutoIndexJobsForRepo($id: ID!, $rev: String) {
         queueAutoIndexJobsForRepo(repository: $id, rev: $rev) {
-            ...LsifIndexFields
+            ...PreciseIndexFields
         }
     }
 
-    ${lsifIndexFieldsFragment}
+    ${preciseIndexFieldsFragment}
 `
 
 type EnqueueIndexJobResults = Promise<

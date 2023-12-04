@@ -2,7 +2,7 @@
 
 package schema
 
-// ChangesetSpecJSON is the content of the file "../../../schema/changeset_spec.schema.json".
+// ChangesetSpecJSON is the content of the file "schema/changeset_spec.schema.json".
 const ChangesetSpecJSON = `{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ChangesetSpec",
@@ -13,6 +13,10 @@ const ChangesetSpecJSON = `{
       "title": "ExistingChangesetSpec",
       "type": "object",
       "properties": {
+        "version": {
+          "type": "integer",
+          "description": "A field for versioning the payload."
+        },
         "baseRepository": {
           "type": "string",
           "description": "The GraphQL ID of the repository that contains the existing changeset on the code host.",
@@ -31,6 +35,10 @@ const ChangesetSpecJSON = `{
       "title": "BranchChangesetSpec",
       "type": "object",
       "properties": {
+        "version": {
+          "type": "integer",
+          "description": "A field for versioning the payload."
+        },
         "baseRepository": {
           "type": "string",
           "description": "The GraphQL ID of the repository that this changeset spec is proposing to change.",
@@ -52,6 +60,10 @@ const ChangesetSpecJSON = `{
           "description": "The GraphQL ID of the repository that contains the branch with this changeset's changes. Fork repositories and cross-repository changesets are not yet supported. Therefore, headRepository must be equal to baseRepository.",
           "examples": ["UmVwb3NpdG9yeTo5Cg=="]
         },
+        "fork": {
+          "type": "boolean",
+          "description": "Whether to publish the changeset to a fork of the target repository. If omitted, the changeset will be published to a branch directly on the target repository, unless the global ` + "`" + `batches.enforceFork` + "`" + ` setting is enabled. If set, this property will override any global setting."
+        },
         "headRef": {
           "type": "string",
           "description": "The full name of the Git ref that holds the changes proposed by this changeset. This ref will be created or updated with the commits.",
@@ -72,6 +84,10 @@ const ChangesetSpecJSON = `{
             "additionalProperties": false,
             "required": ["message", "diff", "authorName", "authorEmail"],
             "properties": {
+              "version": {
+                "type": "integer",
+                "description": "A field for versioning the payload."
+              },
               "message": {
                 "type": "string",
                 "description": "The Git commit message."

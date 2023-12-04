@@ -1,18 +1,13 @@
-import { useContext, useEffect, useState } from 'react'
-import { ObservableInput } from 'rxjs'
+import { type RefObject, useEffect, useState } from 'react'
 
-import { ErrorLike } from '@sourcegraph/common'
+import type { ObservableInput } from 'rxjs'
 
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../core/backend/gql-api/code-insights-gql-backend'
-import { useLazyParallelRequest } from '../../../hooks/use-parallel-requests/use-parallel-request'
+import { type LazyQueryState, useLazyParallelRequest } from '../../../hooks/use-parallel-requests/use-parallel-request'
 
 export interface UseInsightDataResult<T> {
-    data: T | undefined
-    error: ErrorLike | undefined
-    loading: boolean
     isVisible: boolean
     query: (request: () => ObservableInput<T>) => void
+    state: LazyQueryState<T>
 }
 
 /**
@@ -25,22 +20,15 @@ export interface UseInsightDataResult<T> {
  */
 export function useInsightData<D>(
     request: () => ObservableInput<D>,
-    reference: React.RefObject<HTMLElement>
+    reference: RefObject<HTMLElement>
 ): UseInsightDataResult<D> {
-    const api = useContext(CodeInsightsBackendContext)
-    const isGqlAPI = api instanceof CodeInsightsGqlBackend
+    const { state, query } = useLazyParallelRequest<D>()
 
-    const { data, loading, error, query } = useLazyParallelRequest<D>()
-
-    // All non GQL API implementations do not support partial loading,
-    // allowing insights fetching for these API whether insights are
-    // in a viewport or not.
-    const [isVisible, setVisibility] = useState<boolean>(!isGqlAPI)
-    const [hasIntersected, setHasIntersected] = useState<boolean>(!isGqlAPI)
+    const [isVisible, setVisibility] = useState<boolean>(false)
+    const [hasIntersected, setHasIntersected] = useState<boolean>(false)
 
     useEffect(() => {
         if (hasIntersected) {
-            // eslint-disable-next-line @typescript-eslint/unbound-method
             const { unsubscribe } = query(request)
 
             return unsubscribe
@@ -55,7 +43,7 @@ export function useInsightData<D>(
         // Do not observe insights visibility for non GQL based APIs.
         // Only GQL API supports partial insights fetching based on
         // insights visibility.
-        if (!element || !isGqlAPI) {
+        if (!element) {
             return
         }
 
@@ -74,7 +62,49 @@ export function useInsightData<D>(
         observer.observe(element)
 
         return () => observer.unobserve(element)
-    }, [isGqlAPI, reference])
+    }, [reference])
 
-    return { data, loading, error, isVisible, query }
+    return { state, isVisible, query }
+}
+
+export interface UseVisibilityResult<T> {
+    isVisible: boolean
+    wasEverVisible: boolean
+}
+
+/**
+ * This hook returns a value to indicate if the element {@link reference} prop
+ * is currently visible on the screen and if it ever was.
+ *
+ * @param reference - consumer's element to track visibility
+ */
+export function useVisibility<D>(reference: RefObject<HTMLElement>): UseVisibilityResult<D> {
+    const [isVisible, setVisibility] = useState<boolean>(false)
+    const [wasEverVisible, setWasEverVisible] = useState<boolean>(false)
+
+    useEffect(() => {
+        const element = reference.current
+
+        if (!element) {
+            return
+        }
+
+        function handleIntersection(entries: IntersectionObserverEntry[]): void {
+            const [entry] = entries
+
+            setVisibility(entry.isIntersecting)
+
+            if (entry.isIntersecting) {
+                setWasEverVisible(true)
+            }
+        }
+
+        const observer = new IntersectionObserver(handleIntersection)
+
+        observer.observe(element)
+
+        return () => observer.unobserve(element)
+    }, [reference])
+
+    return { isVisible, wasEverVisible }
 }

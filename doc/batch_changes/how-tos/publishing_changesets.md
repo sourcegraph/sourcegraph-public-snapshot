@@ -55,20 +55,20 @@ A brief summary of the pros and cons of each workflow is:
       <td>
         <ul>
           <li>
-            If you reuse your batch spec, or share it with others, the new batch changes will have the same changesets published
+            If you reuse your batch spec, or share it with others, the new batch changes will have the same changesets published.
           </li>
           <li>
-            Easy to publish changesets in large batch changes based on specific criteria, such as the organization each repository is in
+            Easy to publish changesets in large batch changes based on specific criteria, such as the organization each repository is in.
           </li>
         </ul>
       </td>
       <td>
         <ul>
           <li>
-            Requires the batch spec to be re-applied before changes take effect, which can be slower
+            Requires the batch spec to be re-applied before changes take effect, which can be slower.
           </li>
           <li>
-            Requires more context switching from the UI back to the spec file when previewing diffs
+            Requires more context switching from the UI back to the spec file when previewing diffs.
           </li>
         </ul>
       </td>
@@ -82,23 +82,25 @@ A brief summary of the pros and cons of each workflow is:
       <td>
         <ul>
           <li>
-            Rapid feedback loop: you can check a specific diff and immediately publish it
+            Rapid feedback loop: you can check a specific diff and immediately publish it.
           </li>
           <li>
-            Easy to publish random changesets without having to specify rules in the <code>published</code> field
+            Easy to publish random changesets without having to specify rules in the <code>published</code> field.
           </li>
         </ul>
       </td>
       <td>
         <ul>
           <li>
-            Publication state isn't reproducible across multiple batch changes
+            Publication state isn't reproducible across multiple batch changes.
           </li>
         </ul>
       </td>
     </tr>
   </tbody>
 </table>
+
+>NOTE: We currently do not support changing the state of a `published` changeset to `draft` or `unpublished`. Once a changeset is published, it can't be `unpublished` or changed to a `draft`.
 
 ### Within the spec
 
@@ -171,13 +173,13 @@ See [`changesetTemplate.published`](../references/batch_spec_yaml_reference.md#c
 
 ### Within the UI
 
-> NOTE: This functionality requires Sourcegraph 3.30 or later, and also requires `src` 3.29.2 or later.
+<span class="badge badge-note">Sourcegraph 3.30+</span>
 
 To publish from the Sourcegraph UI, you'll need to remove (or omit) the `published` field from your batch spec. When you first apply a batch change without an explicit `published` field, all changesets are left unpublished.
 
 #### From the preview
 
-> NOTE: This feature requires Sourcegraph 3.31 or later.
+<span class="badge badge-note">Sourcegraph 3.31+</span>
 
 When you run `src batch preview` against your batch spec and open the preview link, you'll see the current states of each of your changesets, as well as a preview of the actions that will be performed when you apply:
 

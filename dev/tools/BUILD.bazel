@@ -1,0 +1,49 @@
+sh_binary(
+    name = "docsite",
+    srcs = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@docsite_darwin_amd64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@docsite_darwin_arm64//file:downloaded"],
+        "@bazel_tools//src/conditions:linux_x86_64": ["@docsite_linux_amd64//file:downloaded"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "src-cli",
+    srcs = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@src-cli-darwin-amd64//:src-cli-darwin-amd64"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@src-cli-darwin-arm64//:src-cli-darwin-arm64"],
+        "@bazel_tools//src/conditions:linux_x86_64": ["@src-cli-linux-amd64//:src-cli-linux-amd64"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "universal-ctags",
+    srcs = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@universal-ctags-darwin-amd64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@universal-ctags-darwin-arm64//file:downloaded"],
+        "@bazel_tools//src/conditions:linux_x86_64": ["@universal-ctags-linux-amd64//file:downloaded"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "gcloud",
+    srcs = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@gcloud-darwin-amd64//:gcloud"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@gcloud-darwin-arm64//:gcloud"],
+        "@bazel_tools//src/conditions:linux_x86_64": ["@gcloud-linux-amd64//:gcloud"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "gsutil",
+    srcs = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@gcloud-darwin-amd64//:gsutil"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@gcloud-darwin-arm64//:gsutil"],
+        "@bazel_tools//src/conditions:linux_x86_64": ["@gcloud-linux-amd64//:gsutil"],
+    }),
+    visibility = ["//visibility:public"],
+)

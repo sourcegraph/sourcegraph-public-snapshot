@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "resolvers",
+    srcs = [
+        "autoindexing.go",
+        "codenav.go",
+        "git.go",
+        "policies.go",
+        "ranking.go",
+        "root_resolver.go",
+        "sentinel.go",
+        "uploads.go",
+        "utils.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/gitserver/gitdomain",
+        "//internal/gqlutil",
+        "//internal/markdown",
+        "//internal/types",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
+    ],
+)

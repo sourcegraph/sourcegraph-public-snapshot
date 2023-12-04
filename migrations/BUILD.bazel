@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+# Important warning: if you add files to that package, you *must*
+# add them manually to the scrs attribute, because of the gazelle:ignore
+# pragma.
+#
+# We use gazelle:ignore here so gazelle doesn't report a warning on the
+# missing files in the embedsrcs attribute because it doesn't see
+# any files on disk. The actual files are coming from the targets
+# that generates them, listed with the keep comment.
+#
+# gazelle:ignore
+go_library(
+    name = "migrations",
+    srcs = ["embed.go"],
+    embedsrcs = [
+        "//migrations/frontend:sql",  # keep
+        "//migrations/codeinsights:sql",  # keep
+        "//migrations/codeintel:sql",  # keep
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/migrations",
+    visibility = ["//visibility:public"],
+)

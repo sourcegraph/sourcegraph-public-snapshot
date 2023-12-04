@@ -7,7 +7,23 @@
   "sideEffects": false,
   "license": "Apache-2.0",
   "scripts": {
-    "eslint": "eslint --cache 'src/**/*.[jt]s?(x)'",
-    "test": "jest"
+    "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
+    "test": "echo no tests"
+  },
+  "devDependencies": {
+    "@types/sass": "1.16.1"
+  },
+  "dependencies": {
+    "buffer": "^6.0.3",
+    "enhanced-resolve": "^5.9.3",
+    "esbuild": "^0.17.7",
+    "monaco-editor-webpack-plugin": "^3.1.0",
+    "postcss": "^8.4.19",
+    "postcss-cli": "^10.1.0",
+    "postcss-modules": "^6.0.0",
+    "process": "^0.11.10",
+    "sass": "^1.32.4",
+    "signale": "^1.4.0",
+    "typed-scss-modules": "^4.1.1"
   }
 }

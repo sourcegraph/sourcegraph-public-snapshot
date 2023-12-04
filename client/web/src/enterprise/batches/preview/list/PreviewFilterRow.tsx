@@ -1,6 +1,8 @@
-import * as H from 'history'
-import React, { useCallback, useContext, useEffect, useRef } from 'react'
-import { Form } from 'reactstrap'
+import React, { type FC, useCallback, useContext, useEffect, useRef } from 'react'
+
+import { useLocation, useNavigate } from 'react-router-dom'
+
+import { Input, Form } from '@sourcegraph/wildcard'
 
 import { ChangesetSpecOperation, ChangesetState } from '../../../../graphql-operations'
 import { ChangesetFilter } from '../../ChangesetFilter'
@@ -12,22 +14,27 @@ export interface PreviewFilters {
     action: ChangesetSpecOperation | null
 }
 
-export interface PreviewFilterRowProps {
-    history: H.History
-    location: H.Location
-}
+export interface PreviewFilterRowProps {}
 
-export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = ({ history, location }) => {
+export const PreviewFilterRow: FC<PreviewFilterRowProps> = props => {
+    const location = useLocation()
+    const navigate = useNavigate()
+
     const searchElement = useRef<HTMLInputElement | null>(null)
 
-    const { filters, setFilters } = useContext(BatchChangePreviewContext)
+    // `BatchChangePreviewContext` is responsible for managing the filter arguments for
+    // the `applyPreview` connection query.
+    const { filters, setFilters, setFiltersChanged } = useContext(BatchChangePreviewContext)
 
     const onSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>): void => {
             event.preventDefault()
             setFilters({ ...filters, search: searchElement.current?.value || null })
+            if (filters.search !== searchElement.current?.value) {
+                setFiltersChanged(true)
+            }
         },
-        [setFilters, filters]
+        [setFilters, filters, setFiltersChanged]
     )
 
     const setAction = useCallback(
@@ -67,23 +74,25 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
         }
 
         if (location.search !== urlParameters.toString()) {
-            history.replace({ ...location, search: urlParameters.toString() })
+            navigate({ search: urlParameters.toString() })
         }
 
-        // We cannot depend on the history, since it's modified by this hook and that would cause an infinite render loop.
+        // We cannot depend on location.search, since it's modified by this hook and that would cause an infinite render loop.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filters])
+    }, [filters, navigate])
 
     return (
         <div className="row no-gutters">
             <div className="m-0 col">
                 <Form className="form-inline d-flex mb-2" onSubmit={onSubmit}>
-                    <input
-                        className="form-control flex-grow-1"
+                    <Input
+                        className="flex-grow-1"
+                        inputClassName="flex-grow-1"
                         type="search"
                         ref={searchElement}
                         defaultValue={filters.search ?? undefined}
                         placeholder="Search title and repository name"
+                        aria-label="Search title and repository name"
                     />
                 </Form>
             </div>

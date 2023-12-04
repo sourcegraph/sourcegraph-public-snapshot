@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "db",
+    srcs = [
+        "chunk_point.go",
+        "conf.go",
+        "db.go",
+        "migrate.go",
+        "noop.go",
+        "qdrant.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/embeddings/db",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/grpc/defaults",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_qdrant_go_client//qdrant",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "db_test",
+    srcs = [
+        "chunk_point_test.go",
+        "conf_test.go",
+    ],
+    embed = [":db"],
+    deps = [
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//lib/pointers",
+        "//schema",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+    ],
+)

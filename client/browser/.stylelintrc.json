@@ -9,7 +9,7 @@
     {
       "files": ["src/app.scss", "src/branded.scss", "src/highlight.scss", "src/shared.scss"],
       "rules": {
-        "filenames/match-regex": null
+        "@sourcegraph/filenames-match-regex": null
       }
     }
   ]

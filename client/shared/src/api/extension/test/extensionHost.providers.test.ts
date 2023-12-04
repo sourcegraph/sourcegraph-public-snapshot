@@ -1,17 +1,19 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { DocumentHighlight, Hover } from 'sourcegraph'
+import { describe, expect, it } from 'vitest'
 
+import { fromHoverMerged, type HoverMerged, type TextDocumentIdentifier } from '@sourcegraph/client-api'
 import { LOADING } from '@sourcegraph/codeintellify'
 import { MarkupKind, Range } from '@sourcegraph/extension-api-classes'
 
-import { fromHoverMerged, HoverMerged } from '../../client/types/hover'
-import { TextDocumentIdentifier } from '../../client/types/textDocument'
-import { callProviders, mergeProviderResults, providersForDocument, RegisteredProvider } from '../extensionHostApi'
+import type { Hover, DocumentHighlight } from '../../../codeintel/legacy-extensions/api'
+import { callProviders, mergeProviderResults, providersForDocument, type RegisteredProvider } from '../extensionHostApi'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 type Provider = RegisteredProvider<number | Observable<number>>
+
+const documentURI = 'git://repo#src/f.ts'
 
 const getResultsFromProviders = (providersObservable: Observable<Provider[]>, document: TextDocumentIdentifier) =>
     callProviders(
@@ -31,24 +33,19 @@ describe('callProviders()', () => {
     describe('1 provider', () => {
         it('returns empty non loading result with no providers', () => {
             scheduler().run(({ cold, expectObservable }) =>
-                expectObservable(
-                    getResultsFromProviders(
-                        cold<Provider[]>('-a', { a: [] }),
-                        { uri: 'file:///f.ts' }
-                    )
-                ).toBe('-a', {
-                    a: { isLoading: false, result: [] },
-                })
+                expectObservable(getResultsFromProviders(cold<Provider[]>('-a', { a: [] }), { uri: documentURI })).toBe(
+                    '-a',
+                    {
+                        a: { isLoading: false, result: [] },
+                    }
+                )
             )
         })
 
         it('returns a result from a provider synchronously with raw values', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    getResultsFromProviders(
-                        cold<Provider[]>('-a', { a: [provide(1)] }),
-                        { uri: 'file:///f.ts' }
-                    )
+                    getResultsFromProviders(cold<Provider[]>('-a', { a: [provide(1)] }), { uri: documentURI })
                 ).toBe('-(lr)', {
                     l: { isLoading: true, result: [LOADING] },
                     r: { isLoading: false, result: [1] },
@@ -59,10 +56,9 @@ describe('callProviders()', () => {
         it('returns a result from a provider with observables', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    getResultsFromProviders(
-                        cold<Provider[]>('-a', { a: [provide(cold('--a', { a: 1 }))] }),
-                        { uri: 'file:///f.ts' }
-                    )
+                    getResultsFromProviders(cold<Provider[]>('-a', { a: [provide(cold('--a', { a: 1 }))] }), {
+                        uri: documentURI,
+                    })
                 ).toBe('-l-r', {
                     l: { isLoading: true, result: [LOADING] },
                     r: { isLoading: false, result: [1] },
@@ -75,10 +71,9 @@ describe('callProviders()', () => {
         it("returns a synchronous result from both providers, but doesn't wait for the second to yield", () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    getResultsFromProviders(
-                        cold<Provider[]>('-a', { a: [provide(1), provide(2)] }),
-                        { uri: 'file:///f.ts' }
-                    )
+                    getResultsFromProviders(cold<Provider[]>('-a', { a: [provide(1), provide(2)] }), {
+                        uri: documentURI,
+                    })
                 ).toBe('-(lr)', {
                     l: { isLoading: true, result: [1, LOADING] },
                     r: { isLoading: false, result: [1, 2] },
@@ -93,7 +88,7 @@ describe('callProviders()', () => {
                         cold<Provider[]>('-a', {
                             a: [provide(cold('-a', { a: 1 })), provide(cold('-a', { a: 2 }))],
                         }),
-                        { uri: 'file:///f.ts' }
+                        { uri: documentURI }
                     )
                 ).toBe('-lr', {
                     l: { isLoading: true, result: [LOADING, LOADING] },
@@ -109,7 +104,7 @@ describe('callProviders()', () => {
                         cold<Provider[]>('-a', {
                             a: [provide(cold('-a', { a: 1 })), provide(cold('-#', {}, new Error('boom!')))],
                         }),
-                        { uri: 'file:///f.ts' }
+                        { uri: documentURI }
                     )
                 ).toBe('-lr', {
                     l: { isLoading: true, result: [LOADING, LOADING] },
@@ -123,10 +118,9 @@ describe('callProviders()', () => {
         it('it can filter out providers', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    getResultsFromProviders(
-                        cold<Provider[]>('-a', { a: [provide(1, '*.ts'), provide(2, '*.js')] }),
-                        { uri: 'file:///f.ts' }
-                    )
+                    getResultsFromProviders(cold<Provider[]>('-a', { a: [provide(1, '*.ts'), provide(2, '*.js')] }), {
+                        uri: documentURI,
+                    })
                 ).toBe('-(lr)', {
                     l: { isLoading: true, result: [LOADING] },
                     r: { isLoading: false, result: [1] },
@@ -144,7 +138,7 @@ describe('callProviders()', () => {
                             a: [provide(cold('-a', { a: 1 })), provide(cold('-a', { a: 2 }))],
                             b: [provide(cold('-a', { a: 3 }))],
                         }),
-                        { uri: 'file:///f.ts' }
+                        { uri: documentURI }
                     )
                 ).toBe('-abcd', {
                     a: { isLoading: true, result: [LOADING, LOADING] },
@@ -205,13 +199,13 @@ describe('mergeProviderResults()', () => {
 
         it('merges a Hover into result', () => {
             const hover: Hover = { contents: { value: 'a', kind: MarkupKind.PlainText } }
-            const merged: HoverMerged = { contents: [hover.contents], alerts: [], aggregatedBadges: [] }
+            const merged: HoverMerged = { contents: [hover.contents], aggregatedBadges: [] }
             expect(mergeHoverResults([hover])).toEqual(merged)
         })
 
         it('omits non Hover values from hovers result', () => {
             const hover: Hover = { contents: { value: 'a', kind: MarkupKind.PlainText } }
-            const merged: HoverMerged = { contents: [hover.contents], alerts: [], aggregatedBadges: [] }
+            const merged: HoverMerged = { contents: [hover.contents], aggregatedBadges: [] }
             expect(mergeHoverResults([hover, null, LOADING, undefined])).toEqual(merged)
         })
 
@@ -219,12 +213,12 @@ describe('mergeProviderResults()', () => {
             const hover1: Hover = {
                 contents: { value: 'c1' },
                 // TODO this is weird to cast to ranges
-                range: ({ start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown) as Range,
+                range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown as Range,
             }
             const hover2: Hover = {
                 contents: { value: 'c2' },
                 // TODO this is weird to cast to ranges
-                range: ({ start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown) as Range,
+                range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown as Range,
             }
             const merged: HoverMerged = {
                 contents: [
@@ -232,7 +226,6 @@ describe('mergeProviderResults()', () => {
                     { value: 'c2', kind: MarkupKind.PlainText },
                 ],
                 range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
-                alerts: [],
                 aggregatedBadges: [],
             }
 

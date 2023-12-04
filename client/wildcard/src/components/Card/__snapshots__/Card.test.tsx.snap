@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Card renders card correctly 1`] = `
+exports[`Card > renders card correctly 1`] = `
 <DocumentFragment>
   <div
     class=""
@@ -14,7 +14,7 @@ exports[`Card renders card correctly 1`] = `
       class="cardBody"
     >
       <h3
-        class="cardTitle"
+        class="h3 cardTitle"
       >
         Card Title
       </h3>

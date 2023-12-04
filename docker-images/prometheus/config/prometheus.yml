@@ -1,4 +1,10 @@
-# Prometheus global config
+# Prometheus global/reference config
+#
+# Keep in sync with:
+#
+# - https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/templates/prometheus/prometheus.ConfigMap.yaml
+# - https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/main/prometheus/prometheus.yml
+# - https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/prometheus/prometheus.ConfigMap.yaml
 global:
   scrape_interval: 30s # Scrape services for updated metrics every 30s. Default is 1m.
   evaluation_interval: 30s # Evaluate rules every 30s. Default is 1m.

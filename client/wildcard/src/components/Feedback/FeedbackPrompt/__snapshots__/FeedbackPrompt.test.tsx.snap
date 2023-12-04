@@ -1,0 +1,314 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`FeedbackPrompt > should render correctly 1`] = `
+<body>
+  <div>
+    <button
+      aria-expanded="true"
+      aria-label="Feedback"
+      class="btn btnSecondary btnOutline btnSm"
+      type="button"
+    >
+      <span>
+        Feedback
+      </span>
+    </button>
+  </div>
+  <div
+    aria-modal="true"
+    class="floatingPanel popover menu"
+    role="dialog"
+  >
+    <div
+      data-focus-guard="true"
+      style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
+      tabindex="-1"
+    />
+    <div
+      data-focus-guard="true"
+      style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
+      tabindex="-1"
+    />
+    <div
+      data-focus-lock-disabled="disabled"
+    >
+      <button
+        class="btn close"
+        type="button"
+      >
+        <svg
+          aria-label="Close"
+          class="mdi-icon icon"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+          />
+        </svg>
+      </button>
+      <form
+        class=""
+      >
+        <h3
+          class="h3 mb-3"
+          id="feedback-prompt-question"
+        >
+          Send feedback to Sourcegraph
+        </h3>
+        <textarea
+          aria-labelledby="feedback-prompt-question"
+          class="form-control textarea resizeNone textarea textarea"
+          rows="3"
+        />
+        <p
+          class="small text-muted"
+        >
+          You're not signed in. Please tell us how to contact you if you want a reply.
+        </p>
+        <p
+          class="d-flex align-items-center justify-content-between mt-2"
+        >
+          <span>
+            By submitting your feedback, you agree to the
+             
+            <a
+              class="anchorLink"
+              href="https://sourcegraph.com/terms/privacy"
+            >
+              Sourcegraph Privacy Policy
+            </a>
+            .
+          </span>
+        </p>
+        <button
+          aria-disabled="true"
+          class="btn btnSecondary btnBlock button"
+          role="menuitem"
+          type="submit"
+        >
+          Send
+        </button>
+      </form>
+    </div>
+    <div
+      data-focus-guard="true"
+      style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
+      tabindex="-1"
+    />
+  </div>
+</body>
+`;
+
+exports[`FeedbackPrompt > should render submit error correctly 1`] = `
+<body>
+  <div>
+    <button
+      aria-expanded="true"
+      aria-label="Feedback"
+      class="btn btnSecondary btnOutline btnSm"
+      type="button"
+    >
+      <span>
+        Feedback
+      </span>
+    </button>
+  </div>
+  <div
+    aria-modal="true"
+    class="floatingPanel popover menu"
+    hidden=""
+    role="dialog"
+    style="visibility: hidden;"
+  >
+    <div
+      data-focus-guard="true"
+      style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
+      tabindex="0"
+    />
+    <div
+      data-focus-guard="true"
+      style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
+      tabindex="1"
+    />
+    <div
+      data-focus-lock-disabled="false"
+    >
+      <button
+        class="btn close"
+        type="button"
+      >
+        <svg
+          aria-label="Close"
+          class="mdi-icon icon"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+          />
+        </svg>
+      </button>
+      <form
+        class=""
+      >
+        <h3
+          class="h3 mb-3"
+          id="feedback-prompt-question"
+        >
+          Send feedback to Sourcegraph
+        </h3>
+        <textarea
+          aria-labelledby="feedback-prompt-question"
+          class="form-control textarea resizeNone textarea textarea"
+          rows="3"
+        >
+          Lorem ipsum dolor sit amet
+        </textarea>
+        <p
+          class="small text-muted"
+        >
+          You're not signed in. Please tell us how to contact you if you want a reply.
+        </p>
+        <div
+          aria-live="assertive"
+          class="alert alertDanger mt-3"
+          role="alert"
+        >
+          <strong>
+            Error submitting feedback
+            :
+          </strong>
+           
+          <span
+            class="markdown"
+          >
+            Something went really wrong
+          </span>
+        </div>
+        <p
+          class="d-flex align-items-center justify-content-between mt-2"
+        >
+          <span>
+            By submitting your feedback, you agree to the
+             
+            <a
+              class="anchorLink"
+              href="https://sourcegraph.com/terms/privacy"
+            >
+              Sourcegraph Privacy Policy
+            </a>
+            .
+          </span>
+        </p>
+        <button
+          aria-disabled="false"
+          class="btn btnSecondary btnBlock button"
+          role="menuitem"
+          type="submit"
+        >
+          Send
+        </button>
+      </form>
+    </div>
+    <div
+      data-focus-guard="true"
+      style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
+      tabindex="0"
+    />
+  </div>
+</body>
+`;
+
+exports[`FeedbackPrompt > should render submit success correctly 1`] = `
+<body>
+  <div>
+    <button
+      aria-expanded="true"
+      aria-label="Feedback"
+      class="btn btnSecondary btnOutline btnSm"
+      type="button"
+    >
+      <span>
+        Feedback
+      </span>
+    </button>
+  </div>
+  <div
+    aria-modal="true"
+    class="floatingPanel popover menu"
+    role="dialog"
+  >
+    <div
+      data-focus-guard="true"
+      style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
+      tabindex="-1"
+    />
+    <div
+      data-focus-guard="true"
+      style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
+      tabindex="-1"
+    />
+    <div
+      data-focus-lock-disabled="disabled"
+    >
+      <button
+        class="btn close"
+        type="button"
+      >
+        <svg
+          aria-label="Close"
+          class="mdi-icon icon"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+          />
+        </svg>
+      </button>
+      <div
+        class="success"
+      >
+        <svg
+          aria-label="Success"
+          class="mdi-icon successTick"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"
+          />
+        </svg>
+        <h3
+          class="h3"
+        >
+          We‘ve received your feedback!
+        </h3>
+        <p
+          class="d-inline"
+        >
+          Thank you.
+        </p>
+      </div>
+    </div>
+    <div
+      data-focus-guard="true"
+      style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
+      tabindex="-1"
+    />
+  </div>
+</body>
+`;

@@ -1,28 +1,29 @@
-import React, { useMemo } from 'react'
+import { type FC, useMemo } from 'react'
 
-import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { LangStatsInsight } from '../../../../core/types'
-import { SupportedInsightSubject } from '../../../../core/types/subjects'
-import { LangStatsInsightCreationContent } from '../../creation/lang-stats/components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
-import { LangStatsCreationFormFields } from '../../creation/lang-stats/types'
+import { FORM_ERROR, type SubmissionErrors } from '@sourcegraph/wildcard'
+
+import { CodeInsightCreationMode, CodeInsightsCreationActions } from '../../../../components'
+import type { MinimalLangStatsInsightData, LangStatsInsight } from '../../../../core'
+import type { LangStatsCreationFormFields } from '../../creation/lang-stats'
+import { LangStatsInsightCreationContent } from '../../creation/lang-stats/components/LangStatsInsightCreationContent'
 import { getSanitizedLangStatsInsight } from '../../creation/lang-stats/utils/insight-sanitizer'
 
 export interface EditLangStatsInsightProps {
     insight: LangStatsInsight
-    subjects: SupportedInsightSubject[]
-    onSubmit: (insight: LangStatsInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
+    licensed: boolean
+    isEditAvailable: boolean | undefined
+    onSubmit: (insight: MinimalLangStatsInsightData) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
 
-export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightProps> = props => {
-    const { insight, subjects, onSubmit, onCancel } = props
+export const EditLangStatsInsight: FC<EditLangStatsInsightProps> = props => {
+    const { insight, licensed, isEditAvailable, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<LangStatsCreationFormFields>(
         () => ({
             title: insight.title,
             repository: insight.repository,
             threshold: insight.otherThreshold * 100,
-            visibility: insight.visibility,
             dashboardReferenceCount: insight.dashboardReferenceCount,
         }),
         [insight]
@@ -37,12 +38,22 @@ export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightP
 
     return (
         <LangStatsInsightCreationContent
-            mode="edit"
-            className="pb-5"
             initialValues={insightFormValues}
-            subjects={subjects}
+            touched={true}
+            className="pb-5"
             onSubmit={handleSubmit}
-            onCancel={onCancel}
-        />
+        >
+            {form => (
+                <CodeInsightsCreationActions
+                    mode={CodeInsightCreationMode.Edit}
+                    licensed={licensed}
+                    available={isEditAvailable}
+                    submitting={form.submitting}
+                    errors={form.submitErrors?.[FORM_ERROR]}
+                    clear={form.isFormClearActive}
+                    onCancel={onCancel}
+                />
+            )}
+        </LangStatsInsightCreationContent>
     )
 }

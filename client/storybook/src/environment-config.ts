@@ -1,10 +1,6 @@
-const getEnvironmentBoolean = (value = 'false'): boolean => Boolean(JSON.parse(value))
+import { getEnvironmentBoolean } from '@sourcegraph/build-config'
 
-export const environment = {
-    customStoriesGlob: process.env.STORIES_GLOB,
-    isDLLPluginEnabled: getEnvironmentBoolean(process.env.WEBPACK_DLL_PLUGIN),
-    isProgressPluginEnabled: getEnvironmentBoolean(process.env.WEBPACK_PROGRESS_PLUGIN),
-    isBundleAnalyzerEnabled: getEnvironmentBoolean(process.env.WEBPACK_BUNDLE_ANALYZER),
-    isSpeedAnalyzerEnabled: getEnvironmentBoolean(process.env.WEBPACK_SPEED_ANALYZER),
-    shouldMinify: getEnvironmentBoolean(process.env.MINIFY),
+export const ENVIRONMENT_CONFIG = {
+    STORIES_GLOB: process.env.STORIES_GLOB,
+    CHROMATIC: getEnvironmentBoolean('CHROMATIC'),
 }

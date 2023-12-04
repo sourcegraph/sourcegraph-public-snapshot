@@ -2,8 +2,3 @@
 
 **/* @bobheadxi
 **/* @slimsag
-**/* @sourcegraph/distribution
-
-frontend.go @efritz
-precise_code_intel_* @efritz
-precise_code_intel_* @sourcegraph/code-intelligence

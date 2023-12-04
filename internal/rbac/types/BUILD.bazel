@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+
+go_library(
+    name = "types",
+    srcs = [
+        "action.go",
+        "namespace.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/rbac/types",
+    visibility = ["//:__subpackages__"],
+)
+
+genrule(
+    name = "generate_namespace_go",
+    srcs = [
+        "//internal/rbac:schema.yaml",
+    ],
+    outs = ["_namespace.go"],
+    cmd = """\
+    $(location //internal/rbac/gen:type_gen) -i $< -o $@ -lang go -kind namespace
+    $(location @go_sdk//:bin/gofmt) -s -w $@
+    """,
+    tools = [
+        "//internal/rbac/gen:type_gen",
+        "@go_sdk//:bin/gofmt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "generate_action_go",
+    srcs = [
+        "//internal/rbac:schema.yaml",
+    ],
+    outs = ["_action.go"],
+    cmd = """\
+    $(location //internal/rbac/gen:type_gen) -i $< -o $@ -lang go -kind action
+    $(location @go_sdk//:bin/gofmt) -s -w $@
+    """,
+    tools = [
+        "//internal/rbac/gen:type_gen",
+        "@go_sdk//:bin/gofmt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+write_generated_to_source_files(
+    name = "write_generated_namespace",
+    output_files = {"namespace.go": "_namespace.go"},
+    tags = ["go_generate"],
+    target = ":generate_namespace_go",
+)
+
+write_generated_to_source_files(
+    name = "write_generated_action",
+    output_files = {"action.go": "_action.go"},
+    tags = ["go_generate"],
+    target = ":generate_action_go",
+)

@@ -1,25 +1,26 @@
-import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
-import { RouteComponentProps } from 'react-router'
 
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
 
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
+import { Alert, Container, PageHeader, H5, Link } from '@sourcegraph/wildcard'
+
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 
-import { queryWebhookLogs as _queryWebhookLogs, SelectedExternalService } from './backend'
+import { queryWebhookLogs as _queryWebhookLogs, type SelectedExternalService } from './backend'
 import { WebhookLogNode } from './WebhookLogNode'
-import styles from './WebhookLogPage.module.scss'
 import { WebhookLogPageHeader } from './WebhookLogPageHeader'
 
-export interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {
+import styles from './WebhookLogPage.module.scss'
+
+export interface Props {
     queryWebhookLogs?: typeof _queryWebhookLogs
+    webhookID?: string
 }
 
-export const WebhookLogPage: React.FunctionComponent<Props> = ({
-    history,
-    location,
+export const WebhookLogPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     queryWebhookLogs = _queryWebhookLogs,
+    webhookID,
 }) => {
     const [onlyErrors, setOnlyErrors] = useState(false)
     const [externalService, setExternalService] = useState<SelectedExternalService>('all')
@@ -32,9 +33,10 @@ export const WebhookLogPage: React.FunctionComponent<Props> = ({
                     after: after ?? null,
                 },
                 externalService,
-                onlyErrors
+                onlyErrors,
+                webhookID
             ),
-        [externalService, onlyErrors, queryWebhookLogs]
+        [externalService, onlyErrors, queryWebhookLogs, webhookID]
     )
 
     return (
@@ -46,6 +48,10 @@ export const WebhookLogPage: React.FunctionComponent<Props> = ({
                 description="Use these logs of received webhooks to debug integrations"
                 className="mb-3"
             />
+            <Alert variant="warning">
+                This webhooks page has been deprecated, please see our{' '}
+                <Link to="/site-admin/webhooks/incoming">new webhooks page</Link>.
+            </Alert>
             <Container>
                 <WebhookLogPageHeader
                     onlyErrors={onlyErrors}
@@ -54,8 +60,6 @@ export const WebhookLogPage: React.FunctionComponent<Props> = ({
                     onSelectExternalService={setExternalService}
                 />
                 <FilteredConnection
-                    history={history}
-                    location={location}
                     queryConnection={query}
                     nodeComponent={WebhookLogNode}
                     noun="webhook log"
@@ -70,11 +74,11 @@ export const WebhookLogPage: React.FunctionComponent<Props> = ({
     )
 }
 
-const Header: React.FunctionComponent<{}> = () => (
+const Header: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <>
         <span className="d-none d-md-block" />
-        <h5 className="d-none d-md-block text-uppercase text-center text-nowrap">Status code</h5>
-        <h5 className="d-none d-md-block text-uppercase text-nowrap">External service</h5>
-        <h5 className="d-none d-md-block text-uppercase text-center text-nowrap">Received at</h5>
+        <H5 className="d-none d-md-block text-uppercase text-center text-nowrap">Status code</H5>
+        <H5 className="d-none d-md-block text-uppercase text-nowrap">External service</H5>
+        <H5 className="d-none d-md-block text-uppercase text-center text-nowrap">Received at</H5>
     </>
 )

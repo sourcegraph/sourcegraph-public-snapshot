@@ -138,6 +138,34 @@ func TestCanonicalizeReferenceResults(t *testing.T) {
 	}
 }
 
+func TestCanonicalizeDocumentsInDefinitionReferences(t *testing.T) {
+	actualMap := map[int]*datastructures.DefaultIDSetMap{
+		1: newIDSetMap(map[int]*idSet{
+			11: newIDSet(101, 102),
+			12: newIDSet(101, 103),
+		}),
+		2: newIDSetMap(map[int]*idSet{
+			12: newIDSet(104),
+		}),
+	}
+	canonicalizeDocumentsInDefinitionReferences(actualMap, map[int]int{
+		12: 11,
+	})
+
+	expectedMap := map[int]*datastructures.DefaultIDSetMap{
+		1: newIDSetMap(map[int]*idSet{
+			11: newIDSet(101, 102, 103),
+		}),
+		2: newIDSetMap(map[int]*idSet{
+			11: newIDSet(104),
+		}),
+	}
+
+	if diff := cmp.Diff(expectedMap, actualMap, datastructures.Comparers...); diff != "" {
+		t.Errorf("unexpected state (-want +got):\n%s", diff)
+	}
+}
+
 func TestCanonicalizeResultSets(t *testing.T) {
 	linkedMonikers := datastructures.NewDisjointIDSet()
 	linkedMonikers.Link(4002, 4005)
@@ -145,35 +173,30 @@ func TestCanonicalizeResultSets(t *testing.T) {
 	state := &State{
 		ResultSetData: map[int]ResultSet{
 			5001: {
-				DefinitionResultID:    0,
-				ReferenceResultID:     0,
-				HoverResultID:         0,
-				DocumentationResultID: 0,
+				DefinitionResultID: 0,
+				ReferenceResultID:  0,
+				HoverResultID:      0,
 			},
 			5002: {
-				DefinitionResultID:    2001,
-				ReferenceResultID:     2002,
-				HoverResultID:         2003,
-				DocumentationResultID: 2004,
+				DefinitionResultID: 2001,
+				ReferenceResultID:  2002,
+				HoverResultID:      2003,
 			},
 			5003: {
-				DefinitionResultID:    2004,
-				ReferenceResultID:     2005,
-				HoverResultID:         0,
-				DocumentationResultID: 2006,
+				DefinitionResultID: 2004,
+				ReferenceResultID:  2005,
+				HoverResultID:      0,
 			},
 			5004: {
 				DefinitionResultID:     2006,
 				ReferenceResultID:      2007,
 				HoverResultID:          0,
-				DocumentationResultID:  2009,
 				ImplementationResultID: 2010,
 			},
 			5005: {
-				DefinitionResultID:    0,
-				ReferenceResultID:     2008,
-				HoverResultID:         2008,
-				DocumentationResultID: 2008,
+				DefinitionResultID: 0,
+				ReferenceResultID:  2008,
+				HoverResultID:      2008,
 			},
 		},
 		NextData: map[int]int{
@@ -198,33 +221,28 @@ func TestCanonicalizeResultSets(t *testing.T) {
 				DefinitionResultID:     2006,
 				ReferenceResultID:      2007,
 				HoverResultID:          2008,
-				DocumentationResultID:  2009,
 				ImplementationResultID: 2010,
 			},
 			5002: {
-				DefinitionResultID:    2001,
-				ReferenceResultID:     2002,
-				HoverResultID:         2003,
-				DocumentationResultID: 2004,
+				DefinitionResultID: 2001,
+				ReferenceResultID:  2002,
+				HoverResultID:      2003,
 			},
 			5003: {
-				DefinitionResultID:    2004,
-				ReferenceResultID:     2005,
-				HoverResultID:         2008,
-				DocumentationResultID: 2006,
+				DefinitionResultID: 2004,
+				ReferenceResultID:  2005,
+				HoverResultID:      2008,
 			},
 			5004: {
 				DefinitionResultID:     2006,
 				ReferenceResultID:      2007,
 				HoverResultID:          2008,
-				DocumentationResultID:  2009,
 				ImplementationResultID: 2010,
 			},
 			5005: {
-				DefinitionResultID:    0,
-				ReferenceResultID:     2008,
-				HoverResultID:         2008,
-				DocumentationResultID: 2008,
+				DefinitionResultID: 0,
+				ReferenceResultID:  2008,
+				HoverResultID:      2008,
 			},
 		},
 		NextData:       map[int]int{},
@@ -314,16 +332,14 @@ func TestCanonicalizeRanges(t *testing.T) {
 		},
 		ResultSetData: map[int]ResultSet{
 			5001: {
-				DefinitionResultID:    2006,
-				ReferenceResultID:     2007,
-				HoverResultID:         0,
-				DocumentationResultID: 0,
+				DefinitionResultID: 2006,
+				ReferenceResultID:  2007,
+				HoverResultID:      0,
 			},
 			5002: {
-				DefinitionResultID:    0,
-				ReferenceResultID:     2008,
-				HoverResultID:         2008,
-				DocumentationResultID: 0,
+				DefinitionResultID: 0,
+				ReferenceResultID:  2008,
+				HoverResultID:      2008,
 			},
 		},
 		NextData:       map[int]int{},

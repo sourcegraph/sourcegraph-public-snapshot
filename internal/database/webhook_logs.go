@@ -2,8 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -33,13 +31,6 @@ type webhookLogStore struct {
 
 var _ WebhookLogStore = &webhookLogStore{}
 
-func WebhookLogs(db dbutil.DB, key encryption.Key) *webhookLogStore {
-	return &webhookLogStore{
-		Store: basestore.NewWithDB(db, sql.TxOptions{}),
-		key:   key,
-	}
-}
-
 func WebhookLogsWith(other basestore.ShareableStore, key encryption.Key) *webhookLogStore {
 	return &webhookLogStore{
 		Store: basestore.NewWithHandle(other.Handle()),
@@ -55,47 +46,29 @@ func (s *webhookLogStore) Create(ctx context.Context, log *types.WebhookLog) err
 		receivedAt = log.ReceivedAt
 	}
 
-	rawRequest, err := json.Marshal(&log.Request)
+	rawRequest, _, err := log.Request.Encrypt(ctx, s.key)
 	if err != nil {
-		return errors.Wrap(err, "marshalling request data")
+		return err
 	}
-
-	rawResponse, err := json.Marshal(&log.Response)
+	rawResponse, keyID, err := log.Response.Encrypt(ctx, s.key)
 	if err != nil {
-		return errors.Wrap(err, "marshalling response data")
-	}
-
-	encKeyID := ""
-	if s.key != nil {
-		encKeyID, err = keyID(ctx, s.key)
-		if err != nil {
-			return errors.Wrap(err, "getting key version")
-		}
-
-		rawRequest, err = s.key.Encrypt(ctx, rawRequest)
-		if err != nil {
-			return errors.Wrap(err, "encrypting request data")
-		}
-
-		rawResponse, err = s.key.Encrypt(ctx, rawResponse)
-		if err != nil {
-			return errors.Wrap(err, "encrypting response data")
-		}
+		return err
 	}
 
 	q := sqlf.Sprintf(
 		webhookLogCreateQueryFmtstr,
 		receivedAt,
 		dbutil.NullInt64{N: log.ExternalServiceID},
+		dbutil.NullInt32{N: log.WebhookID},
 		log.StatusCode,
-		rawRequest,
-		rawResponse,
-		encKeyID,
+		[]byte(rawRequest),
+		[]byte(rawResponse),
+		keyID,
 		sqlf.Join(webhookLogColumns, ", "),
 	)
 
 	row := s.QueryRow(ctx, q)
-	if err := s.scanWebhookLog(ctx, log, row); err != nil {
+	if err := s.scanWebhookLog(log, row); err != nil {
 		return errors.Wrap(err, "scanning webhook log")
 	}
 
@@ -111,7 +84,7 @@ func (s *webhookLogStore) GetByID(ctx context.Context, id int64) (*types.Webhook
 
 	row := s.QueryRow(ctx, q)
 	log := types.WebhookLog{}
-	if err := s.scanWebhookLog(ctx, &log, row); err != nil {
+	if err := s.scanWebhookLog(&log, row); err != nil {
 		return nil, errors.Wrap(err, "scanning webhook log")
 	}
 
@@ -132,6 +105,12 @@ type WebhookLogListOpts struct {
 	// logs will be returned.
 	ExternalServiceID *int64
 
+	// If set and non-zero, this limits the webhook logs to those matched to
+	// that configured webhook. If set and zero, this limits the webhook logs to
+	// those that did not match any webhook. If nil, then all webhook
+	// logs will be returned.
+	WebhookID *int32
+
 	// If set, only webhook logs that resulted in errors will be returned.
 	OnlyErrors bool
 
@@ -146,6 +125,13 @@ func (opts *WebhookLogListOpts) predicates() []*sqlf.Query {
 			preds = append(preds, sqlf.Sprintf("external_service_id IS NULL"))
 		} else {
 			preds = append(preds, sqlf.Sprintf("external_service_id = %s", *id))
+		}
+	}
+	if id := opts.WebhookID; id != nil {
+		if *id == 0 {
+			preds = append(preds, sqlf.Sprintf("webhook_id IS NULL"))
+		} else {
+			preds = append(preds, sqlf.Sprintf("webhook_id = %s", *id))
 		}
 	}
 	if opts.OnlyErrors {
@@ -205,7 +191,7 @@ func (s *webhookLogStore) List(ctx context.Context, opts WebhookLogListOpts) ([]
 	logs := []*types.WebhookLog{}
 	for rows.Next() {
 		log := types.WebhookLog{}
-		if err := s.scanWebhookLog(ctx, &log, rows); err != nil {
+		if err := s.scanWebhookLog(&log, rows); err != nil {
 			return nil, 0, err
 		}
 		logs = append(logs, &log)
@@ -235,6 +221,7 @@ var webhookLogColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("received_at"),
 	sqlf.Sprintf("external_service_id"),
+	sqlf.Sprintf("webhook_id"),
 	sqlf.Sprintf("status_code"),
 	sqlf.Sprintf("request"),
 	sqlf.Sprintf("response"),
@@ -242,11 +229,11 @@ var webhookLogColumns = []*sqlf.Query{
 }
 
 const webhookLogCreateQueryFmtstr = `
--- source: internal/database/webhook_logs.go:Create
 INSERT INTO
 	webhook_logs (
 		received_at,
 		external_service_id,
+		webhook_id,
 		status_code,
 		request,
 		response,
@@ -258,13 +245,13 @@ INSERT INTO
 		%s,
 		%s,
 		%s,
+		%s,
 		%s
 	)
 	RETURNING %s
 `
 
 const webhookLogGetByIDQueryFmtstr = `
--- source: internal/database/webhook_logs.go:GetByID
 SELECT
 	%s
 FROM
@@ -274,7 +261,6 @@ WHERE
 `
 
 const webhookLogCountQueryFmtstr = `
--- source: internal/database/webhook_logs.go:Count
 SELECT
 	COUNT(id)
 FROM
@@ -284,7 +270,6 @@ WHERE
 `
 
 const webhookLogListQueryFmtstr = `
--- source: internal/database/webhook_logs.go:List
 SELECT
 	%s
 FROM
@@ -297,29 +282,29 @@ ORDER BY
 `
 
 const webhookLogDeleteStaleQueryFmtstr = `
--- source: internal/database/webhook_logs.go:DeleteStale
 DELETE FROM
 	webhook_logs
 WHERE
 	received_at <= %s
 `
 
-func (s *webhookLogStore) scanWebhookLog(ctx context.Context, log *types.WebhookLog, sc dbutil.Scanner) error {
+func (s *webhookLogStore) scanWebhookLog(log *types.WebhookLog, sc dbutil.Scanner) error {
 	var (
-		encKeyID          string
 		externalServiceID int64 = -1
-		rawRequest              = []byte{}
-		rawResponse             = []byte{}
+		webhookID         int32 = -1
+		request, response []byte
+		keyID             string
 	)
 
 	if err := sc.Scan(
 		&log.ID,
 		&log.ReceivedAt,
 		&dbutil.NullInt64{N: &externalServiceID},
+		&dbutil.NullInt32{N: &webhookID},
 		&log.StatusCode,
-		&rawRequest,
-		&rawResponse,
-		&encKeyID,
+		&request,
+		&response,
+		&keyID,
 	); err != nil {
 		return err
 	}
@@ -327,47 +312,11 @@ func (s *webhookLogStore) scanWebhookLog(ctx context.Context, log *types.Webhook
 	if externalServiceID != -1 {
 		log.ExternalServiceID = &externalServiceID
 	}
-
-	if encKeyID != "" {
-		// The record includes a field indicating the encryption key ID. We
-		// don't really have a way to look up a key by ID right now, so this is
-		// used as a marker of whether we should expect a key or not.
-		storeKeyID, err := keyID(ctx, s.key)
-		if err != nil {
-			return errors.Wrap(err, "retrieving store key ID")
-		}
-
-		if encKeyID != storeKeyID {
-			return errors.New("key mismatch: webhook log is encrypted with a different key to the one in the store")
-		}
+	if webhookID != -1 {
+		log.WebhookID = &webhookID
 	}
 
-	if err := scanMessage(ctx, s.key, rawRequest, &log.Request); err != nil {
-		return errors.Wrap(err, "scanning request data")
-	}
-	if err := scanMessage(ctx, s.key, rawResponse, &log.Response); err != nil {
-		return errors.Wrap(err, "scanning response data")
-	}
-
-	return nil
-}
-
-func scanMessage(ctx context.Context, key encryption.Key, raw []byte, message *types.WebhookLogMessage) error {
-	var decrypted []byte
-	if key != nil {
-		secret, err := key.Decrypt(ctx, raw)
-		if err != nil {
-			return errors.Wrap(err, "decrypting")
-		}
-
-		decrypted = []byte(secret.Secret())
-	} else {
-		decrypted = raw
-	}
-
-	if err := json.Unmarshal(decrypted, message); err != nil {
-		return errors.Wrap(err, "unmarshalling")
-	}
-
+	log.Request = types.NewEncryptedWebhookLogMessage(string(request), keyID, s.key)
+	log.Response = types.NewEncryptedWebhookLogMessage(string(response), keyID, s.key)
 	return nil
 }

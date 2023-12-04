@@ -12,16 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// IsBasic returns whether a query is a basic query. A basic query is one which
-// does not have a DNF-expansion. I.e., there is only one disjunct. A basic
-// query implies that it has no subexpressions that we need to evaluate. IsBasic
-// is used in our codebase where legacy code has not been updated to handle
-// queries with multiple expressions (like alerts), and assume only one
-// evaluatable query.
-func IsBasic(nodes []Node) bool {
-	return len(Dnf(nodes)) == 1
-}
-
 // IsPatternAtom returns whether a node is a non-negated pattern atom.
 func IsPatternAtom(b Basic) bool {
 	if b.Pattern == nil {
@@ -31,13 +21,6 @@ func IsPatternAtom(b Basic) bool {
 		return true
 	}
 	return false
-}
-
-// IsStreamingCompatible returns whether a backend search process may
-// immediately send results over a streaming interface. A query is streaming
-// compatible if: ask Camden because this is super in flux right now.
-func IsStreamingCompatible(p Plan) bool {
-	return len(p) == 1
 }
 
 // Exists traverses every node in nodes and returns early as soon as fn is satisfied.
@@ -70,16 +53,6 @@ func ForAll(nodes []Node, fn func(node Node) bool) bool {
 	return sat
 }
 
-// returns true if the query contains a predicate value.
-func ContainsPredicate(nodes []Node) bool {
-	return Exists(nodes, func(node Node) bool {
-		if v, ok := node.(Parameter); ok && v.Annotation.Labels.IsSet(IsPredicate) {
-			return true
-		}
-		return false
-	})
-}
-
 // isPatternExpression returns true if every leaf node in nodes is a search
 // pattern expression.
 func isPatternExpression(nodes []Node) bool {
@@ -96,19 +69,6 @@ func containsPattern(node Node) bool {
 		_, ok := node.(Pattern)
 		return ok
 	})
-}
-
-// ContainsRegexpMetasyntax returns true if a string is a valid regular
-// expression and contains regex metasyntax (i.e., it is not a literal).
-func ContainsRegexpMetasyntax(input string) bool {
-	_, err := regexp.Compile(input)
-	if err == nil {
-		// It is a regexp. But does it contain metasyntax, or is it literal?
-		if len(regexp.QuoteMeta(input)) != len(input) {
-			return true
-		}
-	}
-	return false
 }
 
 // processTopLevel processes the top level of a query. It validates that we can
@@ -196,10 +156,16 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	}
 
 	isValidRegexp := func() error {
-		if _, err := regexp.Compile(value); err != nil {
-			return err
+		_, err := regexp.Compile(value)
+		return err
+	}
+
+	isValidRepoRegexp := func() error {
+		if negated {
+			return isValidRegexp()
 		}
-		return nil
+		_, err := ParseRepositoryRevisions(value)
+		return err
 	}
 
 	isBoolean := func() error {
@@ -240,7 +206,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	}
 
 	isYesNoOnly := func() error {
-		v := ParseYesNoOnly(value)
+		v := parseYesNoOnly(value)
 		if v == Invalid {
 			return errors.Errorf("invalid value %q for field %q. Valid values are: yes, only, no", value, field)
 		}
@@ -279,7 +245,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return satisfies(isSingular, isBoolean, isNotNegated)
 	case
 		FieldRepo:
-		return satisfies(isValidRegexp)
+		return satisfies(isValidRepoRegexp)
 	case
 		FieldContext:
 		return satisfies(isSingular, isNotNegated)
@@ -424,7 +390,7 @@ func validateRefGlobs(nodes []Node) error {
 	VisitField(nodes, FieldIndex, func(value string, _ bool, _ Annotation) {
 		indexValue = value
 	})
-	if ParseYesNoOnly(indexValue) == Only {
+	if parseYesNoOnly(indexValue) == Only {
 		return errors.Errorf("invalid index:%s (revisions with glob pattern cannot be resolved for indexed searches)", indexValue)
 	}
 	return nil
@@ -432,12 +398,9 @@ func validateRefGlobs(nodes []Node) error {
 
 // validatePredicates validates predicate parameters with respect to their validation logic.
 func validatePredicate(field, value string, negated bool) error {
-	if negated {
-		return errors.New("predicates do not currently support negation")
-	}
 	name, params := ParseAsPredicate(value)                // guaranteed to succeed
 	predicate := DefaultPredicateRegistry.Get(field, name) // guaranteed to succeed
-	if err := predicate.ParseParams(params); err != nil {
+	if err := predicate.Unmarshal(params, negated); err != nil {
 		return errors.Errorf("invalid predicate value: %s", err)
 	}
 	return nil
@@ -549,7 +512,7 @@ const (
 	Invalid YesNoOnly = "invalid"
 )
 
-func ParseYesNoOnly(s string) YesNoOnly {
+func parseYesNoOnly(s string) YesNoOnly {
 	switch s {
 	case "y", "Y", "yes", "YES", "Yes":
 		return Yes
@@ -569,29 +532,14 @@ func ParseYesNoOnly(s string) YesNoOnly {
 }
 
 func ContainsRefGlobs(q Q) bool {
-	containsRefGlobs := false
-	if repoFilterValues, _ := q.Repositories(); len(repoFilterValues) > 0 {
-		for _, v := range repoFilterValues {
-			repoRev := strings.SplitN(v, "@", 2)
-			if len(repoRev) == 1 { // no revision
-				continue
+	if repoFilters, _ := q.Repositories(); len(repoFilters) > 0 {
+		for _, r := range repoFilters {
+			for _, rev := range r.Revs {
+				if rev.HasRefGlob() {
+					return true
+				}
 			}
-			if ContainsNoGlobSyntax(repoRev[1]) {
-				continue
-			}
-			containsRefGlobs = true
-			break
 		}
 	}
-	return containsRefGlobs
-}
-
-func HasTypeRepo(q Q) bool {
-	found := false
-	VisitField(q, "type", func(value string, _ bool, _ Annotation) {
-		if value == "repo" {
-			found = true
-		}
-	})
-	return found
+	return false
 }

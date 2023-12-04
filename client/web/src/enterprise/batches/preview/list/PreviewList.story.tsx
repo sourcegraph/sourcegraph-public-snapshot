@@ -1,29 +1,36 @@
-import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
-import React from 'react'
-import { of, Observable } from 'rxjs'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
+import { type Observable, of } from 'rxjs'
 
 import { WebStory } from '../../../../components/WebStory'
-import { BatchSpecApplyPreviewConnectionFields, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import type { BatchSpecApplyPreviewConnectionFields, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { MultiSelectContextProvider } from '../../MultiSelectContext'
 import { filterPublishableIDs } from '../utils'
 
-import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
 import { PreviewList } from './PreviewList'
-import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
+import { hiddenChangesetApplyPreviewStories, visibleChangesetApplyPreviewNodeStories } from './storyData'
 
-const { add } = storiesOf('web/batches/preview', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
-        chromatic: {
-            viewports: [320, 576, 978, 1440],
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/preview/PreviewList',
+    decorators: [decorator],
+    argTypes: {
+        publicationStateSet: {
+            name: 'publication state set by spec file',
+            control: { type: 'boolean' },
         },
-    })
+    },
+    args: {
+        publicationStateSet: false,
+    },
+}
+
+export default config
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-add('PreviewList', () => {
-    const publicationStateSet = boolean('publication state set by spec file', false)
+export const DefaultStory: StoryFn = args => {
+    const publicationStateSet = args.publicationStateSet
 
     const nodes: ChangesetApplyPreviewFields[] = [
         ...Object.values(visibleChangesetApplyPreviewNodeStories(publicationStateSet)),
@@ -54,7 +61,7 @@ add('PreviewList', () => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
@@ -64,4 +71,12 @@ add('PreviewList', () => {
             )}
         </WebStory>
     )
-})
+}
+
+DefaultStory.parameters = {
+    chromatic: {
+        viewports: [320, 576, 978, 1440],
+    },
+}
+
+DefaultStory.storyName = 'default'

@@ -1,0 +1,29 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+    - mailcap
+
+    ## jaeger-all-in-one packages
+    - jaeger-all-in-one@sourcegraph
+
+
+# Add jaeger user and group
+accounts:
+  groups:
+    - groupname: jaeger
+      gid: 10002
+  users:
+    - username: jaeger
+      uid: 10001
+      gid: 10002
+
+paths:
+  - path: /tmp
+    type: directory
+    uid: 10001
+    permissions: 0o755
+
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

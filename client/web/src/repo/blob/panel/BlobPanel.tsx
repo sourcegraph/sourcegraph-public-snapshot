@@ -1,211 +1,193 @@
-import * as H from 'history'
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
-import { from, Observable, ReplaySubject, Subscription } from 'rxjs'
-import { map, mapTo, switchMap, tap } from 'rxjs/operators'
+import React, { useEffect, useMemo } from 'react'
 
-import { BuiltinPanelView, useBuiltinPanelViews } from '@sourcegraph/branded/src/components/panel/Panel'
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { isErrorLike } from '@sourcegraph/common'
-import * as clientType from '@sourcegraph/extension-api-types'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegraph/shared/src/api/protocol'
-import { Activation, ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/wildcard'
+import { useLocation } from 'react-router-dom'
+import { type Observable, Subscription } from 'rxjs'
 
+import { type Panel, useBuiltinTabbedPanelViews } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
+import { PanelContent } from '@sourcegraph/branded/src/components/panel/views/PanelContent'
+import { isDefined, isErrorLike } from '@sourcegraph/common'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { type AbsoluteRepoFile, type ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { Text } from '@sourcegraph/wildcard'
+
+import type { CodeIntelligenceProps } from '../../../codeintel'
+import { ReferencesPanel } from '../../../codeintel/ReferencesPanel'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
+import type { OwnConfigProps } from '../../../own/OwnConfigProps'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
+import { FileOwnershipPanel } from '../own/FileOwnershipPanel'
 
-interface Props extends AbsoluteRepoFile, ModeSpec, SettingsCascadeProps, ExtensionsControllerProps, ActivationProps {
-    location: H.Location
-    history: H.History
+interface Props
+    extends AbsoluteRepoFile,
+        ModeSpec,
+        SettingsCascadeProps,
+        ExtensionsControllerProps,
+        PlatformContextProps,
+        Pick<CodeIntelligenceProps, 'useCodeIntel'>,
+        OwnConfigProps,
+        TelemetryProps {
     repoID: Scalars['ID']
+    isPackage: boolean
     repoName: string
     commitID: string
+
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
-export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history'
-
-/** The subject (what the contextual information refers to). */
-interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<UIPositionSpec> {
-    repoID: string
-
-    /**
-     * Include the full URI fragment here because it represents the state of panels, and we want
-     * panels to be re-rendered when this state changes.
-     */
-    hash: string
-
-    history: H.History
-    location: H.Location
-}
+export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history' | 'ownership'
 
 /**
  * A React hook that registers panel views for the blob.
  */
-export function useBlobPanelViews({
+function useBlobPanelViews({
     extensionsController,
-    activation,
-    repoName,
-    commitID,
     revision,
-    mode,
     filePath,
     repoID,
-    location,
-    history,
+    isPackage,
     settingsCascade,
+    platformContext,
+    useCodeIntel,
+    telemetryService,
+    fetchHighlightedFileLineRanges,
+    ownEnabled,
 }: Props): void {
     const subscriptions = useMemo(() => new Subscription(), [])
 
-    // Activation props are not stable
-    const activationReference = useRef<Activation | undefined>(activation)
-    activationReference.current = activation
+    const preferAbsoluteTimestamps = preferAbsoluteTimestampsFromSettings(settingsCascade)
+    const defaultPageSize = defaultPageSizeFromSettings(settingsCascade)
 
-    // Keep active code editor position subscription active to prevent empty loading state
-    // (for main thread -> ext host -> main thread roundtrip for editor position)
-    const activeCodeEditorPositions = useMemo(() => new ReplaySubject<TextDocumentPositionParameters | null>(1), [])
-    useObservable(
-        useMemo(
-            () =>
-                from(extensionsController.extHostAPI).pipe(
-                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getActiveCodeEditorPosition())),
-                    tap(parameters => activeCodeEditorPositions.next(parameters)),
-                    mapTo(undefined)
-                ),
-            [activeCodeEditorPositions, extensionsController]
-        )
-    )
+    const location = useLocation()
 
-    const maxPanelResults = maxPanelResultsFromSettings(settingsCascade)
-
-    // Creates source for definition and reference panels
-    const createLocationProvider = useCallback(
-        <P extends TextDocumentPositionParameters>(
-            id: string,
-            title: string,
-            priority: number,
-            provideLocations: (parameters: P) => Observable<MaybeLoadingResult<clientType.Location[]>>,
-            extraParameters?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParameters>>
-        ): Observable<BuiltinPanelView | null> =>
-            activeCodeEditorPositions.pipe(
-                map(textDocumentPositionParameters => {
-                    if (!textDocumentPositionParameters) {
-                        return null
-                    }
-
-                    return {
-                        title,
-                        content: '',
-                        selector: null,
-                        priority,
-
-                        maxLocationResults: id === 'references' || id === 'def' ? maxPanelResults : undefined,
-                        // This disable directive is necessary because TypeScript is not yet smart
-                        // enough to know that (typeof params & typeof extraParams) is P.
-                        //
-                        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-                        locationProvider: provideLocations({
-                            ...textDocumentPositionParameters,
-                            ...extraParameters,
-                        } as P).pipe(
-                            tap(({ result: locations }) => {
-                                if (activationReference.current && id === 'references' && locations.length > 0) {
-                                    activationReference.current.update({ FoundReferences: true })
-                                }
-                            })
-                        ),
-                    }
-                })
-            ),
-        [activeCodeEditorPositions, maxPanelResults]
-    )
-
-    // Source for history panel
-    const panelSubject = useMemo(() => {
+    const position = useMemo(() => {
         const parsedHash = parseQueryAndHash(location.search, location.hash)
-        return {
+        return parsedHash.line !== undefined
+            ? { line: parsedHash.line, character: parsedHash.character || 0 }
+            : undefined
+    }, [location.hash, location.search])
+
+    const [enableOwnershipPanels] = useFeatureFlag('enable-ownership-panels', true)
+
+    useBuiltinTabbedPanelViews(
+        useMemo(() => {
+            const panelDefinitions: Panel[] = [
+                position
+                    ? {
+                          id: 'references',
+                          title: 'References',
+                          // The new reference panel contains definitions, references, and implementations. We need it to
+                          // match all these IDs so it shows up when one of the IDs is used as `#tab=<ID>` in the URL.
+                          matchesTabID: (id: string): boolean =>
+                              id === 'def' || id === 'references' || id.startsWith('implementations_'),
+                          element: (
+                              <ReferencesPanel
+                                  settingsCascade={settingsCascade}
+                                  platformContext={platformContext}
+                                  extensionsController={extensionsController}
+                                  telemetryService={telemetryService}
+                                  key="references"
+                                  fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                  useCodeIntel={useCodeIntel}
+                              />
+                          ),
+                      }
+                    : null,
+
+                isPackage
+                    ? {
+                          id: 'history',
+                          title: 'History',
+                          element: (
+                              <PanelContent>
+                                  {/* Instead of removing the "History" tab, explain why it's not available */}
+                                  <Text>Git history is not available when browsing packages</Text>
+                              </PanelContent>
+                          ),
+                      }
+                    : {
+                          id: 'history',
+                          title: 'History',
+                          element: (
+                              <PanelContent>
+                                  <RepoRevisionSidebarCommits
+                                      key="commits"
+                                      repoID={repoID}
+                                      revision={revision}
+                                      filePath={filePath}
+                                      preferAbsoluteTimestamps={preferAbsoluteTimestamps}
+                                      defaultPageSize={defaultPageSize}
+                                  />
+                              </PanelContent>
+                          ),
+                      },
+                ownEnabled && enableOwnershipPanels
+                    ? {
+                          id: 'ownership',
+                          title: 'Ownership',
+                          productStatus: 'beta' as const,
+                          element: (
+                              <PanelContent>
+                                  <FileOwnershipPanel
+                                      key="ownership"
+                                      repoID={repoID}
+                                      revision={revision}
+                                      filePath={filePath}
+                                      telemetryService={telemetryService}
+                                  />
+                              </PanelContent>
+                          ),
+                      }
+                    : null,
+            ].filter(isDefined)
+
+            return panelDefinitions
+        }, [
+            isPackage,
+            position,
+            settingsCascade,
+            platformContext,
+            extensionsController,
+            telemetryService,
+            fetchHighlightedFileLineRanges,
+            useCodeIntel,
             repoID,
-            repoName,
-            commitID,
             revision,
             filePath,
-            mode,
-            position:
-                parsedHash.line !== undefined
-                    ? { line: parsedHash.line, character: parsedHash.character || 0 }
-                    : undefined,
-            hash: location.hash,
-            history,
-            location,
-        }
-    }, [commitID, filePath, history, location, mode, repoID, repoName, revision])
-
-    const panelSubjectChanges = useMemo(() => new ReplaySubject<PanelSubject>(1), [])
-    useEffect(() => {
-        panelSubjectChanges.next(panelSubject)
-    }, [panelSubject, panelSubjectChanges])
-
-    useBuiltinPanelViews(
-        useMemo(
-            () => [
-                {
-                    id: 'history',
-                    provider: panelSubjectChanges.pipe(
-                        map(({ repoID, revision, filePath, history, location }) => ({
-                            title: 'History',
-                            content: '',
-                            priority: 150,
-                            selector: null,
-                            locationProvider: undefined,
-                            reactElement: (
-                                <RepoRevisionSidebarCommits
-                                    key="commits"
-                                    repoID={repoID}
-                                    revision={revision}
-                                    filePath={filePath}
-                                    history={history}
-                                    location={location}
-                                />
-                            ),
-                        }))
-                    ),
-                },
-                {
-                    id: 'def',
-                    provider: createLocationProvider('def', 'Definition', 190, parameters =>
-                        from(extensionsController.extHostAPI).pipe(
-                            switchMap(extensionHostAPI =>
-                                wrapRemoteObservable(extensionHostAPI.getDefinition(parameters))
-                            )
-                        )
-                    ),
-                },
-                {
-                    id: 'references',
-                    provider: createLocationProvider<ReferenceParameters>('references', 'References', 180, parameters =>
-                        from(extensionsController.extHostAPI).pipe(
-                            switchMap(extensionHostAPI =>
-                                wrapRemoteObservable(
-                                    extensionHostAPI.getReferences(parameters, { includeDeclaration: false })
-                                )
-                            )
-                        )
-                    ),
-                },
-            ],
-            [createLocationProvider, extensionsController.extHostAPI, panelSubjectChanges]
-        )
+            preferAbsoluteTimestamps,
+            defaultPageSize,
+            ownEnabled,
+            enableOwnershipPanels,
+        ])
     )
 
     useEffect(() => () => subscriptions.unsubscribe(), [subscriptions])
 }
 
-function maxPanelResultsFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): number | undefined {
+function preferAbsoluteTimestampsFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): boolean {
     if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
-        return settingsCascade.final['codeIntelligence.maxPanelResults'] as number
+        return settingsCascade.final['history.preferAbsoluteTimestamps'] as boolean
     }
+    return false
+}
+
+function defaultPageSizeFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): number | undefined {
+    if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
+        return settingsCascade.final['history.defaultPageSize'] as number
+    }
+
     return undefined
+}
+
+/**
+ * Registers built-in tabbed panel views and renders `null`.
+ */
+export const BlobPanel: React.FunctionComponent<Props> = props => {
+    useBlobPanelViews(props)
+
+    return null
 }

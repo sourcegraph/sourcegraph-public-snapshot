@@ -1,36 +1,50 @@
-import { number } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
-import React from 'react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../WebStory'
 
 import { DiffStat, DiffStatSquares, DiffStatStack } from './DiffStat'
 
-const getSharedKnobs = () => ({
-    added: number('Added', 10),
-    changed: number('Changed', 4),
-    deleted: number('Deleted', 8),
-})
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
-const { add } = storiesOf('web/diffs/DiffStat', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const config: Meta = {
+    title: 'web/diffs/DiffStat',
+    decorators: [decorator],
+    argTypes: {
+        added: {
+            type: 'number',
+        },
+        deleted: {
+            type: 'number',
+        },
+    },
+    args: {
+        added: 10,
+        deleted: 8,
+    },
+}
 
-add('Collapsed counts', () => {
-    const stats = getSharedKnobs()
-    return <WebStory>{() => <DiffStat {...stats} />}</WebStory>
-})
+export default config
 
-add('Expanded counts', () => {
-    const stats = getSharedKnobs()
-    return <WebStory>{() => <DiffStat {...stats} expandedCounts={true} />}</WebStory>
-})
+export const CollapsedCounts: StoryFn<React.ComponentProps<typeof DiffStat>> = args => (
+    <WebStory>{() => <DiffStat {...args} />}</WebStory>
+)
 
-add('DiffStatSquares', () => {
-    const stats = getSharedKnobs()
-    return <WebStory>{() => <DiffStatSquares {...stats} />}</WebStory>
-})
-add('DiffStatStack', () => {
-    const stats = getSharedKnobs()
-    return <WebStory>{() => <DiffStatStack {...stats} />}</WebStory>
-})
+CollapsedCounts.storyName = 'Collapsed counts'
+
+export const ExpandedCounts: StoryFn<React.ComponentProps<typeof DiffStat>> = args => (
+    <WebStory>{() => <DiffStat {...args} expandedCounts={true} />}</WebStory>
+)
+
+ExpandedCounts.storyName = 'Expanded counts'
+
+export const DiffStatSquaresStory: StoryFn<React.ComponentProps<typeof DiffStatSquares>> = args => (
+    <WebStory>{() => <DiffStatSquares {...args} />}</WebStory>
+)
+
+DiffStatSquaresStory.storyName = 'DiffStatSquares'
+
+export const DiffStatStackStory: StoryFn<React.ComponentProps<typeof DiffStatStack>> = args => (
+    <WebStory>{() => <DiffStatStack {...args} />}</WebStory>
+)
+
+DiffStatStackStory.storyName = 'DiffStatStack'

@@ -1,0 +1,49 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "runner",
+    srcs = [
+        "errors.go",
+        "iface.go",
+        "options.go",
+        "run.go",
+        "runner.go",
+        "util.go",
+        "validate.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/migration/runner",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/migration/definition",
+        "//internal/database/migration/schemas",
+        "//internal/database/migration/shared",
+        "//lib/errors",
+        "@com_github_jackc_pgconn//:pgconn",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "runner_test",
+    timeout = "short",
+    srcs = [
+        "helpers_test.go",
+        "mocks_test.go",
+        "options_test.go",
+        "run_test.go",
+        "validate_test.go",
+    ],
+    embed = [":runner"],
+    deps = [
+        "//internal/database/migration/definition",
+        "//internal/database/migration/runner/testdata",
+        "//internal/database/migration/schemas",
+        "//internal/database/migration/shared",
+        "//lib/errors",
+        "@com_github_derision_test_go_mockgen//testutil/assert",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

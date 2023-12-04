@@ -1,18 +1,28 @@
-import * as H from 'history'
 import React, { useCallback, useEffect } from 'react'
-import { Observable } from 'rxjs'
 
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
+import { type Observable, of } from 'rxjs'
+
+import { LoadingSpinner } from '@sourcegraph/wildcard'
+
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { GitRefType, Scalars, GitRefConnectionFields, GitRefFields } from '../../graphql-operations'
+import {
+    GitRefType,
+    type Scalars,
+    type GitRefConnectionFields,
+    type GitRefFields,
+    type RepositoryFields,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
-import { GitReferenceNode, queryGitReferences as queryGitReferencesFromBackend } from '../GitReference'
+import {
+    GitReferenceNode,
+    type GitReferenceNodeProps,
+    queryGitReferences as queryGitReferencesFromBackend,
+} from '../GitReference'
 
-import { RepositoryReleasesAreaPageProps } from './RepositoryReleasesArea'
-
-interface Props extends RepositoryReleasesAreaPageProps {
-    history: H.History
-    location: H.Location
+interface Props {
+    repo: RepositoryFields | undefined
+    isPackage?: boolean
     queryGitReferences?: (args: {
         repo: Scalars['ID']
         first?: number
@@ -23,10 +33,9 @@ interface Props extends RepositoryReleasesAreaPageProps {
 }
 
 /** A page that shows all of a repository's tags. */
-export const RepositoryReleasesTagsPage: React.FunctionComponent<Props> = ({
+export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     repo,
-    history,
-    location,
+    isPackage,
     queryGitReferences: queryGitReferences = queryGitReferencesFromBackend,
 }) => {
     useEffect(() => {
@@ -34,25 +43,35 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<Props> = ({
     }, [])
 
     const queryTags = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
-            queryGitReferences({ ...args, repo: repo.id, type: GitRefType.GIT_TAG }),
-        [repo.id, queryGitReferences]
+        (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> => {
+            if (!repo?.id) {
+                return of()
+            }
+
+            return queryGitReferences({ ...args, repo: repo.id, type: GitRefType.GIT_TAG })
+        },
+        [repo?.id, queryGitReferences]
     )
+
+    if (!repo) {
+        return <LoadingSpinner />
+    }
 
     return (
         <div className="repository-releases-page">
-            <PageTitle title="Tags" />
-            <FilteredConnection<GitRefFields>
+            <PageTitle title={isPackage ? 'Versions' : 'Tags'} />
+            <FilteredConnection<GitRefFields, Partial<GitReferenceNodeProps>>
                 className="my-3"
-                listClassName="list-group list-group-flush"
-                noun="tag"
-                pluralNoun="tags"
+                listClassName="list-group list-group-flush test-filtered-tags-connection"
+                {...(isPackage ? { noun: 'version', pluralNoun: 'versions' } : { noun: 'tag', pluralNoun: 'tags' })}
                 queryConnection={queryTags}
                 nodeComponent={GitReferenceNode}
+                nodeComponentProps={{ isPackageVersion: isPackage }}
+                ariaLabelFunction={(tagDisplayName: string) =>
+                    `View this repository using ${tagDisplayName} as the selected revision`
+                }
                 defaultFirst={20}
                 autoFocus={true}
-                history={history}
-                location={location}
             />
         </div>
     )

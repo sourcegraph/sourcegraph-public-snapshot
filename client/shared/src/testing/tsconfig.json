@@ -2,8 +2,7 @@
   "extends": "../../tsconfig.json",
   "references": [{ "path": "../.." }],
   "compilerOptions": {
-    "types": ["mocha", "node"],
-    "module": "commonjs",
+    "types": ["node"],
   },
   "include": ["**/*"],
   "exclude": [],

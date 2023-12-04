@@ -1,7 +1,10 @@
 import React from 'react'
 
-import { SaveToolbar, SaveToolbarProps } from '@sourcegraph/web/src/components/SaveToolbar'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
+
+import { SaveToolbar, type SaveToolbarProps } from '../../../../components/SaveToolbar'
+
+import { ConfigurationInferButton } from './ConfigurationInferButton'
 
 export interface IndexConfigurationSaveToolbarProps {
     loading: boolean
@@ -23,11 +26,7 @@ export const IndexConfigurationSaveToolbar: React.FunctionComponent<
         {loading ? (
             <LoadingSpinner className="mt-2 ml-2" />
         ) : (
-            inferEnabled && (
-                <Button type="button" title="Infer index configuration from HEAD" variant="link" onClick={onInfer}>
-                    Infer index configuration from HEAD
-                </Button>
-            )
+            inferEnabled && <ConfigurationInferButton onClick={onInfer} />
         )}
     </SaveToolbar>
 )

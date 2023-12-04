@@ -1,6 +1,6 @@
 # Testing Go code
 
-This document contains tips for writing unit tests for Go code.
+This document contains tips for writing and running unit tests for Go code.
 
 ## Conventions
 
@@ -97,7 +97,7 @@ func TestSprocket(t *testing.T) {
 
 ### Asserting expected complex values
 
-Expected values that are not simple scalars (really, anything not comparable with `==`) should use [go-cmp](https://github.com/google/go-cmp/cmp) to create a highly-readable diff string.
+Expected values that are not simple scalars (really, anything not comparable with `==`) should use [go-cmp](https://github.com/google/go-cmp) to create a highly-readable diff string.
 
 ```go
 import "github.com/google/go-cmp/cmp"
@@ -150,7 +150,7 @@ When testing code that depends on a database connection, you may want to test ho
 
 ### Testing with a mocked database
 
-Helpers for mocking out a database can be found in the `internal/database` package. For each store in `internal/database`, as well as for the `database.DB` type, there is an associated mock in the `database` package that can be used in place of the store or db interface. The mocks are generated with `go-mockgen` (see "Mocks" above for details).
+Helpers for mocking out a database can be found in the `internal/database/dbmocks` package. For each store in `internal/database`, as well as for the `database.DB` type, there is an associated mock in the `dbmocks` package that can be used in place of the store or db interface. The mocks are generated with `go-mockgen` (see "Mocks" above for details).
 
 ```go
 func getRepo(db database.DB, id int) *types.Repo {
@@ -159,10 +159,10 @@ func getRepo(db database.DB, id int) *types.Repo {
 
 func TestGetRepos(t *testing.T) {
 	t.Parallel()
-	repoStore := database.NewMockRepoStore()
+	repoStore := dbmocks.NewMockRepoStore()
 	repoStore.GetFunc.SetDefaultReturn(&types.Repo{Name: "my cool repo", ID: 123})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repoStore)
 
 	got := getRepos(db, 0)
@@ -193,7 +193,7 @@ func getRepo(db database.DB, id int) *types.Repo {
 
 func TestGetRepos(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := dbtest.NewDB(logger, t)
 
 	createRepo(db, "my cool repo", 123)
 	got := getRepo(db, 123)
@@ -205,3 +205,23 @@ func TestGetRepos(t *testing.T) {
 ```
 
 You will also see references to the `internal/database/dbtesting` package in the codebase, but use of that package is waning because it relies on a global database connection, which is not isolated between tests, and cannot be safely parallelized.
+
+### Verifying fixes to flaky tests
+
+For verifying fixes to flaky tests, pass the `-count` flag to `go test`.
+This bypasses the default caching of test results, and repeatedly runs the test in a loop.
+From the [official `go test` docs](https://pkg.go.dev/cmd/go/internal/test):
+
+```text
+	-count n
+	    Run each test, benchmark, and fuzz seed n times (default 1).
+	    If -cpu is set, run n times for each GOMAXPROCS value.
+	    Examples are always run once. -count does not apply to
+	    fuzz tests matched by -fuzz.
+```
+
+Example usage:
+
+```bash
+go test ./path/to/package -run MyTestName -count 100
+```

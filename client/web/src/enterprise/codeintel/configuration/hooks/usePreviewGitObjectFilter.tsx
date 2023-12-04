@@ -1,26 +1,26 @@
-import { ApolloError } from '@apollo/client'
+import { gql } from '@sourcegraph/http-client'
+import type { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 
-import { gql, useQuery } from '@sourcegraph/http-client'
-import { GitObjectType, Maybe } from '@sourcegraph/shared/src/graphql-operations'
-
-import { PreviewGitObjectFilterResult, PreviewGitObjectFilterVariables } from '../../../../graphql-operations'
-
-interface SearchGitObjectResult {
-    previewResult: GitObjectPreviewResult
-    isLoadingPreview: boolean
-    previewError: ApolloError | undefined
-}
+import type { PreviewGitObjectFilterResult } from '../../../../graphql-operations'
 
 export interface GitObjectPreviewResult {
     preview: {
-        repoName: string
         name: string
         rev: string
+        committedAt: string
     }[]
+    totalCount: number
+    totalCountYoungerThanThreshold: number | null
 }
 
 export const PREVIEW_GIT_OBJECT_FILTER = gql`
-    query PreviewGitObjectFilter($id: ID!, $type: GitObjectType!, $pattern: String!) {
+    query PreviewGitObjectFilter(
+        $id: ID!
+        $type: GitObjectType!
+        $pattern: String!
+        $countObjectsYoungerThanHours: Int
+        $first: Int
+    ) {
         node(id: $id) {
             ...RepositoryPreviewGitObjectFilter
         }
@@ -28,31 +28,40 @@ export const PREVIEW_GIT_OBJECT_FILTER = gql`
 
     fragment RepositoryPreviewGitObjectFilter on Repository {
         __typename
-        name
-        previewGitObjectFilter(type: $type, pattern: $pattern) {
-            name
-            rev
+        previewGitObjectFilter(
+            type: $type
+            pattern: $pattern
+            countObjectsYoungerThanHours: $countObjectsYoungerThanHours
+            first: $first
+        ) {
+            nodes {
+                name
+                rev
+                committedAt
+            }
+            totalCount
+            totalCountYoungerThanThreshold
         }
     }
 `
 
-export const usePreviewGitObjectFilter = (id: string, type: GitObjectType, pattern: string): SearchGitObjectResult => {
-    const { data, loading, error } = useQuery<PreviewGitObjectFilterResult, PreviewGitObjectFilterVariables>(
-        PREVIEW_GIT_OBJECT_FILTER,
-        {
-            variables: { id, type, pattern },
-        }
-    )
-
-    return {
-        previewResult: {
-            preview: hasNodeRepositoryType(data)
-                ? data.node.previewGitObjectFilter.map(({ name, rev }) => ({ repoName: data.node.name, name, rev }))
-                : [],
-        },
-        isLoadingPreview: loading,
-        previewError: error,
+export function convertGitObjectFilterResult(
+    preview?: PreviewGitObjectFilterResult
+): GitObjectPreviewResult | undefined {
+    if (preview) {
+        return hasNodeRepositoryType(preview)
+            ? {
+                  ...preview.node.previewGitObjectFilter,
+                  preview: preview.node.previewGitObjectFilter.nodes.map(node => ({
+                      name: node.name,
+                      rev: node.rev,
+                      committedAt: node.committedAt,
+                  })),
+              }
+            : undefined
     }
+
+    return undefined
 }
 
 function hasNodeRepositoryType<

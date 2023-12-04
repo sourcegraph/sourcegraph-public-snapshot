@@ -1,24 +1,25 @@
-import classNames from 'classnames'
 import React, { useCallback, useMemo } from 'react'
-import { RouteComponentProps } from 'react-router'
-import { Observable } from 'rxjs'
+
+import classNames from 'classnames'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader, Link } from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Container, PageHeader, Link, Code } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
-import { Timestamp } from '../../../components/time/Timestamp'
-import {
+import type {
     UserEventLogFields,
     UserEventLogsConnectionFields,
     UserEventLogsResult,
     UserEventLogsVariables,
 } from '../../../graphql-operations'
-import { UserSettingsAreaRouteContext } from '../../../user/settings/UserSettingsArea'
+import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
+import type { UserSettingsAreaRouteContext } from '../../../user/settings/UserSettingsArea'
 
 import styles from './UserEventLogsPage.module.scss'
 
@@ -29,10 +30,12 @@ interface UserEventNodeProps {
     node: UserEventLogFields
 }
 
-export const UserEventNode: React.FunctionComponent<UserEventNodeProps> = ({ node }: UserEventNodeProps) => (
+export const UserEventNode: React.FunctionComponent<React.PropsWithChildren<UserEventNodeProps>> = ({
+    node,
+}: UserEventNodeProps) => (
     <li className={classNames('list-group-item', styles.eventLog)}>
         <div className="d-flex align-items-center justify-content-between">
-            <code>{node.name}</code>
+            <Code>{node.name}</Code>
             <div>
                 <Timestamp date={node.timestamp} />
             </div>
@@ -51,19 +54,33 @@ export const UserEventNode: React.FunctionComponent<UserEventNodeProps> = ({ nod
 )
 
 export interface UserEventLogsPageProps
-    extends Pick<UserSettingsAreaRouteContext, 'user'>,
-        Pick<RouteComponentProps, 'history' | 'location'>,
-        TelemetryProps {}
+    extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'isSourcegraphDotCom'>,
+        UserEventLogsPageContentProps {}
+
+export interface UserEventLogsPageContentProps extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps {}
 
 /**
  * A page displaying usage statistics for the site.
  */
-export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> = ({
+export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<UserEventLogsPageProps>> = ({
+    isSourcegraphDotCom,
+    authenticatedUser,
     telemetryService,
-    history,
-    location,
     user,
 }) => {
+    if (isSourcegraphDotCom && authenticatedUser && user.id !== authenticatedUser.id) {
+        return (
+            <SiteAdminAlert className="sidebar__alert" variant="danger">
+                Only the user may access their event logs.
+            </SiteAdminAlert>
+        )
+    }
+    return <UserEventLogsPageContent telemetryService={telemetryService} user={user} />
+}
+
+export const UserEventLogsPageContent: React.FunctionComponent<
+    React.PropsWithChildren<UserEventLogsPageContentProps>
+> = ({ telemetryService, user }) => {
     useMemo(() => {
         telemetryService.logViewEvent('UserEventLogPage')
     }, [telemetryService])
@@ -130,8 +147,6 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
                     pluralNoun="user events"
                     queryConnection={queryUserEventLogs}
                     nodeComponent={UserEventNode}
-                    history={history}
-                    location={location}
                 />
             </Container>
         </>

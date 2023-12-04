@@ -1,14 +1,9 @@
+import { describe, expect, test } from 'vitest'
+
 import { FilterType } from './filters'
 import { FilterKind, findFilter } from './query'
-import { Filter } from './token'
-import {
-    appendContextFilter,
-    omitFilter,
-    parenthesizeQueryWithGlobalContext,
-    sanitizeQueryForTelemetry,
-    updateFilter,
-    updateFilters,
-} from './transformer'
+import type { Filter } from './token'
+import { appendContextFilter, omitFilter, sanitizeQueryForTelemetry, updateFilter, updateFilters } from './transformer'
 
 expect.addSnapshotSerializer({
     serialize: value => value as string,
@@ -51,12 +46,12 @@ describe('omitFilter', () => {
 
     test('omit context filter from the end of the query', () => {
         const query = 'bar context:foo'
-        expect(omitFilter(query, getGlobalContextFilter(query))).toMatchInlineSnapshot('bar ')
+        expect(omitFilter(query, getGlobalContextFilter(query))).toMatchInlineSnapshot('bar')
     })
 
     test('omit context filter from the middle of the query', () => {
         const query = 'bar context:foo bar1'
-        expect(omitFilter(query, getGlobalContextFilter(query))).toMatchInlineSnapshot('bar  bar1')
+        expect(omitFilter(query, getGlobalContextFilter(query))).toMatchInlineSnapshot('bar bar1')
     })
 })
 
@@ -111,20 +106,4 @@ describe('sanitizeQueryForTelemetry', () => {
             'test -repo:[REDACTED] -r:[REDACTED] -file:[REDACTED] -f:[REDACTED]'
         )
     })
-})
-
-describe('parenthesizeQueryWithGlobalContext', () => {
-    test('query without context', () =>
-        expect(parenthesizeQueryWithGlobalContext('a or b')).toMatchInlineSnapshot('a or b'))
-
-    test('do not parenthesize query without operators', () =>
-        expect(parenthesizeQueryWithGlobalContext('context:ctx a')).toMatchInlineSnapshot('context:ctx a'))
-
-    test('parenthesize query with global context filter', () =>
-        expect(parenthesizeQueryWithGlobalContext('context:ctx a or b')).toMatchInlineSnapshot('context:ctx (a or b)'))
-
-    test('do not parenthesize query with nested context', () =>
-        expect(parenthesizeQueryWithGlobalContext('(context:ctx a) or b')).toMatchInlineSnapshot(
-            '(context:ctx a) or b'
-        ))
 })

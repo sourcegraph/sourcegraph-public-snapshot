@@ -1,0 +1,156 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph
+    method: GET
+  response:
+    body: '{"scm": "git", "has_wiki": false, "links": {"watchers": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/watchers"},
+      "branches": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/refs/branches"},
+      "tags": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/refs/tags"},
+      "commits": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/commits"},
+      "clone": [{"href": "https://sourcegraph-testing@bitbucket.org/sourcegraph-testing/sourcegraph.git",
+      "name": "https"}, {"href": "git@bitbucket.org:sourcegraph-testing/sourcegraph.git",
+      "name": "ssh"}], "self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph"},
+      "source": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/src"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/sourcegraph"}, "avatar":
+      {"href": "https://bytebucket.org/ravatar/%7Bf46afc56-15a7-4579-9429-1b9329ad4c09%7D?ts=default"},
+      "hooks": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/hooks"},
+      "forks": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/forks"},
+      "downloads": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/downloads"},
+      "pullrequests": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/pullrequests"}},
+      "created_on": "2022-03-17T11:18:32.035547+00:00", "full_name": "sourcegraph-testing/sourcegraph",
+      "owner": {"display_name": "Sourcegraph Testing", "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}",
+      "links": {"self": {"href": "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"},
+      "html": {"href": "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"},
+      "avatar": {"href": "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"}},
+      "type": "user", "nickname": "Sourcegraph Testing", "account_id": "623316f53fbb880068413f6b"},
+      "size": 657151990, "uuid": "{f46afc56-15a7-4579-9429-1b9329ad4c09}", "type":
+      "repository", "website": null, "override_settings": {"branching_model": true,
+      "default_merge_strategy": true}, "description": "", "has_issues": false, "slug":
+      "sourcegraph", "is_private": true, "name": "sourcegraph", "language": "", "fork_policy":
+      "no_public_forks", "project": {"links": {"self": {"href": "https://api.bitbucket.org/2.0/workspaces/sourcegraph-testing/projects/SOUR"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/workspace/projects/SOUR"},
+      "avatar": {"href": "https://bitbucket.org/account/user/sourcegraph-testing/projects/SOUR/avatar/32?ts=1647515868"}},
+      "type": "project", "name": "sourcegraph-testing", "key": "SOUR", "uuid": "{a862a17c-1726-47a2-bcd1-d9b37313b350}"},
+      "mainbranch": {"type": "branch", "name": "master"}, "workspace": {"slug": "sourcegraph-testing",
+      "type": "workspace", "name": "Sourcegraph Testing", "links": {"self": {"href":
+      "https://api.bitbucket.org/2.0/workspaces/sourcegraph-testing"}, "html": {"href":
+      "https://bitbucket.org/sourcegraph-testing/"}, "avatar": {"href": "https://bitbucket.org/workspaces/sourcegraph-testing/avatar/?ts=1647515473"}},
+      "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}"}, "updated_on": "2022-03-17T11:18:32.485296+00:00"}'
+    headers:
+      Cache-Control:
+      - private
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 13 Apr 2022 21:12:48 GMT
+      Etag:
+      - '"gz[a8009000bb4ab4b2363ea10d9ab0830f]"'
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Authorization, Origin, cookie, user-context
+      - Accept-Encoding
+      X-Accepted-Oauth-Scopes:
+      - repository
+      X-B3-Traceid:
+      - eb4618976ff8d9f7
+      X-Credential-Type:
+      - apppassword
+      X-Dc-Location:
+      - Micros
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Oauth-Scopes:
+      - pipeline, pullrequest:write, account
+      X-Render-Time:
+      - "0.0922610759735"
+      X-Request-Count:
+      - "1036"
+      X-Served-By:
+      - cc9294239b27
+      X-Static-Version:
+      - e82c15c517a3
+      X-Usage-Input-Ops:
+      - "0"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.006979"
+      X-Usage-User-Time:
+      - "0.045449"
+      X-Version:
+      - e82c15c517a3
+      X-View-Name:
+      - bitbucket.apps.repo2.api.v20.repo.RepositoryHandler
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/does-not-exist
+    method: GET
+  response:
+    body: '{"type": "error", "error": {"message": "The requested repository either
+      does not exist or you do not have access. If you believe this repository exists
+      and you have access, make sure you''re authenticated."}}'
+    headers:
+      Cache-Control:
+      - max-age=900
+      Content-Length:
+      - "207"
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 13 Apr 2022 21:12:49 GMT
+      Etag:
+      - '"7d15f36b6efdc797bf0b22d3f051a03f"'
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - authorization, cookie, user-context, Origin
+      X-Accepted-Oauth-Scopes:
+      - repository
+      X-B3-Traceid:
+      - 1420e9176bf18b04
+      X-Credential-Type:
+      - apppassword
+      X-Dc-Location:
+      - Micros
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Oauth-Scopes:
+      - pipeline, pullrequest:write, account
+      X-Render-Time:
+      - "0.0568602085114"
+      X-Request-Count:
+      - "3765"
+      X-Served-By:
+      - a757af51562f
+      X-Static-Version:
+      - e82c15c517a3
+      X-Usage-Input-Ops:
+      - "0"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.000000"
+      X-Usage-User-Time:
+      - "0.027615"
+      X-Version:
+      - e82c15c517a3
+      X-View-Name:
+      - bitbucket.apps.repo2.api.v20.repo.RepositoryHandler
+    status: 404 Not Found
+    code: 404
+    duration: ""

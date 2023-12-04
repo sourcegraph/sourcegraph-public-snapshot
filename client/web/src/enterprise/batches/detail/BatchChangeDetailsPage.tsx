@@ -1,28 +1,28 @@
-import { subDays, startOfDay } from 'date-fns'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect, useMemo } from 'react'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { subDays, startOfDay } from 'date-fns'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { useParams } from 'react-router-dom'
+
 import { useQuery } from '@sourcegraph/http-client'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { PageHeader, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { PageHeader, LoadingSpinner, Alert, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { CreatedByAndUpdatedByInfoByline } from '../../../components/Byline/CreatedByAndUpdatedByInfoByline'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
-import {
-    BatchChangeByNamespaceResult,
-    BatchChangeByNamespaceVariables,
-    BatchChangeFields,
-} from '../../../graphql-operations'
+import type { BatchChangeByNamespaceResult, BatchChangeByNamespaceVariables } from '../../../graphql-operations'
 import { Description } from '../Description'
+import { MissingCredentialsAlert } from '../MissingCredentialsAlert'
 
-import { deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'
+import { ActiveExecutionNotice } from './ActiveExecutionNotice'
+import { type deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
-import { BatchChangeDetailsProps, BatchChangeDetailsTabs } from './BatchChangeDetailsTabs'
-import { BatchChangeInfoByline } from './BatchChangeInfoByline'
+import { type BatchChangeDetailsProps, BatchChangeDetailsTabs, type TabName } from './BatchChangeDetailsTabs'
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 import { BulkOperationsAlerts } from './BulkOperationsAlerts'
 import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
@@ -34,17 +34,22 @@ import { WebhookAlert } from './WebhookAlert'
 export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, SettingsCascadeProps<Settings> {
     /** The namespace ID. */
     namespaceID: Scalars['ID']
-    /** The batch change name. */
-    batchChangeName: BatchChangeFields['name']
+    /** The name of the tab that should be initially open */
+    initialTab?: TabName
     /** For testing only. */
     deleteBatchChange?: typeof _deleteBatchChange
+
+    authenticatedUser: Pick<AuthenticatedUser, 'url'>
 }
 
 /**
  * The area for a single batch change.
  */
-export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsPageProps> = props => {
-    const { namespaceID, batchChangeName, history, location, telemetryService, deleteBatchChange } = props
+export const BatchChangeDetailsPage: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangeDetailsPageProps>
+> = props => {
+    const { batchChangeName } = useParams()
+    const { namespaceID, telemetryService, authenticatedUser, deleteBatchChange } = props
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeDetailsPage')
@@ -56,7 +61,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
     const { data, error, loading, refetch } = useQuery<BatchChangeByNamespaceResult, BatchChangeByNamespaceVariables>(
         BATCH_CHANGE_BY_NAMESPACE,
         {
-            variables: { namespaceID, batchChange: batchChangeName, createdAfter },
+            variables: { namespaceID, batchChange: batchChangeName!, createdAfter },
             // Cache this data but always re-request it in the background when we revisit
             // this page to pick up newer changes.
             fetchPolicy: 'cache-and-network',
@@ -70,7 +75,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             // For subsequent requests while this page is open, make additional network
             // requests; this is necessary for `refetch` to actually use the network. (see
             // https://github.com/apollographql/apollo-client/issues/5515)
-            nextFetchPolicy: 'network-only',
+            nextFetchPolicy: 'cache-and-network',
         }
     )
 
@@ -87,7 +92,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
         throw new Error(error.message)
     }
     // If there weren't any errors and we just didn't receive any data
-    if (!data || !data.batchChange) {
+    if (!data?.batchChange) {
         return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
 
@@ -104,50 +109,62 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 </Alert>
             )}
             <PageHeader
-                path={[
-                    {
-                        icon: BatchChangesIcon,
-                        to: '/batch-changes',
-                    },
-                    { to: `${batchChange.namespace.url}/batch-changes`, text: batchChange.namespace.namespaceName },
-                    { text: batchChange.name },
-                ]}
                 byline={
-                    <BatchChangeInfoByline
+                    <CreatedByAndUpdatedByInfoByline
                         createdAt={batchChange.createdAt}
-                        creator={batchChange.creator}
-                        lastAppliedAt={batchChange.lastAppliedAt}
-                        lastApplier={batchChange.lastApplier}
+                        createdBy={batchChange.creator}
+                        updatedAt={batchChange.lastAppliedAt}
+                        updatedBy={batchChange.lastApplier}
                     />
                 }
                 actions={
-                    <BatchChangeDetailsActionSection
-                        batchChangeID={batchChange.id}
-                        batchChangeClosed={!!batchChange.closedAt}
-                        deleteBatchChange={deleteBatchChange}
-                        batchChangeNamespaceURL={batchChange.namespace.url}
-                        history={history}
-                        settingsCascade={props.settingsCascade}
-                    />
+                    batchChange.viewerCanAdminister ? (
+                        <BatchChangeDetailsActionSection
+                            batchChangeID={batchChange.id}
+                            batchChangeClosed={!!batchChange.closedAt}
+                            deleteBatchChange={deleteBatchChange}
+                            batchChangeNamespaceURL={batchChange.namespace.url}
+                            batchChangeURL={batchChange.url}
+                            settingsCascade={props.settingsCascade}
+                        />
+                    ) : null
                 }
                 className="test-batch-change-details-page mb-3"
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb icon={BatchChangesIcon} to="/batch-changes" aria-label="Batch Changes" />
+                    <PageHeader.Breadcrumb to={`${batchChange.namespace.url}/batch-changes`}>
+                        {batchChange.namespace.namespaceName}
+                    </PageHeader.Breadcrumb>
+                    <PageHeader.Breadcrumb>{batchChange.name}</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
+            <BulkOperationsAlerts bulkOperations={batchChange.activeBulkOperations} />
+            {batchChange.viewerCanAdminister && (
+                <MissingCredentialsAlert
+                    authenticatedUser={authenticatedUser}
+                    viewerBatchChangesCodeHosts={batchChange.currentSpec.viewerBatchChangesCodeHosts}
+                />
+            )}
+            {batchChange.viewerCanAdminister && (
+                <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
+            )}
+            <ActiveExecutionNotice
+                batchSpecs={batchChange.batchSpecs.nodes}
+                batchChangeURL={batchChange.url}
+                className="mb-3"
             />
-            <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
-            <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
             <ClosedNotice closedAt={batchChange.closedAt} className="mb-3" />
-            <UnpublishedNotice
-                unpublished={batchChange.changesetsStats.unpublished}
-                total={batchChange.changesetsStats.total}
-                className="mb-3"
-            />
-            <ChangesetsArchivedNotice history={history} location={location} />
+            {batchChange.closedAt === null && batchChange.viewerCanAdminister && (
+                <UnpublishedNotice
+                    unpublished={batchChange.changesetsStats.unpublished}
+                    total={batchChange.changesetsStats.total}
+                    className="mb-3"
+                />
+            )}
+            <ChangesetsArchivedNotice />
             <WebhookAlert batchChange={batchChange} />
-            <BatchChangeStatsCard
-                closedAt={batchChange.closedAt}
-                stats={batchChange.changesetsStats}
-                diff={batchChange.diffStat}
-                className="mb-3"
-            />
+            <BatchChangeStatsCard batchChange={batchChange} className="mb-3" />
             <Description description={batchChange.description} />
             <BatchChangeDetailsTabs batchChange={batchChange} refetchBatchChange={refetch} {...props} />
         </>

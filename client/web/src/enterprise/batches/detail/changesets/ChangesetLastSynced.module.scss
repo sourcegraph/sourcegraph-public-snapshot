@@ -1,0 +1,6 @@
+// This class is for preventing layout changes while switching between loading and loaded state
+.update-loader-wrapper {
+    display: inline-flex;
+    align-items: center;
+    height: 1rem;
+}

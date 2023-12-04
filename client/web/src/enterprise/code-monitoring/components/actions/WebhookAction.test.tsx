@@ -1,11 +1,17 @@
-import { render } from '@testing-library/react'
+import type { MockedResponse } from '@apollo/client/testing'
 import userEvent from '@testing-library/user-event'
-import React from 'react'
 import sinon from 'sinon'
+import { describe, expect, test } from 'vitest'
 
-import { ActionProps } from '../FormActionArea'
+import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { WebhookAction } from './WebhookAction'
+import type { SendTestWebhookResult, SendTestWebhookVariables } from '../../../../graphql-operations'
+import { mockAuthenticatedUser } from '../../testing/util'
+import type { ActionProps, MonitorAction } from '../FormActionArea'
+
+import { SEND_TEST_WEBHOOK, WebhookAction } from './WebhookAction'
 
 describe('WebhookAction', () => {
     const props: ActionProps = {
@@ -13,25 +19,32 @@ describe('WebhookAction', () => {
         setAction: sinon.stub(),
         disabled: false,
         monitorName: 'Test',
+        authenticatedUser: mockAuthenticatedUser,
     }
 
     test('open and submit', () => {
         const setActionSpy = sinon.spy()
-        const { getByTestId } = render(<WebhookAction {...props} setAction={setActionSpy} />)
+        const { getByTestId } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <WebhookAction {...props} setAction={setActionSpy} />
+            </MockedTestProvider>
+        )
 
         userEvent.click(getByTestId('form-action-toggle-webhook'))
 
-        expect(getByTestId('submit-action-webhook')).toBeDisabled()
+        assertAriaDisabled(getByTestId('submit-action-webhook'))
 
         userEvent.type(getByTestId('webhook-url'), 'https://example.com')
-        expect(getByTestId('submit-action-webhook')).toBeEnabled()
+        assertAriaEnabled(getByTestId('submit-action-webhook'))
+
+        userEvent.click(getByTestId('include-results-toggle-webhook'))
 
         userEvent.click(getByTestId('submit-action-webhook'))
 
         sinon.assert.calledOnceWithExactly(setActionSpy, {
             __typename: 'MonitorWebhook',
             enabled: true,
-            includeResults: false,
+            includeResults: true,
             id: '',
             url: 'https://example.com',
         })
@@ -39,28 +52,30 @@ describe('WebhookAction', () => {
 
     test('open and edit', () => {
         const setActionSpy = sinon.spy()
-        const { getByTestId } = render(
-            <WebhookAction
-                {...props}
-                setAction={setActionSpy}
-                action={{
-                    __typename: 'MonitorWebhook',
-                    enabled: true,
-                    includeResults: false,
-                    id: '1',
-                    url: 'https://example.com',
-                }}
-            />
+        const { getByTestId } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <WebhookAction
+                    {...props}
+                    setAction={setActionSpy}
+                    action={{
+                        __typename: 'MonitorWebhook',
+                        enabled: true,
+                        includeResults: false,
+                        id: '1',
+                        url: 'https://example.com',
+                    }}
+                />
+            </MockedTestProvider>
         )
 
         userEvent.click(getByTestId('form-action-toggle-webhook'))
-        expect(getByTestId('submit-action-webhook')).toBeEnabled()
+        assertAriaEnabled(getByTestId('submit-action-webhook'))
 
         userEvent.clear(getByTestId('webhook-url'))
-        expect(getByTestId('submit-action-webhook')).toBeDisabled()
+        assertAriaDisabled(getByTestId('submit-action-webhook'))
 
         userEvent.type(getByTestId('webhook-url'), 'https://example2.com')
-        expect(getByTestId('submit-action-webhook')).toBeEnabled()
+        assertAriaEnabled(getByTestId('submit-action-webhook'))
 
         userEvent.click(getByTestId('submit-action-webhook'))
 
@@ -75,18 +90,20 @@ describe('WebhookAction', () => {
 
     test('open and delete', () => {
         const setActionSpy = sinon.spy()
-        const { getByTestId } = render(
-            <WebhookAction
-                {...props}
-                action={{
-                    __typename: 'MonitorWebhook',
-                    enabled: true,
-                    includeResults: false,
-                    id: '2',
-                    url: 'https://example.com',
-                }}
-                setAction={setActionSpy}
-            />
+        const { getByTestId } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <WebhookAction
+                    {...props}
+                    action={{
+                        __typename: 'MonitorWebhook',
+                        enabled: true,
+                        includeResults: false,
+                        id: '2',
+                        url: 'https://example.com',
+                    }}
+                    setAction={setActionSpy}
+                />
+            </MockedTestProvider>
         )
 
         userEvent.click(getByTestId('form-action-toggle-webhook'))
@@ -97,18 +114,20 @@ describe('WebhookAction', () => {
 
     test('enable and disable', () => {
         const setActionSpy = sinon.spy()
-        const { getByTestId } = render(
-            <WebhookAction
-                {...props}
-                action={{
-                    __typename: 'MonitorWebhook',
-                    enabled: false,
-                    includeResults: false,
-                    id: '5',
-                    url: 'https://example.com',
-                }}
-                setAction={setActionSpy}
-            />
+        const { getByTestId } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <WebhookAction
+                    {...props}
+                    action={{
+                        __typename: 'MonitorWebhook',
+                        enabled: false,
+                        includeResults: false,
+                        id: '5',
+                        url: 'https://example.com',
+                    }}
+                    setAction={setActionSpy}
+                />
+            </MockedTestProvider>
         )
 
         expect(getByTestId('enable-action-toggle-collapsed-webhook')).not.toBeChecked()
@@ -133,6 +152,143 @@ describe('WebhookAction', () => {
             includeResults: false,
             id: '5',
             url: 'https://example.com',
+        })
+    })
+
+    test('open, edit, cancel, open again', () => {
+        const setActionSpy = sinon.spy()
+        const { getByTestId } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <WebhookAction
+                    {...props}
+                    action={{
+                        __typename: 'MonitorWebhook',
+                        enabled: true,
+                        includeResults: false,
+                        id: '5',
+                        url: 'https://example.com',
+                    }}
+                    setAction={setActionSpy}
+                />
+            </MockedTestProvider>
+        )
+
+        userEvent.click(getByTestId('form-action-toggle-webhook'))
+
+        expect(getByTestId('enable-action-toggle-expanded-webhook')).toBeChecked()
+        userEvent.click(getByTestId('enable-action-toggle-expanded-webhook'))
+        expect(getByTestId('enable-action-toggle-expanded-webhook')).not.toBeChecked()
+
+        userEvent.type(getByTestId('webhook-url'), 'https://example2.com')
+
+        userEvent.click(getByTestId('cancel-action-webhook'))
+
+        userEvent.click(getByTestId('form-action-toggle-webhook'))
+        expect(getByTestId('webhook-url')).toHaveValue('https://example.com')
+        expect(getByTestId('enable-action-toggle-expanded-webhook')).toBeChecked()
+
+        sinon.assert.notCalled(setActionSpy)
+    })
+
+    describe('Send test message', () => {
+        const mockAction: MonitorAction = {
+            __typename: 'MonitorWebhook',
+            enabled: false,
+            includeResults: false,
+            id: '5',
+            url: 'https://example.com',
+        }
+
+        const mockedVariables: SendTestWebhookVariables = {
+            namespace: props.authenticatedUser.id,
+            description: props.monitorName,
+            webhook: {
+                enabled: true,
+                includeResults: false,
+                url: mockAction.url,
+            },
+        }
+
+        test('disabled if no webhook url set', () => {
+            const { getByTestId } = renderWithBrandedContext(
+                <MockedTestProvider>
+                    <WebhookAction {...props} />
+                </MockedTestProvider>
+            )
+
+            userEvent.click(getByTestId('form-action-toggle-webhook'))
+            assertAriaDisabled(getByTestId('send-test-webhook'))
+        })
+
+        test('disabled if no monitor name set', () => {
+            const { getByTestId } = renderWithBrandedContext(
+                <MockedTestProvider>
+                    <WebhookAction {...props} monitorName="" />
+                </MockedTestProvider>
+            )
+
+            userEvent.click(getByTestId('form-action-toggle-webhook'))
+            assertAriaDisabled(getByTestId('send-test-webhook'))
+        })
+
+        test('send test message, success', async () => {
+            const mockedResponse: MockedResponse<SendTestWebhookResult> = {
+                request: {
+                    query: SEND_TEST_WEBHOOK,
+                    variables: mockedVariables,
+                },
+                result: { data: { triggerTestWebhookAction: { alwaysNil: null } } },
+            }
+
+            const { getByTestId, queryByTestId } = renderWithBrandedContext(
+                <MockedTestProvider mocks={[mockedResponse]}>
+                    <WebhookAction {...props} action={mockAction} />
+                </MockedTestProvider>
+            )
+
+            userEvent.click(getByTestId('form-action-toggle-webhook'))
+            expect(getByTestId('send-test-webhook')).toHaveTextContent('Call webhook with test payload')
+
+            userEvent.click(getByTestId('send-test-webhook'))
+            expect(getByTestId('send-test-webhook')).toHaveTextContent('Calling webhook...')
+
+            await waitForNextApolloResponse()
+
+            expect(getByTestId('send-test-webhook')).toHaveTextContent('Test call completed!')
+            assertAriaDisabled(getByTestId('send-test-webhook'))
+
+            expect(queryByTestId('send-test-webhook')).toBeInTheDocument()
+            expect(queryByTestId('test-email-webhook')).not.toBeInTheDocument()
+        })
+
+        test('send test message, error', async () => {
+            const mockedResponse: MockedResponse<SendTestWebhookResult> = {
+                request: {
+                    query: SEND_TEST_WEBHOOK,
+                    variables: mockedVariables,
+                },
+                error: new Error('An error occurred'),
+            }
+
+            const { getByTestId, queryByTestId } = renderWithBrandedContext(
+                <MockedTestProvider mocks={[mockedResponse]}>
+                    <WebhookAction {...props} action={mockAction} />
+                </MockedTestProvider>
+            )
+
+            userEvent.click(getByTestId('form-action-toggle-webhook'))
+            expect(getByTestId('send-test-webhook')).toHaveTextContent('Call webhook with test payload')
+
+            userEvent.click(getByTestId('send-test-webhook'))
+
+            await waitForNextApolloResponse()
+
+            expect(getByTestId('send-test-webhook')).toHaveTextContent('Call webhook with test payload')
+
+            assertAriaEnabled(getByTestId('send-test-webhook'))
+
+            expect(queryByTestId('send-test-webhook-again')).not.toBeInTheDocument()
+            expect(queryByTestId('test-webhook-error')).toBeInTheDocument()
         })
     })
 })

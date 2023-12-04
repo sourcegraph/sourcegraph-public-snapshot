@@ -1,15 +1,14 @@
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 
-import * as GQL from '../schema'
-import { Settings, SettingsCascadeOrError } from '../settings/settings'
+import type { Settings, SettingsCascadeOrError } from '../settings/settings'
 
-import { ExtensionManifest, parseExtensionManifestOrError } from './extensionManifest'
+import type { ExtensionManifest } from './extensionManifest'
 
 /**
  * The default fields in the {@link ConfiguredExtension} manifest (i.e., the default value of the
  * `K` type parameter).
  */
-export const CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS = ['contributes', 'activationEvents', 'url'] as const
+const CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS = ['contributes', 'activationEvents', 'url'] as const
 export type ConfiguredExtensionManifestDefaultFields = typeof CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS[number]
 
 /**
@@ -28,45 +27,6 @@ export interface ConfiguredExtension<K extends keyof ExtensionManifest = Configu
 
     /** The parsed extension manifest, null if there is none, or a parse error. */
     readonly manifest: Pick<ExtensionManifest, K> | null | ErrorLike
-}
-
-/**
- * Describes a configured extension with an optional associated registry extension. Prefer using
- * {@link ConfiguredExtension} when it is not necessary to access the registry extension's metadata.
- *
- * @template X the registry extension type
- */
-export interface ConfiguredRegistryExtension<
-    X extends Pick<GQL.IRegistryExtension, 'id' | 'url' | 'viewerCanAdminister'> = Pick<
-        GQL.IRegistryExtension,
-        'id' | 'url' | 'viewerCanAdminister'
-    >
-> extends ConfiguredExtension<keyof ExtensionManifest> {
-    /** The extension's metadata on the registry, if this is a registry extension. */
-    readonly registryExtension?: X
-
-    /** The raw extension manifest (JSON), or null if there is none. */
-    readonly rawManifest: string | null
-}
-
-type MinimalRegistryExtension = Pick<GQL.IRegistryExtension, 'extensionID' | 'id' | 'url' | 'viewerCanAdminister'> & {
-    manifest: { raw: string } | null
-}
-
-/**
- * Converts to a {@link ConfiguredRegistryExtension} value.
- *
- * @template X the extension type
- */
-export function toConfiguredRegistryExtension<X extends MinimalRegistryExtension>(
-    extension: X
-): ConfiguredRegistryExtension<X> {
-    return {
-        id: extension.extensionID,
-        manifest: extension.manifest ? parseExtensionManifestOrError(extension.manifest.raw) : null,
-        rawManifest: extension?.manifest?.raw || null,
-        registryExtension: extension,
-    }
 }
 
 /** Reports whether the given extension is enabled in the settings. */
@@ -128,9 +88,12 @@ export function extensionIDsFromSettings(settings: SettingsCascadeOrError): stri
  *
  * @param extensionID The extension ID (string)
  */
-export function splitExtensionID(
-    extensionID: string
-): { publisher: string; name: string; host?: string; isSourcegraphExtension?: boolean } {
+export function splitExtensionID(extensionID: string): {
+    publisher: string
+    name: string
+    host?: string
+    isSourcegraphExtension?: boolean
+} {
     const parts = extensionID.split('/')
     if (parts.length === 3) {
         return {

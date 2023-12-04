@@ -74,6 +74,11 @@ const (
 	// RepositoryMissing is when we could not search a repository because it
 	// is not cloned and we failed to find it on the remote code host.
 	RepositoryMissing SkippedReason = "repository-missing"
+	// BackendMissing is when a backend was missing. This means we are unsure
+	// if we found all results, since we do not know which results may have
+	// come back from the backend. This should be a rare event. For example it
+	// will happen when rolling out a new version of Zoekt.
+	BackendMissing SkippedReason = "backend-missing"
 	// ExcludedFork is when we did not search a repository because it is a
 	// fork.
 	ExcludedFork SkippedReason = "repository-fork"

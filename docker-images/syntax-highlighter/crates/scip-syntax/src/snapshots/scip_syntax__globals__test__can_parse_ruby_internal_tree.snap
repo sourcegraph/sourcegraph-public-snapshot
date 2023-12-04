@@ -1,0 +1,98 @@
+---
+source: crates/scip-syntax/src/globals.rs
+expression: dumped
+---
+  if true
+    a = 1
+  elsif false
+    b = 2
+  else
+    c = 3
+  end
+  
+  (1..5).each do |counter|
+    z = 3
+  end
+  
+  for counter in 1..5
+    y = 10
+  end
+  
+  counter = 1
+//^^^^^^^ definition scip-ctags counter.
+  while counter <= 5 do
+    no = true
+    counter += 1
+  end
+  
+  begin
+    raise NoMemoryError, 'Z.'
+  rescue NoMemoryError => exception_variable
+    puts 'A', exception_variable
+  rescue RuntimeError => other_exception_variable
+    puts 'K'
+  else
+    puts 'L'
+  ensure
+    puts 'O'
+  end
+  
+  grade = 42
+//^^^^^ definition scip-ctags grade.
+  case grade
+  when 0.100
+    shouldntgetcaptured = true
+    puts 'you got a grade i guess'
+  end
+  
+  module MyModule
+//       ^^^^^^^^ definition scip-ctags MyModule/
+    def self.abc(base)
+//           ^^^ definition scip-ctags MyModule/abc().
+    end
+  
+    class MyClass
+//        ^^^^^^^ definition scip-ctags MyModule/MyClass#
+      def yay
+//        ^^^ definition scip-ctags MyModule/MyClass#yay().
+      end
+  
+      def self.woo(base)
+//             ^^^ definition scip-ctags MyModule/MyClass#woo().
+      end
+    end
+  end
+  
+  class Foo
+//      ^^^ definition scip-ctags Foo#
+    attr_accessor :bar
+//                ^^^^ definition scip-ctags Foo#`bar=`().
+//                ^^^^ definition scip-ctags Foo#bar().
+    attr_reader :baz
+//              ^^^^ definition scip-ctags Foo#baz().
+    attr_writer :qux
+//              ^^^^ definition scip-ctags Foo#`qux=`().
+  end
+  
+  class Aliased
+//      ^^^^^^^ definition scip-ctags Aliased#
+    def bar
+//      ^^^ definition scip-ctags Aliased#bar().
+    end
+  
+    alias_method :baz, :bar
+//               ^^^^ definition scip-ctags Aliased#baz().
+  end
+  
+  class Parental
+//      ^^^^^^^^ definition scip-ctags Parental#
+      def parental_func()
+//        ^^^^^^^^^^^^^ definition scip-ctags Parental#parental_func().
+      end
+  end
+  
+  class Composed
+//      ^^^^^^^^ definition scip-ctags Composed#
+      include Parental
+  end
+

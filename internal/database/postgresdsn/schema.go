@@ -9,7 +9,7 @@ import (
 )
 
 func DSNsBySchema(schemaNames []string) (map[string]string, error) {
-	dsns := RawDSNsBySchema(schemaNames)
+	dsns := RawDSNsBySchema(schemaNames, os.Getenv)
 
 	// We set this envvar in development to disable the following check
 	if os.Getenv("CODEINTEL_PG_ALLOW_SINGLE_DB") == "" {
@@ -26,15 +26,15 @@ func DSNsBySchema(schemaNames []string) (map[string]string, error) {
 	return dsns, nil
 }
 
-func RawDSNsBySchema(schemaNames []string) map[string]string {
+func RawDSNsBySchema(schemaNames []string, getenv func(string) string) map[string]string {
 	username := ""
-	if user, err := user.Current(); err == nil {
-		username = user.Username
+	if currentUser, err := user.Current(); err == nil {
+		username = currentUser.Username
 	}
 
 	dsns := make(map[string]string, len(schemaNames))
 	for _, schemaName := range schemaNames {
-		dsns[schemaName] = New(schemaName, username, os.Getenv)
+		dsns[schemaName] = New(schemaName, username, getenv)
 	}
 
 	return dsns
@@ -58,7 +58,11 @@ func comparePostgresDSNs(name1, name2, dsn1, dsn2 string) error {
 	}
 
 	if url1.Host == url2.Host && url1.Path == url2.Path {
-		return errors.Errorf("%s and %s databases must be distinct: %s and %s seem to refer to the same database", name1, name2, dsn1, dsn2)
+		return errors.Errorf("databases %s and %s must be distinct, but both target %s", name1, name2, &url.URL{
+			Scheme: "postgres",
+			Host:   url1.Host,
+			Path:   url1.Path,
+		})
 	}
 
 	return nil

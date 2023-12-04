@@ -3,78 +3,72 @@
     "**/node_modules": true,
     "**/bower_components": true,
     "dist": true,
-    "ui/assets": true,
+    "ui/assets/": true,
+    "ui/assets/*.go": false,
     "client/browser/build": true,
-    "**/coverage": true,
     "**/out": true,
     "**/__fixtures__/**": true,
     "**/.cache": true,
     "**/.nyc_output": true,
     "doc/_resources/assets": true,
-    "**/.eslintcache": true,
+    "**/.eslintcache": true
   },
   "files.exclude": {
-    "**/*.scss.d.ts": true,
+    "**/*.scss.d.ts": true
   },
   "files.associations": {
     "**/dev/critical-config.json": "jsonc",
     "**/dev/site-config.json": "jsonc",
-    "**/.mocharc.json": "jsonc",
+    "**/.mocharc.json": "jsonc"
   },
   "json.schemas": [
     {
       "fileMatch": ["dev/critical-config.json"],
-      "url": "/schema/critical/critical.schema.json",
+      "url": "/schema/critical/critical.schema.json"
     },
     {
       "fileMatch": ["dev/site-config.json"],
-      "url": "/schema/site.schema.json",
-    },
+      "url": "/schema/site.schema.json"
+    }
   ],
   "editor.formatOnSave": true,
   "go.useLanguageServer": true,
   "gopls": {
-    "local": "github.com/sourcegraph/sourcegraph",
+    "build.allowImplicitNetworkAccess": true,
+    "local": "github.com/sourcegraph/sourcegraph"
   },
-  "jest.pathToJest": "yarn -s test",
-  "jest.showCoverageOnLoad": false,
-  "jest.autoEnable": false, // until we confirm people like it
-  "gulp.autoDetect": "off",
-  "npm.packageManager": "yarn",
+  "npm.packageManager": "pnpm",
   "npm.runSilent": true,
   "typescript.preferences.quoteStyle": "single",
   "typescript.preferences.importModuleSpecifier": "relative",
   "typescript.format.semicolons": "remove",
   "typescript.tsc.autoDetect": "off",
   "typescript.tsdk": "node_modules/typescript/lib",
-  "eslint.packageManager": "yarn",
+  "eslint.packageManager": "pnpm",
   "eslint.lintTask.enable": false,
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true,
-  },
+  "editor.codeActionsOnSave": {},
   "eslint.codeActionsOnSave.mode": "problems",
   "eslint.options": { "cache": true },
-  "eslint.workingDirectories": [
-    "./dev/release",
-    "./client/web",
-    "./client/browser",
-    "./client/build-config",
-    "./client/shared",
-    "./client/search",
-    "./client/search-ui",
-    "./client/vscode",
-    "./client/http-client",
-    "./client/branded",
-    "./client/wildcard",
-    "./client/storybook",
-    "./client/extension-api-types",
-    "./client/extension-api",
-    "./client/template-parser",
-    "./client/codeintellify",
-  ],
+  "eslint.workingDirectories": ["./dev/release", "./client/*"],
   "go.lintTool": "golangci-lint",
   "shellformat.flag": "-i 2 -ci",
   "vscode-graphql.useSchemaFileDefinitions": true,
-  "jest.jestCommandLine": "yarn -s test",
+  "nixEnvSelector.nixFile": "${workspaceRoot}/shell.nix",
+  "nix.enableLanguageServer": true,
+  "[nix]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2
+  },
+  "files.watcherExclude": {
+    "**/target": true
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "cody.codebase": "github.com/sourcegraph/sourcegraph",
+  "rust-analyzer.linkedProjects": ["docker-images/syntax-highlighter/Cargo.toml", "src-tauri/Cargo.toml"]
 }

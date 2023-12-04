@@ -1,8 +1,6 @@
 package conf
 
 import (
-	"encoding/json"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -10,13 +8,9 @@ import (
 
 // parseConfigData parses the provided config string into the given cfg struct
 // pointer.
-func parseConfigData(data string, cfg interface{}) error {
+func parseConfigData(data string, cfg any) error {
 	if data != "" {
-		data, err := jsonc.Parse(data)
-		if err != nil {
-			return err
-		}
-		if err := json.Unmarshal(data, cfg); err != nil {
+		if err := jsonc.Unmarshal(data, cfg); err != nil {
 			return err
 		}
 	}
@@ -47,24 +41,15 @@ func ParseConfig(data conftypes.RawUnified) (*Unified, error) {
 // Experimental features are special in that they are denoted individually
 // via e.g. "experimentalFeatures::myFeatureFlag".
 var requireRestart = []string{
-	"auth.accessTokens",
-	"auth.sessionExpiry",
-	"git.cloneURLToRepositoryName",
-	"searchScopes",
-	"extensions",
-	"disablePublicRepoRedirects",
-	"auth.userOrgMap",
 	"auth.providers",
-	"externalURL",
-	"update.channel",
 	"insights.query.worker.concurrency",
 	"insights.commit.indexer.interval",
-	"codeIntelAutoIndexing.enabled",
+	"permissions.syncUsersMaxConcurrency",
 }
 
-// NeedRestartToApply determines if a restart is needed to apply the changes
+// needRestartToApply determines if a restart is needed to apply the changes
 // between the two configurations.
-func NeedRestartToApply(before, after *Unified) bool {
+func needRestartToApply(before, after *Unified) bool {
 	// Check every option that changed to determine whether or not a server
 	// restart is required.
 	for option := range diff(before, after) {

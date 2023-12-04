@@ -1,22 +1,20 @@
 package backend
 
 import (
-	"container/heap"
 	"context"
 	"fmt"
-	"math"
 	"net"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
-	"github.com/google/zoekt/query"
-	"github.com/google/zoekt/stream"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegraph/zoekt/query"
+	"github.com/sourcegraph/zoekt/stream"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -24,21 +22,10 @@ import (
 )
 
 var (
-	metricReorderQueueSize = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_zoekt_reorder_queue_size",
-		Help:    "Maximum size of result reordering buffer for a request.",
-		Buckets: prometheus.ExponentialBuckets(4, 2, 10),
-	}, nil)
 	metricIgnoredError = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_zoekt_ignored_error_total",
 		Help: "Total number of errors ignored from Zoekt.",
 	}, []string{"reason"})
-	// temporary metric so we can check if we are encountering non-empty
-	// queues once streaming is complete.
-	metricFinalQueueSize = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_zoekt_final_queue_size",
-		Help: "the size of the results queue once streaming is done.",
-	})
 )
 
 // HorizontalSearcher is a Streamer which aggregates searches over
@@ -55,35 +42,30 @@ type HorizontalSearcher struct {
 	clients map[string]zoekt.Streamer // addr -> client
 }
 
-// StreamSearch does a search which merges the stream from every endpoint in Map, reordering results to produce a sorted stream.
 func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoekt.Sender) error {
 	clients, err := s.searchers()
 	if err != nil {
 		return err
 	}
 
-	siteConfig := conf.Get().SiteConfiguration
-	maxQueueDepth := 24
-	if siteConfig.ExperimentalFeatures != nil && siteConfig.ExperimentalFeatures.Ranking != nil && siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize != nil {
-		maxQueueDepth = *siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
-	}
-
 	endpoints := make([]string, 0, len(clients))
 	for endpoint := range clients {
-		endpoints = append(endpoints, endpoint)
+		endpoints = append(endpoints, endpoint) //nolint:staticcheck
 	}
 
-	// resultQueue is used to re-order results by priority.
-	resultQueue := newResultQueue(maxQueueDepth, endpoints)
+	flushSender := newFlushCollectSender(opts, endpoints, conf.RankingMaxQueueSizeBytes(), streamer)
+	defer flushSender.Flush()
 
-	// During rebalancing a repository can appear on more than one replica.
+	// During re-balancing a repository can appear on more than one replica.
 	var mu sync.Mutex
 	dedupper := dedupper{}
 
-	// GobCache exists so we only pay the cost of marshalling a query once
+	// GobCache exists, so we only pay the cost of marshalling a query once
 	// when we aggregate it out over all the replicas. Zoekt's RPC layers
 	// unwrap this before passing it on to the Zoekt evaluation layers.
-	q = &query.GobCache{Q: q}
+	if !conf.IsGRPCEnabled(ctx) {
+		q = &query.GobCache{Q: q}
+	}
 
 	ch := make(chan error, len(clients))
 	for endpoint, c := range clients {
@@ -95,192 +77,36 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 				}
 
 				mu.Lock()
-				defer mu.Unlock()
-
 				sr.Files = dedupper.Dedup(endpoint, sr.Files)
+				mu.Unlock()
 
-				resultQueue.Enqueue(endpoint, sr)
-				resultQueue.FlushReady(streamer)
+				flushSender.Send(endpoint, sr)
 			}))
-			mu.Lock()
-			resultQueue.Done(endpoint)
-			mu.Unlock()
 
-			if canIgnoreError(ctx, err) {
+			if isZoektRolloutError(ctx, err) {
+				flushSender.Send(endpoint, crashEvent())
 				err = nil
 			}
 
+			flushSender.SendDone(endpoint)
 			ch <- err
 		}(endpoint, c)
 	}
 
 	var errs errors.MultiError
 	for i := 0; i < cap(ch); i++ {
-		errors.Append(&errs, <-ch)
+		errs = errors.Append(errs, <-ch)
 	}
 
-	if err := errs.ErrorOrNil(); err != nil {
-		return err
-	}
-
-	resultQueue.FlushAll(streamer)
-
-	return nil
+	return errs
 }
 
-// The results from each endpoint are mostly sorted by priority, with bounded
-// errors described by SearchResult.Stats.MaxPendingPriority. Each backend
-// will dispatch searches in parallel against its shards in priority order,
-// but the actual return order of those searches is not constrained.
-//
-// Instead, the backend will report the maximum priority shard that it still
-// has pending along with the results that it returns, so we accumulate
-// results in a heap and only pop when the top item has a priority greater
-// than the maximum of all endpoints' pending results.
-type resultQueue struct {
-	// maxQueueDepth will flush any items in the queue such that we never
-	// exceed maxQueueDepth. This is used to prevent aggregating too many
-	// results in memory.
-	maxQueueDepth int
+type queueSearchResult struct {
+	*zoekt.SearchResult
 
-	queue           priorityQueue
-	metricMaxLength int // for a prometheus metric
-
-	endpointMaxPendingPriority map[string]float64
-
-	// We aggregate statistics independently of matches. Everytime we
-	// encounter matches to send we send the current aggregated stats then
-	// reset them. This is because in a lot of cases we only get stats and no
-	// matches. By aggregating we avoid spamming the sender and the
-	// resultQueue with pure stats events.
-	stats zoekt.Stats
-}
-
-func newResultQueue(maxQueueDepth int, endpoints []string) *resultQueue {
-	// To start, initialize every endpoint's maxPending to +inf since we don't yet know the bounds.
-	endpointMaxPendingPriority := map[string]float64{}
-	for _, endpoint := range endpoints {
-		endpointMaxPendingPriority[endpoint] = math.Inf(1)
-	}
-
-	return &resultQueue{
-		maxQueueDepth:              maxQueueDepth,
-		endpointMaxPendingPriority: endpointMaxPendingPriority,
-	}
-}
-
-// Enqueue adds the result to the queue and updates the max pending priority
-// for endpoint based on sr.
-func (q *resultQueue) Enqueue(endpoint string, sr *zoekt.SearchResult) {
-	// Update aggregate stats
-	q.stats.Add(sr.Stats)
-	sr.Stats = zoekt.Stats{}
-
-	// Note the endpoint's updated MaxPendingPriority
-	q.endpointMaxPendingPriority[endpoint] = sr.Progress.MaxPendingPriority
-
-	// Don't add empty results to the heap.
-	if len(sr.Files) != 0 {
-		q.queue.add(sr)
-	}
-}
-
-// Done must be called once per endpoint once it has finished streaming.
-func (q *resultQueue) Done(endpoint string) {
-	// Clear pending priority because the endpoint is done sending results--
-	// otherwise, an endpoint with 0 results could delay results returning,
-	// because it would never set its maxPendingPriority to 0 in the
-	// StreamSearch callback.
-	delete(q.endpointMaxPendingPriority, endpoint)
-}
-
-// FlushReady will send results which are greater than the
-// maxPendingPriority. Note: it will also send results if we exceed
-// maxQueueDepth.
-func (q *resultQueue) FlushReady(streamer zoekt.Sender) {
-	// we can send any results such that priority > maxPending. Need to
-	// calculate maxPending.
-	maxPending := math.Inf(-1)
-	for _, pri := range q.endpointMaxPendingPriority {
-		if pri > maxPending {
-			maxPending = pri
-		}
-	}
-
-	if q.queue.Len() > q.metricMaxLength {
-		q.metricMaxLength = q.queue.Len()
-	}
-
-	// Pop and send search results where it is guaranteed that no
-	// higher-priority result is possible, because there are no pending shards
-	// with a greater priority.
-	for (q.maxQueueDepth >= 0 && q.queue.Len() > q.maxQueueDepth) || q.queue.isTopAbove(maxPending) {
-		// We need to use the current aggregate stats then clear them out.
-		sr := heap.Pop(&q.queue).(*zoekt.SearchResult)
-		sr.Stats = q.stats
-		q.stats = zoekt.Stats{}
-		streamer.Send(sr)
-	}
-}
-
-// FlushAll will send any remaining results that are in the queue and any
-// final statistics. This should only be called once all endpoints are done.
-func (q *resultQueue) FlushAll(streamer zoekt.Sender) {
-	metricReorderQueueSize.WithLabelValues().Observe(float64(q.metricMaxLength))
-	metricFinalQueueSize.Add(float64(q.queue.Len()))
-	for q.queue.Len() > 0 {
-		sr := heap.Pop(&q.queue).(*zoekt.SearchResult)
-		sr.Stats = q.stats
-		q.stats = zoekt.Stats{}
-		streamer.Send(sr)
-	}
-
-	// We may have had no matches but had stats. Send the final stats if there
-	// is any.
-	if !q.stats.Zero() {
-		streamer.Send(&zoekt.SearchResult{
-			Stats: q.stats,
-		})
-		q.stats = zoekt.Stats{}
-	}
-}
-
-// priorityQueue modified from https://golang.org/pkg/container/heap/
-// A priorityQueue implements heap.Interface and holds Items.
-// All Exported methods are part of the container.heap interface, and
-// unexported methods are local helpers.
-type priorityQueue []*zoekt.SearchResult
-
-func (pq *priorityQueue) add(sr *zoekt.SearchResult) {
-	heap.Push(pq, sr)
-}
-
-func (pq *priorityQueue) isTopAbove(limit float64) bool {
-	return len(*pq) > 0 && (*pq)[0].Progress.Priority >= limit
-}
-
-func (pq priorityQueue) Len() int { return len(pq) }
-
-func (pq priorityQueue) Less(i, j int) bool {
-	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
-	return pq[i].Progress.Priority > pq[j].Progress.Priority
-}
-
-func (pq priorityQueue) Swap(i, j int) {
-	pq[i], pq[j] = pq[j], pq[i]
-}
-
-func (pq *priorityQueue) Push(x interface{}) {
-	*pq = append(*pq, x.(*zoekt.SearchResult))
-}
-
-func (pq *priorityQueue) Pop() interface{} {
-	old := *pq
-	n := len(old)
-	item := old[n-1]
-	old[n-1] = nil // avoid memory leak
-	*pq = old[0 : n-1]
-	return item
+	// optimization: It can be expensive to calculate sizeBytes, hence we cache it
+	// in the queue.
+	sizeBytes uint64
 }
 
 // Search aggregates search over every endpoint in Map.
@@ -341,12 +167,13 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 	// does deduplication.
 
 	aggregate := zoekt.RepoList{
-		Minimal: make(map[uint32]*zoekt.MinimalRepoListEntry),
+		ReposMap: make(zoekt.ReposMap),
 	}
 	for range clients {
 		r := <-results
 		if r.err != nil {
-			if canIgnoreError(ctx, r.err) {
+			if isZoektRolloutError(ctx, r.err) {
+				aggregate.Crashes++
 				continue
 			}
 
@@ -357,10 +184,16 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 		aggregate.Crashes += r.rl.Crashes
 		aggregate.Stats.Add(&r.rl.Stats)
 
-		for k, v := range r.rl.Minimal {
-			aggregate.Minimal[k] = v
+		for k, v := range r.rl.ReposMap {
+			aggregate.ReposMap[k] = v
 		}
 	}
+
+	// Only one of these fields is populated and in all cases the size of that
+	// field is the number of Repos. We may overcount in the case of asking
+	// for Repos since we don't deduplicate, but this should be very rare
+	// (only happens in the case of rebalancing)
+	aggregate.Stats.Repos = len(aggregate.Repos) + len(aggregate.ReposMap)
 
 	return &aggregate, nil
 }
@@ -512,7 +345,7 @@ func (repoEndpoint dedupper) Dedup(endpoint string, fms []zoekt.FileMatch) []zoe
 	return dedup
 }
 
-// canIgnoreError returns true if the error we received from zoekt can be
+// isZoektRolloutError returns true if the error we received from zoekt can be
 // ignored.
 //
 // Note: ctx is passed in so we can log to the trace when we ignore an
@@ -522,27 +355,23 @@ func (repoEndpoint dedupper) Dedup(endpoint string, fms []zoekt.FileMatch) []zoe
 // during rollouts of Zoekt, we may still have endpoints of zoekt which are
 // not available in our endpoint map. In particular, this happens when using
 // Kubernetes and the (default) stateful set watcher.
-func canIgnoreError(ctx context.Context, err error) bool {
-	reason := canIgnoreErrorReason(err)
+func isZoektRolloutError(ctx context.Context, err error) bool {
+	reason := zoektRolloutReason(err)
 	if reason == "" {
 		return false
 	}
 
 	metricIgnoredError.WithLabelValues(reason).Inc()
-	if span := trace.TraceFromContext(ctx); span != nil {
-		span.LogFields(
-			otlog.String("ignored.reason", reason),
-			otlog.String("ignored.error", err.Error()))
-	}
+	trace.FromContext(ctx).AddEvent("rollout",
+		attribute.String("rollout.reason", reason),
+		attribute.String("rollout.error", err.Error()))
 
 	return true
 }
 
-func canIgnoreErrorReason(err error) string {
+func zoektRolloutReason(err error) string {
 	// Please only add very specific error checks here. An error can be added
 	// here if we see it correlated with rollouts on sourcegraph.com.
-	// Additionally you should be able to justify why it is related to races
-	// between service discovery and us trying to dial.
 
 	var dnsErr *net.DNSError
 	if errors.As(err, &dnsErr) && dnsErr.IsNotFound {
@@ -550,7 +379,11 @@ func canIgnoreErrorReason(err error) string {
 	}
 
 	var opErr *net.OpError
-	if errors.As(err, &opErr) && opErr.Op == "dial" {
+	if !errors.As(err, &opErr) {
+		return ""
+	}
+
+	if opErr.Op == "dial" {
 		if opErr.Timeout() {
 			return "dial-timeout"
 		}
@@ -563,5 +396,22 @@ func canIgnoreErrorReason(err error) string {
 		}
 	}
 
+	// Zoekt does not have a proper graceful shutdown for net/rpc since those
+	// connections are multi-plexed over a single HTTP connection. This means
+	// we often run into this during rollout for List calls (Search calls use
+	// streaming RPC).
+	if opErr.Op == "read" {
+		return "read-failed"
+	}
+
 	return ""
+}
+
+// crashEvent indicates a shard or backend failed to be searched due to a
+// panic or being unreachable. The most common reason for this is during zoekt
+// rollout.
+func crashEvent() *zoekt.SearchResult {
+	return &zoekt.SearchResult{Stats: zoekt.Stats{
+		Crashes: 1,
+	}}
 }

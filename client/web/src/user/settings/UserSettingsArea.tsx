@@ -1,46 +1,42 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Route, Routes } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
-import { HeroPage } from '../../components/HeroPage'
-import {
+import { RouteError } from '../../components/ErrorBoundary'
+import { HeroPage, NotFoundPage } from '../../components/HeroPage'
+import type {
     UserAreaUserFields,
     UserSettingsAreaUserFields,
     UserSettingsAreaUserProfileResult,
     UserSettingsAreaUserProfileVariables,
 } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
-import { RouteDescriptor } from '../../util/contributions'
-import { UserAreaRouteContext } from '../area/UserArea'
+import type { RouteV6Descriptor } from '../../util/contributions'
+import type { UserAreaRouteContext } from '../area/UserArea'
 
+import { isAccessTokenCallbackPage } from './accessTokens/UserSettingsCreateAccessTokenCallbackPage'
 import { EditUserProfilePageGQLFragment } from './profile/UserSettingsProfilePage'
+import { UserSettingsSidebar, type UserSettingsSidebarItems } from './UserSettingsSidebar'
+
 import styles from './UserSettingsArea.module.scss'
-import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSidebar'
 
-const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+export interface UserSettingsAreaRoute extends RouteV6Descriptor<UserSettingsAreaRouteContext> {}
 
-export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaRouteContext> {}
-
-export interface UserSettingsAreaProps
-    extends UserAreaRouteContext,
-        RouteComponentProps<{}>,
-        ThemeProps,
-        TelemetryProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+export interface UserSettingsAreaProps extends UserAreaRouteContext, TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
     sideBarItems: UserSettingsSidebarItems
     routes: readonly UserSettingsAreaRoute[]
     user: UserAreaUserFields
+    isSourcegraphDotCom: boolean
 }
 
 export interface UserSettingsAreaRouteContext extends UserSettingsAreaProps {
@@ -60,9 +56,10 @@ const UserSettingsAreaGQLFragment = gql`
         siteAdmin @include(if: $siteAdmin)
         builtinAuth
         createdAt
-        emails @include(if: $siteAdmin) {
+        emails @skip(if: $isSourcegraphDotCom) {
             email
             verified
+            isPrimary
         }
         organizations {
             nodes {
@@ -71,14 +68,19 @@ const UserSettingsAreaGQLFragment = gql`
                 name
             }
         }
-        tags @include(if: $siteAdmin)
+        roles @skip(if: $isSourcegraphDotCom) {
+            nodes {
+                name
+                system
+            }
+        }
         ...EditUserProfilePage
     }
     ${EditUserProfilePageGQLFragment}
 `
 
 const USER_SETTINGS_AREA_USER_PROFILE = gql`
-    query UserSettingsAreaUserProfile($userID: ID!, $siteAdmin: Boolean!) {
+    query UserSettingsAreaUserProfile($userID: ID!, $siteAdmin: Boolean!, $isSourcegraphDotCom: Boolean!) {
         node(id: $userID) {
             __typename
             ...UserSettingsAreaUserFields
@@ -90,7 +92,9 @@ const USER_SETTINGS_AREA_USER_PROFILE = gql`
 /**
  * Renders a layout of a sidebar and a content area to display user settings.
  */
-export const AuthenticatedUserSettingsArea: React.FunctionComponent<UserSettingsAreaProps> = props => {
+export const AuthenticatedUserSettingsArea: React.FunctionComponent<
+    React.PropsWithChildren<UserSettingsAreaProps>
+> = props => {
     const { authenticatedUser, sideBarItems } = props
 
     const { data, error, loading, previousData } = useQuery<
@@ -100,6 +104,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<UserSettings
         variables: {
             userID: props.user.id,
             siteAdmin: authenticatedUser.siteAdmin,
+            isSourcegraphDotCom: props.isSourcegraphDotCom,
         },
     })
 
@@ -117,7 +122,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<UserSettings
     }
 
     if (!user) {
-        return <NotFoundPage />
+        return <NotFoundPage pageType="user" />
     }
 
     if (authenticatedUser.id !== user.id && !user.viewerCanAdminister) {
@@ -137,7 +142,32 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<UserSettings
 
     const siteAdminViewingOtherUser = user.id !== authenticatedUser.id
 
-    return (
+    // The callback page for creating a personal access token is a full-screen page,
+    // so we don't want to render the sidebar on it.
+    const isFullScreenPage = isAccessTokenCallbackPage()
+
+    const routeSuspense = (
+        <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
+            <Routes>
+                {props.routes.map(
+                    ({ path, render, condition = () => true }) =>
+                        condition(context) && (
+                            <Route
+                                errorElement={<RouteError />}
+                                element={render(context)}
+                                path={path}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            />
+                        )
+                )}
+                <Route path="*" element={<NotFoundPage pageType="settings" />} />
+            </Routes>
+        </React.Suspense>
+    )
+
+    return isFullScreenPage ? (
+        routeSuspense
+    ) : (
         <>
             {/* Indicate when the site admin is viewing another user's account */}
             {siteAdminViewingOtherUser && (
@@ -145,34 +175,13 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<UserSettings
                     Viewing account for <strong>{user.username}</strong>
                 </SiteAdminAlert>
             )}
-            <div className="d-flex">
+            <div className="d-flex flex-column flex-sm-row">
                 <UserSettingsSidebar
                     items={sideBarItems}
                     {...context}
-                    className={classNames('flex-0 mr-3', styles.userSettingsSidebar)}
+                    className={classNames('flex-0 mr-3 mb-4', styles.userSettingsSidebar)}
                 />
-                <div className="flex-1">
-                    <ErrorBoundary location={props.location}>
-                        <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
-                            <Switch>
-                                {props.routes.map(
-                                    ({ path, exact, render, condition = () => true }) =>
-                                        condition(context) && (
-                                            <Route
-                                                render={routeComponentProps =>
-                                                    render({ ...context, ...routeComponentProps })
-                                                }
-                                                path={props.match.url + path}
-                                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                exact={exact}
-                                            />
-                                        )
-                                )}
-                                <Route component={NotFoundPage} key="hardcoded-key" />
-                            </Switch>
-                        </React.Suspense>
-                    </ErrorBoundary>
-                </div>
+                <div className="flex-1">{routeSuspense}</div>
             </div>
         </>
     )

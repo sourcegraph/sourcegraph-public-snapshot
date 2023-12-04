@@ -1,17 +1,24 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { RepoNotFoundError } from '@sourcegraph/shared/src/backend/errors'
 
 import { requestGraphQL } from '../../backend/graphql'
-import {
+import type {
     SettingsAreaRepositoryFields,
     SettingsAreaRepositoryResult,
     SettingsAreaRepositoryVariables,
 } from '../../graphql-operations'
 
 export const settingsAreaRepositoryFragment = gql`
+    fragment SettingsAreaExternalServiceFields on ExternalService {
+        id
+        kind
+        displayName
+        supportsRepoExclusion
+    }
+
     fragment SettingsAreaRepositoryFields on Repository {
         id
         name
@@ -24,6 +31,13 @@ export const settingsAreaRepositoryFragment = gql`
             cloneProgress
             cloned
             updatedAt
+            isCorrupted
+            corruptionLogs {
+                timestamp
+                reason
+            }
+            lastError
+            lastSyncOutput
             updateSchedule {
                 due
                 index
@@ -34,15 +48,27 @@ export const settingsAreaRepositoryFragment = gql`
                 index
                 total
             }
+            shard
         }
         externalServices {
             nodes {
-                id
-                kind
-                displayName
+                ...SettingsAreaExternalServiceFields
             }
         }
+        metadata {
+            key
+            value
+        }
     }
+`
+
+export const FETCH_SETTINGS_AREA_REPOSITORY_GQL = gql`
+    query SettingsAreaRepository($name: String!) {
+        repository(name: $name) {
+            ...SettingsAreaRepositoryFields
+        }
+    }
+    ${settingsAreaRepositoryFragment}
 `
 
 /**
@@ -50,14 +76,7 @@ export const settingsAreaRepositoryFragment = gql`
  */
 export function fetchSettingsAreaRepository(name: string): Observable<SettingsAreaRepositoryFields> {
     return requestGraphQL<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
-        gql`
-            query SettingsAreaRepository($name: String!) {
-                repository(name: $name) {
-                    ...SettingsAreaRepositoryFields
-                }
-            }
-            ${settingsAreaRepositoryFragment}
-        `,
+        FETCH_SETTINGS_AREA_REPOSITORY_GQL,
         { name }
     ).pipe(
         map(dataOrThrowErrors),
@@ -69,3 +88,11 @@ export function fetchSettingsAreaRepository(name: string): Observable<SettingsAr
         })
     )
 }
+
+export const EXCLUDE_REPO_FROM_EXTERNAL_SERVICES = gql`
+    mutation ExcludeRepoFromExternalServices($externalServices: [ID!]!, $repo: ID!) {
+        excludeRepoFromExternalServices(externalServices: $externalServices, repo: $repo) {
+            alwaysNil
+        }
+    }
+`

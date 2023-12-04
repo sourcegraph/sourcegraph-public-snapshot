@@ -1,0 +1,49 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "store",
+    srcs = [
+        "observability.go",
+        "scan.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/dependencies/shared",
+        "//internal/conf/reposource",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/batch",
+        "//internal/database/dbutil",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_jackc_pgconn//:pgconn",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_lib_pq//:pq",
+        "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_x_exp//slices",
+    ],
+)
+
+go_test(
+    name = "store_test",
+    timeout = "moderate",
+    srcs = ["store_test.go"],
+    embed = [":store"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/codeintel/dependencies/shared",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/observation",
+        "//internal/timeutil",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

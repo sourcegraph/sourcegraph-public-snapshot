@@ -1,0 +1,59 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"query":"\nmutation CreatePullRequestComment($input: AddCommentInput!)
+      {\n  addComment(input: $input) {\n    subject { id }\n  }\n}\n","variables":{"input":{"subjectId":"MDExOlB1bGxSZXF1ZXN0MzQ5NTIzMzE0","body":"test-comment"}}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"addComment":{"subject":{"id":"MDExOlB1bGxSZXF1ZXN0MzQ5NTIzMzE0"}}},"extensions":{"warnings":[{"type":"DEPRECATION","message":"The
+      id MDExOlB1bGxSZXF1ZXN0MzQ5NTIzMzE0 is deprecated. Update your cache to use
+      the next_global_id from the data payload.","data":{"legacy_global_id":"MDExOlB1bGxSZXF1ZXN0MzQ5NTIzMzE0","next_global_id":"PR_kwDODS5xec4U1U1y"},"link":"https://docs.github.com"}]}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 03 Feb 2023 20:24:10 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - DE87:3EC0:5B9472:BB5AA7:63DD6D69
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "132"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""

@@ -3,7 +3,6 @@ import { Observable } from 'rxjs'
 
 /**
  * Highlights a node using recursive node walking.
- *
  * @param node the node to highlight
  * @param start the current character position (starts at 0).
  * @param length the number of characters to highlight.
@@ -29,6 +28,45 @@ export function highlightNode(node: HTMLElement, start: number, length: number):
     highlightNodeHelper(node, 0, start, length)
 }
 
+/**
+ * Highlights match ranges within visibleRows, with support for highlighting match ranges that span multiple lines.
+ * @param visibleRows the visible rows of the HTML table containing the code excerpt
+ * @param startRow the row within the table where highlighting should begin
+ * @param endRow the row within the table where highlighting should end
+ * @param startRowIndex the index of startRow within visibleRows
+ * @param endRowIndex the index of endRow within visibleRows
+ * @param startCharacter the 0-based character offset from the beginning of startRow's text content where highlighting should begin
+ * @param endCharacter the 0-based character offset from the beginning of endRow's text content where highlighting should end
+ */
+export function highlightNodeMultiline(
+    visibleRows: NodeListOf<HTMLElement>,
+    startRow: HTMLElement,
+    endRow: HTMLElement,
+    startRowIndex: number,
+    endRowIndex: number,
+    startCharacter: number,
+    endCharacter: number
+): void {
+    // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
+    const startRowCode = startRow.lastChild as HTMLTableCellElement
+    const endRowCode = endRow.lastChild as HTMLTableCellElement
+
+    // Highlight a single-line match
+    if (endRowIndex === startRowIndex) {
+        return highlightNode(startRowCode, startCharacter, endCharacter - startCharacter)
+    }
+
+    // Otherwise the match is a multiline match. Highlight from the start character through to the end character.
+    highlightNode(startRowCode, startCharacter, startRowCode.textContent!.length - startCharacter)
+    for (let currRowIndex = startRowIndex + 1; currRowIndex < endRowIndex; ++currRowIndex) {
+        if (visibleRows[currRowIndex]) {
+            const currRowCode = visibleRows[currRowIndex].lastChild as HTMLTableCellElement
+            highlightNode(currRowCode, 0, currRowCode.textContent!.length)
+        }
+    }
+    highlightNode(endRowCode, 0, endCharacter)
+}
+
 interface HighlightResult {
     highlightingCompleted: boolean
     charsConsumed: number
@@ -37,7 +75,6 @@ interface HighlightResult {
 
 /**
  * Highlights a node using recursive node walking.
- *
  * @param currNode the current node being walked.
  * @param currOffset the current character position (starts at 0).
  * @param start the offset character where highlting starts.
@@ -69,14 +106,25 @@ function highlightNodeHelper(
             case Node.TEXT_NODE: {
                 const nodeText = child.textContent!
 
+                // Unpack the string to be sliced into an array of code points before doing the slice.
+                // This allows match range highlighting to continue to work when Unicode characters (such as emojis)
+                // are present in a matched line.
+                const unicodeAwareSlice = (text: string, start: number, end: number): string =>
+                    [...text].slice(start, end).join('')
+
                 // Split the text node into a range before the highlight, a range overlapping with
                 // the highlight, and a range after the highlight. These ranges can be zero-length
-                const preHighlightedRange = nodeText.slice(0, Math.max(0, start - currentOffset))
-                const highlightedRange = nodeText.slice(
+                const preHighlightedRange = unicodeAwareSlice(nodeText, 0, Math.max(0, start - currentOffset))
+                const highlightedRange = unicodeAwareSlice(
+                    nodeText,
                     Math.max(0, start - currentOffset),
                     start - currentOffset + length
                 )
-                const postHighlightedRange = nodeText.slice(start - currentOffset + length)
+                const postHighlightedRange = unicodeAwareSlice(
+                    nodeText,
+                    start - currentOffset + length,
+                    nodeText.length + 1
+                )
 
                 // Create new nodes for each of the ranges with length > 0
                 const newNodes: Node[] = []
@@ -87,7 +135,12 @@ function highlightNodeHelper(
 
                 if (highlightedRange) {
                     const highlight = document.createElement('span')
-                    highlight.className = 'selection-highlight'
+                    /*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */
+                    highlight.className = 'match-highlight a11y-ignore'
                     highlight.append(document.createTextNode(highlightedRange))
                     newNodes.push(highlight)
                 }
@@ -104,13 +157,19 @@ function highlightNodeHelper(
                     // If there are more than one new nodes, wrap them in a span
                     const containerNode = document.createElement('span')
                     containerNode.append(...newNodes)
+                    /*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */
+                    containerNode.className = 'a11y-ignore'
                     newNode = containerNode
                 }
 
                 // Remove the original child and replace it with the new node
                 child.remove()
                 if (currentNode.childNodes.length === 0 || isLastNode) {
-                    if (currentNode.classList.contains('selection-highlight')) {
+                    if (currentNode.classList.contains('match-highlight')) {
                         // Nothing to do; it's already highlighted.
                         currentNode.append(child)
                     } else {
@@ -120,13 +179,14 @@ function highlightNodeHelper(
                     currentNode.insertBefore(newNode, currentNode.childNodes[index] || currentNode.firstChild)
                 }
 
-                currentOffset += nodeText.length
-                charsHighlighted += highlightedRange.length
-                if (highlightedRange.length > 0 && postHighlightedRange.length > 0) {
+                // Count highlighted characters in terms of code points, not bytes
+                currentOffset += [...nodeText].length
+                charsHighlighted += [...highlightedRange].length
+                if ([...highlightedRange].length > 0 && [...postHighlightedRange].length > 0) {
                     return {
                         highlightingCompleted: true,
-                        charsConsumed: nodeText.length,
-                        charsHighlighted: highlightedRange.length,
+                        charsConsumed: [...nodeText].length,
+                        charsHighlighted: [...highlightedRange].length,
                     }
                 }
 

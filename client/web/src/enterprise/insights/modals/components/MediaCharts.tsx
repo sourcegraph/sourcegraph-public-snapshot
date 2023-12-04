@@ -1,9 +1,12 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import styles from './MediaCharts.module.scss'
 
-export const ThreeLineChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
+export const ThreeLineChart: React.FunctionComponent<
+    React.PropsWithChildren<React.SVGProps<SVGSVGElement>>
+> = props => (
     <svg
         width="169"
         height="158"
@@ -63,7 +66,7 @@ export const ThreeLineChart: React.FunctionComponent<React.SVGProps<SVGSVGElemen
     </svg>
 )
 
-export const FourLineChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
+export const FourLineChart: React.FunctionComponent<React.PropsWithChildren<React.SVGProps<SVGSVGElement>>> = props => (
     <svg
         width="169"
         height="158"
@@ -132,7 +135,9 @@ export const FourLineChart: React.FunctionComponent<React.SVGProps<SVGSVGElement
     </svg>
 )
 
-export const LangStatsInsightChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
+export const LangStatsInsightChart: React.FunctionComponent<
+    React.PropsWithChildren<React.SVGProps<SVGSVGElement>>
+> = props => (
     <svg
         width="169"
         height="158"
@@ -174,7 +179,9 @@ export const LangStatsInsightChart: React.FunctionComponent<React.SVGProps<SVGSV
     </svg>
 )
 
-export const SearchBasedInsightChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
+export const SearchBasedInsightChart: React.FunctionComponent<
+    React.PropsWithChildren<React.SVGProps<SVGSVGElement>>
+> = props => (
     <svg
         width="185"
         height="126"
@@ -235,7 +242,9 @@ export const SearchBasedInsightChart: React.FunctionComponent<React.SVGProps<SVG
     </svg>
 )
 
-export const CaptureGroupInsightChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
+export const CaptureGroupInsightChart: React.FunctionComponent<
+    React.PropsWithChildren<React.SVGProps<SVGSVGElement>>
+> = props => (
     <svg
         width="185"
         height="126"
@@ -291,6 +300,97 @@ export const CaptureGroupInsightChart: React.FunctionComponent<React.SVGProps<SV
         <path
             d="M176.882 105.625a5.261 5.261 0 0 1-.807.065c-.275 0-.541-.024-.808-.065v-2.834l-2.018 2.003a6.703 6.703 0 0 1-1.123-1.123l2.003-2.018h-2.834a5.284 5.284 0 0 1-.065-.808c0-.275.024-.541.065-.808h2.834l-2.003-2.018c.154-.202.315-.404.525-.598.194-.21.396-.371.598-.525l2.018 2.003v-2.834c.267-.04.533-.065.808-.065s.541.024.807.065v2.834l2.019-2.003c.404.315.808.719 1.123 1.123l-2.003 2.018h2.834c.041.267.065.533.065.808s-.024.541-.065.808h-2.834l2.003 2.018a4.462 4.462 0 0 1-.525.598c-.194.21-.396.371-.598.525l-2.019-2.003v2.834Zm-8.882 1.68a1.615 1.615 0 1 1 3.23 0 1.615 1.615 0 0 1-3.23 0Z"
             fill="#A6B6D9"
+        />
+    </svg>
+)
+
+export const ComputeInsightChart: React.FunctionComponent<
+    React.PropsWithChildren<React.SVGProps<SVGSVGElement>>
+> = props => (
+    <svg
+        width="185"
+        height="126"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 -15 185 126"
+        {...props}
+        className={classNames(styles.chart, props.className)}
+    >
+        <path d="M0 23.7998H137V24.7998H0V23.7998Z" fill="var(--border-color-2)" />
+        <path d="M0 0.799805H137V1.7998H0V0.799805Z" fill="var(--border-color-2)" />
+        <path d="M0 46.7998H137V47.7998H0V46.7998Z" fill="var(--border-color-2)" />
+        <path d="M0 69.7998H137V70.7998H0V69.7998Z" fill="var(--border-color-2)" />
+        <path d="M0 92.7998H137V93.7998H0V92.7998Z" fill="var(--border-color-2)" />
+        <path d="M164 36.2998H179V37.2998H164V36.2998Z" fill="var(--border-color-2)" />
+        <path
+            d="M161 36.7998C161 37.9044 160.105 38.7998 159 38.7998C157.895 38.7998 157 37.9044 157 36.7998C157 35.6952 157.895 34.7998 159 34.7998C160.105 34.7998 161 35.6952 161 36.7998Z"
+            fill="var(--orange)"
+        />
+        <path d="M164 45.2998H179V46.2998H164V45.2998Z" fill="var(--border-color-2)" />
+        <path
+            d="M161 45.7998C161 46.9044 160.105 47.7998 159 47.7998C157.895 47.7998 157 46.9044 157 45.7998C157 44.6952 157.895 43.7998 159 43.7998C160.105 43.7998 161 44.6952 161 45.7998Z"
+            fill="var(--pink)"
+        />
+        <path d="M164 54.2998H179V55.2998H164V54.2998Z" fill="var(--border-color-2)" />
+        <path
+            d="M161 54.7998C161 55.9044 160.105 56.7998 159 56.7998C157.895 56.7998 157 55.9044 157 54.7998C157 53.6952 157.895 52.7998 159 52.7998C160.105 52.7998 161 53.6952 161 54.7998Z"
+            fill="var(--dark-blue)"
+        />
+        <path d="M164 63.2998H179V64.2998H164V63.2998Z" fill="var(--border-color-2)" />
+        <path
+            d="M161 63.7998C161 64.9044 160.105 65.7998 159 65.7998C157.895 65.7998 157 64.9044 157 63.7998C157 62.6952 157.895 61.7998 159 61.7998C160.105 61.7998 161 62.6952 161 63.7998Z"
+            fill="var(--green)"
+        />
+        <path d="M16 100H31V101H16V100Z" fill="var(--border-color-2)" />
+        <path d="M61.5 100H76.5V101H61.5V100Z" fill="var(--border-color-2)" />
+        <path d="M107 100H122V101H107V100Z" fill="var(--border-color-2)" />
+        <path
+            d="M12 3C12 2.44772 12.4477 2 13 2H14C14.5523 2 15 2.44772 15 3V92C15 92.5523 14.5523 93 14 93H13C12.4477 93 12 92.5523 12 92V3Z"
+            fill="var(--dark-blue)"
+        />
+        <path
+            d="M18 18C18 17.4477 18.4477 17 19 17H20C20.5523 17 21 17.4477 21 18V92C21 92.5523 20.5523 93 20 93H19C18.4477 93 18 92.5523 18 92V18Z"
+            fill="var(--pink)"
+        />
+        <path
+            d="M24 72C24 71.4477 24.4477 71 25 71H26C26.5523 71 27 71.4477 27 72V92C27 92.5523 26.5523 93 26 93H25C24.4477 93 24 92.5523 24 92V72Z"
+            fill="var(--green)"
+        />
+        <path
+            d="M30 81C30 80.4477 30.4477 80 31 80H32C32.5523 80 33 80.4477 33 81V92C33 92.5523 32.5523 93 32 93H31C30.4477 93 30 92.5523 30 92V81Z"
+            fill="var(--orange)"
+        />
+        <path
+            d="M58 16C58 15.4477 58.4477 15 59 15H60C60.5523 15 61 15.4477 61 16V92C61 92.5523 60.5523 93 60 93H59C58.4477 93 58 92.5523 58 92V16Z"
+            fill="var(--dark-blue)"
+        />
+        <path
+            d="M64 32C64 31.4477 64.4477 31 65 31H66C66.5523 31 67 31.4477 67 32V92C67 92.5523 66.5523 93 66 93H65C64.4477 93 64 92.5523 64 92V32Z"
+            fill="var(--pink)"
+        />
+        <path
+            d="M70 58C70 57.4477 70.4477 57 71 57H72C72.5523 57 73 57.4477 73 58V92C73 92.5523 72.5523 93 72 93H71C70.4477 93 70 92.5523 70 92V58Z"
+            fill="var(--green)"
+        />
+        <path
+            d="M76 41C76 40.4477 76.4477 40 77 40H78C78.5523 40 79 40.4477 79 41V92C79 92.5523 78.5523 93 78 93H77C76.4477 93 76 92.5523 76 92V41Z"
+            fill="var(--orange)"
+        />
+        <path
+            d="M104 53C104 52.4477 104.448 52 105 52H106C106.552 52 107 52.4477 107 53V92C107 92.5523 106.552 93 106 93H105C104.448 93 104 92.5523 104 92V53Z"
+            fill="var(--dark-blue)"
+        />
+        <path
+            d="M110 68C110 67.4477 110.448 67 111 67H112C112.552 67 113 67.4477 113 68V92C113 92.5523 112.552 93 112 93H111C110.448 93 110 92.5523 110 92V68Z"
+            fill="var(--pink)"
+        />
+        <path
+            d="M116 38C116 37.4477 116.448 37 117 37H118C118.552 37 119 37.4477 119 38V92C119 92.5523 118.552 93 118 93H117C116.448 93 116 92.5523 116 92V38Z"
+            fill="var(--green)"
+        />
+        <path
+            d="M122 21C122 20.4477 122.448 20 123 20H124C124.552 20 125 20.4477 125 21V92C125 92.5523 124.552 93 124 93H123C122.448 93 122 92.5523 122 92V21Z"
+            fill="var(--orange)"
         />
     </svg>
 )

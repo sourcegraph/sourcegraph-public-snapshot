@@ -1,30 +1,31 @@
+import React, { type AnchorHTMLAttributes, useRef } from 'react'
+
 import classNames from 'classnames'
-import * as H from 'history'
-import { noop } from 'lodash'
-import React, { AnchorHTMLAttributes } from 'react'
 import { Key } from 'ts-key-enum'
+import { useMergeRefs } from 'use-callback-ref'
 
 import { isDefined } from '@sourcegraph/common'
 
-import { ForwardReferenceComponent } from '../../types'
-import { Button, ButtonProps } from '../Button'
+import type { ForwardReferenceComponent } from '../../types'
+import { Button, type ButtonProps } from '../Button'
 import { Link, AnchorLink } from '../Link'
 
 const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
-    event.key === Key.Enter && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey
+    (event.key === Key.Enter || event.key === ' ') &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.metaKey &&
+    !event.altKey
 
 export type ButtonLinkProps = Omit<ButtonProps, 'as' | 'onSelect'> &
     Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'onSelect'> & {
         /** The link destination URL. */
-        to?: H.LocationDescriptor
+        to?: string
 
         /**
          * Called when the user clicks or presses enter on this element.
          */
         onSelect?: (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => void
-
-        /** A tooltip to display when the user hovers or focuses this element. */
-        ['data-tooltip']?: string
 
         /**
          * If given, the element is treated as a toggle with the boolean indicating its state.
@@ -50,28 +51,33 @@ export type ButtonLinkProps = Omit<ButtonProps, 'as' | 'onSelect'> &
  *
  * It is keyboard accessible: unlike `<Link>` or `<a>`, pressing the enter key triggers it.
  */
-export const ButtonLink = React.forwardRef((props, reference) => {
+export const ButtonLink = React.forwardRef(function ButtonLink(props, reference) {
     const {
         className,
         to,
         disabled,
         disabledClassName,
         pressed,
-        'data-tooltip': tooltip,
-        onSelect = noop,
+        onSelect,
         children,
         id,
         'data-content': dataContent,
         tabIndex,
         ...rest
     } = props
+    const buttonReference = useRef<HTMLAnchorElement>(null)
+    const mergedbuttonReference = useMergeRefs([buttonReference, reference])
 
-    // We need to set up a keypress listener because <a onclick> doesn't get
+    // We need to set up a keydown listener because <a onclick> doesn't get
     // triggered by enter.
-    const handleKeyPress = (event: React.KeyboardEvent<HTMLElement>): void => {
-        if (!disabled && isSelectKeyPress(event)) {
-            onSelect(event)
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
+        if (disabled || !isSelectKeyPress(event)) {
+            return
         }
+
+        // Override the original key press and trigger the click event
+        event.preventDefault()
+        buttonReference.current?.click()
     }
 
     const handleClick = (event: React.MouseEvent<HTMLElement>): void => {
@@ -82,21 +88,20 @@ export const ButtonLink = React.forwardRef((props, reference) => {
             return
         }
 
-        onSelect(event)
+        onSelect?.(event)
     }
 
     const commonProps = {
         // `.disabled` will only be selected if the `.btn` class is applied as well
         className: classNames(className, disabled && ['disabled', disabledClassName]),
-        'data-tooltip': tooltip,
-        'aria-label': tooltip,
         role: typeof pressed === 'boolean' ? 'button' : undefined,
         'aria-pressed': pressed,
         tabIndex: isDefined(tabIndex) ? tabIndex : disabled ? -1 : 0,
         onClick: onSelect,
-        onKeyPress: handleKeyPress,
+        // We need `onKeyDown` instead `onKeyPress` to make ButtonLink works inside reactstrap Dropdown
+        onKeyDown: handleKeyDown,
         id,
-        ref: reference,
+        ref: mergedbuttonReference,
         disabled,
     }
 

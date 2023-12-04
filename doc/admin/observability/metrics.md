@@ -15,11 +15,11 @@ Site admins can view the Grafana monitoring dashboards on a Sourcegraph instance
 
 A complete [dashboard reference](dashboards.md) is available for more context on our available service dashboards and panels.
 
-Additional dashboards can also be set up - see [Grafana configuration](#grafana-configuration) for more details.
+Additional dashboards can also be set up—see [Grafana configuration](#grafana-configuration) for more details.
 
 #### View documentation
 
-On service dashboards, each metric panel has links attached that lead to relevant [alert solutions](alert_solutions.md) or [panel documentation](dashboards.md).
+On service dashboards, each metric panel has links attached that lead to relevant [alert solutions](alerts.md) or [panel documentation](dashboards.md).
 These can be accessed from the top left corner of each panel.
 
 #### View alerts
@@ -65,7 +65,7 @@ Follow the instructions below to access Grafana directly to, for example, edit c
 > NOTE: Most of the dashboards that Sourcegraph ships with are not configurable through the Grafana UI.
 > In general, we recommend [these configuration methods instead](#grafana-configuration).
 
-If you are using the [Kubernetes deployment option](../install/kubernetes/index.md), you can access Grafana directly using Kubernetes port forwarding to your local machine:
+If you are using the [Kubernetes deployment option](../deploy/kubernetes/index.md), you can access Grafana directly using Kubernetes port forwarding to your local machine:
 
 ```sh
 kubectl port-forward svc/grafana 3370:30070
@@ -73,7 +73,7 @@ kubectl port-forward svc/grafana 3370:30070
 
 Grafana will be available http://localhost:3370/-/debug/grafana.
 
-If you are using [Docker](../install/docker/index.md) or the [docker-compose deployment option](../install/index.md), Grafana is available locally at http://localhost:3370/-/debug/grafana without any additional setup.
+If you are using [Docker Single Container](../deploy/docker-single-container/index.md) or the [Docker Compose deployment option](../deploy/index.md), Grafana is available locally at http://localhost:3370/-/debug/grafana without any additional setup.
 If Sourcegraph is deployed to a remote server, then access via an SSH tunnel using a tool such as [sshuttle](https://github.com/sshuttle/sshuttle) is required to establish a secure connection to Grafana.
 To access the remote server using `sshuttle` from your local machine:
 
@@ -100,7 +100,7 @@ Sourcegraph's metrics include a single high-level metric `alert_count` which ind
 This is the same metric presented on the **Overview** Grafana dashboard.
 
 > NOTE: We provide [built-in alerting](./alerting.md) for these alerting metrics to help monitor the health of your Sourcegraph instance.
-> Refer to our [alert solutions reference](./alert_solutions.md) for details on specific alerts.
+> Refer to our [alert solutions reference](./alerts.md) for details on specific alerts.
 
 **Description:** The number of alerts each service has fired for a given alert name and severity level.
 
@@ -140,13 +140,13 @@ Most of the time, Sourcegraph site admins will monitor and query key metrics thr
 Grafana also provides the dashboards that monitor the standard metrics that indicate the health of the instance.
 Follow the instructions below to access Prometheus directly instead.
 
-If you are using the [Kubernetes deployment option](../install/kubernetes/index.md), port-forward the Prometheus service:
+If you are using the [Kubernetes deployment option](../deploy/kubernetes/index.md), port-forward the Prometheus service:
 
 ```sh
 kubectl port-forward svc/prometheus 9090:30090
 ```
 
-If you are using [Docker](../install/docker/index.md) or the [docker-compose deployment option](../install/index.md), you will need to restart the Sourcegraph container
+If you are using [Docker Single Container](../deploy/docker-single-container/index.md) or the [Docker Compose deployment option](../deploy/index.md), you will need to restart the Sourcegraph container
 with a flag `--publish 9090:9090` in the `docker run` command.
 
 Prometheus will be available http://localhost:9090.

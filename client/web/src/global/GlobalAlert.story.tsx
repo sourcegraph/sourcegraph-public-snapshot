@@ -1,11 +1,13 @@
-import { Meta, Story } from '@storybook/react'
-import React from 'react'
+import type { Meta, StoryFn } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { AlertType } from '@sourcegraph/web/src/graphql-operations'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { H1, H2, Code, Text } from '@sourcegraph/wildcard'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
+
+import { AlertType } from '../graphql-operations'
 
 import { GlobalAlert } from './GlobalAlert'
+
+import webStyles from '../SourcegraphWebApp.scss'
 
 const config: Meta = {
     title: 'web/GlobalAlert',
@@ -26,17 +28,17 @@ const config: Meta = {
 
 export default config
 
-export const GlobalAlerts: Story = () => (
+export const GlobalAlerts: StoryFn = () => (
     <div>
-        <h1>Global Alert</h1>
-        <p>
-            These alerts map to the <code>AlertType</code> returned from the backend API
-        </p>
-        <h2>Variants</h2>
+        <H1>Global Alert</H1>
+        <Text>
+            These alerts map to the <Code>AlertType</Code> returned from the backend API
+        </Text>
+        <H2>Variants</H2>
         {Object.values(AlertType).map(type => (
             <GlobalAlert key={type} alert={{ message: 'Something happened!', isDismissibleWithKey: null, type }} />
         ))}
-        <h2>Dismissible</h2>
+        <H2>Dismissible</H2>
         <GlobalAlert
             alert={{ message: 'You can dismiss me', isDismissibleWithKey: 'dismiss-key', type: AlertType.INFO }}
         />

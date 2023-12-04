@@ -1,6 +1,9 @@
 package main
 
-import "strings"
+import (
+	"slices"
+	"strings"
+)
 
 // IssueContext tracks a visible set of issues, tracking issues, and pull requests
 // with respect to a given tracking issue. The visible set of issues and pull requests
@@ -12,7 +15,7 @@ type IssueContext struct {
 	pullRequests   []*PullRequest
 }
 
-// NewIssueContext creates  anew issue context with the given visible issues, tracking
+// NewIssueContext creates a new issue context with the given visible issues, tracking
 // issues, and pull requests.
 func NewIssueContext(trackingIssue *Issue, trackingIssues []*Issue, issues []*Issue, pullRequests []*PullRequest) IssueContext {
 	return IssueContext{
@@ -65,7 +68,7 @@ func matchingTrackingIssues(trackingIssue *Issue, issues []*Issue, pullRequests 
 	}
 	for _, pullRequest := range matchingPullRequests(pullRequests, matcher) {
 		for _, issue := range pullRequest.TrackedBy {
-			if contains(issue.Labels, "tracking") {
+			if slices.Contains(issue.Labels, "tracking") {
 				stack = append(stack, issue)
 			} else {
 				stack = append(stack, issue.TrackedBy...)

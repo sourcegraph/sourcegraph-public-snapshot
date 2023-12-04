@@ -1,0 +1,37 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pypi",
+    srcs = ["client.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/pypi",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf/reposource",
+        "//internal/errcode",
+        "//internal/httpcli",
+        "//internal/lazyregexp",
+        "//internal/ratelimit",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_net//html",
+    ],
+)
+
+go_test(
+    name = "pypi_test",
+    timeout = "short",
+    srcs = ["client_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":pypi"],
+    deps = [
+        "//internal/httpcli",
+        "//internal/httptestutil",
+        "//internal/ratelimit",
+        "//internal/testutil",
+        "//internal/unpack",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_grafana_regexp//:regexp",
+        "@org_golang_x_time//rate",
+    ],
+)

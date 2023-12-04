@@ -2,8 +2,8 @@ import React from 'react'
 
 import { Link } from '@sourcegraph/wildcard'
 
-import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
-import { CommunitySearchContextMetadata } from './types'
+import { CommunitySearchContextPage, type CommunitySearchContextPageProps } from './CommunitySearchContextPage'
+import type { CommunitySearchContextMetadata } from './types'
 
 export const cncf: CommunitySearchContextMetadata = {
     title: 'Cloud Native Computing Foundation (CNCF)',
@@ -24,5 +24,5 @@ export const cncf: CommunitySearchContextMetadata = {
 }
 
 export const CncfCommunitySearchContextPage: React.FunctionComponent<
-    Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>
+    React.PropsWithChildren<Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>>
 > = props => <CommunitySearchContextPage {...props} communitySearchContextMetadata={cncf} />

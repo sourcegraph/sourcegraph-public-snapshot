@@ -1,0 +1,34 @@
+.title-button {
+    display: flex;
+    align-items: center;
+    // Reset default button styles
+    padding: 0 0.25rem !important;
+    background-color: transparent;
+    border: 1px solid transparent;
+    color: var(--body-color);
+
+    // Allow the edit icon to be visible when navigating using the keyboard.
+    &:focus,
+    &:active,
+    &:hover {
+        .title-edit-icon {
+            visibility: visible;
+        }
+    }
+}
+
+.title-edit-icon {
+    visibility: hidden;
+    font-size: 1rem;
+    margin-left: 0.25rem;
+}
+
+.title-input {
+    width: 32rem;
+    // Match h1 size
+    font-size: 1.625rem;
+    // Reset form-control styles
+    padding: 0 0.25rem !important;
+    height: auto !important;
+    line-height: inherit !important;
+}

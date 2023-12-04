@@ -10,7 +10,7 @@ import "net/url"
 // in the struct) must be snake case, per HubSpot conventions.
 //
 // See https://developers.hubspot.com/docs/methods/forms/submit_form.
-func (c *Client) SubmitForm(formID string, params interface{}) error {
+func (c *Client) SubmitForm(formID string, params any) error {
 	return c.postForm("SubmitForm", c.baseFormURL(), formID, params)
 }
 

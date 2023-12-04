@@ -1,36 +1,54 @@
-import { storiesOf } from '@storybook/react'
-import React from 'react'
+import type { Meta, StoryFn } from '@storybook/react'
 import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../components/WebStory'
-import { EMPTY_FEATURE_FLAGS } from '../featureFlags/featureFlags'
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 
 import { CloudSignUpPage } from './CloudSignUpPage'
 
-const { add } = storiesOf('web/auth/CloudSignUpPage', module)
+const config: Meta = {
+    title: 'web/auth/CloudSignUpPage',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
+}
 
-const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'> = {
+export default config
+
+const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'authMinPasswordLength'> = {
     authProviders: [
         {
+            clientID: '000',
             serviceType: 'github',
             displayName: 'GitHub.com',
             isBuiltin: false,
             authenticationURL: '/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F',
+            serviceID: 'https://github.com',
         },
         {
+            clientID: '001',
             serviceType: 'gitlab',
             displayName: 'GitLab.com',
             isBuiltin: false,
             authenticationURL: '/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F',
+            serviceID: 'https://gitlab.com',
+        },
+        {
+            clientID: '002',
+            serviceType: 'openidconnect',
+            displayName: 'Google',
+            isBuiltin: false,
+            authenticationURL: '/.auth/openidconnect/login?pc=google',
+            serviceID: 'https://gitlab.com',
         },
     ],
     experimentalFeatures: {},
+    authMinPasswordLength: 0,
 }
 
-add('default', () => (
+export const Default: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -40,13 +58,13 @@ add('default', () => (
                 context={context}
                 showEmailForm={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                featureFlags={EMPTY_FEATURE_FLAGS}
+                isSourcegraphDotCom={true}
             />
         )}
     </WebStory>
-))
+)
 
-add('email form', () => (
+export const EmailForm: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -56,13 +74,13 @@ add('email form', () => (
                 context={context}
                 showEmailForm={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                featureFlags={EMPTY_FEATURE_FLAGS}
+                isSourcegraphDotCom={true}
             />
         )}
     </WebStory>
-))
+)
 
-add('invalid source', () => (
+export const InvalidSource: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -72,13 +90,13 @@ add('invalid source', () => (
                 context={context}
                 showEmailForm={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                featureFlags={EMPTY_FEATURE_FLAGS}
+                isSourcegraphDotCom={true}
             />
         )}
     </WebStory>
-))
+)
 
-add('Optimization signup', () => (
+export const OptimizationSignup: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -88,8 +106,8 @@ add('Optimization signup', () => (
                 context={context}
                 showEmailForm={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                featureFlags={new Map([])}
+                isSourcegraphDotCom={true}
             />
         )}
     </WebStory>
-))
+)

@@ -1,12 +1,13 @@
-import { Shortcut } from '@slimsag/react-shortcuts'
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as monaco from 'monaco-editor'
-import * as React from 'react'
 import { Subscription, Subject } from 'rxjs'
 import { map, distinctUntilChanged } from 'rxjs/operators'
 
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import type { KeyboardShortcut } from '../keyboardShortcuts'
+import { Shortcut } from '../react-shortcuts'
+import { isInputElement } from '../util/dom'
 
 const SOURCEGRAPH_LIGHT = 'sourcegraph-light'
 const SOURCEGRAPH_DARK = 'sourcegraph-dark'
@@ -156,7 +157,7 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
     rules: lightRules,
 })
 
-interface Props extends ThemeProps {
+interface Props {
     /** The contents of the document. */
     value?: string
 
@@ -188,13 +189,10 @@ interface Props extends ThemeProps {
     /** Keyboard shortcut to focus the Monaco editor. */
     keyboardShortcutForFocus?: KeyboardShortcut
 
-    /**
-     * NOTE: This is currently only used for Insights code through
-     * the MonacoField component: client/web/src/enterprise/insights/components/form/monaco-field/MonacoField.tsx
-     *
-     * Issue to improve this: https://github.com/sourcegraph/sourcegraph/issues/29438
-     */
-    placeholder?: string
+    /** Whether to autofocus the Monaco editor when it mounts. Default: false. */
+    autoFocus?: boolean
+
+    isLightTheme: boolean
 }
 
 interface State {
@@ -254,6 +252,10 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
+        if (this.props.autoFocus) {
+            this.focusInput()
+        }
+
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
@@ -286,10 +288,14 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
                         height: this.state.computedHeight,
                         position: 'relative',
                     }}
-                    data-placeholder={this.props.placeholder}
                     ref={this.setRef}
                     id={this.props.id}
-                    className={classNames(this.props.className, this.props.border !== false && 'border rounded')}
+                    data-editor="monaco"
+                    className={classNames(
+                        this.props.className,
+                        'test-editor',
+                        this.props.border !== false && 'border rounded'
+                    )}
                 />
                 {this.props.keyboardShortcutForFocus?.keybindings.map((keybinding, index) => (
                     <Shortcut key={index} {...keybinding} onMatch={this.focusInput} />
@@ -299,11 +305,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
     }
 
     private focusInput = (): void => {
-        if (
-            this.editor &&
-            !!document.activeElement &&
-            !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
-        ) {
+        if (this.editor && !!document.activeElement && !isInputElement(document.activeElement)) {
             this.editor.focus()
         }
     }

@@ -1,0 +1,13 @@
+(FILTER
+  (LIMIT
+    (TIMEOUT
+      (PARALLEL
+        (AND
+          LEAF
+          LEAF)
+        (OR
+          LEAF
+          LEAF)
+        (AND
+          LEAF
+          LEAF)))))

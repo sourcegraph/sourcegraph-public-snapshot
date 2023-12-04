@@ -1,14 +1,14 @@
 import { first } from 'lodash'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { filter, map } from 'rxjs/operators'
 
 import { isDefined, memoizeObservable } from '@sourcegraph/common'
 import { checkOk } from '@sourcegraph/http-client'
 
-import { DiffResolvedRevisionSpec } from '../../repo'
+import type { DiffResolvedRevisionSpec } from '../../repo'
 
-import { BitbucketRepoInfo } from './scrape'
+import type { BitbucketRepoInfo } from './scrape'
 
 //
 // PR API /rest/api/1.0/projects/SG/repos/go-langserver/pull-requests/1
@@ -57,15 +57,14 @@ interface PRResponse {
 /**
  * Get the base commit ID for a merge request.
  */
-export const getCommitsForPR: (
-    info: BitbucketRepoInfo & { prID: number }
-) => Observable<DiffResolvedRevisionSpec> = memoizeObservable(
-    ({ project, repoSlug, prID }) =>
-        get<PRResponse>(buildURL(project, repoSlug, `/pull-requests/${prID}`)).pipe(
-            map(({ fromRef, toRef }) => ({ baseCommitID: toRef.latestCommit, headCommitID: fromRef.latestCommit }))
-        ),
-    ({ prID }) => prID.toString()
-)
+export const getCommitsForPR: (info: BitbucketRepoInfo & { prID: number }) => Observable<DiffResolvedRevisionSpec> =
+    memoizeObservable(
+        ({ project, repoSlug, prID }) =>
+            get<PRResponse>(buildURL(project, repoSlug, `/pull-requests/${prID}`)).pipe(
+                map(({ fromRef, toRef }) => ({ baseCommitID: toRef.latestCommit, headCommitID: fromRef.latestCommit }))
+            ),
+        ({ prID }) => prID.toString()
+    )
 
 interface GetBaseCommitInput extends BitbucketRepoInfo {
     commitID: string

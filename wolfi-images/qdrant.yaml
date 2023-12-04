@@ -1,0 +1,20 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+
+    - qdrant@sourcegraph
+
+paths:
+  - path: /data
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+
+entrypoint:
+  command: /sbin/tini -- /usr/local/bin/qdrant --config-path /etc/qdrant/config.yaml
+
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

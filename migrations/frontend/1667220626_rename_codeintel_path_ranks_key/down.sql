@@ -1,0 +1,3 @@
+ALTER TABLE codeintel_path_ranks DROP CONSTRAINT IF EXISTS codeintel_path_ranks_repository_id_key;
+ALTER TABLE codeintel_path_ranks ADD CONSTRAINT codeintel_path_ranks_repository_id_key UNIQUE (repository_id);
+DROP INDEX IF EXISTS codeintel_path_ranks_repository_id;

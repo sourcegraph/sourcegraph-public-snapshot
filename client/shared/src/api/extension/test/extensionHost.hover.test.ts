@@ -1,13 +1,14 @@
-import { ProxyMarked, proxyMarker, Remote } from 'comlink'
-import { Observer, of } from 'rxjs'
-import { Hover } from 'sourcegraph'
+import { type ProxyMarked, proxyMarker, type Remote } from 'comlink'
+import { type Observer, of } from 'rxjs'
+import type { Hover } from 'sourcegraph'
+import { describe, expect, it } from 'vitest'
 
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import type { HoverMerged } from '@sourcegraph/client-api'
+import type { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
-import { SettingsCascade } from '../../../settings/settings'
-import { ClientAPI } from '../../client/api/api'
-import { HoverMerged } from '../../client/types/hover'
+import type { SettingsCascade } from '../../../settings/settings'
+import type { ClientAPI } from '../../client/api/api'
 import { pretendProxySubscribable, pretendRemote } from '../../util'
 
 import { initializeExtensionHostTest } from './test-helpers'
@@ -16,7 +17,6 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
     // integration(ish) tests for scenarios not covered by providers tests
     const noopMain = pretendRemote<ClientAPI>({
         getEnabledExtensions: () => pretendProxySubscribable(of([])),
-        getScriptURLForExtension: () => undefined,
     })
     const initialSettings: SettingsCascade<object> = {
         subjects: [],
@@ -38,7 +38,7 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
     })
 
     it('restarts hover call if a provider was added or removed', () => {
-        const typescriptFileUri = 'file:///f.ts'
+        const typescriptFileUri = 'git://repo#src/f.ts'
 
         const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
             { initialSettings, clientApplication: 'sourcegraph', sourcegraphURL: 'https://example.com/' },
@@ -65,13 +65,13 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
             .subscribe(observe(value => results.push(value)))
 
         // first provider results
-        expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
+        expect(results).toEqual([
             { isLoading: true, result: null },
             {
                 isLoading: false,
-                result: { contents: [textHover('a1').contents], alerts: [], aggregatedBadges: [] },
+                result: { contents: [textHover('a1').contents], aggregatedBadges: [] },
             },
-        ])
+        ] as MaybeLoadingResult<HoverMerged | null>[])
         results = []
 
         const subscription = extensionAPI.languages.registerHoverProvider([{ pattern: '*.ts' }], {
@@ -79,31 +79,30 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
         })
 
         // second and first
-        expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
+        expect(results).toEqual([
             {
                 isLoading: true,
-                result: { contents: [textHover('a2').contents], alerts: [], aggregatedBadges: [] },
+                result: { contents: [textHover('a2').contents], aggregatedBadges: [] },
             },
             {
                 isLoading: false,
                 result: {
                     contents: ['a2', 'b'].map(value => textHover(value).contents),
-                    alerts: [],
                     aggregatedBadges: [],
                 },
             },
-        ])
+        ] as MaybeLoadingResult<HoverMerged | null>[])
         results = []
 
         subscription.unsubscribe()
 
         // just first was queried for the third time
-        expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
+        expect(results).toEqual([
             { isLoading: true, result: null },
             {
                 isLoading: false,
-                result: { contents: [textHover('a3').contents], alerts: [], aggregatedBadges: [] },
+                result: { contents: [textHover('a3').contents], aggregatedBadges: [] },
             },
-        ])
+        ] as MaybeLoadingResult<HoverMerged | null>[])
     })
 })

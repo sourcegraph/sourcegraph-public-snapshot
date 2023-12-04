@@ -1,0 +1,5 @@
+[]store.SeriesPoint{{
+	SeriesID: "one",
+	Time:     time.Time{ext: 63766868400},
+	Value:    1.1,
+}}

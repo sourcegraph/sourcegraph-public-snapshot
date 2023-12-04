@@ -1,0 +1,93 @@
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+
+filegroup(
+    name = "doc_files",
+    srcs = glob(
+        ["**/*"],
+        [
+            "**/*.go",
+            "*.sh",
+        ],
+    ),
+    visibility = ["//doc:__pkg__"],
+)
+
+OUTPUT_FILES = [
+    "admin.md",
+    "api.md",
+    "batch/apply.md",
+    "batch/exec.md",
+    "batch/index.md",
+    "batch/new.md",
+    "batch/preview.md",
+    "batch/remote.md",
+    "batch/repositories.md",
+    "batch/validate.md",
+    "code-intel/index.md",
+    "code-intel/upload.md",
+    "codeowners.md",
+    "config/edit.md",
+    "config/get.md",
+    "config/index.md",
+    "config/list.md",
+    "debug.md",
+    "extensions/copy.md",
+    "extensions/delete.md",
+    "extensions/get.md",
+    "extensions/index.md",
+    "extensions/list.md",
+    "extensions/publish.md",
+    "extsvc/create.md",
+    "extsvc/edit.md",
+    "extsvc/index.md",
+    "extsvc/list.md",
+    "index.md",
+    "login.md",
+    "lsif.md",
+    "orgs/create.md",
+    "orgs/delete.md",
+    "orgs/get.md",
+    "orgs/index.md",
+    "orgs/list.md",
+    "orgs/members/add.md",
+    "orgs/members/index.md",
+    "orgs/members/remove.md",
+    "repos/add-metadata.md",
+    "repos/delete-metadata.md",
+    "repos/delete.md",
+    "repos/get.md",
+    "repos/index.md",
+    "repos/list.md",
+    "repos/update-metadata.md",
+    "scout.md",
+    "search.md",
+    "serve-git.md",
+    "snapshot.md",
+    "teams.md",
+    "users/create.md",
+    "users/delete.md",
+    "users/get.md",
+    "users/index.md",
+    "users/list.md",
+    "users/prune.md",
+    "users/tag.md",
+    "validate.md",
+    "version.md",
+]
+
+# We prefix outputs with gen/ to avoid having the generated files having the same path as the ones we'll
+# write in the source tree, as this breaks the diff test that ensure the source tree files are up to date.
+genrule(
+    name = "generate_doc",
+    outs = ["gen/" + path for path in OUTPUT_FILES],
+    cmd_bash = "GOMAXPROCS=8 USER=user HOME=/home/user $(execpath //dev/tools:src-cli) doc -o=$(RULEDIR)/gen",
+    tools = ["//dev/tools:src-cli"],
+    visibility = ["//visibility:public"],
+)
+
+write_generated_to_source_files(
+    name = "write_doc_files",
+    output_files = {dest: "gen/" + dest for dest in OUTPUT_FILES},
+    tags = ["go_generate"],
+    target = ":generate_doc",
+)

@@ -1,6 +1,8 @@
+import { describe, expect, test } from 'vitest'
+
 import { stringHuman } from './printer'
-import { ScanResult, scanSearchQuery, ScanSuccess } from './scanner'
-import { Token } from './token'
+import { type ScanResult, scanSearchQuery, type ScanSuccess } from './scanner'
+import type { Token } from './token'
 
 expect.addSnapshotSerializer({
     serialize: value => value as string,
@@ -17,5 +19,10 @@ describe('stringHuman', () => {
         expect(stringHuman(tokens)).toMatchInlineSnapshot(
             '(a or b) (-repo:foo AND file:bar) content:"count:5000" /yowza/ "a\'b" \\d+'
         )
+    })
+
+    test('render delimited syntax', () => {
+        const tokens = toSuccess(scanSearchQuery('patterntype:standard /test\\ .*me/ "and me"'))
+        expect(stringHuman(tokens)).toMatchInlineSnapshot('patterntype:standard /test\\ .*me/ "and me"')
     })
 })

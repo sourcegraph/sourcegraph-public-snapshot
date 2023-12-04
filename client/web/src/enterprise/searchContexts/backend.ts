@@ -1,18 +1,19 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
-import { RepositoriesByNamesResult, RepositoriesByNamesVariables } from '../../graphql-operations'
+import type { RepositoriesByNamesResult, RepositoriesByNamesVariables } from '../../graphql-operations'
 
 export function fetchRepositoriesByNames(
     names: string[]
 ): Observable<RepositoriesByNamesResult['repositories']['nodes']> {
+    const first = names.length
     return requestGraphQL<RepositoriesByNamesResult, RepositoriesByNamesVariables>(
         gql`
-            query RepositoriesByNames($names: [String!]!) {
-                repositories(names: $names) {
+            query RepositoriesByNames($names: [String!]!, $first: Int!) {
+                repositories(names: $names, first: $first) {
                     nodes {
                         id
                         name
@@ -22,6 +23,7 @@ export function fetchRepositoriesByNames(
         `,
         {
             names,
+            first,
         }
     ).pipe(
         map(dataOrThrowErrors),

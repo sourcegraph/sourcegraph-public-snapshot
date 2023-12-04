@@ -15,7 +15,7 @@ var durations = map[string][]float64{}
 
 // queryGraphQL performs a GraphQL request and stores its latency not the global durations
 // map. If the verbose flag is set, a line with the request's latency is printed.
-func queryGraphQL(ctx context.Context, queryName, query string, variables map[string]interface{}, target interface{}) error {
+func queryGraphQL(_ context.Context, queryName, query string, variables map[string]any, target any) error {
 	requestStart := time.Now()
 
 	if err := internal.GraphQLClient().GraphQL(internal.SourcegraphAccessToken, query, variables, target); err != nil {

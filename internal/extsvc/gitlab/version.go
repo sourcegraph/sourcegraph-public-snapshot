@@ -10,7 +10,10 @@ import (
 
 // GetVersion retrieves the version of the GitLab instance.
 func (c *Client) GetVersion(ctx context.Context) (string, error) {
-	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
+	if MockGetVersion != nil {
+		return MockGetVersion(ctx)
+	}
+	time.Sleep(c.externalRateLimiter.RecommendedWaitForBackgroundOp(1))
 
 	var v struct {
 		Version  string `json:"version"`

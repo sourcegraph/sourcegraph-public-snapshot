@@ -1,3 +1,5 @@
+import { describe, expect, it, test } from 'vitest'
+
 import { isExternalLink } from '@sourcegraph/common'
 
 import { SearchPatternType } from '../graphql-operations'
@@ -10,7 +12,7 @@ import {
     toPrettyBlobURL,
     withWorkspaceRootInputRevision,
     toAbsoluteBlobURL,
-    RepoFile,
+    type RepoFile,
     toRepoURL,
 } from './url'
 
@@ -289,6 +291,12 @@ describe('util/url', () => {
                 '/github.com/gorilla/mux/-/blob/mux.go?L1:1#tab=references'
             )
         })
+
+        test('formats url with symbols in filePath', () => {
+            expect(toPrettyBlobURL({ ...context, filePath: '.shellrc/zshrc.d/functions/gdk.sh##class.Work' })).toBe(
+                '/github.com/gorilla/mux/-/blob/.shellrc/zshrc.d/functions/gdk.sh%23%23class.Work'
+            )
+        })
     })
 
     describe('toAbsoluteBlobURL', () => {
@@ -352,83 +360,86 @@ describe('withWorkspaceRootInputRevision', () => {
 
 describe('buildSearchURLQuery', () => {
     it('builds the URL query for a regular expression search', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.regexp, false, undefined)).toBe('q=foo&patternType=regexp'))
+        expect(buildSearchURLQuery('foo', SearchPatternType.regexp, false, undefined)).toMatchInlineSnapshot(
+            '"q=foo&patternType=regexp&sm=0"'
+        ))
     it('builds the URL query for a literal search', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.literal, false, undefined)).toBe(
-            'q=foo&patternType=literal'
+        expect(buildSearchURLQuery('foo', SearchPatternType.standard, false, undefined)).toMatchInlineSnapshot(
+            '"q=foo&patternType=standard&sm=0"'
         ))
     it('handles an empty query', () =>
-        expect(buildSearchURLQuery('', SearchPatternType.regexp, false, undefined)).toBe('q=&patternType=regexp'))
+        expect(buildSearchURLQuery('', SearchPatternType.regexp, false, undefined)).toMatchInlineSnapshot(
+            '"q=&patternType=regexp&sm=0"'
+        ))
     it('handles characters that need encoding', () =>
-        expect(buildSearchURLQuery('foo bar%baz', SearchPatternType.regexp, false, undefined)).toBe(
-            'q=foo+bar%25baz&patternType=regexp'
+        expect(buildSearchURLQuery('foo bar%baz', SearchPatternType.regexp, false, undefined)).toMatchInlineSnapshot(
+            '"q=foo+bar%25baz&patternType=regexp&sm=0"'
         ))
     it('preserves / and : for readability', () =>
-        expect(buildSearchURLQuery('repo:foo/bar', SearchPatternType.regexp, false, undefined)).toBe(
-            'q=repo:foo/bar&patternType=regexp'
+        expect(buildSearchURLQuery('repo:foo/bar', SearchPatternType.regexp, false, undefined)).toMatchInlineSnapshot(
+            '"q=repo:foo/bar&patternType=regexp&sm=0"'
         ))
     describe('removal of patternType parameter', () => {
         it('overrides the patternType parameter at the end', () => {
-            expect(buildSearchURLQuery('foo patternType:literal', SearchPatternType.regexp, false, undefined)).toBe(
-                'q=foo&patternType=literal'
-            )
+            expect(
+                buildSearchURLQuery('foo patternType:literal', SearchPatternType.regexp, false, undefined)
+            ).toMatchInlineSnapshot('"q=foo&patternType=literal&sm=0"')
         })
         it('overrides the patternType parameter at the beginning', () => {
             expect(
                 buildSearchURLQuery('patternType:literal foo type:diff', SearchPatternType.regexp, false, undefined)
-            ).toBe('q=foo+type:diff&patternType=literal')
+            ).toMatchInlineSnapshot('"q=foo+type:diff&patternType=literal&sm=0"')
         })
         it('overrides the patternType parameter at the end with another operator', () => {
             expect(
                 buildSearchURLQuery('type:diff foo patternType:literal', SearchPatternType.regexp, false, undefined)
-            ).toBe('q=type:diff+foo&patternType=literal')
+            ).toMatchInlineSnapshot('"q=type:diff+foo&patternType=literal&sm=0"')
         })
         it('overrides the patternType parameter in the middle', () => {
             expect(
                 buildSearchURLQuery('type:diff patternType:literal foo', SearchPatternType.regexp, false, undefined)
-            ).toBe('q=type:diff+foo&patternType=literal')
+            ).toMatchInlineSnapshot('"q=type:diff+foo&patternType=literal&sm=0"')
         })
         it('overrides the patternType parameter if using a quoted value', () => {
-            expect(buildSearchURLQuery('patternType:"literal" foo', SearchPatternType.regexp, false, undefined)).toBe(
-                'q=foo&patternType=literal'
-            )
+            expect(
+                buildSearchURLQuery('patternType:"literal" foo', SearchPatternType.regexp, false, undefined)
+            ).toMatchInlineSnapshot('"q=foo&patternType=literal&sm=0"')
         })
     })
     it('builds the URL query with a case parameter if caseSensitive is true', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.literal, true, undefined)).toBe(
-            'q=foo&patternType=literal&case=yes'
+        expect(buildSearchURLQuery('foo', SearchPatternType.standard, true, undefined)).toMatchInlineSnapshot(
+            '"q=foo&patternType=standard&case=yes&sm=0"'
         ))
     it('appends the case parameter if `case:yes` exists in the query', () =>
-        expect(buildSearchURLQuery('foo case:yes', SearchPatternType.literal, false, undefined)).toBe(
-            'q=foo+&patternType=literal&case=yes'
+        expect(buildSearchURLQuery('foo case:yes', SearchPatternType.standard, false, undefined)).toMatchInlineSnapshot(
+            '"q=foo&patternType=standard&case=yes&sm=0"'
         ))
     it('removes the case parameter if using a quoted value', () =>
-        expect(buildSearchURLQuery('foo case:"yes"', SearchPatternType.literal, true, undefined)).toBe(
-            'q=foo+&patternType=literal&case=yes'
-        ))
+        expect(
+            buildSearchURLQuery('foo case:"yes"', SearchPatternType.standard, true, undefined)
+        ).toMatchInlineSnapshot('"q=foo&patternType=standard&case=yes&sm=0"'))
     it('removes the case parameter case:no exists in the query and caseSensitive is true', () =>
-        expect(buildSearchURLQuery('foo case:no', SearchPatternType.literal, true, undefined)).toBe(
-            'q=foo+&patternType=literal'
+        expect(buildSearchURLQuery('foo case:no', SearchPatternType.standard, true, undefined)).toMatchInlineSnapshot(
+            '"q=foo&patternType=standard&sm=0"'
         ))
 })
 
 describe('isExternalLink', () => {
     it('returns false for the same site', () => {
-        jsdom.reconfigure({ url: 'https://github.com/here' })
-        expect(isExternalLink('https://github.com/there')).toBe(false)
+        const windowLocation = new URL('https://github.com/here')
+        expect(isExternalLink('https://github.com/there', windowLocation)).toBe(false)
     })
     it('returns false for relative links', () => {
-        jsdom.reconfigure({ url: 'https://github.com/here' })
-        expect(isExternalLink('/there')).toBe(false)
+        const windowLocation = new URL('https://github.com/here')
+        expect(isExternalLink('/there', windowLocation)).toBe(false)
     })
     it('returns false for invalid URLs', () => {
-        jsdom.reconfigure({ url: 'https://github.com/here' })
-
-        expect(isExternalLink(' ')).toBe(false)
+        const windowLocation = new URL('https://github.com/here')
+        expect(isExternalLink(' ', windowLocation)).toBe(false)
     })
     it('returns true for a different site', () => {
-        jsdom.reconfigure({ url: 'https://github.com/here' })
-        expect(isExternalLink('https://sourcegraph.com/here')).toBe(true)
+        const windowLocation = new URL('https://github.com/here')
+        expect(isExternalLink('https://sourcegraph.com/here', windowLocation)).toBe(true)
     })
 })
 

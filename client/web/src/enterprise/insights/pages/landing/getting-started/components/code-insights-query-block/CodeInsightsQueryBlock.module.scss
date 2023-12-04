@@ -1,0 +1,17 @@
+.query {
+    display: inline-block;
+    width: 100%;
+    margin: 0;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    word-break: break-word;
+    border-radius: var(--border-radius);
+
+    :global(.theme-light) & {
+        background-color: var(--body-bg);
+    }
+
+    :global(.theme-dark) & {
+        background-color: var(--color-bg-2);
+    }
+}

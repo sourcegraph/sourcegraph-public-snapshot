@@ -1,0 +1,39 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "blobstore",
+    srcs = [
+        "blobstore.go",
+        "blobstore_posix.go",
+        "blobstore_windows.go",
+        "multipart.go",
+        "s3_routes.go",
+        "s3_types.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/blobstore/internal/blobstore",
+    visibility = ["//cmd/blobstore:__subpackages__"],
+    deps = [
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_russellhaering_gosaml2//uuid",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "blobstore_test",
+    timeout = "moderate",
+    srcs = ["blobstore_test.go"],
+    data = glob(["testdata/**"]),
+    deps = [
+        ":blobstore",
+        "//internal/observation",
+        "//internal/uploadstore",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+    ],
+)

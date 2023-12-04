@@ -4,32 +4,33 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func (r *GitTreeEntryResolver) Blame(ctx context.Context,
 	args *struct {
-		StartLine int32
-		EndLine   int32
+		StartLine        int32
+		EndLine          int32
+		IgnoreWhitespace bool
 	}) ([]*hunkResolver, error) {
-	hunks, err := git.BlameFile(ctx, r.commit.repoResolver.RepoName(), r.Path(), &git.BlameOptions{
-		NewestCommit: api.CommitID(r.commit.OID()),
-		StartLine:    int(args.StartLine),
-		EndLine:      int(args.EndLine),
-	}, authz.DefaultSubRepoPermsChecker)
+	hunks, err := r.gitserverClient.BlameFile(ctx, r.commit.repoResolver.RepoName(), r.Path(), &gitserver.BlameOptions{
+		NewestCommit:     api.CommitID(r.commit.OID()),
+		StartLine:        int(args.StartLine),
+		EndLine:          int(args.EndLine),
+		IgnoreWhitespace: args.IgnoreWhitespace,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	var hunksResolver []*hunkResolver
+	hunkResolvers := make([]*hunkResolver, 0, len(hunks))
 	for _, hunk := range hunks {
-		hunksResolver = append(hunksResolver, &hunkResolver{
+		hunkResolvers = append(hunkResolvers, &hunkResolver{
 			db:   r.db,
 			repo: r.commit.repoResolver,
 			hunk: hunk,
 		})
 	}
 
-	return hunksResolver, nil
+	return hunkResolvers, nil
 }

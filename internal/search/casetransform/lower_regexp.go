@@ -1,10 +1,9 @@
 package casetransform
 
 import (
+	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"unicode"
 	"unicode/utf8"
-
-	"github.com/grafana/regexp/syntax"
 )
 
 // LowerRegexpASCII lowers rune literals and expands char classes to include

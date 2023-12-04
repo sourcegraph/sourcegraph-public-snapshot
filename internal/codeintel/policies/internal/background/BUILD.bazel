@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "background",
+    srcs = ["init.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/background",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/policies/internal/background/repository_matcher",
+        "//internal/codeintel/policies/internal/store",
+        "//internal/goroutine",
+        "//internal/observation",
+    ],
+)

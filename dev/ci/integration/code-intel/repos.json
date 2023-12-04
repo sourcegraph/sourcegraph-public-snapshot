@@ -5,10 +5,12 @@
     "Config": {
       "url": "https://github.com",
       "repos": [
-        "sourcegraph-testing/etcd",
-        "sourcegraph-testing/tidb",
-        "sourcegraph-testing/titan",
-        "sourcegraph-testing/zap"
+        "go-nacelle/config",
+        "go-nacelle/log",
+        "go-nacelle/nacelle",
+        "go-nacelle/process",
+        "go-nacelle/service",
+        "sourcegraph-testing/nav-test"
       ]
     }
   }

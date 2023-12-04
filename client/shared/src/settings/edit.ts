@@ -4,10 +4,9 @@ import { first, map, switchMap } from 'rxjs/operators'
 import { isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
-import { SettingsEdit } from '../api/client/services/settings'
-import { Scalars } from '../graphql-operations'
-import { PlatformContext } from '../platform/context'
-import * as GQL from '../schema'
+import type { SettingsEdit } from '../api/client/services/settings'
+import type { Scalars, KeyPathSegment, ConfigurationEdit, SettingsEdit as SettingsEditArg } from '../graphql-operations'
+import type { PlatformContext } from '../platform/context'
 
 /**
  * A helper function for performing an update to settings.
@@ -22,7 +21,7 @@ export function updateSettings(
         { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
         subject: Scalars['ID'],
         lastID: number | null,
-        edit: GQL.ISettingsEdit | string
+        edit: SettingsEditArg | string
     ) => Promise<void>
 ): Promise<void> {
     return from(settings)
@@ -60,7 +59,7 @@ export function updateSettings(
         .toPromise()
 }
 
-function toGQLKeyPath(keyPath: (string | number)[]): GQL.IKeyPathSegment[] {
+function toGQLKeyPath(keyPath: (string | number)[]): KeyPathSegment[] {
     return keyPath.map(member => (typeof member === 'string' ? { property: member } : { index: member }))
 }
 
@@ -74,7 +73,7 @@ export function mutateSettings(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     subject: Scalars['ID'],
     lastID: number | null,
-    edit: GQL.IConfigurationEdit | string
+    edit: ConfigurationEdit | string
 ): Promise<void> {
     return typeof edit === 'string'
         ? overwriteSettings({ requestGraphQL }, subject, lastID, edit)
@@ -93,7 +92,7 @@ function editSettings(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     subject: Scalars['ID'],
     lastID: number | null,
-    edit: GQL.IConfigurationEdit
+    edit: ConfigurationEdit
 ): Promise<void> {
     return from(
         requestGraphQL({

@@ -1,32 +1,29 @@
-import { ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { mdiSourceRepository } from '@mdi/js'
+import { ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
+import classNames from 'classnames'
+
 import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import styles from './SuggestionPanel.module.scss'
 
 interface SuggestionsPanelProps {
     value: string | null
-    suggestions?: Error | RepositorySuggestion[]
-}
-
-interface RepositorySuggestion {
-    id: string
-    name: string
+    suggestions: string[]
+    className?: string
 }
 
 /**
  * Renders suggestion panel for repositories combobox component.
  */
-export const SuggestionsPanel: React.FunctionComponent<SuggestionsPanelProps> = props => {
-    const { value, suggestions } = props
+export const SuggestionsPanel: React.FunctionComponent<React.PropsWithChildren<SuggestionsPanelProps>> = props => {
+    const { value, suggestions, className } = props
 
     if (suggestions === undefined) {
         return (
-            <div className={styles.loadingPanel}>
+            <div className={classNames(styles.loadingPanel, className)}>
                 <LoadingSpinner inline={false} />
             </div>
         )
@@ -36,14 +33,25 @@ export const SuggestionsPanel: React.FunctionComponent<SuggestionsPanelProps> = 
         return <ErrorAlert className="m-1" error={suggestions} data-testid="repository-suggestions-error" />
     }
 
+    if (suggestions.length === 0) {
+        return null
+    }
+
     const searchValue = value ?? ''
     const isValueEmpty = searchValue.trim() === ''
 
     return (
-        <ComboboxList className={styles.suggestionsList}>
+        <ComboboxList className={classNames(styles.suggestionsList, className)}>
             {suggestions.map(suggestion => (
-                <ComboboxOption className={styles.suggestionsListItem} key={suggestion.id} value={suggestion.name}>
-                    <SourceRepositoryIcon className="mr-1" size="1rem" />
+                <ComboboxOption className={styles.suggestionsListItem} key={suggestion} value={suggestion}>
+                    <Icon
+                        className="mr-1"
+                        svgPath={mdiSourceRepository}
+                        inline={false}
+                        aria-hidden={true}
+                        height="1rem"
+                        width="1rem"
+                    />
                     <ComboboxOptionText />
                 </ComboboxOption>
             ))}

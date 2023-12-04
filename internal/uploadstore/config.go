@@ -21,9 +21,14 @@ func normalizeConfig(t Config) Config {
 	// Normalize the backend name.
 	o.Backend = strings.ToLower(o.Backend)
 
-	if o.Backend == "minio" {
-		// No manual provisioning on minIO.
+	if o.Backend == "blobstore" {
+		o.S3.IsBlobstore = true
+
+		// No manual provisioning on blobstore.
 		o.ManageBucket = true
+
+		// No subdomains on built-in blobstore.
+		o.S3.UsePathStyle = true
 	}
 	return o
 }

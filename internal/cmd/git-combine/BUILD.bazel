@@ -1,0 +1,36 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "git-combine_lib",
+    srcs = ["git-combine.go"],
+    embedsrcs = ["default-branch.sh"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/cmd/git-combine",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//lib/errors",
+        "@com_github_go_git_go_git_v5//:go-git",
+        "@com_github_go_git_go_git_v5//plumbing",
+        "@com_github_go_git_go_git_v5//plumbing/filemode",
+        "@com_github_go_git_go_git_v5//plumbing/object",
+        "@com_github_go_git_go_git_v5//plumbing/storer",
+    ],
+)
+
+go_binary(
+    name = "git-combine",
+    embed = [":git-combine_lib"],
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "git-combine_test",
+    timeout = "short",
+    srcs = ["git-combine_test.go"],
+    embed = [":git-combine_lib"],
+    deps = [
+        "@com_github_go_git_go_git_v5//plumbing",
+        "@com_github_go_git_go_git_v5//plumbing/object",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

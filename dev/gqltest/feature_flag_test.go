@@ -10,7 +10,7 @@ func TestFeatureFlags(t *testing.T) {
 	const featureFlagOverrideFragment = `fragment FeatureFlagOverrideData on FeatureFlagOverride {
 		id
 		namespace {
-			id 
+			id
 		}
 		targetFlag {
 			...on FeatureFlagBoolean {
@@ -75,7 +75,7 @@ func TestFeatureFlags(t *testing.T) {
 				CreateFeatureFlag featureFlagResult
 			}
 		}
-		params := map[string]interface{}{"name": name, "value": value, "rollout": rolloutBasisPoints}
+		params := map[string]any{"name": name, "value": value, "rollout": rolloutBasisPoints}
 		err := client.GraphQL("", m, params, &res)
 		return res.Data.CreateFeatureFlag, err
 	}
@@ -97,7 +97,7 @@ func TestFeatureFlags(t *testing.T) {
 				UpdateFeatureFlag featureFlagResult
 			}
 		}
-		params := map[string]interface{}{"name": name, "value": value, "rollout": rolloutBasisPoints}
+		params := map[string]any{"name": name, "value": value, "rollout": rolloutBasisPoints}
 		err := client.GraphQL("", m, params, &res)
 		return res.Data.UpdateFeatureFlag, err
 	}
@@ -107,10 +107,10 @@ func TestFeatureFlags(t *testing.T) {
 			deleteFeatureFlag(
 				name: $name,
 			) {
-				alwaysNil		
+				alwaysNil
 			}
 		}`
-		params := map[string]interface{}{"name": name}
+		params := map[string]any{"name": name}
 		return client.GraphQL("", m, params, nil)
 	}
 
@@ -262,7 +262,7 @@ func TestFeatureFlags(t *testing.T) {
 				CreateFeatureFlagOverride featureFlagOverrideResult
 			}
 		}
-		params := map[string]interface{}{"namespace": namespace, "flagName": flagName, "value": value}
+		params := map[string]any{"namespace": namespace, "flagName": flagName, "value": value}
 		err := client.GraphQL("", m, params, &res)
 		return res.Data.CreateFeatureFlagOverride, err
 	}
@@ -283,7 +283,7 @@ func TestFeatureFlags(t *testing.T) {
 				UpdateFeatureFlagOverride featureFlagOverrideResult
 			}
 		}
-		params := map[string]interface{}{"id": id, "value": value}
+		params := map[string]any{"id": id, "value": value}
 		err := client.GraphQL("", m, params, &res)
 		return res.Data.UpdateFeatureFlagOverride, err
 	}
@@ -298,7 +298,7 @@ func TestFeatureFlags(t *testing.T) {
 			}
 		}`
 
-		params := map[string]interface{}{"id": id}
+		params := map[string]any{"id": id}
 		return client.GraphQL("", m, params, nil)
 	}
 
@@ -311,9 +311,7 @@ func TestFeatureFlags(t *testing.T) {
 
 		userID, err := client.CreateUser("testuseroverrides", "test@override.com")
 		require.NoError(t, err)
-		t.Cleanup(func() {
-			client.DeleteUser(userID, true)
-		})
+		removeTestUserAfterTest(t, userID)
 
 		boolTrue := true
 		flag, err := createFeatureFlag("test_override", &boolTrue, nil)
@@ -340,7 +338,6 @@ func TestFeatureFlags(t *testing.T) {
 					require.NoError(t, err)
 					require.Equal(t, updated.Value, true)
 				})
-
 			})
 
 			t.Run("UserOverride", func(t *testing.T) {

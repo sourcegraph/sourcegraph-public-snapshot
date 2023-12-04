@@ -1,0 +1,48 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "luasandbox",
+    srcs = [
+        "builtins.go",
+        "globals.go",
+        "init.go",
+        "libs.go",
+        "modules.go",
+        "observability.go",
+        "sandbox.go",
+        "service.go",
+    ],
+    embedsrcs = [
+        "lua/.stylua.toml",
+        "lua/fun.lua",
+        "lua/json.lua",
+        "lua/path.lua",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/luasandbox",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/luasandbox/libs",
+        "//internal/luasandbox/util",
+        "//internal/memo",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_yuin_gopher_lua//:gopher-lua",
+        "@com_layeh_gopher_luar//:gopher-luar",
+    ],
+)
+
+go_test(
+    name = "luasandbox_test",
+    timeout = "short",
+    srcs = ["sandbox_test.go"],
+    embed = [":luasandbox"],
+    deps = [
+        "//internal/luasandbox/util",
+        "//internal/observation",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_yuin_gopher_lua//:gopher-lua",
+    ],
+)

@@ -1,0 +1,31 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "locker",
+    srcs = ["locker.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/locker",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/basestore",
+        "//lib/errors",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_segmentio_fasthash//fnv1",
+    ],
+)
+
+go_test(
+    name = "locker_test",
+    timeout = "moderate",
+    srcs = ["locker_test.go"],
+    embed = [":locker"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/database/basestore",
+        "//internal/database/dbtest",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

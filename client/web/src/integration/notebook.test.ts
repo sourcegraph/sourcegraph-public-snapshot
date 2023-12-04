@@ -1,18 +1,33 @@
+import fs from 'fs'
+import path from 'path'
+
 import { subDays } from 'date-fns'
 import expect from 'expect'
+import { afterEach, beforeEach, describe, it } from 'mocha'
 
-import { NotebookBlockType, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import {
+    highlightFileResult,
+    mixedSearchStreamEvents,
+} from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
+import type { SearchEvent } from '@sourcegraph/shared/src/search/stream'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
+import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebGraphQlOperations } from '../graphql-operations'
-import { BlockType } from '../search/notebook'
+import {
+    type CreateNotebookBlockInput,
+    type NotebookFields,
+    type WebGraphQlOperations,
+    NotebookBlockType,
+    SymbolKind,
+} from '../graphql-operations'
+import type { BlockType } from '../notebooks'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { createRepositoryRedirectResult, createResolveRevisionResult } from './graphQlResponseHelpers'
+import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { createResolveRepoRevisionResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
-import { highlightFileResult, mixedSearchStreamEvents } from './streaming-search-mocks'
 import { percySnapshotWithVariants } from './utils'
 
 const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
@@ -22,6 +37,7 @@ const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = 
             subjects: [
                 {
                     __typename: 'DefaultSettings',
+                    id: 'TestDefaultSettingsID',
                     settingsURL: null,
                     viewerCanAdminister: false,
                     latestSettings: {
@@ -57,82 +73,126 @@ const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = 
 }
 
 const now = new Date()
+const downloadPath = process.env.TEST_TMPDIR || process.cwd()
+
+const notebookFixture = (id: string, title: string, blocks: NotebookFields['blocks']): NotebookFields => ({
+    __typename: 'Notebook',
+    id,
+    title,
+    createdAt: subDays(now, 5).toISOString(),
+    updatedAt: subDays(now, 5).toISOString(),
+    public: true,
+    viewerCanManage: true,
+    viewerHasStarred: true,
+    namespace: { __typename: 'User', id: '1', namespaceName: 'user1' },
+    stars: { totalCount: 123 },
+    creator: { __typename: 'User', username: 'user1' },
+    updater: { __typename: 'User', username: 'user1' },
+    blocks,
+})
+
+const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookFields['blocks'][number] => {
+    switch (block.type) {
+        case NotebookBlockType.MARKDOWN: {
+            return { __typename: 'MarkdownBlock', id: block.id, markdownInput: block.markdownInput ?? '' }
+        }
+        case NotebookBlockType.QUERY: {
+            return { __typename: 'QueryBlock', id: block.id, queryInput: block.queryInput ?? '' }
+        }
+        case NotebookBlockType.FILE: {
+            return {
+                __typename: 'FileBlock',
+                id: block.id,
+                fileInput: {
+                    __typename: 'FileBlockInput',
+                    repositoryName: block.fileInput?.repositoryName ?? '',
+                    filePath: block.fileInput?.filePath ?? '',
+                    revision: block.fileInput?.revision ?? '',
+                    lineRange: {
+                        __typename: 'FileBlockLineRange',
+                        startLine: block.fileInput?.lineRange?.startLine ?? 0,
+                        endLine: block.fileInput?.lineRange?.endLine ?? 1,
+                    },
+                },
+            }
+        }
+        case NotebookBlockType.SYMBOL: {
+            return {
+                __typename: 'SymbolBlock',
+                id: block.id,
+                symbolInput: {
+                    __typename: 'SymbolBlockInput',
+                    repositoryName: block.symbolInput?.repositoryName ?? '',
+                    filePath: block.symbolInput?.filePath ?? '',
+                    revision: block.symbolInput?.revision ?? '',
+                    lineContext: block.symbolInput?.lineContext ?? 3,
+                    symbolName: block.symbolInput?.symbolName ?? '',
+                    symbolContainerName: block.symbolInput?.symbolContainerName ?? '',
+                    symbolKind: block.symbolInput?.symbolKind ?? SymbolKind.UNKNOWN,
+                },
+            }
+        }
+    }
+}
+
+const mockSymbolStreamEvents: SearchEvent[] = [
+    {
+        type: 'matches',
+        data: [
+            {
+                type: 'symbol',
+                repository: 'github.com/sourcegraph/sourcegraph',
+                path: 'client/web/index.ts',
+                commit: 'branch',
+                symbols: [
+                    {
+                        name: 'func',
+                        containerName: 'class',
+                        url: 'https://sourcegraph.com/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3',
+                        kind: SymbolKind.FUNCTION,
+                        line: 1,
+                    },
+                ],
+            },
+        ],
+    },
+    { type: 'done', data: {} },
+]
+
+const mockFilePathStreamEvents: SearchEvent[] = [
+    {
+        type: 'matches',
+        data: [
+            {
+                type: 'path',
+                repository: 'github.com/sourcegraph/sourcegraph',
+                path: 'client/web/index.ts',
+                commit: 'branch',
+            },
+        ],
+    },
+    { type: 'done', data: {} },
+]
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     ...highlightFileResult,
-    RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-    ResolveRev: () => createResolveRevisionResult('/github.com/sourcegraph/sourcegraph'),
+    ...viewerSettings,
+    ResolveRepoRev: () => createResolveRepoRevisionResult('/github.com/sourcegraph/sourcegraph'),
     FetchNotebook: ({ id }) => ({
-        node: {
-            __typename: 'Notebook',
-            id,
-            title: 'Notebook Title',
-            createdAt: subDays(now, 5).toISOString(),
-            updatedAt: subDays(now, 5).toISOString(),
-            public: true,
-            viewerCanManage: true,
-            viewerHasStarred: true,
-            namespace: {
-                __typename: 'User',
-                id: '1',
-                namespaceName: 'user1',
-            },
-            stars: {
-                totalCount: 123,
-            },
-            creator: { __typename: 'User', username: 'user1' },
-            updater: { __typename: 'User', username: 'user1' },
-            blocks: [
-                { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
-                { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
-            ],
-        },
+        node: notebookFixture(id, 'Notebook Title', [
+            { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
+            { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
+        ]),
     }),
     UpdateNotebook: ({ id, notebook }) => ({
-        updateNotebook: {
-            __typename: 'Notebook',
-            id,
-            title: notebook.title,
-            createdAt: subDays(now, 5).toISOString(),
-            updatedAt: subDays(now, 5).toISOString(),
-            public: notebook.public,
-            viewerCanManage: true,
-            viewerHasStarred: true,
-            namespace: {
-                __typename: 'User',
-                id: '1',
-                namespaceName: 'user1',
-            },
-            stars: {
-                totalCount: 123,
-            },
-            creator: { __typename: 'User', username: 'user1' },
-            updater: { __typename: 'User', username: 'user1' },
-            blocks: notebook.blocks.map(block => {
-                switch (block.type) {
-                    case NotebookBlockType.MARKDOWN:
-                        return { __typename: 'MarkdownBlock', id: block.id, markdownInput: block.markdownInput ?? '' }
-                    case NotebookBlockType.QUERY:
-                        return { __typename: 'QueryBlock', id: block.id, queryInput: block.queryInput ?? '' }
-                    case NotebookBlockType.FILE:
-                        return {
-                            __typename: 'FileBlock',
-                            id: block.id,
-                            fileInput: {
-                                __typename: 'FileBlockInput',
-                                repositoryName: block.fileInput?.repositoryName ?? '',
-                                filePath: block.fileInput?.filePath ?? '',
-                                revision: block.fileInput?.revision ?? '',
-                                lineRange: {
-                                    __typename: 'FileBlockLineRange',
-                                    startLine: block.fileInput?.lineRange?.startLine ?? 0,
-                                    endLine: block.fileInput?.lineRange?.endLine ?? 1,
-                                },
-                            },
-                        }
-                }
-            }),
+        updateNotebook: notebookFixture(id, notebook.title, notebook.blocks.map(GQLBlockInputToResponse)),
+    }),
+    ListNotebooks: () => ({
+        notebooks: {
+            totalCount: 1,
+            nodes: [notebookFixture('id', 'Title', [])],
+            pageInfo: { endCursor: null, hasNextPage: false },
         },
     }),
 }
@@ -150,8 +210,16 @@ describe('Search Notebook', () => {
             currentTest: this.currentTest!,
             directory: __dirname,
         })
-        testContext.overrideGraphQL({ ...commonSearchGraphQLResults, ...viewerSettings })
+        testContext.overrideGraphQL(commonSearchGraphQLResults)
         testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
+        testContext.overrideJsContext({
+            temporarySettings: {
+                __typename: 'TemporarySettings',
+                contents: JSON.stringify({
+                    'search.notebooks.gettingStartedTabSeen': true,
+                }),
+            },
+        })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
@@ -175,7 +243,7 @@ describe('Search Notebook', () => {
         driver.page.click(`${blockSelector(id)} [data-testid="${actionLabel}"]`)
 
     const addNewBlock = (type: BlockType) =>
-        driver.page.click(`[data-testid="always-visible-add-block-buttons"] [data-testid="add-${type}-button"]`)
+        driver.page.click(`[data-testid="notebook-command-palette"] [data-testid="add-${type}-block"]`)
 
     const getFileBlockHeaderText = async (fileBlockSelector: string) => {
         const fileBlockHeaderSelector = `${fileBlockSelector} [data-testid="file-block-header"]`
@@ -187,12 +255,22 @@ describe('Search Notebook', () => {
         return fileBlockHeaderText
     }
 
+    const getRenderedMarkdownText = async (mdBlockSelector: string) => {
+        const markdownOutputSelector = `${mdBlockSelector} [data-testid="output"]`
+        await driver.page.waitForSelector(markdownOutputSelector, { visible: true })
+        return driver.page.evaluate(
+            markdownOutputSelector => document.querySelector<HTMLElement>(markdownOutputSelector)?.textContent,
+            markdownOutputSelector
+        )
+    }
+
     it('Should render a notebook', async () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
         await driver.page.waitForSelector('[data-block-id]', { visible: true })
         const blockIds = await getBlockIds()
         expect(blockIds).toHaveLength(2)
         await percySnapshotWithVariants(driver.page, 'Search notebook')
+        await accessibilityAudit(driver.page)
     })
 
     it('Should move, duplicate, and delete blocks', async () => {
@@ -235,25 +313,21 @@ describe('Search Notebook', () => {
         // Edit and run new markdown block
         await driver.page.click(newMarkdownBlockSelector)
         await driver.replaceText({
-            selector: `${newMarkdownBlockSelector} .monaco-editor`,
+            selector: `${newMarkdownBlockSelector} .cm-content`,
             newText: 'Replaced text',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
         })
         await driver.page.click('[data-testid="Render"]')
 
-        const markdownOutputSelector = `${newMarkdownBlockSelector} [data-testid="output"]`
-        await driver.page.waitForSelector(markdownOutputSelector, { visible: true })
-        const renderedMarkdownText = await driver.page.evaluate(
-            markdownOutputSelector => document.querySelector<HTMLElement>(markdownOutputSelector)?.textContent,
-            markdownOutputSelector
-        )
+        const renderedMarkdownText = await getRenderedMarkdownText(newMarkdownBlockSelector)
         expect(renderedMarkdownText?.trim()).toEqual('Replaced text')
 
         // Edit and run new query block
-        await driver.page.click(`${newQueryBlockSelector} .monaco-editor`)
+        const inputSelector = `${newQueryBlockSelector} [data-testid="notebook-query-block-input"]`
+        await driver.page.click(inputSelector)
         await driver.replaceText({
-            selector: `${newQueryBlockSelector} .monaco-editor`,
+            selector: inputSelector,
             newText: 'repo:test query',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
@@ -268,9 +342,12 @@ describe('Search Notebook', () => {
         )
         expect(isResultContainerVisible).toBeTruthy()
         await percySnapshotWithVariants(driver.page, 'Search notebook with markdown and query blocks')
+        await accessibilityAudit(driver.page)
     })
 
     it('Should add file block and edit it', async () => {
+        testContext.overrideSearchStreamEvents(mockFilePathStreamEvents)
+
         await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
         await driver.page.waitForSelector('[data-block-id]', { visible: true })
 
@@ -282,39 +359,43 @@ describe('Search Notebook', () => {
         const fileBlockSelector = blockSelector(blockIds[2])
 
         // Edit new file block
-        await driver.page.click(fileBlockSelector)
-
+        const inputSelector = `${fileBlockSelector} [data-testid="notebook-file-block-input"]`
+        await driver.page.click(inputSelector)
         await driver.replaceText({
-            selector: `${fileBlockSelector} [data-testid="file-block-repository-name-input"]`,
-            newText: 'github.com/sourcegraph/sourcegraph',
-            selectMethod: 'keyboard',
-            enterTextMethod: 'paste',
-        })
-        // Wait for input to validate
-        await driver.page.waitForSelector(
-            `${fileBlockSelector} [data-testid="file-block-repository-name-input"].is-valid`
-        )
-
-        await driver.replaceText({
-            selector: `${fileBlockSelector} [data-testid="file-block-file-path-input"]`,
+            selector: inputSelector,
             newText: 'client/web/file.tsx',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
         })
-        // Wait for input to validate
-        await driver.page.waitForSelector(`${fileBlockSelector} [data-testid="file-block-file-path-input"].is-valid`)
 
-        // Wait for highlighted code to load
-        await driver.page.waitForSelector(`${fileBlockSelector} td.line`, { visible: true })
+        // Wait for file suggestion button and click it
+        await driver.page.waitForSelector(`${fileBlockSelector} [data-testid="file-suggestion-button"]`, {
+            visible: true,
+        })
+        await driver.page.click(`${fileBlockSelector} [data-testid="file-suggestion-button"]`)
 
-        // Refocus the entire block (prevents jumping content for below actions)
-        await driver.page.click(fileBlockSelector)
+        await driver.replaceText({
+            selector: `[id="${blockIds[2]}-line-range-input"]`,
+            newText: '1-20',
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
+
+        // Wait for header to update to load
+        await driver.page.waitForFunction(
+            (fileBlockSelector: string) => {
+                const fileBlockHeaderSelector = `${fileBlockSelector} [data-testid="file-block-header"]`
+                return document.querySelector<HTMLDivElement>(fileBlockHeaderSelector)?.textContent?.includes('/')
+            },
+            {},
+            fileBlockSelector
+        )
 
         // Save the inputs
         await driver.page.click('[data-testid="Save"]')
 
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
-        expect(fileBlockHeaderText).toEqual('github.com/sourcegraph/sourcegraph/client/web/file.tsx')
+        expect(fileBlockHeaderText).toEqual('sourcegraph/sourcegraph›client/web/index.ts')
     })
 
     it('Should add file block and auto-fill the inputs when pasting a file URL', async () => {
@@ -357,9 +438,7 @@ describe('Search Notebook', () => {
         await driver.page.click('[data-testid="Save"]')
 
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
-        expect(fileBlockHeaderText).toEqual(
-            'github.com/sourcegraph/sourcegraph/client/search/src/index.ts@main, lines 30-32'
-        )
+        expect(fileBlockHeaderText).toEqual('sourcegraph/sourcegraph›client/search/src/index.ts')
     })
 
     it('Should update the notebook title', async () => {
@@ -391,5 +470,319 @@ describe('Search Notebook', () => {
         await driver.page.click('[data-testid="share-notebook-option-test-true"]')
 
         await driver.page.click('[data-testid="share-notebook-done-button"]')
+    })
+
+    afterEach(() => {
+        const exportedNotebookPath = path.resolve(downloadPath, 'Exported.snb.md')
+        // eslint-disable-next-line no-sync
+        if (fs.existsSync(exportedNotebookPath)) {
+            // eslint-disable-next-line no-sync
+            fs.unlinkSync(exportedNotebookPath)
+        }
+    })
+
+    it('Should export a notebook as Markdown file and import it back', async () => {
+        testContext.overrideGraphQL({
+            ...commonSearchGraphQLResults,
+            FetchNotebook: ({ id }) => ({
+                node: notebookFixture(id, 'Exported', [
+                    { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
+                    { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
+                    {
+                        __typename: 'FileBlock',
+                        id: '3',
+                        fileInput: {
+                            __typename: 'FileBlockInput',
+                            repositoryName: 'github.com/sourcegraph/sourcegraph',
+                            filePath: 'client/web/index.ts',
+                            revision: 'main',
+                            lineRange: { __typename: 'FileBlockLineRange', startLine: 1, endLine: 10 },
+                        },
+                    },
+                    {
+                        __typename: 'SymbolBlock',
+                        id: '4',
+                        symbolInput: {
+                            __typename: 'SymbolBlockInput',
+                            repositoryName: 'github.com/sourcegraph/sourcegraph',
+                            filePath: 'client/web/index.ts',
+                            revision: 'branch',
+                            symbolName: 'func',
+                            symbolContainerName: 'class',
+                            symbolKind: SymbolKind.FUNCTION,
+                            lineContext: 3,
+                        },
+                    },
+                ]),
+            }),
+            CreateNotebook: ({ notebook }) => ({
+                createNotebook: notebookFixture(
+                    'importedId',
+                    notebook.title,
+                    notebook.blocks.map(GQLBlockInputToResponse)
+                ),
+            }),
+        })
+        testContext.overrideSearchStreamEvents(mockSymbolStreamEvents)
+
+        const expectedExportedMarkdown = `# Title
+
+\`\`\`sourcegraph
+query
+\`\`\`
+
+${process.env.SOURCEGRAPH_BASE_URL}/github.com/sourcegraph/sourcegraph@main/-/blob/client/web/index.ts?L2-10
+
+${process.env.SOURCEGRAPH_BASE_URL}/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3#symbolName=func&symbolContainerName=class&symbolKind=FUNCTION&lineContext=3
+`
+
+        await driver.page.client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath })
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-testid="export-notebook-markdown-button"]', { visible: true })
+
+        await driver.page.click('[data-testid="export-notebook-markdown-button"]')
+        // Wait for the download to complete.
+        await driver.page.waitForTimeout(1000)
+
+        const exportedNotebookPath = path.resolve(downloadPath, 'Exported.snb.md')
+        // eslint-disable-next-line no-sync
+        expect(fs.existsSync(exportedNotebookPath)).toBeTruthy()
+
+        // eslint-disable-next-line no-sync
+        const exportedNotebookFileContents = fs.readFileSync(exportedNotebookPath, 'utf-8')
+        expect(exportedNotebookFileContents).toEqual(expectedExportedMarkdown)
+
+        // Navigate to the notebooks list page to import the notebook.
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks')
+        await driver.page.waitForSelector('[data-testid="import-markdown-notebook-file-input"]')
+        const fileInputElement = await driver.page.$('[data-testid="import-markdown-notebook-file-input"]')
+        await fileInputElement?.uploadFile(exportedNotebookPath)
+        await fileInputElement?.evaluate(upload => upload.dispatchEvent(new Event('change', { bubbles: true })))
+
+        // Should be redirected to the notebook page.
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+        // Verify the redirected URL contains the imported notebook id.
+        expect(driver.page.url()).toContain('/notebooks/importedId')
+    })
+
+    it('Should copy the notebook', async () => {
+        testContext.overrideGraphQL({
+            ...commonSearchGraphQLResults,
+            CreateNotebook: ({ notebook }) => ({
+                createNotebook: notebookFixture(
+                    'copiedId',
+                    notebook.title,
+                    notebook.blocks.map(GQLBlockInputToResponse)
+                ),
+            }),
+        })
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-testid="copy-notebook-button"]', { visible: true })
+
+        await Promise.all([
+            // We should be redirected to the copied notebook page, wait for the navigation.
+            driver.page.waitForNavigation({ waitUntil: 'networkidle0' }),
+            driver.page.click('[data-testid="copy-notebook-button"]'),
+        ])
+
+        // Wait for blocks to load.
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        // Verify the redirected URL contains the copied notebook id.
+        expect(driver.page.url()).toContain('/notebooks/copiedId')
+    })
+
+    it('Should add symbol block and edit it', async () => {
+        testContext.overrideSearchStreamEvents(mockSymbolStreamEvents)
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        await addNewBlock('symbol')
+
+        const blockIds = await getBlockIds()
+        expect(blockIds).toHaveLength(3)
+
+        const symbolBlockSelector = blockSelector(blockIds[2])
+
+        // Edit new symbol block
+        const inputSelector = `${symbolBlockSelector} [data-testid="notebook-symbol-block-input"]`
+        await driver.page.click(inputSelector)
+        await driver.replaceText({
+            selector: inputSelector,
+            newText: 'func',
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
+
+        // Wait for symbol suggestion button and click it
+        await driver.page.waitForSelector(`${symbolBlockSelector} [data-testid="symbol-suggestion-button"]`, {
+            visible: true,
+        })
+        await driver.page.click(`${symbolBlockSelector} [data-testid="symbol-suggestion-button"]`)
+
+        // Wait for highlighted code to load
+        await driver.page.waitForSelector(`${symbolBlockSelector} td.line`, { visible: true })
+
+        // Refocus the entire block (prevents jumping content for below actions)
+        await driver.page.click(symbolBlockSelector)
+
+        // Save the inputs
+        await driver.page.click('[data-testid="Save"]')
+
+        const symbolBlockSelectedSymbolNameSelector = `${symbolBlockSelector} [data-testid="selected-symbol-name"]`
+        const selectedSymbolName = await driver.page.evaluate(
+            symbolBlockSelectedSymbolNameSelector =>
+                document.querySelector<HTMLDivElement>(symbolBlockSelectedSymbolNameSelector)?.textContent,
+            symbolBlockSelectedSymbolNameSelector
+        )
+        expect(selectedSymbolName).toEqual('func')
+    })
+
+    it('Should add an empty markdown block through the command palette', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        // Focus the input and use the slash command to filter available options
+        await driver.page.click('[data-testid="command-palette-input"]')
+        await driver.replaceText({
+            selector: '[data-testid="command-palette-input"]',
+            newText: '/markdown',
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
+
+        // Wait for the command palette option to show up and select it
+        await driver.page.waitForSelector('[data-option-id="add-md-block"]', { visible: true })
+        await driver.page.click('[data-option-id="add-md-block"]')
+
+        // A new block should appear
+        const blockIds = await getBlockIds()
+        expect(blockIds).toHaveLength(3)
+    })
+
+    it('Should add a markdown block with initial input through the command palette', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        // Focus the input and enter the markdown text
+        await driver.page.click('[data-testid="command-palette-input"]')
+        await driver.replaceText({
+            selector: '[data-testid="command-palette-input"]',
+            newText: 'Markdown Text',
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
+
+        // Wait for the command palette option to show up and select it
+        await driver.page.waitForSelector('[data-option-id="add-md-block-with-input"]', { visible: true })
+        await driver.page.click('[data-option-id="add-md-block-with-input"]')
+
+        // A new block should appear
+        const blockIds = await getBlockIds()
+        expect(blockIds).toHaveLength(3)
+        const mdBlockSelector = blockSelector(blockIds[2])
+
+        // Render the markdown and check the output
+        await driver.page.click('[data-testid="Render"]')
+        const renderedMarkdownText = await getRenderedMarkdownText(mdBlockSelector)
+        expect(renderedMarkdownText?.trim()).toEqual('Markdown Text')
+    })
+
+    it('Should add a pre-populated file block when pasting a file URL in command palette', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        // Focus the input and paste the file URL
+        await driver.page.click('[data-testid="command-palette-input"]')
+        await driver.replaceText({
+            selector: '[data-testid="command-palette-input"]',
+            newText:
+                'https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/client/search/src/index.ts?L30-32',
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
+
+        // Wait for the command palette option to show up and select it
+        await driver.page.waitForSelector('[data-option-id="add-file-from-url"]', { visible: true })
+        await driver.page.click('[data-option-id="add-file-from-url"]')
+
+        // A new block should appear
+        const blockIds = await getBlockIds()
+        expect(blockIds).toHaveLength(3)
+        const fileBlockSelector = blockSelector(blockIds[2])
+
+        // Wait for highlighted code to load
+        await driver.page.waitForSelector(`${fileBlockSelector} td.line`, { visible: true })
+
+        const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
+        expect(fileBlockHeaderText).toEqual('sourcegraph/sourcegraph›client/search/src/index.ts')
+    })
+
+    const getHighlightedOutlineHeading = async () => {
+        const selector = '[data-testid="notebook-outline"] [aria-current="true"]'
+        await driver.page.waitForSelector(selector, { visible: true })
+        return driver.page.evaluate(selector => document.querySelector<HTMLElement>(selector)?.dataset.id, selector)
+    }
+
+    it('Should highlight the top visible heading in the outline', async () => {
+        const fillerText = 'Lorem ipsum dolor sit amet. '.repeat(256)
+        // HTML should not affect heading ids.
+        const markdownInput = `# Title <i>1</i>\n\n${fillerText}\n# Title <i>2</i>\n\n${fillerText}\n`
+
+        testContext.overrideGraphQL({
+            ...commonSearchGraphQLResults,
+            FetchNotebook: ({ id }) => ({
+                node: notebookFixture(id, 'Outline', [{ __typename: 'MarkdownBlock', id: 'id-1', markdownInput }]),
+            }),
+        })
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+        // The first "Title 1" heading should be highlighted
+        await driver.page.waitForSelector('[data-id="title-1-id-1"][aria-current="true"]')
+        expect(await getHighlightedOutlineHeading()).toEqual('title-1-id-1')
+
+        // Click on "Title 2" link in the outline
+        await driver.page.click('[data-id="title-2-id-1"] a')
+
+        // The "Title 2" heading should be visible
+        await driver.page.waitForSelector('h1#title-2-id-1', { visible: true })
+
+        // The "Title 2" heading in the outline should be highlighted
+        await driver.page.waitForSelector('[data-id="title-2-id-1"][aria-current="true"]')
+        expect(await getHighlightedOutlineHeading()).toEqual('title-2-id-1')
+    })
+
+    it('Should scroll to the heading specified in the hash on page load', async () => {
+        const fillerText = 'Lorem ipsum dolor sit amet. '.repeat(256)
+        // HTML should not affect heading ids.
+        const markdownInput = `# Title <i>1</i>\n\n${fillerText}\n# Title <i>2</i>\n\n${fillerText}\n`
+
+        testContext.overrideGraphQL({
+            ...commonSearchGraphQLResults,
+            FetchNotebook: ({ id }) => ({
+                node: notebookFixture(id, 'Outline', [{ __typename: 'MarkdownBlock', id: 'id-1', markdownInput }]),
+            }),
+        })
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1#title-2-id-1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        // The "Title 2" heading should be visible
+        await driver.page.waitForSelector('h1#title-2-id-1', { visible: true })
+
+        // The "Title 2" heading in the outline should be highlighted
+        await driver.page.waitForSelector('[data-id="title-2-id-1"][aria-current="true"]')
+        expect(await getHighlightedOutlineHeading()).toEqual('title-2-id-1')
+    })
+
+    it('Notebooks list page should be accessible', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks?tab=notebooks')
+        await driver.page.waitForSelector('[data-testid="filtered-connection-nodes"]', { visible: true })
+        await percySnapshotWithVariants(driver.page, 'Notebooks list')
+        await accessibilityAudit(driver.page)
     })
 })

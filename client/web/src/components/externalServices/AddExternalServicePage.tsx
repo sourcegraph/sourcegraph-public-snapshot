@@ -1,27 +1,25 @@
-import * as H from 'history'
-import React, { useEffect, useCallback, useState } from 'react'
+import { type FC, useEffect, useCallback, useState } from 'react'
 
-import { asError, isErrorLike, renderMarkdown } from '@sourcegraph/common'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Alert } from '@sourcegraph/wildcard'
+import type { FetchResult } from '@apollo/client'
+import { useNavigate } from 'react-router-dom'
 
-import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
+import { logger, renderMarkdown } from '@sourcegraph/common'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Alert, Container, H3, H4, Markdown, PageHeader } from '@sourcegraph/wildcard'
+
+import type { AddExternalServiceInput, AddExternalServiceResult } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 import { PageTitle } from '../PageTitle'
 
-import { addExternalService } from './backend'
+import { useAddExternalService } from './backend'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import { ExternalServiceForm } from './ExternalServiceForm'
-import { AddExternalServiceOptions } from './externalServices'
+import type { AddExternalServiceOptions } from './externalServices'
 
-interface Props extends ThemeProps, TelemetryProps {
-    history: H.History
+interface Props extends TelemetryProps {
     externalService: AddExternalServiceOptions
-    routingPrefix: string
-    afterCreateRoute: string
-    userID?: Scalars['ID']
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
 
     /** For testing only. */
     autoFocusForm?: boolean
@@ -30,22 +28,25 @@ interface Props extends ThemeProps, TelemetryProps {
 /**
  * Page for adding a single external service.
  */
-export const AddExternalServicePage: React.FunctionComponent<Props> = ({
-    afterCreateRoute,
+export const AddExternalServicePage: FC<Props> = ({
     externalService,
-    history,
-    isLightTheme,
-    routingPrefix,
     telemetryService,
-    userID,
     autoFocusForm,
+    externalServicesFromFile,
+    allowEditExternalServicesWithFile,
 }) => {
     const [config, setConfig] = useState(externalService.defaultConfig)
     const [displayName, setDisplayName] = useState(externalService.defaultDisplayName)
+    const navigate = useNavigate()
+    const { Instructions } = externalService
 
     useEffect(() => {
-        telemetryService.logViewEvent('AddExternalService')
+        telemetryService.logPageView('AddExternalService')
     }, [telemetryService])
+
+    useEffect(() => {
+        setConfig(externalService.defaultConfig)
+    }, [externalService.defaultConfig])
 
     const getExternalServiceInput = useCallback(
         (): AddExternalServiceInput => ({
@@ -64,80 +65,85 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
         [setDisplayName, setConfig]
     )
 
-    const [isCreating, setIsCreating] = useState<boolean | Error>(false)
-    const [createdExternalService, setCreatedExternalService] = useState<ExternalServiceFields>()
+    const [addExternalService, { data: addExternalServiceResult, loading: isCreating, error, client }] =
+        useAddExternalService()
+
     const onSubmit = useCallback(
-        async (event?: React.FormEvent<HTMLFormElement>): Promise<void> => {
+        async (event?: React.FormEvent<HTMLFormElement>): Promise<FetchResult<AddExternalServiceResult>> => {
             if (event) {
                 event.preventDefault()
             }
-            setIsCreating(true)
-            try {
-                const service = await addExternalService(
-                    { input: { ...getExternalServiceInput(), namespace: userID ?? null } },
-                    telemetryService
-                )
-                setIsCreating(false)
-                setCreatedExternalService(service)
-            } catch (error) {
-                setIsCreating(asError(error))
-            }
+            return addExternalService({
+                variables: {
+                    input: { ...getExternalServiceInput() },
+                },
+                onCompleted: data => {
+                    telemetryService.log('AddExternalServiceSucceeded')
+                    refreshSiteFlags(client).catch((error: Error) => logger.error(error))
+                    navigate(`/site-admin/external-services/${data.addExternalService.id}`)
+                },
+                onError: () => {
+                    telemetryService.log('AddExternalServiceFailed')
+                },
+            })
         },
-        [getExternalServiceInput, telemetryService, userID]
+        [addExternalService, telemetryService, getExternalServiceInput, client, navigate]
     )
-
-    useEffect(() => {
-        if (createdExternalService && !isErrorLike(createdExternalService)) {
-            // Refresh site flags so that global site alerts
-            // reflect the latest configuration.
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe({ error: error => console.error(error) })
-            history.push(afterCreateRoute)
-        }
-    }, [afterCreateRoute, createdExternalService, history])
+    const createdExternalService = addExternalServiceResult?.addExternalService
 
     return (
-        <div className="mt-3">
-            <PageTitle title="Add repositories" />
-            <h2>Add repositories</h2>
-            {createdExternalService?.warning ? (
-                <div>
-                    <div className="mb-3">
-                        <ExternalServiceCard
-                            {...externalService}
-                            title={createdExternalService.displayName}
-                            shortDescription="Update this external service configuration to manage repository mirroring."
-                            to={`${routingPrefix}/external-services/${createdExternalService.id}`}
+        <>
+            <PageTitle title="Add a code host connection" />
+            <PageHeader headingElement="h2" path={[{ text: 'Add a code host connection' }]} className="mb-3" />
+            <Container className="mb-3">
+                {createdExternalService?.warning ? (
+                    <div>
+                        <div className="mb-3">
+                            <ExternalServiceCard
+                                {...externalService}
+                                title={createdExternalService.displayName}
+                                shortDescription="Update this external service configuration to manage repository mirroring."
+                                to={`/site-admin/external-services/${encodeURIComponent(
+                                    createdExternalService.id
+                                )}/edit`}
+                            />
+                        </div>
+                        <Alert variant="warning">
+                            <H4>Warning</H4>
+                            <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
+                        </Alert>
+                    </div>
+                ) : (
+                    <>
+                        <div className="mb-3">
+                            <ExternalServiceCard {...externalService} />
+                        </div>
+                        {Instructions && (
+                            <>
+                                <H3>Instructions:</H3>
+                                <div className="mb-4">
+                                    <Instructions />
+                                </div>
+                            </>
+                        )}
+                        <ExternalServiceForm
+                            telemetryService={telemetryService}
+                            error={error}
+                            input={getExternalServiceInput()}
+                            editorActions={externalService.editorActions}
+                            jsonSchema={externalService.jsonSchema}
+                            mode="create"
+                            onSubmit={onSubmit}
+                            onChange={onChange}
+                            loading={isCreating === true}
+                            autoFocus={autoFocusForm}
+                            externalServicesFromFile={externalServicesFromFile}
+                            allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
+                            additionalFormComponent={externalService.additionalFormComponent}
                         />
-                    </div>
-                    <Alert variant="warning">
-                        <h4>Warning</h4>
-                        <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
-                    </Alert>
-                </div>
-            ) : (
-                <div>
-                    <div className="mb-3">
-                        <ExternalServiceCard {...externalService} />
-                    </div>
-                    <h3>Instructions:</h3>
-                    <div className="mb-4">{externalService.instructions}</div>
-                    <ExternalServiceForm
-                        history={history}
-                        isLightTheme={isLightTheme}
-                        telemetryService={telemetryService}
-                        error={isErrorLike(isCreating) ? isCreating : undefined}
-                        input={getExternalServiceInput()}
-                        editorActions={externalService.editorActions}
-                        jsonSchema={externalService.jsonSchema}
-                        mode="create"
-                        onSubmit={onSubmit}
-                        onChange={onChange}
-                        loading={isCreating === true}
-                        autoFocus={autoFocusForm}
-                    />
-                </div>
-            )}
-        </div>
+                    </>
+                )}
+            </Container>
+        </>
     )
 }

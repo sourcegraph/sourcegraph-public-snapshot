@@ -24,8 +24,8 @@ The tooltips include features like:
 
 It works as follows:
 
-- when visiting e.g. https://github.com/..., the extension injects a content script (inject.bundle.js)
-- there is a background script running to access certain chrome APIs, like storage (background.bundle.js)
+- when visiting e.g. https://github.com/..., the extension injects a content script (contentPage.main.bundle.js)
+- there is a background script running to access certain chrome APIs, like storage (backgroundPage.main.bundle.js)
 - a "code view" contains rendered (syntax highlighted) code (in an HTML table); the extension adds event listeners to the code view which control the tooltip
 - when the user mouses over a code table cell, the extension modifies the DOM node:
   - text nodes are wrapped in `<span>` (so hover/click events have appropriate specificity)
@@ -51,7 +51,7 @@ It works as follows:
       - `shared/`
         Code shared between multiple code hosts.
   - `config/`
-    Configuration code that is bundled via webpack. The configuration code adds properties to `window` that make it easier to tell what environment the script is running in. This is useful because the code can be run in the content script, background, options page, or in the actual page when injected by Phabricator and each environment will have different ways to do different things.
+    Configuration code that adds properties to `window` that make it easier to tell what environment the script is running in. This is useful because the code can be run in the content script, background, options page, or in the actual page when injected by Phabricator and each environment will have different ways to do different things.
   - `end-to-end/`
     E2E test suite.
 - `scripts/`
@@ -59,12 +59,12 @@ It works as follows:
 - `config/`
   Build configs.
 - `build/`
-  Generated directory containing the output from webpack and the generated bundles for each browser.
+  Generated directory containing the build output and the generated bundles for each browser.
 
 ## Requirements
 
 - `node`
-- `yarn`
+- `pnpm`
 - `make`
 
 ## Development
@@ -72,7 +72,7 @@ It works as follows:
 To build all the browser extensions for all browsers at once:
 
 ```bash
-yarn run dev
+pnpm run dev
 ```
 
 To only build for a single browser (which makes builds faster in local development), set the env var `TARGETS=chrome` or `TARGETS=firefox`.
@@ -85,34 +85,13 @@ Now, follow the steps below for the browser you intend to work with.
 - If you already have the Sourcegraph extension installed, disable it using the toggle.
 - Enable 'developer mode', click on [Load unpacked extensions](https://developer.chrome.com/extensions/getstarted#unpacked), save it in the `sourcegraph/client/browser/build/chrome` folder.
 - Browse to any public repository on GitHub to confirm it is working.
-- After making changes it is sometimes necessary to refresh the extension. This is done by going to [chrome://extensions](chrome://extensions) and clicking the "Reload" icon.
+- After making changes, it is necessary to refresh the extension. This is done by going to [chrome://extensions](chrome://extensions) and clicking the "Reload" icon.
 
 ![File-path](https://user-images.githubusercontent.com/20326070/96859153-75764300-1461-11eb-8b82-0febc9327723.png)
 
 #### Updating the bundle
 
 Click reload for Sourcegraph at `chrome://extensions`
-
-### Firefox (hot reloading)
-
-In a separate terminal session run:
-
-```bash
-yarn global add web-ext
-yarn run dev:firefox
-```
-
-A Firefox window will be spun up with the extension already installed.
-
-#### Updating the bundle
-
-Save a file and wait for webpack to finish rebuilding.
-
-#### Caveats
-
-The window that is spun up is completely separate from any existing sessions you have on Firefox.
-You'll have to sign into everything at the beginning of each development session(each time you run `yarn run dev:firefox`).
-You should ensure you're signed into any Sourcegraph instance you point the extension at as well as GitHub.
 
 ### Firefox (manual)
 
@@ -129,7 +108,7 @@ Click reload for Sourcegraph at `about:debugging`
 
 > **Note**: Requires MacOS with Xcode installed
 
-1. `yarn --cwd client/browser dev:safari`
+1. `pnpm --filter @sourcegraph/browser dev:safari`
 1. Open Safari then: `Develop > Allow Unsigned Extensions`
 1. Open `client/browser/build/Sourcegraph for Safari/Sourcegraph for Safari.xcodeproj` using Xcode
 1. Choose `Sourcegraph for Safari (macOS)` in the top toolbar and click Run icon
@@ -140,7 +119,14 @@ Click reload for Sourcegraph at `about:debugging`
 ## Testing
 
 - Unit tests: `sg test bext`
-- Integration tests: `sg test bext-build` & `sg test bext-integration`
+- Integration tests
+  - run
+    - build browser extension with `sg test bext-build`
+    - run tests with `sg test bext-integration`
+  - develop
+    - add/edit test case or at least its part with navigation to a certain page
+    - if there's no page snapshot for created test or page URL referenced in the existing test has been changed, test will fail with 'Page not found' error
+    - to generate or update page snapshots for tests run `pnpm record-integration`
 - E2E tests: `sg test bext-build` & `sg test bext-e2e`
 
 ### E2E tests
@@ -160,7 +146,7 @@ It currently does not run in CI and is intended to be run manually for release t
 
 All test suites in `integration` run in CI. These tests run the browser extension against recordings of code hosts (using [Polly.JS](https://netflix.github.io/pollyjs/#/)) and mock data for our GraphQL API.
 
-To update all recordings, run `yarn record-integration`. To update a subset of recordings, run `POLLYJS_MODE=record SOURCEGRAPH_BASE_URL=https://sourcegraph.com yarn test-integration --grep=YOUR_PATTERN`, where `YOUR_PATTERN` is typically a test name.
+To update all recordings, run `pnpm record-integration`. To update a subset of recordings, run `POLLYJS_MODE=record SOURCEGRAPH_BASE_URL=https://sourcegraph.com pnpm test-integration --grep=YOUR_PATTERN`, where `YOUR_PATTERN` is typically a test name.
 
 ## Deploy
 
@@ -214,11 +200,11 @@ Use `nvm` to select the Node.js version specified in `.nvmrc`.
 nvm install
 ```
 
-Install dependencies with `yarn` (install it globally with `npm i -g yarn` if needed) and build.
+Install dependencies with `pnpm install` (install it globally with `npm i -g pnpm` if needed) and build.
 
 ```sh
-yarn
-yarn run build-browser-extension
+pnpm install
+pnpm run build-browser-extension
 ```
 
 The build step automatically pulls in [sourcegraph/code-intel-extensions](https://github.com/sourcegraph/code-intel-extensions) as a dependency.
@@ -234,7 +220,7 @@ The output will be in `browser/build`:
 
 ## Create a zip of the browser extension source code
 
-The `yarn run create-source-zip` command will create `sourcegraph.zip`, an archive of the source that can be used to do a build of the browser extension.
+The `pnpm run create-source-zip` command will create `sourcegraph.zip`, an archive of the source that can be used to do a build of the browser extension.
 
 This will pull the source code at a given revision (by default, the `bext/release` branch on GitHub) and create a zip of the source code, which can then be used to reproduce the exact build. Some directories of the repo, which are not relevant to the browser extension, are excluded from the archive.
 
@@ -244,5 +230,33 @@ Use this process to create a source code zip to attach to a Firefox add-on submi
 
 ```
 cd client/browser
-yarn run create-source-zip
+pnpm run create-source-zip
 ```
+
+## Testing the Phabricator native extension locally
+
+This is an adjusted version of @lguychard's [comment here](https://github.com/sourcegraph/sourcegraph/pull/11825#issuecomment-652040751).
+
+1. Start a Sourcegraph instance locally (`sg start`)
+2. Start Phabricator instance, running the latest version of Phabricator, using `./dev/phabricator/start.sh`
+3. Install the Sourcegraph extension into Phabricator using `./dev/install-sourcegraph.sh`
+4. Navigated to `127.0.0.1` to access the Phabricator instance, and logged in with `admin` / `sourcegraph` (as printed by `./dev/phabricator/start.sh`)
+5. Navigated to `http://127.0.0.1/config/group/sourcegraph/` (Config -> Application Settings -> Sourcegraph)
+6. Edited `corsOrigin` in site config at `https://sourcegraph.test:3443/site-admin/configuration` to include `http://127.0.0.1` (might need to be added in `dev-private` repo).
+7. Added a repository by mirroring a public GitHub repository (we have some docs for this [here](https://docs.sourcegraph.com/dev/phabricator_gitolite), but they need improving):
+   - Navigated to `http://127.0.0.1/diffusion/edit/?vcs=git`
+   - Created a repository with name `JsonRPC2`, callsign `JRPC`, short name `jrpc`
+   - Navigated to `http://127.0.0.1/source/jrpc/manage/uris/` (URIs)
+   - For all three default URIs:
+     - Edited, set I/O type "No IO", Display type "Hidden")
+   - Added a new URI, set it to `https://github.com/sourcegraph/jsonrpc2.git`
+   - Set I/O type "Observe", display type "Visible" (to mirror from GitHub)
+   - In `http://127.0.0.1/source/jrpc/manage/`, "Activate repository"
+   - Reload `http://127.0.0.1/source/jrpc/manage/` until status showed up as "Fully imported"
+8. If you are having issues with the daemons not updating the status, you can do the following:
+   - Shell into the Docker container running Phabricator: `docker exec -it phabricator /bin/bash`
+   - Switch into the main Phabricator directory: `cd /opt/bitnami/phabricator`
+   - Restart the daemons: `./bin/phd restart`
+9. Navigated to `http://127.0.0.1/source/jrpc/browse/master/async.go`
+
+Whenever you make changes to the native extension code, you need to run `pnpm build` inside the `client/browser` directory before seeing the changes in effect on the Phabricator instance.

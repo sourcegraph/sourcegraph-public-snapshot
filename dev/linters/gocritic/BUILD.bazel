@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gocritic",
+    srcs = ["gocritic.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/linters/gocritic",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/linters/nolint",
+        "@com_github_go_critic_go_critic//framework/linter:go_default_library",  #keep
+        "@org_golang_x_tools//go/analysis",
+    ],
+)

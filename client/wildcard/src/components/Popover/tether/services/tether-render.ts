@@ -2,6 +2,7 @@ import {
     getScrollPositions,
     isVisible,
     setMaxSize,
+    setPositionAttributes,
     setScrollPositions,
     setStyle,
     setTransform,
@@ -9,7 +10,7 @@ import {
 } from './tether-browser'
 import { getLayout } from './tether-layout'
 import { getState } from './tether-state'
-import { Tether } from './types'
+import type { Tether } from './types'
 
 /**
  * Main entry point for tooltip element position calculations. It mutates tooltip
@@ -30,20 +31,23 @@ export function render(tether: Tether, eventTarget: HTMLElement | null, preserve
 
     // Restore visibility for correct measure in layout service
     setVisibility(tether.element, true)
-    setVisibility(tether.marker ?? null, true)
+    setVisibility((tether.marker as HTMLElement) ?? null, true)
 
     const layout = getLayout(tether)
     const state = getState(layout)
 
     if (state === null || !isVisible(tether.target)) {
         setVisibility(tether.element, false)
-        setVisibility(tether.marker ?? null, false)
+        setVisibility((tether.marker as HTMLElement) ?? null, false)
 
         return
     }
 
     setTransform(tether.element, 0, state.elementOffset)
+    setPositionAttributes(tether.element, state.position)
+
     setTransform(tether.marker ?? null, state.markerAngle, state.markerOffset)
+    setPositionAttributes(tether.marker ?? null, state.position)
 
     if (!positions.points.has(eventTarget as Element)) {
         if (state.elementBounds) {

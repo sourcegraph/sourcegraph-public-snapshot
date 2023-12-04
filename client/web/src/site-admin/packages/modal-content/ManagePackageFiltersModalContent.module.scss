@@ -1,0 +1,59 @@
+.header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    flex-flow: nowrap;
+}
+
+.content {
+    min-height: 5rem;
+    max-height: 30rem;
+    overflow-y: scroll;
+    padding-right: 1rem;
+}
+
+.close-action {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.item {
+    padding: 1rem 0;
+    &:last-child {
+        padding-bottom: 0;
+    }
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: [type] 5rem [ecosystem] 5rem [name] 1fr [version] 1fr [actions] 4rem;
+}
+
+.label {
+    margin-bottom: 0;
+    flex: 1;
+}
+
+.badge {
+    margin-right: 0.5rem;
+    padding: 0.5rem;
+}
+
+.input {
+    flex: 1;
+
+    input[readonly] {
+        // Override readOnly bg-color
+        background-color: var(--input-bg);
+    }
+}
+
+.actions {
+    grid-column-start: actions;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}

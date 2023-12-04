@@ -12,7 +12,16 @@
     "IsLocked": false,
     "IsDisabled": false,
     "ViewerPermission": "",
-    "Visibility": "INTERNAL"
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "fluff"
+       }
+      }
+     ]
+    },
+    "visibility": "INTERNAL"
    }
   ],
   "TotalCount": 1,

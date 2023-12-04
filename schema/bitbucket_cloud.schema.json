@@ -6,7 +6,26 @@
   "allowComments": true,
   "type": "object",
   "additionalProperties": false,
-  "required": ["url", "username", "appPassword"],
+  "required": ["url"],
+  "oneOf": [
+    {
+      "allOf": [
+        {
+          "required": ["accessToken"]
+        },
+        {
+          "not": { "required": ["username"] }
+        },
+        {
+          "not": { "required": ["appPassword"] }
+        }
+      ]
+    },
+    {
+      "required": ["username", "appPassword"],
+      "not": { "required": ["accessToken"] }
+    }
+  ],
   "properties": {
     "url": {
       "description": "URL of Bitbucket Cloud, such as https://bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.",
@@ -53,12 +72,27 @@
         "requestsPerHour": 7200
       }
     },
+    "authorization": {
+      "title": "BitbucketCloudAuthorization",
+      "description": "If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type \"bitbucketcloud\" with the same `url` field as specified in this `BitbucketCloudConnection`.",
+      "type": "object",
+      "properties": {
+        "identityProvider": {
+          "description": "The identity provider to use for user information. If not set, the `url` field is used.",
+          "type": "string"
+        }
+      }
+    },
     "username": {
       "description": "The username to use when authenticating to the Bitbucket Cloud. Also set the corresponding \"appPassword\" field.",
       "type": "string"
     },
     "appPassword": {
       "description": "The app password to use when authenticating to the Bitbucket Cloud. Also set the corresponding \"username\" field.",
+      "type": "string"
+    },
+    "accessToken": {
+      "description": "The workspace access token to use when authenticating with Bitbucket Cloud.",
       "type": "string"
     },
     "gitURLType": {
@@ -96,7 +130,7 @@
           "uuid": {
             "description": "The UUID of a Bitbucket Cloud repo (as returned by the Bitbucket Cloud's API) to exclude from mirroring.",
             "type": "string",
-            "pattern": "^\\{[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12}\\}$"
+            "pattern": "^\\{[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\}$"
           },
           "pattern": {
             "description": "Regular expression which matches against the name of a Bitbucket Cloud repo.",
@@ -109,6 +143,12 @@
         [{ "name": "myorg/myrepo" }, { "uuid": "{fceb73c7-cef6-4abe-956d-e471281126bc}" }],
         [{ "name": "myorg/myrepo" }, { "name": "myorg/myotherrepo" }, { "pattern": "^topsecretproject/.*" }]
       ]
+    },
+    "webhookSecret": {
+      "description": "A shared secret used to authenticate incoming webhooks (minimum 12 characters).",
+      "deprecationMessage": "Deprecated in favour of first class webhooks. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice",
+      "type": "string",
+      "minLength": 12
     }
   }
 }

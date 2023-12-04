@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "ghe-feeder_lib",
+    srcs = [
+        "main.go",
+        "namesgenerator.go",
+        "progress.go",
+        "pump.go",
+        "worker.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/cmd/ghe-feeder",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//internal/database/dbutil",
+        "//internal/ratelimit",
+        "//lib/errors",
+        "@com_github_google_go_github_v55//github",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_mattn_go_sqlite3//:go-sqlite3",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_prometheus_client_golang//prometheus/promhttp",
+        "@com_github_schollz_progressbar_v3//:progressbar",
+        "@org_golang_x_oauth2//:oauth2",
+        "@org_golang_x_time//rate",
+    ],
+)
+
+go_binary(
+    name = "ghe-feeder",
+    embed = [":ghe-feeder_lib"],
+    visibility = ["//:__subpackages__"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
+)

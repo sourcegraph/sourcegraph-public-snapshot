@@ -1,10 +1,12 @@
-import { DialogProps, DialogOverlay, DialogContent } from '@reach/dialog'
-import classNames from 'classnames'
 import React from 'react'
 
-import { ForwardReferenceComponent } from '../../types'
+import { type DialogProps, DialogOverlay, DialogContent } from '@reach/dialog'
+import classNames from 'classnames'
 
-import { MODAL_POSITIONS } from './constants'
+import type { ForwardReferenceComponent } from '../../types'
+
+import type { MODAL_POSITIONS } from './constants'
+
 import styles from './Modal.module.scss'
 
 interface BaseModalProps extends DialogProps {

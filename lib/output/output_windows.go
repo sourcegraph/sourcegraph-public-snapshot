@@ -10,7 +10,7 @@ import (
 
 func init() {
 	newOutputPlatformQuirks = func(o *Output) error {
-		var errs *errors.MultiError
+		var errs error
 
 		if err := setConsoleMode(windows.Stdout, windows.ENABLE_VIRTUAL_TERMINAL_PROCESSING); err != nil {
 			errs = errors.Append(errs, err)
@@ -19,7 +19,7 @@ func init() {
 			errs = errors.Append(errs, err)
 		}
 
-		return errs.ErrorOrNil()
+		return errs
 	}
 
 	// Windows doesn't have a particularly good way of notifying console
@@ -27,7 +27,7 @@ func init() {
 	// the console window, but it turns out that's a security nightmare.) So
 	// we'll just poll every five seconds and update the capabilities from
 	// there.
-	newCapabilityWatcher = func() chan capabilities {
+	newCapabilityWatcher = func(opts OutputOpts) chan capabilities {
 		c := make(chan capabilities)
 
 		go func() {
@@ -35,7 +35,7 @@ func init() {
 			defer ticker.Stop()
 			for {
 				<-ticker.C
-				if caps, err := detectCapabilities(); err == nil {
+				if caps, err := detectCapabilities(opts); err == nil {
 					c <- caps
 				}
 			}

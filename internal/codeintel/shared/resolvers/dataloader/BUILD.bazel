@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dataloader",
+    srcs = [
+        "backing_service.go",
+        "cache.go",
+        "factory.go",
+        "identifier.go",
+        "loader.go",
+        "loader_factory.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/dataloader",
+    visibility = ["//:__subpackages__"],
+)

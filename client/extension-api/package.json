@@ -1,6 +1,6 @@
 {
   "name": "sourcegraph",
-  "version": "25.5.0",
+  "version": "25.7.0",
   "license": "Apache-2.0",
   "description": "Sourcegraph extension API: build extensions that enhance reading and reviewing code in your existing tools",
   "author": "Sourcegraph",
@@ -12,8 +12,6 @@
     "url": "https://github.com/sourcegraph/sourcegraph",
     "directory": "client/extension-api"
   },
-  "main": "src/index.js",
-  "module": "src/index.js",
   "types": "src/sourcegraph.d.ts",
   "files": [
     "src",
@@ -21,9 +19,9 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "eslint": "eslint 'src/*.[jt]s?(x)'",
-    "docs": "typedoc",
-    "prepublishOnly": "yarn run eslint && yarn run docs"
+    "lint:js": "pnpm eslint 'src/*.[jt]s?(x)'",
+    "docs": "pnpm typedoc",
+    "prepublish": "pnpm eslint && pnpm run docs"
   },
   "devDependencies": {
     "typedoc": "^0.17.8"

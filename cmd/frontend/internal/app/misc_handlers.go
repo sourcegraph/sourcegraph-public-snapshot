@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 
@@ -49,13 +50,13 @@ func sitemapXmlGz(w http.ResponseWriter, r *http.Request) {
 }
 
 func favicon(w http.ResponseWriter, r *http.Request) {
-	url := assetsutil.URL("/img/favicon.png")
+	url := assetsutil.URL("/img/sourcegraph-mark.svg")
 
 	// Add query parameter for cache busting.
 	query := url.Query()
-	query.Set("v", "2")
+	query.Set("v2", "")
 	url.RawQuery = query.Encode()
-	path := url.String()
+	path := strings.Replace(url.String(), "v2=", "v2", 1)
 
 	if branding := globals.Branding(); branding.Favicon != "" {
 		path = branding.Favicon

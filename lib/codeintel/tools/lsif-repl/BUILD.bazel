@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "lsif-repl_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-repl",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//lib/codeintel/lsif/conversion",
+        "//lib/codeintel/precise",
+        "//lib/codeintel/precise/diff",
+    ],
+)
+
+go_binary(
+    name = "lsif-repl",
+    embed = [":lsif-repl_lib"],
+    visibility = ["//visibility:public"],
+)

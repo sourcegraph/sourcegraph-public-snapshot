@@ -36,9 +36,9 @@ var goImportMetaTagTemplate = template.Must(template.New("").Parse(`<html><head>
 //
 // It implements the following mapping:
 //
-// 1. If the username (first path element) is "sourcegraph", consider it to be a vanity
-//    import path pointing to github.com/sourcegraph/<repo> as the clone URL.
-// 2. All other requests are served with 404 Not Found.
+//  1. If the username (first path element) is "sourcegraph", consider it to be a vanity
+//     import path pointing to github.com/sourcegraph/<repo> as the clone URL.
+//  2. All other requests are served with 404 Not Found.
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.

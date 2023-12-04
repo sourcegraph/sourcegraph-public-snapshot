@@ -18,10 +18,11 @@ if [ ! -d "$PGHOST" ]; then
 fi
 if [ ! -d "$PGDATA" ]; then
   echo 'Initializing postgresql database...'
-  initdb "$PGDATA" --nosync -E UNICODE --auth=trust >/dev/null
+  initdb "$PGDATA" --nosync --encoding=UTF8 --no-locale --auth=trust >/dev/null
   cat <<-EOF >>"$PGDATA"/postgresql.conf
 	    unix_socket_directories = '$PGHOST'
-	    listen_addresses = ''
+	    listen_addresses = 'localhost'
+	    max_connections = 250
 	    shared_buffers = 12MB
 	    fsync = off
 	    synchronous_commit = off
@@ -30,5 +31,5 @@ EOF
 fi
 if ! pg_isready --quiet; then
   echo 'Starting postgresql database...'
-  pg_ctl start -l "$PGHOST/log"
+  pg_ctl start -l "$PGHOST/log" 3>&-
 fi

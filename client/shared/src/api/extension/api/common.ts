@@ -1,8 +1,8 @@
-import { Remote, ProxyMarked, proxy, proxyMarker, UnproxyOrClone } from 'comlink'
+import { type Remote, type ProxyMarked, proxy, proxyMarker, type UnproxyOrClone } from 'comlink'
 import { identity } from 'lodash'
-import { from, isObservable, Observable, Observer, of } from 'rxjs'
+import { from, isObservable, type Observable, type Observer, of, type Subscribable, type Unsubscribable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { ProviderResult, Subscribable, Unsubscribable } from 'sourcegraph'
+import type { ProviderResult } from 'sourcegraph'
 
 import { isAsyncIterable, isPromiseLike, isSubscribable, observableFromAsyncIterable } from '../../util'
 

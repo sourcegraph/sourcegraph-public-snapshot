@@ -37,7 +37,8 @@ grapher/ruby/rubysonar/target
 grapher/ruby/rubysonar/dependency-reduced-pom.xml
 grapher/ruby/yard/.bundle
 npm-debug.log
-yarn-error.log
+pnpm-error.log
+pnpm-debug.log
 .codemod.bookmark
 .elasticbeanstalk/
 
@@ -45,21 +46,6 @@ yarn-error.log
 
 /cmd/frontend/internal/graphqlbackend/node_modules
 
-/ui/artifacts
-/ui/node_modules
-/ui/assets/_goTemplates.js
-/ui/assets/analytics.js
-/ui/assets/bundle.js
-/ui/assets/bundle.css
-/ui/assets/sourcebox.js
-/ui/assets/sourcebox.css
-/ui/assets/test.js
-/ui/assets/test.css
-/ui/assets/vs
-/ui/assets/*.html
-/ui/assets/*.map
-/ui/assets/extension
-/ui/.tmp
 *.json.actual
 
 eb-bundle.zip
@@ -93,6 +79,11 @@ cmd/indexer/debug
 # Web
 node_modules/
 /client/web
+
+# Browser
+/client/browser/build
+/client/browser/node_modules
+/client/browser/code-intel-extensions/node_modules
 
 # Extensions
 /extension-api/dist

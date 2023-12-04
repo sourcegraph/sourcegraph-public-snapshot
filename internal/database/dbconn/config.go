@@ -3,8 +3,9 @@ package dbconn
 import (
 	"os"
 
-	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgx/v4"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -20,7 +21,7 @@ var (
 
 // buildConfig takes either a Postgres connection string or connection URI,
 // parses it, and returns a config with additional parameters.
-func buildConfig(dataSource, app string) (*pgx.ConnConfig, error) {
+func buildConfig(logger log.Logger, dataSource, app string) (*pgx.ConnConfig, error) {
 	if dataSource == "" {
 		dataSource = defaultDataSource
 	}
@@ -56,7 +57,7 @@ func buildConfig(dataSource, app string) (*pgx.ConnConfig, error) {
 	// that information in the configuration instead.
 	tz := "UTC"
 	if v, ok := os.LookupEnv("PGTZ"); ok && v != "UTC" && v != "utc" {
-		log15.Warn("Ignoring PGTZ environment variable; using PGTZ=UTC.", "ignoredPGTZ", v)
+		logger.Warn("Ignoring PGTZ environment variable; using PGTZ=UTC.", log.String("ignoredPGTZ", v))
 	}
 	// We set the environment variable to PGTZ to avoid bad surprises if and when
 	// it will be supported by the driver.
@@ -67,7 +68,7 @@ func buildConfig(dataSource, app string) (*pgx.ConnConfig, error) {
 
 	// Ensure the TZ environment variable is set so that times are parsed correctly.
 	if _, ok := os.LookupEnv("TZ"); !ok {
-		log15.Warn("TZ environment variable not defined; using TZ=''.")
+		logger.Warn("TZ environment variable not defined; using TZ=''.")
 		if err := os.Setenv("TZ", ""); err != nil {
 			return nil, errors.Wrap(err, "Error setting TZ=''")
 		}

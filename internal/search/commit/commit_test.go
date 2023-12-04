@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -17,23 +18,23 @@ import (
 func TestQueryToGitQuery(t *testing.T) {
 	type testCase struct {
 		name   string
-		input  query.Q
+		input  query.Basic
 		diff   bool
 		output protocol.Node
 	}
 
 	cases := []testCase{{
 		name: "negated repo does not result in nil node (#26032)",
-		input: []query.Node{
-			query.Parameter{Field: query.FieldRepo, Negated: true},
+		input: query.Basic{
+			Parameters: []query.Parameter{{Field: query.FieldRepo, Negated: true}},
 		},
 		diff:   false,
 		output: &protocol.Boolean{Value: true},
 	}, {
 		name: "expensive nodes are placed last",
-		input: []query.Node{
-			query.Pattern{Value: "a"},
-			query.Parameter{Field: query.FieldAuthor, Value: "b"},
+		input: query.Basic{
+			Parameters: []query.Parameter{{Field: query.FieldAuthor, Value: "b"}},
+			Pattern:    query.Pattern{Value: "a"},
 		},
 		diff: true,
 		output: protocol.NewAnd(
@@ -42,14 +43,16 @@ func TestQueryToGitQuery(t *testing.T) {
 		),
 	}, {
 		name: "all supported nodes are converted",
-		input: []query.Node{
-			query.Parameter{Field: query.FieldAuthor, Value: "author"},
-			query.Parameter{Field: query.FieldCommitter, Value: "committer"},
-			query.Parameter{Field: query.FieldBefore, Value: "2021-09-10"},
-			query.Parameter{Field: query.FieldAfter, Value: "2021-09-08"},
-			query.Parameter{Field: query.FieldFile, Value: "file"},
-			query.Parameter{Field: query.FieldMessage, Value: "message1"},
-			query.Pattern{Value: "message2"},
+		input: query.Basic{
+			Parameters: []query.Parameter{
+				{Field: query.FieldAuthor, Value: "author"},
+				{Field: query.FieldCommitter, Value: "committer"},
+				{Field: query.FieldBefore, Value: "2021-09-10"},
+				{Field: query.FieldAfter, Value: "2021-09-08"},
+				{Field: query.FieldFile, Value: "file"},
+				{Field: query.FieldMessage, Value: "message1"},
+			},
+			Pattern: query.Pattern{Value: "message2"},
 		},
 		diff: false,
 		output: protocol.NewAnd(
@@ -72,7 +75,7 @@ func TestQueryToGitQuery(t *testing.T) {
 }
 
 func TestExpandUsernamesToEmails(t *testing.T) {
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByUsernameFunc.SetDefaultHook(func(_ context.Context, username string) (*types.User, error) {
 		if want := "alice"; username != want {
 			t.Errorf("got %q, want %q", username, want)
@@ -80,7 +83,7 @@ func TestExpandUsernamesToEmails(t *testing.T) {
 		return &types.User{ID: 123}, nil
 	})
 
-	userEmails := database.NewStrictMockUserEmailsStore()
+	userEmails := dbmocks.NewStrictMockUserEmailsStore()
 	userEmails.ListByUserFunc.SetDefaultHook(func(_ context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		if want := int32(123); opt.UserID != want {
 			t.Errorf("got %v, want %v", opt.UserID, want)
@@ -92,7 +95,7 @@ func TestExpandUsernamesToEmails(t *testing.T) {
 		}, nil
 	})
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 

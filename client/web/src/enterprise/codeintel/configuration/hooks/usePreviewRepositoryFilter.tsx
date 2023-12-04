@@ -1,8 +1,8 @@
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 
-import { PreviewRepositoryFilterResult, PreviewRepositoryFilterVariables } from '../../../../graphql-operations'
+import type { PreviewRepositoryFilterResult, PreviewRepositoryFilterVariables } from '../../../../graphql-operations'
 
 interface SearchRepositoriesResult {
     previewResult: RepositoryPreviewResult | null
@@ -11,17 +11,29 @@ interface SearchRepositoriesResult {
 }
 
 interface RepositoryPreviewResult {
-    repositoryNames: string[]
+    repositories: {
+        name: string
+        url: string
+        externalRepository?: {
+            serviceID: string
+            serviceType: string
+        }
+    }[]
     totalCount: number
     totalMatches: number
     limit: number | null
 }
 
 export const PREVIEW_REPOSITORY_FILTER = gql`
-    query PreviewRepositoryFilter($patterns: [String!]!) {
-        previewRepositoryFilter(patterns: $patterns) {
+    query PreviewRepositoryFilter($patterns: [String!]!, $first: Int) {
+        previewRepositoryFilter(patterns: $patterns, first: $first) {
             nodes {
                 name
+                url
+                externalRepository {
+                    serviceID
+                    serviceType
+                }
             }
             totalCount
             totalMatches
@@ -30,12 +42,13 @@ export const PREVIEW_REPOSITORY_FILTER = gql`
     }
 `
 
-export const usePreviewRepositoryFilter = (patterns: string[]): SearchRepositoriesResult => {
+export const usePreviewRepositoryFilter = (patterns: string[], first: number = 15): SearchRepositoriesResult => {
     const { data, loading, error } = useQuery<PreviewRepositoryFilterResult, PreviewRepositoryFilterVariables>(
         PREVIEW_REPOSITORY_FILTER,
         {
             variables: {
                 patterns,
+                first,
             },
         }
     )
@@ -44,7 +57,11 @@ export const usePreviewRepositoryFilter = (patterns: string[]): SearchRepositori
         previewResult: data
             ? {
                   ...data.previewRepositoryFilter,
-                  repositoryNames: data.previewRepositoryFilter.nodes.map(({ name }) => name),
+                  repositories: data.previewRepositoryFilter.nodes.map(({ name, url, externalRepository }) => ({
+                      name,
+                      url,
+                      externalRepository: externalRepository ?? undefined,
+                  })),
               }
             : null,
         isLoadingPreview: loading,

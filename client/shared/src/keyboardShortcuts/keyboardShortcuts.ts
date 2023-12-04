@@ -1,65 +1,83 @@
-import { isMacPlatform } from '@sourcegraph/common'
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { isMacPlatform, isSafari } from '@sourcegraph/common'
 
-export const KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE: KeyboardShortcut = {
-    id: 'commandPalette',
-    title: 'Show command palette',
-    keybindings: [{ held: ['Control'], ordered: ['p'] }, { ordered: ['F1'] }, { held: ['Alt'], ordered: ['x'] }],
+import type { KeyboardShortcut } from '../keyboardShortcuts'
+
+type KEYBOARD_SHORTCUT_IDENTIFIERS =
+    | 'switchTheme'
+    | 'keyboardShortcutsHelp'
+    | 'focusSearch'
+    | 'fuzzyFinder'
+    | 'fuzzyFinderActions'
+    | 'fuzzyFinderRepos'
+    | 'fuzzyFinderSymbols'
+    | 'fuzzyFinderFiles'
+    | 'focusCodeEditor'
+    | 'focusFileTree'
+    | 'focusSymbols'
+    | 'focusCody'
+
+export type KEYBOARD_SHORTCUT_MAPPING = Record<KEYBOARD_SHORTCUT_IDENTIFIERS, KeyboardShortcut>
+
+export const EXPERIMENTAL_BLOB_PAGE_SHORTCUTS: Record<
+    'focusCodeEditor' | 'focusFileTree' | 'focusSymbols' | 'focusCody',
+    KeyboardShortcut
+> = {
+    focusCodeEditor: {
+        title: 'Focus editor',
+        keybindings: [{ ordered: ['c'] }],
+    },
+    focusFileTree: {
+        title: 'Focus file tree',
+        keybindings: [{ ordered: ['f'] }],
+    },
+    focusSymbols: {
+        title: 'Focus symbols',
+        keybindings: [{ ordered: ['s'] }],
+    },
+    focusCody: {
+        title: 'Focus Cody',
+        keybindings: [{ held: ['Alt'], ordered: ['/'] }],
+    },
 }
 
-export const KEYBOARD_SHORTCUT_SWITCH_THEME: KeyboardShortcut = {
-    id: 'switchTheme',
-    title: 'Switch color theme',
-    keybindings: [{ held: ['Alt'], ordered: ['t'] }],
-}
-
-export const KEYBOARD_SHORTCUT_SHOW_HELP: KeyboardShortcut = {
-    id: 'keyboardShortcutsHelp',
-    title: 'Show keyboard shortcuts help',
-    keybindings: [{ held: ['Shift'], ordered: ['?'] }],
-    hideInHelp: true,
-}
-
-export const KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR: KeyboardShortcut = {
-    id: 'focusSearch',
-    title: 'Focus search bar',
-    keybindings: [{ ordered: ['/'] }],
-}
-
-export const KEYBOARD_SHORTCUT_FUZZY_FINDER: KeyboardShortcut = {
-    id: 'fuzzyFinder',
-    title: 'Fuzzy search files',
-    keybindings: [{ held: [isMacPlatform() ? 'Meta' : 'Control'], ordered: ['k'] }],
-}
-
-export const KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER: KeyboardShortcut = {
-    id: 'closeFuzzyFiles',
-    title: 'Close fuzzy search files',
-    keybindings: [{ ordered: ['Escape'] }],
-}
-
-export const KEYBOARD_SHORTCUT_COPY_FULL_QUERY: KeyboardShortcut = {
-    id: 'copyFullQuery',
-    title: 'Copy full query',
-    keybindings: [{ held: [isMacPlatform() ? 'Meta' : 'Control', 'Shift'], ordered: ['c'] }],
-}
-
-/**
- * Global keyboard shortcuts. React components should access these via {@link KeybindingsProps}, not
- * globally.
- */
-export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
-    KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
-    KEYBOARD_SHORTCUT_SWITCH_THEME,
-    KEYBOARD_SHORTCUT_SHOW_HELP,
-    KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR,
-    KEYBOARD_SHORTCUT_FUZZY_FINDER,
-    KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER,
-    KEYBOARD_SHORTCUT_COPY_FULL_QUERY,
-]
-
-/** A partial React props type for components that use or propagate keyboard shortcuts. */
-export interface KeyboardShortcutsProps {
-    /** The global map of keybindings and their associated actions. */
-    keyboardShortcuts: KeyboardShortcut[]
+export const KEYBOARD_SHORTCUTS: KEYBOARD_SHORTCUT_MAPPING = {
+    switchTheme: {
+        title: 'Switch color theme',
+        // use '†' here to make `Alt + t` works on macos
+        keybindings: [{ held: ['Alt'], ordered: [isMacPlatform() ? ('†' as any) : 't'] }],
+    },
+    keyboardShortcutsHelp: {
+        title: 'Show keyboard shortcuts help',
+        keybindings: [{ held: ['Shift'], ordered: ['?'] }],
+        hideInHelp: true,
+    },
+    focusSearch: {
+        title: 'Focus search bar',
+        keybindings: [{ ordered: ['/'] }],
+    },
+    ...EXPERIMENTAL_BLOB_PAGE_SHORTCUTS,
+    fuzzyFinder: {
+        title: 'Fuzzy finder',
+        keybindings: [{ held: ['Mod'], ordered: ['k'] }],
+    },
+    fuzzyFinderActions: {
+        title: 'Fuzzy find actions',
+        keybindings: [{ held: ['Mod', 'Shift'], ordered: ['a'] }],
+        hideInHelp: true,
+    },
+    fuzzyFinderRepos: {
+        title: 'Fuzzy find repos',
+        keybindings: [{ held: ['Mod'], ordered: ['i'] }],
+        hideInHelp: true,
+    },
+    fuzzyFinderFiles: {
+        title: 'Fuzzy find files',
+        keybindings: [{ held: ['Mod'], ordered: ['p'] }],
+        hideInHelp: true,
+    },
+    fuzzyFinderSymbols: {
+        title: 'Fuzzy find symbols',
+        keybindings: [{ held: isSafari() ? ['Mod', 'Shift'] : ['Mod'], ordered: ['o'] }],
+        hideInHelp: true,
+    },
 }

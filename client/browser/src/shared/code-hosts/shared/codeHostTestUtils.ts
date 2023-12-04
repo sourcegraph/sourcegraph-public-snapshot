@@ -1,15 +1,18 @@
 import assert from 'assert'
 
 import { readFile } from 'mz/fs'
-import Simmer, { Options as SimmerOptions } from 'simmerjs'
-import { SetIntersection } from 'utility-types'
+import Simmer, { type Options as SimmerOptions } from 'simmerjs'
+import type { SetIntersection } from 'utility-types'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { DiffPart } from '@sourcegraph/codeintellify'
+import type { DiffPart } from '@sourcegraph/codeintellify'
 
-import { CodeHost, MountGetter } from './codeHost'
-import { CodeView, DOMFunctions } from './codeViews'
+import { windowLocation__testingOnly as windowLocation__testingOnly__github } from '../github/util'
 
-const mountGetterKeys = ['getCommandPaletteMount', 'getViewContextOnSourcegraphMount'] as const
+import type { CodeHost, MountGetter } from './codeHost'
+import type { CodeView, DOMFunctions } from './codeViews'
+
+const mountGetterKeys = ['getViewContextOnSourcegraphMount'] as const
 type MountGetterKey = typeof mountGetterKeys[number]
 
 /**
@@ -19,11 +22,13 @@ export function testCodeHostMountGetters<C extends CodeHost>(
     codeHost: C,
     containerHtmlFixturePaths: string | Record<SetIntersection<MountGetterKey, keyof C>, string>
 ): void {
+    let addedTest = false
     for (const mountGetterKey of mountGetterKeys) {
         const getMount = codeHost[mountGetterKey]
         if (!getMount) {
             continue
         }
+        addedTest = true
         describe(mountGetterKey, () => {
             const fixturePath =
                 typeof containerHtmlFixturePaths === 'string'
@@ -31,6 +36,9 @@ export function testCodeHostMountGetters<C extends CodeHost>(
                     : containerHtmlFixturePaths[mountGetterKey as keyof typeof containerHtmlFixturePaths]
             testMountGetter(fixturePath, getMount, true, true)
         })
+    }
+    if (!addedTest) {
+        it('no tests', () => {})
     }
 }
 
@@ -75,7 +83,7 @@ export async function getFixtureBody({
  * @param mayReturnNull Whether the mount getter might be called with containers where the mount does not belong.
  * It will be tested to return `null` in that case.
  */
-export function testMountGetter(
+function testMountGetter(
     htmlFixturePath: string,
     getMount: MountGetter,
     isFullDocument: boolean,
@@ -153,9 +161,12 @@ export function testDOMFunctions(
     let codeViewElement: HTMLElement
     beforeEach(async () => {
         if (url) {
-            jsdom.reconfigure({ url })
+            windowLocation__testingOnly__github.value = new URL(url)
         }
         codeViewElement = await getFixtureBody({ htmlFixturePath, isFullDocument: false })
+    })
+    afterEach(() => {
+        windowLocation__testingOnly__github.value = null
     })
     for (const { diffPart, lineNumber, firstCharacterIsDiffIndicator } of codeElements) {
         describe(

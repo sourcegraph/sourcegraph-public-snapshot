@@ -12,8 +12,8 @@ To read and write search contexts through the API you will need appropriate perm
 
 **Read** permissions (view contents, use in searches):
 
-* **Public** search contexts are available to everyone
-  * Including unauthenticated users only on Sourcegraph Cloud
+* **Public** search contexts are available to all users
+  * On Sourcegraph.com, unauthenticated visitors can also see public search contexts
 * **Private** search contexts
   * With user namespace: only available to the user
   * With organization namespace: only available to users in the organization

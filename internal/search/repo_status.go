@@ -5,6 +5,9 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // RepoStatus is a bit flag encoding the status of a search on a repository. A
@@ -139,9 +142,9 @@ func (m *RepoStatusMap) String() string {
 	return fmt.Sprintf("RepoStatusMap{N=%d %s}", len(m.m), m.status)
 }
 
-// RepoStatusSingleton is a convenience function to contain a RepoStatusMap
+// repoStatusSingleton is a convenience function to contain a RepoStatusMap
 // with one entry.
-func RepoStatusSingleton(id api.RepoID, status RepoStatus) RepoStatusMap {
+func repoStatusSingleton(id api.RepoID, status RepoStatus) RepoStatusMap {
 	if status == 0 {
 		return RepoStatusMap{}
 	}
@@ -149,4 +152,37 @@ func RepoStatusSingleton(id api.RepoID, status RepoStatus) RepoStatusMap {
 		m:      map[api.RepoID]RepoStatus{id: status},
 		status: status,
 	}
+}
+
+// HandleRepoSearchResult returns information about repository status, whether
+// search limits are hit, and error promotion. If searchErr is a fatal error, it
+// returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error,
+// it returns a nil error.
+func HandleRepoSearchResult(repoID api.RepoID, revSpecs []string, limitHit, timedOut bool, searchErr error) (RepoStatusMap, bool, error) {
+	var fatalErr error
+	var status RepoStatus
+	if limitHit {
+		status |= RepoStatusLimitHit
+	}
+
+	if gitdomain.IsRepoNotExist(searchErr) {
+		if gitdomain.IsCloneInProgress(searchErr) {
+			status |= RepoStatusCloning
+		} else {
+			status |= RepoStatusMissing
+		}
+	} else if errors.HasType(searchErr, &gitdomain.RevisionNotFoundError{}) {
+		if len(revSpecs) == 0 || len(revSpecs) == 1 && revSpecs[0] == "" {
+			// If we didn't specify an input revision, then the repo is empty and can be ignored.
+		} else {
+			fatalErr = searchErr
+		}
+	} else if errcode.IsNotFound(searchErr) {
+		status |= RepoStatusMissing
+	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
+		status |= RepoStatusTimedout
+	} else if searchErr != nil {
+		fatalErr = searchErr
+	}
+	return repoStatusSingleton(repoID, status), limitHit, fatalErr
 }

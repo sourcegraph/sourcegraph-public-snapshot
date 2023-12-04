@@ -1,0 +1,49 @@
+# universal-ctags package
+# Version from the universal-ctags project tags page: https://github.com/universal-ctags/ctags/tags
+
+package:
+  name: ctags
+  version: 6.0.0
+  epoch: 3
+  description: "A maintained ctags implementation"
+  target-architecture:
+    - x86_64
+  copyright:
+    - paths:
+      - "*"
+      license: GPL-2.0
+  dependencies:
+    runtime:
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - build-base
+      - autoconf
+      - automake
+      - pkgconf
+      - pkgconf-dev
+      - busybox
+      - ca-certificates-bundle
+      - jansson-dev
+
+pipeline:
+  - uses: fetch
+    with:
+      uri: https://github.com/universal-ctags/ctags/archive/refs/tags/v${{package.version}}.tar.gz
+      expected-sha256: 71229a73f25529c9e3dabb2cb7310c55405d31caee8e8a9ab5c71b2406d4005a
+  - name: Autogen
+    runs: |
+      ./autogen.sh
+  - uses: autoconf/configure
+    with:
+      opts: |
+        --program-prefix=universal- \
+        --enable-json
+  - uses: autoconf/make
+  - uses: autoconf/make-install
+  - uses: strip

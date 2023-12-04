@@ -79,40 +79,6 @@ The easiest way to use `ruplacer` in our batch spec would look like this:
 
 ```yaml
 steps:
-    # Install and use ruplacer to replace words in case-style variations
-  - run: |
-      cargo install ruplacer \
-      && find . -type f \( -name '*.md' -or -name '*.markdown' \) -not -path "*/vendor/*" -not -path "*/node_modules/*" >> /tmp/find_result.txt \
-      && cat /tmp/find_result.txt | while read file;
-      do
-        ruplacer --subvert whitelist allowlist --go ${file} || echo "nothing to replace";
-        ruplacer --subvert blacklist denylist --go ${file} || echo "nothing to replace";
-      done
-    # Use the rust image in our container
-    container: rust
-```
-
-But there's a problem with that approach: every new execution of `src batch preview` has to execute the `cargo install ruplacer` command again. And if you're tweaking which terms you're replacing, that performance cost can become too much quite fast.
-
-A better option would be to to build a small Docker image in which `ruplacer` is already installed.
-
-To do that, save the following in a `Dockerfile`:
-
-```dockerfile
-FROM rust
-RUN cargo install ruplacer
-```
-
-Then build a Docker image out of it, tagged with `ruplacer`, by running the following command in your terminal:
-
-```
-docker build . -t ruplacer
-```
-
-Once that is done, we can use the following `steps` in our batch spec:
-
-```yaml
-steps:
   - run: |
       find . -type f \( -name '*.md' -or -name '*.markdown' \) -not -path "*/vendor/*" -not -path "*/node_modules/*" >> /tmp/find_result.txt \
       && cat /tmp/find_result.txt | while read file;
@@ -120,8 +86,17 @@ steps:
         ruplacer --subvert whitelist allowlist --go ${file} || echo "nothing to replace";
         ruplacer --subvert blacklist denylist --go ${file} || echo "nothing to replace";
       done
-    # Use the newly-built ruplacer image
-    container: ruplacer
+    container: keegancsmith/ruplacer
 ```
 
 Save the file and run the `src batch preview` command from above again to use `ruplacer` to replace variations of terms.
+
+Alternatively if you want to run it on all files:
+
+```yaml
+steps:
+  - run: |
+      ruplacer --subvert whitelist allowlist --go || echo "nothing to replace"
+      ruplacer --subvert blacklist denylist --go  || echo "nothing to replace"
+    container: keegancsmith/ruplacer
+```

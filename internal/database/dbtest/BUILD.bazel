@@ -1,0 +1,27 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dbtest",
+    srcs = [
+        "dbtest.go",
+        "dsn.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/dbtest",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/connections/test",
+        "//internal/database/migration/schemas",
+        "//internal/database/postgresdsn",
+        "@com_github_lib_pq//:pq",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)
+
+go_test(
+    name = "dbtest_test",
+    timeout = "short",
+    srcs = ["dsn_test.go"],
+    embed = [":dbtest"],
+)

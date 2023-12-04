@@ -1,28 +1,40 @@
+import { forwardRef, type ReactNode } from 'react'
+
 import classNames from 'classnames'
-import React from 'react'
 
-import { LoadingSpinner, Button, ButtonProps } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, type ButtonProps } from '@sourcegraph/wildcard'
 
-interface Props extends ButtonProps {
-    loading: boolean
-    label: string
-    alwaysShowLabel: boolean
+import styles from './LoaderButton.module.scss'
+
+export interface LoaderButtonProps extends ButtonProps {
+    loading?: boolean
+    label?: ReactNode
+    alwaysShowLabel?: boolean
+    icon?: JSX.Element
 }
 
-export const LoaderButton: React.FunctionComponent<Partial<Props>> = ({
-    loading,
-    label,
-    alwaysShowLabel,
-    ...props
-}) => (
-    <Button {...props} className={classNames(props.className, 'd-flex justify-content-center align-items-center')}>
-        {loading ? (
-            <>
-                <LoadingSpinner />
-                {alwaysShowLabel && <span className="ml-1">{label}</span>}
-            </>
-        ) : (
-            label
-        )}
-    </Button>
-)
+export const LoaderButton = forwardRef<HTMLButtonElement, LoaderButtonProps>((props, ref) => {
+    const { loading, label, alwaysShowLabel, icon, ...otherProps } = props
+
+    return (
+        <Button
+            ref={ref}
+            {...otherProps}
+            className={classNames(props.className, 'd-flex justify-content-center align-items-center')}
+        >
+            {loading ? (
+                <>
+                    <LoadingSpinner />
+                    {alwaysShowLabel && <span className={styles.loadingContent}>{label}</span>}
+                </>
+            ) : icon ? (
+                <>
+                    {icon}
+                    {label && <>&nbsp;{label}</>}
+                </>
+            ) : (
+                label
+            )}
+        </Button>
+    )
+})

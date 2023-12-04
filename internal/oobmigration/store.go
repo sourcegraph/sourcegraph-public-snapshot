@@ -3,13 +3,24 @@ package oobmigration
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"encoding/json"
+	"fmt"
+	"sort"
+	"strings"
 	"time"
 
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
+	"golang.org/x/exp/slices"
+	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/sourcegraph/internal/collections"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Migration stores metadata and tracks progress of an out-of-band migration routine.
@@ -26,6 +37,7 @@ type Migration struct {
 	Created        time.Time
 	LastUpdated    *time.Time
 	NonDestructive bool
+	IsEnterprise   bool
 	ApplyReverse   bool
 	Errors         []MigrationError
 	// Metadata can be used to store custom JSON data
@@ -79,6 +91,7 @@ func scanMigrations(rows *sql.Rows, queryErr error) (_ []Migration, err error) {
 			&value.Created,
 			&value.LastUpdated,
 			&value.NonDestructive,
+			&value.IsEnterprise,
 			&value.ApplyReverse,
 			&value.Metadata,
 			&dbutil.NullString{S: &message},
@@ -117,8 +130,8 @@ type Store struct {
 }
 
 // NewStoreWithDB creates a new Store with the given database connection.
-func NewStoreWithDB(db dbutil.DB) *Store {
-	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func NewStoreWithDB(db database.DB) *Store {
+	return &Store{Store: basestore.NewWithHandle(db.Handle())}
 }
 
 var _ basestore.ShareableStore = &Store{}
@@ -142,6 +155,194 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	return &Store{Store: txBase}, err
 }
 
+type yamlMigration struct {
+	ID                     int    `yaml:"id"`
+	Team                   string `yaml:"team"`
+	Component              string `yaml:"component"`
+	Description            string `yaml:"description"`
+	NonDestructive         bool   `yaml:"non_destructive"`
+	IsEnterprise           bool   `yaml:"is_enterprise"`
+	IntroducedVersionMajor int    `yaml:"introduced_version_major"`
+	IntroducedVersionMinor int    `yaml:"introduced_version_minor"`
+	DeprecatedVersionMajor *int   `yaml:"deprecated_version_major"`
+	DeprecatedVersionMinor *int   `yaml:"deprecated_version_minor"`
+}
+
+//go:embed oobmigrations.yaml
+var migrations embed.FS
+
+var yamlMigrations = func() []yamlMigration {
+	contents, err := migrations.ReadFile("oobmigrations.yaml")
+	if err != nil {
+		panic(fmt.Sprintf("malformed oobmigration definitions: %s", err.Error()))
+	}
+
+	var parsedMigrations []yamlMigration
+	if err := yaml.Unmarshal(contents, &parsedMigrations); err != nil {
+		panic(fmt.Sprintf("malformed oobmigration definitions: %s", err.Error()))
+	}
+
+	sort.Slice(parsedMigrations, func(i, j int) bool {
+		return parsedMigrations[i].ID < parsedMigrations[j].ID
+	})
+
+	return parsedMigrations
+}()
+
+var yamlMigrationIDs = func() []int {
+	ids := make([]int, 0, len(yamlMigrations))
+	for _, migration := range yamlMigrations {
+		ids = append(ids, migration.ID)
+	}
+
+	return ids
+}()
+
+// SynchronizeMetadata upserts the metadata defined in the sibling file oobmigrations.yaml.
+// Existing out-of-band migration metadata that does not match one of the identifiers in the
+// referenced file are not removed, as they have likely been registered by a later version of
+// the instance prior to a downgrade.
+//
+// This method will use a fallback query to support an older version of the table (prior to 3.29)
+// so that upgrades of historic instances work with the migrator. This is true of select methods
+// in this store, but not all methods.
+func (s *Store) SynchronizeMetadata(ctx context.Context) (err error) {
+	var fallback bool
+
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if !fallback {
+			err = tx.Done(err)
+		}
+	}()
+
+	for _, migration := range yamlMigrations {
+		if err := tx.Exec(ctx, sqlf.Sprintf(
+			synchronizeMetadataUpsertQuery,
+			migration.ID,
+			migration.Team,
+			migration.Component,
+			migration.Description,
+			migration.NonDestructive,
+			migration.IsEnterprise,
+			migration.IntroducedVersionMajor,
+			migration.IntroducedVersionMinor,
+			migration.DeprecatedVersionMajor,
+			migration.DeprecatedVersionMinor,
+			migration.Team,
+			migration.Component,
+			migration.Description,
+			migration.NonDestructive,
+			migration.IsEnterprise,
+			migration.IntroducedVersionMajor,
+			migration.IntroducedVersionMinor,
+			migration.DeprecatedVersionMajor,
+			migration.DeprecatedVersionMinor,
+		)); err != nil {
+			if !shouldFallback(err) {
+				return err
+			}
+
+			fallback = true
+			_ = tx.Done(err)
+			return s.synchronizeMetadataFallback(ctx)
+		}
+	}
+
+	return nil
+}
+
+const synchronizeMetadataUpsertQuery = `
+INSERT INTO out_of_band_migrations
+(
+	id,
+	team,
+	component,
+	description,
+	created,
+	non_destructive,
+	is_enterprise,
+	introduced_version_major,
+	introduced_version_minor,
+	deprecated_version_major,
+	deprecated_version_minor
+)
+VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s)
+ON CONFLICT (id) DO UPDATE SET
+	team = %s,
+	component = %s,
+	description = %s,
+	non_destructive = %s,
+	is_enterprise = %s,
+	introduced_version_major = %s,
+	introduced_version_minor = %s,
+	deprecated_version_major = %s,
+	deprecated_version_minor = %s
+`
+
+func (s *Store) synchronizeMetadataFallback(ctx context.Context) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, migration := range yamlMigrations {
+		introduced := versionString(migration.IntroducedVersionMajor, migration.IntroducedVersionMinor)
+		var deprecated *string
+		if migration.DeprecatedVersionMajor != nil {
+			s := versionString(*migration.DeprecatedVersionMajor, *migration.DeprecatedVersionMinor)
+			deprecated = &s
+		}
+
+		if err := tx.Exec(ctx, sqlf.Sprintf(
+			synchronizeMetadataFallbackUpsertQuery,
+			migration.ID,
+			migration.Team,
+			migration.Component,
+			migration.Description,
+			migration.NonDestructive,
+			introduced,
+			deprecated,
+			migration.Team,
+			migration.Component,
+			migration.Description,
+			migration.NonDestructive,
+			introduced,
+			deprecated,
+		)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+const synchronizeMetadataFallbackUpsertQuery = `
+INSERT INTO out_of_band_migrations
+(
+	id,
+	team,
+	component,
+	description,
+	created,
+	non_destructive,
+	introduced,
+	deprecated
+)
+VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s)
+ON CONFLICT (id) DO UPDATE SET
+	team = %s,
+	component = %s,
+	description = %s,
+	non_destructive = %s,
+	introduced = %s,
+	deprecated = %s
+`
+
 // GetByID retrieves a migration by its identifier. If the migration does not exist, a false
 // valued flag is returned.
 func (s *Store) GetByID(ctx context.Context, id int) (_ Migration, _ bool, err error) {
@@ -158,7 +359,6 @@ func (s *Store) GetByID(ctx context.Context, id int) (_ Migration, _ bool, err e
 }
 
 const getByIDQuery = `
--- source: internal/oobmigration/store.go:GetByID
 SELECT
 	m.id,
 	m.team,
@@ -172,6 +372,7 @@ SELECT
 	m.created,
 	m.last_updated,
 	m.non_destructive,
+	m.is_enterprise,
 	m.apply_reverse,
 	m.metadata,
 	e.message,
@@ -182,26 +383,27 @@ WHERE m.id = %s
 ORDER BY e.created desc
 `
 
-// ReturnEnterpriseMigrations is set by the enterprise application to enable the
-// inclusion of enterprise-only migration records in the output of oobmigration.List.
-var ReturnEnterpriseMigrations = false
-
-// List returns the complete list of out-of-band migrations.
-func (s *Store) List(ctx context.Context) (_ []Migration, err error) {
-	var conds []*sqlf.Query
-	if !ReturnEnterpriseMigrations {
-		conds = append(conds, sqlf.Sprintf("NOT m.is_enterprise"))
+func (s *Store) GetByIDs(ctx context.Context, ids []int) (_ []Migration, err error) {
+	migrations, err := scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(getByIDsQuery, pq.Array(ids))))
+	if err != nil {
+		return nil, err
 	}
 
-	if len(conds) == 0 {
-		conds = append(conds, sqlf.Sprintf("TRUE"))
+	wanted := collections.NewSet(ids...)
+	received := collections.NewSet[int]()
+	for _, migration := range migrations {
+		received.Add(migration.ID)
+	}
+	difference := wanted.Difference(received).Values()
+	if len(difference) > 0 {
+		slices.Sort(difference)
+		return nil, errors.Newf("unknown migration id(s) %v", difference)
 	}
 
-	return scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listQuery, sqlf.Join(conds, "AND"))))
+	return migrations, nil
 }
 
-const listQuery = `
--- source: internal/oobmigration/store.go:List
+const getByIDsQuery = `
 SELECT
 	m.id,
 	m.team,
@@ -215,6 +417,58 @@ SELECT
 	m.created,
 	m.last_updated,
 	m.non_destructive,
+	m.is_enterprise,
+	m.apply_reverse,
+	m.metadata,
+	e.message,
+	e.created
+FROM out_of_band_migrations m
+LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
+WHERE m.id = ANY(%s)
+ORDER BY m.id ASC, e.created DESC
+`
+
+// List returns the complete list of out-of-band migrations.
+//
+// This method will use a fallback query to support an older version of the table (prior to 3.29)
+// so that upgrades of historic instances work with the migrator. This is true of select methods
+// in this store, but not all methods.
+func (s *Store) List(ctx context.Context) (_ []Migration, err error) {
+	conds := []*sqlf.Query{
+		// Syncing metadata does not remove unknown migration fields. If we've removed them,
+		// we want to block them from returning from old instances. We also want to ignore
+		// any database content that we don't have metadata for. Similar checks should not
+		// be necessary on the other access methods, as they use ids returned by this method.
+		sqlf.Sprintf("m.id = ANY(%s)", pq.Array(yamlMigrationIDs)),
+	}
+
+	migrations, err := scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listQuery, sqlf.Join(conds, "AND"))))
+	if err != nil {
+		if !shouldFallback(err) {
+			return nil, err
+		}
+
+		return scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listFallbackQuery, sqlf.Join(conds, "AND"))))
+	}
+
+	return migrations, nil
+}
+
+const listQuery = `
+SELECT
+	m.id,
+	m.team,
+	m.component,
+	m.description,
+	m.introduced_version_major,
+	m.introduced_version_minor,
+	m.deprecated_version_major,
+	m.deprecated_version_minor,
+	m.progress,
+	m.created,
+	m.last_updated,
+	m.non_destructive,
+	m.is_enterprise,
 	m.apply_reverse,
 	m.metadata,
 	e.message,
@@ -222,7 +476,42 @@ SELECT
 FROM out_of_band_migrations m
 LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
 WHERE %s
-ORDER BY m.id desc, e.created desc
+ORDER BY m.id desc, e.created DESC
+`
+
+const listFallbackQuery = `
+WITH split_migrations AS (
+	SELECT
+		m.*,
+		regexp_matches(m.introduced, E'^(\\d+)\.(\\d+)') AS introduced_parts,
+		regexp_matches(m.deprecated, E'^(\\d+)\.(\\d+)') AS deprecated_parts
+	FROM out_of_band_migrations m
+)
+SELECT
+	m.id,
+	m.team,
+	m.component,
+	m.description,
+	introduced_parts[1] AS introduced_version_major,
+	introduced_parts[2] AS introduced_version_minor,
+	CASE WHEN m.deprecated = '' THEN NULL ELSE deprecated_parts[1] END AS deprecated_version_major,
+	CASE WHEN m.deprecated = '' THEN NULL ELSE deprecated_parts[2] END AS deprecated_version_minor,
+	m.progress,
+	m.created,
+	m.last_updated,
+	m.non_destructive,
+	-- Note that we use true here as a default as we only expect to require this fallback
+	-- query when using a newer migrator version against an old instance, and multi-version
+	-- upgrades are an enterprise feature.
+	true AS is_enterprise,
+	m.apply_reverse,
+	m.metadata,
+	e.message,
+	e.created
+FROM split_migrations m
+LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
+WHERE %s
+ORDER BY m.id desc, e.created DESC
 `
 
 // UpdateDirection updates the direction for the given migration.
@@ -231,7 +520,6 @@ func (s *Store) UpdateDirection(ctx context.Context, id int, applyReverse bool) 
 }
 
 const updateDirectionQuery = `
--- source: internal/oobmigration/store.go:UpdateDirection
 UPDATE out_of_band_migrations SET apply_reverse = %s WHERE id = %s
 `
 
@@ -245,7 +533,6 @@ func (s *Store) updateProgress(ctx context.Context, id int, progress float64, no
 }
 
 const updateProgressQuery = `
--- source: internal/oobmigration/store.go:UpdateProgress
 UPDATE out_of_band_migrations SET progress = %s, last_updated = %s WHERE id = %s AND progress != %s
 `
 
@@ -259,7 +546,6 @@ func (s *Store) updateMetadata(ctx context.Context, id int, meta json.RawMessage
 }
 
 const updateMetadataQuery = `
--- source: internal/oobmigration/store.go:UpdateProgress
 UPDATE out_of_band_migrations SET metadata = %s, last_updated = %s WHERE id = %s AND metadata != %s
 `
 
@@ -297,18 +583,40 @@ func (s *Store) addError(ctx context.Context, id int, message string, now time.T
 }
 
 const addErrorQuery = `
--- source: internal/oobmigration/store.go:AddError
 INSERT INTO out_of_band_migrations_errors (migration_id, message, created) VALUES (%s, %s, %s)
 `
 
 const addErrorUpdateTimeQuery = `
--- source: internal/oobmigration/store.go:AddError
 UPDATE out_of_band_migrations SET last_updated = %s where id = %s
 `
 
 const addErrorPruneQuery = `
--- source: internal/oobmigration/store.go:AddError
 DELETE FROM out_of_band_migrations_errors WHERE id IN (
 	SELECT id FROM out_of_band_migrations_errors WHERE migration_id = %s ORDER BY created DESC OFFSET %s
 )
 `
+
+var columnsSupporingFallback = []string{
+	"is_enterprise",
+	"introduced_version_major",
+	"introduced_version_minor",
+	"deprecated_version_major",
+	"deprecated_version_minor",
+}
+
+func shouldFallback(err error) bool {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "42703" {
+		for _, column := range columnsSupporingFallback {
+			if strings.Contains(pgErr.Message, column) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func versionString(major, minor int) string {
+	return fmt.Sprintf("%d.%d.0", major, minor)
+}

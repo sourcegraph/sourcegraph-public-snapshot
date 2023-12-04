@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS codeintel_scip_symbols_document_lookup_id ON codeintel_scip_symbols(document_lookup_id);

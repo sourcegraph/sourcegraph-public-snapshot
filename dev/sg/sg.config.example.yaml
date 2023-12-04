@@ -25,21 +25,10 @@ commands:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
       # This needs to be set on `frontend` too so that `app.html` is rendered correctly
-      WEBPACK_DEV_SERVER: 1
+      WEB_BUILDER_DEV_SERVER: 1
     watch:
       - internal
       - cmd/frontend
-
-  enterprise-frontend:
-    cmd: .bin/enterprise-frontend
-    install: go build -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
-    env:
-      CONFIGURATION_MODE: server
-      USE_ENHANCED_LANGUAGE_DETECTION: false
-    watch:
-      - internal
-      - cmd/frontend
-      - enterprise/cmd/frontend
 
   gitserver:
     cmd: .bin/gitserver
@@ -84,12 +73,14 @@ commands:
       SOURCEGRAPH_HTTPS_PORT: 3443
 
   web:
-    cmd: ./node_modules/.bin/gulp --silent --color dev
-    install: yarn --no-progress
+    cmd: pnpm --filter @sourcegraph/web dev
+    install: |
+      pnpm install
+      pnpm run generate
     env:
-      WEBPACK_DEV_SERVER: 1
+      WEB_BUILDER_DEV_SERVER: 1
       NODE_ENV: development
-      NODE_OPTIONS: "--max_old_space_size=8192"
+      NODE_OPTIONS: '--max_old_space_size=8192'
 
 commandsets:
   minimal:
@@ -114,17 +105,6 @@ commandsets:
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
-  oss:
-    noDevPrivate: true
-    checks:
-      - docker
-      - redis
-    commands:
-      - frontend
-      - repo-updater
-      - gitserver
-      - web
-
 tests:
   # These can be run with `sg test [name]`
   # Every command is run from the repository root.
@@ -135,6 +115,6 @@ tests:
     env:
       # These are defaults. They can be overwritten by setting the env vars when
       # running the command.
-      BASE_URL: "http://localhost:3080"
-      EMAIL: "joe@sourcegraph.com"
-      PASSWORD: "12345"
+      BASE_URL: 'http://localhost:3080'
+      EMAIL: 'joe@sourcegraph.com'
+      PASSWORD: '12345'

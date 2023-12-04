@@ -9,7 +9,7 @@ import (
 
 type MatchedString struct {
 	Content       string `json:"content"`
-	MatchedRanges Ranges `json:"matched_ranges"`
+	MatchedRanges Ranges `json:"matchedRanges"`
 }
 
 func (m MatchedString) ToHighlightedString() HighlightedString {
@@ -58,15 +58,15 @@ func rangeToHighlights(s string, r Range) []HighlightedRange {
 	return res
 }
 
+// Location represents the location of a character in some UTF-8 encoded content.
 type Location struct {
-	// Offset is the number of unicode code points (not bytes) from the
-	// beginning of the matched text
+	// Offset is the number of bytes preceding this character in the content
 	Offset int
 
 	// Line is the count of newlines before the offset in the matched text
 	Line int
 
-	// Column is the count of unicode code points after the last newline in the matched text
+	// Column is the count of UTF-8 runes after the last newline in the matched text
 	Column int
 }
 
@@ -103,6 +103,7 @@ func (l *Location) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Range represents a slice [start, end) of some UTF-8 encoded content.
 type Range struct {
 	Start Location `json:"start"`
 	End   Location `json:"end"`

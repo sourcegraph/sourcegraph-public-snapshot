@@ -1,4 +1,4 @@
-import * as jsonc from '@sqs/jsonc-parser'
+import * as jsonc from 'jsonc-parser'
 
 export const REPOSITORY_KEY = 'repository'
 export const REVISIONS_KEY = 'revisions'

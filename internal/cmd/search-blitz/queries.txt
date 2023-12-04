@@ -52,6 +52,23 @@ type:diff repo:^github\.com/sourcegraph/sourcegraph$ author:camden before:"febru
 # commit_small
 type:commit repo:^github\.com/sourcegraph/sourcegraph$ author:camden before:"february 1 2021"
 
+# literal_small_select_repo
+patterntype:literal --exclude-task=test select:repo
+
+# literal_large_select_repo
+patterntype:literal lang:go -file:vendor/ count:1000 cfssl select:repo
+
+# and_regex
+patterntype:regexp \beven\b and \bintelligence\b and \bdream\b and \bsimplest\b
+
+# and_literal_simple
+patterntype:literal readUInt16LE and readUInt8
+
+# or_regex
+patterntype:regexp \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdoResults\b
+
+# or_literal_simple
+patterntype:literal readUInt16LE or readUInt8
 
 ## mono_ queries cherry-pick the above queries but are run on our synthetic
 ## monorepo. The queries specifying rev: will use the latest commit, not just
@@ -66,33 +83,34 @@ repo:^github\.com/sgtest/megarepo$ patterntype:regexp se[arc]{3}hZoekt rev:main
 # mono_structural_small
 repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...)
 
-# mono_rev_structural_small
-repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...) rev:main
+## we have disabled this test because it was just too slow.
+## mono_rev_structural_small
+## repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...) rev:main
 
 # mono_symbol_small
 repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion
 
-## This query has been disabled due to it causing the symbols service to
-## degrade. We want to enable it again, tracked at
-## https://github.com/sourcegraph/sourcegraph/issues/28457
-##
-## # mono_rev_symbol_small
-## repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion rev:main
+# mono_rev_symbol_small
+repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion rev:main
+
+## for diff and commit search we limit the count. We are more interested in
+## time to first result. This depends on Camden remaining productive, so we
+## should be safe :P
 
 # mono_diff_small
-repo:^github\.com/sgtest/megarepo$ type:diff   author:camden before:"february 1 2021"
+repo:^github\.com/sgtest/megarepo$ type:diff   author:camden after:"february 1 2021" count:10
 
 # mono_commit_small
-repo:^github\.com/sgtest/megarepo$ type:commit author:camden before:"february 1 2021"
+repo:^github\.com/sgtest/megarepo$ type:commit author:camden after:"february 1 2021" count:10
 
-# literal_small_select_repo
-patterntype:literal --exclude-task=test select:repo
+# mono_literal_small
+repo:^github\.com/sgtest/megarepo$ patterntype:literal --exclude-task=test
 
-# literal_large_select_repo
-patterntype:literal lang:go -file:vendor/ count:1000 cfssl select:repo
+# mono_rev_literal_small
+repo:^github\.com/sgtest/megarepo$ patterntype:literal --exclude-task=test rev:main
 
-# and_regex
-patterntype:regexp \beven\b and \bintelligence\b and \bdream\b and \bsimplest\b
+# mono_literal_large
+repo:^github\.com/sgtest/megarepo$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir
 
-# or_regex
-patterntype:regexp \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdoResults\b
+# mono_rev_literal_large
+repo:^github\.com/sgtest/megarepo$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir rev:main

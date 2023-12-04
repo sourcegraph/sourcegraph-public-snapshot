@@ -1,113 +1,68 @@
-import classNames from 'classnames'
+import type { FC, ReactNode } from 'react'
+
 import { noop } from 'lodash'
-import React, { useCallback } from 'react'
 
-import { styles } from '../../../../../components/creation-ui-kit'
-import { useAsyncInsightTitleValidator } from '../../../../../components/form/hooks/use-async-insight-title-validator'
-import { useField } from '../../../../../components/form/hooks/useField'
-import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
-import { createRequiredValidator } from '../../../../../components/form/validators'
-import {
-    repositoriesExistValidator,
-    repositoriesFieldValidator,
-    requiredStepValueField,
-} from '../../search-insight/components/search-insight-creation-content/validators'
-import { CaptureGroupFormFields } from '../types'
-import { searchQueryValidator } from '../utils/search-query-validator'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { useField, type FormChangeEvent, type SubmissionErrors, useForm } from '@sourcegraph/wildcard'
 
-import { CaptureGroupCreationForm } from './CaptureGoupCreationForm'
-import { CaptureGroupCreationLivePreview } from './CaptureGroupCreationLivePreview'
+import { CreationUiLayout, CreationUIForm, CreationUIPreview, useRepoFields } from '../../../../../components'
+import { LineChartLivePreview } from '../../LineChartLivePreview'
+import type { CaptureGroupFormFields } from '../types'
+
+import { CaptureGroupCreationForm, type RenderPropertyInputs } from './CaptureGoupCreationForm'
+import { QUERY_VALIDATORS, STEP_VALIDATORS, TITLE_VALIDATORS } from './validators'
 
 const INITIAL_VALUES: CaptureGroupFormFields = {
-    repositories: '',
+    repositories: [],
     groupSearchQuery: '',
     title: '',
     step: 'months',
     stepValue: '2',
-    allRepos: false,
+    repoMode: 'search-query',
+    repoQuery: { query: '' },
     dashboardReferenceCount: 0,
 }
 
-const titleRequiredValidator = createRequiredValidator('Title is a required field.')
-const queryRequiredValidator = createRequiredValidator('Query is a required field.')
-
 interface CaptureGroupCreationContentProps {
-    mode: 'creation' | 'edit'
     initialValues?: Partial<CaptureGroupFormFields>
+    touched: boolean
     className?: string
-
+    children: (inputs: RenderPropertyInputs) => ReactNode
     onSubmit: (values: CaptureGroupFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     onChange?: (event: FormChangeEvent<CaptureGroupFormFields>) => void
     onCancel: () => void
 }
 
-export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCreationContentProps> = props => {
-    const { mode, className, initialValues = {}, onSubmit, onChange = noop, onCancel } = props
+export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> = props => {
+    const { touched, initialValues = {}, className, children, onSubmit, onChange = noop } = props
 
-    // Search query validators
-    const validateChecks = useCallback((value: string | undefined) => {
-        if (!value) {
-            return queryRequiredValidator(value)
-        }
+    const repoFieldVariation = useExperimentalFeatures(features => features.codeInsightsRepoUI)
+    const isSearchQueryORUrlsList = repoFieldVariation === 'search-query-or-strict-list'
 
-        const validatedChecks = searchQueryValidator(value, value !== undefined)
-        const allChecksPassed = Object.values(validatedChecks).every(Boolean)
-
-        if (!allChecksPassed) {
-            return 'Query is not valid'
-        }
-
-        return queryRequiredValidator(value)
-    }, [])
+    // Enforce "search-query" initial value if we're in the single search query UI mode
+    const fixedInitialValues = isSearchQueryORUrlsList
+        ? { ...INITIAL_VALUES, ...initialValues }
+        : { ...INITIAL_VALUES, ...initialValues, repoMode: 'search-query' as const }
 
     const form = useForm<CaptureGroupFormFields>({
-        initialValues: { ...INITIAL_VALUES, ...initialValues },
-        touched: mode === 'edit',
+        initialValues: fixedInitialValues,
+        touched,
         onSubmit,
         onChange,
     })
 
-    const asyncTitleValidator = useAsyncInsightTitleValidator({
-        mode,
-        initialTitle: form.formAPI.initialValues.title,
-    })
+    const { repoMode, repoQuery, repositories } = useRepoFields({ formApi: form.formAPI })
 
     const title = useField({
         name: 'title',
         formApi: form.formAPI,
-        validators: { sync: titleRequiredValidator, async: asyncTitleValidator },
-    })
-
-    const allReposMode = useField({
-        name: 'allRepos',
-        formApi: form.formAPI,
-        onChange: (checked: boolean) => {
-            // Reset form values in case if All repos mode was activated
-            if (checked) {
-                repositories.input.onChange('')
-                step.input.onChange('months')
-                stepValue.input.onChange('1')
-            }
-        },
-    })
-
-    const isAllReposMode = allReposMode.input.value
-
-    const repositories = useField({
-        name: 'repositories',
-        formApi: form.formAPI,
-        validators: {
-            // Turn off any validations for the repositories field in we are in all repos mode
-            sync: !isAllReposMode ? repositoriesFieldValidator : undefined,
-            async: !isAllReposMode ? repositoriesExistValidator : undefined,
-        },
-        disabled: isAllReposMode,
+        validators: { sync: TITLE_VALIDATORS },
     })
 
     const query = useField({
         name: 'groupSearchQuery',
         formApi: form.formAPI,
-        validators: { sync: validateChecks },
+        validators: { sync: QUERY_VALIDATORS },
     })
 
     const step = useField({
@@ -118,14 +73,13 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
     const stepValue = useField({
         name: 'stepValue',
         formApi: form.formAPI,
-        validators: {
-            sync: requiredStepValueField,
-        },
+        validators: { sync: STEP_VALIDATORS },
     })
 
     const handleFormReset = (): void => {
         title.input.onChange('')
-        repositories.input.onChange('')
+        repoQuery.input.onChange({ query: '' })
+        repositories.input.onChange([])
         query.input.onChange('')
         step.input.onChange('months')
         stepValue.input.onChange('1')
@@ -135,42 +89,57 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
     }
 
     const hasFilledValue =
-        form.values.title !== '' || form.values.repositories !== '' || form.values.groupSearchQuery !== ''
+        form.values.title !== '' ||
+        form.values.repositories.length > 0 ||
+        form.values.repoQuery.query !== '' ||
+        form.values.groupSearchQuery !== ''
 
     const areAllFieldsForPreviewValid =
-        repositories.meta.validState === 'VALID' &&
+        (repositories.meta.validState === 'VALID' || repoQuery.meta.validState === 'VALID') &&
         stepValue.meta.validState === 'VALID' &&
-        query.meta.validState === 'VALID' &&
-        // For all repos mode we are not able to show the live preview chart
-        !allReposMode.input.value
+        query.meta.validState === 'VALID'
 
     return (
-        <div className={classNames(styles.content, className)}>
-            <CaptureGroupCreationForm
-                mode={mode}
+        <CreationUiLayout className={className}>
+            <CreationUIForm
+                aria-label="Detect and track Insight creation form"
+                as={CaptureGroupCreationForm}
                 form={form}
                 title={title}
+                repoMode={repoMode}
+                repoQuery={repoQuery}
                 repositories={repositories}
                 step={step}
                 stepValue={stepValue}
                 query={query}
                 isFormClearActive={hasFilledValue}
-                onCancel={onCancel}
-                onFormReset={handleFormReset}
-                className={styles.contentForm}
-                allReposMode={allReposMode}
                 dashboardReferenceCount={initialValues.dashboardReferenceCount}
-            />
+                onFormReset={handleFormReset}
+            >
+                {children}
+            </CreationUIForm>
 
-            <CaptureGroupCreationLivePreview
+            <CreationUIPreview
+                as={LineChartLivePreview}
                 disabled={!areAllFieldsForPreviewValid}
-                isAllReposMode={allReposMode.input.value}
                 repositories={repositories.meta.value}
-                query={query.meta.value}
+                repoMode={repoMode.meta.value}
+                repoQuery={repoQuery.meta.value.query}
+                series={captureGroupPreviewSeries(query.meta.value)}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
-                className={styles.contentLivePreview}
             />
-        </div>
+        </CreationUiLayout>
     )
+}
+
+function captureGroupPreviewSeries(query: string): any[] {
+    return [
+        {
+            generatedFromCaptureGroup: true,
+            label: '',
+            query,
+            stroke: '',
+        },
+    ]
 }

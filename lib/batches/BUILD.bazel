@@ -1,0 +1,52 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "batches",
+    srcs = [
+        "batch_spec.go",
+        "changeset_spec.go",
+        "changeset_specs.go",
+        "json_logs.go",
+        "outputs.go",
+        "published.go",
+        "workspaces_execution_input.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/batches",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/batches/env",
+        "//lib/batches/execution",
+        "//lib/batches/git",
+        "//lib/batches/json",
+        "//lib/batches/overridable",
+        "//lib/batches/schema",
+        "//lib/batches/template",
+        "//lib/batches/yaml",
+        "//lib/errors",
+        "@com_github_sourcegraph_go_diff//diff",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
+)
+
+go_test(
+    name = "batches_test",
+    timeout = "short",
+    srcs = [
+        "batch_spec_test.go",
+        "changeset_spec_test.go",
+        "changeset_specs_test.go",
+        "published_test.go",
+    ],
+    embed = [":batches"],
+    deps = [
+        "//lib/batches/execution",
+        "//lib/batches/git",
+        "//lib/batches/overridable",
+        "//lib/batches/template",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_mitchellh_copystructure//:copystructure",
+        "@com_github_stretchr_testify//assert",
+        "@in_gopkg_yaml_v2//:yaml_v2",
+    ],
+)

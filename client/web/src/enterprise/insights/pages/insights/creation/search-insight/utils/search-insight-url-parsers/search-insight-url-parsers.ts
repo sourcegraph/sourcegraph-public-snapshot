@@ -1,27 +1,24 @@
-import { SearchBasedInsightSeries } from '../../../../../../core/types'
-import { createDefaultEditSeries } from '../../components/search-insight-creation-content/hooks/use-editable-series'
-import { CreateInsightFormFields } from '../../types'
+import { createDefaultEditSeries } from '../../../../../../components'
+import type { SearchBasedInsightSeries } from '../../../../../../core'
+import type { CreateInsightFormFields } from '../../types'
 
-export function decodeSearchInsightUrl(queryParameters: string): CreateInsightFormFields | null {
+export function decodeSearchInsightUrl(queryParameters: string): Partial<CreateInsightFormFields> | null {
     try {
         const searchParameter = new URLSearchParams(decodeURIComponent(queryParameters))
 
+        const repoQuery = searchParameter.get('repoQuery')
         const repositories = searchParameter.get('repositories')
         const title = searchParameter.get('title')
         const rawSeries = JSON.parse(searchParameter.get('series') ?? '[]') as SearchBasedInsightSeries[]
-        const editableSeries = rawSeries.map(series => createDefaultEditSeries({ ...series, edit: false }))
-        const allRepos = searchParameter.get('allRepos')
+        const editableSeries = rawSeries.map(series => createDefaultEditSeries({ ...series, edit: false, valid: true }))
 
-        if (repositories || title || editableSeries.length > 0 || allRepos) {
+        if (repoQuery || repositories || title || editableSeries.length > 0) {
             return {
                 title: title ?? '',
-                repositories: repositories ?? '',
-                allRepos: !!allRepos,
+                repoQuery: { query: repoQuery ?? '' },
+                repositories: repositories?.split(',') ?? [],
                 series: editableSeries,
-                visibility: '',
-                step: 'days',
-                stepValue: '8',
-                dashboardReferenceCount: 0,
+                repoMode: repoQuery ? 'search-query' : 'urls-list',
             }
         }
 
@@ -31,10 +28,11 @@ export function decodeSearchInsightUrl(queryParameters: string): CreateInsightFo
     }
 }
 
-type UnsupportedValues = 'series' | 'step' | 'visibility' | 'stepValue'
+type UnsupportedValues = 'series' | 'step' | 'visibility' | 'stepValue' | 'repoQuery' | 'repoMode'
 
 export interface SearchInsightURLValues extends Omit<CreateInsightFormFields, UnsupportedValues> {
-    series: (Omit<SearchBasedInsightSeries, 'id'> & { id?: string })[]
+    repoQuery: string
+    series: (Omit<SearchBasedInsightSeries, 'id'> & { id?: string | number })[]
 }
 
 export function encodeSearchInsightUrl(values: Partial<SearchInsightURLValues>): string {
@@ -46,9 +44,13 @@ export function encodeSearchInsightUrl(values: Partial<SearchInsightURLValues>):
 
         switch (key) {
             case 'title':
-            case 'repositories':
-            case 'allRepos': {
-                parameters.set(key, fields[key].toString())
+            case 'repoQuery': {
+                parameters.set(key, encodeURIComponent(fields[key].toString()))
+                break
+            }
+            case 'repositories': {
+                const encodedRepoURLs = fields[key].join(',')
+                parameters.set(key, encodedRepoURLs)
 
                 break
             }

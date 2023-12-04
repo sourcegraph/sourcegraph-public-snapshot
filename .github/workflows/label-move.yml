@@ -1,200 +1,654 @@
 name: Move labeled or milestoned issue to a specific project colum
 on:
   issues:
-    types: [labeled]
+    types: [ labeled ]
 jobs:
-  # Uses issues beta API - see https://docs.github.com/en/issues/trying-out-the-new-projects-experience/automating-projects#example-workflow
+  # Uses Projects V2 API - see https://docs.github.com/en/issues/trying-out-the-new-projects-experience/automating-projects#example-workflow
   # To get your PROJECT_ID, use:
-  #
-  #   gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='
-  # query($project: Int!) {
-  #   organization(login: "sourcegraph") {
-  #     projectNext(number: $project) {
-  #       id
-  #     }
-  #   }
-  #   }' -F project=212
+  #  gh api graphql -f query='
+  #  query($organization:
+  #    String! $number: Int!){
+  #      organization(login: $organization){
+  #        projectV2(number: $number) {
+  #          id
+  #        }
+  #      }
+  #  }' -f organization="sourcegraph" -F number=<project number from board URL>
   code-intel-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: MDExOlByb2plY3ROZXh0NDI1MA== # https://github.com/orgs/sourcegraph/projects/211
-      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
-    steps:
-    - name: Get issue if relevant
-      if: ${{ contains(github.event.issue.labels.*.name, 'team/code-intelligence') }}
-      env:
-        NODE_ID: ${{ github.event.issue.node_id }}
-      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-    - name: Get pull request if relevant
-      if: ${{ contains(github.event.pull_request.labels.*.name, 'team/code-intelligence') }}
-      env:
-        NODE_ID: ${{ github.event.pull_request.node_id }}
-      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-    - name: Add to board
-      if: ${{ env.NODE_ID != '' }}
-      run: |
-        gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='
-          mutation($project:ID!, $node_id:ID!) {
-            addProjectNextItem(input: {projectId: $project, contentId: $node_id}) {
-              projectNextItem {
-                id
-              }
-            }
-          }' -f project=$PROJECT_ID -f node_id=$NODE_ID
-  dev-experience-board:
-    runs-on: ubuntu-latest
-    env:
-      PROJECT_ID: MDExOlByb2plY3ROZXh0NDI1Nw== # https://github.com/orgs/sourcegraph/projects/212
-      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
-    steps:
-    - name: Get issue if relevant
-      if: ${{ contains(github.event.issue.labels.*.name, 'dx') || contains(github.event.issue.labels.*.name, 'team/devx') }}
-      env:
-        NODE_ID: ${{ github.event.issue.node_id }}
-      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-    - name: Get pull request if relevant
-      if: ${{ contains(github.event.pull_request.labels.*.name, 'dx') || contains(github.event.pull_request.labels.*.name, 'team/devx') }}
-      env:
-        NODE_ID: ${{ github.event.pull_request.node_id }}
-      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-    - name: Add to Distribution board
-      if: ${{ env.NODE_ID != '' }}
-      run: |
-        gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='
-          mutation($project:ID!, $node_id:ID!) {
-            addProjectNextItem(input: {projectId: $project, contentId: $node_id}) {
-              projectNextItem {
-                id
-              }
-            }
-          }' -f project=$PROJECT_ID -f node_id=$NODE_ID
-  growth-and-integrations-board:
-    runs-on: ubuntu-latest
-    env:
-      PROJECT_ID: MDExOlByb2plY3ROZXh0NDMyNg== # https://github.com/orgs/sourcegraph/projects/213
-      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
-    steps:
-    - name: Get issue if relevant
-      if: ${{ contains(github.event.issue.labels.*.name, 'team/growth-and-integrations') }}
-      env:
-        NODE_ID: ${{ github.event.issue.node_id }}
-      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-    - name: Get pull request if relevant
-      if: ${{ contains(github.event.pull_request.labels.*.name, 'team/growth-and-integrations') }}
-      env:
-        NODE_ID: ${{ github.event.pull_request.node_id }}
-      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-    - name: Add to Growth and Integrations board
-      if: ${{ env.NODE_ID != '' }}
-      run: |
-        gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='
-          mutation($project:ID!, $node_id:ID!) {
-            addProjectNextItem(input: {projectId: $project, contentId: $node_id}) {
-              projectNextItem {
-                id
-              }
-            }
-          }' -f project=$PROJECT_ID -f node_id=$NODE_ID
-  batchers-board:
-    runs-on: ubuntu-latest
-    env:
-      PROJECT_ID: PN_kwDOADy5QM0WXg== # https://github.com/orgs/sourcegraph/projects/216
-      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
-    steps:
-    - name: Get issue if relevant
-      if: ${{ contains(github.event.issue.labels.*.name, 'team/batchers') }}
-      env:
-        NODE_ID: ${{ github.event.issue.node_id }}
-      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-    - name: Get pull request if relevant
-      if: ${{ contains(github.event.pull_request.labels.*.name, 'team/batchers') }}
-      env:
-        NODE_ID: ${{ github.event.pull_request.node_id }}
-      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-    - name: Add to Batchers board
-      if: ${{ env.NODE_ID != '' }}
-      run: |
-        gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='
-          mutation($project:ID!, $node_id:ID!) {
-            addProjectNextItem(input: {projectId: $project, contentId: $node_id}) {
-              projectNextItem {
-                id
-              }
-            }
-          }' -f project=$PROJECT_ID -f node_id=$NODE_ID
-  dev-ops-board:
-    runs-on: ubuntu-latest
-    env:
-      PROJECT_ID: PN_kwDOADy5QM1D1Q # https://github.com/orgs/sourcegraph/projects/220
+      PROJECT_ID: PVT_kwDOADy5QM0Qmg # https://github.com/orgs/sourcegraph/projects/211
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
       - name: Get issue if relevant
-        if: ${{ contains(github.event.issue.labels.*.name, 'team/devops') }}
+        if: ${{ contains(github.event.issue.labels.*.name, 'team/code-intelligence') }}
         env:
           NODE_ID: ${{ github.event.issue.node_id }}
         run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
       - name: Get pull request if relevant
-        if: ${{ contains(github.event.pull_request.labels.*.name, 'team/devops') }}
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'team/code-intelligence') }}
         env:
           NODE_ID: ${{ github.event.pull_request.node_id }}
         run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-      - name: Add to devops board
+      - name: Add to board
         if: ${{ env.NODE_ID != '' }}
         run: |
-          gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='
-            mutation($project:ID!, $node_id:ID!) {
-              addProjectNextItem(input: {projectId: $project, contentId: $node_id}) {
-                projectNextItem {
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
                   id
                 }
               }
-            }' -f project=$PROJECT_ID -f node_id=$NODE_ID
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  dev-experience-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM0QoQ # https://github.com/orgs/sourcegraph/projects/212
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'dx') || contains(github.event.issue.labels.*.name, 'team/devx') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'dx') || contains(github.event.pull_request.labels.*.name, 'team/devx') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Distribution board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  integrations-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM0Q5g # https://github.com/orgs/sourcegraph/projects/213
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'team/integrations') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'team/integrations') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Integrations board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  batchers-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM0WXg # https://github.com/orgs/sourcegraph/projects/216
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'team/batchers') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'team/batchers') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Batchers board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
   frontend-platform-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: PN_kwDOADy5QM2FqQ== # https://github.com/orgs/sourcegraph/projects/222
+      PROJECT_ID: PVT_kwDOADy5QM2FqQ # https://github.com/orgs/sourcegraph/projects/222
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
-    - name: Get issue if relevant
-      if: ${{ contains(github.event.issue.labels.*.name, 'team/frontend-platform') }}
-      env:
-        NODE_ID: ${{ github.event.issue.node_id }}
-      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-    - name: Add to Frontend Platform board
-      if: ${{ env.NODE_ID != '' }}
-      run: |
-        gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='
-          mutation($project:ID!, $node_id:ID!) {
-            addProjectNextItem(input: {projectId: $project, contentId: $node_id}) {
-              projectNextItem {
-                id
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'team/frontend-platform') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Frontend Platform board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
               }
-            }
-          }' -f project=$PROJECT_ID -f node_id=$NODE_ID
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
   delivery-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: MDExOlByb2plY3ROZXh0Mzg2Mw== # https://github.com/orgs/sourcegraph/projects/205
+      PROJECT_ID: PVT_kwDOADy5QM4AK8nZ # https://github.com/orgs/sourcegraph/projects/316
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
-    - name: Get issue if relevant
-      if: ${{ contains(github.event.issue.labels.*.name, 'team/delivery') }}
-      env:
-        NODE_ID: ${{ github.event.issue.node_id }}
-      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-    - name: Get pull request if relevant
-      if: ${{ contains(github.event.pull_request.labels.*.name, 'team/delivery') }}
-      env:
-        NODE_ID: ${{ github.event.pull_request.node_id }}
-      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-    - name: Add to Distribution board
-      if: ${{ env.NODE_ID != '' }}
-      run: |
-        gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='
-          mutation($project:ID!, $node_id:ID!) {
-            addProjectNextItem(input: {projectId: $project, contentId: $node_id}) {
-              projectNextItem {
-                id
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'team/delivery') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'team/delivery') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Delivery board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
               }
-            }
-          }' -f project=$PROJECT_ID -f node_id=$NODE_ID
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  wcag-accessibility-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4AAyDB # https://github.com/orgs/sourcegraph/projects/238
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'wcag/2.1') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Accessibility board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  growth-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4ABLw3 # https://github.com/orgs/sourcegraph/projects/253
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'team/growth') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'team/growth') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Growth board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  executors-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4ADYmX # https://github.com/orgs/sourcegraph/projects/267
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'user-code-execution') || contains(github.event.issue.labels.*.name, 'rfc-696') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'user-code-execution') || contains(github.event.pull_request.labels.*.name, 'rfc-696') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Executors board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  grpc-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4AKrqk # https://github.com/orgs/sourcegraph/projects/309
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'grpc') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'grpc') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to gRPC board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  design-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4AEFJO # https://github.com/orgs/sourcegraph/projects/278
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'design') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'design') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Design board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  app-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4AKedC # https://github.com/orgs/sourcegraph/projects/306
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'app') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'app') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to App board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  own-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4AKkiu # https://github.com/orgs/sourcegraph/projects/307
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'own') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'own') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Own board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  cloud-v2-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4ACuLn # https://github.com/orgs/sourcegraph/projects/264
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'team/cloud') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'team/cloud') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Cloud V2 board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  bazel-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4AKsv5 # https://github.com/orgs/sourcegraph/projects/311
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'JF/bazel') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'JF/bazel') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Bazel board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  code-exploration-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4AIHNz # https://github.com/orgs/sourcegraph/projects/297
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'team/code-exploration') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'team/code-exploration') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Code Exploration board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  code-insights-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4AHHGl # https://github.com/orgs/sourcegraph/projects/291
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'team/code-insights') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'team/code-insights') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Code Insights board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  setup-experience-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4AKtrW # https://github.com/orgs/sourcegraph/projects/312
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'team/setup-experience') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'team/setup-experience') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Setup Experience board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  release-guild-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4AA0Qs # https://github.com/orgs/sourcegraph/projects/240
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'release-tool') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'release-tool') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Release Guild board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  tracked-vulns-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4ABLGv # https://github.com/orgs/sourcegraph/projects/251
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'vulnerability-report') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'vulnerability-report') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Tracked Vulns board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  first-class-perforce-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4AKku5 # https://github.com/orgs/sourcegraph/projects/308
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'first-class-perforce') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'first-class-perforce') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to First-class Perforce board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  backstage-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4AK4v7 # https://github.com/orgs/sourcegraph/projects/308
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'backstage') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'backstage') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Backstage board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  feature-request-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4AEmQV # https://github.com/orgs/sourcegraph/projects/284
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'feature-request') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'feature-request') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Feature Request board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID
+  growth-marketing-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PVT_kwDOADy5QM4AHqaR # https://github.com/orgs/sourcegraph/projects/296
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+      - name: Get issue if relevant
+        if: ${{ contains(github.event.issue.labels.*.name, 'team/growth-marketing') }}
+        env:
+          NODE_ID: ${{ github.event.issue.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Get pull request if relevant
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'team/growth-marketing') }}
+        env:
+          NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+      - name: Add to Growth Marketing board
+        if: ${{ env.NODE_ID != '' }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=$NODE_ID

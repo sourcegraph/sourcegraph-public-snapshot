@@ -10,7 +10,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -77,7 +79,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 		{
 			name:                 "not found",
 			projectWithNamespace: "foobarfoobarfoobar/please-let-this-not-exist",
-			err:                  `unexpected response from GitLab API (https://gitlab.com/api/v4/projects/foobarfoobarfoobar%2Fplease-let-this-not-exist): HTTP error status 404`,
+			err:                  "GitLab project \"foobarfoobarfoobar/please-let-this-not-exist\" not found",
 		},
 		{
 			name:                 "found",
@@ -110,10 +112,12 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 							HTTPURLToRepo:     "https://gitlab.com/gitlab-org/gitaly.git",
 							SSHURLToRepo:      "git@gitlab.com:gitlab-org/gitaly.git",
 						},
-						Visibility: "",
-						Archived:   false,
-						StarCount:  168,
-						ForksCount: 76,
+						Visibility:    "",
+						Archived:      false,
+						StarCount:     168,
+						ForksCount:    76,
+						DefaultBranch: "master",
+						Topics:        []string{"topic1", "topic2"},
 					},
 				}
 
@@ -135,20 +139,15 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 			// We need to clear the cache before we run the tests
 			rcache.SetupForTest(t)
 
-			cf, save := newClientFactory(t, tc.name)
+			cf, save := NewClientFactory(t, tc.name)
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
+			svc := typestest.MakeExternalService(t, extsvc.VariantGitLab, &schema.GitLabConnection{
+				Url: "https://gitlab.com",
+			})
 
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitLab,
-				Config: marshalJSON(t, &schema.GitLabConnection{
-					Url: "https://gitlab.com",
-				}),
-			}
-
-			gitlabSrc, err := NewGitLabSource(svc, cf)
+			ctx := context.Background()
+			gitlabSrc, err := NewGitLabSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -166,6 +165,10 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 }
 
 func TestGitLabSource_makeRepo(t *testing.T) {
+	// The GitLabSource uses the gitlab.Client under the hood, which
+	// uses rcache, a caching layer that uses Redis.
+	// We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
 	b, err := os.ReadFile(filepath.Join("testdata", "gitlab-repos.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -175,38 +178,51 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindGitLab}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindGitLab,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	tests := []struct {
 		name   string
-		schmea *schema.GitLabConnection
+		schema *schema.GitLabConnection
 	}{
 		{
 			name: "simple",
-			schmea: &schema.GitLabConnection{
+			schema: &schema.GitLabConnection{
 				Url: "https://gitlab.com",
 			},
 		}, {
 			name: "ssh",
-			schmea: &schema.GitLabConnection{
+			schema: &schema.GitLabConnection{
 				Url:        "https://gitlab.com",
 				GitURLType: "ssh",
 			},
 		}, {
 			name: "path-pattern",
-			schmea: &schema.GitLabConnection{
+			schema: &schema.GitLabConnection{
 				Url:                   "https://gitlab.com",
 				RepositoryPathPattern: "gl/{pathWithNamespace}",
+			},
+		}, {
+			name: "internal-repo-public",
+			schema: &schema.GitLabConnection{
+				Url:                       "https://gitlab.com",
+				MarkInternalReposAsPublic: true,
+			},
+		}, {
+			name: "internal-repo-private",
+			schema: &schema.GitLabConnection{
+				Url:                       "https://gitlab.com",
+				MarkInternalReposAsPublic: false,
 			},
 		},
 	}
 	for _, test := range tests {
 		test.name = "GitLabSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
-			s, err := newGitLabSource(&svc, test.schmea, nil)
+			s, err := newGitLabSource(logtest.Scoped(t), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -216,15 +232,21 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 				got = append(got, s.makeRepo(r))
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, Update(test.name), got)
 		})
 	}
 }
 
 func TestGitLabSource_WithAuthenticator(t *testing.T) {
+	// The GitLabSource uses the gitlab.Client under the hood, which
+	// uses rcache, a caching layer that uses Redis.
+	// We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
+	logger := logtest.Scoped(t)
 	t.Run("supported", func(t *testing.T) {
 		var src Source
-		src, err := newGitLabSource(nil, &schema.GitLabConnection{}, nil)
+
+		src, err := newGitLabSource(logger, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -248,7 +270,8 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				var src Source
-				src, err := newGitLabSource(nil, &schema.GitLabConnection{}, nil)
+
+				src, err := newGitLabSource(logger, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}
@@ -264,4 +287,40 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestGitlabSource_ListRepos(t *testing.T) {
+	// The GitLabSource uses the gitlab.Client under the hood, which
+	// uses rcache, a caching layer that uses Redis.
+	// We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
+	conf := &schema.GitLabConnection{
+		Url:   "https://gitlab.sgdev.org",
+		Token: os.Getenv("GITLAB_TOKEN"),
+		ProjectQuery: []string{
+			"groups/small-test-group/projects",
+		},
+		Exclude: []*schema.ExcludedGitLabProject{
+			{
+				EmptyRepos: true,
+			},
+		},
+	}
+	cf, save := NewClientFactory(t, t.Name())
+	defer save(t)
+
+	svc := typestest.MakeExternalService(t, extsvc.VariantGitLab, conf)
+
+	ctx := context.Background()
+	src, err := NewGitLabSource(ctx, nil, svc, cf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repos, err := ListAll(context.Background(), src)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t, "testdata/sources/GITLAB/"+t.Name(), Update(t.Name()), repos)
 }

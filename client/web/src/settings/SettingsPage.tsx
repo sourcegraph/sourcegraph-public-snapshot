@@ -1,22 +1,17 @@
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
 
+import { logger } from '@sourcegraph/common'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Container } from '@sourcegraph/wildcard'
 
-import { logCodeInsightsChanges } from '../insights/analytics'
-
-import { SettingsAreaPageProps } from './SettingsArea'
+import type { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
 
-interface Props
-    extends SettingsAreaPageProps,
-        Pick<RouteComponentProps<{}>, 'history' | 'location'>,
-        ThemeProps,
-        TelemetryProps {
+interface Props extends SettingsAreaPageProps, TelemetryProps {
     /** Optional description to render above the editor. */
     description?: JSX.Element
+    isLightTheme: boolean
 }
 
 interface State {
@@ -31,16 +26,16 @@ export class SettingsPage extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <SettingsFile
-                settings={this.props.data.subjects[this.props.data.subjects.length - 1].latestSettings}
-                jsonSchema={this.props.data.settingsJSONSchema}
-                commitError={this.state.commitError}
-                onDidCommit={this.onDidCommit}
-                onDidDiscard={this.onDidDiscard}
-                history={this.props.history}
-                isLightTheme={this.props.isLightTheme}
-                telemetryService={this.props.telemetryService}
-            />
+            <Container className="mb-3">
+                <SettingsFile
+                    settings={this.props.data.subjects.at(-1)!.latestSettings}
+                    commitError={this.state.commitError}
+                    onDidCommit={this.onDidCommit}
+                    onDidDiscard={this.onDidDiscard}
+                    isLightTheme={this.props.isLightTheme}
+                    telemetryService={this.props.telemetryService}
+                />
+            </Container>
         )
     }
 
@@ -58,24 +53,17 @@ export class SettingsPage extends React.PureComponent<Props, State> {
         )
 
         try {
-            const originalSettings = this.props.settingsCascade.final
-
             if (isSubjectInViewerSettingsCascade) {
                 await this.props.platformContext.updateSettings(this.props.subject.id, contents)
             } else {
                 await overwriteSettings(this.props.platformContext, this.props.subject.id, lastID, contents)
             }
 
-            const newSettings = this.props.settingsCascade.final
-            if (originalSettings && newSettings) {
-                logCodeInsightsChanges(originalSettings, newSettings, this.props.telemetryService)
-            }
-
             this.setState({ commitError: undefined })
             this.props.onUpdate()
         } catch (commitError) {
             this.setState({ commitError })
-            console.error(commitError)
+            logger.error(commitError)
         }
     }
 

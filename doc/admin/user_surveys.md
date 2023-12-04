@@ -1,10 +1,17 @@
 # User surveys
 
-## Submit a survey
+Sourcegraph periodically surveys users for feedback. The results are visible to site admins and Sourcegraph. The survey questions are:
 
-After using Sourcegraph for a few days, users are presented with a request to answer "How likely is it that you would recommend Sourcegraph to a friend?", and to provide some qualitative product feedback.
+- How likely is it that you would recommend Sourcegraph to a friend?
+- What do you use Sourcegraph for?
+- How can we make Sourcegraph better?
+- What is the most important reason for the score you gave Sourcegraph?
 
-Users can also always submit (or re-submit) this survey by visiting `https://sourcegraph.example.com/survey`.
+## Gathering survey feedback
+
+After a user has been active on Sourcegraph for 3 days, they are shown the survey in the bottom right corner of the page. A user can temporarily or permanently dismiss the survey. Every 30 days, the user will be shown the survey again (unless they have permanently dismissed it).
+
+A user can also visit `https://sourcegraph.example.com/survey` to submit survey feedback at any time.
 
 ## View survey responses
 
@@ -12,24 +19,7 @@ Responses to this survey are visible to all site admins on the Sourcegraph insta
 
 On this page, admins can view individual satisfaction scores (from 0–10) and individual qualitative feedback, along with aggregate historical scores.
 
-Survey responses are also always sent to Sourcegraph.com.
-
-## Restart feedback survey
-
-By default, users are only presented with the feedback survey once. Site admins may restart the feedback survey for all users (regardless of whether they have already responded). To restart the feedback survey, use the [site configuration's `htmlBodyBottom` property](../admin/config/site_config.md#reference):
-
-```json
-{
-  ...,
-  "htmlBodyBottom": "<script>if (localStorage.getItem('reset-survey-000') === null) { localStorage.removeItem('has-dismissed-survey-toast'); localStorage.setItem('days-active-count', 3); localStorage.setItem('reset-survey-000', true); }</script>",
-  ...
-}
-```
-
-This is a temporary solution that injects a JavaScript code snippet that resets the "has dismissed survey" flag for each user. Users will be prompted for feedback in the same way the next time they view a repository, directory, or file page.
-
-To restart the feedback survey for a second (or subsequent) time, change both instances of `-000` to `-001` (or `-002`, etc.). Follow and participate in [issue #666](https://github.com/sourcegraph/sourcegraph/issues/666) if you need a more complete solution.
-
+Survey responses are also sent to Sourcegraph.com.
 
 ## See also 
 

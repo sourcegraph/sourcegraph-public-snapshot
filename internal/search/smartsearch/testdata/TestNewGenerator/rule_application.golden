@@ -1,0 +1,37 @@
+[
+  {
+    "Description": "apply search type for pattern ⚬ apply language filter for pattern",
+    "Input": "go commit yikes derp",
+    "Query": "type:commit lang:Go yikes derp"
+  },
+  {
+    "Description": "apply search type for pattern",
+    "Input": "go commit yikes derp",
+    "Query": "type:commit go yikes derp"
+  },
+  {
+    "Description": "apply language filter for pattern",
+    "Input": "go commit yikes derp",
+    "Query": "lang:Go commit yikes derp"
+  },
+  {
+    "Description": "apply search type for pattern ⚬ apply language filter for pattern ⚬ AND patterns together",
+    "Input": "go commit yikes derp",
+    "Query": "type:commit lang:Go (yikes AND derp)"
+  },
+  {
+    "Description": "apply search type for pattern ⚬ AND patterns together",
+    "Input": "go commit yikes derp",
+    "Query": "type:commit (go AND yikes AND derp)"
+  },
+  {
+    "Description": "apply language filter for pattern ⚬ AND patterns together",
+    "Input": "go commit yikes derp",
+    "Query": "lang:Go (commit AND yikes AND derp)"
+  },
+  {
+    "Description": "AND patterns together",
+    "Input": "go commit yikes derp",
+    "Query": "(go AND commit AND yikes AND derp)"
+  }
+]

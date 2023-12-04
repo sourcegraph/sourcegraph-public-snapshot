@@ -1,4 +1,4 @@
-import { combineLatest, Observable, of } from 'rxjs'
+import { combineLatest, type Observable, of } from 'rxjs'
 import { map, distinctUntilChanged } from 'rxjs/operators'
 
 import { isFirefox } from '@sourcegraph/common'
@@ -10,12 +10,7 @@ import { isDefaultSourcegraphUrl, observeSourcegraphURL } from './context'
 
 const OPTION_FLAGS_SYNC_STORAGE_KEY = 'featureFlags'
 
-export type OptionFlagKey =
-    | 'sendTelemetry'
-    | 'allowErrorReporting'
-    | 'experimentalLinkPreviews'
-    | 'experimentalTextFieldCompletion'
-    | 'clickToGoToDefinition'
+export type OptionFlagKey = 'sendTelemetry' | 'allowErrorReporting'
 
 export interface OptionFlagDefinition {
     label: string
@@ -38,22 +33,11 @@ export const optionFlagDefinitions: OptionFlagDefinition[] = [
         key: 'allowErrorReporting',
         label: 'Allow error reporting',
     },
-    {
-        key: 'experimentalLinkPreviews',
-        label: 'Experimental link previews',
-    },
-    {
-        key: 'clickToGoToDefinition',
-        label: 'Enable click to go to definition',
-    },
 ]
 
 const optionFlagDefaults: OptionFlagValues = {
     sendTelemetry: false,
     allowErrorReporting: false,
-    experimentalLinkPreviews: false,
-    experimentalTextFieldCompletion: false,
-    clickToGoToDefinition: false,
 }
 
 const assignOptionFlagValues = (values: OptionFlagValues): OptionFlagWithValue[] =>

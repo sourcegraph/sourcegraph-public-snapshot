@@ -1,0 +1,32 @@
+sh_test(
+    name = "test",
+    size = "small",
+    timeout = "long",
+    srcs = ["test.sh"],
+    args = ["$(location //dev/tools:docsite)"],
+    data = [
+        "//dev/tools:docsite",
+        "//doc/admin/observability:doc_files",
+        "//doc/cli/references:doc_files",
+        "//doc/dev/background-information/telemetry:doc_files",
+    ] + glob(
+        ["**/*"],
+        ["test.sh"],
+    ),
+    tags = [
+        "requires-network",
+    ],
+)
+
+sh_binary(
+    name = "serve",
+    srcs = ["serve.sh"],
+    args = ["$(location //dev/tools:docsite)"],
+    data = [
+        "//dev/tools:docsite",
+        "//doc/cli/references:doc_files",
+    ] + glob(
+        ["**/*"],
+        ["test.sh"],
+    ),
+)

@@ -1,0 +1,10 @@
+.preview-link {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 4px;
+
+    color: var(--primary);
+    background-color: var(--color-bg-2);
+    border: 1px solid var(--border-color);
+}

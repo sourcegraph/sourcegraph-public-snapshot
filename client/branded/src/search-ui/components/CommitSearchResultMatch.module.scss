@@ -1,0 +1,64 @@
+.markdown {
+    padding: 0.25rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+
+    table,
+    th,
+    td {
+        border: none;
+        padding: 0;
+    }
+
+    code,
+    pre {
+        background-color: transparent;
+        padding: 0;
+    }
+
+    p,
+    li {
+        code {
+            display: inline;
+        }
+    }
+}
+
+.code-excerpt {
+    padding: 0 0.5rem;
+    color: var(--body-color);
+
+    table {
+        margin-bottom: 0 !important; /* Override docsite Markdown table CSS. A currently open PR removes that CSS and lets us remove this override. */
+    }
+    td:global(.line) {
+        display: none;
+    }
+    td:global(.code) > span:first-child {
+        padding-left: 1rem;
+    }
+
+    td:global(.code) > span:last-child {
+        padding-right: 1rem;
+    }
+}
+
+.loader {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 50%;
+}
+
+.line-hidden {
+    visibility: hidden;
+}
+
+.commit-search-result-match {
+    position: relative;
+}
+
+.match-hover:hover {
+    background-color: var(--color-bg-1);
+}

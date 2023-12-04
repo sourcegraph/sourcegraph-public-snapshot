@@ -1,14 +1,19 @@
 import assert from 'assert'
 
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
+import delay from 'delay'
+import { afterEach, beforeEach, describe, it } from 'mocha'
+import { Key } from 'ts-key-enum'
+
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
-import { percySnapshotWithVariants } from '../utils'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from '../context'
+import { createEditorAPI, percySnapshotWithVariants } from '../utils'
 
-import { INSIGHT_TYPES_MIGRATION_BULK_SEARCH, INSIGHT_TYPES_MIGRATION_COMMITS } from './utils/insight-mock-data'
-import { overrideGraphQLExtensions } from './utils/override-insights-graphql'
+import { createJITMigrationToGQLInsightMetadataFixture } from './fixtures/insights-metadata'
+import { SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE } from './fixtures/runtime-insights'
+import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-api'
 
 interface InsightValues {
     series: {
@@ -46,6 +51,11 @@ function getInsightFormValues(): InsightValues {
     }
 }
 
+async function clearAndType(driver: Driver, selector: string, value: string): Promise<void> {
+    await driver.page.click(selector, { clickCount: 3 })
+    await driver.page.type(selector, value)
+}
+
 describe('Code insight edit insight page', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
@@ -53,8 +63,6 @@ describe('Code insight edit insight page', () => {
     before(async () => {
         driver = await createDriverForTest()
     })
-
-    after(() => driver?.close())
 
     beforeEach(async function () {
         testContext = await createWebIntegrationTestContext({
@@ -64,44 +72,11 @@ describe('Code insight edit insight page', () => {
         })
     })
 
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    after(() => driver?.close())
     afterEach(() => testContext?.dispose())
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
-    async function clearAndType(driver: Driver, selector: string, value: string): Promise<void> {
-        await driver.page.click(selector, { clickCount: 3 })
-        await driver.page.type(selector, value)
-    }
-
-    it('should update user/org settings if insight has been updated', async () => {
-        const userSettings = {
-            'searchInsights.insight.teamSize': { series: [] },
-            'searchInsights.insight.graphQLTypesMigration': {
-                title: 'Migration to new GraphQL TS types',
-                repositories: ['github.com/sourcegraph/sourcegraph'],
-                series: [
-                    {
-                        name: 'Imports of old GQL.* types',
-                        query: 'patternType:regex case:yes \\*\\sas\\sGQL',
-                        stroke: 'var(--oc-red-7)',
-                    },
-                    {
-                        name: 'Imports of new graphql-operations types',
-                        query: "patternType:regexp case:yes /graphql-operations'",
-                        stroke: 'var(--oc-blue-7)',
-                    },
-                ],
-                step: {
-                    weeks: 6,
-                },
-            },
-        }
-
-        const orgSettings = {
-            'searchInsights.insight.orgTeamSize': {
-                series: [],
-            },
-        }
-
+    it.skip('should run a proper GQL mutation if search based insight has been updated', async () => {
         // Mock `Date.now` to stabilize timestamps
         await driver.page.evaluateOnNewDocument(() => {
             // Number of ms between Unix epoch and June 31, 2021
@@ -109,78 +84,40 @@ describe('Code insight edit insight page', () => {
             Date.now = () => mockMs
         })
 
-        overrideGraphQLExtensions({
+        overrideInsightsGraphQLApi({
             testContext,
-
-            // Since search insight and code stats insights work via user/org
-            // settings. We have to mock them by mocking user settings and provide
-            // settings cascade mock data
-            userSettings,
             overrides: {
-                OverwriteSettings: () => ({
-                    settingsMutation: {
-                        overwriteSettings: {
-                            empty: emptyResponse,
-                        },
+                // Mock insight config query
+                GetInsights: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [createJITMigrationToGQLInsightMetadataFixture({ type: 'just-in-time' })],
                     },
                 }),
 
-                SubjectSettings: ({ id }) => {
-                    if (id === 'TestUserID') {
-                        return {
-                            settingsSubject: {
-                                latestSettings: {
-                                    id: 310,
-                                    contents: JSON.stringify(userSettings),
-                                },
-                            },
-                        }
-                    }
-
-                    if (id === 'Org_test_id') {
-                        return {
-                            settingsSubject: {
-                                latestSettings: {
-                                    id: 320,
-                                    contents: JSON.stringify(orgSettings),
-                                },
-                            },
-                        }
-                    }
-
-                    return {
-                        settingsSubject: {
-                            latestSettings: {
-                                id: 100,
-                                contents: '{ "a": "b" }',
-                            },
-                        },
-                    }
-                },
-
-                // Mock for async repositories field validation.
-                BulkRepositoriesSearch: () => ({
-                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
-                    repoSearch1: { name: 'github.com/sourcegraph/about' },
-                }),
-
-                // Mocks of commits searching and data search itself for live preview chart
-                BulkSearchCommits: () => INSIGHT_TYPES_MIGRATION_COMMITS,
-                BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
+                // Mocks live preview chart
+                GetInsightPreview: () => SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE,
 
                 // Mock for repository suggest component
                 RepositorySearchSuggestions: () => ({
-                    repositories: { nodes: [] },
+                    repositories: { nodes: [{ id: '001', name: 'github.com/sourcegraph/about' }] },
+                }),
+
+                UpdateLineChartSearchInsight: () => ({
+                    __typename: 'Mutation',
+                    updateLineChartSearchInsight: {
+                        __typename: 'InsightViewPayload',
+                        view: createJITMigrationToGQLInsightMetadataFixture({ type: 'just-in-time' }),
+                    },
                 }),
             },
         })
 
-        await driver.page.goto(
-            driver.sourcegraphBaseUrl + '/insights/edit/searchInsights.insight.graphQLTypesMigration'
-        )
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/edit/001')
 
         // Waiting for all important part of creation form will be rendered.
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.waitForSelector('[name="repositories"]')
 
         // Edit all insight form fields ↓
 
@@ -190,6 +127,13 @@ describe('Code insight edit insight page', () => {
 
         // Add new repo to repositories field
         await driver.page.keyboard.type(', github.com/sourcegraph/about')
+
+        // Wait a bit while suggestion debounce will fire fetch event
+        await delay(600)
+
+        // Pick first suggestions
+        await driver.page.keyboard.press(Key.ArrowDown)
+        await driver.page.keyboard.press(Key.Enter)
 
         // Change insight title
         await clearAndType(driver, 'input[name="title"]', 'Test insight title')
@@ -204,13 +148,10 @@ describe('Code insight edit insight page', () => {
             'test edited series title'
         )
 
-        await driver.page.waitForSelector('[data-testid="series-form"]:nth-child(1) #monaco-query-input')
-        await driver.replaceText({
-            selector: '[data-testid="series-form"]:nth-child(1) #monaco-query-input',
-            newText: 'test edited series query',
-            enterTextMethod: 'type',
-            selectMethod: 'keyboard',
-        })
+        {
+            const editor = await createEditorAPI(driver, '[data-testid="series-form"]:nth-child(1) .test-query-input')
+            await editor.replace('test edited series query')
+        }
 
         await driver.page.click('[data-testid="series-form"]:nth-child(1) label[title="Cyan"]')
 
@@ -227,80 +168,89 @@ describe('Code insight edit insight page', () => {
             'new test series title'
         )
 
-        await driver.page.waitForSelector('[data-testid="series-form"]:nth-child(2) #monaco-query-input')
-        await driver.replaceText({
-            selector: '[data-testid="series-form"]:nth-child(2) #monaco-query-input',
-            newText: 'new test series query',
-            enterTextMethod: 'type',
-            selectMethod: 'keyboard',
-        })
-
-        // Change visibility to test org by org ID mock - 'Org_test_id'
-        await driver.page.click('input[name="visibility"][value="Org_test_id"]')
+        {
+            const editor = await createEditorAPI(driver, '[data-testid="series-form"]:nth-child(2) .test-query-input')
+            await editor.replace('new test series query')
+        }
 
         // Change insight Granularity
         await driver.page.type('input[name="stepValue"]', '2')
         await driver.page.click('input[name="step"][value="days"]')
 
-        const deleteFromUserConfigRequest = await testContext.waitForGraphQLRequest(async () => {
+        const editInsightMutationVariables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[data-testid="insight-save-button"]')
-        }, 'OverwriteSettings')
+        }, 'UpdateLineChartSearchInsight')
 
-        const addToOrgConfigRequest = await testContext.waitForGraphQLRequest(() => {}, 'OverwriteSettings')
+        // FE works in a way that it adds a synthetic FE runtime id to any newly created series
+        // this id uses a following naming rule - runtime-series.<UUID>. In order to stable this test check
+        // we remove UUID part of the runtime series
+        const newlyCreateSeriesId = editInsightMutationVariables.input.dataSeries[1].seriesId
 
-        // Check that old user settings config doesn't have edited insight
-        assert.deepStrictEqual(JSON.parse(deleteFromUserConfigRequest.contents), {
-            'searchInsights.insight.teamSize': { series: [] },
-        })
+        editInsightMutationVariables.input.dataSeries[1].seriesId = newlyCreateSeriesId?.match('runtime-series.')
+            ? 'runtime-series'
+            : newlyCreateSeriesId
 
         // Check that new org settings config has edited insight
-        assert.deepStrictEqual(JSON.parse(addToOrgConfigRequest.contents), {
-            'searchInsights.insight.orgTeamSize': { series: [] },
-            'searchInsights.insight.testInsightTitle': {
-                title: 'Test insight title',
-                repositories: ['github.com/sourcegraph/sourcegraph', 'github.com/sourcegraph/about'],
-                series: [
+        assert.deepStrictEqual(editInsightMutationVariables, {
+            input: {
+                repositoryScope: {
+                    repositories: ['github.com/sourcegraph/sourcegraph', 'github.com/sourcegraph/about'],
+                    repositoryCriteria: null,
+                },
+                dataSeries: [
                     {
-                        name: 'test edited series title',
+                        seriesId: '001',
                         query: 'test edited series query',
-                        stroke: 'var(--oc-cyan-7)',
+                        options: {
+                            label: 'test edited series title',
+                            lineColor: 'var(--oc-cyan-7)',
+                        },
+                        timeScope: {
+                            stepInterval: {
+                                unit: 'DAY',
+                                value: 62,
+                            },
+                        },
                     },
                     {
-                        name: 'new test series title',
+                        seriesId: 'runtime-series',
                         query: 'new test series query',
-                        stroke: 'var(--oc-grape-7)',
+                        options: {
+                            label: 'new test series title',
+                            lineColor: 'var(--oc-grape-7)',
+                        },
+                        timeScope: {
+                            stepInterval: {
+                                unit: 'DAY',
+                                value: 62,
+                            },
+                        },
                     },
                 ],
-                step: {
-                    days: 62,
+                presentationOptions: {
+                    title: 'Test insight title',
+                },
+                viewControls: {
+                    filters: {
+                        excludeRepoRegex: '',
+                        includeRepoRegex: '',
+                        searchContexts: [],
+                    },
+                    seriesDisplayOptions: {
+                        limit: null,
+                        numSamples: null,
+                        sortOptions: {
+                            direction: 'DESC',
+                            mode: 'RESULT_COUNT',
+                        },
+                    },
                 },
             },
+            id: '001',
         })
     })
 
-    it('should open the edit page with pre-filled fields with values from user/org settings', async () => {
-        const settings = {
-            'searchInsights.insight.graphQLTypesMigration': {
-                title: 'Migration to new GraphQL TS types',
-                repositories: ['github.com/sourcegraph/sourcegraph'],
-                series: [
-                    {
-                        name: 'Imports of old GQL.* types',
-                        query: 'patternType:regex case:yes \\*\\sas\\sGQL',
-                        stroke: 'var(--oc-red-7)',
-                    },
-                    {
-                        name: 'Imports of new graphql-operations types',
-                        query: "patternType:regexp case:yes /graphql-operations'",
-                        stroke: 'var(--oc-blue-7)',
-                    },
-                ],
-                step: {
-                    weeks: 6,
-                },
-            },
-        }
-
+    it.skip('should open the edit page with pre-filled fields with values from user/org settings', async () => {
         // Mock `Date.now` to stabilize timestamps
         await driver.page.evaluateOnNewDocument(() => {
             const mockDate = new Date('June 1, 2021 00:00:00 UTC')
@@ -310,22 +260,11 @@ describe('Code insight edit insight page', () => {
             Date.now = () => mockMs
         })
 
-        overrideGraphQLExtensions({
+        overrideInsightsGraphQLApi({
             testContext,
-
-            // Since search insight and code stats insights work via user/org
-            // settings. We have to mock them by mocking user settings and provide
-            // mock setting cascade data
-            userSettings: settings,
             overrides: {
-                // Mock for async repositories field validation.
-                BulkRepositoriesSearch: () => ({
-                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
-                }),
-
-                // Mocks of commits searching and data search itself for live preview chart
-                BulkSearchCommits: () => INSIGHT_TYPES_MIGRATION_COMMITS,
-                BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
+                // Mocks live preview chart
+                GetInsightPreview: () => SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE,
 
                 // Mock for repository suggest component
                 RepositorySearchSuggestions: () => ({
@@ -334,7 +273,7 @@ describe('Code insight edit insight page', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/all')
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
         // Click on edit button of insight context menu (three dots-menu)
@@ -358,6 +297,7 @@ describe('Code insight edit insight page', () => {
         )
 
         await percySnapshotWithVariants(driver.page, 'Code insights edit page with search-based insight creation UI')
+        await accessibilityAudit(driver.page)
 
         // Gather all filled inputs within a creation UI form.
         const grabbedInsightInfo = await driver.page.evaluate(getInsightFormValues)

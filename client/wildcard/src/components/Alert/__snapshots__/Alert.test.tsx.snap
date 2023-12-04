@@ -1,89 +1,136 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Alert renders variant 'danger' correctly 1`] = `
+exports[`Alert > renders variant 'danger' correctly 1`] = `
 <div
+  aria-live="assertive"
   class=""
+  role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
-  Use a 'repo:' or 'repogroup:' filter to narrow your search.
+  Use a 'repo:' filter to narrow your search.
 </div>
 `;
 
-exports[`Alert renders variant 'info' correctly 1`] = `
+exports[`Alert > renders variant 'info' correctly 1`] = `
 <div
+  aria-live="polite"
   class=""
+  role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
-  Use a 'repo:' or 'repogroup:' filter to narrow your search.
+  Use a 'repo:' filter to narrow your search.
 </div>
 `;
 
-exports[`Alert renders variant 'merged' correctly 1`] = `
+exports[`Alert > renders variant 'merged' correctly 1`] = `
 <div
+  aria-live="polite"
   class=""
+  role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
-  Use a 'repo:' or 'repogroup:' filter to narrow your search.
+  Use a 'repo:' filter to narrow your search.
 </div>
 `;
 
-exports[`Alert renders variant 'note' correctly 1`] = `
+exports[`Alert > renders variant 'note' correctly 1`] = `
 <div
+  aria-live="polite"
   class=""
+  role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
-  Use a 'repo:' or 'repogroup:' filter to narrow your search.
+  Use a 'repo:' filter to narrow your search.
 </div>
 `;
 
-exports[`Alert renders variant 'primary' correctly 1`] = `
+exports[`Alert > renders variant 'primary' correctly 1`] = `
 <div
+  aria-live="polite"
   class=""
+  role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
-  Use a 'repo:' or 'repogroup:' filter to narrow your search.
+  Use a 'repo:' filter to narrow your search.
 </div>
 `;
 
-exports[`Alert renders variant 'secondary' correctly 1`] = `
+exports[`Alert > renders variant 'secondary' correctly 1`] = `
 <div
+  aria-live="polite"
   class=""
+  role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
-  Use a 'repo:' or 'repogroup:' filter to narrow your search.
+  Use a 'repo:' filter to narrow your search.
 </div>
 `;
 
-exports[`Alert renders variant 'success' correctly 1`] = `
+exports[`Alert > renders variant 'success' correctly 1`] = `
 <div
+  aria-live="polite"
   class=""
+  role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
-  Use a 'repo:' or 'repogroup:' filter to narrow your search.
+  Use a 'repo:' filter to narrow your search.
 </div>
 `;
 
-exports[`Alert renders variant 'warning' correctly 1`] = `
+exports[`Alert > renders variant 'waiting' correctly 1`] = `
 <div
+  aria-live="polite"
   class=""
+  role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
-  Use a 'repo:' or 'repogroup:' filter to narrow your search.
+  Use a 'repo:' filter to narrow your search.
+</div>
+`;
+
+exports[`Alert > renders variant 'warning' correctly 1`] = `
+<div
+  aria-live="assertive"
+  class=""
+  role="alert"
+>
+  <h4
+    class="h4"
+  >
+    Too many matching repositories
+  </h4>
+  Use a 'repo:' filter to narrow your search.
 </div>
 `;

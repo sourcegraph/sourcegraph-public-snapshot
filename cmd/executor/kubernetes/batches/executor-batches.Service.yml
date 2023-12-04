@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sg-executor-batches
+  namespace: default
+  labels:
+    app: sg-executor-batches
+spec:
+  selector:
+    app: sg-executor-batches
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  # For development purposes.
+  type: LoadBalancer

@@ -7,13 +7,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func Redis() *monitoring.Container {
+func Redis() *monitoring.Dashboard {
 	const (
 		redisCache = "redis-cache"
 		redisStore = "redis-store"
 	)
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:                     "redis",
 		Title:                    "Redis",
 		Description:              "Metrics from both redis databases.",
@@ -31,8 +31,8 @@ func Redis() *monitoring.Container {
 							Query:         `redis_up{app="redis-store"}`,
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
 							DataMustExist: false, // not deployed on docker-compose
-							Critical:      monitoring.Alert().Less(1, nil).For(10 * time.Second),
-							PossibleSolutions: `
+							Critical:      monitoring.Alert().Less(1).For(10 * time.Second),
+							NextSteps: `
 								- Ensure redis-store is running
 							`,
 							Interpretation: "A value of 1 indicates the service is currently running",
@@ -53,8 +53,8 @@ func Redis() *monitoring.Container {
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
 							DataMustExist: false, // not deployed on docker-compose
 
-							Critical: monitoring.Alert().Less(1, nil).For(10 * time.Second),
-							PossibleSolutions: `
+							Critical: monitoring.Alert().Less(1).For(10 * time.Second),
+							NextSteps: `
 								- Ensure redis-cache is running
 							`,
 							Interpretation: "A value of 1 indicates the service is currently running",

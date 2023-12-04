@@ -1,6 +1,14 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint rxjs/no-internal: warn */
-import { asapScheduler, ObservableInput, of, Operator, PartialObserver, Subscriber, TeardownLogic, zip } from 'rxjs'
+import {
+    asapScheduler,
+    type ObservableInput,
+    of,
+    type Operator,
+    type PartialObserver,
+    type Subscriber,
+    type TeardownLogic,
+    zip,
+} from 'rxjs'
 import { Observable } from 'rxjs/internal/Observable'
 import { OuterSubscriber } from 'rxjs/internal/OuterSubscriber'
 import { subscribeToArray } from 'rxjs/internal/util/subscribeToArray'
@@ -34,14 +42,17 @@ import { subscribeToResult } from 'rxjs/internal/util/subscribeToResult'
  */
 export function combineLatestOrDefault<T>(observables: ObservableInput<T>[], defaultValue?: T): Observable<T[]> {
     switch (observables.length) {
-        case 0:
+        case 0: {
             // No source observables: emit an empty array and complete
             return of([])
-        case 1:
+        }
+        case 1: {
             // Only one source observable: no need to handle emission accumulation or default values
             return zip(...observables)
-        default:
+        }
+        default: {
             return new Observable<T[]>(subscribeToArray(observables)).lift(new CombineLatestOperator(defaultValue))
+        }
     }
 }
 

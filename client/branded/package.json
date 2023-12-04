@@ -3,10 +3,23 @@
   "name": "@sourcegraph/branded",
   "version": "1.0.0",
   "license": "Apache-2.0",
+  "sideEffects": false,
+  "main": "./src/index.ts",
   "scripts": {
-    "storybook": "STORIES_GLOB=client/branded/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start",
-    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
-    "stylelint": "stylelint 'src/**/*.scss' --quiet",
-    "test": "jest"
+    "storybook": "STORIES_GLOB='client/branded/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
+    "lint:js": "eslint --cache '**/*.[jt]s?(x)'",
+    "lint:css": "stylelint 'src/**/*.scss' --quiet",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@sourcegraph/extension-api-types": "workspace:*",
+    "@sourcegraph/testing": "workspace:*"
+  },
+  "dependencies": {
+    "@sourcegraph/common": "workspace:*",
+    "@sourcegraph/observability-client": "workspace:*",
+    "@sourcegraph/shared": "workspace:*",
+    "@sourcegraph/wildcard": "workspace:*",
+    "@sourcegraph/http-client": "workspace:*"
   }
 }

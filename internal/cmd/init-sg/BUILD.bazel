@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
+
+go_library(
+    name = "init-sg_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/cmd/init-sg",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//internal/gqltestutil",
+        "@com_github_json_iterator_go//:go",
+    ],
+)
+
+go_binary(
+    name = "init-sg",
+    embed = [":init-sg_lib"],
+    visibility = ["//:__subpackages__"],
+)
+
+go_cross_binary(
+    name = "init-sg-darwin-arm64",
+    platform = "@io_bazel_rules_go//go/toolchain:darwin_arm64",
+    tags = ["manual"],
+    target = ":init-sg",
+    visibility = ["//testing:__pkg__"],
+)

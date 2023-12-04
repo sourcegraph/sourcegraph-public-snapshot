@@ -1,39 +1,15 @@
-@import 'wildcard/src/global-styles/breakpoints';
+.page-wrapper {
+    background: radial-gradient(133.29% 34.62% at 100% -0%, rgba(161, 18, 255, 0.4) 0%, rgba(15, 17, 26, 0) 100%),
+        var(--black);
+    height: 100%;
+    width: 100%;
 
-.post-signup-page {
-    align-self: flex-start;
-
-    @keyframes ellipsis {
-        to {
-            width: 2rem;
-        }
+    .page {
+        max-width: var(--viewport-xl);
     }
-}
 
-.logo {
-    height: 1.75rem;
-    width: 1.75rem;
-}
-
-.logo-link {
-    outline: 0;
-    margin: 0.25rem 0.5rem;
-    display: flex;
-    width: fit-content;
-    text-decoration: none;
-    position: absolute;
-}
-
-@media screen and (max-width: 50rem) {
-    .logo-link {
-        position: relative;
+    .logo {
+        height: 3rem;
+        width: 3rem;
     }
-}
-
-.container {
-    width: 37.25rem;
-}
-
-.progress {
-    width: 50.25rem;
 }

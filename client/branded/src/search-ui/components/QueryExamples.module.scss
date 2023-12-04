@@ -1,0 +1,81 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.query-example-chip {
+    background-color: var(--code-bg);
+    box-shadow: var(--search-input-shadow);
+    border-radius: var(--border-radius);
+    padding: 0.125rem 0.375rem;
+    font-size: 0.75rem;
+    max-width: 21rem;
+    text-align: left;
+
+    &:hover {
+        border: 1px solid var(--border-color);
+    }
+
+    &:active {
+        position: relative;
+        top: 1px;
+        border: 1px solid var(--border-color);
+        box-shadow: none;
+    }
+
+    &:focus-visible {
+        border: 1px solid transparent;
+        box-shadow: 0 0 0 0.125rem var(--primary-2);
+        outline: none;
+    }
+
+    &:active:focus-visible {
+        border: 1px solid var(--border-color);
+        box-shadow: none;
+    }
+}
+
+.query-examples-section-title {
+    margin-bottom: 0.75rem;
+    color: var(--text-muted);
+    font-size: var(--font-size-base);
+    font-weight: 400;
+}
+
+.query-examples-sections-columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4rem;
+
+    @media (--sm-breakpoint-down) {
+        gap: 1rem;
+    }
+}
+
+.query-examples-section {
+    margin-bottom: 1.5rem;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.query-examples-items {
+    > * {
+        margin-bottom: 0.25rem;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+
+.tab-header {
+    border: none !important;
+
+    @media (--lg-breakpoint-up) {
+        justify-content: center !important;
+    }
+}
+
+.tab-panel {
+    // Set a minimum height so the page doesn't shift when changing tabs
+    min-height: 21rem;
+}

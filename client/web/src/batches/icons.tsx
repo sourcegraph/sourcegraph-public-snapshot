@@ -4,18 +4,22 @@ import React from 'react'
  * The internal type used for base icons, which accept both a class name and a
  * viewbox.
  */
-type BaseIcon = React.FunctionComponent<{
-    className?: string
-    viewBox?: string
-}>
+type BaseIcon = React.FunctionComponent<
+    React.PropsWithChildren<{
+        className?: string
+        viewBox?: string
+    }>
+>
 
 /**
  * The internal type used for exported icons, which only support an optional
  * class name.
  */
-type Icon = React.FunctionComponent<{
-    className?: string
-}>
+type Icon = React.FunctionComponent<
+    React.PropsWithChildren<{
+        className?: string
+    }>
+>
 
 /**
  * The base batch changes icon, which may have its class and viewBox overridden by
@@ -33,8 +37,10 @@ const BaseBatchChangesIcon: BaseIcon = React.memo(function BaseBatchChangesIcon(
             fill="currentColor"
             className={className}
             viewBox={viewBox}
-            {...props}
             xmlns="http://www.w3.org/2000/svg"
+            // this icon is used in a decorative manner, and as such should be hidden from screen readers
+            role="presentation"
+            {...props}
         >
             <path
                 fillRule="evenodd"

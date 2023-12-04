@@ -8,16 +8,18 @@ import (
 	"testing"
 
 	"github.com/dnaeon/go-vcr/cassette"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // NewTestClient returns a bitbucketserver.Client that records its interactions
 // to testdata/vcr/.
-func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
+func NewTestClient(t testing.TB, name string, update bool) *Client {
 	t.Helper()
 
 	cassete := filepath.Join("testdata/vcr/", normalize(name))
@@ -25,6 +27,11 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		if err := rec.Stop(); err != nil {
+			t.Errorf("failed to update test data: %s", err)
+		}
+	})
 	rec.SetMatcher(ignoreHostMatcher)
 
 	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
@@ -42,16 +49,13 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 		Url:   instanceURL,
 	}
 
-	cli, err := NewClient(c, hc)
+	cli, err := NewClient("urn", c, hc)
 	if err != nil {
 		t.Fatal(err)
 	}
+	cli.rateLimit = ratelimit.NewInstrumentedLimiter("bitbucket", rate.NewLimiter(100, 10))
 
-	return cli, func() {
-		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
-		}
-	}
+	return cli
 }
 
 var normalizer = lazyregexp.New("[^A-Za-z0-9-]+")

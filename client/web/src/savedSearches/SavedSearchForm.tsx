@@ -1,14 +1,29 @@
+import React, { useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
-import React, { useMemo, useState } from 'react'
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Container, PageHeader, ProductStatusBadge, Button, Link, Alert } from '@sourcegraph/wildcard'
+import { LazyQueryInput } from '@sourcegraph/branded'
+import type { QueryState } from '@sourcegraph/shared/src/search'
+import {
+    Container,
+    PageHeader,
+    ProductStatusBadge,
+    Button,
+    Link,
+    Alert,
+    Checkbox,
+    Input,
+    Code,
+    Label,
+    ErrorAlert,
+    Form,
+} from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { NamespaceProps } from '../namespaces'
+import type { AuthenticatedUser } from '../auth'
+import { PageTitle } from '../components/PageTitle'
+import { type Scalars, SearchPatternType } from '../graphql-operations'
+import type { NamespaceProps } from '../namespaces'
 
 import styles from './SavedSearchForm.module.scss'
 
@@ -29,9 +44,10 @@ export interface SavedSearchFormProps extends NamespaceProps {
     onSubmit: (fields: Omit<SavedQueryFields, 'id'>) => void
     loading: boolean
     error?: any
+    isSourcegraphDotCom: boolean
 }
 
-export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = props => {
+export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSearchFormProps>> = props => {
     const [values, setValues] = useState<Omit<SavedQueryFields, 'id'>>(() => ({
         description: props.defaultValues?.description || '',
         query: props.defaultValues?.query || '',
@@ -45,15 +61,15 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
      *
      * @param key The key of saved query fields that a change of this input should update
      */
-    const createInputChangeHandler = (
-        key: keyof SavedQueryFields
-    ): React.FormEventHandler<HTMLInputElement> => event => {
-        const { value, checked, type } = event.currentTarget
-        setValues(values => ({
-            ...values,
-            [key]: type === 'checkbox' ? checked : value,
-        }))
-    }
+    const createInputChangeHandler =
+        (key: keyof SavedQueryFields): React.FormEventHandler<HTMLInputElement> =>
+        event => {
+            const { value, checked, type } = event.currentTarget
+            setValues(values => ({
+                ...values,
+                [key]: type === 'checkbox' ? checked : value,
+            }))
+        }
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
@@ -77,71 +93,69 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
 
     const { query, description, notify, notifySlack, slackWebhookURL } = values
 
+    const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
+
+    useEffect(() => {
+        setValues(values => ({ ...values, query: queryState.query }))
+    }, [queryState.query])
+
     return (
         <div className="saved-search-form" data-testid="saved-search-form">
-            <PageHeader
-                path={[{ text: props.title }]}
-                headingElement="h2"
-                description="Get notifications when there are new results for specific search queries."
-                className="mb-3"
-            />
+            <PageHeader className="mb-3">
+                <PageTitle title={props.title} />
+                <PageHeader.Heading as="h3" styleAs="h2">
+                    <PageHeader.Breadcrumb>{props.title}</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             <Form onSubmit={handleSubmit}>
                 <Container className="mb-3">
-                    <div className="form-group">
-                        <label className={styles.label} htmlFor="saved-search-form-input-description">
-                            Description
-                        </label>
-                        <input
-                            id="saved-search-form-input-description"
-                            type="text"
-                            name="description"
-                            className="form-control test-saved-search-form-input-description"
-                            placeholder="Description"
-                            required={true}
-                            value={description}
-                            onChange={createInputChangeHandler('description')}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label className={styles.label} htmlFor="saved-search-form-input-query">
-                            Query
-                        </label>
-                        <input
-                            id="saved-search-form-input-query"
-                            type="text"
-                            name="query"
-                            className="form-control test-saved-search-form-input-query"
-                            placeholder="Query"
-                            required={true}
-                            value={query}
-                            onChange={createInputChangeHandler('query')}
-                        />
-                    </div>
+                    <Input
+                        name="description"
+                        required={true}
+                        value={description}
+                        onChange={createInputChangeHandler('description')}
+                        className={classNames('form-group', styles.label)}
+                        label="Description"
+                        autoFocus={true}
+                    />
+                    <Label className={classNames('w-100 form-group', styles.label)}>
+                        <div className="mb-2">Query</div>
 
+                        <LazyQueryInput
+                            className={classNames('form-control', styles.queryInput)}
+                            patternType={SearchPatternType.standard}
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                            caseSensitive={false}
+                            queryState={queryState}
+                            onChange={setQueryState}
+                            preventNewLine={true}
+                        />
+                    </Label>
                     {props.defaultValues?.notify && (
                         <div className="form-group mb-0">
                             {/* Label is for visual benefit, input has more specific label attached */}
-                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <label className={styles.label} id="saved-search-form-email-notifications">
+                            {}
+                            <Label className={styles.label} id="saved-search-form-email-notifications">
                                 Email notifications
-                            </label>
+                            </Label>
                             <div aria-labelledby="saved-search-form-email-notifications">
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        name="Notify owner"
-                                        className={styles.checkbox}
-                                        defaultChecked={notify}
-                                        onChange={createInputChangeHandler('notify')}
-                                    />{' '}
-                                    <span>
-                                        {props.namespace.__typename === 'Org'
-                                            ? 'Send email notifications to all members of this organization'
-                                            : props.namespace.__typename === 'User'
-                                            ? 'Send email notifications to my email'
-                                            : 'Email notifications'}
-                                    </span>
-                                </label>
+                                <Checkbox
+                                    name="Notify owner"
+                                    className={classNames(styles.checkbox, 'mr-0')}
+                                    defaultChecked={notify}
+                                    wrapperClassName="mb-2"
+                                    onChange={createInputChangeHandler('notify')}
+                                    id="NotifyOrgMembersInput"
+                                    label={
+                                        <span className="ml-2">
+                                            {props.namespace.__typename === 'Org'
+                                                ? 'Send email notifications to all members of this organization'
+                                                : props.namespace.__typename === 'User'
+                                                ? 'Send email notifications to my email'
+                                                : 'Email notifications'}
+                                        </span>
+                                    }
+                                />
                             </div>
 
                             <Alert variant="primary" className={classNames(styles.codeMonitoringAlert, 'p-3 mb-0')}>
@@ -150,35 +164,28 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                                     notifications.
                                 </div>
                                 <Button to={codeMonitoringUrl} variant="primary" as={Link}>
-                                    Go to code monitoring →
+                                    Go to code monitoring <span aria-hidden={true}>→</span>
                                 </Button>
                             </Alert>
                         </div>
                     )}
 
                     {notifySlack && slackWebhookURL && (
-                        <div className="form-group mt-3 mb-0">
-                            <label className={styles.label} htmlFor="saved-search-form-input-slack">
-                                Slack notifications
-                            </label>
-                            <input
-                                id="saved-search-form-input-slack"
-                                type="text"
-                                name="Slack webhook URL"
-                                className="form-control"
-                                value={slackWebhookURL}
-                                disabled={true}
-                                onChange={createInputChangeHandler('slackWebhookURL')}
-                            />
-                            <small>
-                                Slack webhooks are deprecated and will be removed in a future Sourcegraph version.
-                            </small>
-                        </div>
+                        <Input
+                            id="saved-search-form-input-slack"
+                            name="Slack webhook URL"
+                            value={slackWebhookURL}
+                            disabled={true}
+                            onChange={createInputChangeHandler('slackWebhookURL')}
+                            className={classNames('mt-3 mb-0', styles.label)}
+                            label="Slack notifications"
+                            message="Slack webhooks are deprecated and will be removed in a future Sourcegraph version."
+                        />
                     )}
                     {isUnsupportedNotifyQuery && (
                         <Alert className="mt-3 mb-0" variant="warning">
                             <strong>Warning:</strong> non-commit searches do not currently support notifications.
-                            Consider adding <code>type:diff</code> or <code>type:commit</code> to your query.
+                            Consider adding <Code>type:diff</Code> or <Code>type:commit</Code> to your query.
                         </Alert>
                     )}
                     {notify && !window.context.emailEnabled && !isUnsupportedNotifyQuery && (
@@ -207,7 +214,9 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                         <ProductStatusBadge status="new" className="mr-3" />
                         <span>
                             Watch for changes to your code and trigger email notifications, webhooks, and more with{' '}
-                            <Link to="/code-monitoring">code monitoring →</Link>
+                            <Link to="/code-monitoring">
+                                code monitoring <span aria-hidden={true}>→</span>
+                            </Link>
                         </span>
                     </Container>
                 )}

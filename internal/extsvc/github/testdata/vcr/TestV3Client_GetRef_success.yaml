@@ -1,0 +1,79 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/repos/sourcegraph/automation-testing/commits/refs/heads/always-open-pr
+    method: GET
+  response:
+    body: '{"sha":"37406e7dfa4466b80d1da183d6477aac16b1e58c","node_id":"MDY6Q29tbWl0MjIxMTQ3NTEzOjM3NDA2ZTdkZmE0NDY2YjgwZDFkYTE4M2Q2NDc3YWFjMTZiMWU1OGM=","commit":{"author":{"name":"Thorsten
+      Ball","email":"mrnugget@gmail.com","date":"2019-11-12T06:39:23Z"},"committer":{"name":"Thorsten
+      Ball","email":"mrnugget@gmail.com","date":"2019-11-12T06:39:23Z"},"message":"Test
+      commit to always have a open PR","tree":{"sha":"851e666a00cd0cf74f1558ac5664fe431d3b1935","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/trees/851e666a00cd0cf74f1558ac5664fe431d3b1935"},"url":"https://api.github.com/repos/sourcegraph/automation-testing/git/commits/37406e7dfa4466b80d1da183d6477aac16b1e58c","comment_count":0,"verification":{"verified":false,"reason":"unsigned","signature":null,"payload":null}},"url":"https://api.github.com/repos/sourcegraph/automation-testing/commits/37406e7dfa4466b80d1da183d6477aac16b1e58c","html_url":"https://github.com/sourcegraph/automation-testing/commit/37406e7dfa4466b80d1da183d6477aac16b1e58c","comments_url":"https://api.github.com/repos/sourcegraph/automation-testing/commits/37406e7dfa4466b80d1da183d6477aac16b1e58c/comments","author":{"login":"mrnugget","id":1185253,"node_id":"MDQ6VXNlcjExODUyNTM=","avatar_url":"https://avatars.githubusercontent.com/u/1185253?v=4","gravatar_id":"","url":"https://api.github.com/users/mrnugget","html_url":"https://github.com/mrnugget","followers_url":"https://api.github.com/users/mrnugget/followers","following_url":"https://api.github.com/users/mrnugget/following{/other_user}","gists_url":"https://api.github.com/users/mrnugget/gists{/gist_id}","starred_url":"https://api.github.com/users/mrnugget/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/mrnugget/subscriptions","organizations_url":"https://api.github.com/users/mrnugget/orgs","repos_url":"https://api.github.com/users/mrnugget/repos","events_url":"https://api.github.com/users/mrnugget/events{/privacy}","received_events_url":"https://api.github.com/users/mrnugget/received_events","type":"User","site_admin":false},"committer":{"login":"mrnugget","id":1185253,"node_id":"MDQ6VXNlcjExODUyNTM=","avatar_url":"https://avatars.githubusercontent.com/u/1185253?v=4","gravatar_id":"","url":"https://api.github.com/users/mrnugget","html_url":"https://github.com/mrnugget","followers_url":"https://api.github.com/users/mrnugget/followers","following_url":"https://api.github.com/users/mrnugget/following{/other_user}","gists_url":"https://api.github.com/users/mrnugget/gists{/gist_id}","starred_url":"https://api.github.com/users/mrnugget/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/mrnugget/subscriptions","organizations_url":"https://api.github.com/users/mrnugget/orgs","repos_url":"https://api.github.com/users/mrnugget/repos","events_url":"https://api.github.com/users/mrnugget/events{/privacy}","received_events_url":"https://api.github.com/users/mrnugget/received_events","type":"User","site_admin":false},"parents":[{"sha":"9d04a0d8733dafbb5d75e594a9ec525c49dfc975","url":"https://api.github.com/repos/sourcegraph/automation-testing/commits/9d04a0d8733dafbb5d75e594a9ec525c49dfc975","html_url":"https://github.com/sourcegraph/automation-testing/commit/9d04a0d8733dafbb5d75e594a9ec525c49dfc975"}],"stats":{"total":1,"additions":1,"deletions":0},"files":[{"sha":"323fae03f4606ea9991df8befbb2fca795e648fa","filename":"foobar.md","status":"added","additions":1,"deletions":0,"changes":1,"blob_url":"https://github.com/sourcegraph/automation-testing/blob/37406e7dfa4466b80d1da183d6477aac16b1e58c/foobar.md","raw_url":"https://github.com/sourcegraph/automation-testing/raw/37406e7dfa4466b80d1da183d6477aac16b1e58c/foobar.md","contents_url":"https://api.github.com/repos/sourcegraph/automation-testing/contents/foobar.md?ref=37406e7dfa4466b80d1da183d6477aac16b1e58c","patch":"@@
+      -0,0 +1 @@\n+foobar"}]}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 02 Jun 2023 00:49:01 GMT
+      Etag:
+      - W/"78ef7c948a5a9bc3a3a13cf4c18f41e5fcb2d6e441d854cd6339b92a92445b4f"
+      Last-Modified:
+      - Tue, 12 Nov 2019 06:39:23 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
+      X-Github-Request-Id:
+      - E9BD:02CA:67481D:D33991:64793C7D
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4957"
+      X-Ratelimit-Reset:
+      - "1685668692"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "43"
+      X-Varied-Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""

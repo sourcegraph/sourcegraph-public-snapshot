@@ -1,5 +1,7 @@
 import { render } from '@testing-library/react'
-import React from 'react'
+import { describe, expect, it } from 'vitest'
+
+import { H4 } from '../Typography'
 
 import { Alert } from './Alert'
 import { ALERT_VARIANTS } from './constants'
@@ -9,7 +11,9 @@ describe('Alert', () => {
         const { container } = render(<Alert>Simple Alert</Alert>)
         expect(container.firstChild).toMatchInlineSnapshot(`
             <div
+              aria-live="polite"
               class=""
+              role="alert"
             >
               Simple Alert
             </div>
@@ -19,8 +23,8 @@ describe('Alert', () => {
     it.each(ALERT_VARIANTS)("renders variant '%s' correctly", variant => {
         const { container } = render(
             <Alert variant={variant}>
-                <h4>Too many matching repositories</h4>
-                Use a 'repo:' or 'repogroup:' filter to narrow your search.
+                <H4>Too many matching repositories</H4>
+                Use a 'repo:' filter to narrow your search.
             </Alert>
         )
         expect(container.firstChild).toMatchSnapshot()

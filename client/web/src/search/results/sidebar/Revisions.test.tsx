@@ -1,9 +1,9 @@
 import { cleanup, within, fireEvent } from '@testing-library/react'
-import React from 'react'
+import { afterEach, describe, expect, it } from 'vitest'
 
-import { RevisionsProps } from '@sourcegraph/search-ui'
-import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
+import type { RevisionsProps } from '@sourcegraph/branded'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { Revisions } from './Revisions'
 import { DEFAULT_MOCKS, MOCK_PROPS } from './Revisions.mocks'

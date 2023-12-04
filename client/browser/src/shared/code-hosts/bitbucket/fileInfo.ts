@@ -1,7 +1,7 @@
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { DiffInfo, BlobInfo } from '../shared/codeHost'
+import type { DiffInfo, BlobInfo } from '../shared/codeHost'
 
 import { getBaseCommit, getCommitsForPR } from './api'
 import {
@@ -50,31 +50,22 @@ export const resolvePullRequestFileInfo = (codeView: HTMLElement): Observable<Di
  * Gets the file info for a single-file "diff to previous" code view.
  */
 export const resolveSingleFileDiffFileInfo = (codeView: HTMLElement): Observable<DiffInfo> => {
-    const {
-        changeType,
-        rawRepoName,
-        filePath,
-        commitID,
-        baseFilePath,
-        revision,
-        ...bitbucketInfo
-    } = getFileInfoFromSingleFileDiffCodeView(codeView)
+    const { changeType, rawRepoName, filePath, commitID, baseFilePath, revision, ...bitbucketInfo } =
+        getFileInfoFromSingleFileDiffCodeView(codeView)
     if (changeType === 'ADD') {
         return of({ head: { rawRepoName, filePath, commitID } })
     }
 
     return getBaseCommit({ commitID, ...bitbucketInfo }).pipe(
-        map(
-            (baseCommitID): DiffInfo => {
-                if (changeType === 'DELETE') {
-                    return { base: { rawRepoName, filePath: baseFilePath, commitID: baseCommitID } }
-                }
-                return {
-                    base: { rawRepoName, filePath: baseFilePath, commitID: baseCommitID },
-                    head: { rawRepoName, filePath, commitID },
-                }
+        map((baseCommitID): DiffInfo => {
+            if (changeType === 'DELETE') {
+                return { base: { rawRepoName, filePath: baseFilePath, commitID: baseCommitID } }
             }
-        )
+            return {
+                base: { rawRepoName, filePath: baseFilePath, commitID: baseCommitID },
+                head: { rawRepoName, filePath, commitID },
+            }
+        })
     )
 }
 

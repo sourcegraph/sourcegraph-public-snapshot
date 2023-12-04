@@ -1,0 +1,47 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dbconn",
+    srcs = [
+        "bulk_insertion.go",
+        "config.go",
+        "connect.go",
+        "connection_updater.go",
+        "connector.go",
+        "dynamic_metadata.go",
+        "hooks_combine.go",
+        "hooks_metrics.go",
+        "metrics.go",
+        "open.go",
+        "postgres_version.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/dbconn",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/dbconn/rds",
+        "//internal/env",
+        "//internal/lazyregexp",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_jackc_pgx_v4//:pgx",
+        "@com_github_jackc_pgx_v4//stdlib",
+        "@com_github_lib_pq//:pq",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_qustavo_sqlhooks_v2//:sqlhooks",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_xsam_otelsql//:otelsql",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_trace//:trace",
+    ],
+)
+
+go_test(
+    name = "dbconn_test",
+    timeout = "short",
+    srcs = ["config_test.go"],
+    embed = [":dbconn"],
+    deps = ["@com_github_sourcegraph_log//logtest"],
+)

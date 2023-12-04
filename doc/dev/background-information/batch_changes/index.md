@@ -10,8 +10,8 @@ Welcome, new batch change developer! This section will give you a rough overview
 
 Before diving into the technical part of batch changes, make sure to read up on what batch changes are, what they're not and what we want them to be:
 
-1. Look at the [batch changes product page](https://about.sourcegraph.com).
-1. Watch the 2min [demo video](https://www.youtube.com/watch?v=eOmiyXIWTCw)
+1. Look at the [batch changes product page](https://sourcegraph.com).
+1. Watch the 2min [demo video](https://www.youtube.com/watch?v=GKyHYqH6ggY)
 
 Next: **create your first batch change!**
 
@@ -40,7 +40,7 @@ It starts in [`src-cli`](https://github.com/sourcegraph/src-cli):
 1. `src batch preview` starts [the "preview" command in `src-cli`](https://github.com/sourcegraph/src-cli/blob/6cbaba6d47761b5f5041ed285aea686bf5b266c3/cmd/src/batch_preview.go)
 1. That executes your batch spec, which means it [parses it, validates it, resolves the namespace, prepares the docker images, and checks which workspaces are required](https://github.com/sourcegraph/src-cli/blob/6cbaba6d47761b5f5041ed285aea686bf5b266c3/cmd/src/batch_common.go#L187:6)
 1. Then, for each repository (or [workspace in each repository](https://docs.sourcegraph.com/batch_changes/how-tos/creating_changesets_per_project_in_monorepos)), it [runs the `steps` in the batch spec](https://github.com/sourcegraph/src-cli/blob/6cbaba6d47761b5f5041ed285aea686bf5b266c3/internal/batches/run_steps.go#L54) by downloading a repository archive, creating a workspace in which to execute the `steps`, and then starting the Docker containers.
-1. If changes were produced in a repository, these changes are turned into a `ChangesetSpec` (a specification of what a changeset should look like on the code host - title, body, commit, etc.) and [uploaded to the Sourcegraph instance](https://github.com/sourcegraph/src-cli/blob/6cbaba6d47761b5f5041ed285aea686bf5b266c3/cmd/src/batch_common.go#L297-L324)
+1. If changes were produced in a repository, these changes are turned into a `ChangesetSpec` (a specification of what a changeset should look like on the code host—title, body, commit, etc.) and [uploaded to the Sourcegraph instance](https://github.com/sourcegraph/src-cli/blob/6cbaba6d47761b5f5041ed285aea686bf5b266c3/cmd/src/batch_common.go#L297-L324)
 1. `src batch preview`'s last step is then to [create a `BatchSpec` on the Sourcegraph instance](https://github.com/sourcegraph/src-cli/blob/6cbaba6d47761b5f5041ed285aea686bf5b266c3/cmd/src/batch_common.go#L331-L336), which is a collection of the `ChangesetSpec`s that you can then preview or apply
 
 When you then click the "Preview the batch change" link that `src-cli` printed, you'll land on the preview page in the web frontend:
@@ -108,10 +108,10 @@ The following is a list of Go packages in the [`sourcegraph/sourcegraph`](https:
 - `enterprise/internal/batches/search/syntax`:
 
     The old Sourcegraph-search-query parser we inherited from the search team a week or two back (the plan is _not_ to keep it, but switch to the new one when we have time)
-- `enterprise/cmd/frontend/internal/batches/resolvers`:
+- `cmd/frontend/internal/batches/resolvers`:
 
-    The GraphQL resolvers that are injected into the `enterprise/frontend` in `enterprise/cmd/frontend/internal/batches/init.go`. They mostly concern themselves with input/argument parsing/validation, (bulk-)reading (and paginating) from the database via the `batches/store`, but delegate most business logic to `batches/service`.
-- `enterprise/cmd/frontend/internal/batches/resolvers/apitest`:
+    The GraphQL resolvers that are injected into the `enterprise/frontend` in `cmd/frontend/internal/batches/init.go`. They mostly concern themselves with input/argument parsing/validation, (bulk-)reading (and paginating) from the database via the `batches/store`, but delegate most business logic to `batches/service`.
+- `cmd/frontend/internal/batches/resolvers/apitest`:
 
     A package that helps with testing the resolvers by defining types that match the GraphQL schema.
 - `enterprise/internal/batches/testing`:
@@ -126,7 +126,7 @@ The following is a list of Go packages in the [`sourcegraph/sourcegraph`](https:
 - `enterprise/internal/batches/service`:
 
     This is what's often called the "service layer" in web architectures and contains a lot of the business logic: creating a batch change and validating whether the user can create one, applying new batch specs, calling the `rewirer`, deleting batch changes, closing batch changes, etc.
-- `enterprise/cmd/frontend/internal/batches/webhooks`:
+- `cmd/frontend/internal/batches/webhooks`:
 
     These `webhooks` endpoints are injected by `InitFrontend` into the `frontend` and implement the `cmd/frontend/webhooks` interfaces.
 - `enterprise/internal/batches/store`:
@@ -185,7 +185,7 @@ Take a look at the following links to see some examples of batch changes and the
 - [k8s.sgdev.org/batch-changes](https://k8s.sgdev.org/batch-changes)
 - [Batch Changes tutorials](https://docs.sourcegraph.com/batch_changes/tutorials)
 
-## Server-side batch changes
+## Server-side execution
 
 ### Database tables
 

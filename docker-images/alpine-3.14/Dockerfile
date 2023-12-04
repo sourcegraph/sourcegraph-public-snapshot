@@ -1,7 +1,8 @@
 # This Dockerfile defines the sourcegraph/alpine Docker image, which is the
 # base image used by all Sourcegraph Docker images.
 
-FROM alpine:3.14@sha256:635f0aa53d99017b38d1a0aa5b2082f7812b03e3cdb299103fe77b5c8a07f1d2
+# alpine_base CHECK:ALPINE_OK
+FROM alpine:3.14@sha256:92d13cc58a46e012300ef49924edc56de5642ada25c9a457dce4a6db59892650 AS alpine_base
 
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
@@ -23,10 +24,18 @@ RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/
 # See https://github.com/sourcegraph/deploy-sourcegraph-docker/issues/1
 # Install other packages that are desirable in ALL Sourcegraph Docker images.
 RUN apk update && apk add --no-cache \
-    bind-tools \
+    'bind-tools>=9.16.33-r0' \
     busybox \
     ca-certificates \
-    curl \
+    # Don't use alpine/edge, the curl release on this segfaults
+    curl --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main \
     mailcap \
     tini \
     wget
+
+# Patch CVE 2022-0778
+# Issue: https://github.com/sourcegraph/sourcegraph/issues/32679
+# PR: https://github.com/sourcegraph/sourcegraph/pull/32682
+# @TODO: Remove this with the next release of Alpine
+RUN apk add --upgrade --no-cache 'libcrypto1.1>=1.1.1t-r2' 'libssl1.1>=1.1.1t-r2' \
+    'libxml2>=2.9.14-r2'  # CVE-2022-40303 CVE-2022-40304

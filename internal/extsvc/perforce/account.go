@@ -1,6 +1,9 @@
 package perforce
 
 import (
+	"context"
+
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -11,13 +14,10 @@ type AccountData struct {
 }
 
 // GetExternalAccountData extracts account data for the external account.
-func GetExternalAccountData(data *extsvc.AccountData) (accountData *AccountData, err error) {
-	if data.Data != nil {
-		var d AccountData
-		if err = data.GetAccountData(&d); err != nil {
-			return nil, err
-		}
-		accountData = &d
+func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (*AccountData, error) {
+	if data.Data == nil {
+		return nil, nil
 	}
-	return accountData, nil
+
+	return encryption.DecryptJSON[AccountData](ctx, data.Data)
 }

@@ -2,7 +2,8 @@
 version: 1
 interactions:
 - request:
-    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n}\n\t\nquery($query:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n\tdiskUsage\n\trepositoryTopics(first:100)
+      {\n\t\tnodes {\n\t\t\ttopic {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n}\n\t\nquery($query:
       String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
       $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
       { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
@@ -11,29 +12,29 @@ interactions:
     headers:
       Accept:
       - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
     body: '{"data":{"search":{"repositoryCount":1,"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOjE="},"nodes":[{"id":"MDEwOlJlcG9zaXRvcnkxMjA4MDU1MQ==","databaseId":12080551,"nameWithOwner":"tsenart/vegeta","description":"HTTP
-      load testing tool and library. It''s over 9000!","url":"https://github.com/tsenart/vegeta","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"ADMIN","stargazerCount":17722,"forkCount":1101}]}}}'
+      load testing tool and library. It''s over 9000!","url":"https://github.com/tsenart/vegeta","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":22111,"forkCount":1363,"diskUsage":2553,"repositoryTopics":{"nodes":[{"topic":{"name":"load-testing"}},{"topic":{"name":"go"}},{"topic":{"name":"benchmarking"}},{"topic":{"name":"http"}}]}}]}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - no-cache
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Content-Security-Policy:
       - default-src 'none'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 19 Jul 2021 10:51:16 GMT
+      - Thu, 16 Nov 2023 13:26:42 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -42,8 +43,6 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -51,26 +50,25 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - C016:3180:580A1C4:5AA15DA:60F55924
-      X-Oauth-Scopes:
-      - ""
+      - FDFF:C346:388C4DBB:393A9134:65561892
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4999"
+      - "4991"
       X-Ratelimit-Reset:
-      - "1626695476"
+      - "1700143529"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "1"
+      - "9"
       X-Xss-Protection:
       - "0"
     status: 200 OK
     code: 200
     duration: ""
 - request:
-    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n}\n\t\nquery($query:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n\tdiskUsage\n\trepositoryTopics(first:100)
+      {\n\t\tnodes {\n\t\t\ttopic {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n}\n\t\nquery($query:
       String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
       $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
       { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
@@ -79,34 +77,33 @@ interactions:
     headers:
       Accept:
       - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: "{\"data\":{\"search\":{\"repositoryCount\":2284861,\"pageInfo\":{\"hasNextPage\":true,\"endCursor\":\"Y3Vyc29yOjU=\"},\"nodes\":[{\"id\":\"MDEwOlJlcG9zaXRvcnkyODQ1NzgyMw==\",\"databaseId\":28457823,\"nameWithOwner\":\"freeCodeCamp/freeCodeCamp\",\"description\":\"freeCodeCamp.org's
-      open-source codebase and curriculum. Learn to code for free.\",\"url\":\"https://github.com/freeCodeCamp/freeCodeCamp\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":326274,\"forkCount\":26133},{\"id\":\"MDEwOlJlcG9zaXRvcnkxNzc3MzY1MzM=\",\"databaseId\":177736533,\"nameWithOwner\":\"996icu/996.ICU\",\"description\":\"Repo
-      for counting stars and contributing. Press F to pay respect to glorious developers.\",\"url\":\"https://github.com/996icu/996.ICU\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":257953,\"forkCount\":21341},{\"id\":\"MDEwOlJlcG9zaXRvcnkxMzQ5MTg5NQ==\",\"databaseId\":13491895,\"nameWithOwner\":\"EbookFoundation/free-programming-books\",\"description\":\":books:
-      Freely available programming books\",\"url\":\"https://github.com/EbookFoundation/free-programming-books\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":196925,\"forkCount\":43345},{\"id\":\"MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg==\",\"databaseId\":11730342,\"nameWithOwner\":\"vuejs/vue\",\"description\":\"\U0001F596
-      Vue.js is a progressive, incrementally-adoptable JavaScript framework for building
-      UI on the web.\",\"url\":\"https://github.com/vuejs/vue\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":185828,\"forkCount\":29655},{\"id\":\"MDEwOlJlcG9zaXRvcnk2MDQ5MzEwMQ==\",\"databaseId\":60493101,\"nameWithOwner\":\"jwasham/coding-interview-university\",\"description\":\"A
-      complete computer science study plan to become a software engineer.\",\"url\":\"https://github.com/jwasham/coding-interview-university\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":184411,\"forkCount\":50216}]}}}"
+    body: "{\"data\":{\"search\":{\"repositoryCount\":3396424,\"pageInfo\":{\"hasNextPage\":true,\"endCursor\":\"Y3Vyc29yOjU=\"},\"nodes\":[{\"id\":\"MDEwOlJlcG9zaXRvcnkyODQ1NzgyMw==\",\"databaseId\":28457823,\"nameWithOwner\":\"freeCodeCamp/freeCodeCamp\",\"description\":\"freeCodeCamp.org's
+      open-source codebase and curriculum. Learn to code for free.\",\"url\":\"https://github.com/freeCodeCamp/freeCodeCamp\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":378065,\"forkCount\":34811,\"diskUsage\":398421,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"learn-to-code\"}},{\"topic\":{\"name\":\"nonprofits\"}},{\"topic\":{\"name\":\"programming\"}},{\"topic\":{\"name\":\"nodejs\"}},{\"topic\":{\"name\":\"react\"}},{\"topic\":{\"name\":\"d3\"}},{\"topic\":{\"name\":\"careers\"}},{\"topic\":{\"name\":\"education\"}},{\"topic\":{\"name\":\"teachers\"}},{\"topic\":{\"name\":\"javascript\"}},{\"topic\":{\"name\":\"certification\"}},{\"topic\":{\"name\":\"curriculum\"}},{\"topic\":{\"name\":\"math\"}},{\"topic\":{\"name\":\"community\"}},{\"topic\":{\"name\":\"freecodecamp\"}},{\"topic\":{\"name\":\"hacktoberfest\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkxMzQ5MTg5NQ==\",\"databaseId\":13491895,\"nameWithOwner\":\"EbookFoundation/free-programming-books\",\"description\":\":books:
+      Freely available programming books\",\"url\":\"https://github.com/EbookFoundation/free-programming-books\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":303257,\"forkCount\":58520,\"diskUsage\":17796,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"education\"}},{\"topic\":{\"name\":\"books\"}},{\"topic\":{\"name\":\"list\"}},{\"topic\":{\"name\":\"resource\"}},{\"topic\":{\"name\":\"hacktoberfest\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkyMTczNzQ2NQ==\",\"databaseId\":21737465,\"nameWithOwner\":\"sindresorhus/awesome\",\"description\":\"\U0001F60E
+      Awesome lists about all kinds of interesting topics\",\"url\":\"https://github.com/sindresorhus/awesome\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":277707,\"forkCount\":26720,\"diskUsage\":1475,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"awesome\"}},{\"topic\":{\"name\":\"awesome-list\"}},{\"topic\":{\"name\":\"unicorns\"}},{\"topic\":{\"name\":\"lists\"}},{\"topic\":{\"name\":\"resources\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnk1NDM0Njc5OQ==\",\"databaseId\":54346799,\"nameWithOwner\":\"public-apis/public-apis\",\"description\":\"A
+      collective list of free APIs\",\"url\":\"https://github.com/public-apis/public-apis\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":268744,\"forkCount\":30233,\"diskUsage\":5088,\"repositoryTopics\":{\"nodes\":[{\"topic\":{\"name\":\"api\"}},{\"topic\":{\"name\":\"public-apis\"}},{\"topic\":{\"name\":\"free\"}},{\"topic\":{\"name\":\"apis\"}},{\"topic\":{\"name\":\"list\"}},{\"topic\":{\"name\":\"development\"}},{\"topic\":{\"name\":\"software\"}},{\"topic\":{\"name\":\"public\"}},{\"topic\":{\"name\":\"resources\"}},{\"topic\":{\"name\":\"dataset\"}},{\"topic\":{\"name\":\"open-source\"}},{\"topic\":{\"name\":\"public-api\"}},{\"topic\":{\"name\":\"lists\"}}]}},{\"id\":\"MDEwOlJlcG9zaXRvcnkxNzc3MzY1MzM=\",\"databaseId\":177736533,\"nameWithOwner\":\"996icu/996.ICU\",\"description\":\"Repo
+      for counting stars and contributing. Press F to pay respect to glorious developers.\",\"url\":\"https://github.com/996icu/996.ICU\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"READ\",\"stargazerCount\":268154,\"forkCount\":21476,\"diskUsage\":187836,\"repositoryTopics\":{\"nodes\":[]}}]}}}"
     headers:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - no-cache
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Content-Security-Policy:
       - default-src 'none'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 19 Jul 2021 10:51:17 GMT
+      - Thu, 16 Nov 2023 13:26:44 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -115,8 +112,6 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -124,19 +119,17 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - C016:3180:580A1FC:5AA1618:60F55924
-      X-Oauth-Scopes:
-      - ""
+      - FDFF:C346:388C4FD3:393A9340:65561892
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4998"
+      - "4990"
       X-Ratelimit-Reset:
-      - "1626695476"
+      - "1700143529"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "2"
+      - "10"
       X-Xss-Protection:
       - "0"
     status: 200 OK

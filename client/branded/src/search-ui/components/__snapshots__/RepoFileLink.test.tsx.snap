@@ -1,0 +1,31 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`RepoFileLink > renders 1`] = `
+<DocumentFragment>
+  <span>
+    <span>
+      <a
+        class="anchorLink"
+        href="https://example.com"
+      >
+        my/repo
+      </a>
+      <span
+        aria-hidden="true"
+      >
+         ›
+      </span>
+       
+      <a
+        class="anchorLink"
+        href="https://example.com/file"
+      >
+        my/
+        <strong>
+          file
+        </strong>
+      </a>
+    </span>
+  </span>
+</DocumentFragment>
+`;

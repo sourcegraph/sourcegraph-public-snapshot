@@ -7,6 +7,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const TokenHeaderName = "X-Gitlab-Token"
+
 // EventCommon contains fields that are common to all webhook event types.
 type EventCommon struct {
 	ObjectKind string               `json:"object_kind"`
@@ -24,10 +26,18 @@ type PipelineEvent struct {
 	MergeRequest *gitlab.MergeRequest `json:"merge_request"`
 }
 
+// PushEvent represents a push to a repository.
+// https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html#push-events
+type PushEvent struct {
+	Repository struct {
+		GitSSHURL string `json:"git_ssh_url,omitempty"`
+	} `json:"repository"`
+}
+
 var ErrObjectKindUnknown = errors.New("unknown object kind")
 
 type downcaster interface {
-	downcast() (interface{}, error)
+	downcast() (any, error)
 }
 
 // UnmarshalEvent unmarshals the given JSON into an event type. Possible return
@@ -37,7 +47,7 @@ type downcaster interface {
 // distinguished from other errors by checking for ErrObjectKindUnknown in the
 // error chain; note that the top level error value will not be equal to
 // ErrObjectKindUnknown in this case.
-func UnmarshalEvent(data []byte) (interface{}, error) {
+func UnmarshalEvent(data []byte) (any, error) {
 	// We need to unmarshal the event twice: once to determine what the eventual
 	// return type should be, and then once to actual unmarshal into that type.
 	//
@@ -53,12 +63,14 @@ func UnmarshalEvent(data []byte) (interface{}, error) {
 	}
 
 	// Now we can set up the typed event that we'll unmarshal into.
-	var typedEvent interface{}
+	var typedEvent any
 	switch event.ObjectKind {
 	case "merge_request":
 		typedEvent = &mergeRequestEvent{}
 	case "pipeline":
 		typedEvent = &PipelineEvent{}
+	case "push":
+		typedEvent = &PushEvent{}
 	default:
 		return nil, errors.Wrapf(ErrObjectKindUnknown, "kind: %s", event.ObjectKind)
 	}

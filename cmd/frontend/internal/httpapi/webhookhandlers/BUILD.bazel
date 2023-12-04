@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "webhookhandlers",
+    srcs = [
+        "handle_repo_authz_event.go",
+        "handle_user_authz_event.go",
+        "handlers.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/webhooks",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/authz/permssync",
+        "//internal/database",
+        "//internal/extsvc",
+        "//lib/errors",
+        "@com_github_google_go_github_v55//github",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

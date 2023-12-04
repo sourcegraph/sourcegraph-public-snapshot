@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "oauthtoken",
+    srcs = ["oauth_token_helper.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/oauthtoken",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/encryption",
+        "//internal/extsvc/auth",
+        "//internal/httpcli",
+        "//internal/oauthutil",
+        "//lib/errors",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)
+
+go_test(
+    name = "oauthtoken_test",
+    srcs = ["oauth_token_helper_test.go"],
+    embed = [":oauthtoken"],
+    deps = [
+        "//internal/database/dbmocks",
+        "//internal/extsvc",
+        "//internal/extsvc/auth",
+        "//internal/oauthutil",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

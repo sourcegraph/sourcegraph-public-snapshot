@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -13,22 +15,23 @@ func TestNamespaces(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create user and organization to test lookups.
-	user, err := Users(db).Create(ctx, NewUser{Username: "alice"})
+	user, err := db.Users().Create(ctx, NewUser{Username: "alice"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	org, err := Orgs(db).Create(ctx, "Acme", nil)
+	org, err := db.Orgs().Create(ctx, "Acme", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("GetByID", func(t *testing.T) {
 		t.Run("no ID", func(t *testing.T) {
-			ns, err := Namespaces(db).GetByID(ctx, 0, 0)
+			ns, err := db.Namespaces().GetByID(ctx, 0, 0)
 			if ns != nil {
 				t.Errorf("unexpected non-nil namespace: %v", ns)
 			}
@@ -38,7 +41,7 @@ func TestNamespaces(t *testing.T) {
 		})
 
 		t.Run("multiple IDs", func(t *testing.T) {
-			ns, err := Namespaces(db).GetByID(ctx, 123, 456)
+			ns, err := db.Namespaces().GetByID(ctx, 123, 456)
 			if ns != nil {
 				t.Errorf("unexpected non-nil namespace: %v", ns)
 			}
@@ -48,7 +51,7 @@ func TestNamespaces(t *testing.T) {
 		})
 
 		t.Run("user not found", func(t *testing.T) {
-			ns, err := Namespaces(db).GetByID(ctx, user.ID+1, 0)
+			ns, err := db.Namespaces().GetByID(ctx, user.ID+1, 0)
 			if ns != nil {
 				t.Errorf("unexpected non-nil namespace: %v", ns)
 			}
@@ -58,7 +61,7 @@ func TestNamespaces(t *testing.T) {
 		})
 
 		t.Run("organization not found", func(t *testing.T) {
-			ns, err := Namespaces(db).GetByID(ctx, 0, org.ID+1)
+			ns, err := db.Namespaces().GetByID(ctx, 0, org.ID+1)
 			if ns != nil {
 				t.Errorf("unexpected non-nil namespace: %v", ns)
 			}
@@ -68,7 +71,7 @@ func TestNamespaces(t *testing.T) {
 		})
 
 		t.Run("user", func(t *testing.T) {
-			ns, err := Namespaces(db).GetByID(ctx, 0, user.ID)
+			ns, err := db.Namespaces().GetByID(ctx, 0, user.ID)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}
@@ -78,7 +81,7 @@ func TestNamespaces(t *testing.T) {
 		})
 
 		t.Run("organization", func(t *testing.T) {
-			ns, err := Namespaces(db).GetByID(ctx, org.ID, 0)
+			ns, err := db.Namespaces().GetByID(ctx, org.ID, 0)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}
@@ -90,7 +93,7 @@ func TestNamespaces(t *testing.T) {
 
 	t.Run("GetByName", func(t *testing.T) {
 		t.Run("user", func(t *testing.T) {
-			ns, err := Namespaces(db).GetByName(ctx, "Alice")
+			ns, err := db.Namespaces().GetByName(ctx, "Alice")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -99,7 +102,7 @@ func TestNamespaces(t *testing.T) {
 			}
 		})
 		t.Run("organization", func(t *testing.T) {
-			ns, err := Namespaces(db).GetByName(ctx, "acme")
+			ns, err := db.Namespaces().GetByName(ctx, "acme")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -108,7 +111,7 @@ func TestNamespaces(t *testing.T) {
 			}
 		})
 		t.Run("not found", func(t *testing.T) {
-			if _, err := Namespaces(db).GetByName(ctx, "doesntexist"); err != ErrNamespaceNotFound {
+			if _, err := db.Namespaces().GetByName(ctx, "doesntexist"); err != ErrNamespaceNotFound {
 				t.Fatal(err)
 			}
 		})

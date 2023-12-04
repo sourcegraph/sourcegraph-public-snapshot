@@ -4,15 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
+	"strings"
 
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	"github.com/lib/pq"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -23,9 +26,10 @@ type Store struct {
 	operations *Operations
 }
 
-func NewWithDB(db dbutil.DB, migrationsTable string, operations *Operations) *Store {
+func NewWithDB(observationCtx *observation.Context, db *sql.DB, migrationsTable string) *Store {
+	operations := NewOperations(observationCtx)
 	return &Store{
-		Store:      basestore.NewWithDB(db, sql.TxOptions{}),
+		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(observationCtx.Logger, db, sql.TxOptions{})),
 		schemaName: migrationsTable,
 		operations: operations,
 	}
@@ -52,19 +56,16 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	}, nil
 }
 
-const currentMigrationLogSchemaVersion = 1
+const currentMigrationLogSchemaVersion = 2
 
 // EnsureSchemaTable creates the bookeeping tables required to track this schema
 // if they do not already exist. If old versions of the tables exist, this method
 // will attempt to update them in a backward-compatible manner.
 func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
-	ctx, endObservation := s.operations.ensureSchemaTable.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.ensureSchemaTable.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	queries := []*sqlf.Query{
-		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS %s(version bigint NOT NULL PRIMARY KEY)`, quote(s.schemaName)),
-		sqlf.Sprintf(`ALTER TABLE %s ADD COLUMN IF NOT EXISTS dirty boolean NOT NULL`, quote(s.schemaName)),
-
 		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS migration_logs(id SERIAL PRIMARY KEY)`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS migration_logs_schema_version integer NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS schema text NOT NULL`),
@@ -74,39 +75,7 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS finished_at timestamptz`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS success boolean`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS error_message text`),
-	}
-
-	minMigrationVersions := map[string]int{
-		"schema_migrations":              1528395834,
-		"codeintel_schema_migrations":    1000000015,
-		"codeinsights_schema_migrations": 1000000000,
-		"test_migrations_table_backfill": 1000000000, // used in tests
-	}
-	if minMigrationVersion, ok := minMigrationVersions[s.schemaName]; ok {
-		queries = append(queries, sqlf.Sprintf(`
-			WITH
-				schema_version AS (SELECT * FROM %s LIMIT 1),
-				min_log AS (SELECT MIN(version) AS version FROM migration_logs WHERE schema = %s),
-				target_version AS (SELECT MIN(version) AS version FROM (SELECT version FROM schema_version UNION SELECT version - 1 FROM min_log) s)
-			INSERT INTO migration_logs (
-				migration_logs_schema_version,
-				schema,
-				version,
-				up,
-				success,
-				started_at,
-				finished_at
-			)
-			SELECT %s, %s, version, true, true, NOW(), NOW()
-			FROM generate_series(%s, (SELECT version FROM target_version)) version
-			WHERE NOT (SELECT dirty FROM schema_version)
-		`,
-			quote(s.schemaName),
-			s.schemaName,
-			currentMigrationLogSchemaVersion,
-			s.schemaName,
-			minMigrationVersion,
-		))
+		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS backfilled boolean NOT NULL DEFAULT FALSE`),
 	}
 
 	tx, err := s.Transact(ctx)
@@ -124,6 +93,146 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	return nil
 }
 
+// BackfillSchemaVersions adds "backfilled" rows into the migration_logs table to make instances
+// upgraded from older versions work uniformly with instances booted from a newer version.
+//
+// Backfilling mainly addresses issues during upgrades and interacting with migration graph defined
+// over multiple versions being stitched back together. The absence of a row in the migration_logs
+// table either represents a migration that needs to be applied, or a migration defined in a version
+// prior to the instance's first boot. Backfilling these records prevents the latter circumstance as
+// being interpreted as the former.
+//
+// DO NOT call this method from inside a transaction, otherwise the absence of optional relations
+// will cause a transaction rollback while this function returns a nil-valued error (hard to debug).
+func (s *Store) BackfillSchemaVersions(ctx context.Context) error {
+	applied, pending, failed, err := s.Versions(ctx)
+	if err != nil {
+		return err
+	}
+	if len(pending) != 0 || len(failed) != 0 {
+		// If we have a dirty database here don't overwrite in-progress/failed records with fake
+		// successful ones. This would end up masking a lot of drift conditions that would make
+		// upgrades painful and operation of the instance unstable.
+		return nil
+	}
+	if len(applied) == 0 {
+		// Haven't applied anything yet to be able to backfill from.
+		return nil
+	}
+
+	var (
+		schemaName         = humanizeSchemaName(s.schemaName)
+		stitchedMigrations = shared.StitchedMigationsBySchemaName[schemaName]
+		definitions        = stitchedMigrations.Definitions
+		boundsByRev        = stitchedMigrations.BoundsByRev
+		rootMap            = make(map[int]struct{}, len(boundsByRev))
+	)
+
+	// Convert applied slice into a map for fast existence check
+	appliedMap := make(map[int]struct{}, len(applied))
+	for _, id := range applied {
+		appliedMap[id] = struct{}{}
+	}
+
+	for _, bounds := range boundsByRev {
+		var missingIDs []int
+		for _, id := range bounds.LeafIDs {
+			// Ensure each leaf migration of this version has been applied.
+			// If not, we'll jump out of this revision and move onto the next
+			// candidate.
+			if _, ok := appliedMap[id]; !ok {
+				missingIDs = append(missingIDs, id)
+			}
+		}
+		if len(missingIDs) > 0 {
+			continue
+		}
+
+		// We haven't broken out of the loop, we've applied the entirety of this
+		// version's migrations. We can backfill from its root.
+		root := bounds.RootID
+		if root < 0 {
+			root = -root
+		}
+		if _, ok := definitions.GetByID(root); ok {
+			rootMap[root] = struct{}{}
+		}
+	}
+
+	roots := make([]int, 0, len(rootMap))
+	for id := range rootMap {
+		roots = append(roots, id)
+	}
+
+	// For any bounds that we have *completely* applied, we can safely backfill the
+	// ancestors of those roots. Note that if there is more than one candidate root
+	// then one should completely dominate the other.
+	ancestorIDs, err := ancestors(definitions, roots...)
+	if err != nil {
+		return err
+	}
+	idsToBackfill := []int64{}
+	for _, id := range ancestorIDs {
+		idsToBackfill = append(idsToBackfill, int64(id))
+	}
+
+	if len(ancestorIDs) == 0 {
+		return nil
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(
+		backfillSchemaVersionsQuery,
+		currentMigrationLogSchemaVersion,
+		s.schemaName,
+		pq.Int64Array(idsToBackfill),
+	))
+}
+
+const backfillSchemaVersionsQuery = `
+WITH candidates AS (
+	SELECT
+		%s::integer AS migration_logs_schema_version,
+		%s AS schema,
+		version AS version,
+		true AS up,
+		NOW() AS started_at,
+		NOW() AS finished_at,
+		true AS success,
+		true AS backfilled
+	FROM (SELECT unnest(%s::integer[])) AS vs(version)
+)
+INSERT INTO migration_logs (
+	migration_logs_schema_version,
+	schema,
+	version,
+	up,
+	started_at,
+	finished_at,
+	success,
+	backfilled
+)
+SELECT c.* FROM candidates c
+WHERE NOT EXISTS (
+	SELECT 1 FROM migration_logs ml
+	WHERE ml.schema = c.schema AND ml.version = c.version
+)
+`
+
+func ancestors(definitions *definition.Definitions, versions ...int) ([]int, error) {
+	ancestors, err := definitions.Up(nil, versions)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]int, 0, len(ancestors))
+	for _, definition := range ancestors {
+		ids = append(ids, definition.ID)
+	}
+	sort.Ints(ids)
+
+	return ids, nil
+}
+
 // Versions returns three sets of migration versions that, together, describe the current schema
 // state. These states describe, respectively, the identifieers of all applied, pending, and failed
 // migrations.
@@ -131,7 +240,7 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 // A failed migration requires administrator attention. A pending migration may currently be
 // in-progress, or may indicate that a migration was attempted but failed part way through.
 func (s *Store) Versions(ctx context.Context) (appliedVersions, pendingVersions, failedVersions []int, err error) {
-	ctx, endObservation := s.operations.versions.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.versions.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	migrationLogs, err := scanMigrationLogs(s.Query(ctx, sqlf.Sprintf(versionsQuery, s.schemaName)))
@@ -157,13 +266,21 @@ func (s *Store) Versions(ctx context.Context) (appliedVersions, pendingVersions,
 }
 
 const versionsQuery = `
--- source: internal/database/migration/store/store.go:Versions
 WITH ranked_migration_logs AS (
 	SELECT
 		migration_logs.*,
-		ROW_NUMBER() OVER (PARTITION BY version ORDER BY finished_at DESC) AS row_number
+		ROW_NUMBER() OVER (PARTITION BY version ORDER BY backfilled, started_at DESC) AS row_number
 	FROM migration_logs
-	WHERE schema = %s
+	WHERE
+		schema = %s AND
+		-- Filter out failed reverts, which should have no visible effect but are
+		-- a common occurrence in development. We don't allow CIC in downgrades
+		-- therefore all reverts are applied in a txn.
+		NOT (
+			NOT up AND
+			NOT success AND
+			finished_at IS NOT NULL
+		)
 )
 SELECT
 	schema,
@@ -174,6 +291,25 @@ FROM ranked_migration_logs
 WHERE row_number = 1
 ORDER BY version
 `
+
+func (s *Store) RunDDLStatements(ctx context.Context, statements []string) (err error) {
+	ctx, _, endObservation := s.operations.runDDLStatements.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, statement := range statements {
+		if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(statement, "%", "%%"))); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 // TryLock attempts to create hold an advisory lock. This method returns a function that should be
 // called once the lock should be released. This method accepts the current function's error output
@@ -186,8 +322,8 @@ ORDER BY version
 func (s *Store) TryLock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
 	key := s.lockKey()
 
-	ctx, endObservation := s.operations.tryLock.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int32("key", key),
+	ctx, _, endObservation := s.operations.tryLock.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("key", int(key)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -216,33 +352,70 @@ func (s *Store) lockKey() int32 {
 	return locker.StringKey(fmt.Sprintf("%s:migrations", s.schemaName))
 }
 
+type wrappedPgError struct {
+	*pgconn.PgError
+}
+
+func (w wrappedPgError) Error() string {
+	var s strings.Builder
+
+	s.WriteString(w.PgError.Error())
+
+	if w.Detail != "" {
+		s.WriteRune('\n')
+		s.WriteString("DETAIL: ")
+		s.WriteString(w.Detail)
+	}
+
+	if w.Hint != "" {
+		s.WriteRune('\n')
+		s.WriteString("HINT: ")
+		s.WriteString(w.Hint)
+	}
+
+	return s.String()
+}
+
 // Up runs the given definition's up query.
 func (s *Store) Up(ctx context.Context, definition definition.Definition) (err error) {
-	ctx, endObservation := s.operations.up.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.up.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.Exec(ctx, definition.UpQuery)
+	err = s.Exec(ctx, definition.UpQuery)
+
+	var pgError *pgconn.PgError
+	if errors.As(err, &pgError) {
+		return wrappedPgError{pgError}
+	}
+
+	return
 }
 
 // Down runs the given definition's down query.
 func (s *Store) Down(ctx context.Context, definition definition.Definition) (err error) {
-	ctx, endObservation := s.operations.down.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.down.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.Exec(ctx, definition.DownQuery)
+	err = s.Exec(ctx, definition.DownQuery)
+
+	var pgError *pgconn.PgError
+	if errors.As(err, &pgError) {
+		return wrappedPgError{pgError}
+	}
+
+	return
 }
 
 // IndexStatus returns an object describing the current validity status and creation progress of the
 // index with the given name. If the index does not exist, a false-valued flag is returned.
-func (s *Store) IndexStatus(ctx context.Context, tableName, indexName string) (_ storetypes.IndexStatus, _ bool, err error) {
-	ctx, endObservation := s.operations.indexStatus.With(ctx, &err, observation.Args{})
+func (s *Store) IndexStatus(ctx context.Context, tableName, indexName string) (_ shared.IndexStatus, _ bool, err error) {
+	ctx, _, endObservation := s.operations.indexStatus.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return scanFirstIndexStatus(s.Query(ctx, sqlf.Sprintf(indexStatusQuery, tableName, indexName)))
 }
 
 const indexStatusQuery = `
--- source: internal/database/migration/store/store.go:IndexStatus
 SELECT
 	pi.indisvalid,
 	pi.indisready,
@@ -254,9 +427,9 @@ SELECT
 	p.blocks_done,
 	p.tuples_total,
 	p.tuples_done
-FROM pg_stat_all_indexes ai
-JOIN pg_index pi ON pi.indexrelid = ai.indexrelid
-LEFT JOIN pg_stat_progress_create_index p ON p.relid = ai.relid AND p.index_relid = ai.indexrelid
+FROM pg_catalog.pg_stat_all_indexes ai
+JOIN pg_catalog.pg_index pi ON pi.indexrelid = ai.indexrelid
+LEFT JOIN pg_catalog.pg_stat_progress_create_index p ON p.relid = ai.relid AND p.index_relid = ai.indexrelid
 WHERE
 	ai.relname = %s AND
 	ai.indexrelname = %s
@@ -266,7 +439,7 @@ WHERE
 // with the given definition. All users are assumed to run either `s.Up` or `s.Down` as part of the
 // given function, among any other behaviors that are necessary to perform in the _critical section_.
 func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Definition, up bool, f func() error) (err error) {
-	ctx, endObservation := s.operations.withMigrationLog.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.withMigrationLog.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	logID, err := s.createMigrationLog(ctx, definition.ID, up)
@@ -274,11 +447,6 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 		return err
 	}
 
-	defer func() {
-		if err == nil {
-			err = s.Exec(ctx, sqlf.Sprintf(`UPDATE %s SET dirty = false`, quote(s.schemaName)))
-		}
-	}()
 	defer func() {
 		if execErr := s.Exec(ctx, sqlf.Sprintf(
 			`UPDATE migration_logs SET finished_at = NOW(), success = %s, error_message = %s WHERE id = %d`,
@@ -304,17 +472,6 @@ func (s *Store) createMigrationLog(ctx context.Context, definitionVersion int, u
 	}
 	defer func() { err = tx.Done(err) }()
 
-	targetVersion := definitionVersion
-	if !up {
-		targetVersion--
-	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM %s`, quote(s.schemaName))); err != nil {
-		return 0, err
-	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s (version, dirty) VALUES (%s, true)`, quote(s.schemaName), targetVersion)); err != nil {
-		return 0, err
-	}
-
 	id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
 		`
 			INSERT INTO migration_logs (
@@ -337,8 +494,6 @@ func (s *Store) createMigrationLog(ctx context.Context, definitionVersion int, u
 
 	return id, nil
 }
-
-var quote = sqlf.Sprintf
 
 func errMsgPtr(err error) *string {
 	if err == nil {
@@ -365,27 +520,27 @@ func scanMigrationLogs(rows *sql.Rows, queryErr error) (_ []migrationLog, err er
 
 	var logs []migrationLog
 	for rows.Next() {
-		var log migrationLog
+		var mLog migrationLog
 
 		if err := rows.Scan(
-			&log.Schema,
-			&log.Version,
-			&log.Up,
-			&log.Success,
+			&mLog.Schema,
+			&mLog.Version,
+			&mLog.Up,
+			&mLog.Success,
 		); err != nil {
 			return nil, err
 		}
 
-		logs = append(logs, log)
+		logs = append(logs, mLog)
 	}
 
 	return logs, nil
 }
 
 // scanFirstIndexStatus scans a slice of index status objects from the return value of `*Store.query`.
-func scanFirstIndexStatus(rows *sql.Rows, queryErr error) (status storetypes.IndexStatus, _ bool, err error) {
+func scanFirstIndexStatus(rows *sql.Rows, queryErr error) (status shared.IndexStatus, _ bool, err error) {
 	if queryErr != nil {
-		return storetypes.IndexStatus{}, false, queryErr
+		return shared.IndexStatus{}, false, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
@@ -402,11 +557,24 @@ func scanFirstIndexStatus(rows *sql.Rows, queryErr error) (status storetypes.Ind
 			&status.TuplesDone,
 			&status.TuplesTotal,
 		); err != nil {
-			return storetypes.IndexStatus{}, false, err
+			return shared.IndexStatus{}, false, err
 		}
 
 		return status, true, nil
 	}
 
-	return storetypes.IndexStatus{}, false, nil
+	return shared.IndexStatus{}, false, nil
 }
+
+// humanizeSchemaName converts the golang-migrate/migration_logs.schema name into the name
+// defined by the definitions in the migrations/ directory. Hopefully we cna get rid of this
+// difference in the future, but that requires a bit of migratory work.
+func humanizeSchemaName(schemaName string) string {
+	if schemaName == "schema_migrations" {
+		return "frontend"
+	}
+
+	return strings.TrimSuffix(schemaName, "_schema_migrations")
+}
+
+var quote = sqlf.Sprintf

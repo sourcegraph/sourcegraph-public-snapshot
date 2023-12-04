@@ -2,12 +2,11 @@
 package auth
 
 import (
+	"math/rand"
 	"net/http"
-	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // AuthURLPrefix is the URL path prefix under which to attach authentication handlers
@@ -58,38 +57,33 @@ func composeMiddleware(middlewares ...*Middleware) *Middleware {
 }
 
 // NormalizeUsername normalizes a proposed username into a format that meets Sourcegraph's
-// username formatting rules (based on, but not identical to
-// https://help.github.com/enterprise/2.11/admin/guides/user-management/using-ldap/#username-considerations-with-ldap):
-//
-// - Any characters not in `[a-zA-Z0-9-.]` are replaced with `-`
-// - Usernames with exactly one `@` character are interpreted as an email address, so the username will be extracted by truncating at the `@` character.
-// - Usernames with two or more `@` characters are not considered an email address, so the `@` will be treated as a non-standard character and be replaced with `-`
-// - Usernames with consecutive `-` or `.` characters are not allowed
-// - Usernames that start or end with `.` are not allowed
-// - Usernames that start with `-` are not allowed
-//
-// Usernames that could not be converted return an error.
-//
-// Note: Do not forget to change database constraints on "users" and "orgs" tables.
+// username formatting rules.
 func NormalizeUsername(name string) (string, error) {
-	origName := name
-	if i := strings.Index(name, "@"); i != -1 && i == strings.LastIndex(name, "@") {
-		name = name[:i]
-	}
-
-	name = disallowedCharacter.ReplaceAllString(name, "-")
-	if disallowedSymbols.MatchString(name) {
-		return "", errors.Errorf("username %q could not be normalized to acceptable format", origName)
-	}
-
-	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(name); err != nil {
-		return "", err
-	}
-
-	return name, nil
+	return userpasswd.NormalizeUsername(name)
 }
 
-var (
-	disallowedSymbols   = lazyregexp.New(`(^[\-\.])|(\.$)|([\-\.]{2,})`)
-	disallowedCharacter = lazyregexp.New(`[^a-zA-Z0-9\-\.]`)
-)
+// AddRandomSuffix appends a random 5-character lowercase alphabetical suffix (like "-lbwwt")
+// to the username to avoid collisions. If the username already ends with a dash, it is not
+// added again.
+func AddRandomSuffix(username string) (string, error) {
+	b := make([]byte, 5)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	for i, c := range b {
+		b[i] = "abcdefghijklmnopqrstuvwxyz"[c%26]
+	}
+	if len(username) == 0 || username[len(username)-1] == '-' {
+		return username + string(b), nil
+	}
+	return username + "-" + string(b), nil
+}
+
+// Equivalent to `^\w(?:\w|[-.](?=\w))*-?$` which we have in the DB constraint, but without a lookahead
+var validUsername = lazyregexp.New(`^\w(?:(?:[\w.-]\w|\w)*-?|)$`)
+
+// IsValidUsername returns true if the username matches the constraints in the database.
+func IsValidUsername(name string) bool {
+	return validUsername.MatchString(name) && len(name) <= 255
+}

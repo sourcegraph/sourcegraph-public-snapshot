@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "syntheticgithubdata_lib",
+    srcs = [
+        "create.go",
+        "delete.go",
+        "github.go",
+        "main.go",
+        "oauth.go",
+        "state.go",
+        "validate.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/scaletesting/syntheticgithubdata",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//lib/output",
+        "@com_github_google_go_github_v55//github",
+        "@com_github_mattn_go_sqlite3//:go-sqlite3",
+        "@com_github_sourcegraph_conc//pool",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)
+
+go_binary(
+    name = "syntheticgithubdata",
+    embed = [":syntheticgithubdata_lib"],
+    visibility = ["//visibility:public"],
+)

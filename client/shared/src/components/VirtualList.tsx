@@ -1,4 +1,5 @@
 import * as React from 'react'
+
 import VisibilitySensor from 'react-visibility-sensor'
 
 interface Props<TItem, TExtraItemProps> {
@@ -32,6 +33,9 @@ interface Props<TItem, TExtraItemProps> {
     containment?: HTMLElement
 
     className?: string
+
+    as?: React.ElementType
+    'aria-label'?: string
 }
 
 interface State {}
@@ -51,11 +55,12 @@ export class VirtualList<TItem, TExtraItemProps = undefined> extends React.PureC
     }
 
     public render(): JSX.Element | null {
+        const Element = this.props.as || 'div'
         return (
-            <div className={this.props.className} ref={this.props.onRef}>
+            <Element className={this.props.className} ref={this.props.onRef} aria-label={this.props['aria-label']}>
                 {this.props.items.slice(0, this.props.itemsToShow).map((item, index) => (
                     <VisibilitySensor
-                        onChange={isVisible => this.onChangeVisibility(isVisible, index)}
+                        onChange={(isVisible: boolean) => this.onChangeVisibility(isVisible, index)}
                         key={this.props.itemKey(item)}
                         containment={this.props.containment}
                         partialVisibility={true}
@@ -63,7 +68,7 @@ export class VirtualList<TItem, TExtraItemProps = undefined> extends React.PureC
                         {this.props.renderItem(item, index, this.props.itemProps)}
                     </VisibilitySensor>
                 ))}
-            </div>
+            </Element>
         )
     }
 }

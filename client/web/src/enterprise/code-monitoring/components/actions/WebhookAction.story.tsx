@@ -1,21 +1,29 @@
-import { storiesOf } from '@storybook/react'
-import React from 'react'
+import type { Meta, StoryFn } from '@storybook/react'
 import sinon from 'sinon'
 
+import { H2 } from '@sourcegraph/wildcard'
+
 import { WebStory } from '../../../../components/WebStory'
-import { ActionProps } from '../FormActionArea'
+import { mockAuthenticatedUser } from '../../testing/util'
+import type { ActionProps } from '../FormActionArea'
 
 import { WebhookAction } from './WebhookAction'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/actions/WebhookAction', module).addParameters({
-    chromatic: { disableSnapshot: false },
-})
+const config: Meta = {
+    title: 'web/enterprise/code-monitoring/actions/WebhookAction',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
+}
+
+export default config
 
 const defaultProps: ActionProps = {
     action: undefined,
     setAction: sinon.fake(),
     disabled: false,
     monitorName: 'Example code monitor',
+    authenticatedUser: mockAuthenticatedUser,
 }
 
 const action: ActionProps['action'] = {
@@ -26,31 +34,36 @@ const action: ActionProps['action'] = {
     includeResults: false,
 }
 
-add('WebhookAction', () => (
+export const WebhookActionStory: StoryFn = () => (
     <WebStory>
         {() => (
             <>
-                <h2>Action card disabled</h2>
+                <H2>Action card disabled</H2>
                 <WebhookAction {...defaultProps} disabled={true} />
 
-                <h2>Closed, not populated</h2>
+                <H2>Closed, not populated</H2>
                 <WebhookAction {...defaultProps} />
 
-                <h2>Open, not populated</h2>
+                <H2>Open, not populated</H2>
                 <WebhookAction {...defaultProps} _testStartOpen={true} />
 
-                <h2>Closed, populated, enabled</h2>
+                <H2>Closed, populated, enabled</H2>
                 <WebhookAction {...defaultProps} action={action} />
 
-                <h2>Open, populated, enabled</h2>
+                <H2>Open, populated, enabled</H2>
                 <WebhookAction {...defaultProps} _testStartOpen={true} action={action} />
 
-                <h2>Closed, populated, disabled</h2>
+                <H2>Open, populated with error, enabled</H2>
+                <WebhookAction {...defaultProps} _testStartOpen={true} action={{ ...action, url: 'mailto:test' }} />
+
+                <H2>Closed, populated, disabled</H2>
                 <WebhookAction {...defaultProps} action={{ ...action, enabled: false }} />
 
-                <h2>Open, populated, disabled</h2>
+                <H2>Open, populated, disabled</H2>
                 <WebhookAction {...defaultProps} _testStartOpen={true} action={{ ...action, enabled: false }} />
             </>
         )}
     </WebStory>
-))
+)
+
+WebhookActionStory.storyName = 'WebhookAction'

@@ -1,0 +1,49 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Collapse > should render opened when \`openByDefault\` is true 1`] = `
+<DocumentFragment>
+  <button
+    aria-expanded="true"
+    role="button"
+  >
+    I am Collapse Header
+  </button>
+  <div
+    class="collapse show"
+  >
+    I am Collapse Panel
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Collapse > should toggle when clicking on header 1`] = `
+<DocumentFragment>
+  <button
+    aria-expanded="true"
+    role="button"
+  >
+    I am Collapse Header
+  </button>
+  <div
+    class="collapse show"
+  >
+    I am Collapse Panel
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Collapse > should toggle when clicking on header 2`] = `
+<DocumentFragment>
+  <button
+    aria-expanded="false"
+    role="button"
+  >
+    I am Collapse Header
+  </button>
+  <div
+    class="collapse"
+  >
+    I am Collapse Panel
+  </div>
+</DocumentFragment>
+`;

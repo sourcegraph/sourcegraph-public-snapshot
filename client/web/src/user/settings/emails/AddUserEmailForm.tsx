@@ -1,36 +1,49 @@
-import classNames from 'classnames'
-import React, { FunctionComponent, useMemo, useState } from 'react'
+import React, { type FunctionComponent, useMemo, useState } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
-import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
+import classNames from 'classnames'
+
+import { asError, isErrorLike, type ErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
+import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
+import { screenReaderAnnounce, Input, Label, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { LoaderButton } from '../../../components/LoaderButton'
-import { AddUserEmailResult, AddUserEmailVariables } from '../../../graphql-operations'
+import type { AddUserEmailResult, AddUserEmailVariables, UserSettingsAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 interface Props {
-    user: string
+    user: Pick<UserSettingsAreaUserFields, 'id' | 'scimControlled'>
     onDidAdd: () => void
+    emails: Set<string>
 
     className?: string
 }
 
 type Status = undefined | 'loading' | ErrorLike
 
-export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, onDidAdd }) => {
+enum InputState {
+    NOT_VALIDATED = 'initial',
+    LOADING = 'loading',
+    VALID = 'valid',
+    INVALID = 'error',
+}
+
+export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>> = ({
+    user,
+    className,
+    onDidAdd,
+    emails,
+}) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
 
     const [emailState, nextEmailFieldChange, emailInputReference, overrideEmailState] = useInputValidation(
         useMemo(
             () => ({
-                synchronousValidators: [],
+                synchronousValidators: [email => validateEmail(email, emails)],
                 asynchronousValidators: [],
             }),
-            []
+            [emails]
         )
     )
 
@@ -50,11 +63,13 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
                                 }
                             }
                         `,
-                        { user, email: emailState.value }
+                        { user: user.id, email: emailState.value }
                     ).toPromise()
                 )
 
                 eventLogger.log('NewUserEmailAddressAdded')
+                screenReaderAnnounce('Email address added')
+
                 overrideEmailState({ value: '' })
                 setStatusOrError(undefined)
 
@@ -69,45 +84,40 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
 
     return (
         <div className={classNames('add-user-email-form', className)}>
-            <label
+            <Label
                 htmlFor="AddUserEmailForm-email"
                 className={classNames('align-self-start', {
                     'text-danger font-weight-bold': emailState.kind === 'INVALID',
                 })}
             >
                 Add email address
-            </label>
+            </Label>
             {/* eslint-disable-next-line react/forbid-elements */}
             <form className="form-inline" onSubmit={onSubmit} noValidate={true}>
-                <LoaderInput
+                <Input
+                    id="AddUserEmailForm-email"
+                    type="email"
+                    name="email"
+                    inputClassName={deriveInputClassName(emailState)}
+                    onChange={nextEmailFieldChange}
+                    size={32}
+                    value={emailState.value}
+                    ref={emailInputReference}
+                    required={true}
+                    autoComplete="email"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    readOnly={false}
+                    status={InputState[emailState.kind]}
+                    disabled={user.scimControlled}
                     className={classNames(deriveInputClassName(emailState), 'mr-sm-2')}
-                    loading={emailState.kind === 'LOADING'}
-                >
-                    <input
-                        id="AddUserEmailForm-email"
-                        type="email"
-                        name="email"
-                        className={classNames(
-                            'form-control test-user-email-add-input',
-                            deriveInputClassName(emailState)
-                        )}
-                        onChange={nextEmailFieldChange}
-                        size={32}
-                        value={emailState.value}
-                        ref={emailInputReference}
-                        required={true}
-                        autoComplete="email"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        spellCheck={false}
-                        readOnly={false}
-                    />
-                </LoaderInput>
+                />
                 <LoaderButton
                     loading={statusOrError === 'loading'}
                     label="Add"
                     type="submit"
-                    disabled={statusOrError === 'loading' || emailState.kind !== 'VALID'}
+                    disabled={statusOrError === 'loading' || emailState.kind !== 'VALID' || user.scimControlled}
                     variant="primary"
                 />
                 {emailState.kind === 'INVALID' && (
@@ -120,3 +130,6 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
         </div>
     )
 }
+
+const validateEmail = (email: string, existingEmails: Set<string>): string | undefined =>
+    existingEmails.has(email) ? 'Email already exists' : undefined

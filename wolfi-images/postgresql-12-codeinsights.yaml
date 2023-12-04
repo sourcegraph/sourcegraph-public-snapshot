@@ -1,0 +1,36 @@
+include: ./postgresql-12.yaml
+
+paths:
+  - path: /data
+    type: directory
+    uid: 70
+    gid: 70
+    permissions: 0o750
+  - path: /data/pgdata-12
+    type: directory
+    uid: 70
+    gid: 70
+    permissions: 0o750
+  - path: /var/lib/postgresql
+    type: directory
+    uid: 70
+    gid: 70
+    permissions: 0o755
+  - path: /var/run/postgresql
+    type: directory
+    uid: 70
+    gid: 70
+    permissions: 0o755
+
+accounts:
+  groups:
+    - groupname: ping
+      gid: 700
+    - groupname: postgres
+      gid: 70
+  users:
+    - username: postgres
+      uid: 70
+      gid: 70
+
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

@@ -1,0 +1,73 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = [
+        "config.go",
+        "debug.go",
+        "service.go",
+        "shared.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/gitserver/internal",
+        "//cmd/gitserver/internal/accesslog",
+        "//cmd/gitserver/internal/cloneurl",
+        "//cmd/gitserver/internal/gitserverfs",
+        "//cmd/gitserver/internal/perforce",
+        "//cmd/gitserver/internal/vcssyncer",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/authz/subrepoperms",
+        "//internal/codeintel/dependencies",
+        "//internal/collections",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/database/connections/live",
+        "//internal/debugserver",
+        "//internal/encryption/keyring",
+        "//internal/env",
+        "//internal/gitserver/v1:gitserver",
+        "//internal/goroutine",
+        "//internal/goroutine/recorder",
+        "//internal/grpc",
+        "//internal/grpc/defaults",
+        "//internal/hostname",
+        "//internal/httpserver",
+        "//internal/instrumentation",
+        "//internal/observation",
+        "//internal/ratelimit",
+        "//internal/requestclient",
+        "//internal/requestinteraction",
+        "//internal/service",
+        "//internal/trace",
+        "//internal/wrexec",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_x_sync//semaphore",
+    ],
+)
+
+go_test(
+    name = "shared_test",
+    timeout = "short",
+    srcs = [
+        "config_test.go",
+        "shared_test.go",
+    ],
+    embed = [":shared"],
+    # This test loads coursier as a side effect, so we ensure the
+    # path is sandboxed properly.
+    env = {"COURSIER_CACHE_DIR": "/tmp"},
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)

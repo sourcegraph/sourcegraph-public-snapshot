@@ -1,5 +1,11 @@
-import { Context, ContextProvider, ProviderProps, ShortcutManager } from '@slimsag/react-shortcuts'
 import * as React from 'react'
+
+import {
+    type Context,
+    ContextProvider,
+    type ProviderProps,
+    ShortcutManager,
+} from '@sourcegraph/shared/src/react-shortcuts'
 
 /**
  * Describes the variable this file injects into the `global` object. It is

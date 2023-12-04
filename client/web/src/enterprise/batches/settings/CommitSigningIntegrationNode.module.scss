@@ -1,0 +1,50 @@
+.node {
+    padding: 0;
+    border: none;
+    padding-bottom: 1rem;
+    &:not(:first-child) {
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+}
+
+.wrapper {
+    gap: 0.5rem;
+}
+
+.readonly-app-details {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    padding-left: 0.5rem;
+    height: 2rem;
+    gap: 0.5rem;
+}
+
+.app-details-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex-shrink: 0;
+    padding-left: 0.5rem;
+}
+
+.app-details-stack-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.app-logo,
+.app-logo-large {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background-color: var(--gray-02);
+}
+
+.app-logo-large {
+    width: 2.125rem;
+    height: 2.125rem;
+}

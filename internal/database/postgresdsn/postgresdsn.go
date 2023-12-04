@@ -18,6 +18,14 @@ func New(prefix, currentUser string, getenv func(string) string) string {
 		return getenv(prefix + name)
 	}
 
+	dequote := func(value string) string {
+		if len(value) > 2 && value[0] == value[len(value)-1] && (value[0] == '\'' || value[0] == '"') {
+			return value[1 : len(value)-1]
+		}
+
+		return value
+	}
+
 	// PGDATASOURCE is a sourcegraph specific variable for just setting the DSN
 	if dsn := env("PGDATASOURCE"); dsn != "" {
 		return dsn
@@ -49,8 +57,10 @@ func New(prefix, currentUser string, getenv func(string) string) string {
 		dsn.Host = host
 	}
 
-	if port := env("PGPORT"); port != "" {
-		dsn.Host += ":" + port
+	// PGPORT values may be (legally) quoted, but should remain quoted
+	// when constructed as part of the DSN. Strip it here.
+	if port := dequote(env("PGPORT")); port != "" {
+		dsn.Host = strings.Split(dsn.Host, ":")[0] + ":" + port
 	}
 
 	if db := env("PGDATABASE"); db != "" {

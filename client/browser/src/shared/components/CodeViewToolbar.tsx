@@ -1,23 +1,25 @@
-import classNames from 'classnames'
-import * as H from 'history'
 import * as React from 'react'
 
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { isHTTPAuthError } from '@sourcegraph/http-client'
-import { ActionNavItemsClassProps, ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
-import { ContributionScope } from '@sourcegraph/shared/src/api/extension/api/context/context'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import classNames from 'classnames'
+import type * as H from 'history'
 
-import { DiffOrBlobInfo, FileInfoWithContent } from '../code-hosts/shared/codeHost'
+import { ContributableMenu } from '@sourcegraph/client-api'
+import { type ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { isHTTPAuthError } from '@sourcegraph/http-client'
+import { type ActionNavItemsClassProps, ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
+import type { ContributionScope } from '@sourcegraph/shared/src/api/extension/api/context/context'
+import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
+import type { DiffOrBlobInfo, FileInfoWithContent } from '../code-hosts/shared/codeHost'
 import { SignInButton } from '../code-hosts/shared/SignInButton'
 import { defaultRevisionToCommitID } from '../code-hosts/shared/util/fileInfo'
 
-import styles from './CodeViewToolbar.module.scss'
 import { OpenDiffOnSourcegraph } from './OpenDiffOnSourcegraph'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
+
+import styles from './CodeViewToolbar.module.scss'
 
 export interface ButtonProps {
     listItemClass?: string
@@ -37,7 +39,7 @@ export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
 }
 
 export interface CodeViewToolbarProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'requestGraphQL'>,
+    extends PlatformContextProps<'settings' | 'requestGraphQL'>,
         ExtensionsControllerProps,
         TelemetryProps,
         CodeViewToolbarClassProps {
@@ -57,9 +59,9 @@ export interface CodeViewToolbarProps
     hideActions?: boolean
 }
 
-export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = props => (
+export const CodeViewToolbar: React.FunctionComponent<React.PropsWithChildren<CodeViewToolbarProps>> = props => (
     <ul className={classNames(styles.codeViewToolbar, props.className)} data-testid="code-view-toolbar">
-        {!props.hideActions && (
+        {!props.hideActions && props.extensionsController !== null && (
             <ActionsNavItems
                 {...props}
                 listItemClass={classNames(styles.item, props.buttonProps?.listItemClass ?? props.listItemClass)}

@@ -1,26 +1,16 @@
-import { LineOrPositionOrRange, lprToRange, toPositionHashComponent } from '@sourcegraph/common'
-import { Position, Range } from '@sourcegraph/extension-api-types'
+import { type LineOrPositionOrRange, lprToRange, toPositionHashComponent } from '@sourcegraph/common'
+import type { Position, Range } from '@sourcegraph/extension-api-types'
 import {
     encodeRepoRevision,
-    ParsedRepoURI,
+    type ParsedRepoRevision,
+    type ParsedRepoURI,
     parseQueryAndHash,
-    RepoDocumentation,
-    RepoFile,
+    parseRepoRevision,
+    type RepoFile,
 } from '@sourcegraph/shared/src/util/url'
 
 export function toTreeURL(target: RepoFile): string {
     return `/${encodeRepoRevision(target)}/-/tree/${target.filePath}`
-}
-
-export function toDocumentationURL(target: RepoDocumentation): string {
-    return `/${encodeRepoRevision(target)}/-/docs${target.pathID}`
-}
-
-export function toDocumentationSingleSymbolURL(target: RepoDocumentation): string {
-    const hash = target.pathID.indexOf('#')
-    const path = hash === -1 ? target.pathID : target.pathID.slice(0, hash)
-    const qualifier = hash === -1 ? '' : target.pathID.slice(hash + '#'.length)
-    return `/${encodeRepoRevision(target)}/-/docs${path}?${qualifier}`
 }
 
 /**
@@ -101,6 +91,8 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRe
     const treeSeparator = pathname.indexOf('/-/tree/')
     const blobSeparator = pathname.indexOf('/-/blob/')
     const comparisonSeparator = pathname.indexOf('/-/compare/')
+    const commitsSeparator = pathname.indexOf('/-/commits/')
+    const changelistsSeparator = pathname.indexOf('/-/changelists/')
     if (treeSeparator !== -1) {
         filePath = decodeURIComponent(pathname.slice(treeSeparator + '/-/tree/'.length))
     }
@@ -109,6 +101,12 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRe
     }
     if (comparisonSeparator !== -1) {
         commitRange = pathname.slice(comparisonSeparator + '/-/compare/'.length)
+    }
+    if (commitsSeparator !== -1) {
+        filePath = decodeURIComponent(pathname.slice(commitsSeparator + '/-/commits/'.length))
+    }
+    if (changelistsSeparator !== -1) {
+        filePath = decodeURIComponent(pathname.slice(changelistsSeparator + '/-/changelists/'.length))
     }
     let position: Position | undefined
     let range: Range | undefined
@@ -130,27 +128,4 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRe
         }
     }
     return { repoName, revision, rawRevision, commitID, filePath, commitRange, position, range }
-}
-
-/** The results of parsing a repo-revision string like "my/repo@my/revision". */
-export interface ParsedRepoRevision {
-    repoName: string
-
-    /** The URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
-    revision?: string
-
-    /** The raw revision (e.g., "my%23branch" in "my/repo@my%23branch"). */
-    rawRevision?: string
-}
-
-/**
- * Parses a repo-revision string like "my/repo@my/revision" to the repo and revision components.
- */
-export function parseRepoRevision(repoRevision: string): ParsedRepoRevision {
-    const [repository, revision] = repoRevision.split('@', 2) as [string, string | undefined]
-    return {
-        repoName: decodeURIComponent(repository),
-        revision: revision && decodeURIComponent(revision),
-        rawRevision: revision,
-    }
 }

@@ -1,0 +1,32 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "fakedb",
+    srcs = [
+        "fakedb.go",
+        "teams.go",
+        "users.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/fakedb",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/database",
+        "//internal/database/dbmocks",
+        "//internal/types",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "fakedb_test",
+    srcs = ["teams_test.go"],
+    deps = [
+        ":fakedb",
+        "//internal/database",
+        "//internal/types",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//require",
+    ],
+)

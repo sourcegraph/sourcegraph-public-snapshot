@@ -16,7 +16,7 @@ import (
 //
 // http://developers.hubspot.com/docs/methods/contacts/create_or_update
 func (c *Client) CreateOrUpdateContact(email string, params *ContactProperties) (*ContactResponse, error) {
-	if c.hapiKey == "" {
+	if c.accessToken == "" {
 		return nil, errors.New("HubSpot API key must be provided.")
 	}
 	var resp ContactResponse
@@ -34,27 +34,24 @@ func (c *Client) CreateOrUpdateContact(email string, params *ContactProperties) 
 }
 
 func (c *Client) baseContactURL(email string) *url.URL {
-	q := url.Values{}
-	q.Set("hapikey", c.hapiKey)
-
 	return &url.URL{
-		Scheme:   "https",
-		Host:     "api.hubapi.com",
-		Path:     "/contacts/v1/contact/createOrUpdate/email/" + email + "/",
-		RawQuery: q.Encode(),
+		Scheme: "https",
+		Host:   "api.hubapi.com",
+		Path:   "/contacts/v1/contact/createOrUpdate/email/" + email + "/",
 	}
 }
 
 // ContactProperties represent HubSpot user properties
 type ContactProperties struct {
-	UserID          string `json:"user_id"`
-	IsServerAdmin   bool   `json:"is_server_admin"`
-	LatestPing      int64  `json:"latest_ping"`
-	AnonymousUserID string `json:"anonymous_user_id"`
-	FirstSourceURL  string `json:"first_source_url"`
-	LastSourceURL   string `json:"last_source_url"`
-	DatabaseID      int32  `json:"database_id"`
-	HasAgreedToToS  bool   `json:"has_agreed_to_tos_and_pp"`
+	UserID                       string `json:"user_id"`
+	IsServerAdmin                bool   `json:"is_server_admin"`
+	LatestPing                   int64  `json:"latest_ping"`
+	AnonymousUserID              string `json:"anonymous_user_id"`
+	FirstSourceURL               string `json:"first_source_url"`
+	LastSourceURL                string `json:"last_source_url"`
+	DatabaseID                   int32  `json:"database_id"`
+	HasAgreedToToS               bool   `json:"has_agreed_to_tos_and_pp"`
+	VSCodyInstalledEmailsEnabled bool   `json:"vs_cody_installed_emails_enabled"`
 }
 
 // ContactResponse represents HubSpot user properties returned
@@ -94,7 +91,7 @@ type apiProperty struct {
 	Value    string `json:"value"`
 }
 
-func (h *apiProperties) set(property string, value interface{}) {
+func (h *apiProperties) set(property string, value any) {
 	if h.Properties == nil {
 		h.Properties = make([]*apiProperty, 0)
 	}

@@ -1,0 +1,2 @@
+name: Drop unused indexes for Batch Changes rand_id columns
+parents: [1677166643, 1678214530]

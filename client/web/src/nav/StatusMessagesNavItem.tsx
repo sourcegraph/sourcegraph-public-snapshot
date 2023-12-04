@@ -1,504 +1,411 @@
-import classNames from 'classnames'
-import * as H from 'history'
-import { isEqual, upperFirst } from 'lodash'
-import AlertIcon from 'mdi-react/AlertIcon'
-import CheckboxCircleIcon from 'mdi-react/CheckboxMarkedCircleIcon'
-import CloudOffOutlineIcon from 'mdi-react/CloudOffOutlineIcon'
-import InformationCircleIcon from 'mdi-react/InformationCircleIcon'
-import SyncIcon from 'mdi-react/SyncIcon'
-import React from 'react'
-import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { Observable, Subscription, of } from 'rxjs'
-import { catchError, map, repeatWhen, delay, distinctUntilChanged, switchMap } from 'rxjs/operators'
+import React, { useState, useMemo } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike, repeatUntil } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import {
+    mdiInformation,
+    mdiAlert,
+    mdiSync,
+    mdiCheckboxMarkedCircle,
+    mdiDatabaseSyncOutline,
+    mdiInformationOutline,
+} from '@mdi/js'
+import classNames from 'classnames'
+
+import { useQuery } from '@sourcegraph/http-client'
 import {
     CloudAlertIconRefresh,
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
+    CloudInfoIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
-import { Link, Button } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Link,
+    Popover,
+    PopoverContent,
+    PopoverTail,
+    PopoverTrigger,
+    Position,
+    Icon,
+    H4,
+    Text,
+    Tooltip,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../backend/graphql'
-import { CircleDashedIcon } from '../components/CircleDashedIcon'
-import { queryExternalServices } from '../components/externalServices/backend'
-import { StatusMessagesResult } from '../graphql-operations'
-import { eventLogger } from '../tracking/eventLogger'
+import type { StatusAndRepoCountResult } from '../graphql-operations'
+
+import { STATUS_AND_REPO_COUNT } from './StatusMessagesNavItemQueries'
 
 import styles from './StatusMessagesNavItem.module.scss'
 
-function fetchAllStatusMessages(): Observable<StatusMessagesResult['statusMessages']> {
-    return requestGraphQL<StatusMessagesResult>(
-        gql`
-            query StatusMessages {
-                statusMessages {
-                    ...StatusMessageFields
-                }
-            }
-
-            fragment StatusMessageFields on StatusMessage {
-                type: __typename
-
-                ... on CloningProgress {
-                    message
-                }
-
-                ... on IndexingProgress {
-                    message
-                }
-
-                ... on SyncError {
-                    message
-                }
-
-                ... on IndexingError {
-                    message
-                }
-
-                ... on ExternalServiceSyncError {
-                    message
-                    externalService {
-                        id
-                        displayName
-                    }
-                }
-            }
-        `
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.statusMessages)
-    )
-}
-
-type EntryType = 'not-active' | 'progress' | 'warning' | 'success' | 'error'
+type EntryType = 'progress' | 'warning' | 'success' | 'error' | 'indexing' | 'info'
 
 interface StatusMessageEntryProps {
+    title: string
     message: string
     linkTo: string
     linkText: string
     entryType: EntryType
     linkOnClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
     messageHint?: string
-    progressHint?: string
-    title?: string
 }
 
 function entryIcon(entryType: EntryType): JSX.Element {
+    const sharedProps = { height: 14, width: 14, inline: false }
+
     switch (entryType) {
-        case 'error':
-            return <InformationCircleIcon size={14} className={classNames('text-danger', styles.icon)} />
-        case 'warning':
-            return <AlertIcon size={14} className={classNames('text-warning', styles.icon)} />
-        case 'success':
-            return <CheckboxCircleIcon size={14} className={classNames('text-success', styles.icon)} />
-        case 'progress':
-            return <SyncIcon size={14} className={classNames('text-primary', styles.icon)} />
-        case 'not-active':
-            return <CircleDashedIcon size={16} className={classNames(styles.icon, styles.iconOff)} />
+        case 'error': {
+            return (
+                <Icon
+                    {...sharedProps}
+                    className={classNames('text-danger', styles.icon)}
+                    svgPath={mdiInformation}
+                    aria-label="Error"
+                />
+            )
+        }
+        case 'warning': {
+            return (
+                <Icon
+                    {...sharedProps}
+                    className={classNames('text-warning', styles.icon)}
+                    svgPath={mdiAlert}
+                    aria-label="Warning"
+                />
+            )
+        }
+        case 'success': {
+            return (
+                <Icon
+                    {...sharedProps}
+                    className={classNames('text-success', styles.icon)}
+                    svgPath={mdiCheckboxMarkedCircle}
+                    aria-label="Success"
+                />
+            )
+        }
+        case 'progress': {
+            return (
+                <Icon
+                    {...sharedProps}
+                    className={classNames('text-primary', styles.icon)}
+                    svgPath={mdiSync}
+                    aria-label="In progress"
+                />
+            )
+        }
+        case 'indexing': {
+            return (
+                <Icon
+                    {...sharedProps}
+                    className={classNames('text-primary', styles.icon)}
+                    svgPath={mdiDatabaseSyncOutline}
+                    aria-label="Indexing"
+                />
+            )
+        }
+        case 'info': {
+            return (
+                <Icon
+                    {...sharedProps}
+                    className={classNames('text-primary', styles.icon)}
+                    svgPath={mdiInformationOutline}
+                    aria-label="Information"
+                />
+            )
+        }
     }
 }
 
 const getMessageColor = (entryType: EntryType): string => {
     switch (entryType) {
-        case 'error':
+        case 'error': {
             return styles.messageError
-        case 'warning':
+        }
+        case 'warning': {
             return styles.messageWarning
-        default:
+        }
+        default: {
             return ''
+        }
     }
 }
 
 const getBorderClassname = (entryType: EntryType): string => {
     switch (entryType) {
-        case 'error':
+        case 'error': {
             return styles.entryBorderError
-        case 'warning':
+        }
+        case 'warning': {
             return styles.entryBorderWarning
-        case 'success':
+        }
+        case 'success': {
             return styles.entryBorderSuccess
-        case 'progress':
+        }
+        case 'progress': {
             return styles.entryBorderProgress
-        default:
+        }
+        case 'indexing': {
+            return styles.entryBorderProgress
+        }
+        case 'info': {
+            return styles.entryBorderInfo
+        }
+        default: {
             return ''
+        }
     }
 }
 
-const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => {
-    const onLinkClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>): void => {
-        const payload = { notificationType: props.entryType }
-        eventLogger.log('UserNotificationsLinkClicked', payload, payload)
-        props.linkOnClick(event)
-    }
-
-    return (
-        <div key={props.message} className={styles.entry}>
-            <h4 className="d-flex align-items-center mb-0">
-                {entryIcon(props.entryType)}
-                {props.title ? props.title : 'Your repositories'}
-            </h4>
-            {props.entryType === 'not-active' ? (
-                <div className={classNames('status-messages-nav-item__entry-card border-0', styles.cardInactive)}>
-                    <p className={classNames('text-muted', styles.message)}>{props.message}</p>
-                    <Link className="text-primary" to={props.linkTo} onClick={onLinkClick}>
-                        {props.linkText}
-                    </Link>
-                </div>
-            ) : (
-                <div
-                    className={classNames(
-                        'status-messages-nav-item__entry-card',
-                        styles.cardActive,
-                        getBorderClassname(props.entryType)
-                    )}
-                >
-                    <p className={classNames(styles.message, getMessageColor(props.entryType))}>{props.message}</p>
-                    {props.messageHint && (
-                        <>
-                            <small className="text-muted d-inline-block mb-1">{props.messageHint}</small>
-                            <br />
-                        </>
-                    )}
-                    <Link className="text-primary" to={props.linkTo} onClick={onLinkClick}>
-                        {props.linkText}
-                    </Link>
-                </div>
+const StatusMessagesNavItemEntry: React.FunctionComponent<React.PropsWithChildren<StatusMessageEntryProps>> = props => (
+    <div key={props.message} className={styles.entry}>
+        <H4 className="d-flex align-items-center mb-0">
+            {entryIcon(props.entryType)}
+            {props.title ? props.title : 'Your repositories'}
+        </H4>
+        <div
+            className={classNames(
+                'status-messages-nav-item__entry-card',
+                styles.cardActive,
+                getBorderClassname(props.entryType)
             )}
-            {props.progressHint && <small className="text-muted">{props.progressHint}</small>}
+        >
+            <Text className={classNames(styles.message, getMessageColor(props.entryType))}>{props.message}</Text>
+            {props.messageHint && (
+                <>
+                    <small className="text-muted d-inline-block mb-1">{props.messageHint}</small>
+                    <br />
+                </>
+            )}
+            <Link className="text-primary" to={props.linkTo} onClick={props.linkOnClick}>
+                {props.linkText}
+            </Link>
         </div>
-    )
-}
+    </div>
+)
 
-interface User {
-    id: string
-    username: string
-    isSiteAdmin: boolean
-}
+const STATUS_MESSAGES_POLL_INTERVAL = 10000
 
 interface Props {
-    user: User
-    history: H.History
-    fetchMessages?: () => Observable<StatusMessagesResult['statusMessages']>
+    disablePolling?: boolean
+    isCodyApp?: boolean
 }
-
-enum ExternalServiceNoActivityReasons {
-    NoCodehosts = 'NoCodehosts',
-    NoRepos = 'NoRepos',
-}
-
-type ExternalServiceNoActivityReason = keyof typeof ExternalServiceNoActivityReasons
-type Message = StatusMessagesResult['statusMessages'] | ExternalServiceNoActivityReason
-type MessageOrError = Message | ErrorLike
-
-const isNoActivityReason = (status: MessageOrError): status is ExternalServiceNoActivityReason =>
-    typeof status === 'string'
-
-interface State {
-    messagesOrError: MessageOrError
-    isOpen: boolean
-}
-
-const REFRESH_INTERVAL_MS = 60000
-
 /**
  * Displays a status icon in the navbar reflecting the completion of backend
  * tasks such as repository cloning, and exposes a dropdown menu containing
  * more information on these tasks.
  */
-export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
-    private subscriptions = new Subscription()
+export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+    const [isOpen, setIsOpen] = useState(false)
+    const toggleIsOpen = (): void => setIsOpen(old => !old)
 
-    public state: State = { isOpen: false, messagesOrError: [] }
+    const { data, error } = useQuery<StatusAndRepoCountResult>(STATUS_AND_REPO_COUNT, {
+        fetchPolicy: 'no-cache',
+        pollInterval: props.disablePolling !== true ? STATUS_MESSAGES_POLL_INTERVAL : undefined,
+    })
 
-    private toggleIsOpen = (): void => {
-        this.setState(previousState => ({ isOpen: !previousState.isOpen }))
-    }
-
-    public componentDidMount(): void {
-        let first = true
-        this.subscriptions.add(
-            queryExternalServices({
-                namespace: this.props.user.id,
-                first: null,
-                after: null,
-            })
-                .pipe(
-                    switchMap(({ nodes: services }) => {
-                        if (!this.props.user.isSiteAdmin) {
-                            if (services.length === 0) {
-                                return of(ExternalServiceNoActivityReasons.NoCodehosts)
-                            }
-
-                            if (
-                                !services.some(service => service.repoCount !== 0) &&
-                                services.every(service => service.lastSyncError === null && service.warning === null)
-                            ) {
-                                return of(ExternalServiceNoActivityReasons.NoRepos)
-                            }
-                        }
-
-                        return (this.props.fetchMessages ?? fetchAllStatusMessages)()
-                    }),
-                    catchError(error => [asError(error) as ErrorLike]),
-                    // Poll on REFRESH_INTERVAL_MS, or REFRESH_INTERVAL_AFTER_ERROR_MS if there is an error.
-                    repeatUntil(messagesOrError => isErrorLike(messagesOrError), { delay: REFRESH_INTERVAL_MS }),
-                    repeatWhen(completions => completions.pipe(delay(REFRESH_INTERVAL_MS))),
-                    distinctUntilChanged((a, b) => isEqual(a, b))
-                )
-                .subscribe(messagesOrError => {
-                    this.setState({ messagesOrError })
-
-                    if (first) {
-                        this.trackUserNotificationsEvent('loaded')
-                        first = false
-                    }
-                })
-        )
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    private renderMessage(noActivityOrStatus: Message, isSiteAdmin: boolean): JSX.Element | JSX.Element[] {
-        const userSettings = `/users/${this.props.user.username}/settings`
-        const makeGetCodeHostLink = (isSiteAdmin: boolean) => (id: string): string =>
-            isSiteAdmin ? `/site-admin/external-services/${id}` : `${userSettings}/code-hosts`
-
-        const roleLinks = {
-            admin: {
-                viewRepositories: '/site-admin/repositories',
-                manageRepositories: '/site-admin/external-services',
-                manageCodeHosts: '/site-admin/external-services',
-                getCodeHostLink: makeGetCodeHostLink(true),
-            },
-            nonAdmin: {
-                viewRepositories: `${userSettings}/repositories`,
-                manageRepositories: `${userSettings}/repositories/manage`,
-                manageCodeHosts: `${userSettings}/code-hosts`,
-                getCodeHostLink: makeGetCodeHostLink(false),
-            },
+    const icon: JSX.Element | null = useMemo(() => {
+        if (!data) {
+            return null
         }
 
-        const links = isSiteAdmin ? roleLinks.admin : roleLinks.nonAdmin
+        let codeHostMessage
+        let iconProps
+        if (
+            data.statusMessages?.some(
+                ({ __typename: type }) => type === 'ExternalServiceSyncError' || type === 'SyncError'
+            )
+        ) {
+            codeHostMessage = 'Syncing repositories failed'
+            iconProps = { as: CloudAlertIconRefresh }
+        } else if (data.statusMessages?.some(({ __typename: type }) => type === 'GitUpdatesDisabled')) {
+            codeHostMessage = 'Syncing repositories disabled'
+            iconProps = { as: CloudAlertIconRefresh }
+        } else if (data.statusMessages?.some(({ __typename: type }) => type === 'CloningProgress')) {
+            codeHostMessage = 'Cloning repositories...'
+            iconProps = { as: CloudSyncIconRefresh }
+        } else if (data.statusMessages?.some(({ __typename: type }) => type === 'IndexingProgress')) {
+            codeHostMessage = 'Indexing repositories...'
+            iconProps = { as: CloudSyncIconRefresh }
+        } else if (data.statusMessages?.some(({ __typename: type }) => type === 'NoRepositoriesDetected')) {
+            codeHostMessage = 'No repositories'
+            iconProps = { as: CloudInfoIconRefresh }
+        } else {
+            codeHostMessage = 'Repositories up to date'
+            iconProps = { as: CloudCheckIconRefresh }
+        }
+
+        return (
+            <Tooltip content={isOpen ? undefined : codeHostMessage}>
+                <Icon
+                    {...iconProps}
+                    size="md"
+                    {...(isOpen ? { 'aria-hidden': true } : { 'aria-label': codeHostMessage })}
+                />
+            </Tooltip>
+        )
+    }, [data, isOpen])
+
+    const messages: JSX.Element | null = useMemo(() => {
+        if (!data) {
+            return null
+        }
 
         // no status messages
-        if (Array.isArray(noActivityOrStatus) && noActivityOrStatus.length === 0) {
+        if (data.statusMessages.length === 0) {
             return (
                 <StatusMessagesNavItemEntry
                     key="up-to-date"
-                    message="Repositories available for search"
-                    linkTo={links.viewRepositories}
-                    linkText="Manage repositories"
-                    linkOnClick={this.toggleIsOpen}
+                    title="Repositories up to date"
+                    message="Repositories synced from code host and available for search."
+                    linkTo="/site-admin/repositories"
+                    linkText="View repositories"
+                    linkOnClick={toggleIsOpen}
                     entryType="success"
                 />
             )
         }
 
-        // no code hosts or no repos
-        if (isNoActivityReason(noActivityOrStatus)) {
-            if (noActivityOrStatus === ExternalServiceNoActivityReasons.NoRepos) {
-                return (
-                    <StatusMessagesNavItemEntry
-                        key={noActivityOrStatus}
-                        message="Add repositories to start searching your code on Sourcegraph."
-                        linkTo={links.manageRepositories}
-                        linkText="Add repositories"
-                        linkOnClick={this.toggleIsOpen}
-                        entryType="not-active"
-                    />
-                )
-            }
-            return (
-                <StatusMessagesNavItemEntry
-                    key={noActivityOrStatus}
-                    message="Connect with a code host to start adding your code to Sourcegraph."
-                    linkTo={links.manageCodeHosts}
-                    linkText="Connect with code host"
-                    linkOnClick={this.toggleIsOpen}
-                    entryType="not-active"
-                />
-            )
-        }
-
-        const cloningProgress = noActivityOrStatus.find(message_ => message_.type === 'CloningProgress')
-        const indexing = noActivityOrStatus.find(message_ => message_.type === 'IndexingProgress')
-
-        if (cloningProgress && indexing) {
-            noActivityOrStatus = noActivityOrStatus.filter(message_ => message_.type !== 'IndexingProgress')
-        }
-
-        return noActivityOrStatus.map(status => {
-            switch (status.type) {
-                case 'CloningProgress':
-                    return (
-                        <StatusMessagesNavItemEntry
-                            key={status.message}
-                            message={status.message}
-                            messageHint="Your repositories may not be up-to-date."
-                            linkTo={links.viewRepositories}
-                            linkText="View status"
-                            linkOnClick={this.toggleIsOpen}
-                            entryType="progress"
-                            progressHint={indexing && indexing.type === 'IndexingProgress' ? indexing.message : ''}
-                        />
-                    )
-                case 'IndexingProgress':
-                    return (
-                        <StatusMessagesNavItemEntry
-                            key={status.message}
-                            message="Repositories available for search"
-                            linkTo={links.viewRepositories}
-                            linkText="Manage repositories"
-                            linkOnClick={this.toggleIsOpen}
-                            entryType="success"
-                            progressHint={status.message}
-                        />
-                    )
-                case 'ExternalServiceSyncError':
-                    return (
-                        <StatusMessagesNavItemEntry
-                            key={status.externalService.id}
-                            message={`Can't connect to ${status.externalService.displayName}`}
-                            messageHint="Verify the code host configuration."
-                            linkTo={links.getCodeHostLink(status.externalService.id)}
-                            linkText="Manage code hosts"
-                            linkOnClick={this.toggleIsOpen}
-                            entryType="error"
-                        />
-                    )
-                case 'SyncError':
-                    return (
-                        <StatusMessagesNavItemEntry
-                            key={status.message}
-                            message={status.message}
-                            messageHint="Your repositories may not be up-to-date."
-                            linkTo={links.viewRepositories}
-                            linkText="Manage repositories"
-                            linkOnClick={this.toggleIsOpen}
-                            entryType="error"
-                        />
-                    )
-                case 'IndexingError':
-                    return (
-                        <StatusMessagesNavItemEntry
-                            key={status.message}
-                            message={status.message}
-                            messageHint="Your repositories are up-to-date, but search speed may be slower than usual."
-                            linkTo={links.viewRepositories}
-                            linkText="Troubleshoot"
-                            linkOnClick={this.toggleIsOpen}
-                            entryType="warning"
-                        />
-                    )
-            }
-        })
-    }
-
-    private renderIcon(): JSX.Element | null {
-        if (isErrorLike(this.state.messagesOrError)) {
-            return (
-                <CloudAlertIconRefresh
-                    className="icon-inline-md"
-                    data-tooltip="Sorry, we couldn’t fetch notifications!"
-                />
-            )
-        }
-
-        if (isNoActivityReason(this.state.messagesOrError)) {
-            return (
-                <CloudOffOutlineIcon
-                    className="icon-inline-md"
-                    data-tooltip={
-                        this.state.isOpen
-                            ? undefined
-                            : this.state.messagesOrError === ExternalServiceNoActivityReasons.NoCodehosts
-                            ? 'No code host connections'
-                            : 'No repositories'
-                    }
-                />
-            )
-        }
-
-        if (
-            this.state.messagesOrError.some(({ type }) => type === 'ExternalServiceSyncError' || type === 'SyncError')
-        ) {
-            return (
-                <CloudAlertIconRefresh
-                    className="icon-inline-md"
-                    data-tooltip={this.state.isOpen ? undefined : 'Syncing repositories failed!'}
-                />
-            )
-        }
-        if (this.state.messagesOrError.some(({ type }) => type === 'CloningProgress')) {
-            return (
-                <CloudSyncIconRefresh
-                    className="icon-inline-md"
-                    data-tooltip={this.state.isOpen ? undefined : 'Cloning repositories...'}
-                />
-            )
-        }
         return (
-            <CloudCheckIconRefresh
-                className="icon-inline-md"
-                data-tooltip={this.state.isOpen ? undefined : 'Repositories up-to-date'}
-            />
-        )
-    }
-
-    private getOpenedNotificationsPayload(messagesOrError: MessageOrError): { status: string[] } {
-        const messageTypes =
-            typeof messagesOrError === 'string'
-                ? [messagesOrError]
-                : isErrorLike(messagesOrError)
-                ? ['error']
-                : messagesOrError.map(message => message.type)
-
-        return { status: messageTypes.length === 0 ? ['success'] : messageTypes }
-    }
-
-    private trackUserNotificationsEvent(eventName: string): void {
-        if (window.context.sourcegraphDotComMode && this.state.messagesOrError) {
-            const payload = this.getOpenedNotificationsPayload(this.state.messagesOrError)
-            eventLogger.log(`UserNotifications${upperFirst(eventName)}`, payload, payload)
-        }
-    }
-
-    public render(): JSX.Element | null {
-        const { isOpen } = this.state
-
-        if (isOpen) {
-            this.trackUserNotificationsEvent('opened')
-        }
-
-        return (
-            <ButtonDropdown
-                isOpen={this.state.isOpen}
-                toggle={this.toggleIsOpen}
-                className="nav-link py-0 px-0 percy-hide chromatic-ignore"
-            >
-                <Button caret={false} nav={true} variant="link" as={DropdownToggle}>
-                    {this.renderIcon()}
-                </Button>
-
-                <DropdownMenu right={true} className={classNames('p-0', styles.dropdownMenu)}>
-                    <div className={styles.dropdownMenuContent}>
-                        <small className={classNames('d-inline-block text-muted', styles.sync)}>Code sync status</small>
-                        {isErrorLike(this.state.messagesOrError) ? (
-                            <ErrorAlert
-                                className={styles.entry}
-                                prefix="Failed to load status messages"
-                                error={this.state.messagesOrError}
+            <>
+                {data.statusMessages.map(status => {
+                    if (status.__typename === 'GitUpdatesDisabled') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key={status.message}
+                                message={status.message}
+                                title="Code syncing disabled"
+                                messageHint="Remove disableGitAutoUpdates or set it to false in the site configuration"
+                                linkTo="/site-admin/configuration"
+                                linkText="View site configuration"
+                                linkOnClick={toggleIsOpen}
+                                entryType="warning"
                             />
-                        ) : (
-                            this.renderMessage(this.state.messagesOrError, this.props.user.isSiteAdmin)
-                        )}
-                    </div>
-                </DropdownMenu>
-            </ButtonDropdown>
+                        )
+                    }
+                    if (status.__typename === 'NoRepositoriesDetected') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key="no-repositories"
+                                title="No repositories"
+                                message="Connect a code host to connect repositories to Sourcegraph."
+                                linkTo={props.isCodyApp ? '/user/app-settings/local-repositories' : '/setup'}
+                                linkText="Setup code hosts"
+                                linkOnClick={toggleIsOpen}
+                                entryType="info"
+                            />
+                        )
+                    }
+                    if (status.__typename === 'CloningProgress') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key={status.message}
+                                message={status.message}
+                                title="Cloning repositories"
+                                messageHint="Not all repositories available for search yet."
+                                linkTo="/site-admin/repositories"
+                                linkText="View repositories"
+                                linkOnClick={toggleIsOpen}
+                                entryType="progress"
+                            />
+                        )
+                    }
+                    if (status.__typename === 'IndexingProgress') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key="indexing-progress"
+                                message={`Indexing repositories. ${status.indexed} out of ${
+                                    status.indexed + status.notIndexed
+                                } indexed.`}
+                                title="Indexing repositories"
+                                messageHint="Indexing repositories speeds up search."
+                                linkTo="/site-admin/repositories"
+                                linkText="View repositories"
+                                linkOnClick={toggleIsOpen}
+                                entryType="indexing"
+                            />
+                        )
+                    }
+                    if (status.__typename === 'ExternalServiceSyncError') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key={status.externalService.id}
+                                title="Code host connection"
+                                message={`Failed to connect to "${status.externalService.displayName}".`}
+                                messageHint="Repositories synced to Sourcegraph may not be up to date."
+                                linkTo={`/site-admin/external-services/${status.externalService.id}`}
+                                linkText="View code host configuration"
+                                linkOnClick={toggleIsOpen}
+                                entryType="error"
+                            />
+                        )
+                    }
+                    if (status.__typename === 'SyncError') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key={status.message}
+                                message={status.message}
+                                title="Syncing repositories from code hosts"
+                                messageHint="Repository contents may not be up to date."
+                                linkTo="/site-admin/repositories?status=failed-fetch"
+                                linkText="View affected repositories"
+                                linkOnClick={toggleIsOpen}
+                                entryType="warning"
+                            />
+                        )
+                    }
+                    if (status.__typename === 'GitserverDiskThresholdReached') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key="disk-threshold-reached"
+                                title="Gitserver disk threshold reached"
+                                message={status.message}
+                                messageHint="Search and cloning may be impacted until disk usage is reduced."
+                                linkTo="/site-admin/gitservers"
+                                linkText="Manage Gitservers"
+                                linkOnClick={toggleIsOpen}
+                                entryType="warning"
+                            />
+                        )
+                    }
+                    return null
+                })}
+            </>
         )
-    }
+    }, [data, props.isCodyApp])
+
+    return (
+        <Popover isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>
+            <PopoverTrigger
+                className="nav-link py-0 px-0 percy-hide chromatic-ignore"
+                as={Button}
+                variant="link"
+                aria-label={isOpen ? 'Hide status messages' : 'Show status messages'}
+            >
+                {error ? (
+                    <Tooltip content="Sorry, we couldn’t fetch notifications!">
+                        <Icon
+                            aria-label="Sorry, we couldn’t fetch notifications!"
+                            as={CloudAlertIconRefresh}
+                            size="md"
+                        />
+                    </Tooltip>
+                ) : (
+                    icon
+                )}
+            </PopoverTrigger>
+
+            <PopoverContent position={Position.bottom} className={classNames('p-0', styles.dropdownMenu)}>
+                <div className={styles.dropdownMenuContent}>
+                    <small className={classNames('d-inline-block text-muted', styles.sync)}>Status</small>
+                    {error && (
+                        <ErrorAlert className={styles.entry} prefix="Failed to load status messages" error={error} />
+                    )}
+                    {messages}
+                </div>
+            </PopoverContent>
+
+            <PopoverTail />
+        </Popover>
+    )
 }

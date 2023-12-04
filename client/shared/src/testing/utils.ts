@@ -1,5 +1,4 @@
-import pRetry from 'p-retry'
-import { OperationOptions } from 'retry'
+import pRetry, { type Options } from 'p-retry'
 
 /**
  * Retry function with more sensible defaults for e2e and integration test assertions
@@ -7,7 +6,7 @@ import { OperationOptions } from 'retry'
  * @param function_ The async assertion function to retry
  * @param options Option overrides passed to pRetry
  */
-export const retry = <T>(function_: (attempt: number) => Promise<T>, options: OperationOptions = {}): Promise<T> =>
+export const retry = <T>(function_: (attempt: number) => Promise<T>, options: Options = {}): Promise<T> =>
     pRetry(function_, { factor: 1, ...options })
 
 /**

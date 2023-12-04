@@ -144,6 +144,6 @@ func (e *execer) RunWithFilter(errorFilter errorFilter, cmd *exec.Cmd) {
 }
 
 // Error returns the first error encountered.
-func (e execer) Error() error {
+func (e *execer) Error() error {
 	return e.err
 }

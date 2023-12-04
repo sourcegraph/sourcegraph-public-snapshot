@@ -1,0 +1,29 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gitserver",
+    srcs = [
+        "client.go",
+        "first_commit.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/insights/gitserver",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "gitserver_test",
+    timeout = "short",
+    srcs = ["first_commit_test.go"],
+    embed = [":gitserver"],
+    deps = [
+        "//lib/errors",
+        "@com_github_hexops_autogold_v2//:autogold",
+    ],
+)

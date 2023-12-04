@@ -1,27 +1,28 @@
-// import { applyEdits, parse } from '@sqs/jsonc-parser'
-// import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import delay from 'delay'
 import expect from 'expect'
+import { applyEdits, parse, modify } from 'jsonc-parser'
 import { describe, before, beforeEach, after, afterEach, test } from 'mocha'
 import { map } from 'rxjs/operators'
 
+import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-// import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
+import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { getUser, setTosAccepted } from './util/api'
-import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
-import {
-    ensureLoggedInOrCreateTestUser,
-    // getGlobalSettings
-} from './util/helpers'
+import { type GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
+import { ensureSignedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import { getTestTools } from './util/init'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import { TestResourceManager } from './util/TestResourceManager'
 
-describe('Core functionality regression test suite', () => {
+// TODO: Disabled because all of the tests in this suite are flaky:
+// - https://github.com/sourcegraph/sourcegraph/issues/29098
+// - https://github.com/sourcegraph/sourcegraph/issues/49161
+// - https://github.com/sourcegraph/sourcegraph/issues/23049
+describe.skip('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
     const config = getConfig(
         'sudoToken',
@@ -45,7 +46,7 @@ describe('Core functionality regression test suite', () => {
         resourceManager.add(
             'User',
             testUsername,
-            await ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+            await ensureSignedInOrCreateTestUser(driver, gqlClient, {
                 username: testUsername,
                 deleteIfExists: true,
                 ...config,
@@ -69,7 +70,7 @@ describe('Core functionality regression test suite', () => {
             await driver.close()
         }
         if (screenshots.screenshots.length > 0) {
-            console.log(screenshots.verificationInstructions())
+            logger.log(screenshots.verificationInstructions())
         }
     })
 
@@ -81,13 +82,12 @@ describe('Core functionality regression test suite', () => {
         await alwaysCleanupManager.destroyAll()
     })
 
-    // TODO: Disabled because it's flaky. https://github.com/sourcegraph/sourcegraph/issues/29098
-    test.skip('2.2.1 User settings are saved and applied', async () => {
+    test('2.2.1 User settings are saved and applied', async () => {
         const getSettings = async () => {
             await driver.page.waitForSelector('.test-settings-file .monaco-editor .view-lines')
             return driver.page.evaluate(() => {
                 const editor = document.querySelector('.test-settings-file .monaco-editor .view-lines') as HTMLElement
-                // eslint-disable-next-line unicorn/prefer-text-content
+
                 return editor ? editor.innerText : null
             })
         }
@@ -121,7 +121,7 @@ describe('Core functionality regression test suite', () => {
             selectMethod: 'keyboard',
             enterTextMethod: 'type',
         })
-        await driver.findElementWithText('Save changes', { action: 'click' })
+        await driver.findElementWithText('Save', { action: 'click' })
         await driver.page.waitForFunction(
             () => document.evaluate("//*[text() = ' Saving...']", document).iterateNext() === null
         )
@@ -164,7 +164,7 @@ describe('Core functionality regression test suite', () => {
         await driver.findElementWithText('Generate new token', { action: 'click', wait: { timeout: 5000 } })
         await driver.findElementWithText('New access token', { wait: { timeout: 1000 } })
         await driver.replaceText({
-            selector: '.test-create-access-token-description',
+            selector: '[data-testid=test-create-access-token-description]',
             newText: 'test-regression',
         })
         await driver.findElementWithText('Generate token', { action: 'click', wait: { timeout: 1000 } })
@@ -192,7 +192,7 @@ describe('Core functionality regression test suite', () => {
         })
         await delay(2000)
         const currentUsernameQuery = gql`
-            query {
+            query CurrentUsername {
                 currentUser {
                     username
                 }
@@ -214,49 +214,50 @@ describe('Core functionality regression test suite', () => {
         ).rejects.toThrowError('401 Unauthorized')
     })
 
-    // TODO: Disabled because it's flaky. https://github.com/sourcegraph/sourcegraph/issues/23049
-    // test('2.5 Quicklinks: add a quicklink, test that it appears on the front page and works.', async () => {
-    //     const quicklinkInfo = {
-    //         name: 'Quicklink',
-    //         url: config.sourcegraphBaseUrl + '/api/console',
-    //         description: 'This is a quicklink',
-    //     }
+    test('2.5 Quicklinks: add a quicklink, test that it appears on the front page and works.', async () => {
+        const quicklinkInfo = {
+            name: 'Quicklink',
+            url: config.sourcegraphBaseUrl + '/api/console',
+            description: 'This is a quicklink',
+        }
 
-    //     const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings(gqlClient)
-    //     const parsedOldContents = parse(oldContents)
-    //     if (parsedOldContents?.quicklinks) {
-    //         throw new Error('Global setting quicklinks already exists, aborting test')
-    //     }
-    //     const newContents = applyEdits(
-    //         oldContents,
-    //         setProperty(oldContents, ['quicklinks'], [quicklinkInfo], {
-    //             eol: '\n',
-    //             insertSpaces: true,
-    //             tabSize: 2,
-    //         })
-    //     )
-    //     await overwriteSettings(gqlClient, subjectID, settingsID, newContents)
-    //     alwaysCleanupManager.add('Global setting', 'quicklinks', async () => {
-    //         const { subjectID: currentSubjectID, settingsID: currentSettingsID } = await getGlobalSettings(gqlClient)
-    //         await overwriteSettings(gqlClient, currentSubjectID, currentSettingsID, oldContents)
-    //     })
+        const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings(gqlClient)
+        const parsedOldContents = parse(oldContents)
+        if (parsedOldContents?.quicklinks) {
+            throw new Error('Global setting quicklinks already exists, aborting test')
+        }
+        const newContents = applyEdits(
+            oldContents,
+            modify(oldContents, ['quicklinks'], [quicklinkInfo], {
+                formattingOptions: {
+                    eol: '\n',
+                    insertSpaces: true,
+                    tabSize: 2,
+                },
+            })
+        )
+        await overwriteSettings(gqlClient, subjectID, settingsID, newContents)
+        alwaysCleanupManager.add('Global setting', 'quicklinks', async () => {
+            const { subjectID: currentSubjectID, settingsID: currentSettingsID } = await getGlobalSettings(gqlClient)
+            await overwriteSettings(gqlClient, currentSubjectID, currentSettingsID, oldContents)
+        })
 
-    //     await driver.page.goto(config.sourcegraphBaseUrl + '/search')
-    //     await (
-    //         await driver.findElementWithText(quicklinkInfo.name, {
-    //             selector: 'a',
-    //             wait: { timeout: 1000 },
-    //         })
-    //     ).hover()
-    //     await driver.findElementWithText(quicklinkInfo.description, {
-    //         wait: { timeout: 1000 },
-    //     })
-    //     await driver.findElementWithText(quicklinkInfo.name, {
-    //         action: 'click',
-    //         selector: 'a',
-    //         wait: { timeout: 1000 },
-    //     })
-    //     await driver.page.waitForNavigation()
-    //     expect(driver.page.url()).toEqual(quicklinkInfo.url)
-    // })
+        await driver.page.goto(config.sourcegraphBaseUrl + '/search')
+        await (
+            await driver.findElementWithText(quicklinkInfo.name, {
+                selector: 'a',
+                wait: { timeout: 1000 },
+            })
+        ).hover()
+        await driver.findElementWithText(quicklinkInfo.description, {
+            wait: { timeout: 1000 },
+        })
+        await driver.findElementWithText(quicklinkInfo.name, {
+            action: 'click',
+            selector: 'a',
+            wait: { timeout: 1000 },
+        })
+        await driver.page.waitForNavigation()
+        expect(driver.page.url()).toEqual(quicklinkInfo.url)
+    })
 })

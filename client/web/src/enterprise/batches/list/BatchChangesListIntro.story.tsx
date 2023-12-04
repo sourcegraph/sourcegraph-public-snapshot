@@ -1,14 +1,10 @@
-import { radios } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
-import React from 'react'
+import type { Meta, Decorator, StoryFn, StoryObj } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 
-const { add } = storiesOf('web/batches/BatchChangesListIntro', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 enum LicensingState {
     Licensed = 'Licensed',
@@ -16,21 +12,59 @@ enum LicensingState {
     Loading = 'Loading',
 }
 
+const config: Meta = {
+    title: 'web/batches/list/BatchChangesListIntro',
+    decorators: [decorator],
+    argTypes: {
+        licensed: {
+            control: { type: 'radio', options: LicensingState },
+        },
+        state: {
+            table: {
+                disable: true,
+            },
+        },
+    },
+}
+
+export default config
+
 function stateToInput(state: LicensingState): boolean | undefined {
     switch (state) {
-        case LicensingState.Licensed:
+        case LicensingState.Licensed: {
             return true
-        case LicensingState.Unlicensed:
+        }
+        case LicensingState.Unlicensed: {
             return false
-        default:
+        }
+        default: {
             return undefined
+        }
     }
 }
 
-for (const state of Object.values(LicensingState)) {
-    add(state, () => (
-        <WebStory>
-            {() => <BatchChangesListIntro licensed={stateToInput(radios('licensed', LicensingState, state))} />}
-        </WebStory>
-    ))
+const Template: StoryFn = ({ state, ...args }) => (
+    <WebStory>
+        {() => <BatchChangesListIntro viewerIsAdmin={false} isLicensed={stateToInput(args.licensed)} />}
+    </WebStory>
+)
+
+type Story = StoryObj<typeof config>
+
+export const Licensed: Story = Template.bind({})
+Licensed.args = { state: LicensingState.Licensed }
+Licensed.argTypes = {
+    licensed: {},
+}
+
+export const Unlicensed: Story = Template.bind({})
+Unlicensed.args = { state: LicensingState.Unlicensed }
+Unlicensed.argTypes = {
+    licensed: {},
+}
+
+export const Loading: Story = Template.bind({})
+Loading.args = { state: LicensingState.Loading }
+Loading.argTypes = {
+    licensed: {},
 }

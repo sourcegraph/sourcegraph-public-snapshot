@@ -1,7 +1,25 @@
-import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { ProductStatusBadge, Button, ButtonGroup } from '@sourcegraph/wildcard'
+import { mdiChevronDown } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
+import classNames from 'classnames'
+
+import {
+    ProductStatusBadge,
+    Button,
+    ButtonGroup,
+    Menu,
+    MenuButton,
+    MenuList,
+    Position,
+    MenuItem,
+    MenuDivider,
+    H4,
+    Text,
+    Icon,
+} from '@sourcegraph/wildcard'
+
+import { useBatchChangesRolloutWindowConfig } from './backend'
 
 import styles from './DropdownButton.module.scss'
 
@@ -10,6 +28,8 @@ export interface Action {
     type: string
     /* The button label for the action. */
     buttonLabel: string
+    /* Whether or not the action is disabled. */
+    disabled?: boolean
     /* The title in the dropdown menu item. */
     dropdownTitle: string
     /* The description in the dropdown menu item. */
@@ -28,27 +48,18 @@ export interface Props {
     actions: Action[]
     defaultAction?: number
     disabled?: boolean
-    dropdownMenuPosition?: 'left' | 'right'
-    initiallyOpen?: boolean
     onLabel?: (label: string | undefined) => void
     placeholder?: string
-    tooltip?: string
 }
 
-export const DropdownButton: React.FunctionComponent<Props> = ({
+export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     actions,
     defaultAction,
     disabled,
-    dropdownMenuPosition,
-    initiallyOpen,
     onLabel,
     placeholder = 'Select action',
-    tooltip,
 }) => {
     const [isDisabled, setIsDisabled] = useState(!!disabled)
-
-    const [isOpen, setIsOpen] = useState(!!initiallyOpen)
-    const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
 
     const [selected, setSelected] = useState<number | undefined>(undefined)
     const selectedAction = useMemo(() => {
@@ -71,10 +82,8 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
             } else {
                 setSelected(undefined)
             }
-
-            setIsOpen(false)
         },
-        [actions, setIsOpen, setSelected]
+        [actions, setSelected]
     )
 
     const [renderedElement, setRenderedElement] = useState<JSX.Element | undefined>()
@@ -122,46 +131,34 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
     return (
         <>
             {renderedElement}
-            <ButtonGroup>
-                <Button
-                    className="text-nowrap"
-                    onClick={onTriggerAction}
-                    disabled={isDisabled || actions.length === 0 || selectedAction === undefined}
-                    data-tooltip={tooltip}
-                    variant="primary"
-                >
-                    {label}
-                </Button>
+            <Menu>
+                <ButtonGroup>
+                    <Button
+                        className="text-nowrap"
+                        onClick={onTriggerAction}
+                        disabled={isDisabled || actions.length === 0 || selectedAction === undefined}
+                        variant="primary"
+                    >
+                        {label}
+                    </Button>
+                    {actions.length > 1 && (
+                        <MenuButton variant="primary" className={styles.dropdownButton}>
+                            <Icon svgPath={mdiChevronDown} inline={false} aria-hidden={true} />
+                            <VisuallyHidden>Actions</VisuallyHidden>
+                        </MenuButton>
+                    )}
+                </ButtonGroup>
                 {actions.length > 1 && (
-                    <>
-                        <Button
-                            onClick={toggleIsOpen}
-                            disabled={isDisabled}
-                            className={classNames('dropdown-toggle', styles.dropdownButton)}
-                            variant="primary"
-                        />
-                        <div
-                            className={classNames(
-                                'dropdown-menu',
-                                isOpen && 'show',
-                                dropdownMenuPosition === 'left'
-                                    ? 'dropdown-menu-left'
-                                    : dropdownMenuPosition === 'right'
-                                    ? 'dropdown-menu-right'
-                                    : null,
-                                styles.dropdownButtonItem
-                            )}
-                        >
-                            {actions.map((action, index) => (
-                                <React.Fragment key={action.type}>
-                                    <DropdownItem action={action} setSelectedType={onSelectedTypeSelect} />
-                                    {index !== actions.length - 1 && <div className="dropdown-divider" />}
-                                </React.Fragment>
-                            ))}
-                        </div>
-                    </>
+                    <MenuList className={styles.menuList} position={Position.bottomEnd}>
+                        {actions.map((action, index) => (
+                            <React.Fragment key={action.type}>
+                                <DropdownItem action={action} setSelectedType={onSelectedTypeSelect} />
+                                {index !== actions.length - 1 && <MenuDivider />}
+                            </React.Fragment>
+                        ))}
+                    </MenuList>
                 )}
-            </ButtonGroup>
+            </Menu>
         </>
     )
 }
@@ -171,26 +168,45 @@ interface DropdownItemProps {
     action: Action
 }
 
-const DropdownItem: React.FunctionComponent<DropdownItemProps> = ({ action, setSelectedType }) => {
-    const onClick = useCallback<React.MouseEventHandler>(() => {
+const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItemProps>> = ({
+    action,
+    setSelectedType,
+}) => {
+    const { rolloutWindowConfig, loading } = useBatchChangesRolloutWindowConfig()
+    const onSelect = useCallback(() => {
         setSelectedType(action.type)
     }, [setSelectedType, action.type])
+    const shouldDisplayRolloutInfo = action.type === 'publish' && rolloutWindowConfig && rolloutWindowConfig.length > 0
+
     return (
-        <div className="dropdown-item">
-            <Button className="text-left" onClick={onClick}>
-                <h4 className="mb-1">
-                    {action.dropdownTitle}
-                    {action.experimental && (
+        <MenuItem className={styles.menuListItem} onSelect={onSelect} disabled={action.disabled}>
+            <H4
+                className={classNames('mb-1', {
+                    'text-muted': action.disabled,
+                })}
+            >
+                {action.dropdownTitle}
+                {action.experimental && (
+                    <>
+                        {' '}
+                        <ProductStatusBadge status="experimental" as="small" />
+                    </>
+                )}
+            </H4>
+            <Text className="text-wrap text-muted mb-0">
+                <small>
+                    {action.dropdownDescription}
+                    {!loading && shouldDisplayRolloutInfo && (
                         <>
-                            {' '}
-                            <ProductStatusBadge status="experimental" as="small" />
+                            <br />
+                            <strong>
+                                Note: Rollout windows have been set up by the admin. This means that some of the
+                                selected changesets won't be processed until a time in the future.
+                            </strong>
                         </>
                     )}
-                </h4>
-                <p className="text-wrap text-muted mb-0">
-                    <small>{action.dropdownDescription}</small>
-                </p>
-            </Button>
-        </div>
+                </small>
+            </Text>
+        </MenuItem>
     )
 }

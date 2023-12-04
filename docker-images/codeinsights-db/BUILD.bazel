@@ -1,0 +1,83 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//dev:oci_defs.bzl", "image_repository")
+
+filegroup(
+    name = "config",
+    srcs = glob(
+        ["rootfs/*"],
+        ["config/*"],
+    ),
+)
+
+pkg_tar(
+    name = "config_tar",
+    srcs = [
+        ":config",
+    ],
+    remap_paths = {
+        "/rootfs": "/",
+        "/config": "/usr/share/postgresql",
+    },
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_postgresql-12-codeinsights_base",
+    entrypoint = ["/postgres-wolfi.sh"],
+    env = {
+        "POSTGRES_PASSWORD": "",
+        "POSTGRES_USER": "sg",
+        "POSTGRES_DB": "sg",
+        "PGDATA": "/var/lib/postgresql/pgdata",
+        "LANG": "en_US.utf8",
+        "PGHOST": "/var/run/postgresql",
+    },
+    tars = [":config_tar"],
+    user = "postgres",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["codeinsights-db:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+# RFC 793: We are not publishing those images for the 5.1 release, but will the next minor version.
+# oci_push(
+#     name = "candidate_push",
+#     image = ":image",
+#     repository = image_repository("codeinsights-db"),
+# )
+
+# The above postgres-12-codeinsights image is built from the wolfi base image. Where as we're still shipping the legacy
+# image built, postgres-12-alpine, for backwards compatibility.
+oci_image(
+    name = "legacy_image",
+    base = "@legacy_codeinsights-db_base",
+)
+
+oci_tarball(
+    name = "legacy_tarball",
+    image = ":legacy_image",
+    repo_tags = ["codeinsights-db:candidate"],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":legacy_image",
+    repository = image_repository("codeinsights-db"),
+)

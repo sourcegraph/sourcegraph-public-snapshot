@@ -1,18 +1,18 @@
-import { Endpoint } from 'comlink'
+import type { Endpoint } from 'comlink'
 import { isObject } from 'lodash'
-import { NextObserver, Observable, Subscribable, Subscription } from 'rxjs'
-import { InputBoxOptions } from 'sourcegraph'
+import type { Observable, Subscribable, Subscription } from 'rxjs'
 
-import { DiffPart } from '@sourcegraph/codeintellify'
-import { ErrorLike, hasProperty } from '@sourcegraph/common'
-import { GraphQLClient, GraphQLResult } from '@sourcegraph/http-client'
+import type { DiffPart } from '@sourcegraph/codeintellify'
+import { hasProperty } from '@sourcegraph/common'
+import type { GraphQLClient, GraphQLResult } from '@sourcegraph/http-client'
 
-import { SettingsEdit } from '../api/client/services/settings'
-import { ExecutableExtension } from '../api/extension/activation'
-import { Scalars } from '../graphql-operations'
-import { Settings, SettingsCascadeOrError } from '../settings/settings'
-import { TelemetryService } from '../telemetry/telemetryService'
-import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevisionSpec, ViewStateSpec } from '../util/url'
+import type { SettingsEdit } from '../api/client/services/settings'
+import type { ExecutableExtension } from '../api/extension/activation'
+import type { Scalars } from '../graphql-operations'
+import type { Settings, SettingsCascadeOrError } from '../settings/settings'
+import type { TelemetryRecorder } from '../telemetry'
+import type { TelemetryService } from '../telemetry/telemetryService'
+import type { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevisionSpec, ViewStateSpec } from '../util/url'
 
 export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */
@@ -70,6 +70,8 @@ export interface PlatformContext {
      * changes as a result of a call to {@link PlatformContext#updateSettings}).
      *
      * It should be a cold observable so that it does not trigger a network request upon each subscription.
+     *
+     * @deprecated Use useSettings instead
      */
     readonly settings: Subscribable<SettingsCascadeOrError<Settings>>
 
@@ -94,6 +96,8 @@ export interface PlatformContext {
     /**
      * Returns promise that resolves into Apollo Client instance after cache restoration.
      * Only `watchQuery` is available till https://github.com/sourcegraph/sourcegraph/issues/24953 is implemented.
+     *
+     * @deprecated Use [Apollo](docs.sourcegraph.com/dev/background-information/web/graphql#graphql-client) instead
      */
     getGraphQLClient: () => Promise<Pick<GraphQLClient, 'watchQuery'>>
 
@@ -103,8 +107,10 @@ export interface PlatformContext {
      * @template R The GraphQL result type
      * could leak private information such as repository names.
      * @returns Observable that emits the result or an error if the HTTP request failed
+     *
+     * @deprecated Use [Apollo](docs.sourcegraph.com/dev/background-information/web/graphql#graphql-client) instead
      */
-    requestGraphQL: <R, V = object>(options: {
+    requestGraphQL: <R, V extends { [key: string]: any } = object>(options: {
         /**
          * The GraphQL request (query or mutation)
          */
@@ -121,11 +127,6 @@ export interface PlatformContext {
     }) => Observable<GraphQLResult<R>>
 
     /**
-     * Forces the currently displayed tooltip, if any, to update its contents.
-     */
-    forceUpdateTooltip: () => void
-
-    /**
      * Spawns a new JavaScript execution context (such as a Web Worker or browser extension
      * background worker) with the extension host and opens a communication channel to it. It is
      * called exactly once, to start the extension host.
@@ -134,22 +135,6 @@ export interface PlatformContext {
      * with the execution context (using, e.g., postMessage/onmessage) when it is ready.
      */
     createExtensionHost: () => Promise<ClosableEndpointPair>
-
-    /**
-     * Returns the script URL suitable for passing to importScripts for an extension's bundle.
-     *
-     * This is necessary because some platforms (such as Chrome extensions) use a script-src CSP
-     * that would prevent loading bundles from arbitrary URLs, which requires us to pass blob: URIs
-     * to importScripts.
-     *
-     * @param bundleURL The URL to the JavaScript bundle file specified in the extension manifest.
-     * @returns A script URL suitable for passing to importScripts, typically either the original
-     * https:// URL for the extension's bundle or a blob: URI for it.
-     *
-     * TODO(tj): If this doesn't return a getScriptURLForExtension function, the original bundleURL will be used.
-     * Also, make getScriptURL batched to minimize round trips between extension host and client application
-     */
-    getScriptURLForExtension: () => undefined | ((bundleURL: string[]) => Promise<(string | ErrorLike)[]>)
 
     /**
      * Constructs the URL (possibly relative or absolute) to the file with the specified options.
@@ -194,38 +179,27 @@ export interface PlatformContext {
     clientApplication: 'sourcegraph' | 'other'
 
     /**
-     * The URL to the Parcel dev server for a single extension.
-     * Used for extension development purposes, to run an extension that isn't on the registry.
-     */
-    sideloadedExtensionURL: Subscribable<string | null> & NextObserver<string | null>
-
-    /**
      * A telemetry service implementation to log events.
      * Optional because it's currently only used in the web app platform.
+     *
+     * @deprecated Use 'telemetryRecorder' instead.
      */
     telemetryService?: TelemetryService
+
+    /**
+     * Telemetry recorder for the new telemetry framework, superseding
+     * 'telemetryService' and 'logEvent' variants. Learn more here:
+     * https://docs.sourcegraph.com/dev/background-information/telemetry
+     *
+     * It is backed by a '@sourcegraph/telemetry' implementation.
+     */
+    telemetryRecorder: TelemetryRecorder
 
     /**
      * If this is a function that returns a Subscribable of executable extensions,
      * the extension host will not activate any other settings (e.g. extensions from user settings)
      */
-    getStaticExtensions?: () => undefined | Subscribable<ExecutableExtension[]>
-
-    /**
-     * Display a modal message from an extension to the user.
-     *
-     * @param message The message to display
-     * @returns a Promise that resolves when the user dismisses the message
-     */
-    showMessage?(message: string): Promise<void>
-
-    /**
-     * Displays an input box for an extension that asks the user for input.
-     *
-     * @param options Configures the behavior of the input box.
-     * @returns The string provided by the user, or `undefined` if the input box was canceled.
-     */
-    showInputBox?(options: InputBoxOptions | undefined): Promise<string | undefined>
+    getStaticExtensions?: () => Observable<ExecutableExtension[] | undefined>
 }
 
 /**

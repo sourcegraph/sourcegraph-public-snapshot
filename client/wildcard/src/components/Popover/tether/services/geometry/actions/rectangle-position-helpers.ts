@@ -1,12 +1,12 @@
-import { createRectangle, Rectangle } from '../../../models/geometry/rectangle'
-import { Flipping, Position } from '../../../models/tether-models'
+import { createRectangle, type Rectangle } from '../../../models/geometry/rectangle'
+import { type ElementPosition, Flipping, Position } from '../../../models/tether-models'
 import { POSITION_VARIANTS } from '../constants'
 
 /**
  * Returns all possible positions (top, top-left, left, right, ..etc) based on
  * initial position and flipping settings.
  */
-export function getPositions(position: Position, flipping: Flipping): Position[] {
+export function getPositions(position: ElementPosition, flipping: Flipping): ElementPosition[] {
     const positions = [position, POSITION_VARIANTS[position].opposite]
 
     if (flipping === Flipping.all) {

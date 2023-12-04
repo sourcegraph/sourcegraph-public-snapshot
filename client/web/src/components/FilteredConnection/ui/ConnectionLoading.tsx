@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -13,7 +14,10 @@ interface ConnectionLoadingProps {
 /**
  * FilteredConnection styled loading spinner
  */
-export const ConnectionLoading: React.FunctionComponent<ConnectionLoadingProps> = ({ className, compact }) => (
+export const ConnectionLoading: React.FunctionComponent<React.PropsWithChildren<ConnectionLoadingProps>> = ({
+    className,
+    compact,
+}) => (
     <span
         data-testid="filtered-connection-loader"
         className={classNames(compact && styles.compact, styles.normal, className)}

@@ -1,0 +1,32 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cache",
+    srcs = [
+        "cache.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/batches/execution/cache",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/batches",
+        "//lib/batches/execution",
+        "//lib/batches/template",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "cache_test",
+    timeout = "short",
+    srcs = ["cache_test.go"],
+    embed = [":cache"],
+    deps = [
+        "//lib/batches",
+        "//lib/batches/env",
+        "//lib/errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

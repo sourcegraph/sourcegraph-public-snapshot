@@ -25,6 +25,11 @@
     }
 }
 
+.alert {
+    pointer-events: auto;
+    cursor: auto;
+}
+
 .horizontal-rule {
     border-top: 1px solid var(--border-color-2);
 }
@@ -44,4 +49,14 @@
 }
 .btn-disabled {
     opacity: 0.65;
+}
+
+.test-action-error {
+    color: var(--danger-text);
+}
+
+.action-button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
 }

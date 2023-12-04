@@ -73,6 +73,7 @@
     },
     "webhooks": {
       "description": "An array of configurations defining existing GitHub webhooks that send updates back to Sourcegraph.",
+      "deprecationMessage": "Deprecated in favour of first class webhooks. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice",
       "type": "array",
       "items": {
         "type": "object",
@@ -106,7 +107,9 @@
           { "required": ["id"] },
           { "required": ["pattern"] },
           { "required": ["forks"] },
-          { "required": ["archived"] }
+          { "required": ["archived"] },
+          { "required": ["stars"] },
+          { "required": ["size"] }
         ],
         "properties": {
           "archived": {
@@ -131,13 +134,26 @@
             "description": "Regular expression which matches against the name of a GitHub repository (\"owner/name\").",
             "type": "string",
             "format": "regex"
+          },
+          "size": {
+            "description": "If set, repositories with a size above the specified one will be excluded.",
+            "type": "string",
+            "minLength": 2,
+            "pattern": "^[<>]{1}[=]{0,1}\\s*\\d+\\s*\\w+$"
+          },
+          "stars": {
+            "description": "If set, repositories stars less than the specified number will be.",
+            "type": "string",
+            "minLength": 2,
+            "pattern": "^[<>]{1}[=]{0,1}\\s*\\d+$"
           }
         }
       },
       "examples": [
         [{ "forks": true }],
         [{ "name": "owner/name" }, { "id": "MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg==" }],
-        [{ "name": "vuejs/vue" }, { "name": "php/php-src" }, { "pattern": "^topsecretorg/.*" }]
+        [{ "name": "vuejs/vue" }, { "name": "php/php-src" }, { "pattern": "^topsecretorg/.*" }],
+        [{ "size": ">= 1GB", "stars": "< 100" }]
       ]
     },
     "repositoryQuery": {
@@ -165,15 +181,56 @@
       "type": "object",
       "properties": {
         "groupsCacheTTL": {
-          "description": "Experimental: If set, configures hours cached permissions from teams and organizations should be kept for. Setting a negative value disables syncing from teams and organizations, and falls back to the default behaviour of syncing all permisisons directly from user-repository affiliations instead. [Learn more](https://docs.sourcegraph.com/admin/repo/permissions#teams-and-organizations-permissions-caching).",
+          "description": "Experimental: If set, configures hours cached permissions from teams and organizations should be kept for. Setting a negative value disables syncing from teams and organizations, and falls back to the default behaviour of syncing all permisisons directly from user-repository affiliations instead. [Learn more](https://docs.sourcegraph.com/admin/external_service/github#teams-and-organizations-permissions-caching).",
           "type": "number",
           "default": 72
+        },
+        "syncInternalRepoPermissions": {
+          "description": "If true, access to internal repositories will be synced as part of user permission syncs. This can lead to slower user permission syncs for organizations with many internal repositories. Defaults to false.",
+          "type": "boolean",
+          "default": false
+        },
+        "markInternalReposAsPublic": {
+          "description": "If true, internal repositories will be accessible to all users on Sourcegraph as if they were public. This overrides repository permissions but allows easier discovery and access to internal repositories, and may be desirable if all users on the Sourcegraph instance should have access to all internal repositories anyways. Defaults to false.",
+          "type": "boolean",
+          "default": false
         }
       }
     },
     "githubAppInstallationID": {
-      "description": "The installation ID of the GitHub App.",
+      "description": "DEPRECATED: The installation ID of the GitHub App.",
       "type": "string"
+    },
+    "gitHubAppDetails": {
+      "description": "If non-null, this is a GitHub App connection with some additional properties.",
+      "type": "object",
+      "properties": {
+        "baseURL": {
+          "description": "The base URL of the GitHub App.",
+          "type": "string",
+          "pattern": "^https?://"
+        },
+        "appID": {
+          "description": "The ID of the GitHub App.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "installationID": {
+          "description": "The installation ID of this connection.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "cloneAllRepositories": {
+          "description": "Clone all repositories for this App installation.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "pending": {
+      "description": "Whether the code host connection is in a pending state.",
+      "type": "boolean",
+      "default": false
     },
     "cloudGlobal": {
       "title": "CloudGlobal",

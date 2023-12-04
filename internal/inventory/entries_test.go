@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 )
 
 func TestContext_Entries(t *testing.T) {
@@ -27,11 +27,11 @@ func TestContext_Entries(t *testing.T) {
 			switch path {
 			case "d":
 				return []fs.FileInfo{
-					&util.FileInfo{Name_: "d/a", Mode_: os.ModeDir},
-					&util.FileInfo{Name_: "d/b.go", Size_: 12},
+					&fileutil.FileInfo{Name_: "d/a", Mode_: os.ModeDir},
+					&fileutil.FileInfo{Name_: "d/b.go", Size_: 12},
 				}, nil
 			case "d/a":
-				return []fs.FileInfo{&util.FileInfo{Name_: "d/a/c.m", Size_: 24}}, nil
+				return []fs.FileInfo{&fileutil.FileInfo{Name_: "d/a/c.m", Size_: 24}}, nil
 			default:
 				panic("unhandled mock ReadTree " + path)
 			}
@@ -64,8 +64,8 @@ func TestContext_Entries(t *testing.T) {
 	}
 
 	inv, err := c.Entries(context.Background(),
-		&util.FileInfo{Name_: "d", Mode_: os.ModeDir},
-		&util.FileInfo{Name_: "f.go", Mode_: 0, Size_: 1 /* HACK to force read */},
+		&fileutil.FileInfo{Name_: "d", Mode_: os.ModeDir},
+		&fileutil.FileInfo{Name_: "f.go", Mode_: 0, Size_: 1 /* HACK to force read */},
 	)
 	if err != nil {
 		t.Fatal(err)

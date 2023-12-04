@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+
+go_library(
+    name = "schema",
+    srcs = [
+        "batch_spec_stringdata.go",
+        "changeset_spec_stringdata.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/batches/schema",
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "generate_stringdata_batch_spec",
+    srcs = [
+        "//schema:batch_spec.schema.json",
+    ],
+    outs = ["_batch_spec_stringdata.go"],
+    cmd = """\
+    $(location //lib/batches/schema/gen:stringdata) -i $< -name BatchSpecJSON -pkg schema -o $@
+    $(location @go_sdk//:bin/gofmt) -s -w $@
+    """,
+    tools = [
+        "//lib/batches/schema/gen:stringdata",
+        "@go_sdk//:bin/gofmt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "generate_stringdata_changeset_spec",
+    srcs = [
+        "//schema:changeset_spec.schema.json",
+    ],
+    outs = ["_changeset_spec_stringdata.go"],
+    cmd = """\
+    $(location //lib/batches/schema/gen:stringdata) -i $< -name ChangesetSpecJSON -pkg schema -o $@
+    $(location @go_sdk//:bin/gofmt) -s -w $@
+    """,
+    tools = [
+        "//lib/batches/schema/gen:stringdata",
+        "@go_sdk//:bin/gofmt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+write_generated_to_source_files(
+    name = "write_generated_batch_spec",
+    output_files = {"batch_spec_stringdata.go": "_batch_spec_stringdata.go"},
+    tags = ["go_generate"],
+    target = ":generate_stringdata_batch_spec",
+)
+
+write_generated_to_source_files(
+    name = "write_generated_changeset_spec",
+    output_files = {"changeset_spec_stringdata.go": "_changeset_spec_stringdata.go"},
+    tags = ["go_generate"],
+    target = ":generate_stringdata_changeset_spec",
+)

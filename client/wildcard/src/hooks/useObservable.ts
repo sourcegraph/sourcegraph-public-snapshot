@@ -1,5 +1,8 @@
-import { useEffect, useState, useMemo } from 'react'
-import { Observable, Observer, Subject } from 'rxjs'
+import { useLayoutEffect, useEffect, useState, useMemo, useCallback } from 'react'
+
+import { type Observable, type Observer, Subject } from 'rxjs'
+
+import type { ObservableStatus } from '../types'
 
 /**
  * React hook to get the latest value of an Observable.
@@ -14,7 +17,9 @@ export function useObservable<T>(observable: Observable<T>): T | undefined {
     const [error, setError] = useState<any>()
     const [currentValue, setCurrentValue] = useState<T>()
 
-    useEffect(() => {
+    // We use a layout effect to avoid UI tearing when the observable is updated because otherwise
+    // the page will be rendered with the old value after the first render pass.
+    useLayoutEffect(() => {
         setCurrentValue(undefined)
         const subscription = observable.subscribe({ next: setCurrentValue, error: setError })
         return () => subscription.unsubscribe()
@@ -25,6 +30,44 @@ export function useObservable<T>(observable: Observable<T>): T | undefined {
     }
 
     return currentValue
+}
+
+/**
+ * React hook to get the latest value of an Observable.
+ *
+ * @description This is a slightly modified version of `useObservable` that returns a `LoadStatus` instead of `undefined` when the Observable hasn't emitted yet.
+ * @param observable The Observable to subscribe to.
+ * @returns [T | undefined, undefined, Error | undefined]
+ */
+export function useObservableWithStatus<T>(observable: Observable<T>): [T | undefined, ObservableStatus, any] {
+    const [error, setError] = useState<any>()
+    const [currentValue, setCurrentValue] = useState<T>()
+    const [status, setStatus] = useState<ObservableStatus>('initial')
+
+    const handleNext = useCallback((value: T) => {
+        setCurrentValue(value)
+        setStatus('next')
+    }, [])
+
+    const handleError = useCallback((error: unknown) => {
+        setError(error)
+        setStatus('error')
+    }, [])
+
+    const handleComplete = useCallback(() => {
+        setStatus('completed')
+    }, [])
+
+    useEffect(() => {
+        setCurrentValue(undefined)
+        const subscription = observable.subscribe({ next: handleNext, error: handleError, complete: handleComplete })
+        return () => {
+            setStatus('initial')
+            subscription.unsubscribe()
+        }
+    }, [handleComplete, handleError, handleNext, observable])
+
+    return [currentValue, status, error]
 }
 
 /**

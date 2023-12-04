@@ -1,0 +1,38 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "store",
+    srcs = [
+        "meta.go",
+        "search.go",
+        "store.go",
+        "symbols.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store",
+    visibility = ["//cmd/symbols:__subpackages__"],
+    deps = [
+        "//cmd/symbols/parser",
+        "//internal/database/basestore",
+        "//internal/database/batch",
+        "//internal/observation",
+        "//internal/search",
+        "//internal/search/result",
+        "//lib/errors",
+        "@com_github_grafana_regexp//syntax",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@org_golang_x_sync//errgroup",
+    ],
+)
+
+go_test(
+    name = "store_test",
+    timeout = "short",
+    srcs = [
+        "search_test.go",
+        "symbols_test.go",
+    ],
+    embed = [":store"],
+    deps = ["@com_github_google_go_cmp//cmp"],
+)

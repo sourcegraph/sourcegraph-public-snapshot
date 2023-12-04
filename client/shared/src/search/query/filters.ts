@@ -1,11 +1,11 @@
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
 
-import { SearchMatch } from '../stream'
+import type { SearchMatch } from '../stream'
 
 import { languageCompletion } from './languageFilter'
 import { predicateCompletion } from './predicates'
 import { selectorCompletion } from './selectFilter'
-import { Filter, Literal } from './token'
+import type { Filter, Literal } from './token'
 
 export enum FilterType {
     after = 'after',
@@ -23,10 +23,9 @@ export enum FilterType {
     message = 'message',
     patterntype = 'patterntype',
     repo = 'repo',
-    repogroup = 'repogroup',
     repohascommitafter = 'repohascommitafter',
     repohasfile = 'repohasfile',
-    // eslint-disable-next-line unicorn/prevent-abbreviations
+
     rev = 'rev',
     select = 'select',
     timeout = 'timeout',
@@ -34,10 +33,9 @@ export enum FilterType {
     visibility = 'visibility',
 }
 
-/* eslint-disable unicorn/prevent-abbreviations */
 export enum AliasedFilterType {
     f = 'file',
-    g = 'repogroup',
+    path = 'file',
     l = 'lang',
     language = 'lang',
     m = 'message',
@@ -47,11 +45,10 @@ export enum AliasedFilterType {
     since = 'after',
     until = 'before',
 }
-/* eslint-enable unicorn/prevent-abbreviations */
 
 export const ALIASES: Record<string, string> = {
     r: 'repo',
-    g: 'repogroup',
+    path: 'file',
     f: 'file',
     l: 'lang',
     language: 'language',
@@ -65,7 +62,7 @@ export const ALIASES: Record<string, string> = {
 export const resolveFieldAlias = (field: string): string => ALIASES[field] || field
 
 export const isFilterType = (filter: string): filter is FilterType => filter in FilterType
-export const isAliasedFilterType = (filter: string): boolean => filter in AliasedFilterType
+const isAliasedFilterType = (filter: string): boolean => filter in AliasedFilterType
 
 export const filterTypeKeys: FilterType[] = Object.keys(FilterType) as FilterType[]
 export const filterTypeKeysWithAliases: (FilterType | AliasedFilterType)[] = [
@@ -73,14 +70,16 @@ export const filterTypeKeysWithAliases: (FilterType | AliasedFilterType)[] = [
     ...Object.keys(AliasedFilterType),
 ] as (FilterType | AliasedFilterType)[]
 
-export enum NegatedFilters {
+enum NegatedFilters {
     author = '-author',
     committer = '-committer',
     content = '-content',
     f = '-f',
     file = '-file',
+    path = '-path',
     l = '-l',
     lang = '-lang',
+    language = '-language',
     message = '-message',
     r = '-r',
     repo = '-repo',
@@ -88,7 +87,7 @@ export enum NegatedFilters {
 }
 
 /** The list of filters that are able to be negated. */
-export type NegatableFilter =
+type NegatableFilter =
     | FilterType.repo
     | FilterType.file
     | FilterType.repohasfile
@@ -102,7 +101,7 @@ export const isNegatableFilter = (filter: FilterType): filter is NegatableFilter
     Object.keys(NegatedFilters).includes(filter)
 
 /** The list of all negated filters. i.e. all valid filters that have `-` as a suffix. */
-export const negatedFilters = Object.values(NegatedFilters)
+const negatedFilters = Object.values(NegatedFilters)
 
 export const isNegatedFilter = (filter: string): filter is NegatedFilters =>
     negatedFilters.includes(filter as NegatedFilters)
@@ -113,8 +112,10 @@ const negatedFilterToNegatableFilter: { [key: string]: NegatableFilter } = {
     '-content': FilterType.content,
     '-f': FilterType.file,
     '-file': FilterType.file,
+    '-path': FilterType.file,
     '-l': FilterType.lang,
     '-lang': FilterType.lang,
+    '-language': FilterType.lang,
     '-message': FilterType.message,
     '-r': FilterType.repo,
     '-repo': FilterType.repo,
@@ -132,6 +133,7 @@ export const resolveNegatedFilter = (filter: NegatedFilters): NegatableFilter =>
  */
 export interface Completion {
     label: string
+    description?: string
     insertText?: string
     asSnippet?: boolean
 }
@@ -140,6 +142,9 @@ interface BaseFilterDefinition {
     alias?: keyof typeof AliasedFilterType
     description: string
     discreteValues?: (value: Literal | undefined, isSourcegraphDotCom?: boolean) => Completion[]
+    /** Placeholder value shown in the input when the filter has no value. */
+    placeholder?: string
+    /** Whether to query the server for completions of this type. */
     suggestions?: SearchMatch['type']
     default?: string
     /** Whether the filter may only be used 0 or 1 times in a query. */
@@ -151,7 +156,7 @@ interface NegatableFilterDefinition extends Omit<BaseFilterDefinition, 'descript
     description: (negated: boolean) => string
 }
 
-export type FilterDefinition = BaseFilterDefinition | NegatableFilterDefinition
+type FilterDefinition = BaseFilterDefinition | NegatableFilterDefinition
 
 const SOURCEGRAPH_DOT_COM_REPO_COMPLETION: Completion[] = [
     {
@@ -178,19 +183,23 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     Record<Exclude<FilterType, NegatableFilter>, BaseFilterDefinition> = {
     [FilterType.after]: {
         alias: 'since',
-        description: 'Commits made after a certain date',
+        description: 'Commits made after a certain time e.g. yesterday, or 12/31/2022',
+        placeholder: '"last week"',
     },
     [FilterType.archived]: {
         description: 'Include results from archived repositories.',
+        discreteValues: () => ['yes', 'only', 'no'].map(value => ({ label: value })),
         singular: true,
     },
     [FilterType.author]: {
         negatable: true,
         description: negated => `${negated ? 'Exclude' : 'Include only'} commits or diffs authored by a user.`,
+        placeholder: '"author name/email"',
     },
     [FilterType.before]: {
         alias: 'until',
-        description: 'Commits made before a certain date',
+        description: 'Commits made before a certain time, e.g. yesterday, or 12/31/2022',
+        placeholder: '"yesterday"',
     },
     [FilterType.case]: {
         description: 'Treat the search pattern as case-sensitive.',
@@ -201,12 +210,14 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterType.committer]: {
         description: (negated: boolean): string =>
             `${negated ? 'Exclude' : 'Include only'} commits and diffs committed by a user.`,
+        placeholder: '"author name/email"',
         negatable: true,
         singular: true,
     },
     [FilterType.content]: {
         description: (negated: boolean): string =>
             `${negated ? 'Exclude' : 'Include only'} results from files if their content matches the search pattern.`,
+        placeholder: 'pattern',
         negatable: true,
         singular: true,
     },
@@ -216,17 +227,33 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.count]: {
         description: 'Number of results to fetch (integer) or "all"',
+        placeholder: 'number',
         singular: true,
     },
     [FilterType.file]: {
         alias: 'f',
         negatable: true,
         description: negated =>
-            `${negated ? 'Exclude' : 'Include only'} results from files matching the given search pattern.`,
+            `${negated ? 'Exclude' : 'Include only'} results from file paths matching the given search pattern.`,
+        discreteValues: () => [...predicateCompletion('file')],
+        placeholder: 'regex',
         suggestions: 'path',
     },
     [FilterType.fork]: {
-        discreteValues: () => ['yes', 'no', 'only'].map(value => ({ label: value })),
+        discreteValues: () => [
+            {
+                label: 'yes',
+                description: 'Include repository forks',
+            },
+            {
+                label: 'only',
+                description: 'Only search in repository forks',
+            },
+            {
+                label: 'no',
+                description: 'Do not search in repository forks (default)',
+            },
+        ],
         description: 'Include results from forked repositories.',
         singular: true,
     },
@@ -241,10 +268,11 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} Commits with messages matching a certain string`,
+        placeholder: '"content"',
     },
     [FilterType.patterntype]: {
-        discreteValues: () => ['regexp', 'literal', 'structural'].map(value => ({ label: value })),
-        description: 'The pattern type (regexp, literal, structural) in use',
+        discreteValues: () => ['regexp', 'structural', 'literal', 'standard'].map(value => ({ label: value })),
+        description: 'The pattern type (standard, regexp, literal, structural) in use',
         singular: true,
     },
     [FilterType.repo]: {
@@ -258,13 +286,9 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
             `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given search pattern.`,
         suggestions: 'repo',
     },
-    [FilterType.repogroup]: {
-        alias: 'g',
-        description: 'group-name (include results from the named group)',
-        singular: true,
-    },
     [FilterType.repohascommitafter]: {
-        description: '"string specifying time frame" (filter out stale repositories without recent commits)',
+        description: 'Filter repositories without commits after a given time. e.g. yesterday, or 12/31/2022',
+        placeholder: '"time frame"',
         singular: true,
     },
     [FilterType.repohasfile]: {
@@ -275,20 +299,47 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterType.rev]: {
         alias: 'revision',
         description: 'Search a revision (branch, commit hash, or tag) instead of the default branch.',
+        placeholder: 'branch/commit/tag',
         singular: true,
     },
     [FilterType.select]: {
         discreteValues: value => selectorCompletion(value).map(value => ({ label: value })),
-        description: 'Selects the kind of result to display.',
+        description: 'Select repo, file, symbol, content, or commit result types.',
         singular: true,
     },
     [FilterType.timeout]: {
-        description: 'Duration before timeout',
+        description: 'Duration before timeout, e.g. 30s, 1m, 2h, 3d, 4w, 5y.',
+        placeholder: 'duration-value',
         singular: true,
     },
     [FilterType.type]: {
-        description: 'Limit results to the specified type.',
-        discreteValues: () => ['diff', 'commit', 'symbol', 'repo', 'path', 'file'].map(value => ({ label: value })),
+        description: 'Limit results to diffs, commits, file paths, symbols and other entities.',
+        discreteValues: () => [
+            {
+                label: 'diff',
+                description: 'Search for file changes',
+            },
+            {
+                label: 'commit',
+                description: 'Search in commit messages',
+            },
+            {
+                label: 'symbol',
+                description: 'Search for symbol names',
+            },
+            {
+                label: 'repo',
+                description: 'Search for repositories',
+            },
+            {
+                label: 'path',
+                description: 'Search for file/directory names',
+            },
+            {
+                label: 'file',
+                description: 'Search for file content',
+            },
+        ],
     },
     [FilterType.visibility]: {
         discreteValues: () => ['any', 'private', 'public'].map(value => ({ label: value })),
@@ -303,15 +354,15 @@ export const discreteValueAliases: { [key: string]: string[] } = {
     only: ['o', 'only', 'ONLY', 'Only'],
 }
 
+export type ResolvedFilter =
+    | { type: NegatableFilter; negated: boolean; definition: NegatableFilterDefinition }
+    | { type: Exclude<FilterType, NegatableFilter>; definition: BaseFilterDefinition }
+    | undefined
+
 /**
  * Returns the {@link FilterDefinition} for the given filterType if it exists, or `undefined` otherwise.
  */
-export const resolveFilter = (
-    filterType: string
-):
-    | { type: NegatableFilter; negated: boolean; definition: NegatableFilterDefinition }
-    | { type: Exclude<FilterType, NegatableFilter>; definition: BaseFilterDefinition }
-    | undefined => {
+export const resolveFilter = (filterType: string): ResolvedFilter => {
     filterType = filterType.toLowerCase()
 
     if (isAliasedFilterType(filterType)) {
@@ -401,6 +452,12 @@ export const validateFilter = (
         // account for finite discrete values and exemption of checks.
         return { valid: true }
     }
+    if (typeAndDefinition.type === FilterType.file) {
+        // File filter is made exempt from checking discrete valid values, since a valid `contain` predicate
+        // has infinite valid discrete values. TODO(rvantonder): value validation should be separated to
+        // account for finite discrete values and exemption of checks.
+        return { valid: true }
+    }
     if (typeAndDefinition.type === FilterType.lang) {
         // Lang filter is exempt because our discrete completion values are only a subset of all valid
         // language values, which are captured by a Go library. The backend takes care of returning an
@@ -446,10 +503,11 @@ export const escapeSpaces = (value: string): string => {
                 current = current + 1
                 continue
             }
-            default:
+            default: {
                 escaped.push(value[current])
                 current = current + 1
                 continue
+            }
         }
     }
     return escaped.join('')

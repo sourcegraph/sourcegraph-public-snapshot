@@ -1,11 +1,15 @@
-import { getReasonPhrase } from 'http-status-codes'
 import React, { useMemo } from 'react'
+
+import { getReasonPhrase } from 'http-status-codes'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 
-import { WebhookLogMessageFields, WebhookLogRequestFields } from '../../graphql-operations'
+import type { WebhookLogFields } from '../../graphql-operations'
 
 import styles from './MessagePanel.module.scss'
+
+type WebhookLogMessageFields = Pick<WebhookLogFields['request'], 'headers' | 'body'>
+type WebhookLogRequestFields = Pick<WebhookLogFields['request'], 'method' | 'url' | 'version'>
 
 export interface Props {
     className?: string
@@ -16,7 +20,11 @@ export interface Props {
     requestOrStatusCode: WebhookLogRequestFields | number
 }
 
-export const MessagePanel: React.FunctionComponent<Props> = ({ className, message, requestOrStatusCode }) => {
+export const MessagePanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    className,
+    message,
+    requestOrStatusCode,
+}) => {
     const [headers, language, body] = useMemo(() => {
         const headers = []
         let language = 'nohighlight'

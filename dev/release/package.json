@@ -1,10 +1,14 @@
 {
-  "name": "release",
-  "description": "Scripts for managing release captain duties",
   "private": true,
+  "name": "@sourcegraph/dev-release",
+  "version": "0.0.1",
+  "description": "Scripts for managing release captain duties",
   "scripts": {
-    "release": "../../node_modules/.bin/ts-node --transpile-only ./src/main.ts",
-    "eslint": "../../node_modules/.bin/eslint 'src/**/*.ts'"
+    "release": "ts-node --transpile-only ./src/main.ts",
+    "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@types/luxon": "^3.2.0",
+    "luxon": "^3.2.1"
+  }
 }

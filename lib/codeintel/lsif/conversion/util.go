@@ -13,7 +13,7 @@ func makeKey(parts ...string) string {
 
 func toID(id int) precise.ID {
 	if id == 0 {
-		return precise.ID("")
+		return ""
 	}
 
 	return precise.ID(strconv.FormatInt(int64(id), 10))

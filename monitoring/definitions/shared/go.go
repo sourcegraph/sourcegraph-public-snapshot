@@ -14,28 +14,32 @@ import (
 const TitleGolangMonitoring = "Golang runtime monitoring"
 
 var (
-	GoGoroutines sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
-		return Observable{
-			Name:              "go_goroutines",
-			Description:       "maximum active goroutines",
-			Query:             fmt.Sprintf(`max by(instance) (go_goroutines{job=~".*%s"})`, containerName),
-			Warning:           monitoring.Alert().GreaterOrEqual(10000, nil).For(10 * time.Minute),
-			Panel:             monitoring.Panel().LegendFormat("{{name}}"),
-			Owner:             owner,
-			Interpretation:    "A high value here indicates a possible goroutine leak.",
-			PossibleSolutions: "none",
+	GoGoroutines = func(jobLabel, instanceLabel string) sharedObservable {
+		return func(containerName string, owner monitoring.ObservableOwner) Observable {
+			return Observable{
+				Name:           "go_goroutines",
+				Description:    "maximum active goroutines",
+				Query:          fmt.Sprintf(`max by(%s) (go_goroutines{%s=~".*%s"})`, instanceLabel, jobLabel, containerName),
+				Warning:        monitoring.Alert().GreaterOrEqual(10000).For(10 * time.Minute),
+				Panel:          monitoring.Panel().LegendFormat("{{name}}"),
+				Owner:          owner,
+				Interpretation: "A high value here indicates a possible goroutine leak.",
+				NextSteps:      "none",
+			}
 		}
 	}
 
-	GoGcDuration sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
-		return Observable{
-			Name:              "go_gc_duration_seconds",
-			Description:       "maximum go garbage collection duration",
-			Query:             fmt.Sprintf(`max by(instance) (go_gc_duration_seconds{job=~".*%s"})`, containerName),
-			Warning:           monitoring.Alert().GreaterOrEqual(2, nil),
-			Panel:             monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-			Owner:             owner,
-			PossibleSolutions: "none",
+	GoGcDuration = func(jobLabel, instanceLabel string) sharedObservable {
+		return func(containerName string, owner monitoring.ObservableOwner) Observable {
+			return Observable{
+				Name:        "go_gc_duration_seconds",
+				Description: "maximum go garbage collection duration",
+				Query:       fmt.Sprintf(`max by(%s) (go_gc_duration_seconds{%s=~".*%s"})`, instanceLabel, jobLabel, containerName),
+				Warning:     monitoring.Alert().GreaterOrEqual(2),
+				Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+				Owner:       owner,
+				NextSteps:   "none",
+			}
 		}
 	}
 )
@@ -46,6 +50,10 @@ type GolangMonitoringOptions struct {
 
 	// GCDuration transforms the default observable used to construct the Go GC duration panel.
 	GCDuration ObservableOption
+
+	JobLabelName string
+
+	InstanceLabelName string
 }
 
 // NewGolangMonitoringGroup creates a group containing panels displaying Go monitoring
@@ -55,13 +63,20 @@ func NewGolangMonitoringGroup(containerName string, owner monitoring.ObservableO
 		options = &GolangMonitoringOptions{}
 	}
 
+	if options.InstanceLabelName == "" {
+		options.InstanceLabelName = "instance"
+	}
+	if options.JobLabelName == "" {
+		options.JobLabelName = "job"
+	}
+
 	return monitoring.Group{
 		Title:  TitleGolangMonitoring,
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.Goroutines.safeApply(GoGoroutines(containerName, owner)).Observable(),
-				options.GCDuration.safeApply(GoGcDuration(containerName, owner)).Observable(),
+				options.Goroutines.safeApply(GoGoroutines(options.JobLabelName, options.InstanceLabelName)(containerName, owner)).Observable(),
+				options.GCDuration.safeApply(GoGcDuration(options.JobLabelName, options.InstanceLabelName)(containerName, owner)).Observable(),
 			},
 		},
 	}

@@ -1,50 +1,30 @@
-import * as H from 'history'
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback } from 'react'
+
 import { map, tap } from 'rxjs/operators'
 
-import { Hoverifier } from '@sourcegraph/codeintellify'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Alert } from '@sourcegraph/wildcard'
 
-import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
-import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
-import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
-import { ExternalChangesetFileDiffsFields, GitRefSpecFields, Scalars } from '../../../../graphql-operations'
+import { FileDiffNode, type FileDiffNodeProps } from '../../../../components/diff/FileDiffNode'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
+import type { Scalars, FileDiffFields } from '../../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../backend'
 
-export interface ChangesetFileDiffProps extends ThemeProps {
+export interface ChangesetFileDiffProps {
     changesetID: Scalars['ID']
-    history: H.History
-    location: H.Location
     repositoryID: Scalars['ID']
     repositoryName: string
     updateOnChange?: string
-    extensionInfo?: {
-        hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
-    } & ExtensionsControllerProps
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
-export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> = ({
-    isLightTheme,
+export const ChangesetFileDiff: React.FunctionComponent<React.PropsWithChildren<ChangesetFileDiffProps>> = ({
     changesetID,
-    history,
-    location,
-    extensionInfo,
     repositoryID,
-    repositoryName,
     updateOnChange,
     queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
 }) => {
     const [isNotImplemented, setIsNotImplemented] = useState<boolean>(false)
-    const [range, setRange] = useState<
-        (NonNullable<ExternalChangesetFileDiffsFields['diff']> & { __typename: 'RepositoryComparison' })['range']
-    >()
 
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(
@@ -58,8 +38,6 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
                 tap(diff => {
                     if (!diff) {
                         setIsNotImplemented(true)
-                    } else if (diff.__typename === 'RepositoryComparison') {
-                        setRange(diff.range)
                     }
                 }),
                 map(
@@ -77,54 +55,25 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
         [changesetID, queryExternalChangesetWithFileDiffs]
     )
 
-    const hydratedExtensionInfo = useMemo(() => {
-        if (!extensionInfo || !range) {
-            return
-        }
-        const baseRevision = commitOIDForGitRevision(range.base)
-        const headRevision = commitOIDForGitRevision(range.head)
-        return {
-            ...extensionInfo,
-            head: {
-                commitID: headRevision,
-                repoID: repositoryID,
-                repoName: repositoryName,
-                revision: headRevision,
-            },
-            base: {
-                commitID: baseRevision,
-                repoID: repositoryID,
-                repoName: repositoryName,
-                revision: baseRevision,
-            },
-        }
-    }, [extensionInfo, range, repositoryID, repositoryName])
-
     if (isNotImplemented) {
         return <DiffRenderingNotSupportedAlert />
     }
 
     return (
-        <FileDiffConnection
+        <FilteredConnection<FileDiffFields, Omit<FileDiffNodeProps, 'node'>>
             listClassName="list-group list-group-flush"
             noun="changed file"
             pluralNoun="changed files"
             queryConnection={queryFileDiffs}
             nodeComponent={FileDiffNode}
             nodeComponentProps={{
-                history,
-                location,
-                isLightTheme,
                 persistLines: true,
-                extensionInfo: hydratedExtensionInfo,
                 lineNumbers: true,
             }}
             updateOnChange={`${repositoryID}-${updateOnChange ?? ''}`}
             defaultFirst={15}
             hideSearch={true}
             noSummaryIfAllNodesVisible={true}
-            history={history}
-            location={location}
             useURLQuery={false}
             cursorPaging={true}
             withCenteredSummary={true}
@@ -132,22 +81,9 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
     )
 }
 
-function commitOIDForGitRevision(revision: GitRefSpecFields): string {
-    switch (revision.__typename) {
-        case 'GitObject':
-            return revision.oid
-        case 'GitRef':
-            return revision.target.oid
-        case 'GitRevSpecExpr':
-            if (!revision.object) {
-                throw new Error('Could not resolve commit for revision')
-            }
-            return revision.object.oid
-    }
-}
-
-const DiffRenderingNotSupportedAlert: React.FunctionComponent<{}> = () => (
+const DiffRenderingNotSupportedAlert: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <Alert className="mb-0" variant="info">
-        Diffs for processing, merged, closed and deleted changesets are currently only available on the code host.
+        Diffs for processing, merged, closed, read-only, and deleted changesets are currently only available on the code
+        host.
     </Alert>
 )

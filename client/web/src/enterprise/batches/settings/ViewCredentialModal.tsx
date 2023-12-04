@@ -1,8 +1,8 @@
 import React from 'react'
 
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, H4, Input } from '@sourcegraph/wildcard'
 
-import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
+import type { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
 
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
 import { ModalHeader } from './ModalHeader'
@@ -14,7 +14,7 @@ interface ViewCredentialModalProps {
     onClose: () => void
 }
 
-export const ViewCredentialModal: React.FunctionComponent<ViewCredentialModalProps> = ({
+export const ViewCredentialModal: React.FunctionComponent<React.PropsWithChildren<ViewCredentialModalProps>> = ({
     credential,
     codeHost,
     onClose,
@@ -28,15 +28,8 @@ export const ViewCredentialModal: React.FunctionComponent<ViewCredentialModalPro
                 externalServiceURL={codeHost.externalServiceURL}
             />
 
-            <h4>Personal access token</h4>
-            <div className="form-group">
-                <input
-                    type="text"
-                    value="PATs cannot be viewed after entering."
-                    className="form-control"
-                    disabled={true}
-                />
-            </div>
+            <H4>Personal access token</H4>
+            <Input className="form-group" value="PATs cannot be viewed after entering." disabled={true} />
 
             <hr className="mb-3" />
 

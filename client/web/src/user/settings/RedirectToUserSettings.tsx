@@ -1,9 +1,7 @@
-import * as H from 'history'
-import * as React from 'react'
-import { Redirect } from 'react-router'
+import { Navigate, useLocation } from 'react-router-dom'
 
 import { userURL } from '..'
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 
 /**
@@ -12,13 +10,17 @@ import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
  */
 export const RedirectToUserSettings = withAuthenticatedUser<{
     authenticatedUser: AuthenticatedUser
-    location: H.Location
-}>(({ authenticatedUser, location }) => (
-    <Redirect
-        to={{
-            pathname: `${userURL(authenticatedUser.username)}/settings`,
-            search: location.search,
-            hash: location.hash,
-        }}
-    />
-))
+}>(({ authenticatedUser }) => {
+    const location = useLocation()
+
+    return (
+        <Navigate
+            to={{
+                pathname: `${userURL(authenticatedUser.username)}/settings`,
+                search: location.search,
+                hash: location.hash,
+            }}
+            replace={true}
+        />
+    )
+})

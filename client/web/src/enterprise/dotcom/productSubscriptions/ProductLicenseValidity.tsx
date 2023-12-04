@@ -1,41 +1,78 @@
-import classNames from 'classnames'
-import { parseISO } from 'date-fns'
-import format from 'date-fns/format'
 import React from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { Alert } from '@sourcegraph/wildcard'
+import { mdiCheckCircle, mdiCloseCircle, mdiShieldRemove } from '@mdi/js'
+import classNames from 'classnames'
 
-import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../../productSubscription/helpers'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { Icon, Label } from '@sourcegraph/wildcard'
+
+import type { ProductLicenseFields } from '../../../graphql-operations'
+import { isProductLicenseExpired } from '../../../productSubscription/helpers'
+
+const getIcon = (isExpired: boolean, isRevoked: boolean): string => {
+    if (isExpired) {
+        return mdiCloseCircle
+    }
+    if (isRevoked) {
+        return mdiShieldRemove
+    }
+    return mdiCheckCircle
+}
+
+const ValidityIcon: React.FC<{ isExpired: boolean; isRevoked: boolean }> = ({ isExpired, isRevoked }) => (
+    <Icon
+        svgPath={getIcon(isExpired, isRevoked)}
+        aria-hidden={true}
+        className={classNames('mr-1', {
+            ['text-success']: !isExpired && !isRevoked,
+            ['text-muted']: isExpired && !isRevoked,
+            ['text-danger']: isRevoked,
+        })}
+    />
+)
+
+const getText = (isExpired: boolean, isRevoked: boolean): string => {
+    if (isExpired) {
+        return 'Expired'
+    }
+    if (isRevoked) {
+        return 'Revoked'
+    }
+    return 'Valid'
+}
 
 /**
  * Displays an alert indicating the validity of a product license.
  */
-export const ProductLicenseValidity: React.FunctionComponent<{
-    licenseInfo: GQL.IProductLicenseInfo
-    primary: boolean
-    className?: string
-}> = ({ licenseInfo: { expiresAt }, primary, className = '' }) => {
+export const ProductLicenseValidity: React.FunctionComponent<
+    React.PropsWithChildren<{
+        license: ProductLicenseFields
+        variant?: 'icon-only' | 'no-icon'
+        className?: string
+    }>
+> = ({ license: { info, revokedAt, revokeReason }, variant, className = '' }) => {
+    const expiresAt = info?.expiresAt ?? 0
     const isExpired = isProductLicenseExpired(expiresAt)
-    const tooltip = format(parseISO(expiresAt), 'PPpp')
-    const validityClass = isExpired ? 'danger' : 'success'
+    const isRevoked = !!revokedAt
+    const timestamp = revokedAt ?? expiresAt
+    const timestampSuffix = isExpired || isRevoked ? 'ago' : 'remaining'
 
-    if (primary) {
+    if (variant === 'icon-only') {
         return (
-            <Alert
-                className={classNames(className, 'py-1 px-2')}
-                variant={isExpired ? 'danger' : 'success'}
-                data-tooltip={tooltip}
-            >
-                <strong>{isExpired ? 'Expired' : 'Valid'}</strong> ({formatRelativeExpirationDate(expiresAt)})
-            </Alert>
+            <div className={className}>
+                <ValidityIcon isExpired={isExpired} isRevoked={isRevoked} />
+            </div>
         )
     }
-
     return (
-        <div className={className} data-tooltip={tooltip}>
-            <strong className={`text-${validityClass}`}>{isExpired ? 'Expired' : 'Valid'}</strong> (
-            {formatRelativeExpirationDate(expiresAt)})
+        <div className={className}>
+            {variant !== 'no-icon' && <ValidityIcon isExpired={isExpired} isRevoked={isRevoked} />}
+            {getText(isExpired, isRevoked)} <Timestamp date={timestamp} noAbout={true} noAgo={true} /> {timestampSuffix}
+            {!isExpired && isRevoked && revokeReason && (
+                <>
+                    <Label className="ml-2 mb-0 d-inline">Reason:</Label> {revokeReason}
+                </>
+            )}
         </div>
     )
 }

@@ -1,202 +1,425 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`SiteAdminProductLicenseNode active 1`] = `
+exports[`SiteAdminProductLicenseNode > active 1`] = `
 <DocumentFragment>
   <li
-    class="list-group-item py-2"
+    class="list-group-item p-3 mb-3 border"
   >
     <div
-      class="d-flex align-items-center justify-content-between"
+      style="display: grid; gap: 0rem; grid-template-columns: auto 1fr; margin-bottom: 0rem;"
     >
-      <div
-        class="mr-3 text-truncate"
+      <button
+        class="btn btnIcon pr-3"
+        type="button"
       >
-        <strong>
-          License in 
-          <a
-            class="anchorLink mr-3"
-            href="/s"
-          >
-            s
-          </a>
-        </strong>
-        <span
-          class="mr-3"
+        <svg
+          aria-label="collapse closed"
+          class="mdi-icon iconInline"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
         >
-          <accountname />
-        </span>
-      </div>
-      <div>
-        <span
-          class="mr-3"
-          title="Tags: a"
-        >
-          NB (123 users)
-        </span>
-        <div
-          class="d-inline-block mr-3"
-          data-tooltip="Jan 1, 2021, 12:00:00 AM"
-        >
-          <strong
-            class="text-success"
-          >
-            Valid
-          </strong>
-           (15 years remaining)
-        </div>
-        <span
-          class="text-muted"
-        >
-          Created 
-          <span
-            class="timestamp"
-            data-tooltip="2020-01-01"
-          >
-            in almost 14 years
-          </span>
-        </span>
-      </div>
-    </div>
-    <div>
-      Tags: 
+          <path
+            d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+          />
+        </svg>
+      </button>
       <div
-        class="badge secondary mr-1"
+        aria-expanded="false"
+        class="d-flex align-items-start"
+        role="button"
       >
-        a
-      </div>
-    </div>
-    <div
-      class="form-inline mt-2 d-block"
-    >
-      <div
-        class="input-group"
-      >
-        <input
-          class="form-control input"
-          readonly=""
-          type="text"
-          value="lk1"
-        />
-        <div
-          class="input-group-append"
-        >
-          <button
-            class="btn btnSecondary"
-            type="button"
+        <div>
+          <div
+            class="text-truncate d-flex"
+          >
+            <h3
+              class="h3"
+            >
+              License in 
+              <a
+                class="anchorLink mr-3"
+                href="/s"
+              >
+                s
+              </a>
+            </h3>
+            <span
+              class="mr-3"
+            >
+              AccountName
+            </span>
+          </div>
+          <div
+            class="d-flex align-items-baseline mb-2"
+          >
+            <h3
+              class="h3 mb-0"
+            >
+              NB (123 users)
+            </h3>
+            <p
+              class="ml-3 mb-0"
+            >
+              <small
+                class="text-muted"
+              >
+                Created 
+                <span
+                  class="timestamp"
+                >
+                  in almost 14 years
+                </span>
+              </small>
+            </p>
+            <p
+              class="ml-3 mb-0 text-muted"
+            >
+              <small>
+                v1
+              </small>
+            </p>
+          </div>
+          <div
+            class=""
           >
             <svg
-              class="mdi-icon icon-inline"
+              aria-hidden="true"
+              class="mdi-icon iconInline mr-1 text-success"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
               <path
-                d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"
               />
             </svg>
-             Copy
-          </button>
+            Valid 
+            <span
+              class="timestamp"
+            >
+              almost 15 years
+            </span>
+             remaining
+          </div>
         </div>
+        <button
+          class="btn btnDanger ml-auto d-flex justify-content-center align-items-center"
+          type="button"
+        >
+          Revoke
+        </button>
+      </div>
+      <div />
+      <div
+        class="collapse mt-4"
+      >
+        <div
+          class="d-flex"
+        >
+          <label
+            class="label"
+          >
+            License Key ID
+          </label>
+          <p
+            class="ml-3"
+          />
+        </div>
+        <div
+          aria-live="assertive"
+          class="alert alertDanger mb-2"
+          role="alert"
+        >
+          License tags contain unknown values (marked red), please check if the tags are correct.
+        </div>
+        <label
+          class="label w-100"
+        >
+          <p
+            class="mb-2"
+          >
+            Tags
+          </p>
+          <p
+            class="mb-2"
+          >
+            <span
+              class="badge danger mr-1"
+            >
+              a
+            </span>
+          </p>
+        </label>
+        <label
+          class="label w-100"
+        >
+          <p
+            class="mb-2"
+          >
+            License Key
+          </p>
+          <div
+            class="form-inline"
+          >
+            <div
+              class="input-group flex-1"
+            >
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  class="input form-control with-invalid-icon"
+                  readonly=""
+                  type="text"
+                  value="lk1"
+                />
+              </div>
+              <div
+                class="input-group-append flex-shrink-0"
+              >
+                <button
+                  aria-disabled="false"
+                  aria-label="Copy"
+                  class="btn btnSecondary"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="mdi-icon iconInline"
+                    fill="currentColor"
+                    height="24"
+                    role="img"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                    />
+                  </svg>
+                   Copy
+                </button>
+              </div>
+            </div>
+          </div>
+        </label>
       </div>
     </div>
   </li>
 </DocumentFragment>
 `;
 
-exports[`SiteAdminProductLicenseNode inactive 1`] = `
+exports[`SiteAdminProductLicenseNode > inactive 1`] = `
 <DocumentFragment>
   <li
-    class="list-group-item py-2"
+    class="list-group-item p-3 mb-3 border"
   >
     <div
-      class="d-flex align-items-center justify-content-between"
+      style="display: grid; gap: 0rem; grid-template-columns: auto 1fr; margin-bottom: 0rem;"
     >
-      <div
-        class="mr-3 text-truncate"
+      <button
+        class="btn btnIcon pr-3"
+        type="button"
       >
-        <strong>
-          License in 
-          <a
-            class="anchorLink mr-3"
-            href="/s"
+        <svg
+          aria-label="collapse closed"
+          class="mdi-icon iconInline"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+          />
+        </svg>
+      </button>
+      <div
+        aria-expanded="false"
+        class="d-flex align-items-start"
+        role="button"
+      >
+        <div>
+          <div
+            class="text-truncate d-flex"
           >
-            s
-          </a>
-        </strong>
-        <span
-          class="mr-3"
-        >
-          <accountname />
-        </span>
-      </div>
-      <div>
-        <span
-          class="mr-3"
-          title="Tags: a"
-        >
-          NB (123 users)
-        </span>
-        <span
-          class="text-warning font-weight-bold mr-3"
-          data-tooltip="A newer license was generated for this subscription. This license should no longer be used."
-        >
-          Inactive
-        </span>
-        <span
-          class="text-muted"
-        >
-          Created 
-          <span
-            class="timestamp"
-            data-tooltip="2020-01-01"
+            <h3
+              class="h3"
+            >
+              License in 
+              <a
+                class="anchorLink mr-3"
+                href="/s"
+              >
+                s
+              </a>
+            </h3>
+            <span
+              class="mr-3"
+            >
+              AccountName
+            </span>
+          </div>
+          <div
+            class="d-flex align-items-baseline mb-2"
           >
-            in almost 14 years
-          </span>
-        </span>
-      </div>
-    </div>
-    <div>
-      Tags: 
-      <div
-        class="badge secondary mr-1"
-      >
-        a
-      </div>
-    </div>
-    <div
-      class="form-inline mt-2 d-block"
-    >
-      <div
-        class="input-group"
-      >
-        <input
-          class="form-control input"
-          readonly=""
-          type="text"
-          value="lk1"
-        />
-        <div
-          class="input-group-append"
-        >
-          <button
-            class="btn btnSecondary"
-            type="button"
+            <h3
+              class="h3 mb-0"
+            >
+              NB (123 users)
+            </h3>
+            <p
+              class="ml-3 mb-0"
+            >
+              <small
+                class="text-muted"
+              >
+                Created 
+                <span
+                  class="timestamp"
+                >
+                  in almost 14 years
+                </span>
+              </small>
+            </p>
+            <p
+              class="ml-3 mb-0 text-muted"
+            >
+              <small>
+                v1
+              </small>
+            </p>
+          </div>
+          <div
+            class=""
           >
             <svg
-              class="mdi-icon icon-inline"
+              aria-hidden="true"
+              class="mdi-icon iconInline mr-1 text-success"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
               <path
-                d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"
               />
             </svg>
-             Copy
-          </button>
+            Valid 
+            <span
+              class="timestamp"
+            >
+              almost 15 years
+            </span>
+             remaining
+          </div>
         </div>
+        <button
+          class="btn btnDanger ml-auto d-flex justify-content-center align-items-center"
+          type="button"
+        >
+          Revoke
+        </button>
+      </div>
+      <div />
+      <div
+        class="collapse mt-4"
+      >
+        <div
+          class="d-flex"
+        >
+          <label
+            class="label"
+          >
+            License Key ID
+          </label>
+          <p
+            class="ml-3"
+          />
+        </div>
+        <div
+          aria-live="assertive"
+          class="alert alertDanger mb-2"
+          role="alert"
+        >
+          License tags contain unknown values (marked red), please check if the tags are correct.
+        </div>
+        <label
+          class="label w-100"
+        >
+          <p
+            class="mb-2"
+          >
+            Tags
+          </p>
+          <p
+            class="mb-2"
+          >
+            <span
+              class="badge danger mr-1"
+            >
+              a
+            </span>
+          </p>
+        </label>
+        <label
+          class="label w-100"
+        >
+          <p
+            class="mb-2"
+          >
+            License Key
+          </p>
+          <div
+            class="form-inline"
+          >
+            <div
+              class="input-group flex-1"
+            >
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  class="input form-control with-invalid-icon"
+                  readonly=""
+                  type="text"
+                  value="lk1"
+                />
+              </div>
+              <div
+                class="input-group-append flex-shrink-0"
+              >
+                <button
+                  aria-disabled="false"
+                  aria-label="Copy"
+                  class="btn btnSecondary"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="mdi-icon iconInline"
+                    fill="currentColor"
+                    height="24"
+                    role="img"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                    />
+                  </svg>
+                   Copy
+                </button>
+              </div>
+            </div>
+          </div>
+        </label>
       </div>
     </div>
   </li>

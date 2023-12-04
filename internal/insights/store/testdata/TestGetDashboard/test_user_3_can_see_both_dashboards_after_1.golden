@@ -1,0 +1,10 @@
+[]*types.Dashboard{{
+	ID:    2,
+	Title: "private dashboard for user 3",
+	InsightIDs: []string{
+		"private1234",
+		"shared1234",
+	},
+	UserIdGrants: []int64{3},
+	OrgIdGrants:  []int64{},
+}}

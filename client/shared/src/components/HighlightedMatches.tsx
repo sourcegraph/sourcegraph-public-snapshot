@@ -1,16 +1,18 @@
 import * as React from 'react'
 
 /** Wraps matches of pattern in text with <strong>. */
-export const HighlightedMatches: React.FunctionComponent<{
-    /* The text to display matches in. */
-    text: string
+export const HighlightedMatches: React.FunctionComponent<
+    React.PropsWithChildren<{
+        /* The text to display matches in. */
+        text: string
 
-    /* The pattern to highlight in the text. */
-    pattern: string
+        /* The pattern to highlight in the text. */
+        pattern: string
 
-    /** The class name for the <strong> element for matches. */
-    className?: string
-}> = ({ text, pattern, className }) => (
+        /** The class name for the <strong> element for matches. */
+        className?: string
+    }>
+> = ({ text, pattern, className }) => (
     <span>
         {fuzzyMatches(text.toLowerCase(), pattern.toLowerCase()).map((span, index) =>
             span.match ? (

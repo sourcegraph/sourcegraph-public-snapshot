@@ -1,14 +1,17 @@
 import { flatMap } from 'lodash'
 
-import { MatchGroup, MatchItem, RankingResult, PerFileResultRanking } from './PerFileResultRanking'
+import type { MatchGroup, MatchItem, PerFileResultRanking, RankingResult } from './PerFileResultRanking'
 
 /**
  * LineRanking orders hunks purely by line number, disregarding the relevance ranking provided by Zoekt.
  */
 export class LineRanking implements PerFileResultRanking {
+    constructor(private maxMatches: number) {}
+
     public collapsedResults(matches: MatchItem[], context: number): RankingResult {
-        return calculateMatchGroupsSorted(matches, 10, context)
+        return calculateMatchGroupsSorted(matches, this.maxMatches, context)
     }
+
     public expandedResults(matches: MatchItem[], context: number): RankingResult {
         return calculateMatchGroupsSorted(matches, 0, context)
     }
@@ -17,13 +20,18 @@ export class LineRanking implements PerFileResultRanking {
 /**
  * Groups highlights that have overlapping or adjacent context. The input must be sorted.
  */
-export const mergeContext = <T extends { line: number }>(context: number, highlights: T[]): T[][] => {
+export const mergeContext = <
+    T extends { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
+>(
+    context: number,
+    highlights: T[]
+): T[][] => {
     const groupsOfHighlights: T[][] = []
 
     for (let index = 0; index < highlights.length; index++) {
         const current = highlights[index]
         const previous = highlights[index - 1]
-        if (!previous || current.line - previous.line - 2 * context > 1) {
+        if (!previous || current.startLine - previous.endLine - 2 * context > 1) {
             // Either this is the beginning of the file, or there is at
             // least one line between the end of the previous context
             // and the beginning of this context, so start a new group.
@@ -32,7 +40,7 @@ export const mergeContext = <T extends { line: number }>(context: number, highli
             // This context either overlaps with or is adjacent to the
             // previous context, so add this highlight to the previous
             // group.
-            groupsOfHighlights[groupsOfHighlights.length - 1].push(current)
+            groupsOfHighlights.at(-1)!.push(current)
         }
     }
 
@@ -41,22 +49,21 @@ export const mergeContext = <T extends { line: number }>(context: number, highli
 
 const calculateGroupPositions = (
     matches: {
-        line: number
-        character: number
-        highlightLength: number
-        isInContext: boolean
+        startLine: number
+        startCharacter: number
+        endLine: number
+        endCharacter: number
     }[],
     context: number,
     highestLineNumberWithinSubsetMatches: number
 ): MatchGroup => {
     {
-        let startLine = matches[0].line - context
+        let startLine = matches[0].startLine - context
         startLine = startLine < 0 ? 0 : startLine
 
-        const highlightRangeLines = matches.map(range => range.line)
-
+        const highlightRangeEndLines = matches.map(range => range.endLine)
         // The highest line number of all highlights in this excerpt.
-        const lastHighlightLineNumber = Math.max(...highlightRangeLines)
+        const lastHighlightLineNumber = Math.max(...highlightRangeEndLines)
 
         // If the last highlight line is greater than the highest line number within the subset of matches
         // we are displaying, then we know that there's at least one highlight in the context lines.
@@ -74,14 +81,13 @@ const calculateGroupPositions = (
         // Of the matches in this excerpt, pick the one with the highest line number + lines of context.
         // Don't add the context value to calculate the last line if the last highlight match is the highlight range + context
         const endLine = contextLineHasHighlight
-            ? Math.max(...highlightRangeLines) + numberOfContextLinesToShow
-            : Math.max(...highlightRangeLines) + context
-
+            ? Math.max(...highlightRangeEndLines) + numberOfContextLinesToShow
+            : Math.max(...highlightRangeEndLines) + context
         return {
             matches,
 
             // 1-based position describing the starting place of the matches.
-            position: { line: matches[0].line + 1, character: matches[0].character + 1 },
+            position: { line: matches[0].startLine + 1, character: matches[0].startCharacter + 1 },
 
             // 0-based range describing the start and end lines (end line is exclusive.)
             startLine,
@@ -109,15 +115,19 @@ export const calculateMatchGroupsSorted = (
     maxMatches: number,
     context: number
 ): { matches: MatchItem[]; grouped: MatchGroup[] } => {
+    if (matches.length === 0) {
+        return { matches: [], grouped: [] }
+    }
+
     const sortedMatches = matches.sort((a, b) => {
-        if (a.line < b.line) {
+        if (a.startLine < b.startLine) {
             return -1
         }
-        if (a.line === b.line) {
-            if (a.highlightRanges[0].start < b.highlightRanges[0].start) {
+        if (a.startLine === b.startLine) {
+            if (a.highlightRanges[0].startCharacter < b.highlightRanges[0].startCharacter) {
                 return -1
             }
-            if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
+            if (a.highlightRanges[0].startCharacter === b.highlightRanges[0].startCharacter) {
                 return 0
             }
         }
@@ -126,28 +136,31 @@ export const calculateMatchGroupsSorted = (
 
     // This checks the highest line number amongst the number of matches
     // that we want to show in a collapsed result preview.
-    const highestLineNumberWithinSubsetMatches =
+    const highestSortedMatchIndex =
         sortedMatches.length > 0
             ? sortedMatches.length > maxMatches
-                ? sortedMatches[maxMatches === 0 ? 0 : maxMatches - 1].line
-                : sortedMatches[sortedMatches.length - 1].line
+                ? maxMatches === 0
+                    ? 0
+                    : maxMatches - 1
+                : sortedMatches.length - 1
             : 0
+    const highestLineNumberWithinSubsetMatches = sortedMatches[highestSortedMatchIndex].endLine
 
     // Determine which line matches we will show. This includes matches that are in the context
     // area (if any.)
     const showMatches = sortedMatches.filter(
         (match, index) =>
-            maxMatches === 0 || index < maxMatches || match.line <= highestLineNumberWithinSubsetMatches + context
+            maxMatches === 0 || index < maxMatches || match.endLine <= highestLineNumberWithinSubsetMatches + context
     )
 
     const grouped = mergeContext(
         context,
         flatMap(showMatches, match =>
             match.highlightRanges.map(range => ({
-                line: match.line,
-                character: range.start,
-                highlightLength: range.highlightLength,
-                isInContext: maxMatches === 0 ? false : match.line > highestLineNumberWithinSubsetMatches,
+                startLine: range.startLine,
+                startCharacter: range.startCharacter,
+                endLine: range.endLine,
+                endCharacter: range.endCharacter,
             }))
         )
     ).map(group => calculateGroupPositions(group, context, highestLineNumberWithinSubsetMatches))

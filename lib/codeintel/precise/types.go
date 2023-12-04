@@ -1,6 +1,8 @@
 package precise
 
-import "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+import (
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+)
 
 type ID string
 
@@ -33,9 +35,15 @@ type RangeData struct {
 	ReferenceResultID      ID   // possibly empty
 	ImplementationResultID ID   // possibly empty
 	HoverResultID          ID   // possibly empty
-	DocumentationResultID  ID   // possibly empty
 	MonikerIDs             []ID // possibly empty
 }
+
+const (
+	Local          = "local"
+	Import         = "import"
+	Export         = "export"
+	Implementation = "implementation"
+)
 
 // MonikerData represent a unique name (eventually) attached to a range.
 type MonikerData struct {
@@ -47,6 +55,9 @@ type MonikerData struct {
 
 // PackageInformationData indicates a globally unique namespace for a moniker.
 type PackageInformationData struct {
+	// Name of the package manager.
+	Manager string
+
 	// Name of the package that contains the moniker.
 	Name string
 
@@ -207,14 +218,29 @@ type DocumentationSearchResult struct {
 // Package pairs a package name and the dump that provides it.
 type Package struct {
 	Scheme  string
+	Manager string
 	Name    string
 	Version string
+}
+
+func (pi *Package) LessThan(pj *Package) bool {
+	if pi.Scheme == pj.Scheme {
+		if pi.Manager == pj.Manager {
+			if pi.Name == pj.Name {
+				return pi.Version < pj.Version
+			}
+
+			return pi.Name < pj.Name
+		}
+
+		return pi.Manager < pj.Manager
+	}
+	return pi.Scheme < pj.Scheme
 }
 
 // PackageReferences pairs a package name/version with a dump that depends on it.
 type PackageReference struct {
 	Package
-	Filter []byte // a bloom filter of identifiers imported by this dependent
 }
 
 // GroupedBundleData{Chans,Maps} is a view of a correlation State that sorts data by it's containing document
@@ -223,17 +249,15 @@ type PackageReference struct {
 // and parallelizing the work, while the Maps version can be modified for e.g. local development
 // via the REPL or patching for incremental indexing.
 type GroupedBundleDataChans struct {
-	Meta                  MetaData
-	Documents             chan KeyedDocumentData
-	ResultChunks          chan IndexedResultChunkData
-	Definitions           chan MonikerLocations
-	References            chan MonikerLocations
-	Implementations       chan MonikerLocations
-	Packages              []Package
-	PackageReferences     []PackageReference
-	DocumentationPages    chan *DocumentationPageData
-	DocumentationPathInfo chan *DocumentationPathInfoData
-	DocumentationMappings chan DocumentationMapping
+	ProjectRoot       string
+	Meta              MetaData
+	Documents         chan KeyedDocumentData
+	ResultChunks      chan IndexedResultChunkData
+	Definitions       chan MonikerLocations
+	References        chan MonikerLocations
+	Implementations   chan MonikerLocations
+	Packages          []Package
+	PackageReferences []PackageReference
 }
 
 type GroupedBundleDataMaps struct {

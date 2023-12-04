@@ -1,28 +1,30 @@
 import React from 'react'
-import { RouteComponentProps } from 'react-router'
 
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
-import { UserAreaUserFields } from '../../../graphql-operations'
+import type { UserAreaUserFields } from '../../../graphql-operations'
 
-import { queryUserBatchChangesCodeHosts } from './backend'
-import { CodeHostConnections } from './CodeHostConnections'
+import { UserCodeHostConnections } from './CodeHostConnections'
+import { UserCommitSigningIntegrations } from './CommitSigningIntegrations'
+import { RolloutWindowsConfiguration } from './RolloutWindowsConfiguration'
 
-export interface BatchChangesSettingsAreaProps extends Pick<RouteComponentProps, 'history' | 'location'> {
+export interface BatchChangesSettingsAreaProps {
     user: Pick<UserAreaUserFields, 'id'>
-    queryUserBatchChangesCodeHosts?: typeof queryUserBatchChangesCodeHosts
 }
 
 /** The page area for all batch changes settings. It's shown in the user settings sidebar. */
-export const BatchChangesSettingsArea: React.FunctionComponent<BatchChangesSettingsAreaProps> = props => (
+export const BatchChangesSettingsArea: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangesSettingsAreaProps>
+> = props => (
     <div className="test-batches-settings-page">
         <PageTitle title="Batch changes settings" />
         <PageHeader headingElement="h2" path={[{ text: 'Batch Changes settings' }]} className="mb-3" />
-        <CodeHostConnections
-            headerLine={<p>Add access tokens to enable Batch Changes changeset creation on your code hosts.</p>}
+        <RolloutWindowsConfiguration />
+        <UserCodeHostConnections
+            headerLine={<Text>Add access tokens to enable Batch Changes changeset creation on your code hosts.</Text>}
             userID={props.user.id}
-            {...props}
         />
+        <UserCommitSigningIntegrations userID={props.user.id} />
     </div>
 )

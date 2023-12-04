@@ -52,7 +52,7 @@ func TestRulesMarshalJSON(t *testing.T) {
 func TestMatchWithSuffix(t *testing.T) {
 	type ruleInputs struct {
 		pattern string
-		value   interface{}
+		value   any
 	}
 	compileInputs := func(t *testing.T, inputs []ruleInputs) (rs rules) {
 		for _, input := range inputs {
@@ -68,7 +68,7 @@ func TestMatchWithSuffix(t *testing.T) {
 	for name, tc := range map[string]struct {
 		rules []ruleInputs
 		args  []string
-		want  interface{}
+		want  any
 	}{
 		"no rules": {
 			rules: []ruleInputs{},

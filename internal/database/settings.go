@@ -6,12 +6,10 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/jsonx"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -21,7 +19,7 @@ import (
 type SettingsStore interface {
 	CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (*api.Settings, error)
 	Done(error) error
-	GetLastestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
+	GetLatestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
 	GetLatest(context.Context, api.SettingsSubject) (*api.Settings, error)
 	ListAll(ctx context.Context, impreciseSubstring string) ([]*api.Settings, error)
 	Transact(context.Context) (SettingsStore, error)
@@ -33,12 +31,7 @@ type settingsStore struct {
 	*basestore.Store
 }
 
-// Settings instantiates and returns a new SettingStore with prepared statements.
-func Settings(db dbutil.DB) SettingsStore {
-	return &settingsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// NewSettingStoreWithDB instantiates and returns a new SettingStore using the other store handle.
+// SettingsWith instantiates and returns a new SettingsStore using the other store handle.
 func SettingsWith(other basestore.ShareableStore) SettingsStore {
 	return &settingsStore{Store: basestore.NewWithHandle(other.Handle())}
 }
@@ -53,21 +46,8 @@ func (s *settingsStore) Transact(ctx context.Context) (SettingsStore, error) {
 }
 
 func (o *settingsStore) CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
-	if strings.TrimSpace(contents) == "" {
-		return nil, errors.Errorf("blank settings are invalid (you can clear the settings by entering an empty JSON object: {})")
-	}
-
-	// Validate JSON syntax before saving.
-	if _, errs := jsonx.Parse(contents, jsonx.ParseOptions{Comments: true, TrailingCommas: true}); len(errs) > 0 {
-		return nil, errors.Errorf("invalid settings JSON: %v", errs)
-	}
-
-	// Validate setting schema
-	problems, err := conf.ValidateSetting(contents)
-	if err != nil {
-		return nil, err
-	}
-	if len(problems) > 0 {
+	// Validate settings for syntax and by the JSON Schema.
+	if problems := conf.ValidateSettings(contents); len(problems) > 0 {
 		return nil, errors.Errorf("invalid settings: %s", strings.Join(problems, ","))
 	}
 
@@ -92,7 +72,7 @@ func (o *settingsStore) CreateIfUpToDate(ctx context.Context, subject api.Settin
 
 	creatorIsUpToDate := latestSetting != nil && lastID != nil && latestSetting.ID == *lastID
 	if latestSetting == nil || creatorIsUpToDate {
-		err := tx.Handle().DB().QueryRowContext(
+		err := tx.Handle().QueryRowContext(
 			ctx,
 			"INSERT INTO settings(org_id, user_id, author_user_id, contents) VALUES($1, $2, $3, $4) RETURNING id, created_at",
 			s.Subject.Org, s.Subject.User, s.AuthorUserID, s.Contents).Scan(&s.ID, &s.CreatedAt)
@@ -126,7 +106,7 @@ func (o *settingsStore) GetLatest(ctx context.Context, subject api.SettingsSubje
 	if err != nil {
 		return nil, err
 	}
-	settings, err := parseQueryRows(ctx, rows)
+	settings, err := parseQueryRows(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -134,19 +114,10 @@ func (o *settingsStore) GetLatest(ctx context.Context, subject api.SettingsSubje
 		// No configuration has been set for this subject yet.
 		return nil, nil
 	}
-	if settings[0].Contents == "" {
-		// On some instances user, org, and global settings are an invalid
-		// empty string / null.
-		//
-		// This happens particularly on instances that ran old versions of
-		// Sourcegraph where we didn't enforce that settings contents had to be
-		// non-empty for correctness.
-		settings[0].Contents = "{}"
-	}
 	return settings[0], nil
 }
 
-func (o *settingsStore) GetLastestSchemaSettings(ctx context.Context, subject api.SettingsSubject) (*schema.Settings, error) {
+func (o *settingsStore) GetLatestSchemaSettings(ctx context.Context, subject api.SettingsSubject) (*schema.Settings, error) {
 	apiSettings, err := o.GetLatest(ctx, subject)
 	if err != nil {
 		return nil, err
@@ -178,11 +149,8 @@ func (o *settingsStore) GetLastestSchemaSettings(ctx context.Context, subject ap
 // 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 // responsible for ensuring this or that the response never makes it to a user.
 func (o *settingsStore) ListAll(ctx context.Context, impreciseSubstring string) (_ []*api.Settings, err error) {
-	tr, ctx := trace.New(ctx, "database.Settings.ListAll", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	tr, ctx := trace.New(ctx, "database.Settings.ListAll")
+	defer tr.EndWithErr(&err)
 
 	q := sqlf.Sprintf(`
 		WITH q AS (
@@ -202,10 +170,10 @@ func (o *settingsStore) ListAll(ctx context.Context, impreciseSubstring string) 
 	if err != nil {
 		return nil, err
 	}
-	return parseQueryRows(ctx, rows)
+	return parseQueryRows(rows)
 }
 
-func parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*api.Settings, error) {
+func parseQueryRows(rows *sql.Rows) ([]*api.Settings, error) {
 	settings := []*api.Settings{}
 	defer rows.Close()
 	for rows.Next() {

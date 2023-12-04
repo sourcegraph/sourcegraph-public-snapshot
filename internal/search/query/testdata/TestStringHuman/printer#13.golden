@@ -1,0 +1,4 @@
+{
+  "Input": "repo:foo a -content:b -content:c",
+  "Result": "repo:foo (-content:b AND -content:c AND a)"
+}

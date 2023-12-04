@@ -1,0 +1,60 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"sourceRefName":"refs/heads/add-codeowners","targetRefName":"refs/heads/main","title":"Test
+      PR","description":"test description","reviewers":null,"forkSource":null,"isDraft":false}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json
+    url: https://dev.azure.com/sgtestazure/sgtestazure/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/pullrequests?api-version=7.0
+    method: POST
+  response:
+    body: '{"repository":{"id":"c4d186ef-18a6-4de4-a610-aa9ebd4e1faa","name":"sgtestazure","url":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa","project":{"id":"dc493f7d-0b57-4de2-a59b-3f74ff3ea334","name":"sgtestazure","url":"https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334","state":"wellFormed","revision":11,"visibility":"private","lastUpdateTime":"2023-01-20T19:22:47.403Z"},"size":3688630,"remoteUrl":"https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure","sshUrl":"git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazure","webUrl":"https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure","isDisabled":false,"isInMaintenance":false},"pullRequestId":38,"codeReviewId":38,"status":"active","createdBy":{"displayName":"idan.varsano@sourcegraph.com","url":"https://spsprodcca1.vssps.visualstudio.com/Ab768986f-7304-43dd-be74-f37e30f66c38/_apis/Identities/473dec3e-03d7-6147-b106-0b0a7f766a92","_links":{"avatar":{"href":"https://dev.azure.com/sgtestazure/_apis/GraphProfile/MemberAvatars/aad.NDczZGVjM2UtMDNkNy03MTQ3LWIxMDYtMGIwYTdmNzY2YTky"}},"id":"473dec3e-03d7-6147-b106-0b0a7f766a92","uniqueName":"idan.varsano@sourcegraph.com","imageUrl":"https://dev.azure.com/sgtestazure/_api/_common/identityImage?id=473dec3e-03d7-6147-b106-0b0a7f766a92","descriptor":"aad.NDczZGVjM2UtMDNkNy03MTQ3LWIxMDYtMGIwYTdmNzY2YTky"},"creationDate":"2023-02-21T21:53:34.2428698Z","title":"Test
+      PR","description":"test description","sourceRefName":"refs/heads/add-codeowners","targetRefName":"refs/heads/main","mergeStatus":"queued","isDraft":false,"mergeId":"b7d5e584-ba11-4b9d-b8cb-4acd96ed0e02","lastMergeSourceCommit":{"commitId":"bb76f558e69f76c26c9c7844b9bc473a054ab1dc","url":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/commits/bb76f558e69f76c26c9c7844b9bc473a054ab1dc"},"lastMergeTargetCommit":{"commitId":"1c70d536b4ab3187b5aed41af8f259f1b8ceba6b","url":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/commits/1c70d536b4ab3187b5aed41af8f259f1b8ceba6b"},"reviewers":[],"labels":[],"url":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/pullRequests/38","_links":{"self":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/pullRequests/38"},"repository":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa"},"workItems":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/pullRequests/38/workitems"},"sourceBranch":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/refs/heads/add-codeowners"},"targetBranch":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/refs/heads/main"},"statuses":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/pullRequests/38/statuses"},"sourceCommit":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/commits/bb76f558e69f76c26c9c7844b9bc473a054ab1dc"},"targetCommit":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/commits/1c70d536b4ab3187b5aed41af8f259f1b8ceba6b"},"createdBy":{"href":"https://spsprodcca1.vssps.visualstudio.com/Ab768986f-7304-43dd-be74-f37e30f66c38/_apis/Identities/473dec3e-03d7-6147-b106-0b0a7f766a92"},"iterations":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/pullRequests/38/iterations"}},"supportsIterations":true,"artifactId":"vstfs:///Git/PullRequestId/dc493f7d-0b57-4de2-a59b-3f74ff3ea334%2fc4d186ef-18a6-4de4-a610-aa9ebd4e1faa%2f38"}'
+    headers:
+      Access-Control-Expose-Headers:
+      - Request-Context
+      Activityid:
+      - 1372f919-a401-49b1-8741-3817dc116205
+      Cache-Control:
+      - no-cache, no-store, must-revalidate
+      Content-Length:
+      - "4391"
+      Content-Type:
+      - application/json; charset=utf-8; api-version=7.0
+      Date:
+      - Tue, 21 Feb 2023 21:53:34 GMT
+      Expires:
+      - "-1"
+      P3p:
+      - CP="CAO DSP COR ADMa DEV CONo TELo CUR PSA PSD TAI IVDo OUR SAMi BUS DEM NAV
+        STA UNI COM INT PHY ONL FIN PUR LOC CNT"
+      Pragma:
+      - no-cache
+      Request-Context:
+      - appId=cid-v1:72d31d95-1757-44f5-b910-a46611808454
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      X-Cache:
+      - CONFIG_NOCACHE
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Msedge-Ref:
+      - 'Ref A: 14D5656B5C8545B0AC29604BF3153444 Ref B: YTO01EDGE0706 Ref C: 2023-02-21T21:53:34Z'
+      X-Tfs-Processid:
+      - 05830bec-98a2-44a0-aed1-265f3224303f
+      X-Tfs-Session:
+      - 1372f919-a401-49b1-8741-3817dc116205
+      X-Vss-E2eid:
+      - 1372f919-a401-49b1-8741-3817dc116205
+      X-Vss-Senderdeploymentid:
+      - 4ff21e82-8865-0b2e-ffe8-9598818f8190
+      X-Vss-Userdata:
+      - 473dec3e-03d7-6147-b106-0b0a7f766a92:idan.varsano@sourcegraph.com
+    status: 201 Created
+    code: 201
+    duration: ""

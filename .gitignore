@@ -1,3 +1,10 @@
+# Temporary directory for whatever you want
+.tmp/
+
+# Bazel
+/bazel-*
+.bazelrc-nix
+
 # Vim
 *.swp
 
@@ -39,35 +46,14 @@ grapher/ruby/rubysonar/target
 grapher/ruby/rubysonar/dependency-reduced-pom.xml
 grapher/ruby/yard/.bundle
 npm-debug.log
-yarn-error.log
+pnpm-error.log
+pnpm-debug.log
 .codemod.bookmark
 .elasticbeanstalk/
 
 .tmp/*.jar
 
 /cmd/frontend/internal/graphqlbackend/node_modules
-
-/ui/artifacts
-/ui/node_modules
-/ui/assets/_goTemplates.js
-/ui/assets/analytics.js
-/ui/assets/bundle.js
-/ui/assets/bundle.css
-/ui/assets/sourcebox.js
-/ui/assets/sourcebox.css
-/ui/assets/test.js
-/ui/assets/test.css
-/ui/assets/webpack.manifest.json
-/ui/assets/vs
-/ui/assets/*.html
-/ui/assets/*.map
-/ui/assets/*.txt
-/ui/assets/extension
-/ui/.tmp
-/ui/assets/scripts/
-/ui/assets/styles/
-/ui/assets/*.br
-/ui/assets/*.gz
 
 *.json.actual
 
@@ -104,15 +90,15 @@ package-lock.json
 .nyc_output/
 coverage/
 out/
-client/shared/src/schema.ts
-client/shared/src/schema/*
+client/shared/src/schema/*.d.ts
 puppeteer/
 package-lock.json
-/dist
+dist/
 sourcegraph-webapp-*.tgz
 *.tsbuildinfo
 graphql-operations.ts
 *.module.scss.d.ts
+*.module.css.d.ts
 dll-bundle
 
 # Extensions
@@ -160,3 +146,50 @@ sitemap_query.db
 .annotate
 .annotate.lock
 annotations/
+.buildevent_file
+
+# Buildkite analytics files
+test-reports/
+
+# CI linter cache (used only in CI)
+.golangci-lint-cache
+
+# go workspace files shouldn't be committed
+go.work
+go.work.sum
+
+# binary
+/sg
+
+# SCIP
+index.scip
+
+# Buildkite helper and cache files
+/an
+/tr
+/cache-*.tar
+
+# Backward compatibility database tests patch, generated on the fly in CI
+# for `bazel test @sourcegraph_back_compat//...` targets.
+/dev/backcompat/back_compat_migrations.patch
+
+# Generated on CI only
+.aspect/bazelrc/ci.sourcegraph.bazelrc
+
+# nix
+result
+result-*
+
+# Windows
+/cmd/sourcegraph/__debug_bin.exe
+
+# For locally building and testing shared packages from the sourcegraph/cody repository on
+# the web client.
+/cody
+
+/playwright
+
+# JUnit execution reports
+junit.xml
+
+/enterprise/

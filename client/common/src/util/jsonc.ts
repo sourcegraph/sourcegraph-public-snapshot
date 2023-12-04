@@ -1,15 +1,15 @@
 import {
     modify as jsoncModify,
     applyEdits,
-    JSONPath,
-    FormattingOptions,
+    type JSONPath,
+    type FormattingOptions,
     parse,
-    ParseError,
-    ParseErrorCode,
+    type ParseError,
     format as jsoncFormat,
-} from '@sqs/jsonc-parser'
+    printParseErrorCode,
+} from 'jsonc-parser'
 
-import { asError, createAggregateError, ErrorLike } from '../errors'
+import { asError, createAggregateError, type ErrorLike } from '../errors'
 
 /**
  * Parses the JSON input using an error-tolerant "JSONC" parser. If an error occurs, it is returned as a value
@@ -35,8 +35,10 @@ function parseJSON(input: string): any {
         throw createAggregateError(
             errors.map(error => ({
                 ...error,
-                code: ParseErrorCode[error.error],
-                message: `parse error (code: ${error.error}, offset: ${error.offset}, length: ${error.length})`,
+                code: error.error,
+                message: `parse error (code: ${error.error}, error: ${printParseErrorCode(error.error)}, offset: ${
+                    error.offset
+                }, length: ${error.length})`,
             }))
         )
     }
@@ -51,7 +53,6 @@ const defaultFormattingOptions: FormattingOptions = {
 
 /**
  * Simplified jsonc API method to modify jsonc object.
- *
  * @param originalContent Original content (settings)
  * @param path - path to the field which will be modified
  * @param value - new value for modify field

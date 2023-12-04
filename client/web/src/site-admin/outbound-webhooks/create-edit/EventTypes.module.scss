@@ -1,0 +1,16 @@
+.heading {
+    display: grid;
+    grid-column-gap: 1rem;
+    grid-template-columns: max-content max-content;
+    align-items: center;
+
+    h3 {
+        display: inline-block;
+        grid-column: 1 / 2;
+        margin: 0;
+    }
+
+    button {
+        grid-column: 2 / 3;
+    }
+}

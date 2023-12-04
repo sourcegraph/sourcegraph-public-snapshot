@@ -1,14 +1,14 @@
 import { URL } from 'url'
 
 import { isDefined } from '@sourcegraph/common'
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import {
     createSharedIntegrationTestContext,
-    IntegrationTestContext,
-    IntegrationTestOptions,
+    type IntegrationTestContext,
+    type IntegrationTestOptions,
 } from '@sourcegraph/shared/src/testing/integration/context'
 
-import { BrowserGraphQlOperations } from '../graphql-operations'
+import type { BrowserGraphQlOperations } from '../graphql-operations'
 
 import { commonBrowserGraphQlResults } from './graphql'
 

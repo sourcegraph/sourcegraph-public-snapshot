@@ -2,28 +2,29 @@ package main
 
 import (
 	"bytes"
+	"embed"
 	_ "embed"
+	"io/fs"
 	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-//go:embed queries.txt
-var queriesRaw []byte
+//go:embed queries*.txt
+var queriesFS embed.FS
+
+//go:embed attribution/*.txt
+var attributionFS embed.FS
 
 type Config struct {
-	Groups []*QueryGroupConfig
-}
-
-type QueryGroupConfig struct {
-	Name    string
 	Queries []*QueryConfig
 }
 
 type QueryConfig struct {
-	Query string
-	Name  string
+	Query   string
+	Snippet string
+	Name    string
 
 	// An unset interval defaults to 1m
 	Interval time.Duration
@@ -42,8 +43,32 @@ const (
 	Stream
 )
 
-func loadQueries() (_ *Config, err error) {
+func loadQueries(env string) (_ *Config, err error) {
+	if env == "" {
+		env = "cloud"
+	}
+
+	queriesRaw, err := queriesFS.ReadFile("queries.txt")
+	if err != nil {
+		return nil, err
+	}
+
+	if env != "cloud" {
+		extra, err := queriesFS.ReadFile("queries_" + env + ".txt")
+		if err != nil {
+			return nil, err
+		}
+		queriesRaw = append(queriesRaw, '\n')
+		queriesRaw = append(queriesRaw, extra...)
+	}
+
 	var queries []*QueryConfig
+	attributions, err := loadAttributions()
+	if err != nil {
+		return nil, err
+	}
+	queries = append(queries, attributions...)
+
 	var current QueryConfig
 	add := func() {
 		q := &QueryConfig{
@@ -74,9 +99,32 @@ func loadQueries() (_ *Config, err error) {
 	add()
 
 	return &Config{
-		Groups: []*QueryGroupConfig{{
-			Name:    "monitoring_queries",
-			Queries: queries,
-		}},
+		Queries: queries,
 	}, err
+}
+
+func loadAttributions() ([]*QueryConfig, error) {
+	var qs []*QueryConfig
+	err := fs.WalkDir(attributionFS, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+
+		b, err := fs.ReadFile(attributionFS, path)
+		if err != nil {
+			return err
+		}
+
+		// Remove extension and prefix with attr_
+		name := "attr_" + strings.Split(d.Name(), ".")[0]
+
+		qs = append(qs, &QueryConfig{
+			Snippet:   string(b),
+			Name:      name,
+			Protocols: []Protocol{Batch}, // only support batch for attribution
+		})
+
+		return nil
+	})
+	return qs, err
 }

@@ -9,26 +9,29 @@
   "HeadRefName": "monorepo",
   "BaseRefName": "master",
   "Number": 596,
+  "ReviewDecision": "",
   "Author": {
-   "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+   "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
    "Login": "chrismwendt",
    "URL": "https://github.com/chrismwendt"
   },
   "BaseRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+   "Name": "sourcegraph",
    "Owner": {
     "Login": "sourcegraph"
    }
   },
   "HeadRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+   "Name": "sourcegraph",
    "Owner": {
     "Login": "sourcegraph"
    }
   },
   "Participants": [
    {
-    "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+    "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
     "Login": "chrismwendt",
     "URL": "https://github.com/chrismwendt"
    },
@@ -53,7 +56,7 @@
     "URL": "https://github.com/beyang"
    },
    {
-    "AvatarURL": "https://avatars.githubusercontent.com/u/25180681?u=d3b431ab24d1b297a939591bbaeec5977eda6592\u0026v=4",
+    "AvatarURL": "https://avatars.githubusercontent.com/u/25180681?u=27181db7e8acbbb4c3c6d507941addb379271b78\u0026v=4",
     "Login": "renovate-bot",
     "URL": "https://github.com/renovate-bot"
    },
@@ -68,7 +71,7 @@
     "URL": "https://github.com/KattMingMing"
    },
    {
-    "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=4d116636ebe647649a2157490c8d4fc21ad1fd16\u0026v=4",
+    "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
     "Login": "slimsag",
     "URL": "https://github.com/slimsag"
    },
@@ -83,7 +86,7 @@
     "URL": "https://github.com/ryan-blunden"
    },
    {
-    "AvatarURL": "https://avatars.githubusercontent.com/u/8770560?u=1998a850667263927cfb8eeff3b24020be3c0101\u0026v=4",
+    "AvatarURL": "https://avatars.githubusercontent.com/u/8770560?u=8e7ba42957dbdc163f1ee8105a68bf574e890b68\u0026v=4",
     "Login": "lukeautry",
     "URL": "https://github.com/lukeautry"
    }
@@ -413,7 +416,7 @@
       "MessageHeadline": "build: bump sourcegraph dep",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/5315e29960e02bb2305d338b828161fd206eee1f",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/1646931?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/1646931?u=df4a0fe79667e85ece8054c617fc9f073450d205\u0026v=4",
        "Email": "beyang@sourcegraph.com",
        "Name": "Beyang Liu",
        "User": {
@@ -2528,7 +2531,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -2551,7 +2554,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -2984,7 +2987,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -3307,7 +3310,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -3439,11 +3442,11 @@
       "MessageHeadline": "feat(deps): update dependency @sourcegraph/extensions-client-common t…",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/5ab0915e5f812399cbf875ae79a4657618e6fb8a",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
        "Email": "stephen.gutekanst@gmail.com",
        "Name": "Stephen Gutekanst",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=4d116636ebe647649a2157490c8d4fc21ad1fd16\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
         "Login": "slimsag",
         "URL": "https://github.com/slimsag"
        }
@@ -3677,11 +3680,11 @@
       "MessageHeadline": "fix: do not display code intelligence hovers on Sourcegraph Extension…",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/893768ee1c6e3bc87bad7cdae0ea4aed4e3a607b",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
        "Email": "stephen.gutekanst@gmail.com",
        "Name": "Stephen Gutekanst",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=4d116636ebe647649a2157490c8d4fc21ad1fd16\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
         "Login": "slimsag",
         "URL": "https://github.com/slimsag"
        }
@@ -3769,11 +3772,11 @@
       "MessageHeadline": "fix: make line decoration link opening match Sourcegraph behavior",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/3e13ce277c58bc34f6d29a63dfe52f9e7933e678",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
        "Email": "stephen.gutekanst@gmail.com",
        "Name": "Stephen Gutekanst",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=4d116636ebe647649a2157490c8d4fc21ad1fd16\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
         "Login": "slimsag",
         "URL": "https://github.com/slimsag"
        }
@@ -3792,11 +3795,11 @@
       "MessageHeadline": "fix: do not leak referrer when clicking Sourcegraph extension links",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/2836554b2d8cc0740e86c5f692b88e58c5786606",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
        "Email": "stephen.gutekanst@gmail.com",
        "Name": "Stephen Gutekanst",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=4d116636ebe647649a2157490c8d4fc21ad1fd16\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
         "Login": "slimsag",
         "URL": "https://github.com/slimsag"
        }
@@ -3815,11 +3818,11 @@
       "MessageHeadline": "fix: hoverMessage now properly renders as a tooltip",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/c7409d3a76aaec2a748b8446b021d8e3bf69c192",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
        "Email": "stephen.gutekanst@gmail.com",
        "Name": "Stephen Gutekanst",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=4d116636ebe647649a2157490c8d4fc21ad1fd16\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
         "Login": "slimsag",
         "URL": "https://github.com/slimsag"
        }
@@ -4224,7 +4227,7 @@
       "MessageHeadline": "chore: add `.github` directory",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/6126d5fa5f25949cd1e222e07af0c5ed1242fcdf",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/133014?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/133014?u=6d63dc94c7e6b7d49745c1a91d70302d4a1ad71c\u0026v=4",
        "Email": "ryan.blunden@gmail.com",
        "Name": "Ryan Blunden",
        "User": {
@@ -4283,7 +4286,7 @@
     "Type": "ReviewRequestedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
@@ -4300,12 +4303,12 @@
     "Type": "ReviewRequestedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "RequestedReviewer": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=4d116636ebe647649a2157490c8d4fc21ad1fd16\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
       "Login": "slimsag",
       "URL": "https://github.com/slimsag"
      },
@@ -4317,7 +4320,7 @@
     "Type": "ReviewRequestedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
@@ -4334,7 +4337,7 @@
     "Type": "ReviewRequestedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
@@ -4351,7 +4354,7 @@
     "Type": "ReviewRequestedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
@@ -4427,7 +4430,7 @@
       "Login": "felixfbecker",
       "URL": "https://github.com/felixfbecker"
      },
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "Aborting my review here cause it looks WIP. Please ping me when this ready for review.",
      "State": "CHANGES_REQUESTED",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#pullrequestreview-169814822",
@@ -4477,12 +4480,12 @@
     "Item": {
      "DatabaseID": 434419090,
      "Author": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "@felixfbecker Yup, this is still a WIP, but I'll need help identifying broken parts (more of what you have done already).\r\n\r\n@ijsnow I'll create a `packages/` directory and put the new repos in there. As a follow up, I'll try moving the web app there too.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-434419090",
      "CreatedAt": "2018-10-30T18:33:06Z",
@@ -4617,7 +4620,7 @@
     "Type": "ReviewRequestedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
@@ -4635,12 +4638,12 @@
     "Item": {
      "DatabaseID": 434878252,
      "Author": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "I ran into a mysterious yarn error where it couldn't find a `node_modules/` directory upon fresh installation, and @ggilmore and @ijsnow figured out that it was caused by workspaces and that moving the web app into the `workspaces` field solves the issue.\r\n\r\nThat means I'm also going to move the web app into `workspaces` as a part of this PR.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-434878252",
      "CreatedAt": "2018-10-31T23:09:20Z",
@@ -4859,7 +4862,7 @@
     "Type": "ReviewRequestedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
@@ -5222,16 +5225,16 @@
     "Item": {
      "DatabaseID": 435026930,
      "Author": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "Ready for review, but don't review the first commit (it's massive! And all I did was `git clone` the 3 other repos and `mv src packages/webapp/src`). cc @felixfbecker @ijsnow \r\n\r\nI'd like some :eyes: on the relationship between the gulpfile, `packages/webapp`, and `enterprise`.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435026930",
      "CreatedAt": "2018-11-01T12:34:26Z",
@@ -5313,12 +5316,12 @@
     "Item": {
      "DatabaseID": 435230801,
      "Author": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "CI is green! ✅ It's aliiiive",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435230801",
      "CreatedAt": "2018-11-02T00:23:01Z",
@@ -5335,7 +5338,7 @@
       "Login": "felixfbecker",
       "URL": "https://github.com/felixfbecker"
      },
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "Since you asked to review commit-by-commit, it would have been nice if you squased your fixup commits. I think some of my comments are fixed in later commits.",
      "State": "COMMENTED",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#pullrequestreview-171051975",
@@ -5351,7 +5354,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -5385,12 +5388,12 @@
     "Item": {
      "DatabaseID": 435487633,
      "Author": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "@felixfbecker Thanks for the review - I'll squash the fixup commits and make one more commit to address your feedback here.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435487633",
      "CreatedAt": "2018-11-02T19:41:58Z",
@@ -5403,12 +5406,12 @@
     "Item": {
      "DatabaseID": 435562830,
      "Author": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "I've seen Cypress e2e tests hang twice now (out of ~6 builds), for example https://buildkite.com/sourcegraph/sourcegraph/builds/22660#083cf18f-2045-4994-b75e-021f8b0e44bf\r\n\r\n```\r\nRunning: github_repository_spec.ts...                                                    (1 of 1)\r\n--\r\n  |  \r\n  | Warning: Cypress can only record videos when using the built in 'electron' browser.\r\n  |  \r\n  | You have set the browser to: 'chrome'\r\n  |  \r\n  | A video will not be recorded when using this browser.\r\n  |  \r\n  |  \r\n  | GitHub\r\n  | ✓ .should() - assert that Sourcegraph View Repository is injected (950ms)\r\n  | The automation client disconnected. Cannot continue running tests.\r\n```\r\n\r\nIt usually passes on retry, so it's is something to keep an eye on.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435562830",
      "CreatedAt": "2018-11-03T05:44:04Z",
@@ -5421,12 +5424,12 @@
     "Item": {
      "DatabaseID": 435565882,
      "Author": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "It looks like mocha types are overriding other types:\r\n\r\n![image](https://user-images.githubusercontent.com/1387653/47949163-7a9bf980-defb-11e8-9e1a-1259e53258f6.png)\r\n\r\n@felixfbecker Is there a way to tell TypeScript that certain types only apply to files by glob pattern (e.g. test files only)?",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435565882",
      "CreatedAt": "2018-11-03T07:00:59Z",
@@ -5457,12 +5460,12 @@
     "Item": {
      "DatabaseID": 435570583,
      "Author": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "Gotcha, I'll try that next time I see the problem. The problem disappeared through some more refactoring that I just did.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435570583",
      "CreatedAt": "2018-11-03T08:32:42Z",
@@ -5475,12 +5478,12 @@
     "Item": {
      "DatabaseID": 435570968,
      "Author": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "I noticed extensions are no longer working on this branch, and I suspect something is wrong with the worker-loader.\r\n\r\nIf I add a console log to `extensionHost.worker.ts` like this:\r\n\r\n```diff\r\n+console.log('.worker.ts')\r\nimport { extensionHostWorkerMain } from 'sourcegraph/module/extension/workerMain'\r\n\r\n// We're running in a Web Worker, so `self` is a DedicatedWorkerGlobalScope. For simplicity, our TypeScript config\r\n// doesn't include lib.webworker.d.ts, so `self` here is actually not the correct type and requires this cast.\r\nextensionHostWorkerMain(self as any)\r\n```\r\n\r\nI do not see the log statement, but if I delete the rest so that this is the whole worker:\r\n\r\n```diff\r\nconsole.log('.worker.ts')\r\n```\r\n\r\nI see the log statement. Any ideas on how to debug this further? I'm currently trying to bisect this by stripping code from `extensionHostWorkerMain` in an attempt to find some function or variable that breaks it.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435570968",
      "CreatedAt": "2018-11-03T08:39:12Z",
@@ -5493,12 +5496,12 @@
     "Item": {
      "DatabaseID": 435572244,
      "Author": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "I narrowed the problem to the use of `async` functions. The worker runs when there are no `async` functions and doesn't run when there are. I'm going to compare the compilation output from both master and this branch. That should point to some difference that's probably caused by differences in config related to the regenerator runtime, browserslist, and webpack looking for discrepancies.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435572244",
      "CreatedAt": "2018-11-03T09:02:39Z",
@@ -5511,12 +5514,12 @@
     "Item": {
      "DatabaseID": 435573493,
      "Author": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "The regenerator runtime is the culprit. It's present on this `monorepo` branch, but not on `master`. I'm going to look around to see why this could be happening. @ijsnow I recall you encountered a similar in the past - wasn't the fix to change `browserslist`?",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435573493",
      "CreatedAt": "2018-11-03T09:22:32Z",
@@ -5534,7 +5537,7 @@
       "URL": "https://github.com/felixfbecker"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "If there are errors with regenerator runtime that highlights a problem with the Babel configuration. I saw you changed the Babel config from being in babel.config.js to being inline in webpack.config.ts which may have something to do with it",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435584211",
      "CreatedAt": "2018-11-03T12:30:19Z",
@@ -5552,7 +5555,7 @@
       "URL": "https://github.com/felixfbecker"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "Is the PR description still accurate?",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435595697",
      "CreatedAt": "2018-11-03T15:18:43Z",
@@ -5565,12 +5568,12 @@
     "Item": {
      "DatabaseID": 435624864,
      "Author": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "I tried a bunch of different things:\r\n\r\n- Restore `babel.config.js` at the top level\r\n- Copy `babel.config.js` to the `packages/webapp/` directory\r\n- Update `browserslist`\r\n- Set `\"browserslist\": [\"last 1 version\"]` in `package.json` and each of `packages/*/package.json`\r\n\r\nNone of these seemed to drop `regeneratorRuntime` from the resulting JavaScript (I used `write-file-webpack-plugin` and added a new key to `entry` to the webpack config to put the file on disk).\r\n\r\nThe only change that dropped `regeneratorRuntime` was to remove the `babelLoader` from the `/\\.tsx?$/` rule, but understandably that caused a lot of other problems.\r\n\r\nIs there any way to debug `babel-preset-env` and its interaction with `browserslist`? Is there a way to eliminate `browserslist` as an unknown and hard-code the target in `babel.config.js` just to see if it drops `regeneratorRuntime`?",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435624864",
      "CreatedAt": "2018-11-03T22:10:32Z",
@@ -5583,12 +5586,12 @@
     "Item": {
      "DatabaseID": 435630027,
      "Author": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "I've settled for copying `\"browserslist\"` from `packages/webapp/package.json` into `babel.config.js` for now. If anyone has other ideas on how to avoid that small duplication, I'll try them out.",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435630027",
      "CreatedAt": "2018-11-03T23:51:36Z",
@@ -5761,7 +5764,7 @@
       "Login": "felixfbecker",
       "URL": "https://github.com/felixfbecker"
      },
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "",
      "State": "COMMENTED",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#pullrequestreview-171378178",
@@ -5777,7 +5780,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -5798,7 +5801,7 @@
       "URL": "https://github.com/felixfbecker"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "The structure in the PR description mentions symlinks. What are those needed for?",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435704296",
      "CreatedAt": "2018-11-04T20:45:32Z",
@@ -5811,12 +5814,12 @@
     "Item": {
      "DatabaseID": 435704409,
      "Author": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "The symlinks are not checked into the repo. They are automatically created by running `yarn` as a part of yarn workspaces https://yarnpkg.com/blog/2017/08/02/introducing-workspaces/",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435704409",
      "CreatedAt": "2018-11-04T20:47:02Z",
@@ -5837,7 +5840,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -5860,7 +5863,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -5883,7 +5886,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -5906,7 +5909,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -5929,7 +5932,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -5952,7 +5955,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -5975,7 +5978,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -5998,7 +6001,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -6021,7 +6024,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -6044,7 +6047,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -6067,7 +6070,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -6090,7 +6093,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -6113,7 +6116,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -6136,7 +6139,7 @@
        "Email": "chrismwendt@gmail.com",
        "Name": "Chris Wendt",
        "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
         "Login": "chrismwendt",
         "URL": "https://github.com/chrismwendt"
        }
@@ -6151,12 +6154,12 @@
     "Item": {
      "DatabaseID": 435723040,
      "Author": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "Here's a diagram showing the merge commits I made to retain the history of the other repositories:\r\n\r\n![image](https://user-images.githubusercontent.com/1387653/47972135-f3ab6600-e04d-11e8-82f1-a9225fd38018.png)\r\n",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435723040",
      "CreatedAt": "2018-11-05T00:23:31Z",
@@ -6168,7 +6171,7 @@
     "Type": "MergedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
@@ -6194,7 +6197,7 @@
     "Type": "ClosedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
       "Login": "chrismwendt",
       "URL": "https://github.com/chrismwendt"
      },
@@ -6209,28 +6212,11 @@
      "Commit": {
       "OID": "701d0a1696c61fa420cd0eaf4c1c7a611e584648",
       "CheckSuites": {
-       "Nodes": [
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUyNTA3NDIwNw==",
-         "Status": "COMPLETED",
-         "Conclusion": "STALE",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        }
-       ]
+       "Nodes": []
       },
       "Status": {
-       "State": "SUCCESS",
-       "Contexts": [
-        {
-         "ID": "MDEzOlN0YXR1c0NvbnRleHQ1NzUxNDc3OTAx",
-         "Context": "buildkite/sourcegraph",
-         "Description": "Build #22720 passed (11 minutes, 22 seconds)",
-         "State": "SUCCESS"
-        }
-       ]
+       "State": "",
+       "Contexts": null
       },
       "CommittedDate": "2018-11-05T00:14:44Z"
      }

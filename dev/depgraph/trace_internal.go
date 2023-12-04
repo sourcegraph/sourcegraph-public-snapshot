@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
+	depgraph "github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/visualization"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var traceInternalFlagSet = flag.NewFlagSet("depgraph trace-internal", flag.ExitOnError)
@@ -29,9 +29,17 @@ func traceInternal(ctx context.Context, args []string) error {
 	}
 	pkg := args[0]
 
-	graph, err := graph.Load()
+	root, err := findRoot()
 	if err != nil {
 		return err
+	}
+
+	graph, err := depgraph.Load(root)
+	if err != nil {
+		return err
+	}
+	if _, ok := graph.PackageNames[pkg]; !ok {
+		return errors.Newf("pkg %q not found", pkg)
 	}
 
 	packages, dependencyEdges := filterExternalReferences(graph, pkg)
@@ -39,7 +47,7 @@ func traceInternal(ctx context.Context, args []string) error {
 	return nil
 }
 
-func filterExternalReferences(graph *graph.DependencyGraph, prefix string) ([]string, map[string][]string) {
+func filterExternalReferences(graph *depgraph.DependencyGraph, prefix string) ([]string, map[string][]string) {
 	packages := make([]string, 0, len(graph.Packages))
 	for _, pkg := range graph.Packages {
 		if strings.HasPrefix(pkg, prefix) {

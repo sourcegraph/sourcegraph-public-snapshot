@@ -1,6 +1,6 @@
 import { createPoint } from '../../../models/geometry/point'
-import { createRectangleFromPoints, Rectangle } from '../../../models/geometry/rectangle'
-import { Overlapping, Position } from '../../../models/tether-models'
+import { createRectangleFromPoints, type Rectangle } from '../../../models/geometry/rectangle'
+import { type ElementPosition, Overlapping, Position } from '../../../models/tether-models'
 import { POSITION_VARIANTS } from '../constants'
 
 /**
@@ -35,7 +35,7 @@ import { POSITION_VARIANTS } from '../constants'
 export function getElementConstraint(
     target: Rectangle,
     constraint: Rectangle,
-    position: Position,
+    position: ElementPosition,
     overlapping: Overlapping
 ): Rectangle {
     const side = POSITION_VARIANTS[position].positionSides

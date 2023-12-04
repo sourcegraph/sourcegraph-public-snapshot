@@ -1,9 +1,11 @@
-import classNames from 'classnames'
-import { formatDistanceToNow, isBefore, parseISO } from 'date-fns'
-import TimerOutlineIcon from 'mdi-react/TimerOutlineIcon'
 import React, { useCallback, useState } from 'react'
 
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { mdiTimerOutline } from '@mdi/js'
+import classNames from 'classnames'
+import { formatDistanceToNow, isBefore, parseISO } from 'date-fns'
+
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { getChangesetScheduleEstimate } from '../backend'
 
@@ -40,9 +42,15 @@ interface Props {
     id: Scalars['ID']
     label: JSX.Element
     className?: string
+    role?: React.AriaRole
 }
 
-const DynamicChangesetStatusScheduled: React.FunctionComponent<Props> = ({ id, label, className }) => {
+const DynamicChangesetStatusScheduled: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    id,
+    label,
+    className,
+    role,
+}) => {
     // Calculating the estimate is just expensive enough that we don't want to
     // do it for every changeset. (If we did, we'd just request the field when
     // we make the initial GraphQL call to list the changesets.)
@@ -80,41 +88,43 @@ const DynamicChangesetStatusScheduled: React.FunctionComponent<Props> = ({ id, l
     }, [estimate, id])
 
     return (
-        <div
-            className={classNames(iconClassNames, className)}
-            onMouseOver={onMouseOver}
-            onFocus={onMouseOver}
-            data-tooltip={tooltip}
-        >
-            <TimerOutlineIcon />
-            {label}
-        </div>
+        <Tooltip content={tooltip}>
+            <div
+                className={classNames(iconClassNames, className)}
+                onMouseOver={onMouseOver}
+                onFocus={onMouseOver}
+                role={role}
+            >
+                <Icon svgPath={mdiTimerOutline} inline={false} aria-hidden={true} />
+                {label}
+            </div>
+        </Tooltip>
     )
 }
 
-const StaticChangesetStatusScheduled: React.FunctionComponent<Pick<Props, 'label' | 'className'>> = ({
-    label,
-    className,
-}) => (
-    <div className={classNames(iconClassNames, className)}>
-        <TimerOutlineIcon />
+const StaticChangesetStatusScheduled: React.FunctionComponent<
+    React.PropsWithChildren<Pick<Props, 'label' | 'className' | 'role'>>
+> = ({ label, className, role }) => (
+    <div className={classNames(iconClassNames, className)} role={role}>
+        <Icon svgPath={mdiTimerOutline} inline={false} aria-hidden={true} />
         {label}
     </div>
 )
 
-export const ChangesetStatusScheduled: React.FunctionComponent<Partial<Props>> = ({
+export const ChangesetStatusScheduled: React.FunctionComponent<React.PropsWithChildren<Partial<Props>>> = ({
     id,
     label = <span>Scheduled</span>,
     className,
+    role,
 }) => (
     // If there's no ID (for example, when previewing a batch change), then no
     // dynamic behaviour is required, and we can just return a static icon and
     // label. Otherwise, we need the whole dynamic shebang.
     <>
         {id ? (
-            <DynamicChangesetStatusScheduled id={id} label={label} className={className} />
+            <DynamicChangesetStatusScheduled id={id} label={label} className={className} role={role} />
         ) : (
-            <StaticChangesetStatusScheduled label={label} className={className} />
+            <StaticChangesetStatusScheduled label={label} className={className} role={role} />
         )}
     </>
 )

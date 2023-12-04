@@ -24,7 +24,7 @@ const (
 	envLogDir = "LOG_DIR"
 )
 
-func run(ctx context.Context, wg *sync.WaitGroup) {
+func run(ctx context.Context, wg *sync.WaitGroup, env string) {
 	defer wg.Done()
 
 	bc, err := newClient()
@@ -37,7 +37,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		panic(err)
 	}
 
-	config, err := loadQueries()
+	config, err := loadQueries(env)
 	if err != nil {
 		panic(err)
 	}
@@ -52,12 +52,12 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		return nil
 	}
 
-	loopSearch := func(ctx context.Context, c genericClient, group string, qc *QueryConfig) {
+	loopSearch := func(ctx context.Context, c genericClient, qc *QueryConfig) {
 		if qc.Interval == 0 {
-			qc.Interval = time.Minute
+			qc.Interval = 5 * time.Minute
 		}
 
-		log := log15.New("group", group, "name", qc.Name, "query", qc.Query, "type", c.clientType())
+		log := log15.New("name", qc.Name, "query", qc.Query, "type", c.clientType())
 
 		// Randomize start to a random time in the initial interval so our
 		// queries aren't all scheduled at the same time.
@@ -72,8 +72,16 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		defer ticker.Stop()
 
 		for {
-
-			m, err := c.search(ctx, qc.Query, qc.Name)
+			var m *metrics
+			var err error
+			if qc.Query != "" {
+				m, err = c.search(ctx, qc.Query, qc.Name)
+			} else if qc.Snippet != "" {
+				m, err = c.attribution(ctx, qc.Snippet, qc.Name)
+			} else {
+				log.Error("snippet and query unset")
+				return
+			}
 			if err != nil {
 				log.Error(err.Error())
 			} else {
@@ -82,10 +90,10 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 
 				tookSeconds, firstResultSeconds := m.took.Seconds(), m.firstResult.Seconds()
 
-				tsv.Log(group, qc.Name, c.clientType(), m.trace, m.matchCount, tookSeconds, firstResultSeconds)
-				durationSearchSeconds.WithLabelValues(group, qc.Name, c.clientType()).Observe(tookSeconds)
-				firstResultSearchSeconds.WithLabelValues(group, qc.Name, c.clientType()).Observe(firstResultSeconds)
-				matchCount.WithLabelValues(group, qc.Name, c.clientType()).Set(float64(m.matchCount))
+				tsv.Log(qc.Name, c.clientType(), m.trace, m.matchCount, tookSeconds, firstResultSeconds)
+				durationSearchSeconds.WithLabelValues(qc.Name, c.clientType()).Observe(tookSeconds)
+				firstResultSearchSeconds.WithLabelValues(qc.Name, c.clientType()).Observe(firstResultSeconds)
+				matchCount.WithLabelValues(qc.Name, c.clientType()).Set(float64(m.matchCount))
 			}
 
 			select {
@@ -96,7 +104,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		}
 	}
 
-	scheduleQuery := func(ctx context.Context, group string, qc *QueryConfig) {
+	scheduleQuery := func(ctx context.Context, qc *QueryConfig) {
 		if len(qc.Protocols) == 0 {
 			qc.Protocols = allProtocols
 		}
@@ -106,20 +114,19 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				loopSearch(ctx, client, group, qc)
+				loopSearch(ctx, client, qc)
 			}()
 		}
 	}
 
-	for _, group := range config.Groups {
-		for _, qc := range group.Queries {
-			scheduleQuery(ctx, group.Name, qc)
-		}
+	for _, qc := range config.Queries {
+		scheduleQuery(ctx, qc)
 	}
 }
 
 type genericClient interface {
 	search(ctx context.Context, query, queryName string) (*metrics, error)
+	attribution(ctx context.Context, snippet, queryName string) (*metrics, error)
 	clientType() string
 }
 
@@ -144,7 +151,7 @@ type tsvLogger struct {
 	buf bytes.Buffer
 }
 
-func (t *tsvLogger) Log(a ...interface{}) {
+func (t *tsvLogger) Log(a ...any) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -188,9 +195,11 @@ func main() {
 	ctx, cleanup := SignalSensitiveContext()
 	defer cleanup()
 
+	env := os.Getenv("SEARCH_BLITZ_ENV")
+
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	go run(ctx, &wg)
+	go run(ctx, &wg, env)
 
 	wg.Add(1)
 	srv := startServer(&wg)

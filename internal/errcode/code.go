@@ -126,6 +126,13 @@ func IsAccountSuspended(err error) bool {
 	return errors.As(err, &e) && e.AccountSuspended()
 }
 
+// IsUnavailableForLegalReasons will check if err or one of its causes was due to
+// legal reasons.
+func IsUnavailableForLegalReasons(err error) bool {
+	var e interface{ UnavailableForLegalReasons() bool }
+	return errors.As(err, &e) && e.UnavailableForLegalReasons()
+}
+
 // IsBadRequest will check if err or one of its causes is a bad request.
 func IsBadRequest(err error) bool {
 	var e interface{ BadRequest() bool }
@@ -138,6 +145,14 @@ func IsBadRequest(err error) bool {
 func IsTemporary(err error) bool {
 	var e interface{ Temporary() bool }
 	return errors.As(err, &e) && e.Temporary()
+}
+
+// IsArchived will check if err or one of its causes is an archived error.
+// (This is generally going to be in the context of repositories being
+// archived.)
+func IsArchived(err error) bool {
+	var e interface{ Archived() bool }
+	return errors.As(err, &e) && e.Archived()
 }
 
 // IsBlocked will check if err or one of its causes is a blocked error.
@@ -167,3 +182,13 @@ func MakeNonRetryable(err error) error {
 type nonRetryableError struct{ error }
 
 func (nonRetryableError) NonRetryable() bool { return true }
+
+func MaybeMakeNonRetryable(statusCode int, err error) error {
+	if statusCode > 0 && statusCode < 200 ||
+		statusCode >= 300 && statusCode < 500 ||
+		statusCode == 501 ||
+		statusCode >= 600 {
+		return MakeNonRetryable(err)
+	}
+	return err
+}

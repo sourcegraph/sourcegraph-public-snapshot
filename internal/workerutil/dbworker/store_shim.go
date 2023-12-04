@@ -11,70 +11,57 @@ import (
 )
 
 // storeShim converts a store.Store into a workerutil.Store.
-type storeShim struct {
-	store.Store
+type storeShim[T workerutil.Record] struct {
+	store.Store[T]
 }
 
-var _ workerutil.Store = &storeShim{}
+var _ workerutil.Store[workerutil.Record] = &storeShim[workerutil.Record]{}
 
 // newStoreShim wraps the given store in a shim.
-func newStoreShim(store store.Store) workerutil.Store {
+func newStoreShim[T workerutil.Record](store store.Store[T]) workerutil.Store[T] {
 	if store == nil {
 		return nil
 	}
 
-	return &storeShim{Store: store}
+	return &storeShim[T]{Store: store}
 }
 
 // QueuedCount calls into the inner store.
-func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{}) (int, error) {
-	conditions, err := convertArguments(extraArguments)
-	if err != nil {
-		return 0, err
-	}
-
-	return s.Store.QueuedCount(ctx, false, conditions)
+func (s *storeShim[T]) QueuedCount(ctx context.Context) (int, error) {
+	return s.Store.QueuedCount(ctx, false)
 }
 
 // Dequeue calls into the inner store.
-func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (workerutil.Record, bool, error) {
+func (s *storeShim[T]) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (ret T, _ bool, _ error) {
 	conditions, err := convertArguments(extraArguments)
 	if err != nil {
-		return nil, false, err
+		return ret, false, err
 	}
 
 	return s.Store.Dequeue(ctx, workerHostname, conditions)
 }
 
-func (s *storeShim) Heartbeat(ctx context.Context, ids []int) (knownIDs []int, err error) {
+func (s *storeShim[T]) Heartbeat(ctx context.Context, ids []string) (knownIDs, cancelIDs []string, err error) {
 	return s.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{})
 }
 
-func (s *storeShim) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) (entryID int, err error) {
-	return s.Store.AddExecutionLogEntry(ctx, id, entry, store.ExecutionLogEntryOptions{})
+func (s *storeShim[T]) MarkComplete(ctx context.Context, rec T) (bool, error) {
+	return s.Store.MarkComplete(ctx, rec.RecordID(), store.MarkFinalOptions{})
 }
 
-func (s *storeShim) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry workerutil.ExecutionLogEntry) error {
-	return s.Store.UpdateExecutionLogEntry(ctx, recordID, entryID, entry, store.ExecutionLogEntryOptions{})
+func (s *storeShim[T]) MarkFailed(ctx context.Context, rec T, failureMessage string) (bool, error) {
+	return s.Store.MarkFailed(ctx, rec.RecordID(), failureMessage, store.MarkFinalOptions{})
 }
 
-func (s *storeShim) MarkComplete(ctx context.Context, id int) (bool, error) {
-	return s.Store.MarkComplete(ctx, id, store.MarkFinalOptions{})
-}
-
-func (s *storeShim) MarkFailed(ctx context.Context, id int, failureMessage string) (bool, error) {
-	return s.Store.MarkFailed(ctx, id, failureMessage, store.MarkFinalOptions{})
-}
-
-func (s *storeShim) MarkErrored(ctx context.Context, id int, errorMessage string) (bool, error) {
-	return s.Store.MarkErrored(ctx, id, errorMessage, store.MarkFinalOptions{})
+func (s *storeShim[T]) MarkErrored(ctx context.Context, rec T, errorMessage string) (bool, error) {
+	return s.Store.MarkErrored(ctx, rec.RecordID(), errorMessage, store.MarkFinalOptions{})
 }
 
 // ErrNotConditions occurs when a PreDequeue handler returns non-sql query extra arguments.
 var ErrNotConditions = errors.New("expected slice of *sqlf.Query values")
 
 // convertArguments converts the given interface value into a slice of *sqlf.Query values.
-func convertArguments(v interface{}) ([]*sqlf.Query, error) {
+func convertArguments(v any) ([]*sqlf.Query, error) {
 	if v == nil {
 		return nil, nil
 	}

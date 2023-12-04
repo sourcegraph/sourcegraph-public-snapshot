@@ -39,10 +39,7 @@ func (s *Serve) Start() error {
 	s.Addr = ln.Addr().String()
 
 	s.Info.Printf("listening on http://%s", s.Addr)
-	h, err := s.handler()
-	if err != nil {
-		return errors.Wrap(err, "configuring server")
-	}
+	h := s.handler()
 
 	if err := (&http.Server{Handler: h}).Serve(ln); err != nil {
 		return errors.Wrap(err, "serving")
@@ -70,16 +67,16 @@ type Repo struct {
 	URI  string
 }
 
-func (s *Serve) handler() (http.Handler, error) {
+func (s *Serve) handler() http.Handler {
 	s.Info.Printf("serving git repositories from %s", s.Root)
 	s.configureRepos()
 
 	// Start the HTTP server.
 	mux := &http.ServeMux{}
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		err := indexHTML.Execute(w, map[string]interface{}{
+		err := indexHTML.Execute(w, map[string]any{
 			"Explain": explainAddr(s.Addr),
 			"Links": []string{
 				"/v1/list-repos",
@@ -91,7 +88,7 @@ func (s *Serve) handler() (http.Handler, error) {
 		}
 	})
 
-	mux.HandleFunc("/v1/list-repos", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/list-repos", func(w http.ResponseWriter, _ *http.Request) {
 		var repos []Repo
 		var reposRootIsRepo bool
 		for _, name := range s.configureRepos() {
@@ -139,7 +136,7 @@ func (s *Serve) handler() (http.Handler, error) {
 			s.Info.Printf("%s %s", r.Method, r.URL.Path)
 		}
 		mux.ServeHTTP(w, r)
-	}), nil
+	})
 }
 
 type httpDir struct {

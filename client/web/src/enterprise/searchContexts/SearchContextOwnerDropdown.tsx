@@ -1,10 +1,11 @@
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import React, { useMemo } from 'react'
 
-import { Namespace } from '@sourcegraph/shared/src/schema'
-import { Menu, MenuButton, MenuDivider, MenuItem, MenuList } from '@sourcegraph/wildcard'
+import { mdiMenuDown } from '@mdi/js'
 
-import { AuthenticatedUser } from '../../auth'
+import type { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
+import { Menu, MenuButton, MenuDivider, MenuItem, MenuList, Icon, Tooltip } from '@sourcegraph/wildcard'
+
+import type { AuthenticatedUser } from '../../auth'
 
 import styles from './SearchContextOwnerDropdown.module.scss'
 
@@ -16,7 +17,7 @@ export interface SelectedNamespace {
     name: string
 }
 
-export function getSelectedNamespace(namespace: Namespace | null): SelectedNamespace {
+export function getSelectedNamespace(namespace: SearchContextFields['namespace']): SelectedNamespace {
     if (!namespace) {
         return { id: null, type: 'global-owner', name: '' }
     }
@@ -42,25 +43,23 @@ export interface SearchContextOwnerDropdownProps {
     setSelectedNamespace: (selectedNamespace: SelectedNamespace) => void
 }
 
-export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOwnerDropdownProps> = ({
-    isDisabled,
-    authenticatedUser,
-    selectedNamespace,
-    setSelectedNamespace,
-}) => {
+export const SearchContextOwnerDropdown: React.FunctionComponent<
+    React.PropsWithChildren<SearchContextOwnerDropdownProps>
+> = ({ isDisabled, authenticatedUser, selectedNamespace, setSelectedNamespace }) => {
     const selectedUserNamespace = useMemo(() => getSelectedNamespaceFromUser(authenticatedUser), [authenticatedUser])
     return (
         <Menu>
-            <MenuButton
-                className={styles.searchContextOwnerDropdownToggle}
-                outline={true}
-                variant="secondary"
-                disabled={isDisabled}
-                data-tooltip={isDisabled ? "Owner can't be changed." : ''}
-            >
-                {selectedNamespace.type === 'global-owner' ? 'Global' : `@${selectedNamespace.name}`}{' '}
-                <MenuDownIcon className="icon-inline" size={18} />
-            </MenuButton>
+            <Tooltip content={isDisabled ? "Owner can't be changed." : ''}>
+                <MenuButton
+                    className={styles.searchContextOwnerDropdownToggle}
+                    outline={true}
+                    variant="secondary"
+                    disabled={isDisabled}
+                >
+                    {selectedNamespace.type === 'global-owner' ? 'Global' : `@${selectedNamespace.name}`}{' '}
+                    <Icon aria-hidden={true} svgPath={mdiMenuDown} />
+                </MenuButton>
+            </Tooltip>
             <MenuList className={styles.menuList}>
                 <MenuItem onSelect={() => setSelectedNamespace(selectedUserNamespace)}>
                     @{authenticatedUser.username} <span className="text-muted">(you)</span>

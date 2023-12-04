@@ -1,0 +1,219 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/api/v4/projects/16606088/merge_requests/1/notes?page=1
+    method: GET
+  response:
+    body: '[]'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 793ebf23dd94c4f5-SEA
+      Content-Length:
+      - "2"
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 03 Feb 2023 22:54:08 GMT
+      Etag:
+      - W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+      Gitlab-Lb:
+      - fe-33-lb-gprd
+      Gitlab-Sv:
+      - localhost
+      Link:
+      - <https://gitlab.com/api/v4/projects/16606088/merge_requests/1/notes?activity_filter=all_notes&id=16606088&noteable_id=1&order_by=created_at&page=1&per_page=20&sort=desc>;
+        rel="first", <https://gitlab.com/api/v4/projects/16606088/merge_requests/1/notes?activity_filter=all_notes&id=16606088&noteable_id=1&order_by=created_at&page=1&per_page=20&sort=desc>;
+        rel="last"
+      Nel:
+      - '{"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}'
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Report-To:
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=T2sO2K6cx3HkRpw7Utqcq3j3V%2BTqUJKqm0z4ilWuj5eqPKNynENdL3Tm2GxnGM6kLsm36kqfHzAjTi%2FsCpA9kLmpfiwq40JsiJe9TSJ37OHdunEuUa3vayVwsFM%3D"}],"group":"cf-nel","max_age":604800}'
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Next-Page:
+      - ""
+      X-Page:
+      - "1"
+      X-Per-Page:
+      - "20"
+      X-Prev-Page:
+      - ""
+      X-Request-Id:
+      - 949f504fc593ccfb53a9ac8b8f45124e
+      X-Runtime:
+      - "0.061816"
+      X-Total:
+      - "0"
+      X-Total-Pages:
+      - "1"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/api/v4/projects/16606088/merge_requests/1/resource_state_events?page=1
+    method: GET
+  response:
+    body: '[]'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 793ebf251ee8c4f5-SEA
+      Content-Length:
+      - "2"
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 03 Feb 2023 22:54:08 GMT
+      Etag:
+      - W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+      Gitlab-Lb:
+      - fe-26-lb-gprd
+      Gitlab-Sv:
+      - localhost
+      Link:
+      - <https://gitlab.com/api/v4/projects/16606088/merge_requests/1/resource_state_events?eventable_id=1&id=16606088&page=1&per_page=20>;
+        rel="first", <https://gitlab.com/api/v4/projects/16606088/merge_requests/1/resource_state_events?eventable_id=1&id=16606088&page=1&per_page=20>;
+        rel="last"
+      Nel:
+      - '{"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}'
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Report-To:
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=K2QbTOc8nm8ZbHomOs2yKAYuhfAxOmClxA07dYUPMB8wwxQvKjDPOWQA1fVSJQ3S3NzuKJ5Omg6xSKrZhhmG%2B%2FZR%2FWeCpzpxV77NCJc0PjwQ7dCAZT4A0%2BxuKuM%3D"}],"group":"cf-nel","max_age":604800}'
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Next-Page:
+      - ""
+      X-Page:
+      - "1"
+      X-Per-Page:
+      - "20"
+      X-Prev-Page:
+      - ""
+      X-Request-Id:
+      - 624b4860f480dd8b504cde7cb112e93d
+      X-Runtime:
+      - "0.080108"
+      X-Total:
+      - "0"
+      X-Total-Pages:
+      - "1"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/api/v4/projects/16606088/merge_requests/1/pipelines?page=1
+    method: GET
+  response:
+    body: '[]'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 793ebf26586bc4f5-SEA
+      Content-Length:
+      - "2"
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 03 Feb 2023 22:54:08 GMT
+      Etag:
+      - W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+      Gitlab-Lb:
+      - fe-36-lb-gprd
+      Gitlab-Sv:
+      - localhost
+      Link:
+      - <https://gitlab.com/api/v4/projects/16606088/merge_requests/1/pipelines?id=16606088&merge_request_iid=1&page=1&per_page=15>;
+        rel="first", <https://gitlab.com/api/v4/projects/16606088/merge_requests/1/pipelines?id=16606088&merge_request_iid=1&page=1&per_page=15>;
+        rel="last"
+      Nel:
+      - '{"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}'
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Report-To:
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=%2Fm1PhR8ILAIORnk78dcZgCwrrKXRI4u0pZy3BVDEjUVcWNiGlr%2Bbus%2Bbpc4KhUY7jW4z%2BPDiTY5VGb7Wn1EGVDW1EtsutX1LBBTvuN%2FaK6esqYLgXmbp1dbmsOA%3D"}],"group":"cf-nel","max_age":604800}'
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Next-Page:
+      - ""
+      X-Page:
+      - "1"
+      X-Per-Page:
+      - "15"
+      X-Prev-Page:
+      - ""
+      X-Request-Id:
+      - 729ff2fc4eb7519b3b0ff6bb05aa367f
+      X-Runtime:
+      - "0.060631"
+      X-Total:
+      - "0"
+      X-Total-Pages:
+      - "1"
+    status: 200 OK
+    code: 200
+    duration: ""

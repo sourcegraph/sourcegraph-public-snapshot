@@ -5,9 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Lint func(graph *graph.DependencyGraph) []lintError
@@ -20,7 +19,6 @@ type lintError struct {
 var lintsByName = map[string]Lint{
 	"NoBinarySpecificSharedCode": NoBinarySpecificSharedCode,
 	"NoDeadPackages":             NoDeadPackages,
-	"NoEnterpriseImportsFromOSS": NoEnterpriseImportsFromOSS,
 	"NoLooseCommands":            NoLooseCommands,
 	"NoReachingIntoCommands":     NoReachingIntoCommands,
 	"NoUnusedSharedCommandCode":  NoUnusedSharedCommandCode,

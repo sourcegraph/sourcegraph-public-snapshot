@@ -1,8 +1,11 @@
-// We want to polyfill first.
+// Set globals first before any imports.
+import '../../config/extension.entry'
+import '../../config/background.entry'
+// Polyfill before other imports.
 import '../../shared/polyfills'
 
-import { Endpoint } from 'comlink'
-import { combineLatest, merge, Observable, of, Subject, Subscription, timer } from 'rxjs'
+import type { Endpoint } from 'comlink'
+import { combineLatest, merge, type Observable, of, Subject, Subscription, timer } from 'rxjs'
 import {
     bufferCount,
     filter,
@@ -19,9 +22,10 @@ import {
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 
 import { isDefined, fetchCache } from '@sourcegraph/common'
-import { GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
+import { type GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
 import { createExtensionHostWorker } from '@sourcegraph/shared/src/api/extension/worker'
-import { EndpointPair } from '@sourcegraph/shared/src/platform/context'
+import type { EndpointPair } from '@sourcegraph/shared/src/platform/context'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { getHeaders } from '../../shared/backend/headers'
 import { fetchSite } from '../../shared/backend/server'
@@ -29,13 +33,14 @@ import { initializeOmniboxInterface } from '../../shared/cli'
 import { browserPortToMessagePort, findMessagePorts } from '../../shared/platform/ports'
 import { createBlobURLForBundle } from '../../shared/platform/worker'
 import { initSentry } from '../../shared/sentry'
-import { observeSourcegraphURL } from '../../shared/util/context'
-import { BrowserActionIconState, setBrowserActionIconState } from '../browser-action-icon'
+import { EventLogger } from '../../shared/tracking/eventLogger'
+import { getExtensionVersion, getPlatformName, observeSourcegraphURL } from '../../shared/util/context'
+import { type BrowserActionIconState, setBrowserActionIconState } from '../browser-action-icon'
 import { assertEnvironment } from '../environmentAssertion'
-import { checkUrlPermissions } from '../util'
+import { checkUrlPermissions, IsProductionVersion } from '../util'
 import { fromBrowserEvent } from '../web-extension-api/fromBrowserEvent'
 import { observeStorageKey, storage } from '../web-extension-api/storage'
-import { BackgroundPageApi, BackgroundPageApiHandlers } from '../web-extension-api/types'
+import type { BackgroundPageApi, BackgroundPageApiHandlers } from '../web-extension-api/types'
 
 const IS_EXTENSION = true
 
@@ -48,33 +53,52 @@ assertEnvironment('BACKGROUND')
 initSentry('background')
 
 /**
- * For each tab, we store a flag if we know that we are on a private
- * repository that has not been added to Cloud (+ the extension
- * points to Cloud). The content script notifies the background page if it has
- * experienced a private code on Cloud error by `notifyPrivateCloudError` message.
+ * For each tab, we store a flag if we know that we are on:
+ * - a private repo not synced with Sourcegraph Cloud when the latter is the active Sourcegraph URL
+ * - a repo not added to the other than Cloud Sourcegraph instance (+ the extension * points to this instance).
+ * The content script notifies the background page if it has experienced this kind of an error
+ * by sending `notifyRepoSyncError` message.
  */
-const tabPrivateCloudErrorCache = (() => {
-    const cache = new Map<number, boolean>()
-    const subject = new Subject<ReadonlyMap<number, boolean>>()
+const tabRepoSyncErrorCache = (() => {
+    const cache = new Map<number, Map<string, boolean>>()
+    const subject = new Subject<ReadonlyMap<number, Map<string, boolean>>>()
     return {
         observable: subject.asObservable(),
         /**
-         * Update the background page's cache of which tabs have experienced a
-         * private code on Cloud error.
+         * Update the background page's cache of which tabs have experienced either a
+         * private code on Cloud or not synced repo on other than Cloud Sourcegrpah instance error.
          */
-        setTabHasPrivateCloudError(tabId: number, hasPrivateCloudError: boolean): void {
-            if (!hasPrivateCloudError) {
-                // An absent value is equivalent to being false; so we can delete it.
+        setTabHasRepoSyncError(tabId: number, hasRepoSyncError: boolean, sourcegraphURL?: string): void {
+            if (sourcegraphURL) {
+                let record = cache.get(tabId)
+
+                if (!record) {
+                    record = new Map()
+                    cache.set(tabId, record)
+                }
+
+                if (hasRepoSyncError) {
+                    record.set(sourcegraphURL, true)
+                } else if (record.size === 0) {
+                    cache.delete(tabId)
+                } else {
+                    record.delete(sourcegraphURL)
+                }
+            } else {
                 cache.delete(tabId)
             }
-            cache.set(tabId, hasPrivateCloudError)
 
             // Emit the updated repository cache when it changes, so that consumers can
             // observe the value.
             subject.next(cache)
         },
-        getTabHasPrivateCloudError(tabId: number): boolean {
-            return !!cache.get(tabId)
+
+        /**
+         * Check whether the background page's cache contains data about repo sync error for
+         * the given parameters.
+         */
+        getTabHasRepoSyncError(tabId: number, sourcegraphURL: string): boolean {
+            return !!cache.get(tabId)?.get(sourcegraphURL)
         },
     }
 })()
@@ -112,11 +136,26 @@ async function main(): Promise<void> {
 
     // Open installation page after the extension was installed
     browser.runtime.onInstalled.addListener(event => {
-        if (event.reason === 'install') {
-            browser.tabs.create({ url: browser.extension.getURL('after_install.html') }).catch(error => {
-                console.error('Error opening after-install page:', error)
-            })
+        if (event.reason !== 'install') {
+            return
         }
+
+        if (IsProductionVersion) {
+            subscriptions.add(
+                observeSourcegraphURL(IS_EXTENSION)
+                    .pipe(take(1))
+                    .subscribe(sourcegraphURL => {
+                        new EventLogger(requestGraphQL, sourcegraphURL)
+                            .log('BrowserExtensionInstalled')
+                            .then(() => console.log(`Triggered "BrowserExtensionInstalled" using ${sourcegraphURL}`))
+                            .catch(error => console.error('Error triggering "BrowserExtensionInstalled" event:', error))
+                    })
+            )
+        }
+
+        browser.tabs.create({ url: browser.extension.getURL('after_install.html') }).catch(error => {
+            console.error('Error opening after-install page:', error)
+        })
     })
 
     // Mirror the managed sourcegraphURL to sync storage
@@ -155,7 +194,7 @@ async function main(): Promise<void> {
     browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if (changeInfo.status === 'loading') {
             // A new URL is loading in the tab, so clear the cached private cloud error flag.
-            tabPrivateCloudErrorCache.setTabHasPrivateCloudError(tabId, false)
+            tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, false)
             return
         }
 
@@ -168,13 +207,17 @@ async function main(): Promise<void> {
                          * See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts#loading_content_scripts
                          */
                         await browser.tabs.executeScript(tabId, {
-                            file: 'js/inject.bundle.js',
+                            file: 'js/contentPage.main.bundle.js',
                             runAt: 'document_end',
                         })
                     }
                 })
                 .catch(console.warn)
         }
+    })
+
+    browser.tabs.onRemoved.addListener(tabId => {
+        tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, false)
     })
 
     const handlers: BackgroundPageApiHandlers = {
@@ -198,19 +241,16 @@ async function main(): Promise<void> {
             return requestGraphQL<T, V>({ request, variables, sourcegraphURL }).toPromise()
         },
 
-        async notifyPrivateCloudError(
-            hasPrivateCloudError: boolean,
-            sender: browser.runtime.MessageSender
-        ): Promise<void> {
+        async notifyRepoSyncError({ sourcegraphURL, hasRepoSyncError }, sender: browser.runtime.MessageSender) {
             const tabId = sender.tab?.id
             if (tabId !== undefined) {
-                tabPrivateCloudErrorCache.setTabHasPrivateCloudError(tabId, hasPrivateCloudError)
+                tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, hasRepoSyncError, sourcegraphURL)
             }
             return Promise.resolve()
         },
 
-        async checkPrivateCloudError(tabId: number): Promise<boolean> {
-            return Promise.resolve(!!tabPrivateCloudErrorCache.getTabHasPrivateCloudError(tabId))
+        async checkRepoSyncError({ tabId, sourcegraphURL }) {
+            return Promise.resolve(!!tabRepoSyncErrorCache.getTabHasRepoSyncError(tabId, sourcegraphURL))
         },
 
         fetchCache,
@@ -225,13 +265,26 @@ async function main(): Promise<void> {
         }
 
         // https://stackoverflow.com/questions/55572797/why-does-typescript-expect-never-as-function-argument-when-retrieving-the-func
-        return (handlers[method] as (
-            payload: any,
-            sender?: browser.runtime.MessageSender
-        ) => ReturnType<BackgroundPageApi[typeof method]>)(message.payload, sender)
+        return (
+            handlers[method] as (
+                payload: any,
+                sender?: browser.runtime.MessageSender
+            ) => ReturnType<BackgroundPageApi[typeof method]>
+        )(message.payload, sender)
     })
 
-    await browser.runtime.setUninstallURL('https://about.sourcegraph.com/uninstall/')
+    await browser.runtime.setUninstallURL(
+        createURLWithUTM(
+            new URL('https://sourcegraph.com/uninstall'),
+            IsProductionVersion
+                ? {
+                      utm_source: getPlatformName(),
+                      utm_campaign: 'browser-extension-uninstall',
+                      utm_content: getExtensionVersion(),
+                  }
+                : {}
+        ).href
+    )
 
     // The `popup=true` param is used by the options page to determine if it's
     // loaded in the popup or in th standalone options page.
@@ -388,9 +441,16 @@ function observeCurrentTabId(): Observable<number> {
  * Returns an observable that indicates whether the current tab has experienced
  * a private code on Cloud error.
  */
-function observeCurrentTabPrivateCloudError(): Observable<boolean> {
-    return combineLatest([observeCurrentTabId(), tabPrivateCloudErrorCache.observable]).pipe(
-        map(([tabId, privateCloudErrorCache]) => !!privateCloudErrorCache.get(tabId)),
+function observeCurrentTabRepoSyncError(): Observable<boolean> {
+    return combineLatest([
+        observeCurrentTabId(),
+        observeStorageKey('sync', 'sourcegraphURL'),
+        tabRepoSyncErrorCache.observable,
+    ]).pipe(
+        map(
+            ([tabId, sourcegraphURL, repoSyncErrorCache]) =>
+                !!(sourcegraphURL && repoSyncErrorCache.get(tabId)?.get(sourcegraphURL))
+        ),
         distinctUntilChanged()
     )
 }
@@ -407,14 +467,14 @@ function observeBrowserActionState(): Observable<BrowserActionIconState> {
     return combineLatest([
         observeStorageKey('sync', 'disableExtension'),
         observeSourcegraphUrlValidation(),
-        observeCurrentTabPrivateCloudError(),
+        observeCurrentTabRepoSyncError(),
     ]).pipe(
-        map(([isDisabled, isSourcegraphUrlValid, hasPrivateCloudError]) => {
+        map(([isDisabled, isSourcegraphUrlValid, hasRepoSyncError]) => {
             if (isDisabled) {
                 return 'inactive'
             }
 
-            if (!isSourcegraphUrlValid || hasPrivateCloudError) {
+            if (!isSourcegraphUrlValid || hasRepoSyncError) {
                 return 'active-with-alert'
             }
 

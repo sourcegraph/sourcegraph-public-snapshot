@@ -1,9 +1,9 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`TextArea should render correctly 1`] = `
+exports[`TextArea > should render correctly 1`] = `
 <DocumentFragment>
   <label
-    class="label"
+    class="label label"
   >
     <textarea
       class="textarea form-control is-valid"

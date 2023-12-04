@@ -11,3 +11,4 @@ See also: [TypeScript programming patterns](../languages/typescript.md).
 - [Accessibility](accessibility.md)
 - [Temporary settings](temporary_settings.md)
 - [Build process](build.md)
+- [Browser extension release process](browser-extension-release-process.md)

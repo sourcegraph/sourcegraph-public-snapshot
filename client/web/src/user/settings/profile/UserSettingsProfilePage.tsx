@@ -1,17 +1,16 @@
 import React, { useEffect } from 'react'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { gql } from '@sourcegraph/http-client'
-import { percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
-import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
-import { Container, PageHeader, Link } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
-import { Timestamp } from '../../../components/time/Timestamp'
-import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
+import type { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
+import { ScimAlert } from '../ScimAlert'
 
 import { EditUserProfileForm } from './EditUserProfileForm'
+
 import styles from './UserSettingsProfilePage.module.scss'
 
 export const EditUserProfilePageGQLFragment = gql`
@@ -22,14 +21,15 @@ export const EditUserProfilePageGQLFragment = gql`
         avatarURL
         viewerCanChangeUsername
         createdAt
+        scimControlled
     }
 `
 
-interface Props extends Pick<UserSettingsAreaRouteContext, 'activation'> {
+interface Props {
     user: EditUserProfilePageFragment
 }
 
-export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({ user, ...props }) => {
+export const UserSettingsProfilePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ user }) => {
     useEffect(() => eventLogger.logViewEvent('UserProfile'), [])
 
     return (
@@ -52,23 +52,17 @@ export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({ user, 
                 }
                 className={styles.heading}
             />
-            {props.activation?.completed && percentageDone(props.activation.completed) < 100 && (
-                <Container className="mb-3">
-                    <h3>Almost there!</h3>
-                    <p>Complete the steps below to finish onboarding to Sourcegraph.</p>
-                    <ActivationChecklist steps={props.activation.steps} completed={props.activation.completed} />
-                </Container>
-            )}
+            {user.scimControlled && <ScimAlert />}
             {user && (
                 <EditUserProfileForm
                     user={user}
                     initialValue={user}
                     after={
                         window.context.sourcegraphDotComMode && (
-                            <p className="mt-4">
-                                <Link to="https://about.sourcegraph.com/contact">Contact support</Link> to delete your
+                            <Text className="mt-4">
+                                <Link to="https://sourcegraph.com/contact">Contact support</Link> to delete your
                                 account.
-                            </p>
+                            </Text>
                         )
                     }
                 />

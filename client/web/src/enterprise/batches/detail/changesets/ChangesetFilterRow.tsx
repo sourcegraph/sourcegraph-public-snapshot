@@ -1,6 +1,9 @@
-import * as H from 'history'
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Form } from 'reactstrap'
+
+import { reject } from 'lodash'
+import { useLocation, useNavigate } from 'react-router-dom'
+
+import { Input, Form } from '@sourcegraph/wildcard'
 
 import { ChangesetReviewState, ChangesetCheckState, ChangesetState } from '../../../../graphql-operations'
 import { ChangesetFilter } from '../../ChangesetFilter'
@@ -14,16 +17,14 @@ export interface ChangesetFilters {
 }
 
 export interface ChangesetFilterRowProps {
-    history: H.History
-    location: H.Location
     onFiltersChange: (newFilters: ChangesetFilters) => void
 }
 
-export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps> = ({
-    history,
-    location,
+export const ChangesetFilterRow: React.FunctionComponent<React.PropsWithChildren<ChangesetFilterRowProps>> = ({
     onFiltersChange,
 }) => {
+    const location = useLocation()
+    const navigate = useNavigate()
     const searchElement = useRef<HTMLInputElement | null>(null)
     const searchParameters = new URLSearchParams(location.search)
     const [state, setState] = useState<ChangesetState | undefined>(() => {
@@ -62,7 +63,7 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
             searchParameters.delete('search')
         }
         if (location.search !== searchParameters.toString()) {
-            history.replace({ ...location, search: searchParameters.toString() })
+            navigate({ ...location, search: searchParameters.toString() }, { replace: true })
         }
         // Update the filters in the parent component.
         onFiltersChange({
@@ -73,7 +74,7 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
         })
         // We cannot depend on the history, since it's modified by this hook and that would cause an infinite render loop.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [state, reviewState, checkState, search])
+    }, [state, reviewState, checkState, search, onFiltersChange])
 
     const onSubmit = useCallback(
         (event?: React.FormEvent<HTMLFormElement>): void => {
@@ -88,12 +89,14 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
             <div className="row no-gutters">
                 <div className="m-0 col">
                     <Form className="form-inline d-flex mb-2" onSubmit={onSubmit}>
-                        <input
-                            className="form-control flex-grow-1"
+                        <Input
+                            className="flex-grow-1"
+                            inputClassName="flex-grow-1"
                             type="search"
                             ref={searchElement}
                             defaultValue={search}
                             placeholder="Search title and repository name"
+                            aria-label="Search title and repository name"
                         />
                     </Form>
                 </div>
@@ -121,7 +124,12 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
                         <div className="w-100 d-block d-sm-none" />
                         <div className="col mb-2 ml-0 ml-sm-2">
                             <ChangesetFilter<ChangesetReviewState>
-                                values={Object.values(ChangesetReviewState)}
+                                values={reject(
+                                    Object.values(ChangesetReviewState),
+                                    state =>
+                                        state === ChangesetReviewState.COMMENTED ||
+                                        state === ChangesetReviewState.DISMISSED
+                                )}
                                 label="Review state"
                                 selected={reviewState}
                                 onChange={setReviewState}

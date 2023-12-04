@@ -1,0 +1,38 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "src-expose_lib",
+    srcs = [
+        "main.go",
+        "serve.go",
+        "snapshot.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/src-expose",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//lib/errors",
+        "@com_github_peterbourgon_ff//ffcli",
+        "@in_gopkg_yaml_v2//:yaml_v2",
+    ],
+)
+
+go_binary(
+    name = "src-expose",
+    embed = [":src-expose_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "src-expose_test",
+    timeout = "short",
+    srcs = [
+        "main_test.go",
+        "serve_test.go",
+    ],
+    embed = [":src-expose_lib"],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+    ],
+)

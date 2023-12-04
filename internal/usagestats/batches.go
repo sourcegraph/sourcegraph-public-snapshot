@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -20,6 +21,7 @@ SELECT
     COUNT(*) FILTER (WHERE closed_at IS NOT NULL) AS batch_changes_closed_count
 FROM batch_changes;
 `
+
 	if err := db.QueryRowContext(ctx, batchChangesCountsQuery).Scan(
 		&stats.BatchChangesCount,
 		&stats.BatchChangesClosedCount,
@@ -32,11 +34,9 @@ SELECT
     COUNT(*)                        FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'UNPUBLISHED') AS action_changesets_unpublished,
     COUNT(*)                        FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED') AS action_changesets,
     COALESCE(SUM(diff_stat_added)   FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_added_sum,
-    COALESCE(SUM(diff_stat_changed) FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_changed_sum,
     COALESCE(SUM(diff_stat_deleted) FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_deleted_sum,
     COUNT(*)                        FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED') AS action_changesets_merged,
     COALESCE(SUM(diff_stat_added)   FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED'), 0) AS action_changesets_merged_diff_stat_added_sum,
-    COALESCE(SUM(diff_stat_changed) FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED'), 0) AS action_changesets_merged_diff_stat_changed_sum,
     COALESCE(SUM(diff_stat_deleted) FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED'), 0) AS action_changesets_merged_diff_stat_deleted_sum,
     COUNT(*) FILTER (WHERE owned_by_batch_change_id IS NULL) AS manual_changesets,
     COUNT(*) FILTER (WHERE owned_by_batch_change_id IS NULL AND external_state = 'MERGED') AS manual_changesets_merged
@@ -46,11 +46,9 @@ FROM changesets;
 		&stats.PublishedChangesetsUnpublishedCount,
 		&stats.PublishedChangesetsCount,
 		&stats.PublishedChangesetsDiffStatAddedSum,
-		&stats.PublishedChangesetsDiffStatChangedSum,
 		&stats.PublishedChangesetsDiffStatDeletedSum,
 		&stats.PublishedChangesetsMergedCount,
 		&stats.PublishedChangesetsMergedDiffStatAddedSum,
-		&stats.PublishedChangesetsMergedDiffStatChangedSum,
 		&stats.PublishedChangesetsMergedDiffStatDeletedSum,
 		&stats.ImportedChangesetsCount,
 		&stats.ImportedChangesetsMergedCount,
@@ -79,9 +77,84 @@ WHERE name IN ('BatchSpecCreated', 'ViewBatchChangeApplyPage', 'ViewBatchChangeD
 		return nil, err
 	}
 
-	queryUniqueEventLogUsersCurrentMonth := func(events []*sqlf.Query) *sql.Row {
-		q := sqlf.Sprintf(
-			`SELECT COUNT(DISTINCT user_id) FROM event_logs WHERE name IN (%s) AND timestamp >= date_trunc('month', CURRENT_DATE);`,
+	const activeExecutorsCountQuery = `SELECT COUNT(id) FROM executor_heartbeats WHERE last_seen_at >= (NOW() - interval '15 seconds');`
+
+	if err := db.QueryRowContext(ctx, activeExecutorsCountQuery).Scan(
+		&stats.ActiveExecutorsCount,
+	); err != nil {
+		return nil, err
+	}
+
+	const changesetDistributionQuery = `
+SELECT
+	COUNT(*),
+	batch_changes_range.range,
+	created_from_raw
+FROM (
+	SELECT
+		CASE
+			WHEN COUNT(changesets.id) BETWEEN 0 AND 9 THEN '0-9 changesets'
+			WHEN COUNT(changesets.id) BETWEEN 10 AND 49 THEN '10-49 changesets'
+			WHEN COUNT(changesets.id) BETWEEN 50 AND 99 THEN '50-99 changesets'
+			WHEN COUNT(changesets.id) BETWEEN 100 AND 199 THEN '100-199 changesets'
+			WHEN COUNT(changesets.id) BETWEEN 200 AND 999 THEN '200-999 changesets'
+			ELSE '1000+ changesets'
+		END AS range,
+		batch_specs.created_from_raw
+	FROM batch_changes
+	LEFT JOIN batch_specs AS batch_specs ON batch_changes.batch_spec_id = batch_specs.id
+	LEFT JOIN changesets ON changesets.batch_change_ids ? batch_changes.id::TEXT
+	GROUP BY batch_changes.id, batch_specs.created_from_raw
+) AS batch_changes_range
+GROUP BY batch_changes_range.range, created_from_raw;
+`
+
+	rows, err := db.QueryContext(ctx, changesetDistributionQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var (
+			count          int32
+			changesetRange string
+			createdFromRaw bool
+		)
+		if err = rows.Scan(&count, &changesetRange, &createdFromRaw); err != nil {
+			return nil, err
+		}
+
+		var batchChangeSource types.BatchChangeSource
+		if createdFromRaw {
+			batchChangeSource = types.ExecutorBatchChangeSource
+		} else {
+			batchChangeSource = types.LocalBatchChangeSource
+		}
+
+		stats.ChangesetDistribution = append(stats.ChangesetDistribution, &types.ChangesetDistribution{
+			Range:             changesetRange,
+			BatchChangesCount: count,
+			Source:            batchChangeSource,
+		})
+	}
+	if err = basestore.CloseRows(rows, err); err != nil {
+		return nil, err
+	}
+
+	queryUniqueContributorCurrentMonth := func(events []*sqlf.Query) *sql.Row {
+		q := sqlf.Sprintf(`
+SELECT
+	COUNT(*)
+FROM (
+	SELECT
+		DISTINCT user_id
+	FROM event_logs
+	WHERE name IN (%s) AND anonymous_user_id != 'backend' AND timestamp >= date_trunc('month', CURRENT_DATE)
+		UNION
+	SELECT
+		DISTINCT user_id
+	FROM changeset_jobs
+) AS contributor_activities_union;`,
 			sqlf.Join(events, ","),
 		)
 
@@ -97,7 +170,7 @@ WHERE name IN ('BatchSpecCreated', 'ViewBatchChangeApplyPage', 'ViewBatchChangeD
 		sqlf.Sprintf("%q", "ViewBatchChangeApplyPage"),
 	}
 
-	if err := queryUniqueEventLogUsersCurrentMonth(contributorEvents).Scan(&stats.CurrentMonthContributorsCount); err != nil {
+	if err := queryUniqueContributorCurrentMonth(contributorEvents).Scan(&stats.CurrentMonthContributorsCount); err != nil {
 		return nil, err
 	}
 
@@ -110,6 +183,19 @@ WHERE name IN ('BatchSpecCreated', 'ViewBatchChangeApplyPage', 'ViewBatchChangeD
 		sqlf.Sprintf("%q", "ViewBatchChangeApplyPage"),
 		sqlf.Sprintf("%q", "ViewBatchChangeDetailsPagePage"),
 		sqlf.Sprintf("%q", "ViewBatchChangesListPage"),
+	}
+
+	queryUniqueEventLogUsersCurrentMonth := func(events []*sqlf.Query) *sql.Row {
+		q := sqlf.Sprintf(`
+SELECT
+	COUNT(DISTINCT user_id)
+FROM event_logs
+WHERE name IN (%s) AND anonymous_user_id != 'backend' AND timestamp >= date_trunc('month', CURRENT_DATE)
+`,
+			sqlf.Join(events, ","),
+		)
+
+		return db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	}
 
 	if err := queryUniqueEventLogUsersCurrentMonth(usersEvents).Scan(&stats.CurrentMonthUsersCount); err != nil {
@@ -168,11 +254,10 @@ ORDER BY batch_change_counts.creation_week ASC
 `
 
 	stats.BatchChangesCohorts = []*types.BatchChangesCohort{}
-	rows, err := db.QueryContext(ctx, batchChangesCohortQuery)
+	rows, err = db.QueryContext(ctx, batchChangesCohortQuery)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
 	for rows.Next() {
 		var cohort types.BatchChangesCohort
@@ -193,6 +278,143 @@ ORDER BY batch_change_counts.creation_week ASC
 		}
 
 		stats.BatchChangesCohorts = append(stats.BatchChangesCohorts, &cohort)
+	}
+
+	if err = basestore.CloseRows(rows, err); err != nil {
+		return nil, err
+	}
+
+	const batchChangeSourceStatQuery = `
+SELECT
+	batch_specs.created_from_raw,
+	COUNT(changesets.id) AS published_changesets_count,
+	COUNT(distinct batch_changes.id) AS batch_changes_count
+FROM batch_changes
+INNER JOIN batch_specs ON batch_specs.id = batch_changes.batch_spec_id
+LEFT JOIN changesets ON changesets.batch_change_ids ? batch_changes.id::TEXT
+WHERE changesets.publication_state = 'PUBLISHED'
+GROUP BY batch_specs.created_from_raw;
+`
+	rows, err = db.QueryContext(ctx, batchChangeSourceStatQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var (
+			publishedChangesetsCount, batchChangeCount int32
+			createdFromRaw                             bool
+		)
+
+		if err = rows.Scan(&createdFromRaw, &publishedChangesetsCount, &batchChangeCount); err != nil {
+			return nil, err
+		}
+
+		var batchChangeSource types.BatchChangeSource
+		if createdFromRaw {
+			batchChangeSource = types.ExecutorBatchChangeSource
+		} else {
+			batchChangeSource = types.LocalBatchChangeSource
+		}
+
+		stats.BatchChangeStatsBySource = append(stats.BatchChangeStatsBySource, &types.BatchChangeStatsBySource{
+			PublishedChangesetsCount: publishedChangesetsCount,
+			BatchChangesCount:        batchChangeCount,
+			Source:                   batchChangeSource,
+		})
+	}
+
+	if err = basestore.CloseRows(rows, err); err != nil {
+		return nil, err
+	}
+
+	const monthlyExecutorUsageQuery = `
+SELECT
+	DATE_TRUNC('month', batch_specs.created_at)::date as month,
+	COUNT(DISTINCT batch_specs.user_id),
+	-- Sum of the durations of every execution job, rounded up to the nearest minute
+	CEIL(COALESCE(SUM(EXTRACT(EPOCH FROM (exec_jobs.finished_at - exec_jobs.started_at))), 0) / 60) AS minutes
+FROM batch_specs
+LEFT JOIN batch_spec_workspaces AS ws ON ws.batch_spec_id = batch_specs.id
+LEFT JOIN batch_spec_workspace_execution_jobs AS exec_jobs ON exec_jobs.batch_spec_workspace_id = ws.id
+WHERE batch_specs.created_from_raw IS TRUE
+GROUP BY date_trunc('month', batch_specs.created_at)::date;
+`
+
+	rows, err = db.QueryContext(ctx, monthlyExecutorUsageQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var (
+			month      string
+			usersCount int32
+			minutes    int64
+		)
+
+		if err = rows.Scan(&month, &usersCount, &minutes); err != nil {
+			return nil, err
+		}
+
+		stats.MonthlyBatchChangesExecutorUsage = append(stats.MonthlyBatchChangesExecutorUsage, &types.MonthlyBatchChangesExecutorUsage{
+			Month:   month,
+			Count:   usersCount,
+			Minutes: minutes,
+		})
+	}
+
+	if err = basestore.CloseRows(rows, err); err != nil {
+		return nil, err
+	}
+
+	const weeklyBulkOperationsStatQuery = `
+SELECT
+	job_type,
+	COUNT(DISTINCT bulk_group),
+	date_trunc('week', created_at)::date
+FROM changeset_jobs
+GROUP BY date_trunc('week', created_at)::date, job_type;
+`
+
+	rows, err = db.QueryContext(ctx, weeklyBulkOperationsStatQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	totalBulkOperation := make(map[string]int32)
+	for rows.Next() {
+		var (
+			bulkOperation, week string
+			count               int32
+		)
+
+		if err = rows.Scan(&bulkOperation, &count, &week); err != nil {
+			return nil, err
+		}
+
+		if bulkOperation == "commentatore" {
+			bulkOperation = "comment"
+		}
+
+		totalBulkOperation[bulkOperation] += count
+
+		stats.WeeklyBulkOperationStats = append(stats.WeeklyBulkOperationStats, &types.WeeklyBulkOperationStats{
+			BulkOperation: bulkOperation,
+			Week:          week,
+			Count:         count,
+		})
+	}
+
+	if err = basestore.CloseRows(rows, err); err != nil {
+		return nil, err
+	}
+
+	for name, count := range totalBulkOperation {
+		stats.BulkOperationsCount = append(stats.BulkOperationsCount, &types.BulkOperationsCount{
+			Name:  name,
+			Count: count,
+		})
 	}
 
 	return &stats, nil

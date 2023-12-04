@@ -30,9 +30,9 @@ Examples of errors that requires [manual retrying](#manual-retrying-by-re-applyi
 
 ## Automatic retrying of errored changesets
 
-When Sourcegraph batch changes marks a changeset as **Retrying** it's automatically going to retry publishing it for up to 60 times.
+If an operation on a changeset results in an error that looks like it could be transient or resolvable if retried, Sourcegraph will automatically retry that operation. Typically, only internal errors and errors from the code host with HTTP status codes in the 500 range will be retried.
 
-No user action is needed.
+This will be indicated by the changeset entering a **Retrying** state. Sourcegraph will automatically retry the operation up to ten times.
 
 ## Manual retrying of errored changesets
 

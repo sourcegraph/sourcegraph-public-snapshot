@@ -4,13 +4,12 @@ package gitservice
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
-
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -45,6 +44,13 @@ type Handler struct {
 	// path to the GIT_DIR for it.
 	Dir func(string) string
 
+	// ErrorHook is called if we fail to run the git command. The main use of
+	// this is to inject logging. For example in src-cli we don't use
+	// sourcegraph/log so this allows us to use stdlib log.
+	//
+	// Note: This is required to be set
+	ErrorHook func(err error, stderr string)
+
 	// CommandHook if non-nil will run with the git upload command before we
 	// start the command.
 	//
@@ -56,7 +62,7 @@ type Handler struct {
 	// Trace if non-nil is called at the start of serving a request. It will
 	// call the returned function when done executing. If the executation
 	// failed, it will pass in a non-nil error.
-	Trace func(svc, repo, protocol string) func(error)
+	Trace func(ctx context.Context, svc, repo, protocol string) func(error)
 }
 
 func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -104,7 +110,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// captured for tracing.
 	var err error
 	if s.Trace != nil {
-		done := s.Trace(svc, repo, r.Header.Get("Git-Protocol"))
+		done := s.Trace(r.Context(), svc, repo, r.Header.Get("Git-Protocol"))
 		defer func() {
 			done(err)
 		}()
@@ -145,7 +151,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err = cmd.Run()
 	if err != nil {
 		err = errors.Errorf("error running git service command args=%q: %w", args, err)
-		log15.Error("git-service error", "error", err, "stderr", stderr.String())
+		s.ErrorHook(err, stderr.String())
 		_, _ = w.Write([]byte("\n" + err.Error() + "\n"))
 	}
 }

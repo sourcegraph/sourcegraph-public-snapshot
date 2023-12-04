@@ -1,0 +1,1276 @@
+{
+  "insights.dashboards": {
+    "frontendPlatform": {
+      "id": "1f0e14f4-ae6f-4686-96e4-c67495ca7eca",
+      "title": "Frontend Platform",
+      "insightIds": [
+        "searchInsights.insight.migrationFromFilteredConnectionToUseConnection",
+        "searchInsights.insight.wildcardGrowth",
+        "searchInsights.insight.migrationToCssModules",
+        "searchInsights.insight.dataFetchingFromGraphQl",
+        "searchInsights.insight.bootstrapSpacingUtilityClasses",
+        "searchInsights.insight.componentImports",
+        "searchInsights.insight.usageOfReactTestingLibraries",
+        "searchInsights.insight.rawHtmlElementsVsWildcardAtoms",
+        "searchInsights.insight.usageOfJavaScriptAndTypeScript"
+      ]
+    },
+    "backendInsightsTesting": {
+      "id": "71b950f5-a254-454b-9de9-2633e3f3fe0f",
+      "title": "Backend Insights Testing",
+      "insightIds": [
+        "searchInsights.insight.joelkwResultsButFilteredJustToSourcegraphSourcegraph",
+        "searchInsights.insight.oneMoreTestGettingGoingForJestd",
+        "searchInsights.insight.testingJoelkwWithACountAllToMakeSureItWorks",
+        "searchInsights.insight.test13QueryJesteRepoExpectedPresentDay119KResuls",
+        "searchInsights.insight.test14QueryJesteCountAllRepoExpected119KResults",
+        "searchInsights.insight.test15QueryJestFileExpectedResultsNear273KOrSo",
+        "searchInsights.insight.insightsOverallAndInSrcSrc",
+        "searchInsights.insight.test12QueryJesteCountAllExpectedPresentDay119KResuls",
+        "searchInsights.insight.test11QueryJesteExpectedPresentDay119KResuls"
+      ]
+    },
+    "backendTesting2": {
+      "id": "d46c18c3-d61d-4881-b4e0-e01d3cff595e",
+      "title": "backend testing 2",
+      "insightIds": [
+        "searchInsights.insight.test21QueryCountAllAardvarkAllRepos",
+        "searchInsights.insight.test23QueryAardvarkLangGoTsJsMdExpectedResultsAll500",
+        "searchInsights.insight.test31QueryCouryExpected206",
+        "searchInsights.insight.test41QueryJoelExpected325K",
+        "searchInsights.insight.test51QuerySelectRepoFinalExpected262K",
+        "searchInsights.insight.test61QueryFelixFelixfForMoreWrongDataConfirmation",
+        "searchInsights.insight.test32VariousSubCouryQueryTests",
+        "searchInsights.insight.test71JoeljSeeIfBitingLargeFilesExpected31",
+        "searchInsights.insight.test81TestSearchContextsExpected311WithoutContext",
+        "searchInsights.insight.testCampaignsInContextJoelSrcSrc",
+        "searchInsights.insight.test92CampaignsFrontendInsight",
+        "searchInsights.insight.test93CampaignsInSrcSrcToMatchFrontendFixedAddedContext",
+        "searchInsights.insight.test71NewViewSavedJustSrcSrc",
+        "searchInsights.insight.test95CampaignsButSpacesToThenFilterDownToSrcSrcToMatchFrontend",
+        "searchInsights.insight.useOfUnstableEventApiCalls"
+      ]
+    },
+    "backendTesting3": {
+      "id": "387409ea-e6fb-41dd-88fb-ab843cfeaa17",
+      "title": "Backend Testing 3",
+      "insightIds": [
+        "searchInsights.insight.testV221QueryCountAllAardvark",
+        "searchInsights.insight.testV223QueryAardvarkLangGoTsJsMdEVs500",
+        "searchInsights.insight.testV231QueryCouryEv206",
+        "searchInsights.insight.testV241QueryJoelEv325K",
+        "searchInsights.insight.testV251QuerySelectRepoEv262K",
+        "searchInsights.insight.testV261QueryFelixFelixf",
+        "searchInsights.insight.testV232VariousSubCouryQueryTests",
+        "searchInsights.insight.testV271JoeljSeeIfBitingLargeFilesExpected31",
+        "searchInsights.insight.testV211QueryJesteEv119K",
+        "searchInsights.insight.testV201InsightsOverAll",
+        "searchInsights.insight.testV215QueryJestFileEv273K",
+        "searchInsights.insight.testV202QueryJestdEv136",
+        "searchInsights.insight.testLoadingState"
+      ]
+    },
+    "backendTest20210829": {
+      "id": "a82737e6-53b6-4ea1-b6b3-ec7d8394c01e",
+      "title": "Backend Test 2021-08-29",
+      "insightIds": [
+        "searchInsights.insight.testV323QueryAardvarkLangGoTsJsMdEVs500",
+        "searchInsights.insight.testV315QueryJestFileEv275K",
+        "searchInsights.insight.testV361QueryFelixF",
+        "searchInsights.insight.testV391QueryCampaigns",
+        "searchInsights.insight.testV321QueryCountAllAardvark",
+        "searchInsights.insight.testV332VariousSubCouryQueryTests",
+        "searchInsights.insight.testV491CampaignsTimeTest"
+      ]
+    },
+    "betaDemoDashboard": {
+      "id": "f2a9d850-4b26-41e0-9437-b0494f2e65b0",
+      "title": "Beta demo dashboard",
+      "insightIds": [
+        "searchInsights.insight.todosInAllRepos"
+      ]
+    },
+    "stressTestStreamingSearchWhooo": {
+      "id": "12c482b7-30f5-4066-9a8f-6353d77c8ba0",
+      "title": "stress test streaming search, whooo!",
+      "insightIds": [
+        "searchInsights.insight.locInTsVsGo",
+        "searchInsights.insight.locTest2N"
+      ]
+    },
+    "docsScreenshotDashboard": {
+      "id": "2b4f00f5-e9f5-467f-a7bb-b93bdbc7d6a5",
+      "title": "Docs Screenshot Dashboard",
+      "insightIds": [
+        "searchInsights.insight.migrationToCssModules",
+        "codeStatsInsights.insight.languageUsageInSourcegraph",
+        "searchInsights.insight.e2eToIntegrationTestsMigration"
+      ]
+    },
+    "migrationFromGlobalDatabaseMocks": {
+      "id": "e498935a-c940-4b7c-ae1d-bded8a011d7c",
+      "title": "Migration from global database mocks",
+      "insightIds": [
+        "searchInsights.insight.migrationToDatabaseDb",
+        "searchInsights.insight.migrationFromGlobalDbMocks",
+        "searchInsights.insight.databaseNewDbOutsideTestFiles",
+        "searchInsights.insight.migrationToMethodStoreConstruction",
+        "searchInsights.insight.removingUsesOfDbconnGlobal",
+        "searchInsights.insight.migrationFromDbtestingToDbtest"
+      ]
+    },
+    "todo": {
+      "id": "daa9263c-8260-4c28-a2e6-1ba2e0c12ad6",
+      "title": "Todo",
+      "insightIds": [
+        "searchInsights.insight.orgTestCounts"
+      ]
+    },
+    "regressionTesting334": {
+      "id": "07aa6632-286b-49f1-aea9-8f01b9fd4546",
+      "title": "Regression Testing 3.34",
+      "insightIds": [
+        "searchInsights.insight.test123",
+        "searchInsights.insight.test234Changed"
+      ]
+    },
+    "jdbOrgRegressionTesting": {
+      "id": "67706111-366b-410f-a25a-f71f1d2c525f",
+      "title": "JDB Org regression testing",
+      "insightIds": [
+        "searchInsights.insight.jdbRegressionTest2",
+        "searchInsights.insight.testingJoelkwWithACountAllToMakeSureItWorks",
+        "searchInsights.insight.jdbRegressionTest6"
+      ]
+    },
+    "vovasOrgVisibleDashboard": {
+      "id": "85ffc9e9-d8c0-4b71-85e1-e2aefbd83b5a",
+      "title": "Vova's org visible dashboard",
+      "insightIds": []
+    },
+    "devX": {
+      "id": "f57813a9-33f6-408b-ab8b-5040b459e31e",
+      "title": "DevX",
+      "insightIds": [
+        "searchInsights.insight.totalCountOfSkippedTests",
+        "searchInsights.insight.ciPipelineGeneratorTests"
+      ]
+    }
+  },
+  "extensions": {
+    "sourcegraph/search-insights": true,
+    "sourcegraph/code-stats-insights": true
+  },
+  // misc insights
+  "codeStatsInsights.query": "repo:^github\\.com/sourcegraph/sourcegraph$",
+  "codeStatsInsights.otherThreshold": 0.02,
+  "codecov.insight.pie": true,
+  // searchInsights
+  "searchInsights.insight.global.monitoringObservables": {
+    "title": "Monitoring API",
+    "subtitle": "Monitoring API usage in monitoring definitions (excluding shared)",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Observables defined",
+        "query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared Query:",
+        "stroke": "var(--oc-blue-7)"
+      },
+      {
+        "name": "Observables without alerts",
+        "query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared NoAlert:(\\s+)true",
+        "stroke": "var(--oc-orange-7)"
+      },
+      {
+        "name": "Observables with Interpretation docs",
+        // not (Interpretation: "none")
+        // file:^monitoring/definitions/(.*).go -file:shared Interpretation:(\s+)"(.?$|[^n].+|n[^o].*)" OR Interpretation:(\s+)`
+        "query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared Interpretation:(\\s+)\"(.?$|[^n].+|n[^o].*)\" OR Interpretation:(\\s+)`",
+        "stroke": "var(--oc-grape-7)"
+      },
+      {
+        "name": "Observables with PossibleSolutions docs",
+        // similar to above
+        "query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared PossibleSolutions:(\\s+)\"(.?$|[^n].+|n[^o].*)\" OR PossibleSolutions:(\\s+)`",
+        "stroke": "var(--oc-teal-7)"
+      },
+      {
+        "name": "Observables with custom panel options",
+        // might not be very reliable without structural
+        "query": "patternType:regexp file:^monitoring/definitions/(.*).go With\\((.*)",
+        "stroke": "var(--oc-violet-7)"
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  },
+  "searchInsights.insight.global.releaseSteps": {
+    "title": "Steps to create a release",
+    "subtitle": "Number of steps documented in release tracking issue templates",
+    "repositories": [
+      "github.com/sourcegraph/about"
+    ],
+    "series": [
+      {
+        "name": "Releases",
+        "query": "patternType:literal file:^handbook/engineering/releases/release_issue_template\\.md [ ]",
+        "stroke": "var(--oc-yellow-7)"
+      },
+      {
+        "name": "Patch releases",
+        "query": "patternType:literal file:^handbook/engineering/releases/patch_release_issue_template\\.md [ ]",
+        "stroke": "var(--oc-blue-7)"
+      }
+    ],
+    "step": {
+      "months": 1
+    }
+  },
+  "searchInsights.insight.global.javaVersionUsage": {
+    "title": "Java version usage",
+    "repositories": [
+      "ghe.sgdev.org/sourcegraph/AntennaPod-AntennaPod",
+      "ghe.sgdev.org/sourcegraph/JakeWharton-RxBinding",
+      "ghe.sgdev.org/sourcegraph/JakeWharton-scalpel",
+      "ghe.sgdev.org/sourcegraph/Kotlin-dokka"
+    ],
+    "series": [
+      {
+        "name": "1.6",
+        "query": "patternType:regexp sourceCompatibility 1[_\\.]6 f:build\\.gradle$",
+        "stroke": "var(--oc-yellow-7)"
+      },
+      {
+        "name": "1.7",
+        "query": "patternType:regexp sourceCompatibility 1[_\\.]7 f:build\\.gradle$",
+        "stroke": "var(--oc-red-7)"
+      },
+      {
+        "name": "1.8",
+        "query": "patternType:regexp sourceCompatibility 1[_\\.]8 f:build\\.gradle$",
+        "stroke": "var(--oc-grape-7)"
+      },
+      {
+        "name": "1.9",
+        "query": "patternType:regexp sourceCompatibility 1[_\\.]9 f:build\\.gradle$",
+        "stroke": "var(--oc-violet-7)"
+      }
+    ],
+    "step": {
+      "months": 10
+    }
+  },
+  "searchInsights.insight.graphQLTypesMigration": {
+    "title": "Migration to new GraphQL TS types",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Imports of old GQL.* types",
+        "query": "patternType:regex case:yes \\*\\sas\\sGQL",
+        "stroke": "var(--oc-red-7)"
+      },
+      {
+        "name": "Imports of new graphql-operations types",
+        "query": "patternType:regexp case:yes /graphql-operations'",
+        "stroke": "var(--oc-blue-7)"
+      },
+    ],
+    "step": {
+      "weeks": 6
+    }
+  },
+  "searchInsights.insight.graphQLTypesMigrationDiff": {
+    "title": "Migration to new GraphQL TS types Diff Search",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Imports of old GQL.* types",
+        "query": "patternType:regex case:yes \\*\\sas\\sGQL type:diff",
+        "stroke": "var(--oc-red-7)"
+      },
+      {
+        "name": "Imports of new graphql-operations types",
+        "query": "patternType:regexp case:yes /graphql-operations' type:diff",
+        "stroke": "var(--oc-blue-7)"
+      },
+    ],
+    "step": {
+      "weeks": 6
+    }
+  },
+  "searchInsights.insight.e2eToIntegrationTestsMigration": {
+    "title": "Number of end-to-end vs integration tests",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "End-to-end tests",
+        "query": "patternType:regexp case:yes \\b(it|test)\\( f:/end-to-end/.*\\.test\\.ts$",
+        "stroke": "var(--oc-pink-7)"
+      },
+      {
+        "name": "Regression/QA tests",
+        "query": "patternType:regexp case:yes \\b(it|test)\\( f:/regression/.*\\.test\\.ts$",
+        "stroke": "var(--oc-orange-7)"
+      },
+      {
+        "name": "Backend integration tests",
+        "query": "patternType:regexp case:yes \\bt\\.Run\\( file:^dev/gqltest/",
+        "stroke": "var(--oc-indigo-7)"
+      },
+      {
+        "name": "Client integration tests",
+        "query": "patternType:regexp case:yes \\b(it|test)\\( f:/integration/.*\\.test\\.ts$ ",
+        "stroke": "var(--oc-teal-7)"
+      },
+      // {
+      //   "name": "Client unit tests",
+      //   "query": "patternType:regexp \\b(it|test)\\( -f:/integration/ -f:/regression/ -f:/end-to-end/ f:\\.test\\.ts$",
+      //   "stroke": "var(--oc-blue-7)"
+      // }
+      // {
+      //   "name": "Client storybook tests",
+      //   "query": "patternType:regexp f:\\.story\\.tsx$ \\badd\\(",
+      //   "stroke": "var(--oc-grape-7)"
+      // }
+    ],
+    "step": {
+      "weeks": 4
+    }
+  },
+  "searchInsights.insight.storybookGrowth": {
+    "title": "Storybook growth",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      // {
+      //   "name": "Client snapshot tests",
+      //   "query": "patternType:regexp \\.toMatchSnapshot\\( -f:/integration/ -f:/regression/ -f:/end-to-end/ f:\\.test\\.ts$",
+      //   "stroke": "var(--oc-blue-7)"
+      // }
+      {
+        "name": "Client storybook tests",
+        "query": "patternType:regexp f:\\.story\\.tsx$ \\badd\\(",
+        "stroke": "var(--oc-grape-7)"
+      }
+    ],
+    "step": {
+      "weeks": 4
+    }
+  },
+  "searchInsights.insight.directory.codeSmells": {
+    "title": "Code Smells",
+    "subtitle": "Code smells are any characteristic in the source code of a program that possibly indicate a deeper problem.",
+    "series": [
+      {
+        "name": "ESLint disable directives",
+        "query": "patternType:literal eslint-disable",
+        "stroke": "var(--oc-yellow-7)"
+      },
+      {
+        "name": "Unsafe use of \"any\" keyword",
+        "query": "patternType:regexp (\bas|:)\\s+any\\b lang:typescript",
+        "stroke": "var(--oc-orange-7)"
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  },
+  "searchInsights.insight.global.databaseUsage": {
+    "title": "Database usage",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Redis",
+        "query": "redis",
+        "stroke": "var(--oc-red-7)"
+      },
+      {
+        "name": "PostgreSQL",
+        "query": "postgres",
+        "stroke": "var(--oc-blue-7)"
+      },
+      {
+        "name": "SQLite",
+        "query": "sqlite",
+        "stroke": "var(--oc-cyan-7)"
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  },
+  "searchInsights.insight.global.goErrorWrapping": {
+    "title": "Go error wrapping adoption",
+    "subtitle": "Adoption of the Go 1.13 standard library's error wrapping (insight would require structural search)",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Go 1.13 errors",
+        "query": "patternType:structural lang:go fmt.Errorf(\":[_]%w:[_]\", :[_])",
+        "stroke": "var(--oc-teal-7)"
+      },
+      {
+        "name": "pkg/errors",
+        "query": "patternType:structural lang:go errors.Wrap(:[_])",
+        "stroke": "var(--oc-red-7)"
+      }
+    ],
+    "step": {
+      "months": 3
+    }
+  },
+  "searchInsights.insight.wildcardGrowth": {
+    "title": "Wildcard growth",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Hooks",
+        "stroke": "var(--oc-teal-7)",
+        "query": "file:^client/wildcard/src/hooks/index\\.ts export"
+      },
+      {
+        "name": "Components",
+        "stroke": "var(--oc-grape-7)",
+        "query": "file:^client/wildcard/src/components/index\\.ts export"
+      }
+    ],
+    "step": {
+      "weeks": 4
+    }
+  },
+  "searchInsights.insight.migrateAwayFromGlobalDatabaseConnections": {
+    "title": "Migrate away from global database connections",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Global database connections",
+        "stroke": "var(--oc-pink-7)",
+        "query": "dbconn.Global"
+      }
+    ],
+    "step": {
+      "months": 1
+    }
+  },
+  "searchInsights.insight.reactFunctionComponentMigration": {
+    "title": "React function component migration",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Function components",
+        "stroke": "var(--oc-grape-7)",
+        "query": "patternType:regexp const\\s\\w+:\\s(React\\.)?FunctionComponent"
+      },
+      {
+        "name": "Class components",
+        "stroke": "var(--oc-violet-7)",
+        "query": "patternType:regexp extends\\s(React\\.)?(Pure)?Component"
+      }
+    ],
+    "step": {
+      "months": 2
+    }
+  },
+  "insights.allrepos": {
+    "searchInsights.insight.testingTimeToRunOverAllReposForStringJoelkwChangedTitle": {
+      "title": "Testing time to run over all repos for string \"joelkw\" changed title",
+      "repositories": [],
+      "series": [
+        {
+          "name": "Testing all repositories",
+          "stroke": "var(--oc-indigo-7)",
+          "query": "joelkw"
+        }
+      ],
+      "step": {
+        "weeks": 2
+      }
+    },
+    "searchInsights.insight.oneMoreTestGettingGoingForJestd": {
+      "title": "One more test getting going for jestd",
+      "repositories": [],
+      "series": [
+        {
+          "name": "testing for jestd (136 results now)",
+          "stroke": "var(--oc-grape-7)",
+          "query": "jestd"
+        }
+      ],
+      "step": {
+        "weeks": 2
+      }
+    },
+    "searchInsights.insight.newJoelkwTestInsight": {
+      "title": "New joelkw test insight ",
+      "series": [
+        {
+          "name": "joelkw",
+          "stroke": "var(--oc-cyan-7)",
+          "query": "joelkw"
+        }
+      ]
+    },
+    "searchInsights.insight.test71NewViewSavedJustSrcSrc": {
+      "title": "[Test 7.1 new view saved just src/src]",
+      "series": [
+        {
+          "name": "joelj 31",
+          "stroke": "var(--oc-indigo-7)",
+          "query": "joelj"
+        }
+      ],
+      "filters": {
+        "includeRepoRegexp": "soourcegra/sourcegrph",
+        "excludeRepoRegexp": ""
+      }
+    },
+    "searchInsights.insight.test95CampaignsButSpacesToThenFilterDownToSrcSrcToMatchFrontend": {
+      "title": "[Test 9.5] Campaigns but spaces (to then filter down to src/src to match frontend)",
+      "series": [
+        {
+          "name": "campaigns (but spaces!)",
+          "stroke": "var(--oc-grape-7)",
+          "query": "campaigns    "
+        }
+      ],
+      "filters": {
+        "includeRepoRegexp": "^github\\.com/sourcegraph/sourcegraph$",
+        "excludeRepoRegexp": ""
+      }
+    },
+    "searchInsights.insight.testV211QueryJesteEv119K": {
+      "title": "[Test-v2 1.1] query:\"jeste     \" ev 11.9k",
+      "series": [
+        {
+          "name": "jeste 11.9k 5s",
+          "stroke": "var(--oc-blue-7)",
+          "query": "jeste     "
+        },
+        {
+          "name": "jeste fork/arch no 5s",
+          "stroke": "var(--oc-pink-7)",
+          "query": "jeste archived:no fork:no     "
+        }
+      ]
+    },
+    "searchInsights.insight.testV215QueryJestFileEv273K": {
+      "title": "[Test-v2 1.5] query:\"jest file:.     \" ev 273k",
+      "series": [
+        {
+          "name": "jest file:. 5s 273k",
+          "stroke": "var(--oc-pink-7)",
+          "query": "jest file:.     "
+        }
+      ]
+    },
+    "searchInsights.insight.testV202QueryJestdEv136": {
+      "title": "[Test-v2 0.2] query:\"jestd     \" ev 136",
+      "series": [
+        {
+          "name": "jestd 136 5s",
+          "stroke": "var(--oc-blue-7)",
+          "query": "jestd     "
+        }
+      ]
+    },
+    "searchInsights.insight.testLoadingState": {
+      "title": "Test loading state ",
+      "series": [
+        {
+          "name": "test loading state",
+          "stroke": "var(--oc-blue-7)",
+          "query": "loader"
+        }
+      ]
+    },
+    "searchInsights.insight.testV323QueryAardvarkLangGoTsJsMdEVs500": {
+      "title": "[Test-v3 2.3] query:\"aardvark lang:[go|ts|js|md]        \" EVs <500",
+      "series": [
+        {
+          "name": "aardvark GO 52 8s",
+          "stroke": "var(--oc-cyan-7)",
+          "query": "aardvark lang:go        "
+        },
+        {
+          "name": "aardvark JS 354 8s",
+          "stroke": "var(--oc-grape-7)",
+          "query": "aardvark lang:JavaScript        "
+        },
+        {
+          "name": "aardvark MD 178 8s",
+          "stroke": "var(--oc-green-7)",
+          "query": "aardvark lang:Markdown        "
+        },
+        {
+          "name": "aardvark TS 32 8s",
+          "stroke": "var(--oc-yellow-7)",
+          "query": "aardvark lang:TypeScript        "
+        }
+      ]
+    },
+    "searchInsights.insight.testV315QueryJestFileEv275K": {
+      "title": "[Test-v3 1.5] query:\"jest file:.        \" ev 275k",
+      "series": [
+        {
+          "name": "jest file:. 8s 275k",
+          "stroke": "var(--oc-grape-7)",
+          "query": "jest file:.        "
+        }
+      ],
+      "filters": {
+        "includeRepoRegexp": "source",
+        "excludeRepoRegexp": ""
+      }
+    },
+    "searchInsights.insight.testV361QueryFelixF": {
+      "title": "[Test-v3 6.1] query:\"felix[f]        \" ",
+      "series": [
+        {
+          "name": "felix 32.3k 8s",
+          "stroke": "var(--oc-green-7)",
+          "query": "felix        "
+        },
+        {
+          "name": "felixf 1042 8s",
+          "stroke": "var(--oc-pink-7)",
+          "query": "felixf       "
+        }
+      ]
+    },
+    "searchInsights.insight.testV391QueryCampaigns": {
+      "title": "[Test-v3 9.1] query:\"campaigns        \"",
+      "series": [
+        {
+          "name": "campaigns 909.5k 8s",
+          "stroke": "var(--oc-orange-7)",
+          "query": "campaigns        "
+        }
+      ]
+    },
+    "searchInsights.insight.testV321QueryCountAllAardvark": {
+      "title": "[Test-v3 2.1] query: \"count:all aardvark        \"",
+      "series": [
+        {
+          "name": "count:all aardvark 3.1k 8s",
+          "stroke": "var(--oc-indigo-7)",
+          "query": "count:all aardvark        "
+        }
+      ]
+    },
+    "searchInsights.insight.testV332VariousSubCouryQueryTests": {
+      "title": "[Test-v3 3.2] various sub \"coury\" query tests",
+      "series": [
+        {
+          "name": "coury select:repo 44 8s",
+          "stroke": "var(--oc-yellow-7)",
+          "query": "coury select:repo        "
+        },
+        {
+          "name": "coury, 28 8s",
+          "stroke": "var(--oc-red-7)",
+          "query": "coury,        "
+        },
+        {
+          "name": "coury. 17 8s",
+          "stroke": "var(--oc-teal-7)",
+          "query": "coury.        "
+        },
+        {
+          "name": "coury@ 12 8s",
+          "stroke": "var(--oc-lime-7)",
+          "query": "coury@        "
+        }
+      ]
+    },
+    "searchInsights.insight.testV491CampaignsTimeTest": {
+      "title": "[Test-v4 9.1] Campaigns time test",
+      "series": [
+        {
+          "name": "campaigns 10s test",
+          "stroke": "var(--oc-red-7)",
+          "query": "campaigns           "
+        }
+      ]
+    },
+    "searchInsights.insight.todosInAllRepos": {
+      "title": "Todos in all repos!!",
+      "series": [
+        {
+          "name": "TODOs",
+          "stroke": "var(--oc-teal-7)",
+          "query": "todo"
+        }
+      ],
+      "filters": {
+        "includeRepoRegexp": "^github\\.com/sourcegraph/about$",
+        "excludeRepoRegexp": ""
+      }
+    },
+    "searchInsights.insight.locInTsVsGo": {
+      "title": "LOC in TS vs GO ",
+      "series": [
+        {
+          "name": "loc in typescript",
+          "stroke": "var(--oc-grape-7)",
+          "query": "patternType:regexp . lang:TypeScript"
+        },
+        {
+          "name": "loc in go",
+          "stroke": "var(--oc-blue-7)",
+          "query": "patternType:regexp . lang:go"
+        }
+      ]
+    },
+    "searchInsights.insight.locTest2N": {
+      "title": "LOC test 2: .\\n ",
+      "series": [
+        {
+          "name": "LOC in TS .\\n",
+          "stroke": "var(--oc-grape-7)",
+          "query": "patternType:regexp .\\n lang:TypeScript"
+        },
+        {
+          "name": "LOC in Go .\\n",
+          "stroke": "var(--oc-cyan-7)",
+          "query": "patternType:regexp .\\n lang:Go"
+        }
+      ]
+    },
+    "searchInsights.insight.triggeringAPingForNewInsightCreatedSep16": {
+      "title": "Triggering a ping for new insight created sep 16",
+      "series": [
+        {
+          "name": "Trigger new insight",
+          "stroke": "var(--oc-grape-7)",
+          "query": "joelkw"
+        }
+      ]
+    },
+    "searchInsights.insight.pingTesting2": {
+      "title": "Ping testing 2",
+      "series": [
+        {
+          "name": "ping testing 2",
+          "stroke": "var(--oc-grape-7)",
+          "query": "ping"
+        }
+      ]
+    },
+    "searchInsights.insight.addInsight11Test": {
+      "title": "Add insight 1.1 Test",
+      "series": [
+        {
+          "name": "Function component",
+          "stroke": "var(--oc-indigo-7)",
+          "query": "FunctionComponent"
+        }
+      ]
+    }
+  },
+  "searchInsights.insight.bootstrapSpacingUtilityClasses": {
+    "title": "Bootstrap spacing utility classes",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "margin",
+        "stroke": "var(--oc-grape-7)",
+        "query": "patternType:regexp m[a-z]?-\\d"
+      },
+      {
+        "name": "padding",
+        "stroke": "var(--oc-teal-7)",
+        "query": "patternType:regexp p[a-z]?-\\d"
+      }
+    ],
+    "step": {
+      "months": 2
+    }
+  },
+  "searchInsights.insight.monitoringApi": {
+    "title": "Monitoring API",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Observables defined",
+        "stroke": "var(--oc-blue-7)",
+        "query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared Query:"
+      },
+      {
+        "name": "Observables without alerts",
+        "stroke": "var(--oc-orange-7)",
+        "query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared NoAlert:(\\s+)true"
+      },
+      {
+        "name": "Observables with Interpretation docs",
+        "stroke": "var(--oc-grape-7)",
+        "query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared Interpretation:(\\s+)\"(.?$|[^n].+|n[^o].*)\" OR Interpretation:(\\s+)`"
+      },
+      {
+        "name": "Observables with PossibleSolutions docs",
+        "stroke": "var(--oc-teal-7)",
+        "query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared PossibleSolutions:(\\s+)\"(.?$|[^n].+|n[^o].*)\" OR PossibleSolutions:(\\s+)`"
+      },
+      {
+        "name": "Observables with custom panel options",
+        "stroke": "var(--oc-violet-7)",
+        "query": "patternType:regexp file:^monitoring/definitions/(.*).go With\\((.*)"
+      },
+      {
+        "name": "Observables using Panel Options",
+        "stroke": "var(--oc-yellow-7)",
+        "query": "patternType:regexp file:^monitoring/definitions/(.*).go PanelOptions\\.(.*)"
+      }
+    ],
+    "step": {
+      "weeks": 6
+    }
+  },
+  "codeStatsInsights.insight.adobeLangStatsUsage": {
+    "title": "Adobe lang stats usage",
+    "repository": "ghe.sgdev.org/sourcegraph/adobe-adobe.github.com",
+    "otherThreshold": 0.03
+  },
+  "searchInsights.insight.componentImports": {
+    "title": "Component imports",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Wildcard components",
+        "stroke": "var(--oc-teal-7)",
+        "query": "patternType:regexp repo:^github\\.com/sourcegraph/sourcegraph$ import.+ from '@sourcegraph\\/wildcard.+"
+      },
+      {
+        "name": "Branded components",
+        "stroke": "var(--oc-red-7)",
+        "query": "patternType:regexp repo:^github\\.com/sourcegraph/sourcegraph$ import.+ from '@sourcegraph\\/branded/src/components.+"
+      },
+      {
+        "name": "Shared components",
+        "stroke": "var(--oc-grape-7)",
+        "query": "patternType:regexp repo:^github\\.com/sourcegraph/sourcegraph$ import.+ from '@sourcegraph\\/shared/src/components.+"
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  },
+  "codeStatsInsights.insight.anotherAdobeLangStatsInsight": {
+    "title": "Another adobe lang stats insight",
+    "repository": "ghe.sgdev.org/sourcegraph/adobe-accessibility-Accessible-Mega-Menu",
+    "otherThreshold": 0.03
+  },
+  "searchInsights.insight.migrationFromFilteredConnectionToUseConnection": {
+    "title": "Migration from FilteredConnection to useConnection",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Usage of useConnection",
+        "stroke": "var(--oc-teal-7)",
+        "query": "= useConnection"
+      },
+      {
+        "name": "Usage of FilteredConnection",
+        "stroke": "var(--oc-red-7)",
+        "query": "<FilteredConnection"
+      }
+    ],
+    "step": {
+      "weeks": 3
+    }
+  },
+  "searchInsights.insight.triggerFrontendInsightSep16": {
+    "title": "Trigger frontend insight sep 16",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "joelkw",
+        "stroke": "var(--oc-grape-7)",
+        "query": "joelkw"
+      }
+    ],
+    "step": {
+      "months": 2
+    }
+  },
+  "searchInsights.insight.triggerSecondFrontendInsightSep16": {
+    "title": "Trigger second frontend insight sep 16",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "joelk",
+        "stroke": "var(--oc-grape-7)",
+        "query": "joelk"
+      }
+    ],
+    "step": {
+      "months": 2
+    }
+  },
+  "searchInsights.insight.dataFetchingFromGraphQl": {
+    "title": "Data fetching from GraphQL",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "requestGraphQL",
+        "stroke": "var(--oc-grape-7)",
+        "query": "patternType:regexp requestGraphQL(\\(|<[^>]*>\\()"
+      },
+      {
+        "name": "queryGraphQL | mutateGraphQL",
+        "stroke": "var(--oc-red-7)",
+        "query": "patternType:regexp (query|mutate)GraphQL(\\(|<[^>]*>\\()"
+      },
+      {
+        "name": "useMutation | useQuery | useConnection hooks",
+        "stroke": "var(--oc-green-7)",
+        "query": "patternType:regexp use(Query|Mutation|Connection|LazyQuery)(\\(|<[^>]*>\\()"
+      }
+    ],
+    "step": {
+      "weeks": 4
+    }
+  },
+  "searchInsights.insight.usageOfReactTestingLibraries": {
+    "title": "Usage of React testing libraries",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "React Test Renderer",
+        "stroke": "var(--oc-indigo-7)",
+        "query": "from 'react-test-renderer'"
+      },
+      {
+        "name": "Enzyme",
+        "stroke": "var(--oc-red-7)",
+        "query": "from 'enzyme'"
+      },
+      {
+        "name": "React Testing Library",
+        "stroke": "var(--oc-grape-7)",
+        "query": "from '@testing-library/react'"
+      }
+    ],
+    "step": {
+      "weeks": 6
+    }
+  },
+  "codeStatsInsights.insight.languageUsageInSourcegraph": {
+    "title": "Language usage in Sourcegraph",
+    "repository": "github.com/sourcegraph/sourcegraph",
+    "otherThreshold": 0.03
+  },
+  "searchInsights.insight.migrationToCssModules": {
+    "title": "Migration to CSS Modules",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Global CSS",
+        "stroke": "var(--oc-red-7)",
+        "query": "context:global type:file lang:scss -file:module.scss -file:global-styles patterntype:regexp"
+      },
+      {
+        "name": "CSS Modules",
+        "stroke": "var(--oc-green-7)",
+        "query": "context:global type:file lang:scss file:module.scss patterntype:regexp"
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  },
+  "codeStatsInsights.insight.newInsightWithNewApi22": {
+    "title": "New insight with new API 22",
+    "repository": "ghe.sgdev.org/sourcegraph/soulwire-Makisu",
+    "otherThreshold": 0.03
+  },
+  "searchInsights.insight.rawHtmlElementsVsWildcardAtoms": {
+    "title": "Raw HTML elements vs Wildcard atoms",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Files using atomic Wildcard components",
+        "stroke": "var(--oc-teal-7)",
+        "query": "patterntype:regexp file:tsx select:file import (Button|Input|Checkbox|RadioButton|Select|TextArea) from '@sourcegraph/wildcard'"
+      },
+      {
+        "name": "Files using raw HTML elements",
+        "stroke": "var(--oc-red-7)",
+        "query": "patterntype:regexp file:tsx select:file content:(<button | <input | <textarea | <select ) file:tsx"
+      }
+    ],
+    "step": {
+      "weeks": 3
+    }
+  },
+  "searchInsights.insight.orgTestCounts": {
+    "title": "\"Org\" test counts",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "\"org\"",
+        "stroke": "var(--oc-grape-7)",
+        "query": "org"
+      }
+    ],
+    "step": {
+      "months": 2
+    }
+  },
+  "searchInsights.insight.test123": {
+    "title": "test123",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "test123",
+        "query": "test123",
+        "stroke": "var(--oc-grape-7)"
+      }
+    ],
+    "step": {
+      "months": 2
+    }
+  },
+  "searchInsights.insight.jdbRegressionTest2": {
+    "title": "JDB Regression Test 2!",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Function component",
+        "query": "FunctionComponent",
+        "stroke": "var(--oc-grape-7)"
+      },
+      {
+        "name": "React Component",
+        "query": "React.Component",
+        "stroke": "var(--oc-indigo-7)"
+      }
+    ],
+    "step": {
+      "months": 2
+    }
+  },
+  "searchInsights.insight.migrationToDatabaseDb": {
+    "title": "Migration to database.DB",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "database.DB",
+        "query": "database.DB",
+        "stroke": "var(--oc-green-7)"
+      },
+      {
+        "name": "dbutil.DB",
+        "query": "dbutil.DB",
+        "stroke": "var(--oc-red-7)"
+      }
+    ],
+    "step": {
+      "weeks": 1
+    }
+  },
+  "searchInsights.insight.databaseNewDbOutsideTestFiles": {
+    "title": "database.NewDB outside test files",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "count",
+        "query": "database.NewDB -file:test.go$",
+        "stroke": "var(--oc-grape-7)"
+      }
+    ],
+    "step": {
+      "weeks": 1
+    }
+  },
+  "searchInsights.insight.migrationToMethodStoreConstruction": {
+    "title": "Migration to method store construction",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "method constructor",
+        "query": "patterntype:regex repo:sourcegraph/sourcegraph$ db\\.(AccessTokens|Authz|EventLogs|ExternalServices|FeatureFlags|Namespaces|OrgInvitations|OrgMembers|Orgs|Phabricator|Repos|SavedSearches|SearchContexts|Settings|SubRepoPerms|TemporarySettings|UserCredentials|UserEmails|UserExternalAccounts|UserPublicRepos|Users|WebhookLogs)\\(\\)",
+        "stroke": "var(--oc-green-7)"
+      },
+      {
+        "name": "function constructor",
+        "query": "patterntype:regex database\\.(AccessTokens|Authz|EventLogs|ExternalServices|FeatureFlags|Namespaces|OrgInvitations|OrgMembers|Orgs|Phabricator|Repos|SavedSearches|SearchContexts|Settings|SubRepoPerms|TemporarySettings|UserCredentials|UserEmails|UserExternalAccounts|UserPublicRepos|Users|WebhookLogs)\\([^\\)]+\\)",
+        "stroke": "var(--oc-red-7)"
+      }
+    ],
+    "step": {
+      "weeks": 1
+    }
+  },
+  "searchInsights.insight.removingUsesOfDbconnGlobal": {
+    "title": "Removing uses of dbconn.Global",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "dbconn.Global",
+        "query": "dbconn.Global",
+        "stroke": "var(--oc-red-7)"
+      }
+    ],
+    "step": {
+      "weeks": 1
+    }
+  },
+  "searchInsights.insight.migrationFromGlobalDbMocks": {
+    "title": "Migration from global db mocks",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "global mocks",
+        "query": "database.Mocks",
+        "stroke": "var(--oc-red-7)"
+      },
+      {
+        "name": "injected mocks",
+        "query": "patterntype:regex dbmock.NewMock\\w+Store type:file",
+        "stroke": "var(--oc-green-7)"
+      }
+    ],
+    "step": {
+      "weeks": 1
+    }
+  },
+  "searchInsights.insight.usageOfJavaScriptAndTypeScript": {
+    "title": "Usage of JavaScript and TypeScript",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "JavaScript files",
+        "query": "repo:sourcegraph/sourcegraph lang:JavaScript",
+        "stroke": "var(--oc-red-7)"
+      },
+      {
+        "name": "TypeScript files",
+        "query": "repo:sourcegraph/sourcegraph lang:TypeScript",
+        "stroke": "var(--oc-green-7)"
+      }
+    ],
+    "step": {
+      "months": 2
+    }
+  },
+  "searchInsights.insight.migrationFromDbtestingToDbtest": {
+    "title": "Migration from dbtesting to dbtest",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "dbtesting.GetDB",
+        "query": "dbtesting.GetDB",
+        "stroke": "var(--oc-red-7)"
+      },
+      {
+        "name": "dbtest.New*",
+        "query": "dbtest.New",
+        "stroke": "var(--oc-green-7)"
+      }
+    ],
+    "step": {
+      "months": 2
+    }
+  },
+  "searchInsights.insight.ciPipelineGeneratorTests": {
+    "title": "CI Pipeline Generator Tests",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "func Test or t.Run",
+        "query": "repo:^github\\.com/sourcegraph/sourcegraph$ lang:Go file:enterprise/dev/ci/.* (func Test or t.Run)",
+        "stroke": "var(--oc-blue-7)"
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  },
+  "searchInsights.insight.totalCountOfSkippedTests": {
+    "title": "Total count of skipped tests",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Skipped Front-End tests",
+        "query": "repo:^github\\.com/sourcegraph/sourcegraph$  test.skip (lang:TypeScript or lang:javascript)",
+        "stroke": "var(--oc-pink-7)"
+      },
+      {
+        "name": "Skipped Go tests",
+        "query": "context:global repo:^github\\.com/sourcegraph/sourcegraph$ lang:Go ^[^\\S\\r\\n]*\\/\\/[^\\S\\r\\n]*func\\ Test or ^[^\\S\\r\\n]*\\/\\/[^\\S\\r\\n]*t\\.Run or ^[^\\S\\r\\n]*t\\.Skip patternType:regexp",
+        "stroke": "var(--oc-blue-7)"
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  },
+  "experimentalFeatures": {
+    "editor":"codemirror6"
+  }
+}

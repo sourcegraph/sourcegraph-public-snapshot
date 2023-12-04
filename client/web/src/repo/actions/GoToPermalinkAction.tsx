@@ -1,102 +1,84 @@
-import * as H from 'history'
-import LinkIcon from 'mdi-react/LinkIcon'
-import * as React from 'react'
-import { fromEvent, Subscription } from 'rxjs'
+import React, { useEffect, useMemo } from 'react'
+
+import { mdiLink } from '@mdi/js'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { isInputElement } from '@sourcegraph/shared/src/util/dom'
+import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { replaceRevisionInURL } from '../../util/url'
-import { RepoHeaderActionButtonLink } from '../components/RepoHeaderActions'
-import { RepoHeaderContext } from '../RepoHeader'
+import { RepoHeaderActionButtonLink, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
+import type { RepoHeaderContext } from '../RepoHeader'
+
+interface GoToPermalinkActionProps extends RepoHeaderContext, TelemetryProps {
+    /**
+     * The current (possibly undefined or non-full-SHA) Git revision.
+     */
+    revision?: string
+
+    /**
+     * The commit SHA for the revision in the current location (URL).
+     */
+    commitID: string
+}
 
 /**
  * A repository header action that replaces the revision in the URL with the canonical 40-character
  * Git commit SHA.
  */
-export class GoToPermalinkAction extends React.PureComponent<
-    {
-        /**
-         * The current (possibly undefined or non-full-SHA) Git revision.
-         */
-        revision?: string
+export const GoToPermalinkAction: React.FunctionComponent<GoToPermalinkActionProps> = props => {
+    const { revision, commitID, actionType, repoName, telemetryService } = props
 
-        /**
-         * The commit SHA for the revision in the current location (URL).
-         */
-        commitID: string
+    const navigate = useNavigate()
+    const location = useLocation()
+    const fullURL = location.pathname + location.search + location.hash
+    const permalinkURL = useMemo(() => replaceRevisionInURL(fullURL, commitID), [fullURL, commitID])
 
-        location: H.Location
-        history: H.History
-    } & RepoHeaderContext &
-        TelemetryProps
-> {
-    private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
+    useEffect(() => {
         // Trigger the user presses 'y'.
-        this.subscriptions.add(
-            fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(
-                    filter(
-                        event =>
-                            // 'y' shortcut (if no input element is focused)
-                            event.key === 'y' &&
-                            !!document.activeElement &&
-                            !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
-                    )
+        const subscription = fromEvent<KeyboardEvent>(window, 'keydown')
+            .pipe(
+                filter(
+                    event =>
+                        // 'y' shortcut (if no input element is focused)
+                        event.key === 'y' && !!document.activeElement && !isInputElement(document.activeElement)
                 )
-                .subscribe(event => {
-                    event.preventDefault()
-
-                    // Replace the revision in the current URL with the new one and push to history.
-                    this.props.history.push(this.permalinkURL)
-                })
-        )
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        if (this.props.revision === this.props.commitID) {
-            return null // already at the permalink destination
-        }
-
-        if (this.props.actionType === 'dropdown') {
-            return (
-                <RepoHeaderActionButtonLink file={true} to={this.permalinkURL} onSelect={this.onClick.bind(this)}>
-                    <LinkIcon className="icon-inline" />
-                    <span>Permalink (with full Git commit SHA)</span>
-                </RepoHeaderActionButtonLink>
             )
-        }
+            .subscribe(event => {
+                event.preventDefault()
 
+                // Replace the revision in the current URL with the new one and push to history.
+                navigate(permalinkURL)
+            })
+
+        return () => subscription.unsubscribe()
+    }, [navigate, permalinkURL])
+
+    if (revision === commitID) {
+        return null // already at the permalink destination
+    }
+
+    const onClick = (): void => {
+        telemetryService.log('PermalinkClicked', { repoName, commitID })
+    }
+
+    if (actionType === 'dropdown') {
         return (
-            <RepoHeaderActionButtonLink
-                className="btn-icon"
-                file={false}
-                to={this.permalinkURL}
-                onSelect={this.onClick.bind(this)}
-                data-tooltip="Permalink (with full Git commit SHA)"
-            >
-                <LinkIcon className="icon-inline" />
+            <RepoHeaderActionMenuLink as={Link} file={true} to={permalinkURL} onSelect={onClick}>
+                <Icon aria-hidden={true} svgPath={mdiLink} />
+                <span>Permalink (with full Git commit SHA)</span>
+            </RepoHeaderActionMenuLink>
+        )
+    }
+
+    return (
+        <Tooltip content="Permalink (with full Git commit SHA)">
+            <RepoHeaderActionButtonLink aria-label="Permalink" file={false} to={permalinkURL} onSelect={onClick}>
+                <Icon aria-hidden={true} svgPath={mdiLink} />
             </RepoHeaderActionButtonLink>
-        )
-    }
-
-    private onClick(): void {
-        this.props.telemetryService.log('PermalinkClicked', {
-            repoName: this.props.repoName,
-            commitID: this.props.commitID,
-        })
-    }
-
-    private get permalinkURL(): string {
-        return replaceRevisionInURL(
-            this.props.location.pathname + this.props.location.search + this.props.location.hash,
-            this.props.commitID
-        )
-    }
+        </Tooltip>
+    )
 }

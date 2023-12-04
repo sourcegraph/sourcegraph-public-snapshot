@@ -1,10 +1,10 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`<ButtonLink /> renders correctly \`disabled\` 1`] = `
+exports[`<ButtonLink /> > renders correctly \`disabled\` 1`] = `
 <DocumentFragment>
   <a
+    aria-disabled="true"
     class="anchorLink btn btnSecondary btnLg disabled"
-    disabled=""
     href=""
     role="button"
     tabindex="-1"
@@ -14,13 +14,11 @@ exports[`<ButtonLink /> renders correctly \`disabled\` 1`] = `
 </DocumentFragment>
 `;
 
-exports[`<ButtonLink /> renders correctly anchor attributes 1`] = `
+exports[`<ButtonLink /> > renders correctly anchor attributes 1`] = `
 <DocumentFragment>
   <a
-    aria-label="SourceGraph.com"
     class="anchorLink btn btnSecondary btnLg"
     data-pressed="true"
-    data-tooltip="SourceGraph.com"
     href="https://sourcegraph.com"
     rel="noopener noreferrer"
     tabindex="0"
@@ -31,7 +29,7 @@ exports[`<ButtonLink /> renders correctly anchor attributes 1`] = `
 </DocumentFragment>
 `;
 
-exports[`<ButtonLink /> renders correctly btn classes 1`] = `
+exports[`<ButtonLink /> > renders correctly btn classes 1`] = `
 <DocumentFragment>
   <a
     class="anchorLink btn btnSecondary btnLg"
@@ -43,7 +41,7 @@ exports[`<ButtonLink /> renders correctly btn classes 1`] = `
 </DocumentFragment>
 `;
 
-exports[`<ButtonLink /> renders correctly empty \`to\` 1`] = `
+exports[`<ButtonLink /> > renders correctly empty \`to\` 1`] = `
 <DocumentFragment>
   <a
     class="anchorLink btn btnSecondary btnLg"

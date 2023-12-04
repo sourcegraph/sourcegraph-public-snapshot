@@ -1,6 +1,6 @@
 # Testing web code
 
-This is the implementation of our [Testing Principles](testing_principles.md) for all code (TypeScript, stylesheets, ...) used on the web, such as our webapp, browser extension, shared code, or Sourcegraph extensions.
+This is the implementation of our [Testing Principles](testing_principles.md) for all code (TypeScript, stylesheets, ...) used on the web, such as our webapp, browser extension, or shared code.
 
 ## General Goals
 
@@ -26,7 +26,44 @@ A visual regression is a bug where the component behaves correctly, but no longe
 We use Percy screenshot tests and Chromatic Storybook tests to catch these.
 Percy can take screenshots in end-to-end tests and client integration tests. Chromatic can take screenshots in Storybook tests.
 Storybook tests can be seen as a form of unit test for a component's UI.
-Any story that is added to our codebase is automatically screenshotted on every CI build (but only in its initial state).
+
+#### Chromatic visual testing
+
+Chromatic screenshots are **disabled** for Storybook stories by default. [This is done](https://github.com/sourcegraph/sourcegraph/pull/30331) to prevent [the exponential growth of the Chromatic cost](https://sourcegraph.slack.com/archives/C01C3NCGD40/p1643363940671909).
+
+Use story `parameters` to enable Chromatic snapshots for a specific story:
+
+```ts
+const config: Meta = {
+    parameters: {
+        chromatic: {
+            disableSnapshot: false,
+        },
+    },
+}
+```
+
+If it's valuable for the story [to be screenshotted in the dark mode](https://github.com/sourcegraph/sourcegraph/pull/30346), enable it by using `enableDarkMode` parameter:
+
+```ts
+const config: Meta = {
+    parameters: {
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
+        },
+    },
+}
+```
+
+The other significant benefit of keeping the Chromatic visual diff small is the ease of review:
+
+1. Prefer showing multiple component variations in one snapshottable story instead of creating one story per variation.
+2. Enable snapshots only for stories where visual testing is valuable.
+
+Check out [the Chromatic documentation on disabling snapshots](https://www.chromatic.com/docs/ignoring-elements#ignore-stories).
+
+**Please note:** Chromatic visual testing [is **disabled** for draft pull requests](https://github.com/sourcegraph/sourcegraph/pull/30375). To trigger the Chromatic job move the PR to a ready-for-review state and convert it back to draft.
 
 ### Render output
 
@@ -48,6 +85,7 @@ Snapshot diffs should be reviewed in pull request reviews the same way any other
 ### Behavior
 
 The most effective way we can test our React components is through our behavior tests. These tests should all follow the same core guiding principle:
+
 > The more our tests resemble the way our software is used, the more confidence they will give us.
 
 This means that our behavior tests should be designed to simulate a typical user journey **as closely as possible**.
@@ -138,7 +176,7 @@ It may be tempting to make many assertions as possible in one test to save repea
 Instead of making many assertions that test different things in one test, favor splitting the test into multiple.
 For example, favor three separate tests for "Add X", "Update X" and "Remove X" with fewer assertions each over a single test like "CRUD feature X works" with many assertions.
 This ensures that when one of them fails, the developer debugging can see whether the other two features are still working and therefor better narrow down where the problem is.
-Use [`beforeEach()`/`afterEach()` hooks](https://jestjs.io/docs/en/setup-teardown) to avoid duplication of common setup and teardown logic and giving better errors when setup or teardown fails (as opposed to the test itself).
+Use [`beforeEach()`/`afterEach()` hooks](https://vitest.dev/api/#setup-and-teardown) to avoid duplication of common setup and teardown logic and giving better errors when setup or teardown fails (as opposed to the test itself).
 
 ### Write clear test titles
 

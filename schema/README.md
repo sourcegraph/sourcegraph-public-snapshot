@@ -7,14 +7,13 @@ Sourcegraph uses the following JSON Schemas:
 - [`settings.schema.json`](./settings.schema.json)
 - [`critical.schema.json`](./critical.schema.json)
 - [`site.schema.json`](./site.schema.json)
-- [`extension.schema.json`](../client/shared/src/schema/extension.schema.json) (not codegenned into Go structs)
 
 # Modifying a schema
 
 1.  Edit the `*.schema.json` file in this directory.
-1.  Run `go generate` to update the `*_stringdata.json` file.
+1.  Run `bazel run //schema:write_generated_schema`.
 1.  Commit the changes to both files.
-1.  When the change is ready for release, [update the documentation](https://github.com/sourcegraph/website/blob/master/README.md#documentation-pages).
+1.  Run `sg start` to automatically update TypeScript schema files.
 
 ## Known issues
 

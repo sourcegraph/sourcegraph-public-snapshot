@@ -1,6 +1,10 @@
-import { CaptureGroupFormFields } from '../../types'
+import type { CaptureGroupFormFields } from '../../types'
 
-export type CaptureInsightUrlValues = Omit<CaptureGroupFormFields, 'step' | 'stepValue'>
+type UnsupportedFields = 'step' | 'stepValue' | 'repoQuery' | 'repoMode'
+
+export type CaptureInsightUrlValues = Omit<CaptureGroupFormFields, UnsupportedFields> & {
+    repoQuery: string
+}
 
 export function encodeCaptureInsightURL(values: Partial<CaptureInsightUrlValues>): string {
     const parameters = new URLSearchParams()
@@ -10,37 +14,41 @@ export function encodeCaptureInsightURL(values: Partial<CaptureInsightUrlValues>
         const fields = values as CaptureInsightUrlValues
 
         switch (key) {
+            case 'repoQuery':
             case 'groupSearchQuery': {
                 parameters.set(key, encodeURIComponent(fields[key].toString()))
                 break
             }
+            case 'repositories': {
+                parameters.set(key, fields[key].join(','))
+                break
+            }
 
-            default:
+            default: {
                 parameters.set(key, fields[key].toString())
+            }
         }
     }
 
     return parameters.toString()
 }
 
-export function decodeCaptureInsightURL(queryParameters: string): CaptureGroupFormFields | null {
+export function decodeCaptureInsightURL(queryParameters: string): Partial<CaptureGroupFormFields> | null {
     try {
         const searchParameter = new URLSearchParams(decodeURIComponent(queryParameters))
 
-        const repositories = searchParameter.get('repositories')
+        const repoQuery = decodeURIComponent(searchParameter.get('repoQuery') ?? '')
+        const repositories = searchParameter.get('repositories')?.split(',')
         const title = searchParameter.get('title')
         const groupSearchQuery = decodeURIComponent(searchParameter.get('groupSearchQuery') ?? '')
-        const allRepos = searchParameter.get('allRepos')
 
-        if (repositories || title || groupSearchQuery || allRepos) {
+        if (repositories || title || groupSearchQuery || repoQuery) {
             return {
                 title: title ?? '',
-                repositories: repositories ?? '',
-                allRepos: !!allRepos,
+                repositories: repositories ?? [],
                 groupSearchQuery: groupSearchQuery ?? '',
-                step: 'days',
-                stepValue: '8',
-                dashboardReferenceCount: 0,
+                repoMode: repoQuery ? 'search-query' : 'urls-list',
+                repoQuery: { query: repoQuery ?? '' },
             }
         }
 

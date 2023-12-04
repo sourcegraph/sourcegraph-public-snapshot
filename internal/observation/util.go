@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
+
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // commonAcronyms includes acronyms that malform the expected output of kebabCase
@@ -27,7 +29,6 @@ func init() {
 	}
 
 	acronymsReplacer = strings.NewReplacer(pairs...)
-	TestOperation = TestContext.Operation(Op{Name: "test.context"})
 }
 
 // kebab transforms a string into lower-kebab-case.
@@ -46,4 +47,34 @@ func kebabCase(s string) string {
 	}
 
 	return buf.String()
+}
+
+// mergeLabels flattens slices of slices of strings.
+func mergeLabels(groups ...[]string) []string {
+	size := 0
+	for _, group := range groups {
+		size += len(group)
+	}
+
+	labels := make([]string, 0, size)
+	for _, group := range groups {
+		labels = append(labels, group...)
+	}
+
+	return labels
+}
+
+// mergeAttrs flattens slices of slices of log fields.
+func mergeAttrs(groups ...[]attribute.KeyValue) []attribute.KeyValue {
+	size := 0
+	for _, group := range groups {
+		size += len(group)
+	}
+
+	attrs := make([]attribute.KeyValue, 0, size)
+	for _, group := range groups {
+		attrs = append(attrs, group...)
+	}
+
+	return attrs
 }

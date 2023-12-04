@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"runtime/debug"
 	"sort"
 	"strconv"
 	"testing"
@@ -14,13 +15,25 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
+	return mustParseGraphQLSchemaWithClient(t, db, gitserver.NewClient("graphql.test"))
+}
+
+func mustParseGraphQLSchemaWithClient(t *testing.T, db database.DB, gitserverClient gitserver.Client) *graphql.Schema {
 	t.Helper()
 
-	parsedSchema, parseSchemaErr := NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	parsedSchema, parseSchemaErr := NewSchema(
+		db,
+		gitserverClient,
+		[]OptionalResolver{},
+		graphql.PanicHandler(printStackTrace{&gqlerrors.DefaultPanicHandler{}}),
+		graphql.MaxDepth(conf.RateLimits().GraphQLMaxDepth),
+	)
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
 	}
@@ -37,9 +50,10 @@ type Test struct {
 	Schema         *graphql.Schema
 	Query          string
 	OperationName  string
-	Variables      map[string]interface{}
+	Variables      map[string]any
 	ExpectedResult string
 	ExpectedErrors []*gqlerrors.QueryError
+	Label          string
 }
 
 // RunTests runs the given GraphQL test cases as subtests.
@@ -52,7 +66,11 @@ func RunTests(t *testing.T, tests []*Test) {
 	}
 
 	for i, test := range tests {
-		t.Run(strconv.Itoa(i+1), func(t *testing.T) {
+		testName := strconv.Itoa(i + 1)
+		if test.Label != "" {
+			testName = fmt.Sprintf("%s/%s", testName, test.Label)
+		}
+		t.Run(testName, func(t *testing.T) {
 			t.Helper()
 			RunTest(t, test)
 		})
@@ -72,6 +90,7 @@ func RunTest(t *testing.T, test *Test) {
 
 	if test.ExpectedResult == "" {
 		if result.Data != nil {
+			t.Logf("%v", test)
 			t.Errorf("got: %s", result.Data)
 			t.Fatal("want: null")
 		}
@@ -81,18 +100,18 @@ func RunTest(t *testing.T, test *Test) {
 	// Verify JSON to avoid red herring errors.
 	got, err := formatJSON(result.Data)
 	if err != nil {
-		t.Fatalf("got: invalid JSON: %s", err)
+		t.Fatalf("got: invalid JSON: %s\n\n%v", err, result.Data)
 	}
 	want, err := formatJSON([]byte(test.ExpectedResult))
 	if err != nil {
-		t.Fatalf("want: invalid JSON: %s", err)
+		t.Fatalf("want: invalid JSON: %s\n\n%s", err, test.ExpectedResult)
 	}
 
 	require.JSONEq(t, string(want), string(got))
 }
 
 func formatJSON(data []byte) ([]byte, error) {
-	var v interface{}
+	var v any
 	if err := json.Unmarshal(data, &v); err != nil {
 		return nil, err
 	}
@@ -111,6 +130,13 @@ func checkErrors(t *testing.T, want, got []*gqlerrors.QueryError) {
 
 	// Compare without caring about the concrete type of the error returned
 	if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(gqlerrors.QueryError{}, "ResolverError", "Err")); diff != "" {
+		// diff truncates the error messages, so dump the full error messages
+		// in t.Log for inspection with 'go test -v'.
+		t.Log("Full errors:\n")
+		for _, e := range got {
+			t.Logf("- %+v\n", e)
+		}
+		// Fail the test with the diff as a summary
 		t.Fatal(diff)
 	}
 }
@@ -122,4 +148,14 @@ func sortErrors(errs []*gqlerrors.QueryError) {
 	sort.Slice(errs, func(i, j int) bool {
 		return fmt.Sprintf("%s", errs[i].Path) < fmt.Sprintf("%s", errs[j].Path)
 	})
+}
+
+// printStackTrace wraps panic recovery from given Handler and prints the stack trace.
+type printStackTrace struct {
+	Handler gqlerrors.PanicHandler
+}
+
+func (t printStackTrace) MakePanicError(ctx context.Context, value interface{}) *gqlerrors.QueryError {
+	debug.PrintStack()
+	return t.Handler.MakePanicError(ctx, value)
 }

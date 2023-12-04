@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "session",
+    srcs = ["session.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/external/session",
+    visibility = ["//visibility:public"],
+    deps = ["//internal/session"],
+)

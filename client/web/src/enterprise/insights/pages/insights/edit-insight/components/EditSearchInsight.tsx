@@ -1,75 +1,68 @@
-import React, { useMemo } from 'react'
+import { type FC, useMemo } from 'react'
 
-import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { InsightExecutionType, SearchBasedInsight } from '../../../../core/types'
-import { isSearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
-import { SupportedInsightSubject } from '../../../../core/types/subjects'
-import { CreateInsightFormFields, InsightStep } from '../../creation/search-insight'
-import { createDefaultEditSeries } from '../../creation/search-insight/components/search-insight-creation-content/hooks/use-editable-series'
-import { SearchInsightCreationContent } from '../../creation/search-insight/components/search-insight-creation-content/SearchInsightCreationContent'
+import { FORM_ERROR, type SubmissionErrors } from '@sourcegraph/wildcard'
+
+import { createDefaultEditSeries, CodeInsightsCreationActions, CodeInsightCreationMode } from '../../../../components'
+import type { MinimalSearchBasedInsightData, SearchBasedInsight } from '../../../../core'
+import type { CreateInsightFormFields, InsightStep } from '../../creation/search-insight'
+import { SearchInsightCreationContent } from '../../creation/search-insight/components/SearchInsightCreationContent'
 import { getSanitizedSearchInsight } from '../../creation/search-insight/utils/insight-sanitizer'
 
 interface EditSearchBasedInsightProps {
+    licensed: boolean
+    isEditAvailable: boolean | undefined
     insight: SearchBasedInsight
-    subjects: SupportedInsightSubject[]
-    onSubmit: (insight: SearchBasedInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
+    onSubmit: (insight: MinimalSearchBasedInsightData) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
 
-export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsightProps> = props => {
-    const { insight, subjects, onSubmit, onCancel } = props
+export const EditSearchBasedInsight: FC<EditSearchBasedInsightProps> = props => {
+    const { insight, licensed, isEditAvailable, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<CreateInsightFormFields>(() => {
-        if (insight.type === InsightExecutionType.Backend) {
-            return {
-                title: insight.title,
-                visibility: insight.visibility,
-                repositories: '',
-                series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
-                stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
-                step: Object.keys(insight.step)[0] as InsightStep,
-                allRepos: true,
-                dashboardReferenceCount: insight.dashboardReferenceCount,
-            }
-        }
+        const isAllReposInsight = insight.repoQuery === '' && insight.repositories.length === 0
+        const repoQuery = isAllReposInsight ? 'repo:.*' : insight.repoQuery
 
         return {
             title: insight.title,
-            visibility: insight.visibility,
-            repositories: insight.repositories.join(', '),
+            repoMode: repoQuery ? 'search-query' : 'urls-list',
+            repoQuery: { query: repoQuery },
+            repositories: insight.repositories,
             series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
             stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
             step: Object.keys(insight.step)[0] as InsightStep,
-            allRepos: false,
+            allRepos: insight.repositories.length === 0,
             dashboardReferenceCount: insight.dashboardReferenceCount,
         }
     }, [insight])
 
-    // Handlers
     const handleSubmit = (values: CreateInsightFormFields): SubmissionErrors | Promise<SubmissionErrors> | void => {
         const sanitizedInsight = getSanitizedSearchInsight(values)
-
-        // Preserve backend insight filters since these filters aren't represented
-        // in the editing form
-        if (isSearchBackendBasedInsight(sanitizedInsight) && isSearchBackendBasedInsight(insight)) {
-            return onSubmit({
-                ...sanitizedInsight,
-                filters: insight.filters,
-            })
-        }
-
-        return onSubmit(sanitizedInsight)
+        return onSubmit({
+            ...sanitizedInsight,
+            filters: insight.filters,
+        })
     }
 
     return (
         <SearchInsightCreationContent
-            mode="edit"
-            className="pb-5"
+            touched={true}
             initialValue={insightFormValues}
-            subjects={subjects}
             dataTestId="search-insight-edit-page-content"
+            className="pb-5"
             onSubmit={handleSubmit}
-            onCancel={onCancel}
-        />
+        >
+            {form => (
+                <CodeInsightsCreationActions
+                    mode={CodeInsightCreationMode.Edit}
+                    licensed={licensed}
+                    available={isEditAvailable}
+                    submitting={form.submitting}
+                    errors={form.submitErrors?.[FORM_ERROR]}
+                    clear={form.isFormClearActive}
+                    onCancel={onCancel}
+                />
+            )}
+        </SearchInsightCreationContent>
     )
 }

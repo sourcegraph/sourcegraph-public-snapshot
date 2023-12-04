@@ -19,8 +19,8 @@ func TestCapabilityWatcher(t *testing.T) {
 	// We'll have them both send the capabilities they receive into this channel.
 	received := make(chan capabilities)
 
-	createWatcher := func() {
-		c := newCapabilityWatcher()
+	createWatcher := func(opts OutputOpts) {
+		c := newCapabilityWatcher(opts)
 		if c == nil {
 			t.Error("unexpected nil watcher channel")
 		}
@@ -34,8 +34,8 @@ func TestCapabilityWatcher(t *testing.T) {
 			received <- caps
 		}()
 	}
-	createWatcher()
-	createWatcher()
+	createWatcher(OutputOpts{})
+	createWatcher(OutputOpts{})
 
 	// Now we set up the main test. To be able to raise signals on the current
 	// process, we need the current process.

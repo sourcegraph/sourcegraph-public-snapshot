@@ -1,0 +1,39 @@
+.nav-list {
+    display: flex;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    padding-left: 0;
+    margin-bottom: 0;
+    list-style: none;
+    max-width: 100%;
+    overflow-x: auto;
+    // This prevents the active item border from being cut off, since .nav-item applies margin-bottom: -1px;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    padding-bottom: 1px;
+}
+
+.nav-link-disabled {
+    opacity: 0.25;
+
+    &:hover {
+        border-bottom: 2px solid transparent !important;
+    }
+}
+
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+
+    // ::after used here for avoids the CLS when the font-weight change (see: https://css-tricks.com/bold-on-hover-without-the-layout-shift/)
+    &::after {
+        content: attr(data-tab-content);
+        height: 0;
+        visibility: hidden; // a11y: avoid detection for voice over
+        overflow: hidden;
+        user-select: none;
+        pointer-events: none;
+        font-weight: 700;
+    }
+}

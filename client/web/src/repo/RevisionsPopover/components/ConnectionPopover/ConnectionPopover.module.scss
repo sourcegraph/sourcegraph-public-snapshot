@@ -5,6 +5,18 @@
 
     min-width: 25rem;
     max-width: 70vw;
+}
 
+.tabs {
+    background-color: var(--color-bg-1);
+}
+
+.popover {
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+
+    min-width: 25rem;
+    max-width: 70vw;
     background-color: var(--color-bg-1);
 }

@@ -1,0 +1,32 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "migrations",
+    srcs = [
+        "init.go",
+        "version.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/conf/deploy",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//internal/oobmigration",
+        "//internal/version",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "migrations_test",
+    timeout = "short",
+    srcs = ["init_test.go"],
+    embed = [":migrations"],
+    deps = ["//internal/oobmigration"],
+)

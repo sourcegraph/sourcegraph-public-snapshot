@@ -15,13 +15,14 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/inconshreveable/log15"
 	amclient "github.com/prometheus/alertmanager/api/v2/client"
-	prometheusAPI "github.com/prometheus/client_golang/api"
-	prometheus "github.com/prometheus/client_golang/api/prometheus/v1"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -41,10 +42,21 @@ var (
 )
 
 func main() {
-	log := log15.New("cmd", "prom-wrapper")
+	liblog := log.Init(log.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
+	})
+	defer liblog.Sync()
+
+	logger := log.Scoped("prom-wrapper")
 	ctx := context.Background()
+
 	disableAlertmanager := noAlertmanager == "true"
 	disableSourcegraphConfig := noConfig == "true"
+	logger.Info("starting prom-wrapper",
+		log.Bool("disableAlertmanager", disableAlertmanager),
+		log.Bool("disableSourcegraphConfig", disableSourcegraphConfig))
 
 	// spin up prometheus and alertmanager
 	procErrs := make(chan error)
@@ -52,7 +64,7 @@ func main() {
 	if len(os.Args) > 1 {
 		promArgs = os.Args[1:] // propagate args to prometheus
 	}
-	go runCmd(log, procErrs, NewPrometheusCmd(promArgs, prometheusPort))
+	go runCmd(logger, procErrs, NewPrometheusCmd(promArgs, prometheusPort))
 
 	// router serves endpoints accessible from outside the container (defined by `exportPort`)
 	// this includes any endpoints from `siteConfigSubscriber`, reverse-proxying services, etc.
@@ -65,39 +77,28 @@ func main() {
 		Schemes:  []string{"http"},
 	})
 
-	// prometheus client
-	promClient, err := prometheusAPI.NewClient(prometheusAPI.Config{
-		Address: fmt.Sprintf("http://127.0.0.1:%s", prometheusPort),
-	})
-	if err != nil {
-		log.Crit("failed to initialize prometheus client",
-			"error", err)
-		os.Exit(1)
-	}
-
 	// disable all components that depend on Alertmanager if DISABLE_ALERTMANAGER=true
 	if disableAlertmanager {
-		log.Warn("DISABLE_ALERTMANAGER=true; Alertmanager is disabled")
+		logger.Warn("DISABLE_ALERTMANAGER=true; Alertmanager is disabled")
 	} else {
 		// start alertmanager
-		go runCmd(log, procErrs, NewAlertmanagerCmd(alertmanagerConfigPath))
+		go runCmd(logger, procErrs, NewAlertmanagerCmd(alertmanagerConfigPath))
 
 		// wait for alertmanager to become available
-		log.Info("waiting for alertmanager")
+		logger.Info("waiting for alertmanager")
 		alertmanagerWaitCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		if err := waitForAlertmanager(alertmanagerWaitCtx, alertmanager); err != nil {
-			log.Crit("unable to reach Alertmanager", "error", err)
-			os.Exit(1)
+			logger.Fatal("unable to reach Alertmanager", log.Error(err))
 		}
 		cancel()
-		log.Debug("detected alertmanager ready")
+		logger.Debug("detected alertmanager ready")
 
 		// subscribe to configuration
 		if disableSourcegraphConfig {
-			log.Info("DISABLE_SOURCEGRAPH_CONFIG=true; configuration syncing is disabled")
+			logger.Info("DISABLE_SOURCEGRAPH_CONFIG=true; configuration syncing is disabled")
 		} else {
-			log.Info("initializing configuration")
-			subscriber := NewSiteConfigSubscriber(log, alertmanager)
+			logger.Info("initializing configuration")
+			subscriber := NewSiteConfigSubscriber(logger.Scoped("siteconfig"), alertmanager)
 
 			// watch for configuration updates in the background
 			go subscriber.Subscribe(ctx)
@@ -116,7 +117,7 @@ func main() {
 	}
 
 	// serve alerts summary status
-	alertsReporter := NewAlertsStatusReporter(log, alertmanager, prometheus.NewAPI(promClient))
+	alertsReporter := NewAlertsStatusReporter(logger, alertmanager)
 	router.PathPrefix(srcprometheus.EndpointAlertsStatus).Handler(alertsReporter.Handler())
 
 	// serve prometheus by default via reverse proxy - place last so other prefixes get served first
@@ -128,9 +129,9 @@ func main() {
 	})
 
 	go func() {
-		log.Debug("serving endpoints and reverse proxy")
+		logger.Debug("serving endpoints and reverse proxy")
 		if err := http.ListenAndServe(fmt.Sprintf(":%s", exportPort), router); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Crit("error serving reverse proxy", "error", err)
+			logger.Fatal("error serving reverse proxy", log.Error(err))
 			os.Exit(1)
 		}
 		os.Exit(0)
@@ -142,7 +143,7 @@ func main() {
 	var exitCode int
 	select {
 	case sig := <-c:
-		log.Info(fmt.Sprintf("stopping on signal %s", sig))
+		logger.Info("stopping on signal", log.String("signal", sig.String()))
 		exitCode = 2
 	case err := <-procErrs:
 		if err != nil {

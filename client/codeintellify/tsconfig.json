@@ -1,12 +1,18 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "commonjs",
     "sourceRoot": "src",
     "rootDir": ".",
     "outDir": "./out",
-    "baseUrl": "./src",
   },
-  "references": [{ "path": "../common" }],
-  "include": ["./src/**/*", "./*.ts"],
+  "references": [
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../extension-api-types",
+    },
+  ],
+  "include": ["src"],
 }

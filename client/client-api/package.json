@@ -1,0 +1,20 @@
+{
+  "private": true,
+  "name": "@sourcegraph/client-api",
+  "version": "0.0.1",
+  "description": "Sourcegraph Client API",
+  "main": "./src/index.ts",
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "scripts": {
+    "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@sourcegraph/extension-api-types": "workspace:*",
+    "sourcegraph": "workspace:*"
+  },
+  "dependencies": {
+    "@sourcegraph/template-parser": "workspace:*"
+  }
+}

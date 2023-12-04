@@ -5,35 +5,38 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/markdown"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/markdown"
 )
 
 type FileResolver interface {
 	Path() string
 	Name() string
 	IsDirectory() bool
-	Content(ctx context.Context) (string, error)
+	Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
 	ByteSize(ctx context.Context) (int32, error)
+	TotalLines(ctx context.Context) (int32, error)
 	Binary(ctx context.Context) (bool, error)
-	RichHTML(ctx context.Context) (string, error)
+	RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
 	URL(ctx context.Context) (string, error)
 	CanonicalURL() string
+	ChangelistURL(ctx context.Context) (*string, error)
 	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
-	Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error)
+	Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error)
 
 	ToGitBlob() (*GitTreeEntryResolver, bool)
-	ToVirtualFile() (*virtualFileResolver, bool)
+	ToVirtualFile() (*VirtualFileResolver, bool)
+	ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool)
 }
 
 func richHTML(content, ext string) (string, error) {
-	switch ext {
+	switch strings.ToLower(ext) {
 	case ".md", ".mdown", ".markdown", ".markdn":
 		break
 	default:
 		return "", nil
 	}
-	return markdown.Render(content), nil
+	return markdown.Render(content)
 }
 
 type markdownOptions struct {
@@ -43,7 +46,7 @@ type markdownOptions struct {
 func (*schemaResolver) RenderMarkdown(args *struct {
 	Markdown string
 	Options  *markdownOptions
-}) string {
+}) (string, error) {
 	return markdown.Render(args.Markdown)
 }
 
@@ -55,7 +58,7 @@ func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {
 }) (string, error) {
 	language := highlight.SyntectLanguageMap[strings.ToLower(args.FuzzyLanguage)]
 	filePath := "file." + language
-	html, _, err := highlight.Code(ctx, highlight.Params{
+	response, _, err := highlight.Code(ctx, highlight.Params{
 		Content:        []byte(args.Code),
 		Filepath:       filePath,
 		DisableTimeout: args.DisableTimeout,
@@ -63,5 +66,11 @@ func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {
 	if err != nil {
 		return args.Code, err
 	}
-	return string(html), nil
+
+	html, err := response.HTML()
+	if err != nil {
+		return "", err
+	}
+
+	return string(html), err
 }

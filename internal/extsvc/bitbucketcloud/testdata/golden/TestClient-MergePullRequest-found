@@ -1,0 +1,155 @@
+{
+  "links": {
+   "activity": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/activity"
+   },
+   "approve": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/approve"
+   },
+   "comments": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/comments"
+   },
+   "commits": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/commits"
+   },
+   "decline": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/decline"
+   },
+   "diff": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/diff/sourcegraph-testing/src-cli:b70b4c18ed5c%0D12fba599d6b6?from_pullrequest_id=4"
+   },
+   "diffstat": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/diffstat/sourcegraph-testing/src-cli:b70b4c18ed5c%0D12fba599d6b6?from_pullrequest_id=4"
+   },
+   "html": {
+    "href": "https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/4"
+   },
+   "merge": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/merge"
+   },
+   "request-changes": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/request-changes"
+   },
+   "self": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4"
+   },
+   "statuses": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/statuses"
+   }
+  },
+  "id": 4,
+  "title": "Merge test 01",
+  "rendered": {
+   "title": {
+    "raw": "Merge test 01",
+    "markup": "markdown",
+    "html": "\u003cp\u003eMerge test 01\u003c/p\u003e",
+    "type": "rendered"
+   },
+   "description": {
+    "raw": "* commit 1\r\n* commit 2\r\n\r\n‌",
+    "markup": "markdown",
+    "html": "\u003cul\u003e\n\u003cli\u003ecommit 1\u003c/li\u003e\n\u003cli\u003ecommit 2\u003c/li\u003e\n\u003c/ul\u003e\n\u003cp\u003e‌\u003c/p\u003e",
+    "type": "rendered"
+   },
+   "reason": {
+    "raw": "",
+    "markup": "",
+    "html": ""
+   }
+  },
+  "summary": {
+   "raw": "* commit 1\r\n* commit 2\r\n\r\n‌",
+   "markup": "markdown",
+   "html": "\u003cul\u003e\n\u003cli\u003ecommit 1\u003c/li\u003e\n\u003cli\u003ecommit 2\u003c/li\u003e\n\u003c/ul\u003e\n\u003cp\u003e‌\u003c/p\u003e",
+   "type": "rendered"
+  },
+  "state": "MERGED",
+  "author": {
+   "links": {
+    "avatar": {
+     "href": "https://secure.gravatar.com/avatar/94883264abf62a96cbe120877ab0f087?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-2.png"
+    },
+    "html": {
+     "href": "https://bitbucket.org/%7B39a35a46-ae0c-4017-91ec-1562988daa73%7D/"
+    },
+    "self": {
+     "href": "https://api.bitbucket.org/2.0/users/%7B39a35a46-ae0c-4017-91ec-1562988daa73%7D"
+    }
+   },
+   "username": "",
+   "nickname": "Adam Harvey",
+   "account_status": "",
+   "display_name": "Adam Harvey",
+   "website": "",
+   "created_on": "0001-01-01T00:00:00Z",
+   "uuid": "{39a35a46-ae0c-4017-91ec-1562988daa73}"
+  },
+  "source": {
+   "repository": {
+    "slug": "",
+    "name": "src-cli",
+    "full_name": "sourcegraph-testing/src-cli",
+    "uuid": "{b090a669-ac7b-44cd-9610-02d027cb39f3}",
+    "scm": "",
+    "description": "",
+    "parent": null,
+    "is_private": false,
+    "links": {
+     "clone": null,
+     "html": {
+      "href": "https://bitbucket.org/sourcegraph-testing/src-cli"
+     }
+    },
+    "fork_policy": "",
+    "owner": null
+   },
+   "branch": {
+    "name": "merge-test-01",
+    "merge_strategies": null,
+    "default_merge_strategy": ""
+   },
+   "commit": {
+    "hash": "d55a513a597c"
+   }
+  },
+  "destination": {
+   "repository": {
+    "slug": "",
+    "name": "src-cli",
+    "full_name": "sourcegraph-testing/src-cli",
+    "uuid": "{b090a669-ac7b-44cd-9610-02d027cb39f3}",
+    "scm": "",
+    "description": "",
+    "parent": null,
+    "is_private": false,
+    "links": {
+     "clone": null,
+     "html": {
+      "href": "https://bitbucket.org/sourcegraph-testing/src-cli"
+     }
+    },
+    "fork_policy": "",
+    "owner": null
+   },
+   "branch": {
+    "name": "master",
+    "merge_strategies": null,
+    "default_merge_strategy": ""
+   },
+   "commit": {
+    "hash": "12fba599d6b6"
+   }
+  },
+  "merge_commit": {
+   "hash": "b70b4c18ed5c9a34896aed92e56688057859a68f"
+  },
+  "comment_count": 0,
+  "task_count": 0,
+  "close_source_branch": true,
+  "reason": "",
+  "created_on": "2022-04-06T17:09:57.476877Z",
+  "updated_on": "2022-04-06T17:10:35.140966Z",
+  "reviewers": [],
+  "participants": []
+ }

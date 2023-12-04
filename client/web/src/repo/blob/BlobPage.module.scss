@@ -1,9 +1,37 @@
+.border {
+    border: 1px solid var(--border-color);
+    border-top-left-radius: 0.1875rem;
+    border-top-right-radius: 0.1875rem;
+    border-bottom: none;
+}
+
 .placeholder {
     background-color: var(--code-bg);
     flex: 1 1 50%;
+    @extend .border;
+}
+
+.lfs-text {
+    max-width: 18rem;
 }
 
 .blob {
     flex: 1;
     position: relative;
+
+    &:focus-within {
+        outline: 0;
+        box-shadow: var(--focus-box-shadow);
+    }
+}
+
+.panel {
+    isolation: isolate;
+    min-height: 6rem;
+    max-height: calc(100% - 3rem);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-bg-1);
+    bottom: 0;
 }

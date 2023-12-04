@@ -37,8 +37,8 @@ interactions:
       20) {\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
-      repo on Repository {\n  id\n  owner {\n    login\n  }\n}\n\nfragment pr on PullRequest
-      {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  reviewDecision\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -54,12 +54,14 @@ interactions:
     headers:
       Accept:
       - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"repository":null},"errors":[{"type":"NOT_FOUND","path":["repository"],"locations":[{"line":315,"column":2}],"message":"Could
+    body: '{"data":{"repository":null},"errors":[{"type":"NOT_FOUND","path":["repository"],"locations":[{"line":317,"column":2}],"message":"Could
       not resolve to a Repository with the name ''whoisthis/sourcegraph''."}]}'
     headers:
       Access-Control-Allow-Origin:
@@ -74,7 +76,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 30 Dec 2021 22:37:57 GMT
+      - Fri, 23 Jun 2023 15:57:38 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -83,8 +85,6 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -92,20 +92,17 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - B982:4B09:2B1E2D3:52A92F2:61CE34C5
-      X-Oauth-Scopes:
-      - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
-        read:user, repo, workflow
+      - D069:23F6:D6C4A8:1B71CCE:6495C0F2
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4920"
+      - "4813"
       X-Ratelimit-Reset:
-      - "1640906777"
+      - "1687536983"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "80"
+      - "187"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -147,8 +144,8 @@ interactions:
       20) {\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
-      repo on Repository {\n  id\n  owner {\n    login\n  }\n}\n\nfragment pr on PullRequest
-      {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  reviewDecision\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -164,12 +161,14 @@ interactions:
     headers:
       Accept:
       - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"repository":{"pullRequest":null}},"errors":[{"type":"NOT_FOUND","path":["repository","pullRequest"],"locations":[{"line":316,"column":3}],"message":"Could
+    body: '{"data":{"repository":{"pullRequest":null}},"errors":[{"type":"NOT_FOUND","path":["repository","pullRequest"],"locations":[{"line":318,"column":3}],"message":"Could
       not resolve to a PullRequest with the number of 0."}]}'
     headers:
       Access-Control-Allow-Origin:
@@ -184,7 +183,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 30 Dec 2021 22:37:57 GMT
+      - Fri, 23 Jun 2023 15:57:39 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -193,8 +192,6 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -202,20 +199,17 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - B982:4B09:2B1E2ED:52A9325:61CE34C5
-      X-Oauth-Scopes:
-      - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
-        read:user, repo, workflow
+      - D069:23F6:D6C4E5:1B71D3D:6495C0F2
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4917"
+      - "4810"
       X-Ratelimit-Reset:
-      - "1640906777"
+      - "1687536983"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "83"
+      - "190"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -257,8 +251,8 @@ interactions:
       20) {\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
-      repo on Repository {\n  id\n  owner {\n    login\n  }\n}\n\nfragment pr on PullRequest
-      {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  reviewDecision\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -274,6 +268,8 @@ interactions:
     headers:
       Accept:
       - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
@@ -282,10 +278,8 @@ interactions:
     body: '{"data":{"repository":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzE2ODI5NDE0","title":"Fix
       disableExtension flag for native integrations","body":"This flag should only
       be observed in the browser extension. Calling `observeStorageKey()` breaks native
-      integrations.","state":"MERGED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550","number":5550,"createdAt":"2019-09-12T10:06:09Z","updatedAt":"2019-09-13T09:44:39Z","headRefOid":"30cc0384757b7d2fe9d42cf09ab7744731c8a9ea","baseRefOid":"f7097fe19816d0a9d637dc759722f6f43fd057ea","headRefName":"disable-extension-native-integratin","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},{"avatarUrl":"https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc&v=4","login":"unknwon","url":"https://github.com/unknwon"},{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"30cc0384757b7d2fe9d42cf09ab7744731c8a9ea","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MDU0MzIx","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #42783 passed (15 minutes, 53 seconds)"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MDUzMTQ0","context":"percy/Sourcegraph","state":"SUCCESS","description":"Visual
-      review automatically approved, no visual changes found."}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODA=","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODE=","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODI=","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}}]},"committedDate":"2019-09-13T09:13:12Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABbSoCn3ABqjI2MzE3ODE0NzU="},"nodes":[{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc&v=4","login":"unknwon","url":"https://github.com/unknwon"},"requestedTeam":{},"createdAt":"2019-09-12T10:06:09Z"},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"requestedTeam":{},"createdAt":"2019-09-12T10:06:09Z"},{"__typename":"PullRequestReview","databaseId":287537086,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc&v=4","login":"unknwon","url":"https://github.com/unknwon"},"authorAssociation":"MEMBER","body":"Thanks
-      for the fix! The chaining logic looks brilliant to me (as a non-FE dev).","state":"APPROVED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287537086","createdAt":"2019-09-12T15:57:28Z","updatedAt":"2019-09-12T15:57:28Z","commit":null,"includesCreatedEdit":false},{"__typename":"PullRequestReview","databaseId":287549355,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287549355","createdAt":"2019-09-12T16:18:08Z","updatedAt":"2019-09-12T16:18:58Z","commit":null,"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"21d1cd99699e36ab5e2b9be1cc663691d47193ef","message":"Fix
+      integrations.","state":"MERGED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550","number":5550,"createdAt":"2019-09-12T10:06:09Z","updatedAt":"2019-09-13T09:44:39Z","headRefOid":"30cc0384757b7d2fe9d42cf09ab7744731c8a9ea","baseRefOid":"f7097fe19816d0a9d637dc759722f6f43fd057ea","headRefName":"disable-extension-native-integratin","baseRefName":"master","reviewDecision":"APPROVED","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","name":"sourcegraph","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","name":"sourcegraph","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},{"avatarUrl":"https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc&v=4","login":"unknwon","url":"https://github.com/unknwon"},{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"30cc0384757b7d2fe9d42cf09ab7744731c8a9ea","status":null,"checkSuites":{"nodes":[]},"committedDate":"2019-09-13T09:13:12Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABbSoCn3ABqjI2MzE3ODE0NzU="},"nodes":[{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc&v=4","login":"unknwon","url":"https://github.com/unknwon"},"requestedTeam":{},"createdAt":"2019-09-12T10:06:09Z"},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"requestedTeam":{},"createdAt":"2019-09-12T10:06:09Z"},{"__typename":"PullRequestReview","databaseId":287537086,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc&v=4","login":"unknwon","url":"https://github.com/unknwon"},"authorAssociation":"MEMBER","body":"Thanks
+      for the fix! The chaining logic looks brilliant to me (as a non-FE dev).","state":"APPROVED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287537086","createdAt":"2019-09-12T15:57:28Z","updatedAt":"2019-09-12T15:57:28Z","commit":null,"includesCreatedEdit":false},{"__typename":"PullRequestReview","databaseId":287549355,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"CONTRIBUTOR","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287549355","createdAt":"2019-09-12T16:18:08Z","updatedAt":"2019-09-12T16:18:58Z","commit":null,"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"21d1cd99699e36ab5e2b9be1cc663691d47193ef","message":"Fix
       disableExtension flag for native integrations\n\nThis flag should only be observed
       in the browser extension. Calling `observeStorageKey()` breaks native integrations.","messageHeadline":"Fix
       disableExtension flag for native integrations","committedDate":"2019-09-13T09:13:12Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/21d1cd99699e36ab5e2b9be1cc663691d47193ef","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?v=4","email":"loic@sourcegraph.com","name":"Loïc
@@ -320,7 +314,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 30 Dec 2021 22:37:58 GMT
+      - Fri, 23 Jun 2023 15:57:39 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -329,8 +323,6 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -338,20 +330,17 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - B982:4B09:2B1E308:52A9363:61CE34C5
-      X-Oauth-Scopes:
-      - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
-        read:user, repo, workflow
+      - D069:23F6:D6C522:1B71DBF:6495C0F2
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4914"
+      - "4807"
       X-Ratelimit-Reset:
-      - "1640906777"
+      - "1687536983"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "86"
+      - "193"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -393,8 +382,8 @@ interactions:
       20) {\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
-      repo on Repository {\n  id\n  owner {\n    login\n  }\n}\n\nfragment pr on PullRequest
-      {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  reviewDecision\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -410,6 +399,8 @@ interactions:
     headers:
       Accept:
       - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
@@ -443,8 +434,7 @@ interactions:
       so that CI doesn''t depend on external services\r\n- [ ] Move issues over to
       this repo\r\n- [ ] Update links in docs, etc.\r\n- [ ] Move extension API docs
       into sourcegraph/sourcegraph\r\n\r\n> This PR does not need to update the CHANGELOG
-      because it''s a bunch of refactoring.\r\n","state":"MERGED","url":"https://github.com/sourcegraph/sourcegraph/pull/596","number":596,"createdAt":"2018-10-30T05:39:55Z","updatedAt":"2018-11-05T00:30:59Z","headRefOid":"701d0a1696c61fa420cd0eaf4c1c7a611e584648","baseRefOid":"9d772b27c652d9c418904e07a591e749156163fd","headRefName":"monorepo","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},{"avatarUrl":"https://avatars.githubusercontent.com/u/11557758?u=3e4924570a6d5224b12a4f68955568912cc7d6c9&v=4","login":"ijsnow","url":"https://github.com/ijsnow"},{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?u=b2974ab9b7a9be05cd1f36e198a3a8b4701f7910&v=4","login":"sqs","url":"https://github.com/sqs"},{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},{"avatarUrl":"https://avatars.githubusercontent.com/u/1646931?u=df4a0fe79667e85ece8054c617fc9f073450d205&v=4","login":"beyang","url":"https://github.com/beyang"},{"avatarUrl":"https://avatars.githubusercontent.com/u/25180681?u=d3b431ab24d1b297a939591bbaeec5977eda6592&v=4","login":"renovate-bot","url":"https://github.com/renovate-bot"},{"avatarUrl":"https://avatars.githubusercontent.com/u/5531172?u=f7cc95afcd6b72742cd0a4653deae151e79ed09c&v=4","login":"danicat","url":"https://github.com/danicat"},{"avatarUrl":"https://avatars.githubusercontent.com/u/4897310?u=0d897c34d8c5366f7226784444b155d97d8cae5d&v=4","login":"KattMingMing","url":"https://github.com/KattMingMing"},{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=4d116636ebe647649a2157490c8d4fc21ad1fd16&v=4","login":"slimsag","url":"https://github.com/slimsag"},{"avatarUrl":"https://avatars.githubusercontent.com/u/16265452?u=cdc81c4ab6f0d1a4a0bce3944d82f72bffd62d3a&v=4","login":"attfarhan","url":"https://github.com/attfarhan"},{"avatarUrl":"https://avatars.githubusercontent.com/u/133014?u=6d63dc94c7e6b7d49745c1a91d70302d4a1ad71c&v=4","login":"ryan-blunden","url":"https://github.com/ryan-blunden"},{"avatarUrl":"https://avatars.githubusercontent.com/u/8770560?u=1998a850667263927cfb8eeff3b24020be3c0101&v=4","login":"lukeautry","url":"https://github.com/lukeautry"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"701d0a1696c61fa420cd0eaf4c1c7a611e584648","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1NzUxNDc3OTAx","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #22720 passed (11 minutes, 22 seconds)"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUyNTA3NDIwNw==","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}}]},"committedDate":"2018-11-05T00:14:44Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":true,"endCursor":"Y3Vyc29yOnYyOpPPAAABZti534AAqTQzNTU3MDk2OA=="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"6c776fa6ec49bca44b2e2eb1fa193b00bc0c09fa","message":"refactor:
+      because it''s a bunch of refactoring.\r\n","state":"MERGED","url":"https://github.com/sourcegraph/sourcegraph/pull/596","number":596,"createdAt":"2018-10-30T05:39:55Z","updatedAt":"2018-11-05T00:30:59Z","headRefOid":"701d0a1696c61fa420cd0eaf4c1c7a611e584648","baseRefOid":"9d772b27c652d9c418904e07a591e749156163fd","headRefName":"monorepo","baseRefName":"master","reviewDecision":null,"isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","name":"sourcegraph","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","name":"sourcegraph","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},{"avatarUrl":"https://avatars.githubusercontent.com/u/11557758?u=3e4924570a6d5224b12a4f68955568912cc7d6c9&v=4","login":"ijsnow","url":"https://github.com/ijsnow"},{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?u=b2974ab9b7a9be05cd1f36e198a3a8b4701f7910&v=4","login":"sqs","url":"https://github.com/sqs"},{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},{"avatarUrl":"https://avatars.githubusercontent.com/u/1646931?u=df4a0fe79667e85ece8054c617fc9f073450d205&v=4","login":"beyang","url":"https://github.com/beyang"},{"avatarUrl":"https://avatars.githubusercontent.com/u/25180681?u=27181db7e8acbbb4c3c6d507941addb379271b78&v=4","login":"renovate-bot","url":"https://github.com/renovate-bot"},{"avatarUrl":"https://avatars.githubusercontent.com/u/5531172?u=f7cc95afcd6b72742cd0a4653deae151e79ed09c&v=4","login":"danicat","url":"https://github.com/danicat"},{"avatarUrl":"https://avatars.githubusercontent.com/u/4897310?u=0d897c34d8c5366f7226784444b155d97d8cae5d&v=4","login":"KattMingMing","url":"https://github.com/KattMingMing"},{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db&v=4","login":"slimsag","url":"https://github.com/slimsag"},{"avatarUrl":"https://avatars.githubusercontent.com/u/16265452?u=cdc81c4ab6f0d1a4a0bce3944d82f72bffd62d3a&v=4","login":"attfarhan","url":"https://github.com/attfarhan"},{"avatarUrl":"https://avatars.githubusercontent.com/u/133014?u=6d63dc94c7e6b7d49745c1a91d70302d4a1ad71c&v=4","login":"ryan-blunden","url":"https://github.com/ryan-blunden"},{"avatarUrl":"https://avatars.githubusercontent.com/u/8770560?u=8e7ba42957dbdc163f1ee8105a68bf574e890b68&v=4","login":"lukeautry","url":"https://github.com/lukeautry"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"701d0a1696c61fa420cd0eaf4c1c7a611e584648","status":null,"checkSuites":{"nodes":[]},"committedDate":"2018-11-05T00:14:44Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":true,"endCursor":"Y3Vyc29yOnYyOpPPAAABZti534AAqTQzNTU3MDk2OA=="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"6c776fa6ec49bca44b2e2eb1fa193b00bc0c09fa","message":"refactor:
       remove `Windows#all`\n\nNow that the `CXP#activeWindow` accessor is at the top
       level, we get a simplicity win by removing this field so that `Windows` has
       no non-method fields. Any extension author needing the list of *all* windows
@@ -504,7 +494,7 @@ interactions:
       palette position (#148)","committedDate":"2018-09-09T01:03:44Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/db0187c327cc5e5d9370416b9c636889446bf638","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"PullRequestCommit","commit":{"oid":"322d416743152de07fd2e025712441e0f2d19395","message":"feat:
       add method to get locations with extension ID (#45)","messageHeadline":"feat:
       add method to get locations with extension ID (#45)","committedDate":"2018-09-09T03:02:42Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/322d416743152de07fd2e025712441e0f2d19395","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"PullRequestCommit","commit":{"oid":"5315e29960e02bb2305d338b828161fd206eee1f","message":"build:
-      bump sourcegraph dep","messageHeadline":"build: bump sourcegraph dep","committedDate":"2018-09-09T03:46:19Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/5315e29960e02bb2305d338b828161fd206eee1f","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1646931?v=4","email":"beyang@sourcegraph.com","name":"Beyang
+      bump sourcegraph dep","messageHeadline":"build: bump sourcegraph dep","committedDate":"2018-09-09T03:46:19Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/5315e29960e02bb2305d338b828161fd206eee1f","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1646931?u=df4a0fe79667e85ece8054c617fc9f073450d205&v=4","email":"beyang@sourcegraph.com","name":"Beyang
       Liu","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1646931?u=df4a0fe79667e85ece8054c617fc9f073450d205&v=4","login":"beyang","url":"https://github.com/beyang"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"a2efe53264a90f506bca1dfb03830c0d65ca7469","message":"fix:
       force release after mis-labeled commit","messageHeadline":"fix: force release
       after mis-labeled commit","committedDate":"2018-09-09T22:04:29Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/a2efe53264a90f506bca1dfb03830c0d65ca7469","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
@@ -836,10 +826,10 @@ interactions:
       chore: prettier","messageHeadline":"feat: stay in github for j2d in new inject
       method (#202)","committedDate":"2018-09-28T23:28:44Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/d9abff53f632d577e9099dd924cd67432bfd8fdb","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"PullRequestCommit","commit":{"oid":"c37fbf675a17a368a9f28aa6e1f4aaf657f28ca1","message":"docs:
       zero-based line/character","messageHeadline":"docs: zero-based line/character","committedDate":"2018-09-29T01:14:17Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/c37fbf675a17a368a9f28aa6e1f4aaf657f28ca1","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"bdb7f2cee3819be63a94b17237e0f94c604f3939","message":"docs:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"bdb7f2cee3819be63a94b17237e0f94c604f3939","message":"docs:
       document limitations to decoration ranges","messageHeadline":"docs: document
       limitations to decoration ranges","committedDate":"2018-09-29T01:23:37Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/bdb7f2cee3819be63a94b17237e0f94c604f3939","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"c9045aa4712b31e0de75f14d795672cced3a624a","message":"chore(deps):
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"c9045aa4712b31e0de75f14d795672cced3a624a","message":"chore(deps):
       update dependency @types/graphql to v14.0.1","messageHeadline":"chore(deps):
       update dependency @types/graphql to v14.0.1","committedDate":"2018-10-01T09:26:18Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/c9045aa4712b31e0de75f14d795672cced3a624a","committer":{"avatarUrl":"https://avatars.githubusercontent.com/in/2740?v=4","email":"renovate[bot]@users.noreply.github.com","name":"renovate[bot]","user":{"avatarUrl":"https://avatars.githubusercontent.com/in/2740?v=4","login":"renovate[bot]","url":"https://github.com/renovate%5Bbot%5D"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"0d716ea8a5108fa892ff0ea1cec47331b6d21dc9","message":"chore(deps):
       update dependency @types/react-dom to v16.0.8","messageHeadline":"chore(deps):
@@ -884,7 +874,7 @@ interactions:
       cannot create context menu item with duplicate id (#231)","committedDate":"2018-10-06T16:45:35Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/8a907b64086ff1cc2cbf67b451c6c15194367c11","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"PullRequestCommit","commit":{"oid":"3e736adbb5c3f54eddaab9bfb26c34d90c3d2eea","message":"chore(deps):
       update dependency @sourcegraph/extensions-client-common to v10 (#233)","messageHeadline":"chore(deps):
       update dependency @sourcegraph/extensions-client-common …","committedDate":"2018-10-07T23:08:19Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/3e736adbb5c3f54eddaab9bfb26c34d90c3d2eea","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"3e579b33b8237834b194c49ffd2db84e597432dd","message":"chore:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"3e579b33b8237834b194c49ffd2db84e597432dd","message":"chore:
       add storybooks (#240)","messageHeadline":"chore: add storybooks (#240)","committedDate":"2018-10-12T03:26:16Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/3e579b33b8237834b194c49ffd2db84e597432dd","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"PullRequestCommit","commit":{"oid":"ac07c1b38d28a272f188e028c4faf900573260e4","message":"chore(deps):
       pin dependency @types/storybook__addon-actions to 3.4.1","messageHeadline":"chore(deps):
       pin dependency @types/storybook__addon-actions to 3.4.1","committedDate":"2018-10-12T05:20:14Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/ac07c1b38d28a272f188e028c4faf900573260e4","committer":{"avatarUrl":"https://avatars.githubusercontent.com/in/2740?v=4","email":"renovate[bot]@users.noreply.github.com","name":"renovate[bot]","user":{"avatarUrl":"https://avatars.githubusercontent.com/in/2740?v=4","login":"renovate[bot]","url":"https://github.com/renovate%5Bbot%5D"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"028cfcda7ea501efb8147e9c269ea97f33650d6c","message":"chore:
@@ -930,7 +920,7 @@ interactions:
       suppress connection error when disabling an extension (#91)","committedDate":"2018-10-23T02:23:16Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/64b11f68dd8d3257a3efe3c8c5e4baecf8e978e1","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"PullRequestCommit","commit":{"oid":"fd0d0007ef43601d8ffe37cfb2d4c53d53b5fc97","message":"fix:
       suppress connection error when disabling an extension (#91)","messageHeadline":"fix:
       suppress connection error when disabling an extension (#91)","committedDate":"2018-10-23T02:49:27Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/fd0d0007ef43601d8ffe37cfb2d4c53d53b5fc97","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"06ade71d61eca6f2bc6e3e586cb9b93145dcfcbb","message":"fix:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"06ade71d61eca6f2bc6e3e586cb9b93145dcfcbb","message":"fix:
       bump sourcegraph to 18.0.1 (#59)","messageHeadline":"fix: bump sourcegraph to
       18.0.1 (#59)","committedDate":"2018-10-23T03:25:22Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/06ade71d61eca6f2bc6e3e586cb9b93145dcfcbb","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"PullRequestCommit","commit":{"oid":"8616d6641b7bbf6407e632a0c21a431d93f760c0","message":"fix:
       bump sourcegraph to 18.0.1 (#259)","messageHeadline":"fix: bump sourcegraph
@@ -942,8 +932,8 @@ interactions:
       use @slimsag/react-shortcuts (#60)\n\nfix: use @slimsag/react-shortcuts","messageHeadline":"fix:
       use @slimsag/react-shortcuts (#60)","committedDate":"2018-10-24T21:35:01Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/b8ce4ed5f7e6ffb924fe34871e5b93b3de4152ad","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"PullRequestCommit","commit":{"oid":"5ab0915e5f812399cbf875ae79a4657618e6fb8a","message":"feat(deps):
       update dependency @sourcegraph/extensions-client-common to ^10.2.2 (#254)","messageHeadline":"feat(deps):
-      update dependency @sourcegraph/extensions-client-common t…","committedDate":"2018-10-24T22:13:58Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/5ab0915e5f812399cbf875ae79a4657618e6fb8a","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?v=4","email":"stephen.gutekanst@gmail.com","name":"Stephen
-      Gutekanst","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=4d116636ebe647649a2157490c8d4fc21ad1fd16&v=4","login":"slimsag","url":"https://github.com/slimsag"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"189cf30cb1f2d22b989651c114d4ec39c9732347","message":"fix:
+      update dependency @sourcegraph/extensions-client-common t…","committedDate":"2018-10-24T22:13:58Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/5ab0915e5f812399cbf875ae79a4657618e6fb8a","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db&v=4","email":"stephen.gutekanst@gmail.com","name":"Stephen
+      Gutekanst","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db&v=4","login":"slimsag","url":"https://github.com/slimsag"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"189cf30cb1f2d22b989651c114d4ec39c9732347","message":"fix:
       command palette (#263)\n\nA regression (#262) which broke the command palette
       was introduced (but not published). This fixes that regression.\r\n\r\n- The
       regression was introduced by @sqs''s change to e-c-c here: https://github.com/sourcegraph/extensions-client-common/commit/19df39f8a349c38242f96d0aeef4c78b70cb20b3\r\n-
@@ -1015,8 +1005,8 @@ interactions:
       it goes away quickly (just a flicker), but on some it displays an error:\n\n![image](https://user-images.githubusercontent.com/3173176/45585161-caaff580-b894-11e8-8b3f-10347f2aa438.png)\n\nAfter
       this change, we no longer attempt to display hovers etc. on the DOM elements
       which Sourcegraph Extensions provide.\n\nFixes sourcegraph/sourcegraph-extension-api#67","messageHeadline":"fix:
-      do not display code intelligence hovers on Sourcegraph Extension…","committedDate":"2018-10-26T01:21:35Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/893768ee1c6e3bc87bad7cdae0ea4aed4e3a607b","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?v=4","email":"stephen.gutekanst@gmail.com","name":"Stephen
-      Gutekanst","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=4d116636ebe647649a2157490c8d4fc21ad1fd16&v=4","login":"slimsag","url":"https://github.com/slimsag"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"597b3199c15b69d47445e8736d848a5c7319f0c0","message":"chore:
+      do not display code intelligence hovers on Sourcegraph Extension…","committedDate":"2018-10-26T01:21:35Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/893768ee1c6e3bc87bad7cdae0ea4aed4e3a607b","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db&v=4","email":"stephen.gutekanst@gmail.com","name":"Stephen
+      Gutekanst","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db&v=4","login":"slimsag","url":"https://github.com/slimsag"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"597b3199c15b69d47445e8736d848a5c7319f0c0","message":"chore:
       add integrity","messageHeadline":"chore: add integrity","committedDate":"2018-10-26T17:09:43Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/597b3199c15b69d47445e8736d848a5c7319f0c0","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?v=4","email":"felix.b@outlook.com","name":"Felix
       Becker","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"a0733828ac7fe1cda8bba144183bc5b10c9ee66b","message":"chore:
       add launch.json","messageHeadline":"chore: add launch.json","committedDate":"2018-10-26T17:09:43Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/a0733828ac7fe1cda8bba144183bc5b10c9ee66b","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?v=4","email":"felix.b@outlook.com","name":"Felix
@@ -1027,21 +1017,21 @@ interactions:
       change, clicking links that are provided by a Sourcegraph extension\nwould cause
       them to open in the same page. This is in contrast to what clicking\nthe same
       link on Sourcegraph does: opens in a new tab if not relative.\n\nFixes sourcegraph/sourcegraph-extension-api#70","messageHeadline":"fix:
-      make line decoration link opening match Sourcegraph behavior","committedDate":"2018-10-26T20:20:48Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/3e13ce277c58bc34f6d29a63dfe52f9e7933e678","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?v=4","email":"stephen.gutekanst@gmail.com","name":"Stephen
-      Gutekanst","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=4d116636ebe647649a2157490c8d4fc21ad1fd16&v=4","login":"slimsag","url":"https://github.com/slimsag"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"2836554b2d8cc0740e86c5f692b88e58c5786606","message":"fix:
+      make line decoration link opening match Sourcegraph behavior","committedDate":"2018-10-26T20:20:48Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/3e13ce277c58bc34f6d29a63dfe52f9e7933e678","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db&v=4","email":"stephen.gutekanst@gmail.com","name":"Stephen
+      Gutekanst","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db&v=4","login":"slimsag","url":"https://github.com/slimsag"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"2836554b2d8cc0740e86c5f692b88e58c5786606","message":"fix:
       do not leak referrer when clicking Sourcegraph extension links\n\nPrior to this
       change clicking a link provided by a Sourcegraph extension\nwould leak referrer
       information. We apply the same `rel` attribute in\nSourcegraph to prevent this:\n\nhttps://sourcegraph.com/github.com/sourcegraph/sourcegraph@4ac84723437a325405bf073a99f45fae1be9ec43/-/blob/src/repo/blob/LineDecorationAttachment.tsx#L52:17\n\nNow
       we also prevent it here in the browser extension.\n\nFixes sourcegraph/sourcegraph-extension-api#106","messageHeadline":"fix:
-      do not leak referrer when clicking Sourcegraph extension links","committedDate":"2018-10-26T20:20:48Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/2836554b2d8cc0740e86c5f692b88e58c5786606","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?v=4","email":"stephen.gutekanst@gmail.com","name":"Stephen
-      Gutekanst","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=4d116636ebe647649a2157490c8d4fc21ad1fd16&v=4","login":"slimsag","url":"https://github.com/slimsag"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"c7409d3a76aaec2a748b8446b021d8e3bf69c192","message":"fix:
+      do not leak referrer when clicking Sourcegraph extension links","committedDate":"2018-10-26T20:20:48Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/2836554b2d8cc0740e86c5f692b88e58c5786606","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db&v=4","email":"stephen.gutekanst@gmail.com","name":"Stephen
+      Gutekanst","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db&v=4","login":"slimsag","url":"https://github.com/slimsag"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"c7409d3a76aaec2a748b8446b021d8e3bf69c192","message":"fix:
       hoverMessage now properly renders as a tooltip\n\nPrior to this change, extensions
       such as code discussions would specify a\n`DecorationAttachmentRenderingOptions.hoverMessage`
       but it would only work on\nSourcegraph, it was unused in the browser extension.
       Now it renders as a native\nbrowser tooltip, which is okay for most cases.\n\nFixes
       sourcegraph/sourcegraph-extension-api#107","messageHeadline":"fix: hoverMessage
-      now properly renders as a tooltip","committedDate":"2018-10-26T20:20:48Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/c7409d3a76aaec2a748b8446b021d8e3bf69c192","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?v=4","email":"stephen.gutekanst@gmail.com","name":"Stephen
-      Gutekanst","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=4d116636ebe647649a2157490c8d4fc21ad1fd16&v=4","login":"slimsag","url":"https://github.com/slimsag"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"3c629da63baf200d67048fc0ea4ef055e75d703e","message":"feat:
+      now properly renders as a tooltip","committedDate":"2018-10-26T20:20:48Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/c7409d3a76aaec2a748b8446b021d8e3bf69c192","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db&v=4","email":"stephen.gutekanst@gmail.com","name":"Stephen
+      Gutekanst","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db&v=4","login":"slimsag","url":"https://github.com/slimsag"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"3c629da63baf200d67048fc0ea4ef055e75d703e","message":"feat:
       add search query transformer extensibility point (#95)\n\n* adds a new search
       namespace\r\n* adds query transformer extensibility point","messageHeadline":"feat:
       add search query transformer extensibility point (#95)","committedDate":"2018-10-26T22:10:07Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/3c629da63baf200d67048fc0ea4ef055e75d703e","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"PullRequestCommit","commit":{"oid":"a79ccc5fcf09d8b72d401e4d802146ae7a0c31d4","message":"feat:
@@ -1100,13 +1090,13 @@ interactions:
       update @sourcegraph/extensions-client-common","messageHeadline":"chore(deps):
       update @sourcegraph/extensions-client-common","committedDate":"2018-10-29T06:01:38Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/deb728040c8415f63b4f800b04ce2472093b9f1e","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
       Slack","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?u=b2974ab9b7a9be05cd1f36e198a3a8b4701f7910&v=4","login":"sqs","url":"https://github.com/sqs"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"6126d5fa5f25949cd1e222e07af0c5ed1242fcdf","message":"chore:
-      add `.github` directory","messageHeadline":"chore: add `.github` directory","committedDate":"2018-10-29T12:49:02Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/6126d5fa5f25949cd1e222e07af0c5ed1242fcdf","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/133014?v=4","email":"ryan.blunden@gmail.com","name":"Ryan
+      add `.github` directory","messageHeadline":"chore: add `.github` directory","committedDate":"2018-10-29T12:49:02Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/6126d5fa5f25949cd1e222e07af0c5ed1242fcdf","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/133014?u=6d63dc94c7e6b7d49745c1a91d70302d4a1ad71c&v=4","email":"ryan.blunden@gmail.com","name":"Ryan
       Blunden","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/133014?u=6d63dc94c7e6b7d49745c1a91d70302d4a1ad71c&v=4","login":"ryan-blunden","url":"https://github.com/ryan-blunden"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"51df9021ceeee2631b0dd5064db416fe9b6cbd6f","message":"fix(docs):
       remove event logging note from Firefox reviewer notes (#216)","messageHeadline":"fix(docs):
       remove event logging note from Firefox reviewer notes (#216)","committedDate":"2018-10-29T21:17:06Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/51df9021ceeee2631b0dd5064db416fe9b6cbd6f","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"PullRequestCommit","commit":{"oid":"9ec9eb53d2bef9ed83b6ae1e1b35468f26b8d0d4","message":"feat(deps):
       update dependency @sourcegraph/codeintellify to ^3.9.1","messageHeadline":"feat(deps):
       update dependency @sourcegraph/codeintellify to ^3.9.1","committedDate":"2018-10-29T23:57:36Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/9ec9eb53d2bef9ed83b6ae1e1b35468f26b8d0d4","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?v=4","email":"felix.b@outlook.com","name":"Felix
-      Becker","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}}}},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?u=b2974ab9b7a9be05cd1f36e198a3a8b4701f7910&v=4","login":"sqs","url":"https://github.com/sqs"},"requestedTeam":{},"createdAt":"2018-10-30T05:39:55Z"},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=4d116636ebe647649a2157490c8d4fc21ad1fd16&v=4","login":"slimsag","url":"https://github.com/slimsag"},"requestedTeam":{},"createdAt":"2018-10-30T05:39:55Z"},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"requestedTeam":{},"createdAt":"2018-10-30T05:39:55Z"},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/11557758?u=3e4924570a6d5224b12a4f68955568912cc7d6c9&v=4","login":"ijsnow","url":"https://github.com/ijsnow"},"requestedTeam":{},"createdAt":"2018-10-30T05:39:55Z"},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/187831?u=317b50a31294346f352a743fc57328acb3f264ed&v=4","login":"keegancsmith","url":"https://github.com/keegancsmith"},"requestedTeam":{},"createdAt":"2018-10-30T05:39:55Z"},{"__typename":"PullRequestCommit","commit":{"oid":"7ae84fdbac767a33de7b71bd3186881cda025bb0","message":"fix:
+      Becker","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}}}},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?u=b2974ab9b7a9be05cd1f36e198a3a8b4701f7910&v=4","login":"sqs","url":"https://github.com/sqs"},"requestedTeam":{},"createdAt":"2018-10-30T05:39:55Z"},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db&v=4","login":"slimsag","url":"https://github.com/slimsag"},"requestedTeam":{},"createdAt":"2018-10-30T05:39:55Z"},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"requestedTeam":{},"createdAt":"2018-10-30T05:39:55Z"},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/11557758?u=3e4924570a6d5224b12a4f68955568912cc7d6c9&v=4","login":"ijsnow","url":"https://github.com/ijsnow"},"requestedTeam":{},"createdAt":"2018-10-30T05:39:55Z"},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/187831?u=317b50a31294346f352a743fc57328acb3f264ed&v=4","login":"keegancsmith","url":"https://github.com/keegancsmith"},"requestedTeam":{},"createdAt":"2018-10-30T05:39:55Z"},{"__typename":"PullRequestCommit","commit":{"oid":"7ae84fdbac767a33de7b71bd3186881cda025bb0","message":"fix:
       don''t send cookies if we have an access token (#288)","messageHeadline":"fix:
       don''t send cookies if we have an access token (#288)","committedDate":"2018-10-30T05:47:47Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/7ae84fdbac767a33de7b71bd3186881cda025bb0","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"PullRequestReview","databaseId":169900762,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/11557758?u=3e4924570a6d5224b12a4f68955568912cc7d6c9&v=4","login":"ijsnow","url":"https://github.com/ijsnow"},"authorAssociation":"CONTRIBUTOR","body":"Can
       we be a bit more organized so the root directory doesn''t keep getting littered
@@ -1117,12 +1107,12 @@ interactions:
       complete to me until the web app was in a workspace too.","state":"CHANGES_REQUESTED","url":"https://github.com/sourcegraph/sourcegraph/pull/596#pullrequestreview-169900762","createdAt":"2018-10-30T17:23:21Z","updatedAt":"2018-10-30T17:23:21Z","commit":{"oid":"86b8821157dfdf04051f5f85d66b699ce32cd0cb","message":"chore:
       pull in changes from https://github.com/sourcegraph/browser-extensions/pull/288","messageHeadline":"chore:
       pull in changes from https://github.com/sourcegraph/browser-ex…","committedDate":"2018-10-30T05:51:14Z","pushedDate":"2018-10-30T05:51:42Z","url":"https://github.com/sourcegraph/sourcegraph/commit/86b8821157dfdf04051f5f85d66b699ce32cd0cb","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/11557758?v=4","email":"isaacjsnow@gmail.com","name":"Isaac
-      Snow","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/11557758?u=3e4924570a6d5224b12a4f68955568912cc7d6c9&v=4","login":"ijsnow","url":"https://github.com/ijsnow"}}},"includesCreatedEdit":false},{"__typename":"PullRequestReview","databaseId":169814822,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"MEMBER","body":"Aborting
+      Snow","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/11557758?u=3e4924570a6d5224b12a4f68955568912cc7d6c9&v=4","login":"ijsnow","url":"https://github.com/ijsnow"}}},"includesCreatedEdit":false},{"__typename":"PullRequestReview","databaseId":169814822,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"CONTRIBUTOR","body":"Aborting
       my review here cause it looks WIP. Please ping me when this ready for review.","state":"CHANGES_REQUESTED","url":"https://github.com/sourcegraph/sourcegraph/pull/596#pullrequestreview-169814822","createdAt":"2018-10-30T14:49:33Z","updatedAt":"2018-10-30T17:36:21Z","commit":{"oid":"86b8821157dfdf04051f5f85d66b699ce32cd0cb","message":"chore:
       pull in changes from https://github.com/sourcegraph/browser-extensions/pull/288","messageHeadline":"chore:
       pull in changes from https://github.com/sourcegraph/browser-ex…","committedDate":"2018-10-30T05:51:14Z","pushedDate":"2018-10-30T05:51:42Z","url":"https://github.com/sourcegraph/sourcegraph/commit/86b8821157dfdf04051f5f85d66b699ce32cd0cb","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/11557758?v=4","email":"isaacjsnow@gmail.com","name":"Isaac
       Snow","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/11557758?u=3e4924570a6d5224b12a4f68955568912cc7d6c9&v=4","login":"ijsnow","url":"https://github.com/ijsnow"}}},"includesCreatedEdit":false},{"__typename":"IssueComment","databaseId":434403445,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/11557758?u=3e4924570a6d5224b12a4f68955568912cc7d6c9&v=4","login":"ijsnow","url":"https://github.com/ijsnow"},"authorAssociation":"CONTRIBUTOR","body":"I''d
-      like to re-org like https://sourcegraph.com/github.com/Quramy/lerna-yarn-workspaces-example.","createdAt":"2018-10-30T17:49:20Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-434403445","updatedAt":"2018-10-30T17:49:20Z","includesCreatedEdit":false,"publishedAt":"2018-10-30T17:49:20Z"},{"__typename":"IssueComment","databaseId":434419090,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"MEMBER","body":"@felixfbecker
+      like to re-org like https://sourcegraph.com/github.com/Quramy/lerna-yarn-workspaces-example.","createdAt":"2018-10-30T17:49:20Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-434403445","updatedAt":"2018-10-30T17:49:20Z","includesCreatedEdit":false,"publishedAt":"2018-10-30T17:49:20Z"},{"__typename":"IssueComment","databaseId":434419090,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"CONTRIBUTOR","body":"@felixfbecker
       Yup, this is still a WIP, but I''ll need help identifying broken parts (more
       of what you have done already).\r\n\r\n@ijsnow I''ll create a `packages/` directory
       and put the new repos in there. As a follow up, I''ll try moving the web app
@@ -1139,7 +1129,7 @@ interactions:
       trigger build","messageHeadline":"fix: trigger build","committedDate":"2018-10-31T07:30:46Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/3b6b5c3375efdf6ef69cedd5df99678892e1cd6e","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
       Slack","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?u=b2974ab9b7a9be05cd1f36e198a3a8b4701f7910&v=4","login":"sqs","url":"https://github.com/sqs"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"f7a6d8541aca55a916b7050e9a0c8ed5b72696e9","message":"fix:
       error emitted from one hover provider would break other hover providers (#117)","messageHeadline":"fix:
-      error emitted from one hover provider would break other hover pr…","committedDate":"2018-10-31T16:38:51Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/f7a6d8541aca55a916b7050e9a0c8ed5b72696e9","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1646931?u=df4a0fe79667e85ece8054c617fc9f073450d205&v=4","login":"beyang","url":"https://github.com/beyang"},"requestedTeam":{},"createdAt":"2018-10-31T21:56:36Z"},{"__typename":"IssueComment","databaseId":434878252,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"MEMBER","body":"I
+      error emitted from one hover provider would break other hover pr…","committedDate":"2018-10-31T16:38:51Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/f7a6d8541aca55a916b7050e9a0c8ed5b72696e9","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1646931?u=df4a0fe79667e85ece8054c617fc9f073450d205&v=4","login":"beyang","url":"https://github.com/beyang"},"requestedTeam":{},"createdAt":"2018-10-31T21:56:36Z"},{"__typename":"IssueComment","databaseId":434878252,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"CONTRIBUTOR","body":"I
       ran into a mysterious yarn error where it couldn''t find a `node_modules/` directory
       upon fresh installation, and @ggilmore and @ijsnow figured out that it was caused
       by workspaces and that moving the web app into the `workspaces` field solves
@@ -1180,7 +1170,7 @@ interactions:
       Slack","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?u=b2974ab9b7a9be05cd1f36e198a3a8b4701f7910&v=4","login":"sqs","url":"https://github.com/sqs"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"ae4fbd2baedef2e05f7bee3a2f27d436bcaa8a5d","message":"docs:
       rename Sourcegraph Server -> Sourcegraph","messageHeadline":"docs: rename Sourcegraph
       Server -> Sourcegraph","committedDate":"2018-11-01T02:13:29Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/ae4fbd2baedef2e05f7bee3a2f27d436bcaa8a5d","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
-      Slack","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?u=b2974ab9b7a9be05cd1f36e198a3a8b4701f7910&v=4","login":"sqs","url":"https://github.com/sqs"}}}},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/5589410?u=75914d6345014f5ad610a115471505a0ba9ad27e&v=4","login":"dadlerj","url":"https://github.com/dadlerj"},"requestedTeam":{},"createdAt":"2018-11-01T02:34:32Z"},{"__typename":"PullRequestCommit","commit":{"oid":"6015fa87e6e88978803b44d6ca3de1810b92df3d","message":"build:
+      Slack","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?u=b2974ab9b7a9be05cd1f36e198a3a8b4701f7910&v=4","login":"sqs","url":"https://github.com/sqs"}}}},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/5589410?u=75914d6345014f5ad610a115471505a0ba9ad27e&v=4","login":"dadlerj","url":"https://github.com/dadlerj"},"requestedTeam":{},"createdAt":"2018-11-01T02:34:32Z"},{"__typename":"PullRequestCommit","commit":{"oid":"6015fa87e6e88978803b44d6ca3de1810b92df3d","message":"build:
       still generate xpi","messageHeadline":"build: still generate xpi","committedDate":"2018-11-01T02:41:44Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/6015fa87e6e88978803b44d6ca3de1810b92df3d","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
       Slack","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?u=b2974ab9b7a9be05cd1f36e198a3a8b4701f7910&v=4","login":"sqs","url":"https://github.com/sqs"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"50d6c5d31adaca79828aa03f3df0ab2ead37cd87","message":"fix:
       add spacing between end-of-line and decoration attachment\n\nfix (in browser
@@ -1228,11 +1218,11 @@ interactions:
       update dependency @types/react-router to v4.4.0","messageHeadline":"chore(deps):
       update dependency @types/react-router to v4.4.0","committedDate":"2018-11-01T09:30:41Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/7bd5ab91d315294a196315173373b93ea74eef0a","committer":{"avatarUrl":"https://avatars.githubusercontent.com/in/2740?v=4","email":"renovate[bot]@users.noreply.github.com","name":"renovate[bot]","user":{"avatarUrl":"https://avatars.githubusercontent.com/in/2740?v=4","login":"renovate[bot]","url":"https://github.com/renovate%5Bbot%5D"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"aee1610c524a9d75bd359b5e7c198f11a017e2cf","message":"chore(deps):
       update dependency @types/webpack to v4.4.17","messageHeadline":"chore(deps):
-      update dependency @types/webpack to v4.4.17","committedDate":"2018-11-01T09:36:29Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/aee1610c524a9d75bd359b5e7c198f11a017e2cf","committer":{"avatarUrl":"https://avatars.githubusercontent.com/in/2740?v=4","email":"renovate[bot]@users.noreply.github.com","name":"renovate[bot]","user":{"avatarUrl":"https://avatars.githubusercontent.com/in/2740?v=4","login":"renovate[bot]","url":"https://github.com/renovate%5Bbot%5D"}}}},{"__typename":"IssueComment","databaseId":435026930,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"MEMBER","body":"Ready
+      update dependency @types/webpack to v4.4.17","committedDate":"2018-11-01T09:36:29Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/aee1610c524a9d75bd359b5e7c198f11a017e2cf","committer":{"avatarUrl":"https://avatars.githubusercontent.com/in/2740?v=4","email":"renovate[bot]@users.noreply.github.com","name":"renovate[bot]","user":{"avatarUrl":"https://avatars.githubusercontent.com/in/2740?v=4","login":"renovate[bot]","url":"https://github.com/renovate%5Bbot%5D"}}}},{"__typename":"IssueComment","databaseId":435026930,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"CONTRIBUTOR","body":"Ready
       for review, but don''t review the first commit (it''s massive! And all I did
       was `git clone` the 3 other repos and `mv src packages/webapp/src`). cc @felixfbecker
       @ijsnow \r\n\r\nI''d like some :eyes: on the relationship between the gulpfile,
-      `packages/webapp`, and `enterprise`.","createdAt":"2018-11-01T12:34:26Z","editor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435026930","updatedAt":"2018-11-01T21:50:36Z","includesCreatedEdit":true,"publishedAt":"2018-11-01T12:34:26Z"},{"__typename":"PullRequestCommit","commit":{"oid":"fb3dab5e9c062b4485bfc297682cc2d6d2117cbe","message":"fix:
+      `packages/webapp`, and `enterprise`.","createdAt":"2018-11-01T12:34:26Z","editor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435026930","updatedAt":"2018-11-01T21:50:36Z","includesCreatedEdit":true,"publishedAt":"2018-11-01T12:34:26Z"},{"__typename":"PullRequestCommit","commit":{"oid":"fb3dab5e9c062b4485bfc297682cc2d6d2117cbe","message":"fix:
       namespace CSS class name for notifications to avoid conflicts\n\naddresses https://github.com/sourcegraph/sourcegraph/issues/629","messageHeadline":"fix:
       namespace CSS class name for notifications to avoid conflicts","committedDate":"2018-11-01T15:08:17Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/fb3dab5e9c062b4485bfc297682cc2d6d2117cbe","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
       Slack","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?u=b2974ab9b7a9be05cd1f36e198a3a8b4701f7910&v=4","login":"sqs","url":"https://github.com/sqs"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"7bfeabc0f47e704b198f0cccbc0aedad29e95aa6","message":"fix:
@@ -1241,16 +1231,16 @@ interactions:
       upgrade @sourcegraph/extensions-client-common to fix CSS","committedDate":"2018-11-01T15:16:10Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/7bfeabc0f47e704b198f0cccbc0aedad29e95aa6","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
       Slack","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?u=b2974ab9b7a9be05cd1f36e198a3a8b4701f7910&v=4","login":"sqs","url":"https://github.com/sqs"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"6299f9d086a0f66e211023a376dba1706ff4eb2d","message":"chore(deps):
       update dependency @types/socket.io to v2","messageHeadline":"chore(deps): update
-      dependency @types/socket.io to v2","committedDate":"2018-11-01T23:12:36Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/6299f9d086a0f66e211023a376dba1706ff4eb2d","committer":{"avatarUrl":"https://avatars.githubusercontent.com/in/2740?v=4","email":"renovate[bot]@users.noreply.github.com","name":"renovate[bot]","user":{"avatarUrl":"https://avatars.githubusercontent.com/in/2740?v=4","login":"renovate[bot]","url":"https://github.com/renovate%5Bbot%5D"}}}},{"__typename":"IssueComment","databaseId":435230801,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"MEMBER","body":"CI
-      is green! ✅ It''s aliiiive","createdAt":"2018-11-02T00:23:01Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435230801","updatedAt":"2018-11-02T00:23:01Z","includesCreatedEdit":false,"publishedAt":"2018-11-02T00:23:01Z"},{"__typename":"PullRequestReview","databaseId":171051975,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"MEMBER","body":"Since
+      dependency @types/socket.io to v2","committedDate":"2018-11-01T23:12:36Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/6299f9d086a0f66e211023a376dba1706ff4eb2d","committer":{"avatarUrl":"https://avatars.githubusercontent.com/in/2740?v=4","email":"renovate[bot]@users.noreply.github.com","name":"renovate[bot]","user":{"avatarUrl":"https://avatars.githubusercontent.com/in/2740?v=4","login":"renovate[bot]","url":"https://github.com/renovate%5Bbot%5D"}}}},{"__typename":"IssueComment","databaseId":435230801,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"CONTRIBUTOR","body":"CI
+      is green! ✅ It''s aliiiive","createdAt":"2018-11-02T00:23:01Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435230801","updatedAt":"2018-11-02T00:23:01Z","includesCreatedEdit":false,"publishedAt":"2018-11-02T00:23:01Z"},{"__typename":"PullRequestReview","databaseId":171051975,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"CONTRIBUTOR","body":"Since
       you asked to review commit-by-commit, it would have been nice if you squased
       your fixup commits. I think some of my comments are fixed in later commits.","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/596#pullrequestreview-171051975","createdAt":"2018-11-02T10:53:23Z","updatedAt":"2018-11-02T14:13:30Z","commit":{"oid":"c48eb4ed238da6f8abf2128e6b28ce700a756f4f","message":"build:
       monorepo manual fixes","messageHeadline":"build: monorepo manual fixes","committedDate":"2018-11-02T04:02:28Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/c48eb4ed238da6f8abf2128e6b28ce700a756f4f","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}},"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"9bd17ee3d8ba8afb73c3808387ecc28e62caadf0","message":"feat:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}},"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"9bd17ee3d8ba8afb73c3808387ecc28e62caadf0","message":"feat:
       bitbucket server implements the CodeHost interface (#310)","messageHeadline":"feat:
-      bitbucket server implements the CodeHost interface (#310)","committedDate":"2018-11-02T16:46:35Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/9bd17ee3d8ba8afb73c3808387ecc28e62caadf0","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"IssueComment","databaseId":435487633,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"MEMBER","body":"@felixfbecker
+      bitbucket server implements the CodeHost interface (#310)","committedDate":"2018-11-02T16:46:35Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/9bd17ee3d8ba8afb73c3808387ecc28e62caadf0","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"IssueComment","databaseId":435487633,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"CONTRIBUTOR","body":"@felixfbecker
       Thanks for the review - I''ll squash the fixup commits and make one more commit
-      to address your feedback here.","createdAt":"2018-11-02T19:41:58Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435487633","updatedAt":"2018-11-02T19:41:58Z","includesCreatedEdit":false,"publishedAt":"2018-11-02T19:41:58Z"},{"__typename":"IssueComment","databaseId":435562830,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"MEMBER","body":"I''ve
+      to address your feedback here.","createdAt":"2018-11-02T19:41:58Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435487633","updatedAt":"2018-11-02T19:41:58Z","includesCreatedEdit":false,"publishedAt":"2018-11-02T19:41:58Z"},{"__typename":"IssueComment","databaseId":435562830,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"CONTRIBUTOR","body":"I''ve
       seen Cypress e2e tests hang twice now (out of ~6 builds), for example https://buildkite.com/sourcegraph/sourcegraph/builds/22660#083cf18f-2045-4994-b75e-021f8b0e44bf\r\n\r\n```\r\nRunning:
       github_repository_spec.ts...                                                    (1
       of 1)\r\n--\r\n  |  \r\n  | Warning: Cypress can only record videos when using
@@ -1259,7 +1249,7 @@ interactions:
       browser.\r\n  |  \r\n  |  \r\n  | GitHub\r\n  | ✓ .should() - assert that Sourcegraph
       View Repository is injected (950ms)\r\n  | The automation client disconnected.
       Cannot continue running tests.\r\n```\r\n\r\nIt usually passes on retry, so
-      it''s is something to keep an eye on.","createdAt":"2018-11-03T05:44:04Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435562830","updatedAt":"2018-11-03T05:44:04Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T05:44:04Z"},{"__typename":"IssueComment","databaseId":435565882,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"MEMBER","body":"It
+      it''s is something to keep an eye on.","createdAt":"2018-11-03T05:44:04Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435562830","updatedAt":"2018-11-03T05:44:04Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T05:44:04Z"},{"__typename":"IssueComment","databaseId":435565882,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"CONTRIBUTOR","body":"It
       looks like mocha types are overriding other types:\r\n\r\n![image](https://user-images.githubusercontent.com/1387653/47949163-7a9bf980-defb-11e8-9e1a-1259e53258f6.png)\r\n\r\n@felixfbecker
       Is there a way to tell TypeScript that certain types only apply to files by
       glob pattern (e.g. test files only)?","createdAt":"2018-11-03T07:00:59Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435565882","updatedAt":"2018-11-03T07:00:59Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T07:00:59Z"},{"__typename":"IssueComment","databaseId":435570415,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?u=b2974ab9b7a9be05cd1f36e198a3a8b4701f7910&v=4","login":"sqs","url":"https://github.com/sqs"},"authorAssociation":"MEMBER","body":"@chrismwendt
@@ -1267,9 +1257,9 @@ interactions:
       not being loaded (and thus it falling back on the mocha defs). I believe the
       fix is to specify the path to our globals.d.ts file in the tsconfig. I am certain
       I solved this problem without using a solution like the one you described. HTH.
-      ","createdAt":"2018-11-03T08:29:37Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435570415","updatedAt":"2018-11-03T08:29:37Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T08:29:37Z"},{"__typename":"IssueComment","databaseId":435570583,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"MEMBER","body":"Gotcha,
+      ","createdAt":"2018-11-03T08:29:37Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435570415","updatedAt":"2018-11-03T08:29:37Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T08:29:37Z"},{"__typename":"IssueComment","databaseId":435570583,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"CONTRIBUTOR","body":"Gotcha,
       I''ll try that next time I see the problem. The problem disappeared through
-      some more refactoring that I just did.","createdAt":"2018-11-03T08:32:42Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435570583","updatedAt":"2018-11-03T08:32:42Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T08:32:42Z"},{"__typename":"IssueComment","databaseId":435570968,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"MEMBER","body":"I
+      some more refactoring that I just did.","createdAt":"2018-11-03T08:32:42Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435570583","updatedAt":"2018-11-03T08:32:42Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T08:32:42Z"},{"__typename":"IssueComment","databaseId":435570968,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"CONTRIBUTOR","body":"I
       noticed extensions are no longer working on this branch, and I suspect something
       is wrong with the worker-loader.\r\n\r\nIf I add a console log to `extensionHost.worker.ts`
       like this:\r\n\r\n```diff\r\n+console.log(''.worker.ts'')\r\nimport { extensionHostWorkerMain
@@ -1295,7 +1285,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 30 Dec 2021 22:38:00 GMT
+      - Fri, 23 Jun 2023 15:57:42 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -1304,8 +1294,6 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -1313,20 +1301,17 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - B982:4B09:2B1E351:52A93DE:61CE34C5
-      X-Oauth-Scopes:
-      - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
-        read:user, repo, workflow
+      - D069:23F6:D6C5F3:1B71F6F:6495C0F3
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4911"
+      - "4804"
       X-Ratelimit-Reset:
-      - "1640906777"
+      - "1687536983"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "89"
+      - "196"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -1376,25 +1361,27 @@ interactions:
     headers:
       Accept:
       - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"node":{"__typename":"PullRequest","timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABZuFHkgABqjE5NDUxMDU5MjY="},"nodes":[{"__typename":"IssueComment","databaseId":435572244,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"MEMBER","body":"I
+    body: '{"data":{"node":{"__typename":"PullRequest","timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABZuFHkgABqjE5NDUxMDU5MjY="},"nodes":[{"__typename":"IssueComment","databaseId":435572244,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"CONTRIBUTOR","body":"I
       narrowed the problem to the use of `async` functions. The worker runs when there
       are no `async` functions and doesn''t run when there are. I''m going to compare
       the compilation output from both master and this branch. That should point to
       some difference that''s probably caused by differences in config related to
-      the regenerator runtime, browserslist, and webpack looking for discrepancies.","createdAt":"2018-11-03T09:02:39Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435572244","updatedAt":"2018-11-03T09:02:39Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T09:02:39Z"},{"__typename":"IssueComment","databaseId":435573493,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"MEMBER","body":"The
+      the regenerator runtime, browserslist, and webpack looking for discrepancies.","createdAt":"2018-11-03T09:02:39Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435572244","updatedAt":"2018-11-03T09:02:39Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T09:02:39Z"},{"__typename":"IssueComment","databaseId":435573493,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"CONTRIBUTOR","body":"The
       regenerator runtime is the culprit. It''s present on this `monorepo` branch,
       but not on `master`. I''m going to look around to see why this could be happening.
       @ijsnow I recall you encountered a similar in the past - wasn''t the fix to
-      change `browserslist`?","createdAt":"2018-11-03T09:22:32Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435573493","updatedAt":"2018-11-03T09:22:32Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T09:22:32Z"},{"__typename":"IssueComment","databaseId":435584211,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"MEMBER","body":"If
+      change `browserslist`?","createdAt":"2018-11-03T09:22:32Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435573493","updatedAt":"2018-11-03T09:22:32Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T09:22:32Z"},{"__typename":"IssueComment","databaseId":435584211,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"CONTRIBUTOR","body":"If
       there are errors with regenerator runtime that highlights a problem with the
       Babel configuration. I saw you changed the Babel config from being in babel.config.js
-      to being inline in webpack.config.ts which may have something to do with it","createdAt":"2018-11-03T12:30:19Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435584211","updatedAt":"2018-11-03T12:30:19Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T12:30:19Z"},{"__typename":"IssueComment","databaseId":435595697,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"MEMBER","body":"Is
-      the PR description still accurate?","createdAt":"2018-11-03T15:18:43Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435595697","updatedAt":"2018-11-03T15:18:43Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T15:18:43Z"},{"__typename":"IssueComment","databaseId":435624864,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"MEMBER","body":"I
+      to being inline in webpack.config.ts which may have something to do with it","createdAt":"2018-11-03T12:30:19Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435584211","updatedAt":"2018-11-03T12:30:19Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T12:30:19Z"},{"__typename":"IssueComment","databaseId":435595697,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"CONTRIBUTOR","body":"Is
+      the PR description still accurate?","createdAt":"2018-11-03T15:18:43Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435595697","updatedAt":"2018-11-03T15:18:43Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T15:18:43Z"},{"__typename":"IssueComment","databaseId":435624864,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"CONTRIBUTOR","body":"I
       tried a bunch of different things:\r\n\r\n- Restore `babel.config.js` at the
       top level\r\n- Copy `babel.config.js` to the `packages/webapp/` directory\r\n-
       Update `browserslist`\r\n- Set `\"browserslist\": [\"last 1 version\"]` in `package.json`
@@ -1405,7 +1392,7 @@ interactions:
       from the `/\\.tsx?$/` rule, but understandably that caused a lot of other problems.\r\n\r\nIs
       there any way to debug `babel-preset-env` and its interaction with `browserslist`?
       Is there a way to eliminate `browserslist` as an unknown and hard-code the target
-      in `babel.config.js` just to see if it drops `regeneratorRuntime`?","createdAt":"2018-11-03T22:10:32Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435624864","updatedAt":"2018-11-03T22:10:32Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T22:10:32Z"},{"__typename":"IssueComment","databaseId":435630027,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"MEMBER","body":"I''ve
+      in `babel.config.js` just to see if it drops `regeneratorRuntime`?","createdAt":"2018-11-03T22:10:32Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435624864","updatedAt":"2018-11-03T22:10:32Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T22:10:32Z"},{"__typename":"IssueComment","databaseId":435630027,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"CONTRIBUTOR","body":"I''ve
       settled for copying `\"browserslist\"` from `packages/webapp/package.json` into
       `babel.config.js` for now. If anyone has other ideas on how to avoid that small
       duplication, I''ll try them out.","createdAt":"2018-11-03T23:51:36Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435630027","updatedAt":"2018-11-03T23:51:36Z","includesCreatedEdit":false,"publishedAt":"2018-11-03T23:51:36Z"},{"__typename":"PullRequestCommit","commit":{"oid":"41edf72b94a09c3a53ee337a09af19abffe26de7","message":"build:
@@ -1434,53 +1421,55 @@ interactions:
       trim context provided to extensions-client-common","committedDate":"2018-11-04T05:58:04Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/06375fdf5ac6f7d61c241dfc1d6158e433769e8a","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
       Slack","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1976?u=b2974ab9b7a9be05cd1f36e198a3a8b4701f7910&v=4","login":"sqs","url":"https://github.com/sqs"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"00d07f7b54771ff9b76301552a5384bb964c95b5","message":"fix:
       call resolveRev when getting file info (#264)","messageHeadline":"fix: call
-      resolveRev when getting file info (#264)","committedDate":"2018-11-04T18:54:28Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/00d07f7b54771ff9b76301552a5384bb964c95b5","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"PullRequestReview","databaseId":171378178,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/596#pullrequestreview-171378178","createdAt":"2018-11-04T20:35:54Z","updatedAt":"2018-11-04T20:44:47Z","commit":{"oid":"5beb0a33dbfcb1b6ffcaca6d8a3b1c693ac3c367","message":"build:
+      resolveRev when getting file info (#264)","committedDate":"2018-11-04T18:54:28Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/00d07f7b54771ff9b76301552a5384bb964c95b5","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"PullRequestReview","databaseId":171378178,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"CONTRIBUTOR","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/596#pullrequestreview-171378178","createdAt":"2018-11-04T20:35:54Z","updatedAt":"2018-11-04T20:44:47Z","commit":{"oid":"5beb0a33dbfcb1b6ffcaca6d8a3b1c693ac3c367","message":"build:
       fixups 2","messageHeadline":"build: fixups 2","committedDate":"2018-11-03T23:42:51Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/5beb0a33dbfcb1b6ffcaca6d8a3b1c693ac3c367","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}},"includesCreatedEdit":false},{"__typename":"IssueComment","databaseId":435704296,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"MEMBER","body":"The
-      structure in the PR description mentions symlinks. What are those needed for?","createdAt":"2018-11-04T20:45:32Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435704296","updatedAt":"2018-11-04T20:45:32Z","includesCreatedEdit":false,"publishedAt":"2018-11-04T20:45:32Z"},{"__typename":"IssueComment","databaseId":435704409,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"MEMBER","body":"The
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}},"includesCreatedEdit":false},{"__typename":"IssueComment","databaseId":435704296,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"CONTRIBUTOR","body":"The
+      structure in the PR description mentions symlinks. What are those needed for?","createdAt":"2018-11-04T20:45:32Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435704296","updatedAt":"2018-11-04T20:45:32Z","includesCreatedEdit":false,"publishedAt":"2018-11-04T20:45:32Z"},{"__typename":"IssueComment","databaseId":435704409,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"CONTRIBUTOR","body":"The
       symlinks are not checked into the repo. They are automatically created by running
       `yarn` as a part of yarn workspaces https://yarnpkg.com/blog/2017/08/02/introducing-workspaces/","createdAt":"2018-11-04T20:47:02Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435704409","updatedAt":"2018-11-04T20:47:02Z","includesCreatedEdit":false,"publishedAt":"2018-11-04T20:47:02Z"},{"__typename":"PullRequestCommit","commit":{"oid":"d347185b34b845abe5c66a540e2eb955d99f326f","message":"build:
       move webapp to packages/webapp","messageHeadline":"build: move webapp to packages/webapp","committedDate":"2018-11-04T22:47:53Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/d347185b34b845abe5c66a540e2eb955d99f326f","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"faf2509fd8468470927d18f6930a9b634ee1ccb5","message":"build:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"faf2509fd8468470927d18f6930a9b634ee1ccb5","message":"build:
       move sourcegraph-extension-api to packages/sourcegraph-extension-api","messageHeadline":"build:
       move sourcegraph-extension-api to packages/sourcegraph-extensi…","committedDate":"2018-11-04T22:47:55Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/faf2509fd8468470927d18f6930a9b634ee1ccb5","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"d8b574ec92b52db56cb6c35e533c6a73ad757f57","message":"build:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"d8b574ec92b52db56cb6c35e533c6a73ad757f57","message":"build:
       remove packages/sourcegraph-extension-api/yarn.lock","messageHeadline":"build:
       remove packages/sourcegraph-extension-api/yarn.lock","committedDate":"2018-11-04T22:47:55Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/d8b574ec92b52db56cb6c35e533c6a73ad757f57","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"da68fe73909ee5de99b6a71502331d5f8180ea60","message":"build:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"da68fe73909ee5de99b6a71502331d5f8180ea60","message":"build:
       move extensions-client-common to packages/extensions-client-common","messageHeadline":"build:
       move extensions-client-common to packages/extensions-client-co…","committedDate":"2018-11-04T22:47:57Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/da68fe73909ee5de99b6a71502331d5f8180ea60","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"ffd4e107ee072b8cd156eaac911e84694446cccc","message":"build:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"ffd4e107ee072b8cd156eaac911e84694446cccc","message":"build:
       remove packages/extensions-client-common/yarn.lock","messageHeadline":"build:
       remove packages/extensions-client-common/yarn.lock","committedDate":"2018-11-04T22:47:57Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/ffd4e107ee072b8cd156eaac911e84694446cccc","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"35d7256513398637056630422cf7bc9f3982e479","message":"build:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"35d7256513398637056630422cf7bc9f3982e479","message":"build:
       move browser-extensions to packages/browser-extensions","messageHeadline":"build:
       move browser-extensions to packages/browser-extensions","committedDate":"2018-11-04T22:47:58Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/35d7256513398637056630422cf7bc9f3982e479","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"7414ab535c1710912e8129554cd0fb54f947b655","message":"build:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"7414ab535c1710912e8129554cd0fb54f947b655","message":"build:
       remove packages/browser-extensions/yarn.lock","messageHeadline":"build: remove
       packages/browser-extensions/yarn.lock","committedDate":"2018-11-04T22:47:58Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/7414ab535c1710912e8129554cd0fb54f947b655","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"cab9f433a3ec79c8ee82d6da4effe25a6e99dff8","message":"build:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"cab9f433a3ec79c8ee82d6da4effe25a6e99dff8","message":"build:
       merge sourcegraph-extension-api","messageHeadline":"build: merge sourcegraph-extension-api","committedDate":"2018-11-04T22:48:00Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/cab9f433a3ec79c8ee82d6da4effe25a6e99dff8","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"8063bac06028460654052126c15cb97f05324d26","message":"build:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"8063bac06028460654052126c15cb97f05324d26","message":"build:
       merge extensions-client-common","messageHeadline":"build: merge extensions-client-common","committedDate":"2018-11-04T22:48:01Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/8063bac06028460654052126c15cb97f05324d26","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"5005a83dfc359e91c2cbdaec1f133685bbec562b","message":"build:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"5005a83dfc359e91c2cbdaec1f133685bbec562b","message":"build:
       merge browser-extensions","messageHeadline":"build: merge browser-extensions","committedDate":"2018-11-04T22:48:01Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/5005a83dfc359e91c2cbdaec1f133685bbec562b","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"5c8ed1e532e6ebd887a407bde6104b641df11c8b","message":"build:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"5c8ed1e532e6ebd887a407bde6104b641df11c8b","message":"build:
       fixups 1 (has already been reviewed by felix)","messageHeadline":"build: fixups
       1 (has already been reviewed by felix)","committedDate":"2018-11-04T22:49:27Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/5c8ed1e532e6ebd887a407bde6104b641df11c8b","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"a5b8cd4fbb484fe3af558389d59051aa5a9ec2cd","message":"build:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"a5b8cd4fbb484fe3af558389d59051aa5a9ec2cd","message":"build:
       fixups 2 (has already been reviewed by felix)","messageHeadline":"build: fixups
       2 (has already been reviewed by felix)","committedDate":"2018-11-04T22:49:27Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/a5b8cd4fbb484fe3af558389d59051aa5a9ec2cd","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"d6a84aea6e0aaa48281e425f4270d90ae9f0bdf2","message":"build:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"d6a84aea6e0aaa48281e425f4270d90ae9f0bdf2","message":"build:
       fixups 3","messageHeadline":"build: fixups 3","committedDate":"2018-11-05T00:14:44Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/d6a84aea6e0aaa48281e425f4270d90ae9f0bdf2","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"701d0a1696c61fa420cd0eaf4c1c7a611e584648","message":"build:
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"701d0a1696c61fa420cd0eaf4c1c7a611e584648","message":"build:
       yarn.lock","messageHeadline":"build: yarn.lock","committedDate":"2018-11-05T00:14:44Z","pushedDate":"2018-11-05T00:14:57Z","url":"https://github.com/sourcegraph/sourcegraph/commit/701d0a1696c61fa420cd0eaf4c1c7a611e584648","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?v=4","email":"chrismwendt@gmail.com","name":"Chris
-      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"IssueComment","databaseId":435723040,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"MEMBER","body":"Here''s
+      Wendt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"}}}},{"__typename":"IssueComment","databaseId":435723040,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"authorAssociation":"CONTRIBUTOR","body":"Here''s
       a diagram showing the merge commits I made to retain the history of the other
-      repositories:\r\n\r\n![image](https://user-images.githubusercontent.com/1387653/47972135-f3ab6600-e04d-11e8-82f1-a9225fd38018.png)\r\n","createdAt":"2018-11-05T00:23:31Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435723040","updatedAt":"2018-11-05T00:23:31Z","includesCreatedEdit":false,"publishedAt":"2018-11-05T00:23:31Z"},{"__typename":"MergedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"mergeRefName":"master","url":"https://github.com/sourcegraph/sourcegraph/pull/596#event-1945105924","commit":{"oid":"b8c70d14dbe322461c0f1502fcf98fc8ed111240","message":"Merge
+      repositories:\r\n\r\n![image](https://user-images.githubusercontent.com/1387653/47972135-f3ab6600-e04d-11e8-82f1-a9225fd38018.png)\r\n","createdAt":"2018-11-05T00:23:31Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435723040","updatedAt":"2018-11-05T00:23:31Z","includesCreatedEdit":false,"publishedAt":"2018-11-05T00:23:31Z"},{"__typename":"MergedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"mergeRefName":"master","url":"https://github.com/sourcegraph/sourcegraph/pull/596#event-1945105924","commit":{"oid":"b8c70d14dbe322461c0f1502fcf98fc8ed111240","message":"Merge
       pull request #596 from sourcegraph/monorepo\n\nMove the browser-extensions repo
       (and others) into this repo","messageHeadline":"Merge pull request #596 from
-      sourcegraph/monorepo","committedDate":"2018-11-05T00:30:55Z","pushedDate":"2018-11-05T00:31:12Z","url":"https://github.com/sourcegraph/sourcegraph/commit/b8c70d14dbe322461c0f1502fcf98fc8ed111240","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}},"createdAt":"2018-11-05T00:30:56Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=b15f6553da690903c1216c7c0702af66f08940b7&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"createdAt":"2018-11-05T00:30:56Z","url":"https://github.com/sourcegraph/sourcegraph/pull/596#event-1945105926"}]}}}}'
+      sourcegraph/monorepo","committedDate":"2018-11-05T00:30:55Z","pushedDate":"2018-11-05T00:31:12Z","url":"https://github.com/sourcegraph/sourcegraph/commit/b8c70d14dbe322461c0f1502fcf98fc8ed111240","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}},"createdAt":"2018-11-05T00:30:56Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30&v=4","login":"chrismwendt","url":"https://github.com/chrismwendt"},"createdAt":"2018-11-05T00:30:56Z","url":"https://github.com/sourcegraph/sourcegraph/pull/596#event-1945105926"}]}}},"extensions":{"warnings":[{"type":"DEPRECATION","message":"The
+      id MDExOlB1bGxSZXF1ZXN0MjI2Nzk4MDA5 is deprecated. Update your cache to use
+      the next_global_id from the data payload.","data":{"legacy_global_id":"MDExOlB1bGxSZXF1ZXN0MjI2Nzk4MDA5","next_global_id":"PR_kwDOAnYEBM4NhKm5"},"link":"https://docs.github.com"}]}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -1494,7 +1483,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 30 Dec 2021 22:38:00 GMT
+      - Fri, 23 Jun 2023 15:57:43 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -1503,8 +1492,6 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -1512,20 +1499,17 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - B982:4B09:2B1E45F:52A95AD:61CE34C6
-      X-Oauth-Scopes:
-      - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
-        read:user, repo, workflow
+      - D069:23F6:D6C91D:1B725D9:6495C0F3
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4908"
+      - "4801"
       X-Ratelimit-Reset:
-      - "1640906777"
+      - "1687536983"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "92"
+      - "199"
       X-Xss-Protection:
       - "0"
     status: 200 OK

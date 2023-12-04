@@ -1,7 +1,5 @@
 # Opting out of batch changes
 
-> NOTE: This feature requires [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) 3.26.3 or later.
-
 Repository owners that are not interested in batch change changesets can opt out so that their repository will be skipped when a batch spec is executed.
 
 To opt out: create a file called `.batchignore` at the root of the repository you wish to be skipped. `src batch [apply|preview]` will now skip that repository if it's yielded by the `on` part of the batch spec.

@@ -1,31 +1,39 @@
-import { boolean } from '@storybook/addon-knobs'
-import { Meta, Story } from '@storybook/react'
-import classNames from 'classnames'
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
+
+import type { Meta, StoryFn } from '@storybook/react'
+import classNames from 'classnames'
 import { noop } from 'rxjs'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { Button, Position } from '@sourcegraph/wildcard'
-
-import { Popover, PopoverContent, PopoverOpenEvent, PopoverTrigger } from '../Popover'
-import { Point, Strategy } from '../tether'
+import { Popover, PopoverContent, type PopoverOpenEvent, PopoverTail, PopoverTrigger, Position } from '..'
+import { BrandedStory } from '../../../stories/BrandedStory'
+import { Button } from '../../Button'
+import { createRectangle, type Point, Strategy } from '../tether'
 
 import styles from './Popover.story.module.scss'
 
 const config: Meta = {
     title: 'wildcard/Popover',
-    decorators: [story => <BrandedStory styles={webStyles}>{() => story()}</BrandedStory>],
+    component: Popover,
+    decorators: [story => <BrandedStory>{() => story()}</BrandedStory>],
     parameters: {
-        chromatic: {
-            enableDarkMode: true,
-        },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma Light',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=954%3A1352',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Dark',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=954%3A2975',
+            },
+        ],
     },
 }
 
 export default config
 
-export const PositionSettingsGallery = () => {
+export const PositionSettingsGallery: StoryFn = () => {
     const [position, setPosition] = useState(Position.top)
 
     return (
@@ -149,7 +157,13 @@ export const PositionSettingsGallery = () => {
     )
 }
 
-export const StandardExample = () => (
+PositionSettingsGallery.parameters = {
+    chromatic: {
+        disableSnapshot: false,
+    },
+}
+
+export const StandardExample: StoryFn = () => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
             <Popover>
@@ -173,7 +187,9 @@ export const StandardExample = () => (
     </ScrollCenterBox>
 )
 
-export const AbsoluteStrategyExample = () => (
+const TARGET_PADDING = createRectangle(0, 0, 10, 10)
+
+export const TargetPaddingExample: StoryFn = () => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
             <Popover>
@@ -181,7 +197,11 @@ export const AbsoluteStrategyExample = () => (
                     Hello
                 </PopoverTrigger>
 
-                <PopoverContent position={Position.rightStart} strategy={Strategy.Absolute} className={styles.floating}>
+                <PopoverContent
+                    targetPadding={TARGET_PADDING}
+                    position={Position.bottomStart}
+                    className={styles.floating}
+                >
                     Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                     Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                     career and his mother was a homemaker.[6] In the early years of his life his family moved to Kharkiv
@@ -197,7 +217,37 @@ export const AbsoluteStrategyExample = () => (
     </ScrollCenterBox>
 )
 
-export const WithCustomAnchor = () => {
+export const AbsoluteStrategyExample: StoryFn = () => (
+    <ScrollCenterBox title="Root scroll block" className={styles.container}>
+        <div className={styles.content}>
+            <Popover>
+                <PopoverTrigger as={Button} variant="secondary" className={styles.target}>
+                    Hello
+                </PopoverTrigger>
+
+                <PopoverContent
+                    position={Position.rightStart}
+                    constrainToScrollParents={true}
+                    overflowToScrollParents={true}
+                    strategy={Strategy.Absolute}
+                    className={styles.floating}
+                >
+                    Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
+                    Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
+                    career and his mother was a homemaker.[6] In the early years of his life his family moved to Kharkiv
+                    in the Ukrainian SSR, where Limonov grew up. He studied at the H.S. Skovoroda Kharkiv National
+                    Pedagogical University.
+                    <div className="mt-2 d-flex" style={{ gap: 10 }}>
+                        <Button variant="secondary">Action 1</Button>
+                        <Button variant="secondary">Action 2</Button>
+                    </div>
+                </PopoverContent>
+            </Popover>
+        </div>
+    </ScrollCenterBox>
+)
+
+export const WithCustomAnchor: StoryFn = () => {
     const customAnchor = useRef<HTMLDivElement>(null)
 
     return (
@@ -251,7 +301,7 @@ const FSM_TRANSITIONS: Record<FSM_STATES, Partial<Record<FSM_ACTIONS, FSM_STATES
     },
 }
 
-export const ShowOnFocus = () => {
+export const ShowOnFocus: StoryFn = () => {
     const [state, setState] = useState<FSM_STATES>(FSM_STATES.Initial)
 
     const handleOpenChange = (event: PopoverOpenEvent): void => {
@@ -311,7 +361,7 @@ export const ShowOnFocus = () => {
     )
 }
 
-export const WithControlledState = () => {
+export const WithControlledState: StoryFn = () => {
     const [open, setOpen] = useState<boolean>(false)
     const handleOpenChange = (event: PopoverOpenEvent): void => {
         setOpen(event.isOpen)
@@ -347,14 +397,14 @@ export const WithControlledState = () => {
     )
 }
 
-export const WithNestedScrollParents: Story = () => {
-    const constrainToScrollParents = boolean('constrainToScrollParents', true)
+export const WithNestedScrollParents: StoryFn = (args = {}) => {
+    const constrainToScrollParents = args.constrainToScrollParents
 
     return (
         <ScrollCenterBox title="Root scroll block" className={styles.root}>
             <div className={styles.spreadContentBlock}>
                 <ScrollCenterBox
-                    title="Sub scroll block (see knobs panel for rendering tooltip outside of the scroll container"
+                    title="Sub scroll block (see controls panel for rendering tooltip outside of the scroll container"
                     className={classNames(styles.container, styles.containerAsSubRoot)}
                 >
                     <div className={styles.content}>
@@ -387,8 +437,16 @@ export const WithNestedScrollParents: Story = () => {
         </ScrollCenterBox>
     )
 }
+WithNestedScrollParents.argTypes = {
+    constrainToScrollParents: {
+        control: { type: 'boolean' },
+    },
+}
+WithNestedScrollParents.args = {
+    constrainToScrollParents: true,
+}
 
-export const WithVirtualTarget = () => {
+export const WithVirtualTarget: StoryFn = () => {
     const [virtualElement, setVirtualElement] = useState<Point | null>(null)
     const activeZoneReference = useRef<HTMLDivElement>(null)
 
@@ -435,7 +493,7 @@ export const WithVirtualTarget = () => {
     )
 }
 
-export const WithTail = () => (
+export const WithTail: StoryFn = (args = {}) => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
             <Popover>
@@ -443,7 +501,7 @@ export const WithTail = () => (
                     Hello
                 </PopoverTrigger>
 
-                <PopoverContent tail={true} position={Position.rightStart} className={styles.floating}>
+                <PopoverContent position={Position.rightStart} className={styles.floating}>
                     Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                     Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                     career and his mother was a homemaker.[6] In the early years of his life his family moved to Kharkiv
@@ -454,16 +512,28 @@ export const WithTail = () => (
                         <Button variant="secondary">Action 2</Button>
                     </div>
                 </PopoverContent>
+
+                <PopoverTail size={args.size} />
             </Popover>
         </div>
     </ScrollCenterBox>
 )
 
+WithTail.argTypes = {
+    size: {
+        control: 'radio',
+        options: ['sm', 'md', 'lg'],
+    },
+}
+WithTail.args = {
+    size: 'sm',
+}
+
 interface ScrollCenterBoxProps extends React.HTMLAttributes<HTMLDivElement> {
     title: string
 }
 
-const ScrollCenterBox: React.FunctionComponent<ScrollCenterBoxProps> = props => {
+const ScrollCenterBox: React.FunctionComponent<React.PropsWithChildren<ScrollCenterBoxProps>> = props => {
     const { children, title, ...otherProps } = props
     const reference = useRef<HTMLDivElement>(null)
 

@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "types",
+    srcs = ["types.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/github_apps/types",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/types",
+        "@com_github_google_go_github_v55//github",
+    ],
+)

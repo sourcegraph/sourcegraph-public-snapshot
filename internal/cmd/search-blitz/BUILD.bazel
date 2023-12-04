@@ -1,0 +1,53 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "search-blitz_lib",
+    srcs = [
+        "api.go",
+        "client.go",
+        "config.go",
+        "main.go",
+        "prometheus.go",
+        "protocol.go",
+        "query.go",
+        "stream_client.go",
+    ],
+    embedsrcs = [
+        "attribution.graphql",
+        "attribution/many_lines.txt",
+        "attribution/one_line.txt",
+        "queries.txt",
+        "queries_dogfood.txt",
+        "search.graphql",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/cmd/search-blitz",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//internal/search/streaming/api",
+        "//internal/search/streaming/http",
+        "//lib/errors",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_prometheus_client_golang//prometheus/promhttp",
+        "@in_gopkg_natefinch_lumberjack_v2//:lumberjack_v2",
+    ],
+)
+
+go_binary(
+    name = "search-blitz",
+    embed = [":search-blitz_lib"],
+    visibility = ["//:__subpackages__"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
+)
+
+go_test(
+    name = "search-blitz_test",
+    timeout = "short",
+    srcs = ["config_test.go"],
+    embed = [":search-blitz_lib"],
+)

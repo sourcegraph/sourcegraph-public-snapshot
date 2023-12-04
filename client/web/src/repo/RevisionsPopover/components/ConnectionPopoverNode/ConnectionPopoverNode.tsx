@@ -1,11 +1,12 @@
+import React, { type HTMLAttributes } from 'react'
+
 import classNames from 'classnames'
-import React, { HTMLAttributes } from 'react'
 
 import styles from './ConnectionPopoverNode.module.scss'
 
 type ConnectionPopoverNodeProps = HTMLAttributes<HTMLLIElement>
 
-export const ConnectionPopoverNode: React.FunctionComponent<ConnectionPopoverNodeProps> = ({
+export const ConnectionPopoverNode: React.FunctionComponent<React.PropsWithChildren<ConnectionPopoverNodeProps>> = ({
     className,
     children,
     ...rest

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { BaseControlInput, ControlInputProps } from '../internal/BaseControlInput'
+import { BaseControlInput, type ControlInputProps } from '../internal/BaseControlInput'
 
 export type RadioButtonProps = {
     /**
@@ -19,6 +19,6 @@ export type RadioButtonProps = {
  *
  * Useful article comparing radio buttons to checkboxes: https://www.nngroup.com/articles/checkboxes-vs-radio-buttons/
  */
-export const RadioButton: React.FunctionComponent<RadioButtonProps> = React.forwardRef((props, reference) => (
-    <BaseControlInput {...props} type="radio" ref={reference} />
-))
+export const RadioButton: React.FunctionComponent<React.PropsWithChildren<RadioButtonProps>> = React.forwardRef(
+    (props, reference) => <BaseControlInput {...props} type="radio" ref={reference} />
+)

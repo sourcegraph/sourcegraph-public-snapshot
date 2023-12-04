@@ -1,6 +1,9 @@
+import React, { useCallback } from 'react'
+
 import classNames from 'classnames'
 import { upperFirst, lowerCase } from 'lodash'
-import React, { useCallback } from 'react'
+
+import { Select } from '@sourcegraph/wildcard'
 
 export interface ChangesetFilterProps<T extends string> {
     label: string
@@ -26,14 +29,22 @@ export const ChangesetFilter = <T extends string>({
 
     return (
         <>
-            <select className={classNames('form-control', className)} value={selected} onChange={innerOnChange}>
+            <Select
+                aria-label={label}
+                isCustomStyle={true}
+                id=""
+                selectClassName={classNames('changeset-filter__dropdown', className)}
+                className="mb-0"
+                value={selected}
+                onChange={innerOnChange}
+            >
                 <option value="">{label}</option>
                 {values.map(state => (
                     <option value={state} key={state}>
                         {upperFirst(lowerCase(state))}
                     </option>
                 ))}
-            </select>
+            </Select>
         </>
     )
 }

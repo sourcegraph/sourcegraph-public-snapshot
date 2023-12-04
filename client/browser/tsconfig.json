@@ -1,33 +1,54 @@
 {
-  "extends": "../../tsconfig.json",
-  "references": [
-    { "path": "../shared" },
-    { "path": "../branded" },
-    { "path": "../../schema" },
-    { "path": "../http-client" },
-    { "path": "../common" },
-    { "path": "../codeintellify" },
-  ],
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "commonjs",
-    "baseUrl": ".",
-    "paths": {
-      "*": ["src/types/*", "../shared/src/types/*", "../common/src/types/*", "*"],
-    },
-    "jsx": "react",
+    "jsx": "react-jsx",
     "resolveJsonModule": true,
     "rootDir": ".",
     "outDir": "out",
   },
-  "include": ["**/*", ".*", "src/**/*.json", "src/types/**/*.d.ts"],
+  "include": ["src", "config", "src/**/*.json", "src/types/**/*.d.ts", "./code-intel-extensions.json"],
   "exclude": [
     "out",
     "node_modules",
-    "code-intel-extensions",
     "../../node_modules",
     "./build/**/*",
-    "coverage",
     "stories", // TODO fix type errors and include
     "src/end-to-end",
+  ],
+  "references": [
+    {
+      "path": "../branded",
+    },
+    {
+      "path": "../build-config",
+    },
+    {
+      "path": "../client-api",
+    },
+    {
+      "path": "../codeintellify",
+    },
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../extension-api",
+    },
+    {
+      "path": "../extension-api-types",
+    },
+    {
+      "path": "../http-client",
+    },
+    {
+      "path": "../shared",
+    },
+    {
+      "path": "../wildcard",
+    },
+    {
+      "path": "../testing",
+    },
   ],
 }

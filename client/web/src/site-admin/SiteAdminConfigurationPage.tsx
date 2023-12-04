@@ -1,32 +1,46 @@
-import * as jsonc from '@sqs/jsonc-parser'
-import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import classNames from 'classnames'
-import * as H from 'history'
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
-import { Subject, Subscription } from 'rxjs'
-import { catchError, concatMap, delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
+import type { FC } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
+import { type ApolloClient, useApolloClient } from '@apollo/client'
+import classNames from 'classnames'
+import * as jsonc from 'jsonc-parser'
+import { Subject, Subscription } from 'rxjs'
+import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
+
+import { logger } from '@sourcegraph/common'
+import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import {
+    Button,
+    LoadingSpinner,
+    Link,
+    Alert,
+    Code,
+    Text,
+    PageHeader,
+    Container,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
+import type { SiteResult } from '../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
+import { SiteConfigurationChangeList } from './SiteConfigurationChangeList'
+
 import styles from './SiteAdminConfigurationPage.module.scss'
 
-const defaultFormattingOptions: jsonc.FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
+const defaultModificationOptions: jsonc.ModificationOptions = {
+    formattingOptions: {
+        eol: '\n',
+        insertSpaces: true,
+        tabSize: 2,
+    },
 }
 
 function editWithComments(
@@ -35,7 +49,7 @@ function editWithComments(
     value: any,
     comments: { [key: string]: string }
 ): jsonc.Edit {
-    const edit = setProperty(config, path, value, defaultFormattingOptions)[0]
+    const edit = jsonc.modify(config, path, value, defaultModificationOptions)[0]
     for (const commentKey of Object.keys(comments)) {
         edit.content = edit.content.replace(`"${commentKey}": true,`, comments[commentKey])
         edit.content = edit.content.replace(`"${commentKey}": true`, comments[commentKey])
@@ -53,7 +67,7 @@ const quickConfigureActions: {
         label: 'Set external URL',
         run: config => {
             const value = '<external URL>'
-            const edits = setProperty(config, ['externalURL'], value, defaultFormattingOptions)
+            const edits = jsonc.modify(config, ['externalURL'], value, defaultModificationOptions)
             return { edits, selectText: '<external URL>' }
         },
     },
@@ -62,7 +76,7 @@ const quickConfigureActions: {
         label: 'Set license key',
         run: config => {
             const value = '<license key>'
-            const edits = setProperty(config, ['licenseKey'], value, defaultFormattingOptions)
+            const edits = jsonc.modify(config, ['licenseKey'], value, defaultModificationOptions)
             return { edits, selectText: '<license key>' }
         },
     },
@@ -198,33 +212,40 @@ const quickConfigureActions: {
     },
 ]
 
-interface Props extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
-    history: H.History
+interface Props extends TelemetryProps {
+    isLightTheme: boolean
+    client: ApolloClient<{}>
+    isCodyApp: boolean
 }
 
 interface State {
-    site?: GQL.ISite
+    site?: SiteResult['site']
     loading: boolean
     error?: Error
 
     saving?: boolean
     restartToApply: boolean
     reloadStartedAt?: number
+    enabledCompletions?: boolean
 }
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
+export const SiteAdminConfigurationPage: FC<TelemetryProps & { isCodyApp: boolean }> = props => {
+    const client = useApolloClient()
+    return <SiteAdminConfigurationContent {...props} isLightTheme={useIsLightTheme()} client={client} />
+}
+
 /**
  * A page displaying the site configuration.
  */
-export class SiteAdminConfigurationPage extends React.Component<Props, State> {
+class SiteAdminConfigurationContent extends React.Component<Props, State> {
     public state: State = {
         loading: true,
         restartToApply: window.context.needServerRestart,
     }
 
     private remoteRefreshes = new Subject<void>()
-    private remoteUpdates = new Subject<string>()
     private siteReloads = new Subject<void>()
     private subscriptions = new Subscription()
 
@@ -233,71 +254,17 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
 
         this.subscriptions.add(
             this.remoteRefreshes.pipe(mergeMap(() => fetchSite())).subscribe(
-                site =>
+                site => {
                     this.setState({
                         site,
                         error: undefined,
                         loading: false,
-                    }),
+                    })
+                },
                 error => this.setState({ error, loading: false })
             )
         )
         this.remoteRefreshes.next()
-
-        this.subscriptions.add(
-            this.remoteUpdates
-                .pipe(
-                    tap(() => this.setState({ saving: true, error: undefined })),
-                    concatMap(newContents => {
-                        const lastConfiguration = this.state.site?.configuration
-                        const lastConfigurationID = lastConfiguration?.id || 0
-
-                        return updateSiteConfiguration(lastConfigurationID, newContents).pipe(
-                            catchError(error => {
-                                console.error(error)
-                                this.setState({ saving: false, error })
-                                return []
-                            }),
-                            tap(() => {
-                                const oldContents = lastConfiguration?.effectiveContents || ''
-                                const oldConfiguration = jsonc.parse(oldContents) as SiteConfiguration
-                                const newConfiguration = jsonc.parse(newContents) as SiteConfiguration
-
-                                // Flipping these feature flags require a reload for the
-                                // UI to be rendered correctly in the navbar and the sidebar.
-                                const keys: (keyof SiteConfiguration)[] = [
-                                    'batchChanges.enabled',
-                                    'codeIntelAutoIndexing.enabled',
-                                ]
-
-                                if (
-                                    !keys.every(
-                                        key => Boolean(oldConfiguration?.[key]) === Boolean(newConfiguration?.[key])
-                                    )
-                                ) {
-                                    window.location.reload()
-                                }
-                            })
-                        )
-                    }),
-                    tap(restartToApply => {
-                        if (restartToApply) {
-                            window.context.needServerRestart = restartToApply
-                        } else {
-                            // Refresh site flags so that global site alerts
-                            // reflect the latest configuration.
-                            // eslint-disable-next-line rxjs/no-ignored-subscription, rxjs/no-nested-subscribe
-                            refreshSiteFlags().subscribe({ error: error => console.error(error) })
-                        }
-                        this.setState({ restartToApply })
-                        this.remoteRefreshes.next()
-                    })
-                )
-                .subscribe(
-                    () => this.setState({ saving: false }),
-                    error => this.setState({ saving: false, error })
-                )
-        )
 
         this.subscriptions.add(
             this.siteReloads
@@ -341,13 +308,13 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         if (this.state.reloadStartedAt) {
             alerts.push(
                 <Alert key="error" className={styles.alert} variant="primary">
-                    <p>
+                    <Text>
                         <LoadingSpinner /> Waiting for site to reload...
-                    </p>
+                    </Text>
                     {Date.now() - this.state.reloadStartedAt > EXPECTED_RELOAD_WAIT && (
-                        <p>
+                        <Text>
                             <small>It's taking longer than expected. Check the server logs for error messages.</small>
-                        </p>
+                        </Text>
                     )}
                 </Alert>
             )
@@ -370,7 +337,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         ) {
             alerts.push(
                 <Alert key="validation-messages" className={styles.alert} variant="danger">
-                    <p>The server reported issues in the last-saved config:</p>
+                    <Text>The server reported issues in the last-saved config:</Text>
                     <ul>
                         {this.state.site.configuration.validationMessages.map((message, index) => (
                             <li key={index} className={styles.alertItem}>
@@ -416,9 +383,21 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             alerts.push(
                 <Alert key="legacy-cluster-props-present" className={styles.alert} variant="info">
                     The configuration contains properties that are valid only in the
-                    <code>values.yaml</code> config file used for Kubernetes cluster deployments of Sourcegraph:{' '}
-                    <code>{legacyKubernetesConfigProps.join(' ')}</code>. You can disregard the validation warnings for
+                    <Code>values.yaml</Code> config file used for Kubernetes cluster deployments of Sourcegraph:{' '}
+                    <Code>{legacyKubernetesConfigProps.join(' ')}</Code>. You can disregard the validation warnings for
                     these properties reported by the configuration editor.
+                </Alert>
+            )
+        }
+
+        if (this.state.enabledCompletions) {
+            alerts.push(
+                <Alert key="cody-beta-notice" className={styles.alert} variant="info">
+                    By turning on completions for "Cody beta," you have read the{' '}
+                    <Link to="/help/cody">Cody Documentation</Link> and agree to the{' '}
+                    <Link to="https://sourcegraph.com/terms/cody-notice">Cody Notice and Usage Policy</Link>. In
+                    particular, some code snippets will be sent to a third-party language model provider when you use
+                    Cody questions.
                 </Alert>
             )
         }
@@ -428,44 +407,123 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         return (
             <div>
                 <PageTitle title="Configuration - Admin" />
-                <h2>Site configuration</h2>
-                <p>
-                    View and edit the Sourcegraph site configuration. See{' '}
-                    <Link to="/help/admin/config/site_config">documentation</Link> for more information.
-                </p>
-                <div>{alerts}</div>
-                {this.state.loading && <LoadingSpinner />}
-                {this.state.site?.configuration && (
-                    <div>
-                        <DynamicallyImportedMonacoSettingsEditor
-                            value={contents || ''}
-                            jsonSchema={siteSchemaJSON}
-                            canEdit={true}
-                            saving={this.state.saving}
-                            loading={isReloading || this.state.saving}
-                            height={600}
-                            isLightTheme={this.props.isLightTheme}
-                            onSave={this.onSave}
-                            actions={quickConfigureActions}
-                            history={this.props.history}
-                            telemetryService={this.props.telemetryService}
-                        />
-                        <p className="form-text text-muted">
-                            <small>
-                                Use Ctrl+Space for completion, and hover over JSON properties for documentation. For
-                                more information, see the <Link to="/help/admin/config/site_config">documentation</Link>
-                                .
-                            </small>
-                        </p>
-                    </div>
-                )}
+                <PageHeader
+                    path={[{ text: 'Site configuration' }]}
+                    headingElement="h2"
+                    description={
+                        <>
+                            View and edit the Sourcegraph site configuration. See{' '}
+                            <Link target="_blank" to="/help/admin/config/site_config">
+                                documentation
+                            </Link>{' '}
+                            for more information.
+                        </>
+                    }
+                    className="mb-3"
+                />
+                <Container className="mb-3">
+                    <div>{alerts}</div>
+                    {this.state.loading && <LoadingSpinner />}
+                    {this.state.site?.configuration && (
+                        <div>
+                            <DynamicallyImportedMonacoSettingsEditor
+                                value={contents || ''}
+                                jsonSchema={siteSchemaJSON}
+                                canEdit={true}
+                                saving={this.state.saving}
+                                loading={isReloading || this.state.saving}
+                                height={600}
+                                isLightTheme={this.props.isLightTheme}
+                                onSave={this.onSave}
+                                actions={this.props.isCodyApp ? [] : quickConfigureActions}
+                                telemetryService={this.props.telemetryService}
+                                explanation={
+                                    <Text className="form-text text-muted">
+                                        <small>
+                                            Use Ctrl+Space for completion, and hover over JSON properties for
+                                            documentation. For more information, see the{' '}
+                                            <Link to="/help/admin/config/site_config">documentation</Link>.
+                                        </small>
+                                    </Text>
+                                }
+                            />
+                        </div>
+                    )}
+                </Container>
+                <SiteConfigurationChangeList />
             </div>
         )
     }
 
-    private onSave = (value: string): void => {
+    private onSave = async (newContents: string): Promise<string> => {
         eventLogger.log('SiteConfigurationSaved')
-        this.remoteUpdates.next(value)
+
+        this.setState({ saving: true, error: undefined })
+
+        const lastConfiguration = this.state.site?.configuration
+        const lastConfigurationID = lastConfiguration?.id || 0
+
+        let restartToApply = false
+        try {
+            restartToApply = await updateSiteConfiguration(lastConfigurationID, newContents).toPromise<boolean>()
+        } catch (error) {
+            logger.error(error)
+            this.setState({
+                saving: false,
+                error: new Error(
+                    String(error) +
+                        '\nError occured while attempting to save site configuration. Please backup changes before reloading the page.'
+                ),
+            })
+            throw error
+        }
+
+        const oldContents = lastConfiguration?.effectiveContents || ''
+        const oldConfiguration = jsonc.parse(oldContents) as SiteConfiguration
+        const newConfiguration = jsonc.parse(newContents) as SiteConfiguration
+
+        // Flipping these feature flags require a reload for the
+        // UI to be rendered correctly in the navbar and the sidebar.
+        const keys: (keyof SiteConfiguration)[] = ['batchChanges.enabled', 'codeIntelAutoIndexing.enabled']
+
+        if (!keys.every(key => Boolean(oldConfiguration?.[key]) === Boolean(newConfiguration?.[key]))) {
+            window.location.reload()
+        }
+
+        this.setState({
+            enabledCompletions:
+                !oldConfiguration?.completions?.enabled && Boolean(newConfiguration?.completions?.enabled),
+        })
+
+        if (restartToApply) {
+            window.context.needServerRestart = restartToApply
+        } else {
+            // Refresh site flags so that global site alerts
+            // reflect the latest configuration.
+            try {
+                await refreshSiteFlags(this.props.client)
+            } catch (error) {
+                logger.error(error)
+            }
+        }
+        this.setState({ restartToApply })
+
+        try {
+            const site = await fetchSite().toPromise()
+
+            this.setState({
+                site,
+                error: undefined,
+                loading: false,
+            })
+
+            this.setState({ saving: false })
+
+            return site.configuration.effectiveContents
+        } catch (error) {
+            this.setState({ error, loading: false })
+            throw error
+        }
     }
 
     private reloadSite = (): void => {

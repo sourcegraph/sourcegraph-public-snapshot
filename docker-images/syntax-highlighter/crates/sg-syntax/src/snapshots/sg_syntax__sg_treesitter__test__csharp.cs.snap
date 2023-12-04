@@ -1,0 +1,489 @@
+---
+source: crates/sg-syntax/src/sg_treesitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  namespace Main;
+//^^^^^^^^^ Keyword
+//          ^^^^ Identifier
+//              ^ PunctuationDelimiter
+  
+  public class CSharp {
+//^^^^^^ Keyword
+//       ^^^^^ Keyword
+//             ^^^^^^ IdentifierType
+      public string Name;
+//    ^^^^^^ Keyword
+//           ^^^^^^ IdentifierBuiltinType
+//                  ^^^^ IdentifierAttribute
+//                      ^ PunctuationDelimiter
+  
+      public CSharp(int name)
+//    ^^^^^^ Keyword
+//           ^^^^^^ IdentifierType
+//                  ^^^ IdentifierBuiltinType
+//                      ^^^^ IdentifierParameter
+      {
+          var something = 42;
+//        ^^^ Keyword
+//            ^^^^^^^^^ Identifier
+//                      ^ IdentifierOperator
+//                        ^^ NumericLiteral
+//                          ^ PunctuationDelimiter
+          Name = "name";
+//        ^^^^ IdentifierAttribute
+//             ^ IdentifierOperator
+//               ^ StringLiteral
+//                ^^^^ StringLiteral
+//                    ^ StringLiteral
+//                     ^ PunctuationDelimiter
+          Console.log(something);
+//        ^^^^^^^ Identifier
+//               ^ PunctuationDelimiter
+//                ^^^ IdentifierFunction
+//                    ^^^^^^^^^ Identifier
+//                              ^ PunctuationDelimiter
+      }
+  
+      public CSharp(string name) => Name = name;
+//    ^^^^^^ Keyword
+//           ^^^^^^ IdentifierType
+//                  ^^^^^^ IdentifierBuiltinType
+//                         ^^^^ IdentifierParameter
+//                               ^^ IdentifierOperator
+//                                  ^^^^ IdentifierAttribute
+//                                       ^ IdentifierOperator
+//                                         ^^^^ Identifier
+//                                             ^ PunctuationDelimiter
+  
+  
+      ~CSharp()
+//    ^ IdentifierOperator
+//     ^^^^^^ IdentifierType
+      {
+          Console.WriteLine(42);
+//        ^^^^^^^ Identifier
+//               ^ PunctuationDelimiter
+//                ^^^^^^^^^ IdentifierFunction
+//                          ^^ NumericLiteral
+//                             ^ PunctuationDelimiter
+      }
+  
+      public class UnmanagedConstraintClass<T> where T : unmanaged
+//    ^^^^^^ Keyword
+//           ^^^^^ Keyword
+//                 ^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType
+//                                         ^ IdentifierOperator
+//                                          ^ Identifier
+//                                           ^ IdentifierOperator
+//                                             ^^^^^ Keyword
+//                                                   ^ Identifier
+//                                                     ^ IdentifierOperator
+//                                                       ^^^^^^^^^ Keyword
+      {
+      }
+      public class DefaultConstraintClass<T> where T : default
+//    ^^^^^^ Keyword
+//           ^^^^^ Keyword
+//                 ^^^^^^^^^^^^^^^^^^^^^^ IdentifierType
+//                                       ^ IdentifierOperator
+//                                        ^ Identifier
+//                                         ^ IdentifierOperator
+//                                           ^^^^^ Keyword
+//                                                 ^ Identifier
+//                                                   ^ IdentifierOperator
+//                                                     ^^^^^^^ IdentifierType
+      {
+      }
+      public class NotNullConstraintClass<T> where T : notnull
+//    ^^^^^^ Keyword
+//           ^^^^^ Keyword
+//                 ^^^^^^^^^^^^^^^^^^^^^^ IdentifierType
+//                                       ^ IdentifierOperator
+//                                        ^ Identifier
+//                                         ^ IdentifierOperator
+//                                           ^^^^^ Keyword
+//                                                 ^ Identifier
+//                                                   ^ IdentifierOperator
+//                                                     ^^^^^^^ Keyword
+      {
+      }
+      public class NewConstraintClass<T> where T : new()
+//    ^^^^^^ Keyword
+//           ^^^^^ Keyword
+//                 ^^^^^^^^^^^^^^^^^^ IdentifierType
+//                                   ^ IdentifierOperator
+//                                    ^ Identifier
+//                                     ^ IdentifierOperator
+//                                       ^^^^^ Keyword
+//                                             ^ Identifier
+//                                               ^ IdentifierOperator
+//                                                 ^^^ Keyword
+      {
+      }
+  
+      class IndexClass
+//    ^^^^^ Keyword
+//          ^^^^^^^^^^ IdentifierType
+      {
+          private bool a;
+//        ^^^^^^^ Keyword
+//                ^^^^ IdentifierBuiltinType
+//                     ^ IdentifierAttribute
+//                      ^ PunctuationDelimiter
+  
+          public bool this[int index]
+//        ^^^^^^ Keyword
+//               ^^^^ IdentifierBuiltinType
+//                    ^^^^ Keyword
+//                         ^^^ IdentifierBuiltinType
+//                             ^^^^^ IdentifierParameter
+          {
+              get { return a; }
+//            ^^^ Keyword
+//                  ^^^^^^ Keyword
+//                         ^ Identifier
+//                          ^ PunctuationDelimiter
+              set { a = value; }
+//            ^^^ Keyword
+//                  ^ Identifier
+//                    ^ IdentifierOperator
+//                      ^^^^^ Identifier
+//                           ^ PunctuationDelimiter
+          }
+      }
+  
+      void SunsetRestrictedTypes()
+//    ^^^^ IdentifierBuiltin
+//         ^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+      {
+          var g = "";
+//        ^^^ Keyword
+//            ^ Identifier
+//              ^ IdentifierOperator
+//                ^ StringLiteral
+//                 ^ StringLiteral
+//                  ^ PunctuationDelimiter
+          var g = "";
+//        ^^^ Keyword
+//            ^ Identifier
+//              ^ IdentifierOperator
+//                ^ StringLiteral
+//                 ^ StringLiteral
+//                  ^ PunctuationDelimiter
+          var reference = __makeref(g);
+//        ^^^ Keyword
+//            ^^^^^^^^^ Identifier
+//                      ^ IdentifierOperator
+//                        ^^^^^^^^^ Keyword
+//                                  ^ Identifier
+//                                    ^ PunctuationDelimiter
+          Console.WriteLine(__refvalue(reference, int));
+//        ^^^^^^^ Identifier
+//               ^ PunctuationDelimiter
+//                ^^^^^^^^^ IdentifierFunction
+//                          ^^^^^^^^^^ Keyword
+//                                     ^^^^^^^^^ Identifier
+//                                              ^ PunctuationDelimiter
+//                                                ^^^ IdentifierBuiltinType
+//                                                     ^ PunctuationDelimiter
+          Console.WriteLine(__reftype(reference));
+//        ^^^^^^^ Identifier
+//               ^ PunctuationDelimiter
+//                ^^^^^^^^^ IdentifierFunction
+//                          ^^^^^^^^^ Keyword
+//                                    ^^^^^^^^^ Identifier
+//                                               ^ PunctuationDelimiter
+      }
+  
+      enum A
+//    ^^^^ Keyword
+//         ^ IdentifierType
+      {
+          B,
+//        ^ IdentifierConstant
+//         ^ PunctuationDelimiter
+          C
+//        ^ IdentifierConstant
+      }
+  
+      string Interpolation()
+//    ^^^^^^ IdentifierBuiltinType
+//           ^^^^^^^^^^^^^ IdentifierFunction
+      {
+          var a = 1;
+//        ^^^ Keyword
+//            ^ Identifier
+//              ^ IdentifierOperator
+//                ^ NumericLiteral
+//                 ^ PunctuationDelimiter
+          var b = 2;
+//        ^^^ Keyword
+//            ^ Identifier
+//              ^ IdentifierOperator
+//                ^ NumericLiteral
+//                 ^ PunctuationDelimiter
+          var c = 3;
+//        ^^^ Keyword
+//            ^ Identifier
+//              ^ IdentifierOperator
+//                ^ NumericLiteral
+//                 ^ PunctuationDelimiter
+          var d = 3;
+//        ^^^ Keyword
+//            ^ Identifier
+//              ^ IdentifierOperator
+//                ^ NumericLiteral
+//                 ^ PunctuationDelimiter
+          return $"a={a} b={b:0.00} c={c,24} d={d:g}";
+//        ^^^^^^ Keyword
+//               ^^ StringLiteral
+//                 ^^ StringLiteral
+//                   ^ StringLiteralEscape
+//                    ^ Identifier
+//                     ^ StringLiteralEscape
+//                      ^^^ StringLiteral
+//                         ^ StringLiteralEscape
+//                          ^ Identifier
+//                           ^ IdentifierOperator
+//                                ^ StringLiteralEscape
+//                                 ^^^ StringLiteral
+//                                    ^ StringLiteralEscape
+//                                     ^ Identifier
+//                                      ^ PunctuationDelimiter
+//                                       ^^ NumericLiteral
+//                                         ^ StringLiteralEscape
+//                                          ^^^ StringLiteral
+//                                             ^ StringLiteralEscape
+//                                              ^ Identifier
+//                                               ^ IdentifierOperator
+//                                                 ^ StringLiteralEscape
+//                                                  ^ StringLiteral
+//                                                   ^ PunctuationDelimiter
+      }
+  
+      class Operators
+//    ^^^^^ Keyword
+//          ^^^^^^^^^ IdentifierType
+      {
+          public static bool operator true(TrueFalse a)
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^ IdentifierBuiltinType
+//                           ^^^^^^^^ Keyword
+//                                    ^^^^ IdentifierFunction
+//                                         ^^^^^^^^^ IdentifierType
+//                                                   ^ IdentifierParameter
+          {
+              return true;
+//            ^^^^^^ Keyword
+//                   ^^^^ IdentifierBuiltin
+//                       ^ PunctuationDelimiter
+          }
+  
+          public static bool operator false(TrueFalse a)
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^ IdentifierBuiltinType
+//                           ^^^^^^^^ Keyword
+//                                    ^^^^^ IdentifierFunction
+//                                          ^^^^^^^^^ IdentifierType
+//                                                    ^ IdentifierParameter
+          {
+              return false;
+//            ^^^^^^ Keyword
+//                   ^^^^^ IdentifierBuiltin
+//                        ^ PunctuationDelimiter
+          }
+  
+          public static bool operator !=(TrueFalse a, TrueFalse b)
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^ IdentifierBuiltinType
+//                           ^^^^^^^^ Keyword
+//                                    ^^ IdentifierFunction
+//                                       ^^^^^^^^^ IdentifierType
+//                                                 ^ IdentifierParameter
+//                                                  ^ PunctuationDelimiter
+//                                                    ^^^^^^^^^ IdentifierType
+//                                                              ^ IdentifierParameter
+          {
+              return true;
+//            ^^^^^^ Keyword
+//                   ^^^^ IdentifierBuiltin
+//                       ^ PunctuationDelimiter
+          }
+  
+          public static bool operator ==(TrueFalse a, TrueFalse b)
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^ IdentifierBuiltinType
+//                           ^^^^^^^^ Keyword
+//                                    ^^ IdentifierFunction
+//                                       ^^^^^^^^^ IdentifierType
+//                                                 ^ IdentifierParameter
+//                                                  ^ PunctuationDelimiter
+//                                                    ^^^^^^^^^ IdentifierType
+//                                                              ^ IdentifierParameter
+          {
+              return true;
+//            ^^^^^^ Keyword
+//                   ^^^^ IdentifierBuiltin
+//                       ^ PunctuationDelimiter
+          }
+      }
+  
+      class PlusMinusOperators
+//    ^^^^^ Keyword
+//          ^^^^^^^^^^^^^^^^^^ IdentifierType
+      {
+          public static int operator +(PlusMinus a)
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^ IdentifierBuiltinType
+//                          ^^^^^^^^ Keyword
+//                                   ^ IdentifierFunction
+//                                     ^^^^^^^^^ IdentifierType
+//                                               ^ IdentifierParameter
+          {
+              return 0;
+//            ^^^^^^ Keyword
+//                   ^ NumericLiteral
+//                    ^ PunctuationDelimiter
+          }
+  
+          public static int operator +(PlusMinus a, PlusMinus b)
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^ IdentifierBuiltinType
+//                          ^^^^^^^^ Keyword
+//                                   ^ IdentifierFunction
+//                                     ^^^^^^^^^ IdentifierType
+//                                               ^ IdentifierParameter
+//                                                ^ PunctuationDelimiter
+//                                                  ^^^^^^^^^ IdentifierType
+//                                                            ^ IdentifierParameter
+          {
+              return 0;
+//            ^^^^^^ Keyword
+//                   ^ NumericLiteral
+//                    ^ PunctuationDelimiter
+          }
+  
+          public static int operator -(PlusMinus a)
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^ IdentifierBuiltinType
+//                          ^^^^^^^^ Keyword
+//                                   ^ IdentifierFunction
+//                                     ^^^^^^^^^ IdentifierType
+//                                               ^ IdentifierParameter
+          {
+              return 0;
+//            ^^^^^^ Keyword
+//                   ^ NumericLiteral
+//                    ^ PunctuationDelimiter
+          }
+      }
+  
+      public class Preprocessors
+//    ^^^^^^ Keyword
+//           ^^^^^ Keyword
+//                 ^^^^^^^^^^^^^ IdentifierType
+      {
+          string OS()
+//        ^^^^^^ IdentifierBuiltinType
+//               ^^ IdentifierFunction
+          {
+      #if WIN32
+//     ^^ Keyword
+//       ^ Keyword
+//        ^^^^^ IdentifierConstant
+              string os = "Win32";
+//            ^^^^^^ IdentifierBuiltinType
+//                   ^^ Identifier
+//                      ^ IdentifierOperator
+//                        ^ StringLiteral
+//                         ^^^^^ StringLiteral
+//                              ^ StringLiteral
+//                               ^ PunctuationDelimiter
+      #warning This class is bad.
+//     ^^^^^^^ Keyword
+//            ^^^^^^^^^^^^^^^^^^^ StringLiteral
+      #error Okay, just stop.
+//     ^^^^^ Keyword
+//          ^^^^^^^^^^^^^^^^^ StringLiteral
+      #elif MACOS
+//     ^^^^^ Keyword
+//          ^^^^^ IdentifierConstant
+              string os = "MacOS";
+//            ^^^^^^ IdentifierBuiltinType
+//                   ^^ Identifier
+//                      ^ IdentifierOperator
+//                        ^ StringLiteral
+//                         ^^^^^ StringLiteral
+//                              ^ StringLiteral
+//                               ^ PunctuationDelimiter
+      #else
+//     ^^^^ Keyword
+              string os = "Unknown";
+//            ^^^^^^ IdentifierBuiltinType
+//                   ^^ Identifier
+//                      ^ IdentifierOperator
+//                        ^ StringLiteral
+//                         ^^^^^^^ StringLiteral
+//                                ^ StringLiteral
+//                                 ^ PunctuationDelimiter
+      #endif
+//     ^^^^^ Keyword
+              return os;
+//            ^^^^^^ Keyword
+//                   ^^ Identifier
+//                     ^ PunctuationDelimiter
+          }
+      }
+  
+      void Linq()
+//    ^^^^ IdentifierBuiltin
+//         ^^^^ IdentifierFunction
+      {
+          var x = from a in sourceA
+//        ^^^ Keyword
+//            ^ Identifier
+//              ^ IdentifierOperator
+//                ^^^^ Keyword
+//                     ^ Identifier
+//                       ^^ Keyword
+//                          ^^^^^^^ Identifier
+                  join b in sourceB on a.Method() equals b.Method()
+//                ^^^^ Keyword
+//                     ^ Identifier
+//                       ^^ Keyword
+//                          ^^^^^^^ Identifier
+//                                  ^^ Keyword
+//                                     ^ Identifier
+//                                      ^ PunctuationDelimiter
+//                                       ^^^^^^ IdentifierFunction
+//                                                ^^^^^^ Keyword
+//                                                       ^ Identifier
+//                                                        ^ PunctuationDelimiter
+//                                                         ^^^^^^ IdentifierFunction
+                  select new { A = a.Method(), B = b.Method() };
+//                ^^^^^^ Keyword
+//                       ^^^ Keyword
+//                             ^ Identifier
+//                               ^ IdentifierOperator
+//                                 ^ Identifier
+//                                  ^ PunctuationDelimiter
+//                                   ^^^^^^ IdentifierFunction
+//                                           ^ PunctuationDelimiter
+//                                             ^ Identifier
+//                                               ^ IdentifierOperator
+//                                                 ^ Identifier
+//                                                  ^ PunctuationDelimiter
+//                                                   ^^^^^^ IdentifierFunction
+//                                                             ^ PunctuationDelimiter
+      }
+  
+  
+  }
+

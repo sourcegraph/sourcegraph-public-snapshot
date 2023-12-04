@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/slack-go/slack"
 	"golang.org/x/net/context/ctxhttp"
 	"gopkg.in/yaml.v3"
@@ -18,8 +18,6 @@ import (
 )
 
 // TeammateResolver provides an interface to find information about teammates.
-//
-//go:generate ../mockgen.sh github.com/sourcegraph/sourcegraph/dev/team -i TeammateResolver -o mock.go
 type TeammateResolver interface {
 	// ResolveByName tries to resolve a teammate by name
 	ResolveByName(ctx context.Context, name string) (*Teammate, error)
@@ -29,8 +27,10 @@ type TeammateResolver interface {
 	ResolveByCommitAuthor(ctx context.Context, org, repo, commit string) (*Teammate, error)
 }
 
-const teamDataURL = "https://raw.githubusercontent.com/sourcegraph/handbook/main/data/team.yml"
-const teamDataGitHubURL = "https://github.com/sourcegraph/handbook/blob/main/data/team.yml"
+const (
+	teamDataURL       = "https://raw.githubusercontent.com/sourcegraph/handbook/main/data/team.yml"
+	teamDataGitHubURL = "https://github.com/sourcegraph/handbook/blob/main/data/team.yml"
+)
 
 type Teammate struct {
 	// Key is the key for this teammate in team.yml
@@ -90,9 +90,13 @@ func (r *teammateResolver) ResolveByGitHubHandle(ctx context.Context, handle str
 		return nil, errors.Newf("getTeamData: %w", err)
 	}
 
+	// Normalize and match against lowercased handle - GitHub handles are not case-sensitive
+	handle = strings.ToLower(handle)
+
+	// Scan for teammates
 	var teammate *Teammate
 	for _, tm := range team {
-		if tm.GitHub == handle {
+		if strings.ToLower(tm.GitHub) == handle {
 			teammate = tm
 			break
 		}
@@ -169,7 +173,7 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 
 		// Populate Slack details
 		if r.slack != nil {
-			slackUsers, err := r.slack.GetUsers()
+			slackUsers, err := r.slack.GetUsersContext(ctx)
 			if err != nil {
 				onceErr = errors.Newf("slack.GetUsers: %w", err)
 				return

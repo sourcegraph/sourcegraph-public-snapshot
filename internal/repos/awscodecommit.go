@@ -10,8 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	awscredentials "github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/codecommit"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/net/http2"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -32,13 +33,17 @@ type AWSCodeCommitSource struct {
 	awsRegion    string
 	client       *awscodecommit.Client
 
-	exclude excludeFunc
+	excluder repoExcluder
 }
 
 // NewAWSCodeCommitSource returns a new AWSCodeCommitSource from the given external service.
-func NewAWSCodeCommitSource(svc *types.ExternalService, cf *httpcli.Factory) (*AWSCodeCommitSource, error) {
+func NewAWSCodeCommitSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*AWSCodeCommitSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.AWSCodeCommitConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newAWSCodeCommitSource(svc, &c, cf)
@@ -80,21 +85,21 @@ func newAWSCodeCommitSource(svc *types.ExternalService, c *schema.AWSCodeCommitC
 		return nil, err
 	}
 
-	var eb excludeBuilder
+	var ex repoExcluder
 	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Exact(r.Id)
+		ex.AddRule().
+			Exact(r.Name).
+			Exact(r.Id)
 	}
-	exclude, err := eb.Build()
-	if err != nil {
+	if err := ex.RuleErrors(); err != nil {
 		return nil, err
 	}
 
 	s := &AWSCodeCommitSource{
-		svc:     svc,
-		config:  c,
-		exclude: exclude,
-		client:  awscodecommit.NewClient(awsConfig),
+		svc:      svc,
+		config:   c,
+		excluder: ex,
+		client:   awscodecommit.NewClient(awsConfig),
 	}
 
 	endpoint, err := codecommit.NewDefaultEndpointResolver().ResolveEndpoint(c.Region, codecommit.EndpointResolverOptions{})
@@ -105,6 +110,13 @@ func newAWSCodeCommitSource(svc *types.ExternalService, c *schema.AWSCodeCommitC
 	s.awsRegion = endpoint.SigningRegion
 
 	return s, nil
+}
+
+// CheckConnection at this point assumes availability and relies on errors returned
+// from the subsequent calls. This is going to be expanded as part of issue #44683
+// to actually only return true if the source can serve requests.
+func (s *AWSCodeCommitSource) CheckConnection(ctx context.Context) error {
+	return nil
 }
 
 // ListRepos returns all AWS Code Commit repositories accessible to all
@@ -119,7 +131,7 @@ func (s *AWSCodeCommitSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) (*types.Repo, error) {
+func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) *types.Repo {
 	urn := s.svc.URN()
 	serviceID := awscodecommit.ServiceID(s.awsPartition, s.awsRegion, r.AccountID)
 
@@ -135,7 +147,8 @@ func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) (*types.Repo
 			},
 		},
 		Metadata: r,
-	}, nil
+		Private:  !s.svc.Unrestricted,
+	}
 }
 
 func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results chan SourceResult) {
@@ -149,11 +162,7 @@ func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results c
 
 		for _, r := range batch {
 			if !s.excludes(r) {
-				repo, err := s.makeRepo(r)
-				if err != nil {
-					results <- SourceResult{Source: s, Err: err}
-					return
-				}
+				repo := s.makeRepo(r)
 				results <- SourceResult{Source: s, Repo: repo}
 			}
 		}
@@ -167,7 +176,7 @@ func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results c
 }
 
 func (s *AWSCodeCommitSource) excludes(r *awscodecommit.Repository) bool {
-	return s.exclude(r.Name) || s.exclude(r.ID)
+	return s.excluder.ShouldExclude(r.Name) || s.excluder.ShouldExclude(r.ID)
 }
 
 // The code below is copied from
@@ -187,7 +196,7 @@ func wrapWithoutRedirect(c *http.Client) {
 	}
 }
 
-func limitedRedirect(r *http.Request, via []*http.Request) error {
+func limitedRedirect(r *http.Request, _ []*http.Request) error {
 	// Request.Response, in CheckRedirect is the response that is triggering
 	// the redirect.
 	resp := r.Response
@@ -209,6 +218,8 @@ type stubBadHTTPRedirectTransport struct {
 	tr http.RoundTripper
 }
 
+var _ httpcli.WrappedTransport = &stubBadHTTPRedirectTransport{}
+
 const stubBadHTTPRedirectLocation = `https://amazonaws.com/badhttpredirectlocation`
 
 func (t stubBadHTTPRedirectTransport) RoundTrip(r *http.Request) (*http.Response, error) {
@@ -229,8 +240,4 @@ func (t stubBadHTTPRedirectTransport) RoundTrip(r *http.Request) (*http.Response
 	return resp, err
 }
 
-// UnwrappableTransport signals that this transport can't be wrapped. In
-// particular this means we won't respect global external
-// settings. https://github.com/sourcegraph/sourcegraph/issues/71 and
-// https://github.com/sourcegraph/sourcegraph/issues/7738
-func (stubBadHTTPRedirectTransport) UnwrappableTransport() {}
+func (t stubBadHTTPRedirectTransport) Unwrap() *http.RoundTripper { return &t.tr }

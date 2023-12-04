@@ -1,105 +1,36 @@
-import classNames from 'classnames'
-import * as H from 'history'
-import React, { useEffect, useMemo } from 'react'
+import type { FC } from 'react'
 
-import { SearchContextInputProps } from '@sourcegraph/search'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { gql, useQuery } from '@sourcegraph/http-client'
 
-import { HomePanelsProps } from '..'
-import { AuthenticatedUser } from '../../auth'
-import { BrandLogo } from '../../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { CodeInsightsProps } from '../../insights/types'
-import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
-import { ThemePreferenceProps } from '../../theme'
-import { HomePanels } from '../panels/HomePanels'
+import type { AuthenticatedUser } from '../../auth'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import type { ExternalServicesTotalCountResult } from '../../graphql-operations'
+import { SearchPageContent, getShouldShowAddCodeHostWidget } from '../../storm/pages/SearchPage/SearchPageContent'
 
-import { LoggedOutHomepage } from './LoggedOutHomepage'
-import styles from './SearchPage.module.scss'
-import { SearchPageFooter } from './SearchPageFooter'
-import { SearchPageInput } from './SearchPageInput'
-
-export interface SearchPageProps
-    extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        ThemePreferenceProps,
-        ActivationProps,
-        KeyboardShortcutsProps,
-        TelemetryProps,
-        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
-        PlatformContextProps<
-            'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'
-        >,
-        SearchContextInputProps,
-        HomePanelsProps,
-        CodeInsightsProps,
-        FeatureFlagProps {
+export interface SearchPageProps {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
-    isSourcegraphDotCom: boolean
-    autoFocus?: boolean
-
-    // Whether globbing is enabled for filters.
-    globbing: boolean
 }
 
-/**
- * The search page
- */
-export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
-    const { extensionViews: ExtensionViewsSection } = props
-    const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
+export const SearchPage: FC<SearchPageProps> = props => {
+    const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
+    return <SearchPageContent shouldShowAddCodeHostWidget={shouldShowAddCodeHostWidget} />
+}
 
-    const isExperimentalOnboardingTourEnabled = useExperimentalFeatures(
-        features => features.showOnboardingTour ?? false
-    )
-    const hasSearchQuery = useNavbarQueryState(state => state.searchQueryFromURL !== '')
-    const isGettingStartedTourEnabled = props.featureFlags.get('getting-started-tour')
-    const showOnboardingTour = useMemo(
-        () => isExperimentalOnboardingTourEnabled && !hasSearchQuery && !isGettingStartedTourEnabled,
-        [hasSearchQuery, isGettingStartedTourEnabled, isExperimentalOnboardingTourEnabled]
-    )
+const EXTERNAL_SERVICES_TOTAL_COUNT = gql`
+    query ExternalServicesTotalCount {
+        externalServices {
+            totalCount
+        }
+    }
+`
 
-    useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
+function useShouldShowAddCodeHostWidget(authenticatedUser: AuthenticatedUser | null): boolean | undefined {
+    const [isAddCodeHostWidgetEnabled] = useFeatureFlag('plg-enable-add-codehost-widget', false)
+    const { data } = useQuery<ExternalServicesTotalCountResult>(EXTERNAL_SERVICES_TOTAL_COUNT, {})
 
-    return (
-        <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
-            <BrandLogo className={styles.logo} isLightTheme={props.isLightTheme} variant="logo" />
-            {props.isSourcegraphDotCom && (
-                <div className="text-muted text-center font-italic mt-3">
-                    Search your code and 2M+ open source repositories
-                </div>
-            )}
-            <div
-                className={classNames(styles.searchContainer, {
-                    [styles.searchContainerWithContentBelow]: props.isSourcegraphDotCom || showEnterpriseHomePanels,
-                })}
-            >
-                <SearchPageInput {...props} showOnboardingTour={showOnboardingTour} source="home" />
-                <ExtensionViewsSection
-                    className="mt-5"
-                    telemetryService={props.telemetryService}
-                    extensionsController={props.extensionsController}
-                    platformContext={props.platformContext}
-                    settingsCascade={props.settingsCascade}
-                    where="homepage"
-                />
-            </div>
-            <div className="flex-grow-1">
-                {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
-
-                {showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
-            </div>
-
-            <SearchPageFooter {...props} />
-        </div>
-    )
+    return getShouldShowAddCodeHostWidget({
+        isAddCodeHostWidgetEnabled,
+        isSiteAdmin: authenticatedUser?.siteAdmin,
+        externalServicesCount: data?.externalServices.totalCount,
+    })
 }

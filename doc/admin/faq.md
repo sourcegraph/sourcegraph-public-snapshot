@@ -43,14 +43,10 @@ Docker image, you can deploy a reverse proxy such as [Caddy](https://caddyserver
 If you are running Sourcegraph as a Kubernetes cluster, you have two additional options:
 
 1. If you are using [NGINX
-   ingress](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/configure.md#ingress-controller-recommended)
+   ingress](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/configure.md#ingress-controller)
    (`kubectl get ingress | grep sourcegraph-frontend`), modify
    [`sourcegraph-frontend.Ingress.yaml`](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml)
    by [adding a rewrite rule](https://kubernetes.github.io/ingress-nginx/examples/rewrite/).
-1. If you are using the [NGINX
-   service](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/configure.md#nginx-service),
-   modify
-   [`nginx.ConfigMap.yaml`](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/nginx-svc/nginx.ConfigMap.yaml).
    
 ## What external HTTP checks are configured?
 
@@ -81,11 +77,11 @@ More information on each available panel in the dashboards is available in the [
 
 ### What does this `<ALERT-MESSAGE>` mean?
 
-See [Alert solutions](https://docs.sourcegraph.com/admin/observability/alert_solutions) to learn about each alert and their possible solutions.
+See [Alert solutions](https://docs.sourcegraph.com/admin/observability/alerts) to learn about each alert and their possible solutions.
 
 ### What’s the threshold for each resource?
 
-All resources dashboards contain a section called `Container monitoring` that indicate thresholds at which alerts will fire for each resource ([example alert](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-container-cpu-usage)).
+All resources dashboards contain a section called `Container monitoring` that indicate thresholds at which alerts will fire for each resource ([example alert](https://docs.sourcegraph.com/admin/observability/alerts#frontend-container-cpu-usage)).
 
 More information on each available panel in the dashboards is available in the [Dashboards reference](https://docs.sourcegraph.com/admin/observability/dashboards).
 
@@ -109,7 +105,7 @@ More advanced users can also refer to [our FAQ item about custom consumption of 
 
 ### Can I consume Sourcegraph's metrics in my own monitoring system (Datadog, New Relic, etc.)?
 
-Sourcegraph provides [high-level alerting metrics](./observability/metrics.md#high-level-alerting-metrics) which you can integrate into your own monitoring system - see the [alerting custom consumption guide](./observability/alerting_custom_consumption.md) for more details.
+Sourcegraph provides [high-level alerting metrics](./observability/metrics.md#high-level-alerting-metrics) which you can integrate into your own monitoring system—see the [alerting custom consumption guide](./observability/alerting_custom_consumption.md) for more details.
 
 While it is technically possible to consume all of Sourcegraph's metrics in an external system, our recommendation is to utilize the builtin monitoring tools and configure Sourcegraph to [send alerts to your own PagerDuty, Slack, email, etc.](./observability/alerting.md). Metrics and thresholds can change with each release, therefore manually defining the alerts required to monitor Sourcegraph's health is not recommended. Sourcegraph automatically updates the dashboards and alerts on each release to ensure the displayed information is up-to-date.
 
@@ -117,7 +113,7 @@ Other monitoring systems that support Prometheus scraping (for example, Datadog 
 
 ### I am getting "Error: Cluster information not available" in the Instrumentation page, what should I do?
 
-This error is expected if your instance was not [deployed with Kubernetes](./install/kubernetes/index.md). The Instrumentation page is currently only available for Kubernetes instances.
+This error is expected if your instance was not [deployed with Kubernetes](./deploy/kubernetes/index.md). The Instrumentation page is currently only available for Kubernetes instances.
 
 ## Troubleshooting
 

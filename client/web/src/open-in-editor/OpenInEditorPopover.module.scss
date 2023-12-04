@@ -1,0 +1,23 @@
+.open-in-editor-popover {
+    isolation: isolate;
+
+    width: 25rem;
+
+    padding: 1.25rem 1rem;
+
+    background-color: var(--color-bg-1);
+}
+
+.close {
+    display: flex;
+    position: absolute;
+    padding: 0;
+    top: 16px;
+    right: 16px;
+    border: none;
+    background: transparent;
+}
+
+.editor-select {
+    margin-top: 1rem;
+}

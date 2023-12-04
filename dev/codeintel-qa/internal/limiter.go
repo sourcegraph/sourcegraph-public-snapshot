@@ -1,10 +1,13 @@
 package internal
 
-import "context"
+import (
+	"context"
+)
 
 // Limiter implements a counting semaphore.
 type Limiter struct {
-	ch chan struct{}
+	concurrency int
+	ch          chan struct{}
 }
 
 // NewLimiter creates a new limiter with the given maximum concurrency.
@@ -14,7 +17,7 @@ func NewLimiter(concurrency int) *Limiter {
 		ch <- struct{}{}
 	}
 
-	return &Limiter{ch: ch}
+	return &Limiter{concurrency, ch}
 }
 
 // Acquire blocks until it can acquire a value from the inner channel.
@@ -35,5 +38,10 @@ func (l *Limiter) Release() {
 
 // Close closes the underlying channel.
 func (l *Limiter) Close() {
+	// Drain the channel before close
+	for i := 0; i < l.concurrency; i++ {
+		<-l.ch
+	}
+
 	close(l.ch)
 }

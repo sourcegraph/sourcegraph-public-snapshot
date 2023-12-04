@@ -42,10 +42,59 @@ func newClient() (*client, error) {
 }
 
 func (s *client) search(ctx context.Context, query, queryName string) (*metrics, error) {
+	return s.doGraphQL(ctx, graphQLRequest{
+		QueryName:        queryName,
+		GraphQLQuery:     graphQLSearchQuery,
+		GraphQLVariables: map[string]string{"query": query},
+		MetricsFromBody: func(body io.Reader) (*metrics, error) {
+			var respDec struct {
+				Data struct {
+					Search struct{ Results struct{ MatchCount int } }
+				}
+			}
+			if err := json.NewDecoder(body).Decode(&respDec); err != nil {
+				return nil, err
+			}
+			return &metrics{
+				matchCount: respDec.Data.Search.Results.MatchCount,
+			}, nil
+		},
+	})
+}
+
+func (s *client) attribution(ctx context.Context, snippet, queryName string) (*metrics, error) {
+	return s.doGraphQL(ctx, graphQLRequest{
+		QueryName:        queryName,
+		GraphQLQuery:     graphQLAttributionQuery,
+		GraphQLVariables: map[string]string{"snippet": snippet},
+		MetricsFromBody: func(body io.Reader) (*metrics, error) {
+			var respDec struct {
+				Data struct{ SnippetAttribution struct{ TotalCount int } }
+			}
+			if err := json.NewDecoder(body).Decode(&respDec); err != nil {
+				return nil, err
+			}
+			return &metrics{
+				matchCount: respDec.Data.SnippetAttribution.TotalCount,
+			}, nil
+		},
+	})
+}
+
+type graphQLRequest struct {
+	QueryName string
+
+	GraphQLQuery     string
+	GraphQLVariables map[string]string
+
+	MetricsFromBody func(io.Reader) (*metrics, error)
+}
+
+func (s *client) doGraphQL(ctx context.Context, greq graphQLRequest) (*metrics, error) {
 	var body bytes.Buffer
-	if err := json.NewEncoder(&body).Encode(map[string]interface{}{
-		"query":     graphQLQuery,
-		"variables": map[string]string{"query": query},
+	if err := json.NewEncoder(&body).Encode(map[string]any{
+		"query":     greq.GraphQLQuery,
+		"variables": greq.GraphQLVariables,
 	}); err != nil {
 		return nil, err
 	}
@@ -57,7 +106,7 @@ func (s *client) search(ctx context.Context, query, queryName string) (*metrics,
 
 	req.Header.Set("Authorization", "token "+s.token)
 	req.Header.Set("X-Sourcegraph-Should-Trace", "true")
-	req.Header.Set("User-Agent", fmt.Sprintf("SearchBlitz (%s)", queryName))
+	req.Header.Set("User-Agent", fmt.Sprintf("SearchBlitz (%s)", greq.QueryName))
 
 	start := time.Now()
 	resp, err := s.client.Do(req)
@@ -74,19 +123,17 @@ func (s *client) search(ctx context.Context, query, queryName string) (*metrics,
 	}
 
 	// Decode the response.
-	respDec := rawResult{Data: result{}}
-	if err := json.NewDecoder(resp.Body).Decode(&respDec); err != nil {
+	metrics, err := greq.MetricsFromBody(resp.Body)
+	if err != nil {
 		return nil, err
 	}
 
 	duration := time.Since(start)
+	metrics.took = duration
+	metrics.firstResult = duration
+	metrics.trace = resp.Header.Get("x-trace")
 
-	return &metrics{
-		took:        duration,
-		firstResult: duration,
-		matchCount:  respDec.Data.Search.Results.ResultCount,
-		trace:       resp.Header.Get("x-trace"),
-	}, nil
+	return metrics, nil
 }
 
 func (s *client) url() string {

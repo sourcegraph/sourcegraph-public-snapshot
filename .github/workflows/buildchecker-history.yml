@@ -1,0 +1,28 @@
+# See dev/buildchecker/README.md
+name: buildchecker-history
+on:
+  schedule:
+  - cron: '0 0 * * SUN'
+  workflow_dispatch:
+
+jobs:
+  report:
+    if: github.repository == 'sourcegraph/sourcegraph'
+    runs-on: ubuntu-latest
+
+    # secrets for this workflow are configured in the 'autobuildsherrif' environment.
+    # 'autobuildsherrif' was the original name of the 'buildchecker' tool - GitHub does
+    # not provide a simple way to do a rename, so we leave it as is for now.
+    environment: autobuildsherrif
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v2
+        with: { go-version: '1.19' }
+
+      - run: ./dev/buildchecker/run-week-history.sh
+        env:
+          BUILDKITE_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_BUILDKITE_TOKEN }}
+          HONEYCOMB_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_HONEYCOMB_TOKEN }}
+          CI_OKAYHQ_TOKEN: ${{ secrets.CI_OKAYHQ_TOKEN }}
+          SLACK_REPORT_WEBHOOK: ${{ secrets.AUTOBUILDSHERRIF_SLACK_REPORT_WEBHOOK}},${{secrets.AUTOBUILDSHERRIF_SLACK_DX_WEBHOOK}}

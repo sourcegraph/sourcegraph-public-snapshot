@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .batch-changes-list-intro {
     /* By default, dismissible alerts are flex containers that position the
     button at the end of the "row". Since we don't want to interfere with the
@@ -24,5 +26,16 @@
 
     &__card {
         background: var(--color-bg-1);
+    }
+}
+
+.alerts-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    &-content {
+        @media (--sm-breakpoint-down) {
+            min-width: 100%;
+        }
     }
 }

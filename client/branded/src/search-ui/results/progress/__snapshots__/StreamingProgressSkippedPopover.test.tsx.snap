@@ -1,0 +1,502 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`StreamingProgressSkippedPopover > should render correctly 1`] = `
+<DocumentFragment>
+  <p
+    class="mx-3 mt-3"
+  >
+    Found 2 results from 2 repositories.
+  </p>
+  <h3
+    class="h3 mx-3"
+  >
+    Some results skipped:
+  </h3>
+  <div
+    class="streamingSkippedItem streamingSkippedItemWarn"
+  >
+    <button
+      aria-disabled="false"
+      aria-expanded="true"
+      class="btn btnDanger btnOutline button p-2 w-100 bg-transparent border-0"
+      role="button"
+      type="button"
+    >
+      <h4
+        class="h4 d-flex align-items-center mb-0 w-100"
+      >
+        <svg
+          aria-label="Alert"
+          class="mdi-icon iconInline icon flex-shrink-0"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+          />
+        </svg>
+        <span
+          class="flex-grow-1 text-left"
+        >
+          Error loading results
+        </span>
+        <svg
+          aria-hidden="true"
+          class="mdi-icon iconInline flex-shrink-0 chevron"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+          />
+        </svg>
+      </h4>
+    </button>
+    <div
+      class="collapse show"
+    >
+      <div
+        class="message markdown text-left py-1 markdown"
+      >
+        <p>
+          There was a network error retrieving search results. Check your Internet connection and try again.
+        </p>
+      </div>
+    </div>
+    <div
+      class="bottomBorderSpacer mt-2"
+    />
+  </div>
+  <div
+    class="streamingSkippedItem streamingSkippedItemWarn"
+  >
+    <button
+      aria-disabled="false"
+      aria-expanded="false"
+      class="btn btnDanger btnOutline button p-2 w-100 bg-transparent border-0"
+      role="button"
+      type="button"
+    >
+      <h4
+        class="h4 d-flex align-items-center mb-0 w-100"
+      >
+        <svg
+          aria-label="Alert"
+          class="mdi-icon iconInline icon flex-shrink-0"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+          />
+        </svg>
+        <span
+          class="flex-grow-1 text-left"
+        >
+          Search timed out
+        </span>
+        <svg
+          aria-hidden="true"
+          class="mdi-icon iconInline flex-shrink-0 chevron"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
+          />
+        </svg>
+      </h4>
+    </button>
+    <div
+      class="collapse"
+    >
+      <div
+        class="message markdown text-left py-1 markdown"
+      >
+        <p>
+          Search timed out
+        </p>
+      </div>
+    </div>
+    <div
+      class="bottomBorderSpacer mt-2"
+    />
+  </div>
+  <div
+    class="streamingSkippedItem"
+  >
+    <button
+      aria-disabled="false"
+      aria-expanded="false"
+      class="btn btnPrimary btnOutline button p-2 w-100 bg-transparent border-0"
+      role="button"
+      type="button"
+    >
+      <h4
+        class="h4 d-flex align-items-center mb-0 w-100"
+      >
+        <svg
+          aria-label="Information"
+          class="mdi-icon iconInline icon flex-shrink-0"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
+          />
+        </svg>
+        <span
+          class="flex-grow-1 text-left"
+        >
+          10k forked repositories excluded
+        </span>
+        <svg
+          aria-hidden="true"
+          class="mdi-icon iconInline flex-shrink-0 chevron"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
+          />
+        </svg>
+      </h4>
+    </button>
+    <div
+      class="collapse"
+    >
+      <div
+        class="message markdown text-left py-1 markdown"
+      >
+        <p>
+          10k forked repositories excluded
+        </p>
+      </div>
+    </div>
+    <div
+      class="bottomBorderSpacer mt-2"
+    />
+  </div>
+  <div
+    class="streamingSkippedItem"
+  >
+    <button
+      aria-disabled="false"
+      aria-expanded="false"
+      class="btn btnPrimary btnOutline button p-2 w-100 bg-transparent border-0"
+      role="button"
+      type="button"
+    >
+      <h4
+        class="h4 d-flex align-items-center mb-0 w-100"
+      >
+        <svg
+          aria-label="Information"
+          class="mdi-icon iconInline icon flex-shrink-0"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
+          />
+        </svg>
+        <span
+          class="flex-grow-1 text-left"
+        >
+          60k archived repositories excluded
+        </span>
+        <svg
+          aria-hidden="true"
+          class="mdi-icon iconInline flex-shrink-0 chevron"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
+          />
+        </svg>
+      </h4>
+    </button>
+    <div
+      class="collapse"
+    >
+      <div
+        class="message markdown text-left py-1 markdown"
+      >
+        <p>
+          60k archived repositories excluded
+        </p>
+      </div>
+    </div>
+    <div
+      class="bottomBorderSpacer mt-2"
+    />
+  </div>
+  <div
+    class="streamingSkippedItem"
+  >
+    <button
+      aria-disabled="false"
+      aria-expanded="false"
+      class="btn btnPrimary btnOutline button p-2 w-100 bg-transparent border-0"
+      role="button"
+      type="button"
+    >
+      <h4
+        class="h4 d-flex align-items-center mb-0 w-100"
+      >
+        <svg
+          aria-label="Information"
+          class="mdi-icon iconInline icon flex-shrink-0"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
+          />
+        </svg>
+        <span
+          class="flex-grow-1 text-left"
+        >
+          1 archived
+        </span>
+        <svg
+          aria-hidden="true"
+          class="mdi-icon iconInline flex-shrink-0 chevron"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
+          />
+        </svg>
+      </h4>
+    </button>
+    <div
+      class="collapse"
+    >
+      <div
+        class="message markdown text-left py-1 markdown"
+      >
+        <p>
+          By default we exclude archived repositories. Include them with 
+          <code>
+            archived:yes
+          </code>
+           in your query.
+        </p>
+      </div>
+    </div>
+    <div
+      class="bottomBorderSpacer mt-2"
+    />
+  </div>
+  <form
+    class="px-3 pb-3"
+    data-testid="popover-form"
+  >
+    <div
+      class="mb-2 mt-3"
+    >
+      Search again:
+    </div>
+    <div
+      class="form-check"
+    >
+      <div
+        class="form-check mb-1 d-block"
+      >
+        <input
+          class="form-check-input"
+          data-testid="streaming-progress-skipped-suggest-check-1"
+          id="streaming-progress-skipped-suggest-check-1"
+          label="[object Object]"
+          type="checkbox"
+          value="timeout:2m"
+        />
+        <label
+          class="label form-check-label label"
+          for="streaming-progress-skipped-suggest-check-1"
+        >
+          timeout:2m (
+          <span
+            class="text-monospace search-query-link"
+          >
+            <span
+              class="search-filter-keyword"
+            >
+              timeout
+            </span>
+            <span
+              class="search-filter-separator"
+            >
+              :
+            </span>
+            <span
+              class="search-query-text"
+            >
+              2m
+            </span>
+          </span>
+          )
+        </label>
+      </div>
+      <div
+        class="form-check mb-1 d-block"
+      >
+        <input
+          class="form-check-input"
+          data-testid="streaming-progress-skipped-suggest-check-2"
+          id="streaming-progress-skipped-suggest-check-2"
+          label="[object Object]"
+          type="checkbox"
+          value="forked:yes"
+        />
+        <label
+          class="label form-check-label label"
+          for="streaming-progress-skipped-suggest-check-2"
+        >
+          forked:yes (
+          <span
+            class="text-monospace search-query-link"
+          >
+            <span
+              class="search-query-text"
+            >
+              forked:yes
+            </span>
+          </span>
+          )
+        </label>
+      </div>
+      <div
+        class="form-check mb-1 d-block"
+      >
+        <input
+          class="form-check-input"
+          data-testid="streaming-progress-skipped-suggest-check-3"
+          id="streaming-progress-skipped-suggest-check-3"
+          label="[object Object]"
+          type="checkbox"
+          value="archived:yes"
+        />
+        <label
+          class="label form-check-label label"
+          for="streaming-progress-skipped-suggest-check-3"
+        >
+          archived:yes (
+          <span
+            class="text-monospace search-query-link"
+          >
+            <span
+              class="search-filter-keyword"
+            >
+              archived
+            </span>
+            <span
+              class="search-filter-separator"
+            >
+              :
+            </span>
+            <span
+              class="search-query-text"
+            >
+              yes
+            </span>
+          </span>
+          )
+        </label>
+      </div>
+      <div
+        class="form-check mb-1 d-block"
+      >
+        <input
+          class="form-check-input"
+          data-testid="streaming-progress-skipped-suggest-check-4"
+          id="streaming-progress-skipped-suggest-check-4"
+          label="[object Object]"
+          type="checkbox"
+          value="archived:yes"
+        />
+        <label
+          class="label form-check-label label"
+          for="streaming-progress-skipped-suggest-check-4"
+        >
+          include archived (
+          <span
+            class="text-monospace search-query-link"
+          >
+            <span
+              class="search-filter-keyword"
+            >
+              archived
+            </span>
+            <span
+              class="search-filter-separator"
+            >
+              :
+            </span>
+            <span
+              class="search-query-text"
+            >
+              yes
+            </span>
+          </span>
+          )
+        </label>
+      </div>
+    </div>
+    <button
+      aria-disabled="true"
+      class="btn btnPrimary mt-2"
+      data-testid="skipped-popover-form-submit-btn"
+      type="submit"
+    >
+      <svg
+        aria-hidden="true"
+        class="mdi-icon iconInline mr-1"
+        fill="currentColor"
+        height="24"
+        role="img"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"
+        />
+      </svg>
+      Search again
+    </button>
+  </form>
+</DocumentFragment>
+`;

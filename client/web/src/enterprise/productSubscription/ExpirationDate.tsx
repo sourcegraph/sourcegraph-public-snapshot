@@ -1,24 +1,27 @@
-import format from 'date-fns/format'
 import React from 'react'
+
+import format from 'date-fns/format'
 
 import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../productSubscription/helpers'
 
 /** Displays an expiration date (for product subscriptions or licenses). */
-export const ExpirationDate: React.FunctionComponent<{
-    /** The expiration date of a product subscription or license. */
-    date: Date | number
+export const ExpirationDate: React.FunctionComponent<
+    React.PropsWithChildren<{
+        /** The expiration date of a product subscription or license. */
+        date: Date | number
 
-    /** Show the time of day of expiration. */
-    showTime?: boolean
+        /** Show the time of day of expiration. */
+        showTime?: boolean
 
-    /** Show "(T remaining)" or "(T ago)" relative times. */
-    showRelative?: boolean
+        /** Show "(T remaining)" or "(T ago)" relative times. */
+        showRelative?: boolean
 
-    /** Show the "Expired on" or "Valid until" prefix. */
-    showPrefix?: boolean
+        /** Show the "Expired on" or "Valid until" prefix. */
+        showPrefix?: boolean
 
-    lowercase?: boolean
-}> = ({ date, showTime, showRelative, showPrefix, lowercase }) => {
+        lowercase?: boolean
+    }>
+> = ({ date, showTime, showRelative, showPrefix, lowercase }) => {
     let text: string | undefined
     if (showPrefix) {
         text = isProductLicenseExpired(date) ? 'Expired on ' : 'Valid until '

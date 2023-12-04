@@ -1,0 +1,42 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "stitch",
+    srcs = [
+        "git.go",
+        "reader.go",
+        "rewriter.go",
+        "stitch.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/migration/stitch",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/migration/definition",
+        "//internal/database/migration/shared",
+        "//internal/lazyregexp",
+        "//internal/mapfs",
+        "//internal/oobmigration",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+    ],
+)
+
+go_test(
+    name = "stitch_test",
+    timeout = "short",
+    srcs = ["stitch_test.go"],
+    embed = [":stitch"],
+    deps = [
+        "//internal/database/connections/live",
+        "//internal/database/dbtest",
+        "//internal/database/migration/runner",
+        "//internal/database/migration/schemas",
+        "//internal/database/migration/shared",
+        "//internal/database/migration/store",
+        "//internal/observation",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

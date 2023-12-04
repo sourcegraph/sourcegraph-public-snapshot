@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "wrapper",
+    srcs = ["encryptedvalue.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/encryption/wrapper",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/errors"],
+)
+
+go_test(
+    name = "wrapper_test",
+    srcs = ["encryptedvalue_test.go"],
+    embed = [":wrapper"],
+    deps = ["@com_github_stretchr_testify//require"],
+)

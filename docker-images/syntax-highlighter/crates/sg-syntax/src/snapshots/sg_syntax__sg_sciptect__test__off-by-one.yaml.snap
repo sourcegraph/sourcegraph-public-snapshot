@@ -1,0 +1,12 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+expression: "snapshot_sciptect_documents(&document, &contents)"
+---
+  pog:
+//^^^ StringLiteralKey entity.name.tag.yaml
+//   ^ PunctuationBracket punctuation.separator.key-value.mapping.yaml
+    test: everythinghereshouldbehighlighted
+//  ^^^^ StringLiteralKey entity.name.tag.yaml
+//      ^ PunctuationBracket punctuation.separator.key-value.mapping.yaml
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral string.unquoted.plain.out.yaml
+

@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`RepositoryReleasesTagsPage renders 1`] = `
+exports[`RepositoryReleasesTagsPage > renders 1`] = `
 <DocumentFragment>
   <div
     class="repository-releases-page"
@@ -10,19 +10,24 @@ exports[`RepositoryReleasesTagsPage renders 1`] = `
       data-testid="filtered-connection"
     >
       <form
-        class="w-100 d-inline-flex justify-content-between flex-row noncompact"
+        class="form noncompact"
       >
-        <input
-          autocapitalize="off"
-          autocomplete="off"
-          autocorrect="off"
-          class="form-control"
-          name="query"
-          placeholder="Search tags..."
-          spellcheck="false"
-          type="search"
-          value=""
-        />
+        <div
+          class="container loader-input loaderInput input"
+        >
+          <input
+            aria-label="Search tags..."
+            autocapitalize="off"
+            autocomplete="off"
+            autocorrect="off"
+            class="form-control with-invalid-icon"
+            name="query"
+            placeholder="Search tags..."
+            spellcheck="false"
+            type="search"
+            value=""
+          />
+        </div>
       </form>
       <div
         class="normal"
@@ -36,6 +41,55 @@ exports[`RepositoryReleasesTagsPage renders 1`] = `
         >
           <small>
             No tags 
+          </small>
+        </p>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`RepositoryReleasesTagsPage > renders for packages 1`] = `
+<DocumentFragment>
+  <div
+    class="repository-releases-page"
+  >
+    <div
+      class="normal noncompact my-3"
+      data-testid="filtered-connection"
+    >
+      <form
+        class="form noncompact"
+      >
+        <div
+          class="container loader-input loaderInput input"
+        >
+          <input
+            aria-label="Search versions..."
+            autocapitalize="off"
+            autocomplete="off"
+            autocorrect="off"
+            class="form-control with-invalid-icon"
+            name="query"
+            placeholder="Search versions..."
+            spellcheck="false"
+            type="search"
+            value=""
+          />
+        </div>
+      </form>
+      <div
+        class="normal"
+      />
+      <div
+        class="normal"
+      >
+        <p
+          class="normal"
+          data-testid="summary"
+        >
+          <small>
+            No versions 
           </small>
         </p>
       </div>

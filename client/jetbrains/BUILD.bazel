@@ -1,0 +1,43 @@
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
+
+# dts-only done manually
+# gazelle:js disabled
+
+npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root()
+
+# Temporary ESLint target to lint stories. This will be removed once we have a
+# custom gazelle targets. E.g., `gazelle:custom_js_files stories src/**/*.story.tsx`
+eslint_test_with_types(
+    name = "stories_eslint",
+    srcs = glob(["webview/src/**/*.story.tsx"]),
+    config = ":eslint_config",
+    deps = [
+        "//:node_modules/@types/node",
+    ],
+)
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/branded:tsconfig",
+        "//client/build-config:tsconfig",
+        "//client/common:tsconfig",
+        "//client/http-client:tsconfig",
+        "//client/shared:tsconfig",
+        "//client/storybook:tsconfig",
+        "//client/wildcard:tsconfig",
+    ],
+)
+
+js_library(
+    name = "jetbrains",
+    srcs = ["globals.d.ts"],
+)

@@ -1,0 +1,55 @@
+:root {
+    --popover-bg: var(--white);
+    --popover-border-width: var(--border-width);
+    --popover-border-color: rgba(var(--black), 0.2);
+    --popover-box-shadow: 0 0.25rem 0.5rem rgba(var(--black), 0.2);
+    --zindex-popover: 1060;
+    --popover-font-size: var(--font-size-base);
+    --popover-max-width: auto;
+}
+
+// Baseclass
+.popover {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: var(--zindex-popover);
+    display: block;
+    max-width: var(--popover-max-width);
+
+    // We deliberately do NOT reset font-size.
+    font-weight: 400;
+    line-height: var(--line-height-base);
+    line-break: auto;
+    text-align: left; // Fallback for where `start` is not supported
+    text-align: start;
+    text-decoration: none;
+    text-shadow: none;
+    text-transform: none;
+    letter-spacing: normal;
+    word-break: normal;
+    word-spacing: normal;
+    white-space: normal;
+
+    // rule from font-size($popover-font-size) mixin
+    font-size: var(--popover-font-size);
+
+    // Allow breaking very long words so they don't overflow the popover's bounds
+    word-wrap: break-word;
+    background-color: var(--popover-bg);
+    background-clip: padding-box;
+    border: var(--popover-border-width) solid var(--popover-border-color);
+    border-radius: var(--popover-border-radius);
+    box-shadow: var(--popover-box-shadow);
+}
+
+// Our simple popovers only need these styles. We don't want the caret or special font sizes from
+// Bootstrap's popover CSS.
+.popover-inner {
+    background-color: var(--color-bg-1);
+    border: solid 1px var(--border-color);
+    box-shadow: var(--dropdown-shadow);
+    border-radius: var(--popover-border-radius);
+    // Ensure content is clipped by border
+    overflow: hidden;
+}

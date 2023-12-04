@@ -1,7 +1,10 @@
 import { BehaviorSubject } from 'rxjs'
 import sinon from 'sinon'
+import { afterEach, beforeEach, describe, it } from 'vitest'
 
-import { ClientAPI } from '../../client/api/api'
+import { logger } from '@sourcegraph/common'
+
+import type { ClientAPI } from '../../client/api/api'
 import { pretendRemote } from '../../util'
 import { proxySubscribable } from '../api/common'
 
@@ -9,8 +12,7 @@ import { initializeExtensionHostTest } from './test-helpers'
 
 const noopMain = pretendRemote<ClientAPI>({
     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
-    getScriptURLForExtension: () => undefined,
-    logExtensionMessage: (...data) => console.log(...data),
+    logExtensionMessage: (...data) => logger.log(...data),
 })
 
 describe('Extension logging', () => {

@@ -6,19 +6,32 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/inconshreveable/log15"
+	"github.com/cespare/xxhash/v2"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/go-rendezvous"
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
-// Map is a consistent hash map to URLs. It uses the kubernetes API to watch
-// the endpoints for a service and update the map when they change. It can
-// also fallback to static URLs if not configured for kubernetes.
+// EmptyError is returned when looking up an endpoint on an empty map.
+type EmptyError struct {
+	URLSpec string
+}
+
+func (e *EmptyError) Error() string {
+	return fmt.Sprintf("endpoint.Map(%s) is empty", e.URLSpec)
+}
+
+// Map is a consistent hash map to URLs. It uses the kubernetes API to
+// watch the endpoints for a service and update the map when they change. It
+// can also fallback to static URLs if not configured for kubernetes.
 type Map struct {
 	urlspec string
 
 	mu  sync.RWMutex
-	hm  consistentHash
+	hm  *rendezvous.Rendezvous
 	err error
 
 	init      sync.Once
@@ -47,15 +60,18 @@ type endpoints struct {
 //
 // Examples URL specifiers:
 //
-// 	"k8s+http://searcher"
-// 	"k8s+rpc://indexed-searcher?kind=sts"
-// 	"http://searcher-0 http://searcher-1 http://searcher-2"
+//	"k8s+http://searcher"
+//	"k8s+rpc://indexed-searcher?kind=sts"
+//	"http://searcher-0 http://searcher-1 http://searcher-2"
 //
+// Note: this function does not take a logger because discovery is done in the
+// in the background and does not connect to higher order functions.
 func New(urlspec string) *Map {
+	logger := log.Scoped("newmap")
 	if !strings.HasPrefix(urlspec, "k8s+") {
 		return Static(strings.Fields(urlspec)...)
 	}
-	return K8S(urlspec)
+	return K8S(logger, urlspec)
 }
 
 // Static returns an Endpoint map which consistently hashes over endpoints.
@@ -98,7 +114,12 @@ func (m *Map) Get(key string) (string, error) {
 		return "", m.err
 	}
 
-	return m.hm.Lookup(key), nil
+	v := m.hm.Lookup(key)
+	if v == "" {
+		return "", &EmptyError{URLSpec: m.urlspec}
+	}
+
+	return v, nil
 }
 
 // GetN gets the n closest URLs in the hash to the provided key.
@@ -110,6 +131,16 @@ func (m *Map) GetN(key string, n int) ([]string, error) {
 
 	if m.err != nil {
 		return nil, m.err
+	}
+
+	// LookupN can fail if n > len(nodes), but the client code will have a
+	// race. So double check while we hold the lock.
+	nodes := len(m.hm.Nodes())
+	if nodes == 0 {
+		return nil, &EmptyError{URLSpec: m.urlspec}
+	}
+	if n > nodes {
+		n = nodes
 	}
 
 	return m.hm.LookupN(key, n), nil
@@ -125,9 +156,13 @@ func (m *Map) GetMany(keys ...string) ([]string, error) {
 
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-
 	if m.err != nil {
 		return nil, m.err
+	}
+
+	// If we are doing a lookup ensure we are not empty.
+	if len(keys) > 0 && len(m.hm.Nodes()) == 0 {
+		return nil, &EmptyError{URLSpec: m.urlspec}
 	}
 
 	vals := make([]string, len(keys))
@@ -168,37 +203,28 @@ func (m *Map) discover() {
 }
 
 func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
+	logger := log.Scoped("endpoint")
 	for eps := range ch {
-		log15.Info(
-			"endpoints discovered",
-			"urlspec", m.urlspec,
-			"service", eps.Service,
-			"count", len(eps.Endpoints),
-			"endpoints", eps.Endpoints,
-			"error", eps.Error,
+
+		logger.Info(
+			"endpoints k8s discovered",
+			log.String("urlspec", m.urlspec),
+			log.String("service", eps.Service),
+			log.Int("count", len(eps.Endpoints)),
+			log.Error(eps.Error),
 		)
 
-		switch {
-		case eps.Error != nil:
-			m.mu.Lock()
-			m.err = eps.Error
-			m.mu.Unlock()
-		case len(eps.Endpoints) > 0:
-			metricEndpointSize.WithLabelValues(eps.Service).Set(float64(len(eps.Endpoints)))
+		metricEndpointSize.WithLabelValues(eps.Service).Set(float64(len(eps.Endpoints)))
 
-			hm := newConsistentHash(eps.Endpoints)
-			m.mu.Lock()
-			m.hm = hm
-			m.mu.Unlock()
-		default:
-			m.mu.Lock()
-			m.err = errors.Errorf(
-				"no %s endpoints could be found (this may indicate more %s replicas are needed, contact support@sourcegraph.com for assistance)",
-				eps.Service,
-				eps.Service,
-			)
-			m.mu.Unlock()
+		var hm *rendezvous.Rendezvous
+		if eps.Error == nil {
+			hm = newConsistentHash(eps.Endpoints)
 		}
+
+		m.mu.Lock()
+		m.hm = hm
+		m.err = eps.Error
+		m.mu.Unlock()
 
 		select {
 		case <-ready:
@@ -206,4 +232,26 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 			close(ready)
 		}
 	}
+}
+
+type connsGetter func(conns conftypes.ServiceConnections) []string
+
+// ConfBased returns a Map that watches the global conf and calls the provided
+// getter to extract endpoints.
+func ConfBased(getter connsGetter) *Map {
+	return &Map{
+		urlspec: "conf-based",
+		discofunk: func(disco chan endpoints) {
+			conf.Watch(func() {
+				serviceConnections := conf.Get().ServiceConnections()
+
+				eps := getter(serviceConnections)
+				disco <- endpoints{Endpoints: eps}
+			})
+		},
+	}
+}
+
+func newConsistentHash(nodes []string) *rendezvous.Rendezvous {
+	return rendezvous.New(nodes, xxhash.Sum64String)
 }

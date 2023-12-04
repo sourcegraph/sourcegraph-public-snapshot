@@ -1,26 +1,67 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "esnext",
     "baseUrl": ".",
-    "paths": {
-      "*": ["src/types/*", "../shared/src/types/*", "../common/src/types/*", "*"],
-    },
-    "jsx": "react",
+    "jsx": "react-jsx",
     "rootDir": ".",
     "outDir": "out",
   },
   "references": [
-    { "path": "../shared" },
-    { "path": "../branded" },
-    { "path": "../../schema" },
-    { "path": "../storybook" },
-    { "path": "../http-client" },
-    { "path": "../codeintellify" },
-    { "path": "../common" },
-    { "path": "../search" },
-    { "path": "../search-ui" },
+    {
+      "path": "../../schema",
+    },
+    {
+      "path": "../branded",
+    },
+    {
+      "path": "../build-config",
+    },
+    {
+      "path": "../client-api",
+    },
+    {
+      "path": "../codeintellify",
+    },
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../extension-api-types",
+    },
+    {
+      "path": "../http-client",
+    },
+    {
+      "path": "../observability-client",
+    },
+    {
+      "path": "../shared",
+    },
+    {
+      "path": "../storybook",
+    },
+    {
+      "path": "../testing",
+    },
+    {
+      "path": "../wildcard",
+    },
   ],
-  "include": ["**/*", ".*", "./src/**/*.json"],
-  "exclude": ["../../node_modules", "./node_modules", "./out", "src/end-to-end", "src/regression", "src/integration"],
+  "include": ["src", "scripts", "__mocks__", "./src/**/*.json"],
+  "exclude": [
+    "vitest.config.ts",
+    "dev",
+    "../../node_modules",
+    "./node_modules",
+    "./out",
+    "src/end-to-end",
+    "src/regression",
+    "src/integration",
+  ],
+  "ts-node": {
+    "moduleTypes": {
+      "scripts/**/*": "cjs",
+    },
+  },
 }

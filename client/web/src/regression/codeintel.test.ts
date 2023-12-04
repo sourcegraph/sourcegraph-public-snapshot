@@ -1,22 +1,20 @@
-import { applyEdits, JSONPath } from '@sqs/jsonc-parser'
-import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import expect from 'expect'
+import { applyEdits, type JSONPath, modify } from 'jsonc-parser'
 import { describe, before, after, test } from 'mocha'
-import { ElementHandle } from 'puppeteer'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
-import { Config, getConfig } from '@sourcegraph/shared/src/testing/config'
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import { getConfig } from '@sourcegraph/shared/src/testing/config'
+import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
+import { ExternalServiceKind } from '../graphql-operations'
+
 import { ensureTestExternalService, getUser, setTosAccepted, setUserSiteAdmin } from './util/api'
-import { GraphQLClient } from './util/GraphQlClient'
-import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
+import type { GraphQLClient } from './util/GraphQlClient'
+import { ensureSignedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import { getTestTools } from './util/init'
 import { TestResourceManager } from './util/TestResourceManager'
 
-describe('Code intelligence regression test suite', () => {
+describe('Code graph regression test suite', () => {
     const testUsername = 'test-sg-codeintel'
     const config = getConfig(
         'gitHubToken',
@@ -32,19 +30,19 @@ describe('Code intelligence regression test suite', () => {
         'testUserPassword'
     )
     const testExternalServiceInfo = {
-        kind: GQL.ExternalServiceKind.GITHUB,
+        kind: ExternalServiceKind.GITHUB,
         uniqueDisplayName: '[TEST] GitHub (codeintel.test.ts)',
     }
 
     const testRepoSlugs = [
-        'sourcegraph/sourcegraph',
+        'sourcegraph/run',
         'sourcegraph-testing/prometheus-common',
         'sourcegraph-testing/prometheus-client-golang',
         'sourcegraph-testing/prometheus-redefinitions',
     ]
 
-    const prometheusCommonHeadCommit = 'b5fe7d854c42dc7842e48d1ca58f60feae09d77b' // HEAD
-    const prometheusRedefinitionsHeadCommit = 'c68f0e063cf8a98e7ce3428cfd50588746010f1f'
+    // const prometheusCommonHeadCommit = 'b5fe7d854c42dc7842e48d1ca58f60feae09d77b' // HEAD
+    // const prometheusRedefinitionsHeadCommit = 'c68f0e063cf8a98e7ce3428cfd50588746010f1f'
 
     let driver: Driver
     let gqlClient: GraphQLClient
@@ -56,7 +54,7 @@ describe('Code intelligence regression test suite', () => {
         outerResourceManager.add(
             'User',
             testUsername,
-            await ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+            await ensureSignedInOrCreateTestUser(driver, gqlClient, {
                 username: testUsername,
                 deleteIfExists: true,
                 ...config,
@@ -102,7 +100,7 @@ describe('Code intelligence regression test suite', () => {
         }
     })
 
-    describe('Basic code intelligence regression test suite', () => {
+    describe('Basic code graph regression test suite', () => {
         const innerResourceManager = new TestResourceManager()
         before(async () => {
             innerResourceManager.add('Global setting', 'codeIntel.lsif', await setGlobalLSIFSetting(gqlClient, false))
@@ -113,7 +111,8 @@ describe('Code intelligence regression test suite', () => {
             }
         })
 
-        test('File sidebar, multiple levels of directories', async () => {
+        // Re-enabling tracked in https://github.com/sourcegraph/sourcegraph/issues/39000
+        test.skip('File sidebar, multiple levels of directories', async () => {
             await driver.page.goto(
                 config.sourcegraphBaseUrl +
                     '/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3'
@@ -169,235 +168,236 @@ describe('Code intelligence regression test suite', () => {
         //     )
         // })
 
-        test('Definitions, references, and hovers', () =>
-            testCodeNavigation(driver, config, {
-                page: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go`,
-                line: 225,
-                token: 'SamplePair',
-                expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
-                // TODO(efritz) - determine why reference panel shows up during this test,
-                // but only when automated - doing the same flow manually works correctly.
-                // expectedDefinition: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:1`,
-                expectedReferences: [
-                    `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?L97:10&subtree=true`,
-                    `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?L225:11&subtree=true`,
-                    `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/sample.go?L7:6&subtree=true`,
-                ],
-            }))
+        // TODO: Disabled because it's flaky. https://github.com/sourcegraph/sourcegraph/issues/32684
+        // test('Definitions, references, and hovers', () =>
+        //     testCodeNavigation(driver, config, {
+        //         page: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go`,
+        //         line: 225,
+        //         token: 'SamplePair',
+        //         expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
+        //         // TODO(efritz) - determine why reference panel shows up during this test,
+        //         // but only when automated - doing the same flow manually works correctly.
+        //         // expectedDefinition: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:1`,
+        //         expectedReferences: [
+        //             `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?L97:10`,
+        //             `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?L225:11`,
+        //             `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/sample.go?L7:6`,
+        //         ],
+        //     }))
     })
 })
 
 //
 // Code navigation utilities
 
-interface CodeNavigationTestCase {
-    /**
-     * The source page.
-     */
-    page: string
+// interface CodeNavigationTestCase {
+//     /**
+//      * The source page.
+//      */
+//     page: string
+//
+//     /**
+//      * The source line.
+//      */
+//     line: number
+//
+//     /**
+//      * The token to click. Should be unambiguous within this line for the test to succeed.
+//      */
+//     token: string
+//
+//     /**
+//      * A substring of the expected hover text
+//      */
+//     expectedHoverContains: string
+//
+//     /**
+//      * A locations (if unambiguous), or a subset of locations that must occur within the definitions panel.
+//      */
+//     expectedDefinition?: string | string[]
+//
+//     /**
+//      * A subset of locations that must occur within the references panel.
+//      */
+//     expectedReferences?: string[]
+// }
 
-    /**
-     * The source line.
-     */
-    line: number
+// /**
+//  * Navigate to the given page and test the definitions, references, and hovers of the token
+//  * on the given line. Will ensure both hover and clicking the token produces the hover overlay.
+//  * Will check the precision indicator of the hoverlay and each file match in the definition
+//  * and reference panels. Will compare hover text. Will compare location of each file match or
+//  * the target of the page navigated to on jump-to-definition (in the case of a single definition).
+//  */
+// async function testCodeNavigation(
+//     driver: Driver,
+//     config: Pick<Config, 'sourcegraphBaseUrl'>,
+//     { page, line, token, expectedHoverContains, expectedDefinition, expectedReferences }: CodeNavigationTestCase
+// ): Promise<void> {
+//     await driver.page.goto(config.sourcegraphBaseUrl + page)
+//     await driver.page.waitForSelector('.test-blob')
+//     const tokenElement = await findTokenElement(driver, line, token)
+//
+//     // Check hover
+//     await tokenElement.hover()
+//     await waitForHover(driver, expectedHoverContains)
+//
+//     // Check click
+//     await clickOnEmptyPartOfCodeView(driver)
+//     await tokenElement.click()
+//     await waitForHover(driver, expectedHoverContains)
+//
+//     // Find-references
+//     if (expectedReferences && expectedReferences.length > 0) {
+//         await clickOnEmptyPartOfCodeView(driver)
+//         await tokenElement.hover()
+//         await waitForHover(driver, expectedHoverContains)
+//         await (await driver.findElementWithText('Find references')).click()
+//
+//         await driver.page.waitForSelector('.test-search-result')
+//         const referenceLinks = await collectLinks(driver)
+//         for (const expectedReference of expectedReferences) {
+//             expect(referenceLinks).toContainEqual(expectedReference)
+//         }
+//         await clickOnEmptyPartOfCodeView(driver)
+//     }
+//
+//     // Go-to-definition
+//     await clickOnEmptyPartOfCodeView(driver)
+//     await tokenElement.hover()
+//     await waitForHover(driver, expectedHoverContains)
+//     await (await driver.findElementWithText('Go to definition')).click()
+//
+//     if (Array.isArray(expectedDefinition)) {
+//         await driver.page.waitForSelector('[data-test-id="hierarchical-locations-view"]')
+//         const defLinks = await collectLinks(driver)
+//         for (const definition of expectedDefinition) {
+//             expect(defLinks).toContainEqual(definition)
+//         }
+//     } else if (expectedDefinition) {
+//         await driver.page.waitForFunction(
+//             (defURL: string) => document.location.href.endsWith(defURL),
+//             { timeout: 2000 },
+//             expectedDefinition
+//         )
+//
+//         await driver.page.goBack()
+//     }
+//
+//     await driver.page.keyboard.press('Escape')
+// }
 
-    /**
-     * The token to click. Should be unambiguous within this line for the test to succeed.
-     */
-    token: string
+// /**
+//  * Return a list of locations (and their precision) that exist in the file list
+//  * panel. This will click on each repository and collect the visible links in a
+//  * sequence.
+//  */
+// async function collectLinks(driver: Driver): Promise<Set<string>> {
+//     await driver.page.waitForSelector('.test-loading-spinner', { hidden: true })
+//
+//     const panelTabTitles = await getPanelTabTitles(driver)
+//     if (panelTabTitles.length === 0) {
+//         return new Set(await collectVisibleLinks(driver))
+//     }
+//
+//     const links = new Set<string>()
+//     for (const title of panelTabTitles) {
+//         const tabElement = await driver.page.$$(
+//             `[data-testid="hierarchical-locations-view-list"] span[title="${title}"]`
+//         )
+//         if (tabElement.length > 0) {
+//             await tabElement[0].click()
+//         }
+//
+//         for (const link of await collectVisibleLinks(driver)) {
+//             links.add(link)
+//         }
+//     }
+//
+//     return links
+// }
 
-    /**
-     * A substring of the expected hover text
-     */
-    expectedHoverContains: string
+// /**
+//  * Return the list of repository titles on the left-hand side of the definition or
+//  * reference result panel.
+//  */
+// async function getPanelTabTitles(driver: Driver): Promise<string[]> {
+//     return (
+//         await Promise.all(
+//             (
+//                 await driver.page.$$('[data-testid="hierarchical-locations-view-list"]:first-child span[title]')
+//             ).map(elementHandle => elementHandle.evaluate(element => element.getAttribute('title') || ''))
+//         )
+//     ).map(normalizeWhitespace)
+// }
 
-    /**
-     * A locations (if unambiguous), or a subset of locations that must occur within the definitions panel.
-     */
-    expectedDefinition?: string | string[]
+// /**
+//  * Return a list of locations (and their precision) that are current visible in a
+//  * file list panel. This may be definitions or references.
+//  */
+// function collectVisibleLinks(driver: Driver): Promise<string[]> {
+//     return driver.page.evaluate(() =>
+//         [...document.querySelectorAll<HTMLElement>('.test-file-match-children-item-wrapper')].map(
+//             a => a.querySelector('.test-file-match-children-item')?.getAttribute('data-href') || ''
+//         )
+//     )
+// }
 
-    /**
-     * A subset of locations that must occur within the references panel.
-     */
-    expectedReferences?: string[]
-}
+// /**
+//  * Close any visible hover overlay.
+//  */
+// async function clickOnEmptyPartOfCodeView(driver: Driver): Promise<void> {
+//     await driver.page.click('.test-blob tr:nth-child(1) .line')
+//     await driver.page.waitForFunction(() => document.querySelectorAll('.test-tooltip-go-to-definition').length === 0)
+// }
 
-/**
- * Navigate to the given page and test the definitions, references, and hovers of the token
- * on the given line. Will ensure both hover and clicking the token produces the hover overlay.
- * Will check the precision indicator of the hoverlay and each file match in the definition
- * and reference panels. Will compare hover text. Will compare location of each file match or
- * the target of the page navigated to on jump-to-definition (in the case of a single definition).
- */
-async function testCodeNavigation(
-    driver: Driver,
-    config: Pick<Config, 'sourcegraphBaseUrl'>,
-    { page, line, token, expectedHoverContains, expectedDefinition, expectedReferences }: CodeNavigationTestCase
-): Promise<void> {
-    await driver.page.goto(config.sourcegraphBaseUrl + page)
-    await driver.page.waitForSelector('.test-blob')
-    const tokenElement = await findTokenElement(driver, line, token)
+// /**
+//  * Find the element with the token text on the given line.
+//  *
+//  * Will close any toast so that the entire line is visible and will hover over the line
+//  * to ensure that the line is tokenized (as this is done on-demand).
+//  */
+// async function findTokenElement(driver: Driver, line: number, token: string): Promise<ElementHandle<Element>> {
+//     try {
+//         // If there's an open toast, close it. If the toast remains open and our target
+//         // identifier happens to be hidden by it, we won't be able to select the correct
+//         // token. This condition was reproducible in the code navigation test that searches
+//         // for the identifier `StdioLogger`.
+//         await driver.page.click('.test-close-toast')
+//     } catch {
+//         // No toast open, this is fine
+//     }
+//
+//     const selector = `.test-blob tr:nth-child(${line}) span`
+//     await driver.page.hover(selector)
+//     return driver.findElementWithText(token, { selector, fuzziness: 'exact' })
+// }
 
-    // Check hover
-    await tokenElement.hover()
-    await waitForHover(driver, expectedHoverContains)
+// /**
+//  * Wait for the hover tooltip to become visible. Compare the visible text with the expected
+//  * contents (expected contents must be a substring of the visible contents).
+//  */
+// async function waitForHover(driver: Driver, expectedHoverContains: string): Promise<void> {
+//     await driver.page.waitForSelector('.test-tooltip-go-to-definition')
+//     await driver.page.waitForSelector('.test-tooltip-content')
+//     expect(normalizeWhitespace(await getTooltip(driver))).toContain(normalizeWhitespace(expectedHoverContains))
+// }
 
-    // Check click
-    await clickOnEmptyPartOfCodeView(driver)
-    await tokenElement.click()
-    await waitForHover(driver, expectedHoverContains)
+// /**
+//  * Return the currently visible hover text.
+//  */
+// async function getTooltip(driver: Driver): Promise<string> {
+//     return driver.page.evaluate(
+//         () => (document.querySelector('.test-tooltip-content') as HTMLElement).textContent || ''
+//     )
+// }
 
-    // Find-references
-    if (expectedReferences && expectedReferences.length > 0) {
-        await clickOnEmptyPartOfCodeView(driver)
-        await tokenElement.hover()
-        await waitForHover(driver, expectedHoverContains)
-        await (await driver.findElementWithText('Find references')).click()
-
-        await driver.page.waitForSelector('.test-search-result')
-        const referenceLinks = await collectLinks(driver)
-        for (const expectedReference of expectedReferences) {
-            expect(referenceLinks).toContainEqual(expectedReference)
-        }
-        await clickOnEmptyPartOfCodeView(driver)
-    }
-
-    // Go-to-definition
-    await clickOnEmptyPartOfCodeView(driver)
-    await tokenElement.hover()
-    await waitForHover(driver, expectedHoverContains)
-    await (await driver.findElementWithText('Go to definition')).click()
-
-    if (Array.isArray(expectedDefinition)) {
-        await driver.page.waitForSelector('[data-test-id="hierarchical-locations-view"]')
-        const defLinks = await collectLinks(driver)
-        for (const definition of expectedDefinition) {
-            expect(defLinks).toContainEqual(definition)
-        }
-    } else if (expectedDefinition) {
-        await driver.page.waitForFunction(
-            (defURL: string) => document.location.href.endsWith(defURL),
-            { timeout: 2000 },
-            expectedDefinition
-        )
-
-        await driver.page.goBack()
-    }
-
-    await driver.page.keyboard.press('Escape')
-}
-
-/**
- * Return a list of locations (and their precision) that exist in the file list
- * panel. This will click on each repository and collect the visible links in a
- * sequence.
- */
-async function collectLinks(driver: Driver): Promise<Set<string>> {
-    await driver.page.waitForSelector('.test-loading-spinner', { hidden: true })
-
-    const panelTabTitles = await getPanelTabTitles(driver)
-    if (panelTabTitles.length === 0) {
-        return new Set(await collectVisibleLinks(driver))
-    }
-
-    const links = new Set<string>()
-    for (const title of panelTabTitles) {
-        const tabElement = await driver.page.$$(
-            `[data-testid="hierarchical-locations-view-list"] span[title="${title}"]`
-        )
-        if (tabElement.length > 0) {
-            await tabElement[0].click()
-        }
-
-        for (const link of await collectVisibleLinks(driver)) {
-            links.add(link)
-        }
-    }
-
-    return links
-}
-
-/**
- * Return the list of repository titles on the left-hand side of the definition or
- * reference result panel.
- */
-async function getPanelTabTitles(driver: Driver): Promise<string[]> {
-    return (
-        await Promise.all(
-            (
-                await driver.page.$$('[data-testid="hierarchical-locations-view-list"]:first-child span[title]')
-            ).map(elementHandle => elementHandle.evaluate(element => element.getAttribute('title') || ''))
-        )
-    ).map(normalizeWhitespace)
-}
-
-/**
- * Return a list of locations (and their precision) that are current visible in a
- * file list panel. This may be definitions or references.
- */
-function collectVisibleLinks(driver: Driver): Promise<string[]> {
-    return driver.page.evaluate(() =>
-        [...document.querySelectorAll<HTMLElement>('.test-file-match-children-item-wrapper')].map(
-            a => a.querySelector('.test-file-match-children-item')?.getAttribute('data-href') || ''
-        )
-    )
-}
-
-/**
- * Close any visible hover overlay.
- */
-async function clickOnEmptyPartOfCodeView(driver: Driver): Promise<void> {
-    await driver.page.click('.test-blob tr:nth-child(1) .line')
-    await driver.page.waitForFunction(() => document.querySelectorAll('.test-tooltip-go-to-definition').length === 0)
-}
-
-/**
- * Find the element with the token text on the given line.
- *
- * Will close any toast so that the entire line is visible and will hover over the line
- * to ensure that the line is tokenized (as this is done on-demand).
- */
-async function findTokenElement(driver: Driver, line: number, token: string): Promise<ElementHandle<Element>> {
-    try {
-        // If there's an open toast, close it. If the toast remains open and our target
-        // identifier happens to be hidden by it, we won't be able to select the correct
-        // token. This condition was reproducible in the code navigation test that searches
-        // for the identifier `StdioLogger`.
-        await driver.page.click('.test-close-toast')
-    } catch {
-        // No toast open, this is fine
-    }
-
-    const selector = `.test-blob tr:nth-child(${line}) span`
-    await driver.page.hover(selector)
-    return driver.findElementWithText(token, { selector, fuzziness: 'exact' })
-}
-
-/**
- * Wait for the hover tooltip to become visible. Compare the visible text with the expected
- * contents (expected contents must be a substring of the visible contents).
- */
-async function waitForHover(driver: Driver, expectedHoverContains: string): Promise<void> {
-    await driver.page.waitForSelector('.test-tooltip-go-to-definition')
-    await driver.page.waitForSelector('.test-tooltip-content')
-    expect(normalizeWhitespace(await getTooltip(driver))).toContain(normalizeWhitespace(expectedHoverContains))
-}
-
-/**
- * Return the currently visible hover text.
- */
-async function getTooltip(driver: Driver): Promise<string> {
-    return driver.page.evaluate(
-        () => (document.querySelector('.test-tooltip-content') as HTMLElement).textContent || ''
-    )
-}
-
-/**
- * Collapse multiple spaces into one.
- */
-function normalizeWhitespace(string: string): string {
-    return string.replace(/\s+/g, ' ')
-}
+// /**
+//  * Collapse multiple spaces into one.
+//  */
+// function normalizeWhitespace(string: string): string {
+//     return string.replace(/\s+/g, ' ')
+// }
 
 //
 // LSIF utilities
@@ -419,10 +419,12 @@ async function writeSetting(gqlClient: GraphQLClient, path: JSONPath, value: unk
     const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings(gqlClient)
     const newContents = applyEdits(
         oldContents,
-        setProperty(oldContents, path, value, {
-            eol: '\n',
-            insertSpaces: true,
-            tabSize: 2,
+        modify(oldContents, path, value, {
+            formattingOptions: {
+                eol: '\n',
+                insertSpaces: true,
+                tabSize: 2,
+            },
         })
     )
 

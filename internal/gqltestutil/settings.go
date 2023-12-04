@@ -30,7 +30,7 @@ query SettingsCascade($subject: ID!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"subject": subjectID,
 	}
 	var resp struct {
@@ -67,7 +67,7 @@ mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"subject":  subjectID,
 		"lastID":   lastID,
 		"contents": contents,
@@ -152,11 +152,12 @@ query ViewerSettings {
 // SiteConfiguration returns current effective site configuration.
 //
 // This method requires the authenticated user to be a site admin.
-func (c *Client) SiteConfiguration() (*schema.SiteConfiguration, error) {
+func (c *Client) SiteConfiguration() (*schema.SiteConfiguration, int32, error) {
 	const query = `
 query Site {
 	site {
 		configuration {
+            id
 			effectiveContents
 		}
 	}
@@ -167,6 +168,7 @@ query Site {
 		Data struct {
 			Site struct {
 				Configuration struct {
+					ID                int32  `json:"id"`
 					EffectiveContents string `json:"effectiveContents"`
 				} `json:"configuration"`
 			} `json:"site"`
@@ -174,33 +176,35 @@ query Site {
 	}
 	err := c.GraphQL("", query, nil, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, 0, errors.Wrap(err, "request GraphQL")
 	}
 
 	config := new(schema.SiteConfiguration)
 	err = jsonc.Unmarshal(resp.Data.Site.Configuration.EffectiveContents, config)
 	if err != nil {
-		return nil, errors.Wrap(err, "unmarshal configuration")
+		return nil, 0, errors.Wrap(err, "unmarshal configuration")
 	}
-	return config, nil
+
+	return config, resp.Data.Site.Configuration.ID, nil
 }
 
 // UpdateSiteConfiguration updates site configuration.
 //
 // This method requires the authenticated user to be a site admin.
-func (c *Client) UpdateSiteConfiguration(config *schema.SiteConfiguration) error {
+func (c *Client) UpdateSiteConfiguration(config *schema.SiteConfiguration, lastID int32) error {
 	input, err := jsoniter.Marshal(config)
 	if err != nil {
 		return errors.Wrap(err, "marshal configuration")
 	}
 
 	const query = `
-mutation UpdateSiteConfiguration($input: String!) {
-	updateSiteConfiguration(lastID: 0, input: $input)
+mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
+	updateSiteConfiguration(lastID: $lastID, input: $input)
 }
 `
-	variables := map[string]interface{}{
-		"input": string(input),
+	variables := map[string]any{
+		"lastID": lastID,
+		"input":  string(input),
 	}
 	err = c.GraphQL("", query, variables, nil)
 	if err != nil {

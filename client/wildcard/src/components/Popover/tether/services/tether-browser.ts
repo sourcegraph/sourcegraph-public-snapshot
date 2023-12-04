@@ -1,5 +1,8 @@
-import { createPoint, Point } from '../models/geometry/point'
-import { Rectangle } from '../models/geometry/rectangle'
+import { createPoint, type Point } from '../models/geometry/point'
+import type { Rectangle } from '../models/geometry/rectangle'
+import type { ElementPosition } from '../models/tether-models'
+
+import { POSITION_VARIANTS } from './geometry/constants'
 
 interface ScrollPositions {
     points: WeakMap<Element, Point>
@@ -111,7 +114,7 @@ export function getAbsoluteAnchorOffset(element: HTMLElement): Point {
     return createPoint(0, 0)
 }
 
-export function setTransform(element: HTMLElement | null, angle: number, offset: Point): void {
+export function setTransform(element: HTMLElement | SVGElement | null, angle: number, offset: Point): void {
     setStyle(element, 'transform', `translate(${offset.x}px, ${offset.y}px) rotate(${angle}deg)`)
 }
 
@@ -123,12 +126,20 @@ export function setMaxSize(element: HTMLElement, bounds: Rectangle | null): void
 export function setVisibility(element: HTMLElement | null, isVisible: boolean): void {
     if (element !== null && element.hidden !== !isVisible) {
         element.hidden = !isVisible
+        element.style.setProperty('visibility', isVisible ? 'visible' : 'hidden')
     }
 }
 
-export function setStyle(element: HTMLElement | null, key: string, value: string): void {
+export function setStyle(element: HTMLElement | SVGElement | null, key: string, value: string): void {
     if (element !== null && element.style.getPropertyValue(key) !== value) {
         element.style.setProperty(key, value)
+    }
+}
+
+export function setPositionAttributes(element: HTMLElement | SVGElement | null, position: ElementPosition): void {
+    if (element !== null && position) {
+        element.dataset.position = position
+        element.dataset.side = POSITION_VARIANTS[position].positionSides
     }
 }
 

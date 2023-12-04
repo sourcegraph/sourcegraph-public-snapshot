@@ -1,45 +1,41 @@
-import React, { ReactNode, useCallback, useContext } from 'react'
+import React, { type ReactNode } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError } from '@sourcegraph/common'
+import classNames from 'classnames'
 
-import { FormGroup } from '../../../../components/form/form-group/FormGroup'
-import { FormInput } from '../../../../components/form/form-input/FormInput'
-import { FormRadioInput } from '../../../../components/form/form-radio-input/FormRadioInput'
-import { useField } from '../../../../components/form/hooks/useField'
-import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../components/form/hooks/useForm'
-import { AsyncValidator } from '../../../../components/form/hooks/utils/use-async-validation'
-import { createRequiredValidator } from '../../../../components/form/validators'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import {
-    isGlobalSubject,
-    isOrganizationSubject,
-    isUserSubject,
-    SupportedInsightSubject,
-} from '../../../../core/types/subjects'
+    Input,
+    ErrorAlert,
+    FormGroup,
+    useForm,
+    useField,
+    getDefaultInputProps,
+    createRequiredValidator,
+    FORM_ERROR,
+    type FormAPI,
+    type SubmissionErrors,
+} from '@sourcegraph/wildcard'
 
-const dashboardTitleRequired = createRequiredValidator('Name is a required field.')
+import { FormRadioInput, LimitedAccessLabel } from '../../../../components'
+import { type InsightsDashboardOwner, isGlobalOwner, isOrganizationOwner, isPersonalOwner } from '../../../../core'
+import { useUiFeatures } from '../../../../hooks'
+
+import styles from './InsightsDashboardCreationContent.module.scss'
+
+const DASHBOARD_TITLE_VALIDATORS = createRequiredValidator('Name is a required field.')
 
 const DASHBOARD_INITIAL_VALUES: DashboardCreationFields = {
     name: '',
-    visibility: 'personal',
+    owner: null,
 }
 
 export interface DashboardCreationFields {
     name: string
-    visibility: string
-    type?: string
-    userId?: string
+    owner: InsightsDashboardOwner | null
 }
 
 export interface InsightsDashboardCreationContentProps {
     initialValues?: DashboardCreationFields
-
-    /**
-     * Organizations list used in the creation form for dashboard visibility setting.
-     */
-    subjects: SupportedInsightSubject[]
-
+    owners: InsightsDashboardOwner[]
     onSubmit: (values: DashboardCreationFields) => Promise<SubmissionErrors>
     children: (formAPI: FormAPI<DashboardCreationFields>) => ReactNode
 }
@@ -47,94 +43,62 @@ export interface InsightsDashboardCreationContentProps {
 /**
  * Renders creation UI form content (fields, submit and cancel buttons).
  */
-export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
-    const { initialValues, subjects, onSubmit, children } = props
+export const InsightsDashboardCreationContent: React.FunctionComponent<
+    InsightsDashboardCreationContentProps
+> = props => {
+    const { initialValues, owners, onSubmit, children } = props
 
-    const { findDashboardByName } = useContext(CodeInsightsBackendContext)
+    const { licensed } = useUiFeatures()
 
-    // We always have user subject in our settings cascade
-    const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
-    const organizationSubjects = subjects.filter(isOrganizationSubject)
-
-    // We always have global subject in our settings cascade
-    const globalSubject = subjects.find(isGlobalSubject)
+    const userOwner = owners.find(isPersonalOwner)
+    const personalOwners = owners.filter(isPersonalOwner)
+    const organizationOwners = owners.filter(isOrganizationOwner)
+    const globalOwners = owners.filter(isGlobalOwner)
 
     const { ref, handleSubmit, formAPI } = useForm<DashboardCreationFields>({
-        initialValues: initialValues ?? { ...DASHBOARD_INITIAL_VALUES, visibility: userSubjectID },
-        // Override onSubmit to pass type value
-        // to correctly set the grants property for graphql api
-        onSubmit: async (): Promise<SubmissionErrors> => {
-            let type = 'organization'
-            if (visibility.input.value === userSubjectID) {
-                type = 'personal'
-            }
-
-            if (visibility.input.value === globalSubject?.id) {
-                type = 'global'
-            }
-
-            return onSubmit({
-                name: name.input.value,
-                visibility: visibility.input.value,
-                type,
-            })
+        initialValues: initialValues ?? {
+            ...DASHBOARD_INITIAL_VALUES,
+            owner: userOwner ?? null,
         },
+        onSubmit,
     })
-
-    const asyncNameValidator = useCallback<AsyncValidator<string>>(
-        async name => {
-            // Pass empty value and initial value (for edit page original name is acceptable)
-            if (!name || name === '' || name === initialValues?.name) {
-                return
-            }
-
-            try {
-                const possibleDashboard = await findDashboardByName(name).toPromise()
-
-                return possibleDashboard !== null
-                    ? 'A dashboard with this name already exists. Please set a different name for the new dashboard.'
-                    : undefined
-            } catch (error) {
-                return asError(error).message || 'Unknown Error'
-            }
-        },
-        [findDashboardByName, initialValues?.name]
-    )
 
     const name = useField({
         name: 'name',
         formApi: formAPI,
-        validators: { sync: dashboardTitleRequired, async: asyncNameValidator },
+        validators: { sync: DASHBOARD_TITLE_VALIDATORS },
     })
 
     const visibility = useField({
-        name: 'visibility',
+        name: 'owner',
         formApi: formAPI,
     })
 
     return (
+        // eslint-disable-next-line react/forbid-elements
         <form noValidate={true} ref={ref} onSubmit={handleSubmit}>
-            <FormInput
+            <Input
                 required={true}
                 autoFocus={true}
-                title="Name"
+                label="Name"
                 placeholder="Example: My personal code insights dashboard"
-                description="Shown as the title for your dashboard"
-                valid={name.meta.touched && name.meta.validState === 'VALID'}
-                error={name.meta.touched && name.meta.error}
-                {...name.input}
+                message="Shown as the title for your dashboard"
+                {...getDefaultInputProps(name)}
             />
 
             <FormGroup name="visibility" title="Visibility" contentClassName="d-flex flex-column" className="mb-0 mt-4">
-                <FormRadioInput
-                    name="visibility"
-                    value={userSubjectID}
-                    title="Private"
-                    description="visible only to you"
-                    checked={visibility.input.value === userSubjectID}
-                    className="mr-3"
-                    onChange={visibility.input.onChange}
-                />
+                {personalOwners.map(owner => (
+                    <FormRadioInput
+                        key={owner.id}
+                        name="visibility"
+                        value={owner.id}
+                        title="Private"
+                        description="visible only to you"
+                        checked={visibility.input.value?.id === owner.id}
+                        className="mr-3"
+                        onChange={() => visibility.input.onChange(owner)}
+                    />
+                ))}
 
                 <hr className="mt-2 mb-3" />
 
@@ -142,19 +106,19 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                     Shared - visible to everyone in the chosen organization
                 </small>
 
-                {organizationSubjects.map(org => (
+                {organizationOwners.map(org => (
                     <FormRadioInput
                         key={org.id}
                         name="visibility"
                         value={org.id}
-                        title={org.displayName ?? org.name}
-                        checked={visibility.input.value === org.id}
-                        onChange={visibility.input.onChange}
+                        title={org.title}
+                        checked={visibility.input.value?.id === org.id}
+                        onChange={() => visibility.input.onChange(org)}
                         className="mr-3"
                     />
                 ))}
 
-                {organizationSubjects.length === 0 && (
+                {organizationOwners.length === 0 && (
                     <FormRadioInput
                         name="visibility"
                         value="organization"
@@ -167,19 +131,29 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                     />
                 )}
 
-                <FormRadioInput
-                    name="visibility"
-                    value={globalSubject?.id}
-                    title="Global"
-                    description="visible to everyone on your Sourcegraph instance"
-                    checked={visibility.input.value === globalSubject?.id}
-                    className="mr-3 flex-grow-0"
-                    onChange={visibility.input.onChange}
-                />
+                {globalOwners.map(owner => (
+                    <FormRadioInput
+                        key={owner.id}
+                        name="visibility"
+                        value={owner.id}
+                        title={owner.title}
+                        description="visible to everyone on your Sourcegraph instance"
+                        checked={visibility.input.value?.id === owner.id}
+                        className="mr-3 flex-grow-0"
+                        onChange={() => visibility.input.onChange(owner)}
+                    />
+                ))}
             </FormGroup>
 
             {formAPI.submitErrors?.[FORM_ERROR] && (
                 <ErrorAlert error={formAPI.submitErrors[FORM_ERROR]} className="mt-2 mb-2" />
+            )}
+
+            {!licensed && (
+                <LimitedAccessLabel
+                    className={classNames(styles.limitedBanner)}
+                    message="Unlock Code Insights to create unlimited custom dashboards"
+                />
             )}
 
             <div className="d-flex flex-wrap justify-content-end mt-3">{children(formAPI)}</div>

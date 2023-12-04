@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`RouterLink renders absolute URL correctly  1`] = `
+exports[`RouterLink > renders absolute URL correctly  1`] = `
 <DocumentFragment>
   <a
     class=""
@@ -11,7 +11,7 @@ exports[`RouterLink renders absolute URL correctly  1`] = `
 </DocumentFragment>
 `;
 
-exports[`RouterLink renders router link correctly 1`] = `
+exports[`RouterLink > renders router link correctly 1`] = `
 <DocumentFragment>
   <a
     class="anchorLink"

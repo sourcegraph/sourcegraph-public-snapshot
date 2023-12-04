@@ -5,19 +5,19 @@
 // When editing this package or introducing any shared declarations, you should abide strictly by the
 // following rules:
 //
-// 1. Do NOT declare a shared definition unless 5+ dashboards will use it. Sharing dashboard
-//    declarations means the codebase becomes more complex and non-declarative which we want to avoid
-//    so repeat yourself instead if it applies to less than 5 dashboards.
+//  1. Do NOT declare a shared definition unless 5+ dashboards will use it. Sharing dashboard
+//     declarations means the codebase becomes more complex and non-declarative which we want to avoid
+//     so repeat yourself instead if it applies to less than 5 dashboards.
 //
-// 2. ONLY declare shared Observables. Introducing shared Rows or Groups prevents individual dashboard
-//    maintainers from holistically considering both the layout of dashboards as well as the
-//    metrics and alerts defined within them -- which we do not want.
+//  2. ONLY declare shared Observables. Introducing shared Rows or Groups prevents individual dashboard
+//     maintainers from holistically considering both the layout of dashboards as well as the
+//     metrics and alerts defined within them -- which we do not want.
 //
-// 3. Use the sharedObservable type and do NOT parameterize more than just the container name. It may
-//    be tempting to pass an alerting threshold as an argument, or parameterize whether a critical
-//    alert is defined -- but this makes reasoning about alerts at a high level much more difficult.
-//    If you have a need for this, it is a strong signal you should NOT be using the shared definition
-//    anymore and should instead copy it and apply your modifications.
+//  3. Use the sharedObservable type and do NOT parameterize more than just the container name. It may
+//     be tempting to pass an alerting threshold as an argument, or parameterize whether a critical
+//     alert is defined -- but this makes reasoning about alerts at a high level much more difficult.
+//     If you have a need for this, it is a strong signal you should NOT be using the shared definition
+//     anymore and should instead copy it and apply your modifications.
 //
 // Learn more about monitoring in https://handbook.sourcegraph.com/engineering/observability/monitoring_pillars
 package shared
@@ -62,7 +62,7 @@ func (o Observable) WithNoAlerts(interpretation string) Observable {
 	o.Warning = nil
 	o.Critical = nil
 	o.NoAlert = true
-	o.PossibleSolutions = ""
+	o.NextSteps = ""
 	o.Interpretation = interpretation
 	return o
 }
@@ -78,19 +78,31 @@ func (f ObservableOption) safeApply(observable Observable) Observable {
 	return f(observable)
 }
 
+// and creates a chained ObservableOption that first invokes the receiver,
+// and the the argument on the result of invoking the receiver.
+func (f ObservableOption) and(m ObservableOption) ObservableOption { //nolint:unused
+	return func(observable Observable) Observable {
+		return m.safeApply(f.safeApply(observable))
+	}
+}
+
 // WarningOption creates an ObservableOption that overrides this Observable's
 // warning-level alert with the given alert.
-func WarningOption(a *monitoring.ObservableAlertDefinition) ObservableOption {
+func WarningOption(a *monitoring.ObservableAlertDefinition, possibleSolution string) ObservableOption {
 	return func(observable Observable) Observable {
-		return observable.WithWarning(a)
+		observable = observable.WithWarning(a)
+		observable.NextSteps = possibleSolution
+		return observable
 	}
 }
 
 // CriticalOption creates an ObservableOption that overrides this Observable's
 // critical-level alert with the given alert.
-func CriticalOption(a *monitoring.ObservableAlertDefinition) ObservableOption {
+func CriticalOption(a *monitoring.ObservableAlertDefinition, possibleSolution string) ObservableOption {
 	return func(observable Observable) Observable {
-		return observable.WithCritical(a)
+		observable = observable.WithCritical(a)
+		observable.NextSteps = possibleSolution
+		return observable
 	}
 }
 
@@ -99,6 +111,15 @@ func CriticalOption(a *monitoring.ObservableAlertDefinition) ObservableOption {
 func NoAlertsOption(interpretation string) ObservableOption {
 	return func(observable Observable) Observable {
 		return observable.WithNoAlerts(interpretation)
+	}
+}
+
+// MultiInstanceOption creates an ObservableOption that opts-in this panel to
+// Sourcegraph Cloud's centralized observability multi-instance dashboard.
+func MultiInstanceOption() ObservableOption {
+	return func(observable Observable) Observable {
+		observable.MultiInstance = true
+		return observable
 	}
 }
 

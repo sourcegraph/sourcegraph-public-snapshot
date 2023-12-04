@@ -39,7 +39,7 @@ func makeGenericEdgeValidator(outLabels, inLabels []string) ElementValidator {
 		return validateLabels(ctx, edgeContext, outContext, outLabels)
 	}
 
-	inValidator := func(ctx *ValidationContext, edgeContext, outContext, inContext lsifReader.LineContext) bool {
+	inValidator := func(ctx *ValidationContext, edgeContext, _, inContext lsifReader.LineContext) bool {
 		return validateLabels(ctx, edgeContext, inContext, inLabels)
 	}
 

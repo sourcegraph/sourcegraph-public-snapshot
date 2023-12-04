@@ -55,9 +55,6 @@ Templating is supported in the following fields:
 - [`steps.files`](batch_spec_yaml_reference.md#steps-run) values
 - [`steps.outputs.<name>.value`](batch_spec_yaml_reference.md#steps-outputs)
 - [`steps.if`](batch_spec_yaml_reference.md#steps-if)
-
-Additionally, with Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later:
-
 - [`changesetTemplate.title`](batch_spec_yaml_reference.md#changesettemplate-title)
 - [`changesetTemplate.body`](batch_spec_yaml_reference.md#changesettemplate-body)
 - [`changesetTemplate.branch`](batch_spec_yaml_reference.md#changesettemplate-branch)
@@ -81,29 +78,27 @@ They are evaluated before the execution of each entry in `steps`, except for the
 
 | Template variable | Type | Description |
 | --- | --- | --- |
-| `batch_change.name` | `string` | The `name` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>. |
-| `batch_change.description` | `string` | The `description` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>. 
-| `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
-| `repository.branch` | `string` | The target branch of the repository in which the step is being executed. </br><i><small>Requires Sourcegraph 3.35 or later.</small></i> |
-| `repository.name` | `string` | Full name of the repository in which the step is being executed. |
-| `previous_step.modified_files` | `list of strings` | List of files that have been modified by the previous step in `steps`. Empty list if no files have been modified. |
-| `previous_step.added_files` | `list of strings` | List of files that have been added by the previous step in `steps`. Empty list if no files have been added. |
-| `previous_step.deleted_files` | `list of strings` | List of files that have been deleted by the previous step in `steps`. Empty list if no files have been deleted. |
+| `batch_change.name` | `string` | The `name` of the batch change, as set in the batch spec. |
+| `batch_change.description` | `string` | The `description` of the batch change, as set in the batch spec. |
+| `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `on.repositoriesMatchingQuery`s have been found. Empty list if a `select:repo` filter is used in the `on.repositoriesMatchingQuery`, or if only `on.repository` entries are specified. |
+| `repository.branch` | `string` | The target branch of the repository in which the step is being executed. |
+| `repository.name` | `string` | Full name of the repository in which the step is being executed. Example: `org_foo/repo_bar`. |
+| `previous_step.modified_files` | `list of strings` | List of files that have been modified by the previous steps. Empty list if no files have been modified. |
+| `previous_step.added_files` | `list of strings` | List of files that have been added by the previous steps. Empty list if no files have been added. |
+| `previous_step.deleted_files` | `list of strings` | List of files that have been deleted by the previous steps. Empty list if no files have been deleted. |
 | `previous_step.stdout` | `string` | The complete output of the previous step on standard output. |
 | `previous_step.stderr` | `string` | The complete output of the previous step on standard error. |
-| `step.modified_files` | `list of strings` | Only in `steps.outputs`: List of files that have been modified by the just-executed step. Empty list if no files have been modified. </br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
-| `step.added_files` | `list of strings` | Only in `steps.outputs`: List of files that have been added by the just-executed step. Empty list if no files have been added. </br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
-| `step.deleted_files` | `list of strings` | Only in `steps.outputs`: List of files that have been deleted by the just-executed step. Empty list if no files have been deleted. </br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
-| `step.stdout` | `string` | Only in `steps.outputs`: The complete output of the just-executed step on standard output.</br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
-| `step.stderr` | `string` | Only in `steps.outputs`: The complete output of the just-executed step on standard error. </br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
-| `steps.modified_files` | `list of strings` | List of files that have been modified by the `steps`. Empty list if no files have been modified. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.28 or later</small></i>. |
-| `steps.added_files` | `list of strings` | List of files that have been added by the `steps`. Empty list if no files have been added. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.28 or later</small></i>. |
-| `steps.deleted_files` | `list of strings` | List of files that have been deleted by the `steps`. Empty list if no files have been deleted. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.28 or later</small></i>. |
-| `steps.path` | `string` | Path (relative to the root of the directory, no leading `/` or `.`) in which the `steps` have been executed. Empty if no workspaces have been used and the `steps` were executed in the root of the repository. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.28 or later</small></i>. |
+| `step.modified_files` | `list of strings` | Only in `steps.outputs`: List of files that have been modified by the just-executed step. Empty list if no files have been modified. |
+| `step.added_files` | `list of strings` | Only in `steps.outputs`: List of files that have been added by the just-executed step. Empty list if no files have been added. |
+| `step.deleted_files` | `list of strings` | Only in `steps.outputs`: List of files that have been deleted by the just-executed step. Empty list if no files have been deleted. |
+| `step.stdout` | `string` | Only in `steps.outputs`: The complete output of the just-executed step on standard output.|
+| `step.stderr` | `string` | Only in `steps.outputs`: The complete output of the just-executed step on standard error. |
+| `steps.modified_files` | `list of strings` | List of files that have been modified by the `steps`. Empty list if no files have been modified. |
+| `steps.added_files` | `list of strings` | List of files that have been added by the `steps`. Empty list if no files have been added. |
+| `steps.deleted_files` | `list of strings` | List of files that have been deleted by the `steps`. Empty list if no files have been deleted. |
+| `steps.path` | `string` | Path (relative to the root of the directory, no leading `/` or `.`) in which the `steps` have been executed. Empty if no workspaces have been used and the `steps` were executed in the root of the repository. |
 
 ### `changesetTemplate` context
-
-> NOTE: Templating in `changsetTemplate` is only supported in Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later.
 
 The following template variables are available in the fields under `changesetTemplate`.
 
@@ -111,16 +106,17 @@ They are evaluated after the execution of all entries in `steps`.
 
 | Template variable | Type | Description |
 | --- | --- | --- |
-| `batch_change.name` | `string` | The `name` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>. |
-| `batch_change.description` | `string` | The `description` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>.  |
-| `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
-| `repository.branch` | `string` | The target branch of the repository in which the step is being executed. </br><i><small>Requires Sourcegraph 3.35 or later.</small></i> |
-| `repository.name` | `string` | Full name of the repository in which the step is being executed. |
+| `batch_change.name` | `string` | The `name` of the batch change, as set in the batch spec. |
+| `batch_change.description` | `string` | The `description` of the batch change, as set in the batch spec. |
+| `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `on.repositoriesMatchingQuery`s have been found. Empty list if a `select:repo` filter is used in the `on.repositoriesMatchingQuery`, or if only `on.repository` entries are specified. |
+| `repository.branch` | `string` | The target branch of the repository in which the step is being executed. |
+| `repository.name` | `string` | Full name of the repository in which the step is being executed. Example: `org_foo/repo_bar`. |
 | `steps.modified_files` | `list of strings` | List of files that have been modified by the `steps`. Empty list if no files have been modified. |
 | `steps.added_files` | `list of strings` | List of files that have been added by the `steps`. Empty list if no files have been added. |
 | `steps.deleted_files` | `list of strings` | List of files that have been deleted by the `steps`. Empty list if no files have been deleted. |
-| `steps.path` | `string` | Path (relative to the root of the directory, no leading `/` or `.`) in which the `steps` have been executed. Empty if no workspaces have been used and the `steps` were executed in the root of the repository. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.25 or later</small></i> |
+| `steps.path` | `string` | Path (relative to the root of the directory, no leading `/` or `.`) in which the `steps` have been executed. Empty if no workspaces have been used and the `steps` were executed in the root of the repository. |
 | `outputs.<name>` | depends on `outputs.<name>.format`, default: `string`| Value of an [`output`](batch_spec_yaml_reference.md#steps-outputs) set by `steps`. If the [`outputs.<name>.format`](batch_spec_yaml_reference.md#steps-outputs-format) is `yaml` or `json` and the `value` a data structure (i.e. array, object, ...), then subfields can be accessed too. See "[Examples](#examples)" below. |
+| `batch_change_link` | `string` | <strong><small>Only available in `changesetTemplate.body`</small></strong><br />Link back to the batch change that produced the changeset on Sourcegraph. If omitted, the link will be automatically appended to the end of the body. <br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.40.9 or later</small></i> |
 
 ## Template helper functions
 
@@ -306,4 +302,15 @@ changesetTemplate:
   body: |
     The host of the repository: ${{ index (split repository.name "/") 0 }}
     The org of the repository: ${{ index (split repository.name "/") 1 }}
+```
+
+Render the batch change link at the beginning of the changeset body:
+
+```yaml
+changesetTemplate:
+  # [...]
+  body: |
+    ${{ batch_change_link }}
+
+    This is the rest of my changeset description.
 ```

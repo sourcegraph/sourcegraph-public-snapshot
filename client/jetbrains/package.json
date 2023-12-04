@@ -1,0 +1,37 @@
+{
+  "private": true,
+  "name": "@sourcegraph/jetbrains",
+  "displayName": "Sourcegraph",
+  "version": "0.0.0",
+  "description": "Sourcegraph for JetBrains",
+  "publisher": "sourcegraph",
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph.git",
+    "directory": "client/jetbrains"
+  },
+  "scripts": {
+    "build": "ts-node -T scripts/build.ts",
+    "watch": "WATCH=1 pnpm run build",
+    "lint": "pnpm run lint:js && pnpm run lint:css",
+    "lint:js": "eslint --cache 'webview/**/*.[jt]s?(x)'",
+    "lint:css": "stylelint 'webview/**/*.scss'",
+    "standalone": "ts-node standalone/src/server.ts",
+    "storybook": "STORIES_GLOB='client/jetbrains/webview/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
+    "typecheck": "tsc -b"
+  },
+  "devDependencies": {
+    "@sourcegraph/build-config": "workspace:*",
+    "@sourcegraph/storybook": "workspace:*",
+    "@sourcegraph/eslint-plugin-wildcard": "workspace:*"
+  },
+  "dependencies": {
+    "@sourcegraph/branded": "workspace:*",
+    "@sourcegraph/common": "workspace:*",
+    "@sourcegraph/http-client": "workspace:*",
+    "@sourcegraph/shared": "workspace:*",
+    "@sourcegraph/wildcard": "workspace:*"
+  }
+}

@@ -1,0 +1,70 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "store",
+    srcs = [
+        "describe.go",
+        "describe_scan.go",
+        "extractor.go",
+        "observability.go",
+        "registration.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/migration/store",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbutil",
+        "//internal/database/locker",
+        "//internal/database/migration/definition",
+        "//internal/database/migration/runner",
+        "//internal/database/migration/schemas",
+        "//internal/database/migration/shared",
+        "//internal/database/postgresdsn",
+        "//internal/jsonc",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/oobmigration",
+        "//internal/oobmigration/migrations",
+        "//lib/errors",
+        "//schema",
+        "@com_github_jackc_pgconn//:pgconn",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_lib_pq//:pq",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "store_test",
+    timeout = "moderate",
+    srcs = [
+        "describe_test.go",
+        "store_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":store"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/database/basestore",
+        "//internal/database/dbtest",
+        "//internal/database/dbutil",
+        "//internal/database/migration/definition",
+        "//internal/database/migration/shared",
+        "//internal/observation",
+        "//internal/timeutil",
+        "//lib/pointers",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//logtest",
+        "@org_golang_x_sync//errgroup",
+    ],
+)

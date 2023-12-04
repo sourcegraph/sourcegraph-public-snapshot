@@ -1,0 +1,353 @@
+extend type Query {
+    """
+    Returns precise code intelligence configuration policies that control data retention
+    and (if enabled) auto-indexing behavior.
+    """
+    codeIntelligenceConfigurationPolicies(
+        """
+        If repository is supplied, then only the configuration policies that apply to
+        repository are returned. If repository is not supplied, then all policies are
+        returned.
+        """
+        repository: ID
+
+        """
+        An (optional) search query that searches over the name property.
+        """
+        query: String
+
+        """
+        If set to true, then only configuration policies with SCIP data retention enabled are returned.
+        If set to false, then configuration policies with SCIP data retention enabled are filtered out.
+        """
+        forDataRetention: Boolean
+
+        """
+        If set to true, then only configuration policies with indexing enabled are returned.
+        If set to false, then configuration policies with indexing enabled are filtered out.
+        """
+        forIndexing: Boolean
+
+        """
+        If set to true, then only configuration policies with embeddings enabled are returned.
+        If set to false, then configuration policies with embeddings enabled are filtered out.
+        """
+        forEmbeddings: Boolean
+
+        """
+        If set to true, then only protected configuration policies are returned.
+        If set to false, then only un-protected configuration policies are returned.
+        If unset, policies are returned regardless if they're protected or not.
+        """
+        protected: Boolean
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+
+        A future request can be made for more results by passing in the
+        'CodeIntelligenceConfigurationPolicyConnection.pageInfo.endCursor'
+        that is returned.
+        """
+        after: String
+    ): CodeIntelligenceConfigurationPolicyConnection!
+
+    """
+    The set of repositories that match the given glob pattern. This resolver is used by the UI to
+    preview what repositories match a code intelligence policy in a given repository.
+    """
+    previewRepositoryFilter(
+        """
+        A set of patterns matching the name of the matching repository.
+        """
+        patterns: [String!]!
+
+        """
+        When specified, indicates that this request should return the first N items.
+        """
+        first: Int
+    ): RepositoryFilterPreview!
+}
+
+extend type Mutation {
+    """
+    Creates a new configuration policy with the given attributes.
+    """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
+    createCodeIntelligenceConfigurationPolicy(
+        """
+        If supplied, the repository to which this configuration policy applies. If not supplied,
+        this configuration policy is applied to all repositories.
+        """
+        repository: ID
+
+        """
+        If supplied, the name patterns matching repositories to which this configuration policy
+        applies. This option is mutually exclusive with an explicit repository.
+        """
+        repositoryPatterns: [String!]
+
+        name: String!
+        type: GitObjectType!
+        pattern: String!
+        retentionEnabled: Boolean!
+        retentionDurationHours: Int
+        retainIntermediateCommits: Boolean!
+        indexingEnabled: Boolean!
+        indexCommitMaxAgeHours: Int
+        indexIntermediateCommits: Boolean!
+
+        """
+        embeddingsEnabled, if not provided, currently defaults to false.
+        """
+        embeddingsEnabled: Boolean
+    ): CodeIntelligenceConfigurationPolicy!
+
+    """
+    Updates the attributes configuration policy with the given identifier.
+    """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
+    updateCodeIntelligenceConfigurationPolicy(
+        id: ID!
+        repositoryPatterns: [String!]
+        name: String!
+        type: GitObjectType!
+        pattern: String!
+        retentionEnabled: Boolean!
+        retentionDurationHours: Int
+        retainIntermediateCommits: Boolean!
+        indexingEnabled: Boolean!
+        indexCommitMaxAgeHours: Int
+        indexIntermediateCommits: Boolean!
+
+        """
+        embeddingsEnabled, if not provided, currently defaults to false.
+        """
+        embeddingsEnabled: Boolean
+    ): EmptyResponse
+
+    """
+    Deletes the configuration policy with the given identifier.
+    """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
+    deleteCodeIntelligenceConfigurationPolicy(policy: ID!): EmptyResponse
+}
+
+extend type Repository {
+    """
+    The set of git objects that match the given git object type and glob pattern.
+    This resolver is used by the UI to preview what names match a code intelligence
+    policy in a given repository.
+    """
+    previewGitObjectFilter(
+        """
+        The type of Git object described by the configuration policy.
+        """
+        type: GitObjectType!
+
+        """
+        A pattern matching the name of the matching Git object.
+        """
+        pattern: String!
+
+        """
+        When specified, indicates that this request should return the first N items.
+        """
+        first: Int
+
+        """
+        When specified, the total number of matching Git objects younger than this value
+        will be returned along with the total number of matching objects. This does not
+        affect the set of objects returned as items.
+        """
+        countObjectsYoungerThanHours: Int
+    ): GitObjectFilterPreview!
+}
+
+"""
+A list of code intelligence configuration policies.
+"""
+type CodeIntelligenceConfigurationPolicyConnection {
+    """
+    A list of code intelligence configuration policies.
+    """
+    nodes: [CodeIntelligenceConfigurationPolicy!]!
+
+    """
+    The total number of policies in this result set.
+    """
+    totalCount: Int
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A configuration policy that applies to a set of Git objects matching an associated
+pattern. Each policy has optional data retention and auto-indexing schedule configuration
+attached. A policy can be applied globally or on a per-repository basis.
+"""
+type CodeIntelligenceConfigurationPolicy implements Node {
+    """
+    The ID.
+    """
+    id: ID!
+
+    """
+    A description of the configuration policy.
+    """
+    name: String!
+
+    """
+    The repository to which this configuration policy applies.
+    """
+    repository: CodeIntelRepository
+
+    """
+    The set of name patterns matching repositories to which this configuration policy applies.
+    """
+    repositoryPatterns: [String!]
+
+    """
+    The type of Git object described by the configuration policy.
+    """
+    type: GitObjectType!
+
+    """
+    A pattern matching the name of the matching Git object.
+    """
+    pattern: String!
+
+    """
+    Protected policies may not be deleted (or created directly by users).
+    """
+    protected: Boolean!
+
+    """
+    Whether or not this configuration policy affects data retention rules.
+    """
+    retentionEnabled: Boolean!
+
+    """
+    The max age of data retained by this configuration policy.
+    """
+    retentionDurationHours: Int
+
+    """
+    If the matching Git object is a branch, setting this value to true will also
+    retain all data used to resolve queries for any commit on the matching branches.
+    Setting this value to false will only consider the tip of the branch.
+    """
+    retainIntermediateCommits: Boolean!
+
+    """
+    Whether or not this configuration policy affects auto-indexing schedules.
+    """
+    indexingEnabled: Boolean!
+
+    """
+    The max age of commits indexed by this configuration policy.
+    """
+    indexCommitMaxAgeHours: Int
+
+    """
+    If the matching Git object is a branch, setting this value to true will also
+    index all commits on the matching branches. Setting this value to false will
+    only consider the tip of the branch.
+    """
+    indexIntermediateCommits: Boolean!
+
+    """
+    Whether or not this configuration policy affects embeddings.
+    """
+    embeddingsEnabled: Boolean!
+}
+
+"""
+A decorated connection of repositories resulting from 'previewRepositoryFilter'.
+"""
+type RepositoryFilterPreview {
+    """
+    A list of repositories composing the current page.
+    """
+    nodes: [CodeIntelRepository!]!
+
+    """
+    The total number of repositories in this result set.
+    """
+    totalCount: Int!
+
+    """
+    If every repository currently on the instance is matched by this filter.
+    """
+    matchesAllRepos: Boolean!
+
+    """
+    The maximum number of repository matches a single policy can make.
+    """
+    limit: Int
+
+    """
+    The number of repositories matching the given filter. This value exceeds the
+    value of totalCount of the result when totalMatches > limit.
+    """
+    totalMatches: Int!
+}
+
+"""
+A decorated connection of Git objects resulting from 'previewGitObjectFilter'.
+"""
+type GitObjectFilterPreview {
+    """
+    A list of Git objects composing the current page.
+    """
+    nodes: [CodeIntelGitObject!]!
+
+    """
+    The total number of Git objects in this result set.
+    """
+    totalCount: Int!
+
+    """
+    When countObjectsYoungerThanHours is supplied, this holds the total number of Git
+    objects in the result set that have an associated commit date younger than the
+    supplied threshold.
+    """
+    totalCountYoungerThanThreshold: Int
+}
+
+"""
+A git object that matches a git object type and glob pattern. This type is used by
+the UI to preview what names match a code intelligence policy in a given repository.
+"""
+type CodeIntelGitObject {
+    """
+    The relevant branch or tag name.
+    """
+    name: String!
+
+    """
+    The full 40-char revhash.
+    """
+    rev: String!
+
+    """
+    The time that the underlying commit was created.
+    """
+    committedAt: DateTime!
+}

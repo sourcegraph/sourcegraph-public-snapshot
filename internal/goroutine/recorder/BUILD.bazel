@@ -1,0 +1,35 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "recorder",
+    srcs = [
+        "common.go",
+        "reader.go",
+        "recorder.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/goroutine/recorder",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/rcache",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "recorder_test",
+    timeout = "short",
+    srcs = ["common_test.go"],
+    embed = [":recorder"],
+    tags = [
+        # requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/rcache",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

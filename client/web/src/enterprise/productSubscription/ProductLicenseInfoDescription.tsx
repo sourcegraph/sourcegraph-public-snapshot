@@ -1,17 +1,17 @@
 import React from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { H3 } from '@sourcegraph/wildcard'
 
+import type { ProductLicenseInfoFields } from '../../graphql-operations'
 import { formatUserCount } from '../../productSubscription/helpers'
 
-export const ProductLicenseInfoDescription: React.FunctionComponent<{
-    licenseInfo: GQL.IProductLicenseInfo
-    className?: string
-}> = ({ licenseInfo, className = '' }) => (
-    <span
-        className={className}
-        title={licenseInfo.tags.length > 0 ? `Tags: ${licenseInfo.tags.join(', ')}` : 'No tags'}
-    >
+export const ProductLicenseInfoDescription: React.FunctionComponent<
+    React.PropsWithChildren<{
+        licenseInfo: ProductLicenseInfoFields
+        className?: string
+    }>
+> = ({ licenseInfo, className = '' }) => (
+    <H3 className={className}>
         {licenseInfo.productNameWithBrand} ({formatUserCount(licenseInfo.userCount)})
-    </span>
+    </H3>
 )

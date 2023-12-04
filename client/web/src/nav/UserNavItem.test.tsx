@@ -1,16 +1,15 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import * as H from 'history'
-import React from 'react'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { ThemePreference } from '../stores/themeState'
-
-import { UserNavItem, UserNavItemProps } from './UserNavItem'
+import { UserNavItem, type UserNavItemProps } from './UserNavItem'
 
 describe('UserNavItem', () => {
     beforeAll(() => {
@@ -31,6 +30,7 @@ describe('UserNavItem', () => {
         organizations: {
             nodes: [
                 {
+                    __typename: 'Org',
                     id: '0',
                     name: 'acme',
                     displayName: 'Acme Corp',
@@ -38,6 +38,7 @@ describe('UserNavItem', () => {
                     settingsURL: '/organizations/acme/settings',
                 },
                 {
+                    __typename: 'Org',
                     id: '1',
                     name: 'beta',
                     displayName: 'Beta Inc',
@@ -46,44 +47,40 @@ describe('UserNavItem', () => {
                 },
             ],
         },
+        emails: [],
     }
-
-    const history = H.createMemoryHistory({ keyLength: 0 })
 
     test('simple', () => {
         expect(
             render(
                 <MemoryRouter>
-                    <UserNavItem
-                        showRepositorySection={true}
-                        isLightTheme={true}
-                        onThemePreferenceChange={() => undefined}
-                        themePreference={ThemePreference.Light}
-                        authenticatedUser={USER}
-                        showDotComMarketing={true}
-                        isExtensionAlertAnimating={false}
-                        codeHostIntegrationMessaging="browser-extension"
-                    />
+                    <MockedTestProvider>
+                        <UserNavItem
+                            showKeyboardShortcutsHelp={() => undefined}
+                            authenticatedUser={USER}
+                            isSourcegraphDotCom={true}
+                            isCodyApp={false}
+                            showFeedbackModal={() => undefined}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
+                        />
+                    </MockedTestProvider>
                 </MemoryRouter>
             ).asFragment()
         ).toMatchSnapshot()
     })
 
     test('logout click triggers page refresh instead of performing client-side only navigation', async () => {
-        renderWithBrandedContext(
-            <UserNavItem
-                showRepositorySection={true}
-                isLightTheme={true}
-                onThemePreferenceChange={() => undefined}
-                themePreference={ThemePreference.Light}
-                authenticatedUser={USER}
-                showDotComMarketing={true}
-                isExtensionAlertAnimating={false}
-                codeHostIntegrationMessaging="browser-extension"
-            />,
-            {
-                history,
-            }
+        const result = renderWithBrandedContext(
+            <MockedTestProvider>
+                <UserNavItem
+                    showKeyboardShortcutsHelp={() => undefined}
+                    authenticatedUser={USER}
+                    isSourcegraphDotCom={true}
+                    isCodyApp={false}
+                    showFeedbackModal={() => undefined}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                />
+            </MockedTestProvider>
         )
 
         // Prevent console.error cause by "Not implemented: navigation (except hash changes)"
@@ -92,7 +89,7 @@ describe('UserNavItem', () => {
         userEvent.click(screen.getByRole('button'))
         userEvent.click(await screen.findByText('Sign out'))
 
-        expect(history.entries.length).toBe(1)
-        expect(history.entries.find(({ pathname }) => pathname.includes('sign-out'))).toBe(undefined)
+        expect(result.locationRef.entries.length).toBe(1)
+        expect(result.locationRef.entries.find(({ pathname }) => pathname.includes('sign-out'))).toBe(undefined)
     })
 })

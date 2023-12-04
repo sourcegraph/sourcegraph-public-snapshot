@@ -1,0 +1,34 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("//dev:oci_defs.bzl", "image_repository")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+
+oci_image(
+    name = "image",
+    base = "@wolfi_redis_exporter_base",
+    entrypoint = ["/usr/local/bin/redis_exporter"],
+    user = "sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["redis-exporter:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("redis_exporter"),
+)

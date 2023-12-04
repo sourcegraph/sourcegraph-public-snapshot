@@ -1,6 +1,6 @@
 # How to setup HTTPS connection with Ingress controller on your Kubernetes instance
 
-This document will take you through how to setup HTTPS connection using the preinstalled [Ingress controller](https://docs.sourcegraph.com/admin/install/kubernetes/configure#ingress-controller-recommended), which allows external users to access your main web server over the network. It installs rules for the default ingress, see comments to restrict it to a specific host. It is our recommended method to configure network access for production environments.
+This document will take you through how to setup HTTPS connection using the preinstalled [Ingress controller](../deploy/kubernetes/configure.md#ingress-controller), which allows external users to access your main web server over the network. It installs rules for the default ingress, see comments to restrict it to a specific host. This is our recommended method to configure network access for production environments.
 
 ## Prerequisites
 
@@ -8,7 +8,7 @@ This document will take you through how to setup HTTPS connection using the prei
 
 ## Steps for GCE-GKE user
 
-> WARNING: Please visit our [Kubernetes Configuration Docs](https://docs.sourcegraph.com/admin/install/kubernetes/configure#ingress-controller-recommended) for more detail on Network-related topics
+> WARNING: Please visit our [Kubernetes Configuration Docs](../deploy/kubernetes/configure.md#ingress-controller) for more detail on Network-related topics
 > 
 
 ### 1. Install the NGINX ingress controller (ingress-nginx) 

@@ -1,6 +1,5 @@
 import { useMemo } from '@storybook/addons'
-import { storiesOf } from '@storybook/react'
-import React from 'react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 
 import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
 
@@ -8,11 +7,16 @@ import { WebStory } from '../../../components/WebStory'
 
 import { BulkOperationsAlerts } from './BulkOperationsAlerts'
 
-const { add } = storiesOf('web/batches/details/BulkOperationsAlerts', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
-add('Processing', () => {
+const config: Meta = {
+    title: 'web/batches/details/BulkOperationsAlerts',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Processing: StoryFn = () => {
     const bulkOperations = useMemo(
         () => ({
             __typename: 'BulkOperationConnection' as const,
@@ -22,8 +26,9 @@ add('Processing', () => {
         []
     )
     return <WebStory>{props => <BulkOperationsAlerts {...props} bulkOperations={bulkOperations} />}</WebStory>
-})
-add('Failed', () => {
+}
+
+export const Failed: StoryFn = () => {
     const bulkOperations = useMemo(
         () => ({
             __typename: 'BulkOperationConnection' as const,
@@ -33,8 +38,9 @@ add('Failed', () => {
         []
     )
     return <WebStory>{props => <BulkOperationsAlerts {...props} bulkOperations={bulkOperations} />}</WebStory>
-})
-add('Completed', () => {
+}
+
+export const Completed: StoryFn = () => {
     const bulkOperations = useMemo(
         () => ({
             __typename: 'BulkOperationConnection' as const,
@@ -44,4 +50,4 @@ add('Completed', () => {
         []
     )
     return <WebStory>{props => <BulkOperationsAlerts {...props} bulkOperations={bulkOperations} />}</WebStory>
-})
+}

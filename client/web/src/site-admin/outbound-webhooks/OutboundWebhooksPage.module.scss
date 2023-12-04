@@ -1,0 +1,33 @@
+.grid {
+    display: grid;
+    grid-template-columns: 1fr max-content max-content;
+    column-gap: 1rem;
+    row-gap: 1rem;
+    align-items: center;
+
+    > :first-child .separator {
+        border-top: none;
+    }
+}
+
+.node {
+    display: contents;
+}
+
+.url {
+    display: inline-block;
+    grid-column: 1 / 2;
+}
+
+.error {
+    grid-column: 2 / 3;
+}
+
+.buttons {
+    grid-column: 3 / 4;
+}
+
+.separator {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--border-color-2);
+}

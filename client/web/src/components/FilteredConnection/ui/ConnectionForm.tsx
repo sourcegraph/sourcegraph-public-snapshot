@@ -1,17 +1,20 @@
-import classNames from 'classnames'
 import React, { useCallback, useRef } from 'react'
+
+import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { useAutoFocus } from '@sourcegraph/wildcard'
+import { useAutoFocus, Input, Form } from '@sourcegraph/wildcard'
 
-import { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from '../FilterControl'
+import { FilterControl, type FilteredConnectionFilter, type FilteredConnectionFilterValue } from '../FilterControl'
 
 import styles from './ConnectionForm.module.scss'
 
 export interface ConnectionFormProps {
-    /** Hides the filter input field. */
+    /** Hides the search input field. */
     hideSearch?: boolean
+
+    /** Shows the search input field before the filter controls */
+    showSearchFirst?: boolean
 
     /** CSS class name for the <input> element */
     inputClassName?: string
@@ -24,6 +27,9 @@ export interface ConnectionFormProps {
 
     /** Value of the <input> element */
     inputValue?: string
+
+    /** aria-label for the <input> element */
+    inputAriaLabel?: string
 
     /** Called when the <input> element value changes */
     onInputChange?: React.ChangeEventHandler<HTMLInputElement>
@@ -38,12 +44,12 @@ export interface ConnectionFormProps {
      */
     filters?: FilteredConnectionFilter[]
 
-    onValueSelect?: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
+    onFilterSelect?: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
 
     /** An element rendered as a sibling of the filters. */
     additionalFilterElement?: React.ReactElement
 
-    values?: Map<string, FilteredConnectionFilterValue>
+    filterValues?: Map<string, FilteredConnectionFilterValue>
 
     compact?: boolean
 }
@@ -56,16 +62,18 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
     (
         {
             hideSearch,
+            showSearchFirst,
             formClassName,
             inputClassName,
             inputPlaceholder,
+            inputAriaLabel,
             inputValue,
             onInputChange,
             autoFocus,
             filters,
-            onValueSelect,
+            onFilterSelect,
+            filterValues,
             additionalFilterElement,
-            values,
             compact,
         },
         reference
@@ -79,37 +87,39 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
 
         useAutoFocus({ autoFocus, reference: localReference })
 
+        const searchControl = !hideSearch && (
+            <Input
+                className={classNames(styles.input, inputClassName)}
+                type="search"
+                placeholder={inputPlaceholder}
+                name="query"
+                value={inputValue}
+                onChange={onInputChange}
+                autoFocus={autoFocus}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                ref={mergedReference}
+                spellCheck={false}
+                aria-label={inputAriaLabel}
+                variant={compact ? 'small' : 'regular'}
+            />
+        )
+
         return (
             <Form
-                className={classNames(
-                    'w-100 d-inline-flex justify-content-between flex-row',
-                    !compact && styles.noncompact,
-                    formClassName
-                )}
+                className={classNames(styles.form, !compact && styles.noncompact, formClassName)}
                 onSubmit={handleSubmit}
             >
-                {filters && onValueSelect && values && (
-                    <FilterControl filters={filters} onValueSelect={onValueSelect} values={values}>
+                {showSearchFirst && searchControl}
+                {filters && onFilterSelect && filterValues && (
+                    <FilterControl filters={filters} onValueSelect={onFilterSelect} values={filterValues}>
                         {additionalFilterElement}
                     </FilterControl>
                 )}
-                {!hideSearch && (
-                    <input
-                        className={classNames('form-control', inputClassName)}
-                        type="search"
-                        placeholder={inputPlaceholder}
-                        name="query"
-                        value={inputValue}
-                        onChange={onInputChange}
-                        autoFocus={autoFocus}
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        ref={mergedReference}
-                        spellCheck={false}
-                    />
-                )}
+                {!showSearchFirst && searchControl}
             </Form>
         )
     }
 )
+ConnectionForm.displayName = 'ConnectionForm'

@@ -1,33 +1,52 @@
-import { number } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
+
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 import { Container } from '@sourcegraph/wildcard'
 
-import { SelectedExternalService } from './backend'
+import { WebStory } from '../../components/WebStory'
+
+import type { SelectedExternalService } from './backend'
 import { buildHeaderMock } from './story/fixtures'
 import { WebhookLogPageHeader } from './WebhookLogPageHeader'
 
-const { add } = storiesOf('web/site-admin/webhooks/WebhookLogPageHeader', module)
-    .addDecorator(story => (
-        <Container>
-            <div className="p-3 container">{story()}</div>
-        </Container>
-    ))
-    .addParameters({
+const decorator: Decorator = story => (
+    <Container>
+        <div className="p-3 container">{story()}</div>
+    </Container>
+)
+
+const config: Meta = {
+    title: 'web/site-admin/webhooks/WebhookLogPageHeader',
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
-    })
+    },
+    decorators: [decorator],
+    argTypes: {
+        externalServiceCount: {
+            name: 'external service count',
+            control: { type: 'number' },
+        },
+        erroredWebhookCount: {
+            name: 'errored webhook count',
+            control: { type: 'number' },
+        },
+    },
+}
+
+export default config
 
 // Create a component to handle the minimum state management required for a
 // WebhookLogPageHeader.
-const WebhookLogPageHeaderContainer: React.FunctionComponent<{
-    initialExternalService?: SelectedExternalService
-    initialOnlyErrors?: boolean
-}> = ({ initialExternalService, initialOnlyErrors }) => {
+const WebhookLogPageHeaderContainer: React.FunctionComponent<
+    React.PropsWithChildren<{
+        initialExternalService?: SelectedExternalService
+        initialOnlyErrors?: boolean
+    }>
+> = ({ initialExternalService, initialOnlyErrors }) => {
     const [onlyErrors, setOnlyErrors] = useState(initialOnlyErrors === true)
     const [externalService, setExternalService] = useState(initialExternalService ?? 'all')
 
@@ -41,64 +60,129 @@ const WebhookLogPageHeaderContainer: React.FunctionComponent<{
     )
 }
 
-add('all zeroes', () => (
+export const AllZeroes: StoryFn = args => (
     <WebStory>
         {() => (
-            <MockedTestProvider mocks={buildHeaderMock(0, 0)}>
+            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
                 <WebhookLogPageHeaderContainer />
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+AllZeroes.argTypes = {
+    externalServiceCount: {},
+    erroredWebhookCount: {},
+}
+AllZeroes.args = {
+    externalServiceCount: 0,
+    erroredWebhookCount: 0,
+}
 
-add('external services', () => (
+AllZeroes.storyName = 'all zeroes'
+
+export const ExternalServices: StoryFn = args => (
     <WebStory>
         {() => (
-            <MockedTestProvider mocks={buildHeaderMock(10, 0)}>
+            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
                 <WebhookLogPageHeaderContainer />
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('external services and errors', () => (
+ExternalServices.argTypes = {
+    externalServiceCount: {},
+    erroredWebhookCount: {},
+}
+ExternalServices.args = {
+    externalServiceCount: 10,
+    erroredWebhookCount: 0,
+}
+
+ExternalServices.storyName = 'external services'
+
+export const ExternalServicesAndErrors: StoryFn = args => (
     <WebStory>
         {() => (
-            <MockedTestProvider mocks={buildHeaderMock(20, 500)}>
+            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
                 <WebhookLogPageHeaderContainer />
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('only errors turned on', () => (
+ExternalServicesAndErrors.argTypes = {
+    externalServiceCount: {},
+    erroredWebhookCount: {},
+}
+ExternalServicesAndErrors.args = {
+    externalServiceCount: 20,
+    erroredWebhookCount: 500,
+}
+
+ExternalServicesAndErrors.storyName = 'external services and errors'
+
+export const OnlyErrorsTurnedOn: StoryFn = args => (
     <WebStory>
         {() => (
-            <MockedTestProvider mocks={buildHeaderMock(20, 500)}>
+            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
                 <WebhookLogPageHeaderContainer initialOnlyErrors={true} />
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+OnlyErrorsTurnedOn.argTypes = {
+    externalServiceCount: {},
+    erroredWebhookCount: {},
+}
+OnlyErrorsTurnedOn.args = {
+    externalServiceCount: 20,
+    erroredWebhookCount: 500,
+}
 
-add('specific external service selected', () => (
+OnlyErrorsTurnedOn.storyName = 'only errors turned on'
+
+export const SpecificExternalServiceSelected: StoryFn = args => (
     <WebStory>
         {() => (
-            <MockedTestProvider mocks={buildHeaderMock(20, 500)}>
-                <WebhookLogPageHeaderContainer
-                    initialExternalService={number('selected external service', 2, { min: 0, max: 19 }).toString()}
-                />
+            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
+                <WebhookLogPageHeaderContainer initialExternalService={args.initialExternalService.toString()} />
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+SpecificExternalServiceSelected.argTypes = {
+    initialExternalService: {
+        control: { type: 'number', min: 0, max: 19 },
+    },
+    externalServiceCount: {},
+    erroredWebhookCount: {},
+}
+SpecificExternalServiceSelected.args = {
+    initialExternalService: 2,
+    externalServiceCount: 20,
+    erroredWebhookCount: 500,
+}
 
-add('unmatched external service selected', () => (
+SpecificExternalServiceSelected.storyName = 'specific external service selected'
+
+export const UnmatchedExternalServiceSelected: StoryFn = args => (
     <WebStory>
         {() => (
-            <MockedTestProvider mocks={buildHeaderMock(20, 500)}>
+            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
                 <WebhookLogPageHeaderContainer initialExternalService="unmatched" />
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+
+UnmatchedExternalServiceSelected.argTypes = {
+    externalServiceCount: {},
+    erroredWebhookCount: {},
+}
+UnmatchedExternalServiceSelected.args = {
+    externalServiceCount: 20,
+    erroredWebhookCount: 500,
+}
+
+UnmatchedExternalServiceSelected.storyName = 'unmatched external service selected'

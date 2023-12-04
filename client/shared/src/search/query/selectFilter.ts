@@ -1,4 +1,4 @@
-import { Literal } from './token'
+import type { Literal } from './token'
 
 interface Access {
     name: string
@@ -11,7 +11,7 @@ export const SELECTORS: Access[] = [
     },
     {
         name: 'file',
-        fields: [{ name: 'directory' }, { name: 'path' }],
+        fields: [{ name: 'directory' }, { name: 'path' }, { name: 'owners' }],
     },
     {
         name: 'content',
@@ -52,6 +52,20 @@ export const SELECTORS: Access[] = [
         fields: [{ name: 'diff', fields: [{ name: 'added' }, { name: 'removed' }] }],
     },
 ]
+const kinds = new Set(SELECTORS.map(value => value.name))
+
+/**
+ * Returns true if the provided select value has additional subfields.
+ */
+export const selectorHasFields = (value: string): boolean => {
+    const parts = value.split('.')
+    let fields: Access[] | undefined = SELECTORS
+
+    for (const part of parts) {
+        fields = fields?.find(value => value.name === part && value.fields)?.fields
+    }
+    return !!fields
+}
 
 /**
  * Returns all paths rooted at a {@link selector} up to {@param depth}.
@@ -75,7 +89,7 @@ export const selectorCompletion = (value: Literal | undefined): string[] => {
         return selectDiscreteValues(SELECTORS, 0)
     }
 
-    if (value.value.endsWith('.') || value.value.split('.').length > 1) {
+    if (value.value.endsWith('.') || value.value.split('.').length > 1 || kinds.has(value.value)) {
         // Resolve completions to greater depth for `foo.` if the value is `foo.` or `foo.bar`.
         const kind = value.value.split('.')[0]
         return selectDiscreteValues(

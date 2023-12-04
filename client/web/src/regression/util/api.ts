@@ -2,27 +2,72 @@
  * Provides convenience functions for interacting with the Sourcegraph API from tests.
  */
 
-import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
+import { zip, timer, concat, throwError, defer, type Observable } from 'rxjs'
 import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
 
-import { isErrorLike, createAggregateError } from '@sourcegraph/common'
+import { isErrorLike, createAggregateError, logger } from '@sourcegraph/common'
 import {
-    gql,
     dataOrThrowErrors,
     createInvalidGraphQLMutationResponseError,
     isErrorGraphQLResult,
+    gql,
 } from '@sourcegraph/http-client'
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
     isRepoNotFoundErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { Config } from '@sourcegraph/shared/src/testing/config'
+import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
+import type { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { Config } from '@sourcegraph/shared/src/testing/config'
 
-import { GraphQLClient } from './GraphQlClient'
-import { ResourceDestructor } from './TestResourceManager'
+import type {
+    AddExternalServiceInput,
+    ExternalServiceKind,
+    UpdateExternalServiceInput,
+    Scalars,
+    DeleteOrganizationResult,
+    SearchPatternType,
+    UpdateSiteConfigurationResult,
+    SiteResult,
+    OrganizationsConnectionFields,
+    OrganizationsResult,
+    CreateOrganizationResult,
+    CreateUserResult,
+    UpdateExternalServiceResult,
+    UpdateExternalServiceVariables,
+    OrganizationsVariables,
+    SearchVersion,
+    DeleteOrganizationVariables,
+    CreateOrganizationVariables,
+    CreateUserVariables,
+    SetUserIsSiteAdminResult,
+    SetUserIsSiteAdminVariables,
+    DeleteExternalServiceResult,
+    DeleteExternalServiceVariables,
+    UpdateSiteConfigurationVariables,
+    ResolveRevResult,
+    ResolveRevVariables,
+    ExternalServicesRegressionResult,
+    ExternalServicesRegressionVariables,
+    ExternalServiceNodeFields,
+    UserResult,
+    DeleteUserResult,
+    DeleteUserVariables,
+    SetTosAcceptedResult,
+    SetTosAcceptedVariables,
+    SiteProductVersionResult,
+    SiteProductVersionVariables,
+    UserVariables,
+    addExternalServiceResult,
+    addExternalServiceVariables,
+    SearchResult,
+    SearchVariables,
+} from '../../graphql-operations'
+
+import type { GraphQLClient } from './GraphQlClient'
+import type { ResourceDestructor } from './TestResourceManager'
 
 type WaitForRepoOptions = Partial<
     Pick<Config, 'logStatusMessages'> & {
@@ -71,7 +116,7 @@ export function waitForRepo(
         indexed: mustBeIndexed = false,
     }: WaitForRepoOptions = {}
 ): Observable<void> {
-    const request = gqlClient.queryGraphQL(
+    const request = gqlClient.queryGraphQL<ResolveRevResult, ResolveRevVariables>(
         gql`
             query ResolveRev($repoName: String!) {
                 repository(name: $repoName) {
@@ -109,7 +154,7 @@ export function waitForRepo(
                               if (isErrorLike(error) && error.message === 'Repo exists') {
                                   // Delay retry by 2s.
                                   if (logStatusMessages) {
-                                      console.log(
+                                      logger.log(
                                           `Waiting for ${repoName} to be removed (attempt ${
                                               retryCount + 1
                                           } of ${numberRetries})`
@@ -147,7 +192,7 @@ export function waitForRepo(
                               if (isCloneInProgressErrorLike(error)) {
                                   // Delay retry by 2s.
                                   if (logStatusMessages) {
-                                      console.log(
+                                      logger.log(
                                           `Waiting for ${repoName} to finish cloning (attempt ${
                                               retryCount + 1
                                           } of ${numberRetries})`
@@ -170,7 +215,7 @@ export function waitForRepo(
 export async function ensureNoTestExternalServices(
     gqlClient: GraphQLClient,
     options: {
-        kind: GQL.ExternalServiceKind
+        kind: ExternalServiceKind
         uniqueDisplayName: string
         deleteIfExist?: boolean
     }
@@ -191,7 +236,7 @@ export async function ensureNoTestExternalServices(
 
     for (const externalService of externalServices) {
         await gqlClient
-            .mutateGraphQL(
+            .mutateGraphQL<DeleteExternalServiceResult, DeleteExternalServiceVariables>(
                 gql`
                     mutation DeleteExternalService($externalService: ID!) {
                         deleteExternalService(externalService: $externalService) {
@@ -212,25 +257,29 @@ export async function ensureNoTestExternalServices(
 export function getExternalServices(
     gqlClient: GraphQLClient,
     options: {
-        kind?: GQL.ExternalServiceKind
+        kind?: ExternalServiceKind
         uniqueDisplayName?: string
     } = {}
-): Promise<GQL.IExternalService[]> {
+): Promise<ExternalServiceNodeFields[]> {
     return gqlClient
-        .queryGraphQL(
+        .queryGraphQL<ExternalServicesRegressionResult, ExternalServicesRegressionVariables>(
             gql`
                 query ExternalServicesRegression($first: Int) {
                     externalServices(first: $first) {
                         nodes {
-                            id
-                            kind
-                            displayName
-                            config
-                            createdAt
-                            updatedAt
-                            warning
+                            ...ExternalServiceNodeFields
                         }
                     }
+                }
+
+                fragment ExternalServiceNodeFields on ExternalService {
+                    id
+                    kind
+                    displayName
+                    config
+                    createdAt
+                    updatedAt
+                    warning
                 }
             `,
             { first: 100 }
@@ -250,10 +299,10 @@ export function getExternalServices(
 
 export async function updateExternalService(
     gqlClient: GraphQLClient,
-    input: GQL.IUpdateExternalServiceInput
+    input: UpdateExternalServiceInput
 ): Promise<void> {
     await gqlClient
-        .mutateGraphQL(
+        .mutateGraphQL<UpdateExternalServiceResult, UpdateExternalServiceVariables>(
             gql`
                 mutation UpdateExternalServiceRegression($input: UpdateExternalServiceInput!) {
                     updateExternalService(input: $input) {
@@ -267,7 +316,7 @@ export async function updateExternalService(
             map(dataOrThrowErrors),
             tap(({ updateExternalService: { warning } }) => {
                 if (warning) {
-                    console.warn('updateExternalService warning:', warning)
+                    logger.warn('updateExternalService warning:', warning)
                 }
             })
         )
@@ -277,7 +326,7 @@ export async function updateExternalService(
 export async function ensureTestExternalService(
     gqlClient: GraphQLClient,
     externalServiceOptions: {
-        kind: GQL.ExternalServiceKind
+        kind: ExternalServiceKind
         uniqueDisplayName: string
         config: Record<string, any>
         waitForRepos?: string[]
@@ -301,7 +350,7 @@ export async function ensureTestExternalService(
     }
 
     // Add a new external service if one doesn't already exist.
-    const input: GQL.IAddExternalServiceInput = {
+    const input: AddExternalServiceInput = {
         kind: externalServiceOptions.kind,
         displayName: externalServiceOptions.uniqueDisplayName,
         config: JSON.stringify(externalServiceOptions.config),
@@ -324,7 +373,7 @@ export async function deleteUser(
     username: string,
     mustAlreadyExist: boolean = true
 ): Promise<void> {
-    let user: GQL.IUser | null
+    let user: UserResult['user'] | null
     try {
         user = await getUser({ requestGraphQL }, username)
     } catch (error) {
@@ -343,7 +392,7 @@ export async function deleteUser(
         }
     }
 
-    await requestGraphQL<GQL.IMutation>({
+    await requestGraphQL<DeleteUserResult, DeleteUserVariables>({
         request: gql`
             mutation DeleteUser($user: ID!, $hard: Boolean) {
                 deleteUser(user: $user, hard: $hard) {
@@ -360,9 +409,13 @@ export async function deleteUser(
  * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
-export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.ID, siteAdmin: boolean): Promise<void> {
+export async function setUserSiteAdmin(
+    gqlClient: GraphQLClient,
+    userID: Scalars['ID'],
+    siteAdmin: boolean
+): Promise<void> {
     await gqlClient
-        .mutateGraphQL(
+        .mutateGraphQL<SetUserIsSiteAdminResult, SetUserIsSiteAdminVariables>(
             gql`
                 mutation SetUserIsSiteAdmin($userID: ID!, $siteAdmin: Boolean!) {
                     setUserIsSiteAdmin(userID: $userID, siteAdmin: $siteAdmin) {
@@ -375,9 +428,9 @@ export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.ID,
         .toPromise()
 }
 
-export async function setTosAccepted(gqlClient: GraphQLClient, userID: GQL.ID): Promise<void> {
+export async function setTosAccepted(gqlClient: GraphQLClient, userID: Scalars['ID']): Promise<void> {
     await gqlClient
-        .mutateGraphQL(
+        .mutateGraphQL<SetTosAcceptedResult, SetTosAcceptedVariables>(
             gql`
                 mutation SetTosAccepted($userID: ID!) {
                     setTosAccepted(userID: $userID) {
@@ -396,9 +449,9 @@ export async function setTosAccepted(gqlClient: GraphQLClient, userID: GQL.ID): 
  */
 export function currentProductVersion(gqlClient: GraphQLClient): Promise<string> {
     return gqlClient
-        .queryGraphQL(
+        .queryGraphQL<SiteProductVersionResult, SiteProductVersionVariables>(
             gql`
-                query SiteFlags {
+                query SiteProductVersion {
                     site {
                         productVersion
                     }
@@ -417,73 +470,11 @@ export function currentProductVersion(gqlClient: GraphQLClient): Promise<string>
  * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
-export async function setUserEmailVerified(
-    gqlClient: GraphQLClient,
-    username: string,
-    email: string,
-    verified: boolean
-): Promise<void> {
-    const user = await getUser(gqlClient, username)
-    if (!user) {
-        throw new Error(`User ${username} does not exist`)
-    }
-    await gqlClient
-        .mutateGraphQL(
-            gql`
-                mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
-                    setUserEmailVerified(user: $user, email: $email, verified: $verified) {
-                        alwaysNil
-                    }
-                }
-            `,
-            { user: user.id, email, verified }
-        )
-        .pipe(map(dataOrThrowErrors))
-        .toPromise()
-}
-
-/**
- * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
- * dependency-injected `requestGraphQL`.
- */
 export function getViewerSettings({
     requestGraphQL,
-}: Pick<PlatformContext, 'requestGraphQL'>): Promise<GQL.ISettingsCascade> {
-    return requestGraphQL<GQL.IQuery>({
-        request: gql`
-            query ViewerSettings {
-                viewerSettings {
-                    ...SettingsCascadeFields
-                }
-            }
-
-            fragment SettingsCascadeFields on SettingsCascade {
-                subjects {
-                    __typename
-                    ... on Org {
-                        id
-                        name
-                        displayName
-                    }
-                    ... on User {
-                        id
-                        username
-                        displayName
-                    }
-                    ... on Site {
-                        id
-                        siteID
-                    }
-                    latestSettings {
-                        id
-                        contents
-                    }
-                    settingsURL
-                    viewerCanAdminister
-                }
-                final
-            }
-        `,
+}: Pick<PlatformContext, 'requestGraphQL'>): Promise<ViewerSettingsResult['viewerSettings']> {
+    return requestGraphQL<ViewerSettingsResult, ViewerSettingsVariables>({
+        request: viewerSettingsQuery,
         variables: {},
         mightContainPrivateInfo: true,
     })
@@ -500,9 +491,9 @@ export function getViewerSettings({
  */
 export function deleteOrganization(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
-    organization: GQL.ID
+    organization: Scalars['ID']
 ): Observable<void> {
-    return requestGraphQL<GQL.IMutation>({
+    return requestGraphQL<DeleteOrganizationResult, DeleteOrganizationVariables>({
         request: gql`
             mutation DeleteOrganization($organization: ID!) {
                 deleteOrganization(organization: $organization) {
@@ -529,29 +520,40 @@ export function deleteOrganization(
 export function fetchAllOrganizations(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     args: { first?: number; query?: string }
-): Observable<GQL.IOrgConnection> {
-    return requestGraphQL<GQL.IQuery>({
+): Observable<OrganizationsConnectionFields> {
+    return requestGraphQL<OrganizationsResult, OrganizationsVariables>({
         request: gql`
             query Organizations($first: Int, $query: String) {
                 organizations(first: $first, query: $query) {
-                    nodes {
-                        id
-                        name
-                        displayName
-                        createdAt
-                        latestSettings {
-                            createdAt
-                            contents
-                        }
-                        members {
-                            totalCount
-                        }
-                    }
+                    ...OrganizationsConnectionFields
+                }
+            }
+
+            fragment OrganizationsConnectionFields on OrgConnection {
+                nodes {
+                    ...OrganizationFields
+                }
+                totalCount
+            }
+
+            fragment OrganizationFields on Org {
+                id
+                name
+                displayName
+                createdAt
+                latestSettings {
+                    createdAt
+                    contents
+                }
+                members {
                     totalCount
                 }
             }
         `,
-        variables: args,
+        variables: {
+            first: args.first ?? null,
+            query: args.query ?? null,
+        },
         mightContainPrivateInfo: true,
     }).pipe(
         map(dataOrThrowErrors),
@@ -574,19 +576,15 @@ export function createOrganization(
     }: Pick<PlatformContext, 'requestGraphQL'> & {
         eventLogger?: EventLogger
     },
-    variables: {
-        /** The name of the organization. */
-        name: string
-        /** The new organization's display name (e.g. full name) in the organization profile. */
-        displayName?: string
-    }
-): Observable<GQL.IOrg> {
-    return requestGraphQL<GQL.IMutation>({
+    variables: CreateOrganizationVariables
+): Observable<CreateOrganizationResult['createOrganization']> {
+    return requestGraphQL<CreateOrganizationResult, CreateOrganizationVariables>({
         request: gql`
-            mutation createOrganization($name: String!, $displayName: String) {
+            mutation CreateOrganization($name: String!, $displayName: String) {
                 createOrganization(name: $name, displayName: $displayName) {
                     id
                     name
+                    settingsURL
                 }
             }
         `,
@@ -611,9 +609,9 @@ export function createOrganization(
 export function createUser(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     username: string,
-    email: string | undefined
-): Observable<GQL.ICreateUserResult> {
-    return requestGraphQL<GQL.IMutation>({
+    email: string | null
+): Observable<CreateUserResult['createUser']> {
+    return requestGraphQL<CreateUserResult, CreateUserVariables>({
         request: gql`
             mutation CreateUser($username: String!, $email: String) {
                 createUser(username: $username, email: $email) {
@@ -636,8 +634,8 @@ export function createUser(
 export async function getUser(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     username: string
-): Promise<GQL.IUser | null> {
-    const user = await requestGraphQL<GQL.IQuery>({
+): Promise<UserResult['user']> {
+    const user = await requestGraphQL<UserResult, UserVariables>({
         request: gql`
             query User($username: String!) {
                 user(username: $username) {
@@ -689,13 +687,13 @@ export async function getUser(
  * dependency-injected `requestGraphQL`.
  */
 export function addExternalService(
-    input: GQL.IAddExternalServiceInput,
+    input: AddExternalServiceInput,
     {
         eventLogger = { log: () => undefined },
         requestGraphQL,
     }: Pick<PlatformContext, 'requestGraphQL'> & { eventLogger: EventLogger }
-): Observable<GQL.IExternalService> {
-    return requestGraphQL<GQL.IMutation>({
+): Observable<addExternalServiceResult['addExternalService']> {
+    return requestGraphQL<addExternalServiceResult, addExternalServiceVariables>({
         request: gql`
             mutation addExternalService($input: AddExternalServiceInput!) {
                 addExternalService(input: $input) {
@@ -720,110 +718,111 @@ export function addExternalService(
     )
 }
 
-const genericSearchResultInterfaceFields = gql`
-  label {
-      html
-  }
-  url
-  icon
-  detail {
-      html
-  }
-  matches {
-      url
-      body {
-          text
-          html
-      }
-      highlights {
-          line
-          character
-          length
-      }
-  }
+const GenericSearchResultInterfaceFragment = gql`
+    fragment GenericSearchResultFields on GenericSearchResultInterface {
+        label {
+            html
+        }
+        url
+        detail {
+            html
+        }
+        matches {
+            url
+            body {
+                text
+                html
+            }
+            highlights {
+                line
+                character
+                length
+            }
+        }
+    }
 `
 
 export function search(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     query: string,
-    version: string,
-    patternType: GQL.SearchPatternType
-): Promise<GQL.ISearch> {
-    return requestGraphQL<GQL.IQuery>({
+    version: SearchVersion,
+    patternType: SearchPatternType
+): Promise<SearchResult['search']> {
+    return requestGraphQL<SearchResult, SearchVariables>({
         request: gql`
-        query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!) {
-            search(query: $query, version: $version, patternType: $patternType) {
-                results {
-                    __typename
-                    limitHit
-                    resultCount
-                    matchCount
-                    approximateResultCount
-                    missing {
-                        name
-                    }
-                    cloning {
-                        name
-                    }
-                    timedout {
-                        name
-                    }
-                    indexUnavailable
-                    dynamicFilters {
-                        value
-                        label
-                        count
-                        limitHit
-                        kind
-                    }
+            query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!) {
+                search(query: $query, version: $version, patternType: $patternType) {
                     results {
                         __typename
-                        ... on Repository {
-                            id
+                        limitHit
+                        matchCount
+                        approximateResultCount
+                        missing {
                             name
-                            ${genericSearchResultInterfaceFields}
                         }
-                        ... on FileMatch {
-                            file {
-                                path
-                                url
-                                commit {
-                                    oid
+                        cloning {
+                            name
+                        }
+                        timedout {
+                            name
+                        }
+                        indexUnavailable
+                        dynamicFilters {
+                            value
+                            label
+                            count
+                            limitHit
+                            kind
+                        }
+                        results {
+                            __typename
+                            ... on Repository {
+                                id
+                                name
+                                ...GenericSearchResultFields
+                            }
+                            ... on FileMatch {
+                                file {
+                                    path
+                                    url
+                                    commit {
+                                        oid
+                                    }
+                                }
+                                repository {
+                                    name
+                                    url
+                                }
+                                limitHit
+                                symbols {
+                                    name
+                                    containerName
+                                    url
+                                    kind
+                                }
+                                lineMatches {
+                                    preview
+                                    lineNumber
+                                    offsetAndLengths
                                 }
                             }
-                            repository {
-                                name
-                                url
-                            }
-                            limitHit
-                            symbols {
-                                name
-                                containerName
-                                url
-                                kind
-                            }
-                            lineMatches {
-                                preview
-                                lineNumber
-                                offsetAndLengths
+                            ... on CommitSearchResult {
+                                ...GenericSearchResultFields
                             }
                         }
-                        ... on CommitSearchResult {
-                            ${genericSearchResultInterfaceFields}
-                        }
-                    }
-                    alert {
-                        title
-                        description
-                        proposedQueries {
+                        alert {
+                            title
                             description
-                            query
+                            proposedQueries {
+                                description
+                                query
+                            }
                         }
+                        elapsedMilliseconds
                     }
-                    elapsedMilliseconds
                 }
             }
-        }
+            ${GenericSearchResultInterfaceFragment}
         `,
         variables: { query, version, patternType },
         mightContainPrivateInfo: false,
@@ -847,12 +846,14 @@ export function search(
  */
 export function fetchSiteConfiguration({
     requestGraphQL,
-}: Pick<PlatformContext, 'requestGraphQL'>): Observable<GQL.ISite> {
-    return requestGraphQL<GQL.IQuery>({
+}: Pick<PlatformContext, 'requestGraphQL'>): Observable<SiteResult['site']> {
+    return requestGraphQL<SiteResult>({
         request: gql`
             query Site {
                 site {
+                    __typename
                     id
+                    canReloadSite
                     configuration {
                         id
                         effectiveContents
@@ -880,7 +881,7 @@ export function updateSiteConfiguration(
     lastID: number,
     input: string
 ): Observable<boolean> {
-    return requestGraphQL<GQL.IMutation>({
+    return requestGraphQL<UpdateSiteConfigurationResult, UpdateSiteConfigurationVariables>({
         request: gql`
             mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
                 updateSiteConfiguration(lastID: $lastID, input: $input)

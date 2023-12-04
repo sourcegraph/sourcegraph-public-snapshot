@@ -1,0 +1,32 @@
+.rollout-window {
+    &__list {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    &__list-item {
+        border: none;
+
+        &:not(:last-child) {
+            padding-bottom: 1rem;
+        }
+
+        &:not(:first-child) {
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+    }
+
+    &__list-item-frequency {
+        margin: 0;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+    }
+
+    &__list-item-frequency-icon {
+        font-size: 1.5rem;
+        margin-right: 0.25rem;
+    }
+}

@@ -430,10 +430,6 @@ declare namespace browser.contentScripts {
 declare namespace browser.devtools.inspectedWindow {
     const tabId: number
 
-    function eval(
-        expression: string
-    ): Promise<[any, { isException: boolean; value: string } | { isError: boolean; code: string }]>
-
     function reload(reloadOptions?: { ignoreCache?: boolean; userAgent?: string; injectedScript?: string }): void
 }
 
@@ -713,9 +709,7 @@ declare namespace browser.i18n {
 
     function getUILanguage(): LanguageCode
 
-    function detectLanguage(
-        text: string
-    ): Promise<{
+    function detectLanguage(text: string): Promise<{
         isReliable: boolean
         languages: { language: LanguageCode; percentage: number }[]
     }>
@@ -1570,9 +1564,7 @@ declare namespace browser.webNavigation {
         frameId: number
     }): Promise<{ errorOccured: boolean; url: string; parentFrameId: number }>
 
-    function getAllFrames(details: {
-        tabId: number
-    }): Promise<
+    function getAllFrames(details: { tabId: number }): Promise<
         {
             errorOccured: boolean
             processId: number

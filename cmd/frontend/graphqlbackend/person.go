@@ -33,12 +33,22 @@ func NewPersonResolver(db database.DB, name, email string, includeUserInfo bool)
 	}
 }
 
+func NewPersonResolverFromUser(db database.DB, email string, user *types.User) *PersonResolver {
+	return &PersonResolver{
+		db:    db,
+		user:  user,
+		email: email,
+		// We don't need to query for user.
+		includeUserInfo: false,
+	}
+}
+
 // resolveUser resolves the person to a user (using the email address). Not all persons can be
 // resolved to a user.
 func (r *PersonResolver) resolveUser(ctx context.Context) (*types.User, error) {
 	r.once.Do(func() {
 		if r.includeUserInfo && r.email != "" {
-			r.user, r.err = database.Users(r.db).GetByVerifiedEmail(ctx, r.email)
+			r.user, r.err = r.db.Users().GetByVerifiedEmail(ctx, r.email)
 			if errcode.IsNotFound(r.err) {
 				r.err = nil
 			}
@@ -98,5 +108,9 @@ func (r *PersonResolver) User(ctx context.Context) (*UserResolver, error) {
 	if user == nil || err != nil {
 		return nil, err
 	}
-	return NewUserResolver(r.db, user), nil
+	return NewUserResolver(ctx, r.db, user), nil
+}
+
+func (r *PersonResolver) OwnerField() string {
+	return EnterpriseResolvers.ownResolver.PersonOwnerField(r)
 }

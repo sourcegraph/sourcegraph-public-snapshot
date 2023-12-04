@@ -18,13 +18,19 @@ Bulk operations allow a single action to be performed across many changesets in 
 
     <img src="https://sourcegraphstatic.com/docs/images/batch_changes/select_bulk_operation_type.png" class="screenshot">
 
+1. Once changesets are selected, a query is made to determine the bulk operations that can be applied to the selected changesets.
+
 ## Supported types of bulk operations
 
+Depending on the changesets selected, different types of bulk operations can be applied to the selected changesets. For a bulk operation to be available, it has to be applicable to all the selected changesets.
+
+Below is a list of supported bulk operations for changesets and the conditions with which they're applicable:
+
 - Commenting: Post a comment on all selected changesets. This can be particularly useful for pinging people, reminding them to take a look at the changeset, or posting your favorite emoji 🦡.
-- Detach: Only available in the archived tab. Detach a selection of changesets from the batch change to remove them from the archived tab.
-- Re-enqueue: Only available if filtering by state `failed`. Re-enqueues the pending changes for all selected changesets that failed.
-- <span class="badge badge-experimental">Experimental</span> Merge: Only available if filtering by state `open`. Tries to merge the selected changesets on the code hosts. Due to the nature of changesets, there are many states in which a changeset is not mergeable. This won't break the entire bulk operation, but single changesets may not be merged after the run for this reason. The bulk operations tab lists those where merging failed below the bulk operation in that case. In the confirmation modal, you can select to merge using the squash merge strategy. This is supported on both GitHub and GitLab, but not on Bitbucket Server / Bitbucket Data Center. In this case, regular merges are always used for merging the changesets.
-- Close: Only available if filtering by state `open` or `draft`. Tries to close the selected changesets on the code hosts.
+- Detach: Detach a selection of changesets from the batch change to remove them from the archived tab.
+- Re-enqueue: Re-enqueues the pending changes for all selected changesets that failed.
+- <span class="badge badge-experimental">Experimental</span> Merge: Tries to merge the selected changesets on the code hosts. Due to the nature of changesets, there are many states in which a changeset is not mergeable. This won't break the entire bulk operation, but single changesets may not be merged after the run for this reason. The bulk operations tab lists those where merging failed below the bulk operation in that case. In the confirmation modal, you can select to merge using the squash merge strategy. This is supported on GitHub, GitLab, and Bitbucket Cloud, but not on Bitbucket Server / Bitbucket Data Center. In this case, regular merges are always used for merging the changesets.
+- Close: Tries to close the selected changesets on the code hosts.
 - Publish: Publishes the selected changesets, provided they don't have a [`published` field](../references/batch_spec_yaml_reference.md#changesettemplate-published) in the batch spec. You can choose between draft and normal changesets in the confirmation modal.
 
 ## Monitoring bulk operations

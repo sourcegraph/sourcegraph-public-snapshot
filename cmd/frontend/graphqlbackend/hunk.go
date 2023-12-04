@@ -4,21 +4,22 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 type hunkResolver struct {
 	db   database.DB
 	repo *RepositoryResolver
-	hunk *git.Hunk
+	hunk *gitserver.Hunk
 }
 
 func (r *hunkResolver) Author() signatureResolver {
 	return signatureResolver{
 		person: &PersonResolver{
-			db:    r.db,
-			name:  r.hunk.Author.Name,
-			email: r.hunk.Author.Email,
+			db:              r.db,
+			name:            r.hunk.Author.Name,
+			email:           r.hunk.Author.Email,
+			includeUserInfo: true,
 		},
 		date: r.hunk.Author.Date,
 	}
@@ -49,7 +50,7 @@ func (r *hunkResolver) Message() string {
 }
 
 func (r *hunkResolver) Commit(ctx context.Context) (*GitCommitResolver, error) {
-	return NewGitCommitResolver(r.db, r.repo, r.hunk.CommitID, nil), nil
+	return NewGitCommitResolver(r.db, gitserver.NewClient("graphql.diff.hunk"), r.repo, r.hunk.CommitID, nil), nil
 }
 
 func (r *hunkResolver) Filename() string {

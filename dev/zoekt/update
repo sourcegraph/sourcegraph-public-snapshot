@@ -4,27 +4,42 @@ set -e
 
 export GO111MODULE=on
 
-# Disable proxy since it can cache the value of master
-export GOPROXY="${GOPROXY:-direct}"
-
 # Can specify a SHA pushed to our fork instead of master
-version="${1:-master}"
+version="${1:-main}"
 
-upstream=github.com/google/zoekt
-fork=github.com/sourcegraph/zoekt
+name="sourcegraph/zoekt"
+repo="github.com/${name}"
 
-oldsha="$(go mod edit -print | grep "$fork" | grep -o '[a-f0-9]*$')"
-module="$(go get "${fork}@${version}" 2>&1 | grep -E -o ${fork}'@v0.0.0-[0-9a-z-]+')"
-newsha="$(echo "$module" | grep -o '[a-f0-9]*$')"
+response="$(mktemp)"
+trap 'rm -f "$response"' EXIT
 
-echo "https://github.com/sourcegraph/zoekt/compare/$oldsha...$newsha"
-echo "git log --pretty=format:'- https://github.com/sourcegraph/zoekt/commit/%h %s' $oldsha...$newsha | sed 's/ (#[0-9]*)//g'"
-echo "git log --pretty=format:'- %h %s' $oldsha...$newsha | sed 's/ (#[0-9]*)//g'"
+curl --silent --fail "https://api.github.com/repos/${name}/commits?per_page=1&sha=${version}" >"${response}"
+newsha="$(jq -r '.[0].sha[:12]' <"${response}")"
+oldsha="$(go mod edit -print | grep "$repo" | grep -o '[a-f0-9]*$')"
 
-go mod edit "-replace=${upstream}=${module}"
-go mod download ${upstream}
+echo "https://$repo/compare/$oldsha...$newsha"
+
+curl --silent --fail "https://api.github.com/repos/sourcegraph/zoekt/compare/$oldsha...$newsha" >"${response}"
+
+echo
+jq -r '.commits[] | "- https://github.com/sourcegraph/zoekt/commit/" + .sha[:10] + " " + (.commit.message | split("\n")[0])' <"${response}" |
+    sed 's/ (#[0-9]*)//g'
+
+echo
+jq -r '.commits[] | "- " + .sha[:10] + " " + (.commit.message | split("\n")[0])' <"${response}" |
+    sed 's/ (#[0-9]*)//g'
+
+echo
+go get "${repo}@${version}"
+go mod download ${repo}
 go mod tidy
+
+echo "Ensure that we update Bazel dependency files."
+bazel run '//:gazelle-update-repos'
+
+echo "Ensure that we update Bazel build files."
+bazel configure
 
 echo "Ensure we update go.sum by actually compiling some code which depends on zoekt."
 echo "We do this by running 'go test' without actually running any tests."
-go test -run '^$' github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
+go test -run '^$' github.com/sourcegraph/sourcegraph/internal/search/zoekt

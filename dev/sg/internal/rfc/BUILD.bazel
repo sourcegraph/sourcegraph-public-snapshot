@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "rfc",
+    srcs = [
+        "rfc.go",
+        "rfc_create.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/rfc",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//dev/sg/internal/open",
+        "//dev/sg/internal/secrets",
+        "//dev/sg/internal/std",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_api//docs/v1:docs",
+        "@org_golang_google_api//drive/v3:drive",
+        "@org_golang_google_api//option",
+        "@org_golang_x_oauth2//:oauth2",
+        "@org_golang_x_oauth2//google",
+    ],
+)
+
+go_test(
+    name = "rfc_test",
+    timeout = "short",
+    srcs = ["rfc_test.go"],
+    embed = [":rfc"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//dev/sg/internal/std",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)

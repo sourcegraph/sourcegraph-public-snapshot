@@ -1,0 +1,39 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2020",
+    "lib": ["esnext", "DOM", "DOM.Iterable"],
+    "sourceMap": true,
+    "sourceRoot": "src",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "jsx": "react-jsx",
+  },
+  "references": [
+    {
+      "path": "../branded",
+    },
+    {
+      "path": "../build-config",
+    },
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../http-client",
+    },
+    {
+      "path": "../shared",
+    },
+    {
+      "path": "../storybook",
+    },
+    {
+      "path": "../wildcard",
+    },
+  ],
+  "include": ["./package.json", "**/*", ".*", "**/*.d.ts"],
+  "exclude": ["node_modules", "../../node_modules", ".vscode-test", "out", "dist", "src", "gradle"],
+}

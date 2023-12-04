@@ -24,12 +24,11 @@ All site configuration options and their default values are shown below.
 The following site configuration options require the server to be restarted for the changes to take effect:
 
 ```
-auth.accessTokens
-auth.sessionExpiry
-git.cloneURLToRepositoryName
-searchScopes
-extensions
-disablePublicRepoRedirects
+auth.providers
+externalURL
+insights.query.worker.concurrency
+insights.commit.indexer.interval
+permissions.syncUsersMaxConcurrency
 ```
 
 ## Editing your site configuration if you cannot access the web UI
@@ -40,8 +39,8 @@ If you are having trouble accessing the web UI, you can make edits to your site 
 
 Set `FRONTEND_CONTAINER` to:
 
-- [Docker Compose](../install/docker-compose/index.md): the `sourcegraph-frontend` container
-- [Single-container](../install/docker/index.md): the `sourcegraph/server` container
+- [Docker Compose](../deploy/docker-compose/index.md): the `sourcegraph-frontend` container
+- [Single-container](../deploy/docker-single-container/index.md): the `sourcegraph/server` container
 
 ```sh
 docker exec -it --user=root $FRONTEND_CONTAINER sh -c 'apk add --no-cache && nano /home/sourcegraph/site-config.json'
@@ -55,7 +54,7 @@ docker exec -it $FRONTEND_CONTAINER sh -c 'vi ~/site-config.json'
 
 ### Sourcegraph with Kubernetes
 
-For [Kubernetes](../install/kubernetes/index.md) deployments:
+For [Kubernetes](../deploy/kubernetes/index.md) deployments:
 
 ```sh
 kubectl exec -it $FRONTEND_POD -- sh -c 'apk add --no-cache nano && nano ~/site-config.json'
@@ -67,7 +66,7 @@ Or if you prefer using a Vim editor:
 kubectl exec -it $FRONTEND_POD -- sh -c 'vi ~/site-config.json'
 ```
 
-Then simply save your changes (type <kbd>ctrl+x</kbd> and <kbd>y</kbd> to exit `nano` and save your changes). Your changes will be applied immediately in the same was as if you had made them through the web UI.
+Then simply save your changes (type <kbd>ctrl+x</kbd> and <kbd>y</kbd> to exit `nano` and save your changes). Your changes will be applied immediately in the same way as if you had made them through the web UI.
 
 ## If you are still encountering issues
 
@@ -92,7 +91,5 @@ You can check the container logs to see if you have made any typos or mistakes i
 			"allowSignup": false
 		}
 	],
-
-	"search.index.enabled": true
 }
 ```

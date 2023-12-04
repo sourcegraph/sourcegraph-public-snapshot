@@ -1,16 +1,16 @@
 import { cleanup, fireEvent, act } from '@testing-library/react'
-import React from 'react'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { RepositoriesPopover, BATCH_COUNT } from './RepositoriesPopover'
 import { MOCK_REQUESTS } from './RepositoriesPopover.mocks'
 
 const repo = {
     id: 'some-repo-id',
-    name: 'github.com/sourcegraph/sourcegraph',
+    name: '/github.com/sourcegraph/sourcegraph',
 }
 
 describe('RevisionsPopover', () => {

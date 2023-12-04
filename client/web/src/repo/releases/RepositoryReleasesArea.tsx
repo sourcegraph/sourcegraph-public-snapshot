@@ -1,29 +1,14 @@
-import * as H from 'history'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useMemo } from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { type FC, useMemo } from 'react'
 
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { HeroPage } from '../../components/HeroPage'
-import { RepositoryFields } from '../../graphql-operations'
-import { RepoContainerContext } from '../RepoContainer'
+import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { RepositoryFields } from '../../graphql-operations'
+import { isPackageServiceType } from '../packages/isPackageServiceType'
+import type { RepoContainerContext } from '../RepoContainer'
 
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 
-const NotFoundPage: React.FunctionComponent = () => (
-    <HeroPage
-        icon={MapSearchIcon}
-        title="404: Not Found"
-        subtitle="Sorry, the requested repository tags page was not found."
-    />
-)
-
-interface Props
-    extends RouteComponentProps<{}>,
-        Pick<RepoContainerContext, 'repo' | 'routePrefix' | 'repoHeaderContributionsLifecycleProps'>,
-        BreadcrumbSetters {
+interface Props extends Pick<RepoContainerContext, 'repo'>, BreadcrumbSetters {
     repo: RepositoryFields
-    history: H.History
 }
 
 /**
@@ -36,31 +21,27 @@ export interface RepositoryReleasesAreaPageProps {
     repo: RepositoryFields
 }
 
+const TAGS_BREADCRUMB = { key: 'tags', element: 'Tags' }
+const VERSIONS_BREADCRUMB = { key: 'versions', element: 'Versions' }
+
 /**
  * Renders pages related to repository branches.
  */
-export const RepositoryReleasesArea: React.FunctionComponent<Props> = ({ useBreadcrumb, repo, routePrefix }) => {
-    useBreadcrumb(useMemo(() => ({ key: 'tags', element: 'Tags' }), []))
+export const RepositoryReleasesArea: FC<Props> = props => {
+    const { useBreadcrumb, repo } = props
 
-    const transferProps: { repo: RepositoryFields } = {
-        repo,
-    }
+    const isPackage = useMemo(
+        () => isPackageServiceType(repo?.externalRepository.serviceType),
+        [repo.externalRepository.serviceType]
+    )
+
+    useBreadcrumb(isPackage ? VERSIONS_BREADCRUMB : TAGS_BREADCRUMB)
 
     return (
         <div className="repository-graph-area">
             <div className="container">
                 <div className="container-inner">
-                    <Switch>
-                        <Route
-                            path={`${routePrefix}/-/tags`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            render={routeComponentProps => (
-                                <RepositoryReleasesTagsPage {...routeComponentProps} {...transferProps} />
-                            )}
-                        />
-                        <Route key="hardcoded-key" component={NotFoundPage} />
-                    </Switch>
+                    <RepositoryReleasesTagsPage repo={repo} isPackage={isPackage} />
                 </div>
             </div>
         </div>

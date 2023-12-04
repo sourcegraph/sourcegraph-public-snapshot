@@ -1,33 +1,30 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import { getYear, parseISO } from 'date-fns'
-import * as H from 'history'
-import React, { useCallback, useMemo, useState } from 'react'
 import {
     Area,
     ComposedChart,
-    LabelFormatter,
+    type LabelFormatter,
     ResponsiveContainer,
     Tooltip,
     XAxis,
     YAxis,
-    TooltipPayload,
+    type TooltipPayload,
 } from 'recharts'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Container, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Checkbox, Container, LoadingSpinner, Label, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
+import type { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
 
-import { queryChangesetCountsOverTime as _queryChangesetCountsOverTime } from './backend'
+import { useChangesetCountsOverTime } from './backend'
+
 import styles from './BatchChangeBurndownChart.module.scss'
 
 interface Props {
     batchChangeID: Scalars['ID']
-    history: H.History
     width?: string | number
-
-    /** For testing only. */
-    queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
 }
 
 // const tooltipLabelFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' })
@@ -75,28 +72,25 @@ const tooltipItemSorter = ({ dataKey }: TooltipPayload): number =>
 /**
  * A burndown chart showing progress of the batch change's changesets.
  */
-export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
+export const BatchChangeBurndownChart: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     batchChangeID,
-    queryChangesetCountsOverTime = _queryChangesetCountsOverTime,
     width = '100%',
 }) => {
     const [includeArchived, setIncludeArchived] = useState<boolean>(false)
     const toggleIncludeArchived = useCallback((): void => setIncludeArchived(previousValue => !previousValue), [])
-
     const [hiddenStates, setHiddenStates] = useState<Set<keyof DisplayableChangesetCounts>>(new Set())
-    const changesetCountsOverTime: ChangesetCountsOverTimeFields[] | undefined = useObservable(
-        useMemo(() => queryChangesetCountsOverTime({ batchChange: batchChangeID, includeArchived }), [
-            batchChangeID,
-            queryChangesetCountsOverTime,
-            includeArchived,
-        ])
-    )
+
+    const { loading, data, error } = useChangesetCountsOverTime(batchChangeID, includeArchived)
 
     const dateTickFormatter = useMemo(() => {
         let dateTickFormat = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric' })
-        if (changesetCountsOverTime && changesetCountsOverTime?.length > 1) {
+        if (!(data?.node?.__typename === 'BatchChange')) {
+            return (timestamp: number): string => dateTickFormat.format(timestamp)
+        }
+        const changesetCountsOverTime = data.node.changesetCountsOverTime
+        if (changesetCountsOverTime.length > 1) {
             const start = parseISO(changesetCountsOverTime[0].date)
-            const end = parseISO(changesetCountsOverTime[changesetCountsOverTime.length - 1].date)
+            const end = parseISO(changesetCountsOverTime.at(-1)!.date)
             // If the range spans multiple years, we want to display the year as well.
             if (getYear(start) !== getYear(end)) {
                 dateTickFormat = new Intl.DateTimeFormat(undefined, {
@@ -107,16 +101,34 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
             }
         }
         return (timestamp: number): string => dateTickFormat.format(timestamp)
-    }, [changesetCountsOverTime])
+    }, [data])
 
-    // Is loading.
-    if (changesetCountsOverTime === undefined) {
+    if (!loading && error) {
+        return <ErrorAlert error={error} />
+    }
+
+    if (loading && !data) {
         return (
             <div className="text-center">
                 <LoadingSpinner className="mx-auto my-4" />
             </div>
         )
     }
+
+    if (!data) {
+        // Shouldn't happen.
+        return null
+    }
+
+    if (!data.node) {
+        return <ErrorAlert error={new Error(`BatchChange with ID ${batchChangeID} does not exist`)} />
+    }
+
+    if (data.node.__typename !== 'BatchChange') {
+        return <ErrorAlert error={new Error(`The given ID is a ${data.node.__typename}, not a BatchChange`)} />
+    }
+
+    const changesetCountsOverTime = data.node.changesetCountsOverTime
 
     return (
         <Container>
@@ -130,10 +142,7 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
                     >
                         <XAxis
                             dataKey="date"
-                            domain={[
-                                changesetCountsOverTime[0].date,
-                                changesetCountsOverTime[changesetCountsOverTime.length - 1].date,
-                            ]}
+                            domain={[changesetCountsOverTime[0].date, changesetCountsOverTime.at(-1)!.date]}
                             name="Time"
                             tickFormatter={dateTickFormatter}
                             type="number"
@@ -193,15 +202,17 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
     )
 }
 
-const LegendLabel: React.FunctionComponent<{
-    stateKey: keyof DisplayableChangesetCounts
-    label: string
-    fill: string
-    hiddenStates: Set<keyof DisplayableChangesetCounts>
-    setHiddenStates: (
-        setter: (currentValue: Set<keyof DisplayableChangesetCounts>) => Set<keyof DisplayableChangesetCounts>
-    ) => void
-}> = ({ stateKey, label, fill, hiddenStates, setHiddenStates }) => {
+const LegendLabel: React.FunctionComponent<
+    React.PropsWithChildren<{
+        stateKey: keyof DisplayableChangesetCounts
+        label: string
+        fill: string
+        hiddenStates: Set<keyof DisplayableChangesetCounts>
+        setHiddenStates: (
+            setter: (currentValue: Set<keyof DisplayableChangesetCounts>) => Set<keyof DisplayableChangesetCounts>
+        ) => void
+    }>
+> = ({ stateKey, label, fill, hiddenStates, setHiddenStates }) => {
     const onChangeCheckbox = useCallback(() => {
         setHiddenStates(current => {
             if (current.has(stateKey)) {
@@ -223,22 +234,21 @@ const LegendLabel: React.FunctionComponent<{
                 }}
                 className={classNames(styles.batchChangeBurndownChartLegendColorBox, 'mr-2')}
             />
-            <input id={stateKey} type="checkbox" className="mr-2" checked={checked} onChange={onChangeCheckbox} />
-            <label htmlFor={stateKey} className="mb-0">
-                {label}
-            </label>
+            <Checkbox id={stateKey} checked={checked} onChange={onChangeCheckbox} label={label} />
         </div>
     )
 }
 
-const IncludeArchivedToggle: React.FunctionComponent<{
-    includeArchived: boolean
-    onToggle: () => void
-}> = ({ includeArchived, onToggle }) => (
+const IncludeArchivedToggle: React.FunctionComponent<
+    React.PropsWithChildren<{
+        includeArchived: boolean
+        onToggle: () => void
+    }>
+> = ({ includeArchived, onToggle }) => (
     <div className="d-flex align-items-center justify-content-between text-nowrap mb-2 pt-1">
-        <label htmlFor="include-archived" className="mb-0">
+        <Label htmlFor="include-archived" className="mb-0">
             Include archived
-        </label>
+        </Label>
         <Toggle
             id="include-archived"
             value={includeArchived}

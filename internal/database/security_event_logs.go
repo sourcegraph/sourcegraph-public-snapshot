@@ -2,16 +2,18 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
+	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/audit"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,9 +30,10 @@ const (
 	SecurityEventNameSignInFailed    SecurityEventName = "SignInFailed"
 	SecurityEventNameSignInSucceeded SecurityEventName = "SignInSucceeded"
 
-	SecurityEventNameAccountCreated SecurityEventName = "AccountCreated"
-	SecurityEventNameAccountDeleted SecurityEventName = "AccountDeleted"
-	SecurityEventNameAccountNuked   SecurityEventName = "AccountNuked"
+	SecurityEventNameAccountCreated  SecurityEventName = "AccountCreated"
+	SecurityEventNameAccountDeleted  SecurityEventName = "AccountDeleted"
+	SecurityEventNameAccountModified SecurityEventName = "AccountModified"
+	SecurityEventNameAccountNuked    SecurityEventName = "AccountNuked"
 
 	SecurityEventNamPasswordResetRequested SecurityEventName = "PasswordResetRequested"
 	SecurityEventNamPasswordRandomized     SecurityEventName = "PasswordRandomized"
@@ -42,6 +45,28 @@ const (
 	SecurityEventNameRoleChangeGranted SecurityEventName = "RoleChangeGranted"
 
 	SecurityEventNameAccessGranted SecurityEventName = "AccessGranted"
+
+	SecurityEventAccessTokenCreated             SecurityEventName = "AccessTokenCreated"
+	SecurityEventAccessTokenDeleted             SecurityEventName = "AccessTokenDeleted"
+	SecurityEventAccessTokenHardDeleted         SecurityEventName = "AccessTokenHardDeleted"
+	SecurityEventAccessTokenImpersonated        SecurityEventName = "AccessTokenImpersonated"
+	SecurityEventAccessTokenInvalid             SecurityEventName = "AccessTokenInvalid"
+	SecurityEventAccessTokenSubjectNotSiteAdmin SecurityEventName = "AccessTokenSubjectNotSiteAdmin"
+
+	SecurityEventGitHubAuthSucceeded SecurityEventName = "GitHubAuthSucceeded"
+	SecurityEventGitHubAuthFailed    SecurityEventName = "GitHubAuthFailed"
+
+	SecurityEventGitLabAuthSucceeded SecurityEventName = "GitLabAuthSucceeded"
+	SecurityEventGitLabAuthFailed    SecurityEventName = "GitLabAuthFailed"
+
+	SecurityEventBitbucketCloudAuthSucceeded SecurityEventName = "BitbucketCloudAuthSucceeded"
+	SecurityEventBitbucketCloudAuthFailed    SecurityEventName = "BitbucketCloudAuthFailed"
+
+	SecurityEventAzureDevOpsAuthSucceeded SecurityEventName = "AzureDevOpsAuthSucceeded"
+	SecurityEventAzureDevOpsAuthFailed    SecurityEventName = "AzureDevOpsAuthFailed"
+
+	SecurityEventOIDCLoginSucceeded SecurityEventName = "SecurityEventOIDCLoginSucceeded"
+	SecurityEventOIDCLoginFailed    SecurityEventName = "SecurityEventOIDCLoginFailed"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.
@@ -55,56 +80,139 @@ type SecurityEvent struct {
 	Timestamp       time.Time
 }
 
-// A SecurityEventLogStore provides persistence for security events.
-type SecurityEventLogStore struct {
+func (e *SecurityEvent) marshalArgumentAsJSON() string {
+	if e.Argument == nil {
+		return "{}"
+	}
+	return string(e.Argument)
+}
+
+// SecurityEventLogsStore provides persistence for security events.
+type SecurityEventLogsStore interface {
+	basestore.ShareableStore
+
+	// Insert adds a new security event to the store.
+	Insert(ctx context.Context, e *SecurityEvent) error
+	// Bulk "Insert" action.
+	InsertList(ctx context.Context, events []*SecurityEvent) error
+	// LogEvent logs the given security events.
+	//
+	// It logs errors directly instead of returning to callers.
+	LogEvent(ctx context.Context, e *SecurityEvent)
+	// Bulk "LogEvent" action.
+	LogEventList(ctx context.Context, events []*SecurityEvent)
+}
+
+type securityEventLogsStore struct {
+	logger log.Logger
 	*basestore.Store
 }
 
-// SecurityEventLogs instantiates and returns a new SecurityEventLogStore with prepared statements.
-func SecurityEventLogs(db dbutil.DB) *SecurityEventLogStore {
-	return &SecurityEventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+// SecurityEventLogsWith instantiates and returns a new SecurityEventLogsStore
+// using the other store handle, and a scoped sub-logger of the passed base logger.
+func SecurityEventLogsWith(baseLogger log.Logger, other basestore.ShareableStore) SecurityEventLogsStore {
+	logger := baseLogger.Scoped("SecurityEvents")
+	return &securityEventLogsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
 }
 
-// Insert adds a new security event to the store.
-func (s *SecurityEventLogStore) Insert(ctx context.Context, e *SecurityEvent) error {
-	argument := e.Argument
-	if argument == nil {
-		argument = []byte(`{}`)
+func (s *securityEventLogsStore) Insert(ctx context.Context, event *SecurityEvent) error {
+	return s.InsertList(ctx, []*SecurityEvent{event})
+}
+
+func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*SecurityEvent) error {
+	cfg := conf.SiteConfig()
+	loc := audit.SecurityEventLocation(cfg)
+	if loc == audit.None {
+		return nil
 	}
 
-	_, err := s.Handle().DB().ExecContext(
-		ctx,
-		"INSERT INTO security_event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-		e.Name,
-		e.URL,
-		e.UserID,
-		e.AnonymousUserID,
-		e.Source,
-		argument,
-		version.Version(),
-		e.Timestamp.UTC(),
-	)
-	if err != nil {
-		return errors.Wrap(err, "INSERT")
+	actor := sgactor.FromContext(ctx)
+	vals := make([]*sqlf.Query, len(events))
+	for index, event := range events {
+		// Add an attribution for Sourcegraph operator to be distinguished in our analytics pipelines
+		if actor.SourcegraphOperator {
+			result, err := jsonc.Edit(
+				event.marshalArgumentAsJSON(),
+				true,
+				EventLogsSourcegraphOperatorKey,
+			)
+			event.Argument = json.RawMessage(result)
+			if err != nil {
+				return errors.Wrap(err, `edit "argument" for Sourcegraph operator`)
+			}
+		}
+
+		// If actor is internal, we may violate the security_event_logs_check_has_user
+		// constraint, since internal actors do not have either an anonymous UID or a
+		// user ID - at many callsites, we already set anonymous UID as "internal" in
+		// these scenarios, so as a workaround, we assign the event the anonymous UID
+		// "internal".
+		noUser := event.UserID == 0 && event.AnonymousUserID == ""
+		if actor.IsInternal() && noUser {
+			// only log internal access if we are explicitly configured to do so
+			if !audit.IsEnabled(cfg, audit.InternalTraffic) {
+				return nil
+			}
+			event.AnonymousUserID = "internal"
+		}
+
+		// Set values corresponding to this event.
+		vals[index] = sqlf.Sprintf(`(%s, %s, %s, %s, %s, %s, %s, %s)`,
+			event.Name,
+			event.URL,
+			event.UserID,
+			event.AnonymousUserID,
+			event.Source,
+			event.marshalArgumentAsJSON(),
+			version.Version(),
+			event.Timestamp.UTC(),
+		)
+	}
+
+	if loc == audit.Database || loc == audit.All {
+		query := sqlf.Sprintf("INSERT INTO security_event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES %s", sqlf.Join(vals, ","))
+
+		if _, err := s.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			return errors.Wrap(err, "INSERT")
+		}
+	}
+	if loc == audit.AuditLog || loc == audit.All {
+		for _, event := range events {
+			audit.Log(ctx, s.logger, audit.Record{
+				Entity: "security events",
+				Action: string(event.Name),
+				Fields: []log.Field{
+					log.Object("event",
+						log.String("URL", event.URL),
+						log.Uint32("UserID", event.UserID),
+						log.String("AnonymousUserID", event.AnonymousUserID),
+						log.String("source", event.Source),
+						log.String("argument", event.marshalArgumentAsJSON()),
+						log.String("version", version.Version()),
+						log.String("timestamp", event.Timestamp.UTC().String()),
+					),
+				},
+			})
+		}
 	}
 	return nil
 }
 
-// LogEvent will log security events.
-//
-// Note that it does not return an error and will instead simply log it.
-func (s *SecurityEventLogStore) LogEvent(ctx context.Context, e *SecurityEvent) {
-	// We don't want to begin logging authentication or authorization events in
-	// on-premises installations yet.
-	if !envvar.SourcegraphDotComMode() {
-		return
-	}
+func (s *securityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent) {
+	s.LogEventList(ctx, []*SecurityEvent{e})
+}
 
-	if err := s.Insert(ctx, e); err != nil {
-		j, _ := json.Marshal(e)
-		log15.Error(string(e.Name), "event", string(j), "traceID", trace.ID(ctx), "err", err)
-		// We want to capture in sentry as it includes a stack trace which will allow us
-		// to track down the root cause.
-		sentry.CaptureError(err, map[string]string{})
+func (s *securityEventLogsStore) LogEventList(ctx context.Context, events []*SecurityEvent) {
+	if err := s.InsertList(ctx, events); err != nil {
+		names := make([]string, len(events))
+		for i, e := range events {
+			names[i] = string(e.Name)
+		}
+		j, _ := json.Marshal(&events)
+		if errors.Is(err, context.Canceled) {
+			trace.Logger(ctx, s.logger).Warn(strings.Join(names, ","), log.String("events", string(j)), log.Error(err))
+		} else {
+			trace.Logger(ctx, s.logger).Error(strings.Join(names, ","), log.String("events", string(j)), log.Error(err))
+		}
 	}
 }

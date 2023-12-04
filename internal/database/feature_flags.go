@@ -13,10 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var clearRedisCache = ff.ClearEvaluatedFlagFromCache
+
 type FeatureFlagStore interface {
 	basestore.ShareableStore
 	With(basestore.ShareableStore) FeatureFlagStore
-	Transact(context.Context) (FeatureFlagStore, error)
+	WithTransact(context.Context, func(FeatureFlagStore) error) error
 	CreateFeatureFlag(context.Context, *ff.FeatureFlag) (*ff.FeatureFlag, error)
 	UpdateFeatureFlag(context.Context, *ff.FeatureFlag) (*ff.FeatureFlag, error)
 	DeleteFeatureFlag(context.Context, string) error
@@ -41,10 +43,6 @@ type featureFlagStore struct {
 	*basestore.Store
 }
 
-func FeatureFlags(db dbutil.DB) FeatureFlagStore {
-	return &featureFlagStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
 func FeatureFlagsWith(other basestore.ShareableStore) FeatureFlagStore {
 	return &featureFlagStore{Store: basestore.NewWithHandle(other.Handle())}
 }
@@ -53,9 +51,10 @@ func (f *featureFlagStore) With(other basestore.ShareableStore) FeatureFlagStore
 	return &featureFlagStore{Store: f.Store.With(other)}
 }
 
-func (f *featureFlagStore) Transact(ctx context.Context) (FeatureFlagStore, error) {
-	txBase, err := f.Store.Transact(ctx)
-	return &featureFlagStore{Store: txBase}, err
+func (f *featureFlagStore) WithTransact(ctx context.Context, fn func(FeatureFlagStore) error) error {
+	return f.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return fn(&featureFlagStore{Store: tx})
+	})
 }
 
 func (f *featureFlagStore) CreateFeatureFlag(ctx context.Context, flag *ff.FeatureFlag) (*ff.FeatureFlag, error) {
@@ -111,7 +110,8 @@ func (f *featureFlagStore) UpdateFeatureFlag(ctx context.Context, flag *ff.Featu
 		SET
 			flag_type = %s,
 			bool_value = %s,
-			rollout = %s
+			rollout = %s,
+			updated_at = NOW()
 		WHERE flag_name = %s
 		RETURNING
 			flag_name,
@@ -146,6 +146,7 @@ func (f *featureFlagStore) UpdateFeatureFlag(ctx context.Context, flag *ff.Featu
 		rollout,
 		flag.Name,
 	))
+	clearRedisCache(flag.Name)
 	return scanFeatureFlag(row)
 }
 
@@ -158,6 +159,7 @@ func (f *featureFlagStore) DeleteFeatureFlag(ctx context.Context, name string) e
 		WHERE flag_name = %s;
 	`
 
+	clearRedisCache(name)
 	return f.Exec(ctx, sqlf.Sprintf(deleteFeatureFlagFmtStr, name))
 }
 
@@ -181,12 +183,51 @@ func (f *featureFlagStore) CreateBool(ctx context.Context, name string, value bo
 
 var ErrInvalidColumnState = errors.New("encountered column that is unexpectedly null based on column type")
 
-// rowScanner is an interface that can scan from either a sql.Row or sql.Rows
-type rowScanner interface {
-	Scan(...interface{}) error
+func scanFeatureFlagAndOverride(scanner dbutil.Scanner) (*ff.FeatureFlag, *bool, error) {
+	var (
+		res      ff.FeatureFlag
+		flagType string
+		boolVal  *bool
+		rollout  *int32
+		override *bool
+	)
+	err := scanner.Scan(
+		&res.Name,
+		&flagType,
+		&boolVal,
+		&rollout,
+		&res.CreatedAt,
+		&res.UpdatedAt,
+		&res.DeletedAt,
+		&override,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	switch flagType {
+	case "bool":
+		if boolVal == nil {
+			return nil, nil, ErrInvalidColumnState
+		}
+		res.Bool = &ff.FeatureFlagBool{
+			Value: *boolVal,
+		}
+	case "rollout":
+		if rollout == nil {
+			return nil, nil, ErrInvalidColumnState
+		}
+		res.Rollout = &ff.FeatureFlagRollout{
+			Rollout: *rollout,
+		}
+	default:
+		return nil, nil, ErrInvalidColumnState
+	}
+
+	return &res, override, nil
 }
 
-func scanFeatureFlag(scanner rowScanner) (*ff.FeatureFlag, error) {
+func scanFeatureFlag(scanner dbutil.Scanner) (*ff.FeatureFlag, error) {
 	var (
 		res      ff.FeatureFlag
 		flagType string
@@ -465,7 +506,7 @@ func scanFeatureFlagOverrides(rows *sql.Rows) ([]*ff.Override, error) {
 	return res, nil
 }
 
-func scanFeatureFlagOverride(scanner rowScanner) (*ff.Override, error) {
+func scanFeatureFlagOverride(scanner dbutil.Scanner) (*ff.Override, error) {
 	var res ff.Override
 	err := scanner.Scan(
 		&res.OrgID,
@@ -480,49 +521,63 @@ func scanFeatureFlagOverride(scanner rowScanner) (*ff.Override, error) {
 // be the primary entrypoint for getting the user flags since it handles retrieving all the flags,
 // the org overrides, and the user overrides, and merges them in priority order.
 func (f *featureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[string]bool, error) {
-	g, ctx := errgroup.WithContext(ctx)
-
-	var flags []*ff.FeatureFlag
-	g.Go(func() error {
-		res, err := f.GetFeatureFlags(ctx)
-		flags = res
-		return err
-	})
-
-	var orgOverrides []*ff.Override
-	g.Go(func() error {
-		res, err := f.GetOrgOverridesForUser(ctx, userID)
-		orgOverrides = res
-		return err
-	})
-
-	var userOverrides []*ff.Override
-	g.Go(func() error {
-		res, err := f.GetUserOverrides(ctx, userID)
-		userOverrides = res
-		return err
-	})
-
-	if err := g.Wait(); err != nil {
+	const listUserOverridesFmtString = `
+		WITH user_overrides AS (
+			SELECT
+				flag_name,
+				flag_value
+			FROM feature_flag_overrides
+			WHERE namespace_user_id = %s
+				AND deleted_at IS NULL
+		), org_overrides AS (
+			SELECT
+				DISTINCT ON (flag_name)
+				flag_name,
+				flag_value
+			FROM feature_flag_overrides
+			WHERE EXISTS (
+				SELECT org_id
+				FROM org_members
+				WHERE org_members.user_id = %s
+					AND feature_flag_overrides.namespace_org_id = org_members.org_id
+			) AND deleted_at IS NULL
+			ORDER BY flag_name, created_at desc
+		)
+		SELECT
+			ff.flag_name,
+			flag_type,
+			bool_value,
+			rollout,
+			created_at,
+			updated_at,
+			deleted_at,
+			-- We prioritize user overrides over org overrides.
+			-- If neither exist override will be NULL.
+			COALESCE(uo.flag_value, oo.flag_value) AS override
+		FROM feature_flags ff
+		LEFT JOIN org_overrides oo ON ff.flag_name = oo.flag_name
+		LEFT JOIN user_overrides uo ON ff.flag_name = uo.flag_name
+		WHERE deleted_at IS NULL
+	`
+	rows, err := f.Query(ctx, sqlf.Sprintf(listUserOverridesFmtString, userID, userID))
+	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	res := make(map[string]bool, len(flags))
-	for _, ff := range flags {
-		res[ff.Name] = ff.EvaluateForUser(userID)
-
-		// Org overrides are higher priority than default
-		for _, oo := range orgOverrides {
-			res[oo.FlagName] = oo.Value
+	res := make(map[string]bool)
+	for rows.Next() {
+		flag, override, err := scanFeatureFlagAndOverride(rows)
+		if err != nil {
+			return nil, err
 		}
-
-		// User overrides are higher priority than org overrides
-		for _, uo := range userOverrides {
-			res[uo.FlagName] = uo.Value
+		if override != nil {
+			res[flag.Name] = *override
+		} else {
+			res[flag.Name] = flag.EvaluateForUser(userID)
 		}
 	}
-
-	return res, nil
+	return res, rows.Err()
 }
 
 // GetAnonymousUserFlags returns the calculated values for feature flags for the given anonymousUID
@@ -533,8 +588,8 @@ func (f *featureFlagStore) GetAnonymousUserFlags(ctx context.Context, anonymousU
 	}
 
 	res := make(map[string]bool, len(flags))
-	for _, ff := range flags {
-		res[ff.Name] = ff.EvaluateForAnonymousUser(anonymousUID)
+	for _, flag := range flags {
+		res[flag.Name] = flag.EvaluateForAnonymousUser(anonymousUID)
 	}
 
 	return res, nil
@@ -547,9 +602,9 @@ func (f *featureFlagStore) GetGlobalFeatureFlags(ctx context.Context) (map[strin
 	}
 
 	res := make(map[string]bool, len(flags))
-	for _, ff := range flags {
-		if val, ok := ff.EvaluateGlobal(); ok {
-			res[ff.Name] = val
+	for _, flag := range flags {
+		if val, ok := flag.EvaluateGlobal(); ok {
+			res[flag.Name] = val
 		}
 	}
 

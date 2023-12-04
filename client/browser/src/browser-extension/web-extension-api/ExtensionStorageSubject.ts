@@ -1,7 +1,7 @@
-import { BehaviorSubject, NextObserver, Observable } from 'rxjs'
+import { type BehaviorSubject, type NextObserver, Observable } from 'rxjs'
 
 import { observeStorageKey, storage } from './storage'
-import { LocalStorageItems } from './types'
+import type { LocalStorageItems } from './types'
 
 /**
  * An RxJS subject that is backed by an extension storage item.
@@ -9,7 +9,8 @@ import { LocalStorageItems } from './types'
 export class ExtensionStorageSubject<T extends keyof LocalStorageItems>
     // eslint-disable-next-line rxjs/no-subclass
     extends Observable<LocalStorageItems[T]>
-    implements NextObserver<LocalStorageItems[T]>, Pick<BehaviorSubject<LocalStorageItems[T]>, 'value'> {
+    implements NextObserver<LocalStorageItems[T]>, Pick<BehaviorSubject<LocalStorageItems[T]>, 'value'>
+{
     constructor(private key: T, defaultValue: LocalStorageItems[T]) {
         super(subscriber => {
             subscriber.next(this.value)

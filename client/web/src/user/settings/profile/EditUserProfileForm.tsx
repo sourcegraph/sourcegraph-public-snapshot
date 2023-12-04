@@ -1,16 +1,15 @@
 import React, { useCallback, useState } from 'react'
-import { useHistory } from 'react-router'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
+import { useNavigate } from 'react-router-dom'
+
 import { gql, useMutation } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { Container, Button, Alert } from '@sourcegraph/wildcard'
+import { Container, Button, Alert, Form } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
-import { UpdateUserResult, UpdateUserVariables } from '../../../graphql-operations'
+import type { EditUserProfilePage, UpdateUserResult, UpdateUserVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
-import { UserProfileFormFields, UserProfileFormFieldsValue } from './UserProfileFormFields'
+import { UserProfileFormFields, type UserProfileFormFieldsValue } from './UserProfileFormFields'
 
 export const UPDATE_USER = gql`
     mutation UpdateUser($user: ID!, $username: String!, $displayName: String, $avatarURL: String) {
@@ -24,20 +23,24 @@ export const UPDATE_USER = gql`
 `
 
 interface Props {
-    user: Pick<GQL.IUser, 'id' | 'viewerCanChangeUsername'>
+    user: Pick<EditUserProfilePage, 'id' | 'viewerCanChangeUsername' | 'scimControlled'>
     initialValue: UserProfileFormFieldsValue
-    after?: React.ReactFragment
+    after?: React.ReactNode
 }
 
 /**
  * A form to edit a user's profile.
  */
-export const EditUserProfileForm: React.FunctionComponent<Props> = ({ user, initialValue, after }) => {
-    const history = useHistory()
+export const EditUserProfileForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    user,
+    initialValue,
+    after,
+}) => {
+    const navigate = useNavigate()
     const [updateUser, { data, loading, error }] = useMutation<UpdateUserResult, UpdateUserVariables>(UPDATE_USER, {
         onCompleted: ({ updateUser }) => {
             eventLogger.log('UserProfileUpdated')
-            history.replace(`/users/${updateUser.username}/settings/profile`)
+            navigate(`/users/${updateUser.username}/settings/profile`, { replace: true })
 
             // In case the edited user is the current user, immediately reflect the changes in the
             // UI.
@@ -71,13 +74,16 @@ export const EditUserProfileForm: React.FunctionComponent<Props> = ({ user, init
         [updateUser, user.id, userFields]
     )
 
+    const isUserScimControlled = user.scimControlled
+
     return (
         <Container>
             <Form className="w-100" onSubmit={onSubmit}>
                 <UserProfileFormFields
                     value={userFields}
                     onChange={onChange}
-                    usernameFieldDisabled={!user.viewerCanChangeUsername}
+                    usernameFieldDisabled={!user.viewerCanChangeUsername || isUserScimControlled}
+                    displayNameFieldDisabled={isUserScimControlled}
                     disabled={loading}
                 />
                 <Button type="submit" disabled={loading} id="test-EditUserProfileForm__save" variant="primary">

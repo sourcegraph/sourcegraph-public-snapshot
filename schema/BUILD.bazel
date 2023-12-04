@@ -1,0 +1,131 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("//dev:defs.bzl", "npm_package")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+
+package(default_visibility = ["//visibility:public"])
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+    ],
+)
+
+js_library(
+    name = "json-schema-draft-07",
+    srcs = [
+        "json-schema-draft-07.schema.json",
+    ],
+)
+
+js_library(
+    name = "settings",
+    srcs = [
+        "settings.schema.json",
+    ],
+)
+
+js_library(
+    name = "site",
+    srcs = [
+        "site.schema.json",
+    ],
+)
+
+js_library(
+    name = "batch_spec",
+    srcs = [
+        "batch_spec.schema.json",
+    ],
+)
+
+go_library(
+    name = "schema",
+    srcs = [
+        "bitbucket_server_util.go",
+        "bitbucketcloud_util.go",
+        "extension_schema.go",
+        "github_util.go",
+        "gitlab_util.go",
+        "schema.go",
+        "stringdata.go",
+    ],
+    embedsrcs = [
+        "aws_codecommit.schema.json",
+        "batch_spec.schema.json",
+        "bitbucket_cloud.schema.json",
+        "bitbucket_server.schema.json",
+        "changeset_spec.schema.json",
+        "gerrit.schema.json",
+        "github.schema.json",
+        "gitlab.schema.json",
+        "gitolite.schema.json",
+        "go-modules.schema.json",
+        "jvm-packages.schema.json",
+        "npm-packages.schema.json",
+        "other_external_service.schema.json",
+        "pagure.schema.json",
+        "perforce.schema.json",
+        "phabricator.schema.json",
+        "python-packages.schema.json",
+        "ruby-packages.schema.json",
+        "rust-packages.schema.json",
+        "settings.schema.json",
+        "site.schema.json",
+        "azuredevops.schema.json",
+        "localgit.schema.json",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/schema",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_sourcegraph_go_jsonschema//jsonschema"],
+)
+
+js_library(
+    name = "schema-json",
+    srcs = glob(["*.schema.json"]),
+    visibility = ["//visibility:public"],
+)
+
+npm_package(
+    name = "schema_pkg",
+    srcs = ["package.json"],
+)
+
+go_test(
+    name = "schema_test",
+    srcs = ["validation_test.go"],
+    embed = [":schema"],
+    deps = [
+        "//internal/jsonc",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_xeipuuv_gojsonschema//:gojsonschema",
+    ],
+)
+
+genrule(
+    name = "generate",
+    srcs = glob(
+        ["*.schema.json"],
+        ["json-schema-draft*.json"],
+    ),
+    outs = ["_schema.go"],
+    cmd = """\
+    $(location @com_github_sourcegraph_go_jsonschema//cmd/go-jsonschema-compiler:go-jsonschema-compiler) -o $@ -pkg schema $(SRCS)
+    """,
+    tools = [
+        "@com_github_sourcegraph_go_jsonschema//cmd/go-jsonschema-compiler",
+    ],
+)
+
+write_generated_to_source_files(
+    name = "write_generated_schema",
+    output_files = {"schema.go": "_schema.go"},
+    tags = ["go_generate"],
+    target = ":generate",
+)

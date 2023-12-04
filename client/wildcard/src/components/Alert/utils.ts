@@ -1,8 +1,9 @@
 import className from 'classnames'
 import { upperFirst } from 'lodash'
 
+import type { ALERT_VARIANTS } from './constants'
+
 import styles from './Alert.module.scss'
-import { ALERT_VARIANTS } from './constants'
 
 interface GetAlertStyleParameters {
     variant: typeof ALERT_VARIANTS[number]

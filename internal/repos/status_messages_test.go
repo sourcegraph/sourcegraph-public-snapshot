@@ -2,224 +2,278 @@ package repos
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestStatusMessages(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
-	store := NewStore(db, sql.TxOptions{})
 
-	admin, err := database.Users(db).Create(ctx, database.NewUser{
-		Email:                 "a1@example.com",
-		Username:              "a1",
-		Password:              "p",
-		EmailVerificationCode: "c",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	nonAdmin, err := database.Users(db).Create(ctx, database.NewUser{
-		Email:                 "u1@example.com",
-		Username:              "u1",
-		Password:              "p",
-		EmailVerificationCode: "c",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	db := database.NewDB(logger, dbtest.NewDB(t))
+	store := NewStore(logtest.Scoped(t), db)
 
-	siteLevelService := &types.ExternalService{
+	mockGitserverClient := gitserver.NewMockClient()
+
+	extSvc := &types.ExternalService{
 		ID:          1,
-		Config:      `{}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "beef", "repos": ["owner/name"]}`),
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - site",
 	}
-	err = database.ExternalServices(db).Upsert(ctx, siteLevelService)
-	if err != nil {
-		t.Fatal(err)
-	}
-	userService := &types.ExternalService{
-		ID:              2,
-		Config:          `{}`,
-		Kind:            extsvc.KindGitHub,
-		DisplayName:     "github.com - user",
-		NamespaceUserID: nonAdmin.ID,
-	}
-	err = database.ExternalServices(db).Upsert(ctx, userService)
-	if err != nil {
-		t.Fatal(err)
-	}
+	err := db.ExternalServices().Upsert(ctx, extSvc)
+	require.NoError(t, err)
 
 	testCases := []struct {
-		name             string
-		stored           types.Repos
-		gitserverCloned  []string
+		testSetup func()
+		name      string
+		repos     types.Repos
+		// maps repoName to CloneStatus
+		cloneStatus map[string]types.CloneStatus
+		// indexed is list of repo names that are indexed
+		indexed          []string
 		gitserverFailure map[string]bool
 		sourcerErr       error
 		res              []StatusMessage
-		user             *types.User
-		// maps repoName to external service
-		repoOwner map[api.RepoName]*types.ExternalService
-		err       string
+		err              string
 	}{
 		{
-			name:            "all cloned",
-			gitserverCloned: []string{"foobar"},
-			stored:          []*types.Repo{{Name: "foobar"}},
-			user:            admin,
-			res:             nil,
-		},
-		{
-			name:            "nothing cloned",
-			stored:          []*types.Repo{{Name: "foobar"}},
-			user:            admin,
-			gitserverCloned: []string{},
-			repoOwner: map[api.RepoName]*types.ExternalService{
-				"foobar": siteLevelService,
+			testSetup: func() {
+				conf.Mock(&conf.Unified{
+					SiteConfiguration: schema.SiteConfiguration{
+						DisableAutoGitUpdates: true,
+					},
+				})
 			},
+			name: "disableAutoGitUpdates set to true",
 			res: []StatusMessage{
 				{
-					Cloning: &CloningProgress{
-						Message: "Some repositories cloning...",
+					GitUpdatesDisabled: &GitUpdatesDisabled{
+						Message: "Repositories will not be cloned or updated.",
+					},
+				},
+				{
+					NoRepositoriesDetected: &NoRepositoriesDetected{
+						Message: "No repositories have been added to Sourcegraph.",
 					},
 				},
 			},
 		},
 		{
-			name:            "subset cloned",
-			stored:          []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			user:            admin,
-			gitserverCloned: []string{"foobar"},
-			repoOwner: map[api.RepoName]*types.ExternalService{
-				"foobar": siteLevelService,
-				"barfoo": siteLevelService,
-			},
+			name:        "site-admin: all cloned and indexed",
+			cloneStatus: map[string]types.CloneStatus{"foobar": types.CloneStatusCloned},
+			indexed:     []string{"foobar"},
+			repos:       []*types.Repo{{Name: "foobar"}},
+			res:         nil,
+		},
+		{
+			name:        "site-admin: one repository not cloned",
+			repos:       []*types.Repo{{Name: "foobar"}},
+			cloneStatus: map[string]types.CloneStatus{},
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "Some repositories cloning...",
+						Message: "1 repository enqueued for cloning.",
+					},
+				},
+				{
+					Indexing: &IndexingProgress{NotIndexed: 1},
+				},
+			},
+		},
+		{
+			name:        "site-admin: one repository cloning",
+			repos:       []*types.Repo{{Name: "foobar"}},
+			cloneStatus: map[string]types.CloneStatus{"foobar": types.CloneStatusCloning},
+			res: []StatusMessage{
+				{
+					Cloning: &CloningProgress{
+						Message: "1 repository currently cloning...",
+					},
+				},
+				{
+					Indexing: &IndexingProgress{NotIndexed: 1},
+				},
+			},
+		},
+		{
+			name:        "site-admin: one not cloned, one cloning",
+			repos:       []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			cloneStatus: map[string]types.CloneStatus{"foobar": types.CloneStatusCloning, "barfoo": types.CloneStatusNotCloned},
+			res: []StatusMessage{
+				{
+					Cloning: &CloningProgress{
+						Message: "1 repository enqueued for cloning. 1 repository currently cloning...",
+					},
+				},
+				{
+					Indexing: &IndexingProgress{NotIndexed: 2},
+				},
+			},
+		},
+		{
+			name: "site-admin: multiple not cloned, multiple cloning, multiple cloned",
+			repos: []*types.Repo{
+				{Name: "repo-1"},
+				{Name: "repo-2"},
+				{Name: "repo-3"},
+				{Name: "repo-4"},
+				{Name: "repo-5"},
+				{Name: "repo-6"},
+			},
+			cloneStatus: map[string]types.CloneStatus{
+				"repo-1": types.CloneStatusCloning,
+				"repo-2": types.CloneStatusCloning,
+				"repo-3": types.CloneStatusNotCloned,
+				"repo-4": types.CloneStatusNotCloned,
+				"repo-5": types.CloneStatusCloned,
+				"repo-6": types.CloneStatusCloned,
+			},
+			indexed: []string{"repo-6"},
+			res: []StatusMessage{
+				{
+					Cloning: &CloningProgress{
+						Message: "2 repositories enqueued for cloning. 2 repositories currently cloning...",
+					},
+				},
+				{
+					Indexing: &IndexingProgress{Indexed: 1, NotIndexed: 5},
+				},
+			},
+		},
+		{
+			name:       "site-admin: no repos detected",
+			repos:      []*types.Repo{},
+			sourcerErr: nil,
+			res: []StatusMessage{
+				{
+					NoRepositoriesDetected: &NoRepositoriesDetected{
+						Message: "No repositories have been added to Sourcegraph.",
 					},
 				},
 			},
 		},
 		{
-			name:   "non admin users should only count their own non cloned repos",
-			stored: []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			repoOwner: map[api.RepoName]*types.ExternalService{
-				"foobar": userService,
+			name:  "site-admin: one repo failed to sync",
+			repos: []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			cloneStatus: map[string]types.CloneStatus{
+				"foobar": types.CloneStatusCloned,
+				"barfoo": types.CloneStatusCloned,
 			},
-			user: nonAdmin,
-			res: []StatusMessage{
-				{
-					Cloning: &CloningProgress{
-						Message: "Some repositories cloning...",
-					},
-				},
-			},
-		},
-		{
-			name:            "more cloned than stored",
-			stored:          []*types.Repo{{Name: "foobar"}},
-			user:            admin,
-			gitserverCloned: []string{"foobar", "barfoo"},
-			res:             nil,
-		},
-		{
-			name:            "cloned different than stored",
-			stored:          []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			user:            admin,
-			gitserverCloned: []string{"one", "two", "three"},
-			repoOwner: map[api.RepoName]*types.ExternalService{
-				"foobar": siteLevelService,
-				"barfoo": siteLevelService,
-			},
-			res: []StatusMessage{
-				{
-					Cloning: &CloningProgress{
-						Message: "Some repositories cloning...",
-					},
-				},
-			},
-		},
-		{
-			name:             "one repo failed to sync",
-			stored:           []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			user:             admin,
-			gitserverCloned:  []string{"foobar", "barfoo"},
+			indexed:          []string{"foobar", "barfoo"},
 			gitserverFailure: map[string]bool{"foobar": true},
-			repoOwner: map[api.RepoName]*types.ExternalService{
-				"foobar": siteLevelService,
-				"barfoo": siteLevelService,
-			},
 			res: []StatusMessage{
 				{
 					SyncError: &SyncError{
-						Message: "Some repositories could not be synced",
+						Message: "1 repository failed last attempt to sync content from code host",
 					},
 				},
 			},
 		},
 		{
-			name:             "two repos failed to sync",
-			stored:           []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			user:             admin,
-			gitserverCloned:  []string{"foobar", "barfoo"},
+			name:  "site-admin: two repos failed to sync",
+			repos: []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			cloneStatus: map[string]types.CloneStatus{
+				"foobar": types.CloneStatusCloned,
+				"barfoo": types.CloneStatusCloned,
+			},
+			indexed:          []string{"foobar", "barfoo"},
 			gitserverFailure: map[string]bool{"foobar": true, "barfoo": true},
-			repoOwner: map[api.RepoName]*types.ExternalService{
-				"foobar": siteLevelService,
-				"barfoo": siteLevelService,
-			},
 			res: []StatusMessage{
 				{
 					SyncError: &SyncError{
-						Message: "Some repositories could not be synced",
+						Message: "2 repositories failed last attempt to sync content from code host",
 					},
 				},
 			},
-		},
-		{
-			name:            "case insensitivity",
-			gitserverCloned: []string{"foobar"},
-			stored:          []*types.Repo{{Name: "FOOBar"}},
-			user:            admin,
-			res:             nil,
-		},
-		{
-			name:            "case insensitivity to gitserver names",
-			gitserverCloned: []string{"FOOBar"},
-			stored:          []*types.Repo{{Name: "FOOBar"}},
-			user:            admin,
-			res:             nil,
 		},
 		{
 			name:       "one external service syncer err",
-			user:       admin,
 			sourcerErr: errors.New("github is down"),
 			res: []StatusMessage{
 				{
 					ExternalServiceSyncError: &ExternalServiceSyncError{
 						Message:           "github is down",
-						ExternalServiceId: siteLevelService.ID,
+						ExternalServiceId: extSvc.ID,
+					},
+				},
+			},
+		},
+		{
+			testSetup: func() {
+				conf.Mock(&conf.Unified{
+					SiteConfiguration: schema.SiteConfiguration{
+						GitserverDiskUsageWarningThreshold: pointers.Ptr(10),
+					},
+				})
+
+				mockGitserverClient.SystemsInfoFunc.SetDefaultReturn([]protocol.SystemInfo{
+					{
+						Address:     "gitserver-0",
+						PercentUsed: 75.10345,
+					},
+				}, nil)
+
+			},
+			name:        "site-admin: gitserver disk threshold reached (configured threshold)",
+			cloneStatus: map[string]types.CloneStatus{"foobar": types.CloneStatusCloned},
+			indexed:     []string{"foobar"},
+			repos:       []*types.Repo{{Name: "foobar"}},
+			res: []StatusMessage{
+				{
+					GitserverDiskThresholdReached: &GitserverDiskThresholdReached{
+						Message: "The disk usage on gitserver \"gitserver-0\" is over 10% (75.10% used).",
+					},
+				},
+			},
+		},
+		{
+			testSetup: func() {
+				mockGitserverClient.SystemsInfoFunc.SetDefaultReturn([]protocol.SystemInfo{
+					{
+						Address:     "gitserver-0",
+						PercentUsed: 95.10345,
+					},
+				}, nil)
+
+			},
+			name:        "site-admin: gitserver disk threshold reached (default threshold)",
+			cloneStatus: map[string]types.CloneStatus{"foobar": types.CloneStatusCloned},
+			indexed:     []string{"foobar"},
+			repos:       []*types.Repo{{Name: "foobar"}},
+			res: []StatusMessage{
+				{
+					GitserverDiskThresholdReached: &GitserverDiskThresholdReached{
+						Message: "The disk usage on gitserver \"gitserver-0\" is over 90% (95.10% used).",
 					},
 				},
 			},
@@ -228,10 +282,13 @@ func TestStatusMessages(t *testing.T) {
 
 	for _, tc := range testCases {
 		tc := tc
-		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			stored := tc.stored.Clone()
+			if tc.testSetup != nil {
+				tc.testSetup()
+			}
+
+			stored := tc.repos.Clone()
 			for _, r := range stored {
 				r.ExternalRepo = api.ExternalRepoSpec{
 					ID:          uuid.New().String(),
@@ -240,19 +297,18 @@ func TestStatusMessages(t *testing.T) {
 				}
 			}
 
-			err := database.Repos(db).Create(ctx, stored...)
-			if err != nil {
-				t.Fatal(err)
-			}
+			err := db.Repos().Create(ctx, stored...)
+			require.NoError(t, err)
+
 			t.Cleanup(func() {
+				conf.Mock(nil)
+
 				ids := make([]api.RepoID, 0, len(stored))
 				for _, r := range stored {
 					ids = append(ids, r.ID)
 				}
-				err := database.Repos(db).Delete(ctx, ids...)
-				if err != nil {
-					t.Fatal(err)
-				}
+				err := db.Repos().Delete(ctx, ids...)
+				require.NoError(t, err)
 			})
 
 			idMapping := make(map[api.RepoName]api.RepoID)
@@ -262,91 +318,99 @@ func TestStatusMessages(t *testing.T) {
 			}
 
 			// Add gitserver_repos rows
-			for _, toClone := range tc.gitserverCloned {
-				toClone = strings.ToLower(toClone)
-				id := idMapping[api.RepoName(toClone)]
+			for repoName, cloneStatus := range tc.cloneStatus {
+				id := idMapping[api.RepoName(repoName)]
 				if id == 0 {
 					continue
 				}
 				lastError := ""
-				if tc.gitserverFailure != nil && tc.gitserverFailure[toClone] {
+				if tc.gitserverFailure != nil && tc.gitserverFailure[repoName] {
 					lastError = "Oops"
 				}
-				if err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
+				err := db.GitserverRepos().Update(ctx, &types.GitserverRepo{
 					RepoID:      id,
 					ShardID:     "test",
-					CloneStatus: types.CloneStatusCloned,
+					CloneStatus: cloneStatus,
 					LastError:   lastError,
-				}); err != nil {
-					t.Fatal(err)
-				}
+				})
+				require.NoError(t, err)
 			}
-			t.Cleanup(func() {
-				err = store.Exec(ctx, sqlf.Sprintf(`DELETE FROM gitserver_repos`))
-				if err != nil {
-					t.Fatal(err)
+			for _, repoName := range tc.indexed {
+				id := uint32(idMapping[api.RepoName(repoName)])
+				if id == 0 {
+					continue
 				}
-			})
+				err := db.ZoektRepos().UpdateIndexStatuses(ctx, zoekt.ReposMap{
+					id: {
+						Branches: []zoekt.RepositoryBranch{{Name: "main", Version: "d34db33f"}},
+					},
+				})
+				require.NoError(t, err)
+			}
 
 			// Set up ownership of repos
-			if tc.repoOwner != nil {
-				for _, repo := range stored {
-					svc, ok := tc.repoOwner[repo.Name]
-					if !ok {
-						continue
-					}
-					err = store.Exec(ctx, sqlf.Sprintf(`
-						INSERT INTO external_service_repos(external_service_id, repo_id, user_id, clone_url)
-						VALUES (%s, %s, NULLIF(%s, 0), 'example.com')
-					`, svc.ID, repo.ID, svc.NamespaceUserID))
-					if err != nil {
-						t.Fatal(err)
-					}
-					t.Cleanup(func() {
-						err = store.Exec(ctx, sqlf.Sprintf(`DELETE FROM external_service_repos WHERE external_service_id = %s`, svc.ID))
-						if err != nil {
-							t.Fatal(err)
-						}
-					})
-				}
+			for _, repo := range stored {
+				q := sqlf.Sprintf(`
+						INSERT INTO external_service_repos(external_service_id, repo_id, clone_url)
+						VALUES (%s, %s, 'example.com')
+					`, extSvc.ID, repo.ID)
+				_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+				require.NoError(t, err)
+
+				t.Cleanup(func() {
+					q := sqlf.Sprintf(`DELETE FROM external_service_repos WHERE external_service_id = %s`, extSvc.ID)
+					_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+					require.NoError(t, err)
+				})
 			}
 
 			clock := timeutil.NewFakeClock(time.Now(), 0)
 			syncer := &Syncer{
-				Store: store,
-				Now:   clock.Now,
+				ObsvCtx: observation.TestContextTB(t),
+				Store:   store,
+				Now:     clock.Now,
 			}
 
+			mockDB := dbmocks.NewMockDBFrom(db)
 			if tc.sourcerErr != nil {
-				sourcer := NewFakeSourcer(tc.sourcerErr, NewFakeSource(siteLevelService, nil))
+				sourcer := NewFakeSourcer(tc.sourcerErr, NewFakeSource(extSvc, nil))
 				syncer.Sourcer = sourcer
 
-				err = syncer.SyncExternalService(ctx, siteLevelService.ID, time.Millisecond)
+				noopRecorder := func(ctx context.Context, progress SyncProgress, final bool) error {
+					return nil
+				}
+				err = syncer.SyncExternalService(ctx, extSvc.ID, time.Millisecond, noopRecorder)
 				// In prod, SyncExternalService is kicked off by a worker queue. Any error
-				// returned will be stored in the external_service_sync_jobs table so we fake
+				// returned will be stored in the external_service_sync_jobs table, so we fake
 				// that here.
 				if err != nil {
-					defer func() { database.Mocks.ExternalServices = database.MockExternalServices{} }()
-					database.Mocks.ExternalServices.ListSyncErrors = func(ctx context.Context) (map[int64]string, error) {
-						return map[int64]string{
-							siteLevelService.ID: err.Error(),
-						}, nil
-					}
+					externalServices := dbmocks.NewMockExternalServiceStore()
+					externalServices.GetLatestSyncErrorsFunc.SetDefaultReturn(
+						[]*database.SyncError{
+							{ServiceID: extSvc.ID, Message: err.Error()},
+						},
+						nil,
+					)
+					mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
 				}
+			}
+
+			if len(tc.repos) < 1 && tc.sourcerErr == nil {
+				externalServices := dbmocks.NewMockExternalServiceStore()
+				externalServices.GetLatestSyncErrorsFunc.SetDefaultReturn(
+					[]*database.SyncError{},
+					nil,
+				)
+				mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
 			}
 
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
 
-			res, err := FetchStatusMessages(ctx, db, tc.user)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("have err: %q, want: %q", have, want)
-			}
-
-			if diff := cmp.Diff(tc.res, res); diff != "" {
-				t.Error(diff)
-			}
+			res, err := FetchStatusMessages(ctx, mockDB, mockGitserverClient)
+			assert.Equal(t, tc.err, fmt.Sprint(err))
+			assert.Equal(t, tc.res, res)
 		})
 	}
 }

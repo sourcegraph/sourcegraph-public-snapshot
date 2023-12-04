@@ -6,7 +6,6 @@ import { omit, cloneDeep, curry } from 'lodash'
 import shelljs from 'shelljs'
 import signale from 'signale'
 import utcVersion from 'utc-version'
-import { Configuration } from 'webpack'
 
 import manifestSpec from '../src/browser-extension/manifest.spec.json'
 import schema from '../src/browser-extension/schema.json'
@@ -20,9 +19,9 @@ const EXTENSION_PERMISSIONS_ALL_URLS = Boolean(
     process.env.EXTENSION_PERMISSIONS_ALL_URLS && JSON.parse(process.env.EXTENSION_PERMISSIONS_ALL_URLS)
 )
 
-export type BuildEnvironment = 'dev' | 'prod'
+type BuildEnvironment = 'dev' | 'prod'
 
-type Browser = 'firefox' | 'chrome' | 'safari'
+type Browser = 'firefox' | 'chrome' | 'safari' | 'edge'
 
 const BUILDS_DIR = 'build'
 
@@ -37,14 +36,6 @@ const BUILDS_DIR = 'build'
  */
 const useUtcVersion = true
 
-export const WEBPACK_STATS_OPTIONS: Configuration['stats'] = {
-    all: false,
-    timings: true,
-    errors: true,
-    warnings: true,
-    colors: true,
-}
-
 function ensurePaths(browser?: Browser): void {
     shelljs.mkdir('-p', 'build/dist')
     shelljs.mkdir('-p', 'build/bundles')
@@ -52,6 +43,7 @@ function ensurePaths(browser?: Browser): void {
         shelljs.mkdir('-p', `build/${browser}`)
     } else {
         shelljs.mkdir('-p', 'build/chrome')
+        shelljs.mkdir('-p', 'build/edge')
         shelljs.mkdir('-p', 'build/firefox')
         shelljs.mkdir('-p', 'build/safari')
     }
@@ -111,28 +103,40 @@ function copyExtensionAssets(toDirectory: string): void {
  *
  * The pre-requisite step is to first clone, build, and copy into `build/extensions`.
  */
-function copyInlineExtensions(toDirectory: string): void {
+export function copyInlineExtensions(toDirectory: string): void {
     shelljs.cp('-R', 'build/extensions', toDirectory)
 }
 
 export function copyIntegrationAssets(): void {
     shelljs.mkdir('-p', 'build/integration/scripts')
     shelljs.mkdir('-p', 'build/integration/css')
-    shelljs.cp('build/dist/js/phabricator.bundle.js', 'build/integration/scripts')
-    shelljs.cp('build/dist/js/integration.bundle.js', 'build/integration/scripts')
+
+    // The destination filename is hardcoded in
+    // https://sourcegraph.com/github.com/sourcegraph/phabricator-extension@master/-/blob/src/application/SourcegraphApplication.php?L33.
+    shelljs.cp(
+        'build/dist/js/phabricatorNativeIntegration.main.bundle.js',
+        'build/integration/scripts/phabricator.bundle.js'
+    )
+
+    // The destination filename is hardcoded in
+    // https://sourcegraph.com/github.com/sourcegraph/bitbucket-server-plugin@master/-/blob/src/main/resources/js/sourcegraph-bitbucket.js?L23:52.
+    shelljs.cp('build/dist/js/nativeIntegration.main.bundle.js', 'build/integration/scripts/integration.bundle.js')
+
     shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', 'build/integration/scripts')
-    shelljs.cp('build/dist/css/style.bundle.css', 'build/integration/css')
-    shelljs.cp('build/dist/css/inject.bundle.css', 'build/integration/css')
+    shelljs.cp('build/dist/css/app.bundle.css', 'build/integration/css')
+    shelljs.cp('build/dist/css/contentPage.main.bundle.css', 'build/integration/css')
     shelljs.cp('src/native-integration/extensionHostFrame.html', 'build/integration')
-    // Copy to the ui/assets directory so that these files can be served by
+    copyInlineExtensions('build/integration')
+    // Copy to the dist directory so that these files can be served by
     // the webapp.
-    shelljs.mkdir('-p', '../../ui/assets/extension')
-    shelljs.cp('-r', 'build/integration/*', '../../ui/assets/extension')
+    shelljs.mkdir('-p', '../../client/web/dist/extension')
+    shelljs.cp('-r', 'build/integration/*', '../../client/web/dist/extension')
 }
 
 const BROWSER_TITLES = {
     firefox: 'Firefox',
     chrome: 'Chrome',
+    edge: 'Edge',
     safari: 'Safari',
 } as const
 
@@ -142,6 +146,7 @@ const BROWSER_TITLES = {
 const BROWSER_BUNDLE_ZIPS: Partial<Record<Browser, string>> = {
     firefox: 'firefox-bundle.xpi',
     chrome: 'chrome-bundle.zip',
+    edge: 'edge-bundle.zip',
 }
 
 /**
@@ -149,6 +154,7 @@ const BROWSER_BUNDLE_ZIPS: Partial<Record<Browser, string>> = {
  */
 const BROWSER_BLOCKLIST = {
     chrome: ['applications'] as const,
+    edge: ['applications'] as const,
     firefox: ['key'] as const,
     safari: [] as const,
 }
@@ -158,8 +164,6 @@ function writeSchema(writeDirectory: string): void {
 }
 
 const version = process.env.BROWSER_EXTENSION_VERSION || utcVersion()
-
-const shouldBuildWithInlineExtensions = (browser: Browser): boolean => browser === 'firefox'
 
 function writeManifest(environment: BuildEnvironment, browser: Browser, writeDirectory: string): void {
     const extensionInfo = cloneDeep(manifestSpec)
@@ -190,14 +194,9 @@ function writeManifest(environment: BuildEnvironment, browser: Browser, writeDir
         }
     }
 
-    if (shouldBuildWithInlineExtensions(browser)) {
-        // Add the inline extensions to web accessible resources
-        manifest.web_accessible_resources = manifest.web_accessible_resources || []
-        manifest.web_accessible_resources.push('extensions/*')
-
-        // Revert the CSP to default, in order to remove the `blob` policy exception.
-        delete manifest.content_security_policy
-    }
+    // Add the inline extensions to web accessible resources
+    manifest.web_accessible_resources = manifest.web_accessible_resources || []
+    manifest.web_accessible_resources.push('extensions/*')
 
     delete manifest.$schema
 
@@ -212,6 +211,8 @@ const buildForBrowser = curry((browser: Browser, environment: BuildEnvironment):
     // Allow only building for specific browser targets.
     // Useful in local dev for faster builds.
     if (process.env.TARGETS && !process.env.TARGETS.includes(browser)) {
+        signale.info(`Skipping build ${browser} because TARGETS=${process.env.TARGETS}`)
+
         return
     }
 
@@ -226,7 +227,12 @@ const buildForBrowser = curry((browser: Browser, environment: BuildEnvironment):
     writeSchema(buildDirectory)
 
     copyExtensionAssets(buildDirectory)
-    if (shouldBuildWithInlineExtensions(browser)) {
+
+    // TODO(@camdencheek): figure out whether we actually want to continue
+    // shipping the inline extensions with the browser extensions. For now,
+    // skip them for the firefox extension because they are being detected
+    // as non-human-readable assets, and will cause removal from the addon store.
+    if (browser !== 'firefox') {
         copyInlineExtensions(buildDirectory)
     }
 
@@ -250,4 +256,5 @@ const buildForBrowser = curry((browser: Browser, environment: BuildEnvironment):
 
 export const buildFirefox = buildForBrowser('firefox')
 export const buildChrome = buildForBrowser('chrome')
+export const buildEdge = buildForBrowser('edge')
 export const buildSafari = buildForBrowser('safari')

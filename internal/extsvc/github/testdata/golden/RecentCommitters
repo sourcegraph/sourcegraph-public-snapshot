@@ -7,6 +7,9 @@
        "Date": "2021-05-12T18:17:49-05:00",
        "Email": "eric@eric-fritz.com",
        "Name": "Eric Fritz",
+       "User": {
+        "Login": "efritz"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/103087?v=4"
       }
      ]
@@ -19,6 +22,9 @@
        "Date": "2021-05-12T17:42:19-05:00",
        "Email": "eric@eric-fritz.com",
        "Name": "Eric Fritz",
+       "User": {
+        "Login": "efritz"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/103087?v=4"
       }
      ]
@@ -31,6 +37,9 @@
        "Date": "2021-05-12T17:38:55-05:00",
        "Email": "eric@eric-fritz.com",
        "Name": "Eric Fritz",
+       "User": {
+        "Login": "efritz"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/103087?v=4"
       }
      ]
@@ -43,6 +52,9 @@
        "Date": "2021-03-11T14:25:14+01:00",
        "Email": "mrnugget@gmail.com",
        "Name": "Thorsten Ball",
+       "User": {
+        "Login": "mrnugget"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?v=4"
       }
      ]
@@ -55,6 +67,9 @@
        "Date": "2021-03-11T14:24:26+01:00",
        "Email": "mrnugget@gmail.com",
        "Name": "Thorsten Ball",
+       "User": {
+        "Login": "mrnugget"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?v=4"
       }
      ]
@@ -67,6 +82,9 @@
        "Date": "2020-05-04T23:26:22-07:00",
        "Email": "xiangli.cs@gmail.com",
        "Name": "Xiang Li",
+       "User": {
+        "Login": "xiang90"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/4479947?v=4"
       }
      ]
@@ -79,6 +97,9 @@
        "Date": "2020-05-04T17:43:08-07:00",
        "Email": "yuzhihong@gmail.com",
        "Name": "Zhihong Yu",
+       "User": {
+        "Login": "tedyu"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/235188?v=4"
       }
      ]
@@ -91,6 +112,9 @@
        "Date": "2020-05-04T15:46:36-07:00",
        "Email": "yuzhihong@gmail.com",
        "Name": "Zhihong Yu",
+       "User": {
+        "Login": "tedyu"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/235188?v=4"
       }
      ]
@@ -103,6 +127,9 @@
        "Date": "2020-05-04T13:37:55-04:00",
        "Email": "spzala@us.ibm.com",
        "Name": "Sahdev Zala",
+       "User": {
+        "Login": "spzala"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6462877?v=4"
       }
      ]
@@ -115,6 +142,9 @@
        "Date": "2020-05-04T12:40:34-04:00",
        "Email": "spzala@us.ibm.com",
        "Name": "Sahdev P. Zala",
+       "User": {
+        "Login": "spzala"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6462877?v=4"
       }
      ]
@@ -127,6 +157,9 @@
        "Date": "2020-05-03T23:32:25+09:00",
        "Email": "h.mitake@gmail.com",
        "Name": "Hitoshi Mitake",
+       "User": {
+        "Login": "mitake"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/1173955?v=4"
       }
      ]
@@ -139,6 +172,9 @@
        "Date": "2020-05-03T17:17:30+09:00",
        "Email": "h.mitake@gmail.com",
        "Name": "Hitoshi Mitake",
+       "User": {
+        "Login": "mitake"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/1173955?v=4"
       }
      ]
@@ -151,6 +187,9 @@
        "Date": "2020-04-30T11:08:33-04:00",
        "Email": "spzala@us.ibm.com",
        "Name": "Sahdev Zala",
+       "User": {
+        "Login": "spzala"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6462877?v=4"
       }
      ]
@@ -163,6 +202,9 @@
        "Date": "2020-04-30T13:59:17+02:00",
        "Email": "krzysztof.t.kruk@gmail.com",
        "Name": "Krzysztof Kruk",
+       "User": {
+        "Login": "krukkrz"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/40073114?v=4"
       }
      ]
@@ -175,6 +217,9 @@
        "Date": "2020-04-29T05:35:06-07:00",
        "Email": "brandon@ifup.org",
        "Name": "Brandon Philips",
+       "User": {
+        "Login": "philips"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/33544?v=4"
       }
      ]
@@ -187,6 +232,9 @@
        "Date": "2020-04-28T23:27:08-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -199,6 +247,9 @@
        "Date": "2020-04-28T20:54:13-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -211,6 +262,9 @@
        "Date": "2020-04-28T20:33:40-07:00",
        "Email": "yuzhihong@gmail.com",
        "Name": "Ted Yu",
+       "User": {
+        "Login": "tedyu"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/235188?v=4"
       }
      ]
@@ -223,6 +277,9 @@
        "Date": "2020-04-28T16:11:26-07:00",
        "Email": "brandon@ifup.org",
        "Name": "Brandon Philips",
+       "User": {
+        "Login": "philips"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/33544?v=4"
       }
      ]
@@ -235,6 +292,9 @@
        "Date": "2020-04-28T15:24:29-07:00",
        "Email": "brandon@ifup.org",
        "Name": "Brandon Philips",
+       "User": {
+        "Login": "philips"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/33544?v=4"
       }
      ]
@@ -247,6 +307,9 @@
        "Date": "2020-04-28T15:12:50-07:00",
        "Email": "brandon@ifup.org",
        "Name": "Brandon Philips",
+       "User": {
+        "Login": "philips"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/33544?v=4"
       }
      ]
@@ -259,6 +322,9 @@
        "Date": "2020-04-28T22:02:19Z",
        "Email": "brandon@ifup.org",
        "Name": "Brandon Philips",
+       "User": {
+        "Login": "philips"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/33544?v=4"
       }
      ]
@@ -271,6 +337,9 @@
        "Date": "2020-04-26T11:16:25-04:00",
        "Email": "gaurav1086@gmail.com",
        "Name": "Gaurav Singh",
+       "User": {
+        "Login": "gaurav1086"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/1029926?v=4"
       }
      ]
@@ -283,6 +352,9 @@
        "Date": "2020-04-25T22:48:04-04:00",
        "Email": "gaurav1086@gmail.com",
        "Name": "Gaurav Singh",
+       "User": {
+        "Login": "gaurav1086"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/1029926?v=4"
       }
      ]
@@ -295,6 +367,9 @@
        "Date": "2020-04-27T14:54:34Z",
        "Email": "brandon@ifup.org",
        "Name": "Brandon Philips",
+       "User": {
+        "Login": "philips"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/33544?v=4"
       }
      ]
@@ -307,6 +382,9 @@
        "Date": "2020-04-27T15:41:00Z",
        "Email": "brandon@ifup.org",
        "Name": "Brandon Philips",
+       "User": {
+        "Login": "philips"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/33544?v=4"
       }
      ]
@@ -319,6 +397,9 @@
        "Date": "2020-04-27T06:09:09Z",
        "Email": "brandon@ifup.org",
        "Name": "Brandon Philips",
+       "User": {
+        "Login": "philips"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/33544?v=4"
       }
      ]
@@ -331,6 +412,9 @@
        "Date": "2020-04-27T00:49:18Z",
        "Email": "brandon@ifup.org",
        "Name": "Brandon Philips",
+       "User": {
+        "Login": "philips"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/33544?v=4"
       }
      ]
@@ -343,6 +427,9 @@
        "Date": "2020-04-26T21:24:35Z",
        "Email": "brandon@ifup.org",
        "Name": "Brandon Philips",
+       "User": {
+        "Login": "philips"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/33544?v=4"
       }
      ]
@@ -355,6 +442,9 @@
        "Date": "2020-04-26T22:28:02Z",
        "Email": "brandon@ifup.org",
        "Name": "Brandon Philips",
+       "User": {
+        "Login": "philips"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/33544?v=4"
       }
      ]
@@ -367,6 +457,9 @@
        "Date": "2020-04-26T21:03:37Z",
        "Email": "brandon@ifup.org",
        "Name": "Brandon Philips",
+       "User": {
+        "Login": "philips"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/33544?v=4"
       }
      ]
@@ -379,6 +472,9 @@
        "Date": "2020-04-25T11:08:39-07:00",
        "Email": "yuzhihong@gmail.com",
        "Name": "Ted Yu",
+       "User": {
+        "Login": "tedyu"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/235188?v=4"
       }
      ]
@@ -391,6 +487,9 @@
        "Date": "2020-04-25T12:54:23-04:00",
        "Email": "spzala@us.ibm.com",
        "Name": "Sahdev Zala",
+       "User": {
+        "Login": "spzala"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6462877?v=4"
       }
      ]
@@ -403,6 +502,9 @@
        "Date": "2020-04-25T09:14:30-07:00",
        "Email": "yuzhihong@gmail.com",
        "Name": "Ted Yu",
+       "User": {
+        "Login": "tedyu"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/235188?v=4"
       }
      ]
@@ -415,6 +517,9 @@
        "Date": "2020-04-23T14:55:11-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -427,6 +532,9 @@
        "Date": "2020-04-23T15:53:05-04:00",
        "Email": "spzala@us.ibm.com",
        "Name": "Sahdev P. Zala",
+       "User": {
+        "Login": "spzala"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6462877?v=4"
       }
      ]
@@ -439,6 +547,9 @@
        "Date": "2020-04-23T11:02:27-07:00",
        "Email": "bphilips@redhat.com",
        "Name": "Brandon Philips",
+       "User": {
+        "Login": ""
+       },
        "AvatarURL": "https://camo.githubusercontent.com/da245587335a1436fc7e82d42652b52832174bc55aa1357bf2a846a036b912f0/68747470733a2f2f312e67726176617461722e636f6d2f6176617461722f62633635396638626163643433363930343233366537323134613165303939353f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67"
       }
      ]
@@ -451,6 +562,9 @@
        "Date": "2020-04-23T10:47:02-07:00",
        "Email": "brandon@ifup.org",
        "Name": "Brandon Philips",
+       "User": {
+        "Login": "philips"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/33544?v=4"
       }
      ]
@@ -463,6 +577,9 @@
        "Date": "2020-04-23T11:24:42-04:00",
        "Email": "spzala@us.ibm.com",
        "Name": "Sahdev Zala",
+       "User": {
+        "Login": "spzala"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6462877?v=4"
       }
      ]
@@ -475,6 +592,9 @@
        "Date": "2020-04-16T13:31:19-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -487,6 +607,9 @@
        "Date": "2020-04-23T07:50:29+09:00",
        "Email": "h.mitake@gmail.com",
        "Name": "Hitoshi Mitake",
+       "User": {
+        "Login": "mitake"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/1173955?v=4"
       }
      ]
@@ -499,6 +622,9 @@
        "Date": "2020-04-22T11:38:58-04:00",
        "Email": "spzala@us.ibm.com",
        "Name": "Sahdev Zala",
+       "User": {
+        "Login": "spzala"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6462877?v=4"
       }
      ]
@@ -511,6 +637,9 @@
        "Date": "2020-04-22T11:26:07-04:00",
        "Email": "spzala@us.ibm.com",
        "Name": "Sahdev Zala",
+       "User": {
+        "Login": "spzala"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6462877?v=4"
       }
      ]
@@ -523,6 +652,9 @@
        "Date": "2020-04-20T01:11:52+09:00",
        "Email": "h.mitake@gmail.com",
        "Name": "Hitoshi Mitake",
+       "User": {
+        "Login": "mitake"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/1173955?v=4"
       }
      ]
@@ -535,6 +667,9 @@
        "Date": "2020-04-21T22:58:48-04:00",
        "Email": "spzala@us.ibm.com",
        "Name": "Sahdev Zala",
+       "User": {
+        "Login": "spzala"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6462877?v=4"
       }
      ]
@@ -547,6 +682,9 @@
        "Date": "2020-04-08T13:50:12-04:00",
        "Email": "sbatsche@redhat.com",
        "Name": "Sam Batschelet",
+       "User": {
+        "Login": "hexfusion"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/1249749?v=4"
       }
      ]
@@ -559,6 +697,9 @@
        "Date": "2020-04-20T11:31:17-04:00",
        "Email": "spzala@us.ibm.com",
        "Name": "Sahdev Zala",
+       "User": {
+        "Login": "spzala"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6462877?v=4"
       }
      ]
@@ -571,6 +712,9 @@
        "Date": "2020-04-16T15:00:58+08:00",
        "Email": "malinbupt@gmail.com",
        "Name": "mlmhl",
+       "User": {
+        "Login": "mlmhl"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/7688266?v=4"
       }
      ]
@@ -583,6 +727,9 @@
        "Date": "2020-04-18T12:20:03+08:00",
        "Email": "malinbupt@gmail.com",
        "Name": "mlmhl",
+       "User": {
+        "Login": "mlmhl"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/7688266?v=4"
       }
      ]
@@ -595,6 +742,9 @@
        "Date": "2020-04-17T15:29:10-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -607,6 +757,9 @@
        "Date": "2020-04-16T19:34:51-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -619,6 +772,9 @@
        "Date": "2020-04-17T09:30:22+08:00",
        "Email": "tangcong506@gmail.com",
        "Name": "tangcong",
+       "User": {
+        "Login": "tangcong"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/2403673?v=4"
       }
      ]
@@ -631,6 +787,9 @@
        "Date": "2020-04-12T00:35:12+08:00",
        "Email": "tangcong506@gmail.com",
        "Name": "tangcong",
+       "User": {
+        "Login": "tangcong"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/2403673?v=4"
       }
      ]
@@ -643,6 +802,9 @@
        "Date": "2020-04-12T00:09:17+08:00",
        "Email": "tangcong506@gmail.com",
        "Name": "tangcong",
+       "User": {
+        "Login": "tangcong"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/2403673?v=4"
       }
      ]
@@ -655,6 +817,9 @@
        "Date": "2020-04-16T12:01:33-07:00",
        "Email": "yoyinzyc@gmail.com",
        "Name": "yoyinzyc",
+       "User": {
+        "Login": "YoyinZyc"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/11894762?v=4"
       }
      ]
@@ -667,6 +832,9 @@
        "Date": "2020-04-15T19:13:19-04:00",
        "Email": "spzala@us.ibm.com",
        "Name": "Sahdev Zala",
+       "User": {
+        "Login": "spzala"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6462877?v=4"
       }
      ]
@@ -679,6 +847,9 @@
        "Date": "2020-04-15T18:16:36-04:00",
        "Email": "spzala@us.ibm.com",
        "Name": "Sahdev Zala",
+       "User": {
+        "Login": "spzala"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6462877?v=4"
       }
      ]
@@ -691,6 +862,9 @@
        "Date": "2020-04-13T14:53:18Z",
        "Email": "narang@us.ibm.com",
        "Name": "Nirman Narang",
+       "User": {
+        "Login": "nirmannarang"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/8256882?v=4"
       }
      ]
@@ -703,6 +877,9 @@
        "Date": "2020-04-12T22:44:37-04:00",
        "Email": "andrei@cockroachlabs.com",
        "Name": "Andrei Matei",
+       "User": {
+        "Login": "andreimatei"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/377201?v=4"
       }
      ]
@@ -715,6 +892,9 @@
        "Date": "2020-04-10T10:14:15-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -727,6 +907,9 @@
        "Date": "2020-04-10T23:38:36+08:00",
        "Email": "tangcong506@gmail.com",
        "Name": "tangcong",
+       "User": {
+        "Login": "tangcong"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/2403673?v=4"
       }
      ]
@@ -739,6 +922,9 @@
        "Date": "2020-04-10T23:24:46+08:00",
        "Email": "jingyih@google.com",
        "Name": "Jingyi Hu",
+       "User": {
+        "Login": "jingyih"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/23108879?v=4"
       }
      ]
@@ -751,6 +937,9 @@
        "Date": "2020-04-10T19:30:32+08:00",
        "Email": "tangcong506@gmail.com",
        "Name": "tangcong",
+       "User": {
+        "Login": "tangcong"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/2403673?v=4"
       }
      ]
@@ -763,6 +952,9 @@
        "Date": "2020-04-10T00:09:46+08:00",
        "Email": "tangcong506@gmail.com",
        "Name": "tangcong",
+       "User": {
+        "Login": "tangcong"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/2403673?v=4"
       }
      ]
@@ -775,6 +967,9 @@
        "Date": "2020-04-09T23:50:17+08:00",
        "Email": "tangcong506@gmail.com",
        "Name": "tangcong",
+       "User": {
+        "Login": "tangcong"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/2403673?v=4"
       }
      ]
@@ -787,6 +982,9 @@
        "Date": "2020-04-07T18:15:02+02:00",
        "Email": "fbranczyk@gmail.com",
        "Name": "Frederic Branczyk",
+       "User": {
+        "Login": "brancz"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/4546722?v=4"
       }
      ]
@@ -799,6 +997,9 @@
        "Date": "2020-04-07T18:14:23+02:00",
        "Email": "fbranczyk@gmail.com",
        "Name": "Frederic Branczyk",
+       "User": {
+        "Login": "brancz"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/4546722?v=4"
       }
      ]
@@ -811,6 +1012,9 @@
        "Date": "2020-04-07T18:13:41+02:00",
        "Email": "fbranczyk@gmail.com",
        "Name": "Frederic Branczyk",
+       "User": {
+        "Login": "brancz"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/4546722?v=4"
       }
      ]
@@ -823,6 +1027,9 @@
        "Date": "2020-04-07T11:27:46+08:00",
        "Email": "fullstop1005@gmail.com",
        "Name": "Fullstop000",
+       "User": {
+        "Login": "Fullstop000"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/12471960?v=4"
       }
      ]
@@ -835,6 +1042,9 @@
        "Date": "2020-04-06T16:56:45-04:00",
        "Email": "spzala@us.ibm.com",
        "Name": "Sahdev Zala",
+       "User": {
+        "Login": "spzala"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6462877?v=4"
       }
      ]
@@ -847,6 +1057,9 @@
        "Date": "2020-04-06T12:07:59-07:00",
        "Email": "xiangli.cs@gmail.com",
        "Name": "Xiang Li",
+       "User": {
+        "Login": "xiang90"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/4479947?v=4"
       }
      ]
@@ -859,6 +1072,9 @@
        "Date": "2020-04-06T10:49:49-07:00",
        "Email": "bphilips@redhat.com",
        "Name": "Brandon Philips",
+       "User": {
+        "Login": ""
+       },
        "AvatarURL": "https://camo.githubusercontent.com/da245587335a1436fc7e82d42652b52832174bc55aa1357bf2a846a036b912f0/68747470733a2f2f312e67726176617461722e636f6d2f6176617461722f62633635396638626163643433363930343233366537323134613165303939353f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67"
       }
      ]
@@ -871,6 +1087,9 @@
        "Date": "2020-04-07T01:16:47+08:00",
        "Email": "tangcong506@gmail.com",
        "Name": "tangcong",
+       "User": {
+        "Login": "tangcong"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/2403673?v=4"
       }
      ]
@@ -883,6 +1102,9 @@
        "Date": "2020-04-06T21:56:05+08:00",
        "Email": "jingyih@google.com",
        "Name": "Jingyi Hu",
+       "User": {
+        "Login": "jingyih"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/23108879?v=4"
       }
      ]
@@ -895,6 +1117,9 @@
        "Date": "2020-04-06T22:46:14+09:00",
        "Email": "h.mitake@gmail.com",
        "Name": "Hitoshi Mitake",
+       "User": {
+        "Login": "mitake"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/1173955?v=4"
       }
      ]
@@ -907,6 +1132,9 @@
        "Date": "2020-04-06T22:45:55+09:00",
        "Email": "h.mitake@gmail.com",
        "Name": "Hitoshi Mitake",
+       "User": {
+        "Login": "mitake"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/1173955?v=4"
       }
      ]
@@ -919,6 +1147,9 @@
        "Date": "2020-04-06T16:55:55+08:00",
        "Email": "malinbupt@gmail.com",
        "Name": "mlmhl",
+       "User": {
+        "Login": "mlmhl"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/7688266?v=4"
       }
      ]
@@ -931,6 +1162,9 @@
        "Date": "2020-04-06T13:43:37+08:00",
        "Email": "mcx_221@foxmail.com",
        "Name": "Changxin Miao",
+       "User": {
+        "Login": "polyrabbit"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/2657334?v=4"
       }
      ]
@@ -943,6 +1177,9 @@
        "Date": "2020-04-05T19:27:13+08:00",
        "Email": "tangcong506@gmail.com",
        "Name": "tangcong",
+       "User": {
+        "Login": "tangcong"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/2403673?v=4"
       }
      ]
@@ -955,6 +1192,9 @@
        "Date": "2020-04-04T14:46:03-07:00",
        "Email": "yczhou@google.com",
        "Name": "Yuchen Zhou",
+       "User": {
+        "Login": "YoyinZyc"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/11894762?v=4"
       }
      ]
@@ -967,6 +1207,9 @@
        "Date": "2020-04-05T05:41:19+08:00",
        "Email": "zhanw15@gmail.com",
        "Name": "zhanwang",
+       "User": {
+        "Login": "zhanw15"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/33194527?v=4"
       }
      ]
@@ -979,6 +1222,9 @@
        "Date": "2020-04-04T14:38:14-07:00",
        "Email": "lars.lehtonen@gmail.com",
        "Name": "Lars Lehtonen",
+       "User": {
+        "Login": "alrs"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/28523?v=4"
       }
      ]
@@ -991,6 +1237,9 @@
        "Date": "2020-04-02T21:42:48+08:00",
        "Email": "jingyih@google.com",
        "Name": "Jingyi Hu",
+       "User": {
+        "Login": "jingyih"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/23108879?v=4"
       }
      ]
@@ -1003,6 +1252,9 @@
        "Date": "2020-04-02T10:57:13+08:00",
        "Email": "malinbupt@gmail.com",
        "Name": "mlmhl",
+       "User": {
+        "Login": "mlmhl"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/7688266?v=4"
       }
      ]
@@ -1015,6 +1267,9 @@
        "Date": "2020-04-02T10:04:35+08:00",
        "Email": "zhangbitao01@gmail.com",
        "Name": "zhangbitao",
+       "User": {
+        "Login": "zhangbitao"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/3415872?v=4"
       }
      ]
@@ -1027,6 +1282,9 @@
        "Date": "2020-04-01T12:05:00-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -1039,6 +1297,9 @@
        "Date": "2020-04-01T10:55:48-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -1051,6 +1312,9 @@
        "Date": "2020-04-01T09:08:10-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -1063,6 +1327,9 @@
        "Date": "2020-04-01T23:24:35+08:00",
        "Email": "jingyih@google.com",
        "Name": "Jingyi Hu",
+       "User": {
+        "Login": "jingyih"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/23108879?v=4"
       }
      ]
@@ -1075,6 +1342,9 @@
        "Date": "2020-03-31T20:34:16-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -1087,6 +1357,9 @@
        "Date": "2020-03-31T20:31:32-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -1099,6 +1372,9 @@
        "Date": "2020-03-31T20:31:24-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -1111,6 +1387,9 @@
        "Date": "2020-03-30T17:21:40+08:00",
        "Email": "shawwang@tencent.com",
        "Name": "shawwang",
+       "User": {
+        "Login": "wswcfan"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/7612790?v=4"
       }
      ]
@@ -1123,6 +1402,9 @@
        "Date": "2020-03-29T12:43:18-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -1135,6 +1417,9 @@
        "Date": "2020-03-29T12:38:04-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -1147,6 +1432,9 @@
        "Date": "2020-03-29T12:30:49-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]
@@ -1159,6 +1447,9 @@
        "Date": "2020-03-29T08:09:46+08:00",
        "Email": "tangcong506@gmail.com",
        "Name": "tangcong",
+       "User": {
+        "Login": "tangcong"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/2403673?v=4"
       }
      ]
@@ -1171,6 +1462,9 @@
        "Date": "2020-03-27T11:13:58-04:00",
        "Email": "spzala@us.ibm.com",
        "Name": "Sahdev Zala",
+       "User": {
+        "Login": "spzala"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6462877?v=4"
       }
      ]
@@ -1183,6 +1477,9 @@
        "Date": "2020-02-18T23:36:55-08:00",
        "Email": "jingyih@google.com",
        "Name": "jingyih",
+       "User": {
+        "Login": "jingyih"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/23108879?v=4"
       }
      ]
@@ -1195,6 +1492,9 @@
        "Date": "2020-03-25T18:07:44-07:00",
        "Email": "leegyuho@amazon.com",
        "Name": "Gyuho Lee",
+       "User": {
+        "Login": "gyuho"
+       },
        "AvatarURL": "https://avatars.githubusercontent.com/u/6799218?v=4"
       }
      ]

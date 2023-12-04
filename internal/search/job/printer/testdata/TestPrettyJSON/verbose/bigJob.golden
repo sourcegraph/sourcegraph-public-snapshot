@@ -1,0 +1,42 @@
+{
+  "FilterJob": {
+    "LimitJob": {
+      "TimeoutJob": {
+        "ParallelJob": {
+          "AndJob.0": {
+            "LeafJob.0": {
+              "leaf_meaning": 420,
+              "life_meaning": 42
+            },
+            "LeafJob.1": {
+              "leaf_meaning": 420,
+              "life_meaning": 42
+            }
+          },
+          "AndJob.1": {
+            "LeafJob.0": {
+              "leaf_meaning": 420,
+              "life_meaning": 42
+            },
+            "LeafJob.1": {
+              "leaf_meaning": 420,
+              "life_meaning": 42
+            }
+          },
+          "OrJob": {
+            "LeafJob.0": {
+              "leaf_meaning": 420,
+              "life_meaning": 42
+            },
+            "LeafJob.1": {
+              "leaf_meaning": 420,
+              "life_meaning": 42
+            }
+          }
+        },
+        "duration": "50ms"
+      },
+      "limit": 100
+    }
+  }
+}

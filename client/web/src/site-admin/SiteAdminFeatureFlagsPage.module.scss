@@ -1,0 +1,41 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.flags-grid {
+    display: grid;
+    grid-template-columns: [info] minmax(auto, 1fr) [progress] min-content [link] min-content [end];
+    row-gap: 1rem;
+    column-gap: 1rem;
+    align-items: center;
+    @media (--sm-breakpoint-down) {
+        row-gap: 0.5rem;
+        column-gap: 0.5rem;
+    }
+}
+
+.separator {
+    /* Make it full width in the current row. */
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--border-color-2);
+    @media (--xs-breakpoint-down) {
+        margin-top: 1rem;
+        padding-bottom: 1rem;
+    }
+}
+
+.progress,
+.information,
+.button {
+    @media (--xs-breakpoint-down) {
+        grid-column: 1 / -1;
+    }
+}
+
+.page {
+    @media (min-width: 768px) {
+        &__header {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+        }
+    }
+}

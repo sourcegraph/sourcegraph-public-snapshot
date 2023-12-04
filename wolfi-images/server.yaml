@@ -1,0 +1,84 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+
+    ## server packages
+    - bash
+    - ca-certificates
+    - git
+    - git-lfs
+    - git-p4
+    - glibc-locale-en
+    - libev
+    - libstdc++
+    - nginx
+    - openjdk-11
+    - openjdk-11-default-jvm
+    - openssh-client
+    - pcre
+    - posix-libc-utils # Adds locale, used by server postgres init scripts
+    - postgresql-12
+    - postgresql-12-contrib
+    - prometheus-postgres-exporter
+    - prometheus-alertmanager
+    - python3
+    - posix-libc-utils # Locales
+    - prometheus
+    - prometheus-alertmanager
+    - redis-6.2
+    - sqlite-libs
+    - su-exec
+
+    - comby@sourcegraph
+    - ctags@sourcegraph
+    - coursier@sourcegraph
+    - p4cli@sourcegraph
+    - p4-fusion-sg@sourcegraph
+    - s3proxy@sourcegraph
+    - grafana@chainguard
+
+accounts:
+  groups:
+    - groupname: sourcegraph
+      gid: 101
+    - groupname: postgres
+      gid: 70
+    - groupname: nginx
+      gid: 102
+    - groupname: redis
+      gid: 103
+    - groupname: grafana
+      gid: 104
+  users:
+    - username: sourcegraph
+      uid: 100
+      gid: 101
+    # These users should all be /bin/nologin
+    - username: postgres
+      uid: 70
+      gid: 70
+    - username: nginx
+      uid: 101
+      gid: 102
+    - username: redis
+      uid: 102
+      gid: 103
+    - username: grafana
+      uid: 103
+      gid: 104
+
+paths:
+  - path: /var/lib/nginx/tmp
+    type: directory
+    permissions: 0o755
+  - path: /var/run
+    type: directory
+    permissions: 0o755
+  - path: /sg_grafana_additional_dashboards
+    type: directory
+    permissions: 0o755
+
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

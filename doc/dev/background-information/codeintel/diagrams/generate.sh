@@ -16,7 +16,7 @@ declare mermaid_diagrams=(
 )
 
 # Install mermaid util
-yarn
+pnpm
 mermaid="../../../../../node_modules/.bin/mmdc"
 
 # Generate mermaid diagrams

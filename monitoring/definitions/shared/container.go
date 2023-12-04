@@ -45,10 +45,10 @@ var (
 			Name:        "container_memory_usage",
 			Description: "container memory usage by instance",
 			Query:       fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{%s}`, CadvisorContainerNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(99, nil),
+			Warning:     monitoring.Alert().GreaterOrEqual(99),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
-			PossibleSolutions: strings.ReplaceAll(`
+			NextSteps: strings.ReplaceAll(`
 			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
 		`, "{{CONTAINER_NAME}}", containerName),
@@ -60,10 +60,10 @@ var (
 			Name:        "container_cpu_usage",
 			Description: "container cpu usage total (1m average) across all cores by instance",
 			Query:       fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{%s}`, CadvisorContainerNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(99, nil),
+			Warning:     monitoring.Alert().GreaterOrEqual(99),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
-			PossibleSolutions: strings.ReplaceAll(`
+			NextSteps: strings.ReplaceAll(`
 			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
 		`, "{{CONTAINER_NAME}}", containerName),

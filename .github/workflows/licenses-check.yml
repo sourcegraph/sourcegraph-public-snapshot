@@ -1,24 +1,43 @@
 name: Licenses Check
-on: [ pull_request ]
+on: [pull_request]
 
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-ruby@v1
-      with: { ruby-version: '2.6' }
-    - uses: actions/setup-go@v2
-      with: { go-version: '1.17' }
+      # set up correct version of node
+      - name: Setup Node
+        id: node-setup
+        run: echo "NODE_VERSION=20.8.1" >> ${GITHUB_OUTPUT}
+      - uses: actions/setup-node@v2
+        with: { node-version: "${{ steps.node-setup.outputs.NODE_VERSION }}" }
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        id: pnpm-install
+        with:
+          version: 8.9.2
+          run_install: false
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2.2" # Not needed with a .ruby-version file   - uses: actions/setup-ruby@v1
+      - uses: actions/setup-go@v2
+        with: { go-version: "1.21" }
 
-    # set up correct version of node
-    - id: nvmrc
-      run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
-    - uses: actions/setup-node@v2
-      with: { node-version: '${{ steps.nvmrc.outputs.NODE_VERSION }}' }
 
-    - name: Install license_finder
-      run: gem install license_finder:6.9.0 # sync with licenses-update.yml
+      - name: Install license_finder
+        run: gem install license_finder:7.1.0 # sync with licenses-update.yml
 
-    - name: Check dependencies
-      run: LICENSE_CHECK=true ./dev/licenses.sh
+      - name: Check dependencies
+        run: LICENSE_CHECK=true ./dev/licenses.sh

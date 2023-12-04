@@ -5,61 +5,164 @@
   "description": "Configuration for a Sourcegraph site.",
   "allowComments": true,
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
-    "dontIncludeSymbolResultsByDefault": {
-      "description": "Set to `true` to not include symbol results if no `type:` filter was given",
-      "type": "boolean",
-      "group": "Search"
-    },
-    "disableBuiltInSearches": {
-      "description": "Whether built-in searches should be hidden on the Searches page.",
-      "type": "boolean",
-      "group": "Search"
-    },
-    "search.index.enabled": {
-      "description": "Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Search"
-    },
     "search.index.symbols.enabled": {
       "description": "Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.",
       "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Search"
+      "!go": {
+        "pointer": true
+      },
+      "group": "Search",
+      "examples": [true]
+    },
+    "search.index.shardConcurrency": {
+      "description": "The number of threads each indexserver should use to index shards. If not set, indexserver will use the number of available CPUs. This is exposed as a safeguard and should usually not require being set.",
+      "type": "integer",
+      "group": "Search",
+      "examples": ["10"]
     },
     "search.largeFiles": {
-      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.",
+      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.",
       "type": "array",
       "items": {
         "type": "string"
       },
       "group": "Search",
-      "examples": [["go.sum", "package-lock.json", "*.thrift"]]
+      "examples": [["go.sum", "package-lock.json", "**/*.thrift"]]
     },
     "debug.search.symbolsParallelism": {
       "description": "(debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["20"]]
-    },
-    "apidocs.search.index-size-limit-factor": {
-      "description": "Limit factor for API docs search index size. A multiple of 250 million symbols. 1.0 indicates 250 million symbols (approx 12.5k repos) can be indexed. 2.0 indicates double that, and so on. See https://docs.sourcegraph.com/code_intelligence/apidocs",
-      "type": "number",
-      "default": 1.0,
-      "additionalProperties": false
+      "examples": ["20"]
     },
     "cloneProgress.log": {
       "description": "Whether clone progress should be logged to a file. If enabled, logs are written to files in the OS default path for temporary files.",
       "type": "boolean",
       "default": false
     },
-    "experimentalFeatures": {
-      "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
+    "defaultRateLimit": {
+      "description": "The rate limit (in requests per hour) for the default rate limiter in the rate limiters registry. By default this is disabled and the default rate limit is infinity.",
+      "type": "integer",
+      "!go": {
+        "pointer": true
+      },
+      "default": -1
+    },
+    "RedirectUnsupportedBrowser": {
+      "description": "Prompts user to install new browser for non es5",
+      "type": "boolean",
+      "default": false
+    },
+    "rateLimits": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "graphQLMaxDepth": {
+          "description": "Maximum depth of nested objects allowed for GraphQL queries. Changes to this setting require a restart.",
+          "type": "integer",
+          "default": 30
+        },
+        "graphQLMaxAliases": {
+          "description": "Maximum number of aliases allowed in a GraphQL query",
+          "type": "integer",
+          "default": 500
+        },
+        "graphQLMaxFieldCount": {
+          "description": "Maximum number of estimated fields allowed in a GraphQL response",
+          "type": "integer",
+          "default": 500000
+        }
+      }
+    },
+    "exportUsageTelemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "Toggles whether or not to export Sourcegraph telemetry. If enabled events will be scraped and sent to an analytics store. This is an opt-in setting, and only should only be enabled for customers that have agreed to event level data collection.",
+          "type": "boolean",
+          "default": false,
+          "deprecationMessage": "Deprecated in favor of an environment variable EXPORT_USAGE_DATA_ENABLED."
+        },
+        "batchSize": {
+          "description": "Maximum number of events scraped from the events table in a single scrape.",
+          "type": "integer",
+          "default": 5000,
+          "minimum": 1
+        },
+        "topicProjectName": {
+          "type": "string",
+          "description": "GCP project name containing the usage data pubsub topic",
+          "deprecationMessage": "Deprecated in favor of an environment variable EXPORT_USAGE_DATA_TOPIC_PROJECT."
+        },
+        "topicName": {
+          "type": "string",
+          "description": "Destination pubsub topic name to export usage data",
+          "deprecationMessage": "Deprecated in favor of an environment variable EXPORT_USAGE_DATA_TOPIC_NAME."
+        }
+      },
+      "examples": [
+        {
+          "enabled": true,
+          "batchSize": 1000,
+          "topicProjectName": "my-project",
+          "topicName": "usage-data"
+        },
+        {
+          "enabled": false
+        }
+      ]
+    },
+    "auth.passwordPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.",
+      "properties": {
+        "enabled": {
+          "description": "Enables password policy",
+          "type": "boolean",
+          "default": false
+        },
+        "numberOfSpecialCharacters": {
+          "description": "The required number of special characters",
+          "type": "integer",
+          "length": 2
+        },
+        "requireAtLeastOneNumber": {
+          "description": "Does the password require a number",
+          "type": "boolean",
+          "default": true
+        },
+        "requireUpperandLowerCase": {
+          "description": "Require Mixed characters",
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "examples": [
+        {
+          "enabled": true,
+          "numberOfSpecialCharacters": 1,
+          "requireAtLeastOneNumber": true,
+          "requireUpperandLowerCase": true
+        }
+      ]
+    },
+    "experimentalFeatures": {
+      "description": "Experimental features and settings.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "searchJobs": {
+          "description": "Enables search jobs (long-running exhaustive) search feature and its UI",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "rateLimitAnonymous": {
           "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",
           "type": "integer",
@@ -71,6 +174,38 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "passwordPolicy": {
+          "description": "DEPRECATED: this is now a standard feature see: auth.passwordPolicy",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "description": "Enables password policy",
+              "type": "boolean",
+              "default": true
+            },
+            "minimumLength": {
+              "description": "DEPRECATED: replaced by auth.minPasswordLength",
+              "type": "integer",
+              "default": 12
+            },
+            "numberOfSpecialCharacters": {
+              "description": "The required number of special characters",
+              "type": "integer",
+              "default": 2
+            },
+            "requireAtLeastOneNumber": {
+              "description": "Does the password require a number",
+              "type": "boolean",
+              "default": true
+            },
+            "requireUpperandLowerCase": {
+              "description": "Require Mixed characters",
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
         "debug.log": {
           "description": "Turns on debug logging for specific debugging scenarios.",
           "type": "object",
@@ -81,13 +216,8 @@
               "type": "boolean",
               "default": false
             }
-          }
-        },
-        "apidocs.search.indexing": {
-          "description": "Index API docs for search, see https://docs.sourcegraph.com/code_intelligence/apidocs",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
+          },
+          "deprecationMessage": "Deprecated in favor of internal debug logging."
         },
         "structuralSearch": {
           "description": "Enables structural search.",
@@ -95,35 +225,54 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
-        "andOrQuery": {
-          "description": "DEPRECATED: Interpret a search input query as an and/or query.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
-        },
-        "bitbucketServerFastPerm": {
-          "description": "DEPRECATED: Configure in Bitbucket Server config.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
-        "searchMultipleRevisionsPerRepository": {
-          "description": "DEPRECATED. Always on. Will be removed in 3.19.",
-          "type": "boolean",
-          "default": false,
-          "!go": { "pointer": true }
-        },
         "perforce": {
           "description": "Allow adding Perforce code host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "enabled"
+          "default": "enabled",
+          "deprecationMessage": "Deprecated, Perforce is always enabled, setting is no longer used."
         },
-        "jvmPackages": {
-          "description": "Allow adding JVM packages code host connections",
+        "perforceChangelistMapping": {
+          "description": "Allow mapping of Perforce changelists to their commit SHAs in the DB",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "enabled"
+          "default": "disabled"
+        },
+        "goPackages": {
+          "description": "Allow adding Go package host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "jvmPackages": {
+          "description": "Allow adding JVM package host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "npmPackages": {
+          "description": "Allow adding npm package code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "pythonPackages": {
+          "description": "Allow adding Python package code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "rustPackages": {
+          "description": "Allow adding Rust package code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "rubyPackages": {
+          "description": "Allow adding Ruby package host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
         },
         "pagure": {
           "description": "Allow adding Pagure code host connections",
@@ -154,12 +303,6 @@
             }
           }
         },
-        "npmPackages": {
-          "description": "Allow adding NPM packages code host connections",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
-        },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
           "type": "object",
@@ -171,7 +314,7 @@
               "default": false
             },
             "certificates": {
-              "description": "TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.",
+              "description": "TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh. NOTE: System Certificate Authorities are automatically included.",
               "type": "array",
               "items": {
                 "type": "string",
@@ -182,7 +325,7 @@
           }
         },
         "customGitFetch": {
-          "description": "JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.",
+          "description": "JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.",
           "type": "array",
           "items": {
             "title": "CustomGitFetchMapping",
@@ -223,7 +366,11 @@
             "title": "SearchIndexRevisionsRule",
             "additionalProperties": false,
             "required": ["revisions"],
-            "anyOf": [{ "required": ["name"] }],
+            "anyOf": [
+              {
+                "required": ["name"]
+              }
+            ],
             "properties": {
               "name": {
                 "description": "Regular expression which matches against the name of a repository (e.g. \"^github\\.com/owner/name$\").",
@@ -254,7 +401,9 @@
           "type": "object",
           "additionalProperties": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "maxItems": 64
           },
           "examples": [
@@ -269,80 +418,29 @@
           "type": "boolean",
           "default": false
         },
-        "versionContexts": {
-          "description": "DEPRECATED: Use search contexts instead.\n\nJSON array of version context configuration",
-          "type": "array",
-          "items": {
-            "title": "VersionContext",
-            "description": "Configuration of the version context",
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["name", "revisions"],
-            "properties": {
-              "name": {
-                "description": "Name of the version context, it must be unique.",
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 50
-              },
-              "revisions": {
-                "description": "List of repositories of the version context",
-                "type": "array",
-                "items": {
-                  "title": "VersionContextRevision",
-                  "description": "Description of the chosen repository and revision",
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": ["repo", "rev"],
-                  "properties": {
-                    "repo": {
-                      "description": "Repository name",
-                      "type": "string"
-                    },
-                    "rev": {
-                      "description": "Branch, tag, or commit hash. \"HEAD\" or \"\" can be used for the default branch.",
-                      "type": "string"
-                    }
-                  }
-                }
-              },
-              "description": {
-                "description": "Description of the version context",
-                "type": "string"
-              }
-            }
-          },
-          "examples": [
-            {
-              "name": "Release foo",
-              "revisions": [
-                {
-                  "repo": "github.com/sourcegraph/sourcegraph",
-                  "rev": "3.15"
-                },
-                {
-                  "repo": "github.com/sourcegraph/lib1",
-                  "rev": "23edr233r"
-                },
-                {
-                  "repo": "github.com/sourcegraph/lib2",
-                  "rev": "2.4"
-                }
-              ]
-            }
-          ]
+        "enableGRPC": {
+          "description": "Enables gRPC for communication between internal services",
+          "type": "boolean",
+          "default": true,
+          "!go": {
+            "pointer": true
+          }
         },
         "enablePermissionsWebhooks": {
-          "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
+          "description": "DEPRECATED: No longer has any effect.",
           "type": "boolean",
           "default": false,
-          "!go": { "pointer": false }
+          "!go": {
+            "pointer": false
+          }
         },
-        "enablePostSignupFlow": {
-          "description": "Enables post sign-up user flow to add code hosts and sync code",
+        "enableStorm": {
+          "description": "Enables the Storm frontend architecture changes.",
           "type": "boolean",
           "default": false,
-          "!go": { "pointer": false }
+          "!go": {
+            "pointer": false
+          }
         },
         "ranking": {
           "description": "Experimental search result ranking options.",
@@ -358,22 +456,116 @@
               }
             },
             "maxReorderQueueSize": {
-              "description": "The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 24. Set this to small integers to limit latency increases from slow backends.",
+              "description": "DEPRECATED: This setting has no effect.",
               "default": 24,
               "type": "integer",
               "group": "Search",
-              "!go": { "pointer": true }
+              "!go": {
+                "pointer": true
+              }
+            },
+            "maxQueueMatchCount": {
+              "description": "DEPRECATED: This setting has no effect.",
+              "default": -1,
+              "type": "integer",
+              "group": "Search",
+              "!go": {
+                "pointer": true
+              }
+            },
+            "maxQueueSizeBytes": {
+              "description": "The maximum number of bytes that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs.",
+              "default": -1,
+              "type": "integer",
+              "group": "Search",
+              "!go": {
+                "pointer": true
+              }
+            },
+            "maxReorderDurationMS": {
+              "description": "DEPRECATED: This setting has no effect.",
+              "type": "integer",
+              "default": 0,
+              "group": "Search"
+            },
+            "documentRanksWeight": {
+              "description": "Controls the impact of document ranks on the final ranking. This is intended for internal testing purposes only, it's not recommended for users to change this.",
+              "type": "number",
+              "default": 4500,
+              "group": "Search",
+              "!go": {
+                "pointer": true
+              }
+            },
+            "flushWallTimeMS": {
+              "description": "Controls the amount of time that Zoekt shards collect and rank results. Larger values give a more stable ranking, but searches can take longer to return an initial result.",
+              "type": "integer",
+              "default": 500,
+              "group": "Search"
+            }
+          }
+        },
+        "search.sanitization": {
+          "description": "Allows site admins to specify a list of regular expressions representing matched content that should be omitted from search results. Also allows admins to specify the name of an organization within their Sourcegraph instance whose members are trusted and will not have their search results sanitized. Enable this feature by adding at least one valid regular expression to the value of the `sanitizePatterns` field on this object. Site admins will not have their searches sanitized.",
+          "type": "object",
+          "properties": {
+            "sanitizePatterns": {
+              "description": "An array of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. Values added to this array must be valid Go regular expressions. Site admins will not have their search results sanitized.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "regex"
+              }
+            },
+            "orgName": {
+              "description": "Optionally specify the name of an organization within this Sourcegraph instance containing users whose searches should not be sanitized. Admins: ensure that ALL members of this org are trusted users. If no org exists with the given name then there will be no effect. If no org name is specified then all non-admin users will have their searches sanitized if this feature is enabled.",
+              "type": "string"
             }
           }
         },
         "enableGithubInternalRepoVisibility": {
-          "description": "Enable support for visilibity of internal Github repositories",
+          "description": "Enable support for visibility of internal Github repositories",
           "type": "boolean",
           "default": false
         },
-        "enableGitServerCommandExecFilter": {
-          "description": "Enable filtering of all exec commands on gitserver based on a pre-defined allowlist",
+        "gitServerPinnedRepos": {
+          "description": "List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "examples": [
+            {
+              "github.com/foo/bar": "gitserverHostname",
+              "github.com/foo/bar2": "gitserverHostname2"
+            }
+          ]
+        },
+        "insightsAlternateLoadingStrategy": {
+          "description": "Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.",
           "type": "boolean",
+          "default": false
+        },
+        "insightsBackfillerV2": {
+          "description": "DEPRECATED: Setting any value to this flag has no effect.",
+          "type": "boolean",
+          "default": true,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "insightsDataRetention": {
+          "description": "Code insights data points beyond the sample size defined in the site configuration will be periodically archived",
+          "type": "boolean",
+          "default": true,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "batchChanges.enablePerforce": {
+          "description": "When enabled, batch changes will be executable on Perforce depots.",
+          "type": "boolean",
+          "group": "BatchChanges",
           "default": false
         }
       },
@@ -389,28 +581,22 @@
               "fetch": "customgitbinary someflag anotherflag"
             }
           ]
+        },
+        {
+          "tls.external": {
+            "certificates": ["-----BEGIN CERTIFICATE-----\n..."],
+            "insecureSkipVerify": true
+          }
         }
       ],
       "group": "Experimental"
     },
-    "campaigns.enabled": {
-      "description": "DEPRECATED: Use batchChanges.enabled instead. This setting is non-functional.",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Campaigns",
-      "default": true
-    },
-    "campaigns.restrictToAdmins": {
-      "description": "DEPRECATED: Use batchChanges.restrictToAdmins instead. This setting is non-functional.",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Campaigns",
-      "default": false
-    },
     "batchChanges.enabled": {
       "description": "Enables/disables the Batch Changes feature.",
       "type": "boolean",
-      "!go": { "pointer": true },
+      "!go": {
+        "pointer": true
+      },
       "group": "BatchChanges",
       "default": true
     },
@@ -423,14 +609,24 @@
     "batchChanges.restrictToAdmins": {
       "description": "When enabled, only site admins can create and apply batch changes.",
       "type": "boolean",
-      "!go": { "pointer": true },
+      "!go": {
+        "pointer": true
+      },
+      "group": "BatchChanges",
+      "default": false
+    },
+    "batchChanges.autoDeleteBranch": {
+      "description": "Automatically delete branches created for Batch Changes changesets when the changeset is merged or closed, for supported code hosts. Overrides any setting on the repository on the code host itself.",
+      "type": "boolean",
       "group": "BatchChanges",
       "default": false
     },
     "batchChanges.rolloutWindows": {
-      "description": "Specifies specific windows, which can have associated rate limits, to be used when publishing changesets. All days and times are handled in UTC.",
+      "description": "Specifies specific windows, which can have associated rate limits, to be used when reconciling published changesets (creating or updating). All days and times are handled in UTC.",
       "type": "array",
-      "!go": { "pointer": true },
+      "!go": {
+        "pointer": true
+      },
       "group": "BatchChanges",
       "items": {
         "title": "BatchChangeRolloutWindow",
@@ -441,7 +637,11 @@
           "rate": {
             "description": "The rate changesets will be published at.",
             "oneOf": [
-              { "type": "number", "minimum": 0, "maximum": 0 },
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 0
+              },
               {
                 "type": "string",
                 "pattern": "^(unlimited|[0-9]+\\/(sec|secs|second|seconds|min|mins|minute|minutes|hr|hrs|hour|hours))$"
@@ -470,7 +670,15 @@
         "dependencies": {
           "start": ["end"]
         }
-      }
+      },
+      "examples": [
+        {
+          "rate": "10/hour",
+          "days": ["saturday", "sunday"],
+          "start": "06:00",
+          "end": "20:00"
+        }
+      ]
     },
     "batchChanges.disableWebhooksWarning": {
       "description": "Hides Batch Changes warnings about webhooks not being configured.",
@@ -478,26 +686,89 @@
       "group": "BatchChanges",
       "default": false
     },
+    "batchChanges.changesetsRetention": {
+      "description": "How long changesets will be retained after they have been detached from a batch change.",
+      "type": "string",
+      "group": "BatchChanges",
+      "examples": ["336h", "48h", "5h30m40s"]
+    },
     "codeIntelAutoIndexing.enabled": {
       "description": "Enables/disables the code intel auto-indexing feature. Currently experimental.",
       "type": "boolean",
-      "!go": { "pointer": true },
+      "!go": {
+        "pointer": true
+      },
       "group": "Code intelligence",
       "default": false
+    },
+    "codeIntelAutoIndexing.indexerMap": {
+      "description": "Overrides the default Docker images used by auto-indexing.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "group": "Code intelligence",
+      "default": null,
+      "examples": [
+        {
+          "go": "sourcegraph/lsif-go:latest",
+          "java": "sourcegraph/lsif-java:latest"
+        }
+      ]
     },
     "codeIntelAutoIndexing.policyRepositoryMatchLimit": {
       "description": "The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.",
       "type": "integer",
-      "!go": { "pointer": true },
+      "!go": {
+        "pointer": true
+      },
       "group": "Code intelligence",
       "default": -1
     },
     "codeIntelAutoIndexing.allowGlobalPolicies": {
       "description": "Whether auto-indexing policies may apply to all repositories on the Sourcegraph instance. Default is false. The policyRepositoryMatchLimit setting still applies to such auto-indexing policies.",
       "type": "boolean",
-      "!go": { "pointer": true },
+      "!go": {
+        "pointer": true
+      },
       "group": "Code intelligence",
       "default": false
+    },
+    "codeIntelRanking.documentReferenceCountsEnabled": {
+      "description": "Enables/disables the document reference counts feature. Currently experimental.",
+      "type": "boolean",
+      "!go": {
+        "pointer": true
+      },
+      "group": "Code intelligence",
+      "default": false
+    },
+    "codeIntelRanking.documentReferenceCountsCronExpression": {
+      "description": "A cron expression indicating when to run the document reference counts graph reduction job.",
+      "type": "string",
+      "!go": {
+        "pointer": true
+      },
+      "group": "Code intelligence",
+      "default": "@weekly"
+    },
+    "codeIntelRanking.documentReferenceCountsGraphKey": {
+      "description": "An arbitrary identifier used to group calculated rankings from SCIP data (including the SCIP export).",
+      "type": "string",
+      "group": "Code intelligence",
+      "examples": ["dev"]
+    },
+    "codeIntelRanking.documentReferenceCountsDerivativeGraphKeyPrefix": {
+      "description": "An arbitrary identifier used to group calculated rankings from SCIP data (excluding the SCIP export).",
+      "type": "string",
+      "group": "Code intelligence",
+      "examples": [""]
+    },
+    "codeIntelRanking.staleResultsAge": {
+      "description": "The interval at which to run the reduce job that computes document reference counts. Default is 24hrs.",
+      "type": "integer",
+      "default": 24,
+      "group": "Code intelligence"
     },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
@@ -513,7 +784,13 @@
       "group": "Security"
     },
     "disableNonCriticalTelemetry": {
-      "description": "Disable aggregated event counts from being sent to Sourcegraph.com via pings.",
+      "description": "DEPRECATED. Has no effect.",
+      "type": "boolean",
+      "default": false,
+      "group": "Misc."
+    },
+    "disableFeedbackSurvey": {
+      "description": "Disable the feedback survey",
       "type": "boolean",
       "default": false,
       "group": "Misc."
@@ -551,12 +828,26 @@
           }
         }
       },
-      "group": "External services"
+      "group": "External services",
+      "examples": [
+        [
+          {
+            "pattern": "^github.com/sourcegraph/.*",
+            "interval": 5
+          },
+          {
+            "pattern": "^bitbucket.org/.*",
+            "interval": 10
+          }
+        ]
+      ]
     },
     "disablePublicRepoRedirects": {
-      "description": "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
+      "description": "DEPRECATED! Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
       "type": "boolean",
-      "group": "External services"
+      "group": "External services",
+      "examples": [true],
+      "deprecationMessage": "Deprecated because it's no longer supported and hasn't been working for a while."
     },
     "git.cloneURLToRepositoryName": {
       "description": "JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.",
@@ -578,19 +869,15 @@
           }
         }
       },
-      "group": "External services"
-    },
-    "githubClientID": {
-      "description": "Client ID for GitHub. (DEPRECATED)",
-      "type": "string",
-      "group": "Internal",
-      "hide": true
-    },
-    "githubClientSecret": {
-      "description": "Client secret for GitHub. (DEPRECATED)",
-      "type": "string",
-      "group": "Internal",
-      "hide": true
+      "group": "External services",
+      "examples": [
+        [
+          {
+            "from": "^../(?P<name>\\w+)$",
+            "to": "github.com/user/{name}"
+          }
+        ]
+      ]
     },
     "gitLongCommandTimeout": {
       "description": "Maximum number of seconds that a long Git command (e.g. clone or remote update) is allowed to execute. The default is 3600 seconds, or 1 hour.",
@@ -607,9 +894,111 @@
     "gitMaxCodehostRequestsPerSecond": {
       "description": "Maximum number of remote code host git operations (e.g. clone or ls-remote) to be run per second per gitserver. Default is -1, which is unlimited.",
       "type": "integer",
-      "!go": { "pointer": true },
+      "!go": {
+        "pointer": true
+      },
       "default": -1,
       "group": "External services"
+    },
+    "syntaxHighlighting": {
+      "title": "SyntaxHighlighting",
+      "description": "Syntax highlighting configuration",
+      "type": "object",
+      "required": ["engine", "languages"],
+      "properties": {
+        "engine": {
+          "title": "SyntaxHighlightingEngine",
+          "type": "object",
+          "required": ["default"],
+          "properties": {
+            "default": {
+              "description": "The default syntax highlighting engine to use",
+              "type": "string",
+              "enum": ["tree-sitter", "syntect", "scip-syntax"]
+            },
+            "overrides": {
+              "description": "Manually specify overrides for syntax highlighting engine per language",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "enum": ["tree-sitter", "syntect", "scip-syntax"]
+              }
+            }
+          }
+        },
+        "languages": {
+          "title": "SyntaxHighlightingLanguage",
+          "type": "object",
+          "required": ["extensions", "patterns"],
+          "properties": {
+            "extensions": {
+              "description": "Map of extension to language",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "patterns": {
+              "description": "Map of patterns to language. Will return after first match, if any.",
+              "type": "array",
+              "items": {
+                "title": "SyntaxHighlightingLanguagePatterns",
+                "type": "object",
+                "required": ["pattern", "language"],
+                "properties": {
+                  "pattern": {
+                    "description": "Regular expression which matches the filepath",
+                    "type": "string",
+                    "format": "regex"
+                  },
+                  "language": {
+                    "description": "Name of the language if pattern matches",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "symbols": {
+          "title": "SymbolConfiguration",
+          "description": "Configure symbol generation",
+          "type": "object",
+          "required": ["engine"],
+          "properties": {
+            "engine": {
+              "description": "Manually specify overrides for symbol generation engine per language",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "enum": ["universal-ctags", "scip-ctags", "off"]
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "engine": {
+            "default": "tree-sitter",
+            "overrides": {
+              "go": "syntect"
+            }
+          },
+          "languages": {
+            "extensions": {
+              "go": "go",
+              "ts": "typescript"
+            },
+            "patterns": [
+              {
+                "match": "cobol_.*\\.txt",
+                "language": "cobol"
+              }
+            ]
+          }
+        }
+      ]
     },
     "repoListUpdateInterval": {
       "description": "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
@@ -621,6 +1010,43 @@
       "description": "The number of concurrent external service syncers that can run.",
       "type": "integer",
       "default": 3,
+      "group": "External services"
+    },
+    "repoPurgeWorker": {
+      "description": "Configuration for repository purge worker.",
+      "type": "object",
+      "group": "External services",
+      "additionalProperties": false,
+      "default": {
+        "intervalMinutes": 15,
+        "deletedTTLMinutes": 60
+      },
+      "properties": {
+        "intervalMinutes": {
+          "type": "integer",
+          "description": "Interval in minutes at which to run purge jobs. Set to 0 to disable.",
+          "default": "15",
+          "minimum": 0
+        },
+        "deletedTTLMinutes": {
+          "type": "integer",
+          "description": "Repository TTL in minutes after deletion before it becomes eligible to be purged. A migration or admin could accidentally remove all or a significant number of repositories - recloning all of them is slow, so a TTL acts as a grace period so that admins can recover from accidental deletions",
+          "default": "60",
+          "minimum": 0
+        }
+      }
+    },
+    "scim.authToken": {
+      "type": "string",
+      "description": "The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.",
+      "default": "",
+      "group": "External services"
+    },
+    "scim.identityProvider": {
+      "type": "string",
+      "enum": ["STANDARD", "Azure AD"],
+      "description": "Identity provider used for SCIM support.  \"STANDARD\" should be used unless a more specific value is available",
+      "default": "STANDARD",
       "group": "External services"
     },
     "maxReposToSearch": {
@@ -636,7 +1062,7 @@
       "additionalProperties": false,
       "properties": {
         "maxTimeoutSeconds": {
-          "description": "The maximum value for \"timeout:\" that search will respect. \"timeout:\" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Defaults to 1 minute.",
+          "description": "The maximum value for \"timeout:\" that search will respect. \"timeout:\" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Note: Experimental search jobs do not respect this limit. Defaults to 1 minute.",
           "type": "integer",
           "default": "60",
           "minimum": 1
@@ -658,7 +1084,15 @@
           "default": 10000,
           "minimum": 1
         }
-      }
+      },
+      "examples": [
+        {
+          "maxTimeoutSeconds": 60,
+          "maxRepos": 200,
+          "commitDiffMaxRepos": 50,
+          "commitDiffWithTimeFilterMaxRepos": 5000
+        }
+      ]
     },
     "parentSourcegraph": {
       "description": "URL to fetch unreachable repository details from. Defaults to \"https://sourcegraph.com\"",
@@ -670,7 +1104,12 @@
           "default": "https://sourcegraph.com"
         }
       },
-      "group": "External services"
+      "group": "External services",
+      "examples": [
+        {
+          "url": "https://sourcegraph.example.com"
+        }
+      ]
     },
     "auth.accessTokens": {
       "description": "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
@@ -691,7 +1130,9 @@
         {
           "allow": "site-admin-create"
         },
-        { "allow": "none" }
+        {
+          "allow": "none"
+        }
       ],
       "group": "Security"
     },
@@ -705,19 +1146,13 @@
       "type": "integer",
       "default": 5
     },
-    "externalService.userMode": {
-      "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
-      "type": "string",
-      "enum": ["public", "disabled", "all"],
-      "default": "disabled"
-    },
     "permissions.userMapping": {
-      "description": "Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).",
+      "description": "Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "enabled": {
-          "description": "Whether permissions user mapping is enabled. There must be no `authorization` field in any external service configuration before enabling this.",
+          "description": "Whether permissions user mapping is enabled.",
           "type": "boolean",
           "default": false
         },
@@ -732,8 +1167,66 @@
         "enabled": true,
         "bindID": "email"
       },
-      "examples": [{ "bindID": "email" }, { "bindID": "username" }],
+      "examples": [
+        {
+          "bindID": "email"
+        },
+        {
+          "bindID": "username"
+        }
+      ],
       "group": "Security"
+    },
+    "permissions.syncScheduleInterval": {
+      "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
+      "type": "integer",
+      "default": 15
+    },
+    "permissions.syncOldestUsers": {
+      "description": "Number of user permissions to schedule for syncing in single scheduler iteration.",
+      "type": "integer",
+      "default": 10,
+      "!go": {
+        "pointer": true
+      }
+    },
+    "permissions.syncOldestRepos": {
+      "description": "Number of repo permissions to schedule for syncing in single scheduler iteration.",
+      "type": "integer",
+      "default": 10,
+      "!go": {
+        "pointer": true
+      }
+    },
+    "permissions.syncUsersBackoffSeconds": {
+      "description": "Don't sync a user's permissions if they have synced within the last n seconds.",
+      "type": "integer",
+      "default": 60
+    },
+    "permissions.syncReposBackoffSeconds": {
+      "description": "Don't sync a repo's permissions if it has synced within the last n seconds.",
+      "type": "integer",
+      "default": 60
+    },
+    "permissions.syncUsersMaxConcurrency": {
+      "description": "The maximum number of user-centric permissions syncing jobs that can be spawned concurrently. Service restart is required to take effect for changes.",
+      "type": "integer",
+      "default": 1
+    },
+    "permissions.syncJobsHistorySize": {
+      "description": "The number of last repo/user permission jobs to keep for history.",
+      "type": "integer",
+      "default": 5,
+      "minimum": 5,
+      "!go": {
+        "pointer": true
+      }
+    },
+    "permissions.syncJobCleanupInterval": {
+      "description": "Time interval (in seconds) of how often cleanup worker should remove old jobs from permissions sync jobs table.",
+      "type": "integer",
+      "default": 60,
+      "minimum": 1
     },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
@@ -779,7 +1272,7 @@
     },
     "email.smtp": {
       "title": "SMTPServerConfig",
-      "description": "The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).",
+      "description": "The SMTP server used to send transactional emails.\nPlease see https://docs.sourcegraph.com/admin/config/email",
       "type": "object",
       "additionalProperties": false,
       "required": ["host", "port", "authentication"],
@@ -812,6 +1305,33 @@
         "noVerifyTLS": {
           "description": "Disable TLS verification",
           "type": "boolean"
+        },
+        "additionalHeaders": {
+          "description": "Additional headers to include on SMTP messages that cannot be configured with other 'email.smtp' fields.",
+          "type": "array",
+          "items": {
+            "title": "Header",
+            "type": "object",
+            "required": ["key", "value"],
+            "additionalProperties": false,
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              },
+              "sensitive": {
+                "type": "boolean"
+              }
+            },
+            "examples": [
+              {
+                "key": "",
+                "value": ""
+              }
+            ]
+          }
         }
       },
       "default": null,
@@ -827,52 +1347,127 @@
       "group": "Email"
     },
     "email.address": {
-      "description": "The \"from\" address for emails sent by this server.",
+      "description": "The \"from\" address for emails sent by this server.\nPlease see https://docs.sourcegraph.com/admin/config/email",
       "type": "string",
       "format": "email",
       "group": "Email",
-      "default": "noreply@sourcegraph.com"
+      "examples": ["noreply@sourcegraph.example.com"]
     },
-    "executors.accessToken": {
-      "description": "The shared secret between Sourcegraph and executors.",
+    "email.senderName": {
+      "description": "The name to use in the \"from\" address for emails sent by this server.",
       "type": "string",
-      "minLength": 20
+      "group": "Email",
+      "default": "Sourcegraph",
+      "examples": ["Our Company Sourcegraph", "Example Inc Sourcegraph"]
     },
-    "extensions": {
-      "description": "Configures Sourcegraph extensions.",
+    "email.templates": {
+      "description": "Configurable templates for some email types sent by Sourcegraph.",
       "type": "object",
       "properties": {
-        "disabled": {
-          "description": "Disable all usage of extensions.",
-          "type": "boolean",
-          "default": false,
-          "!go": { "pointer": true }
+        "resetPassword": {
+          "description": "Email sent on password resets. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}",
+          "$ref": "#/definitions/EmailTemplate"
         },
-        "remoteRegistry": {
-          "description": "The remote extension registry URL, or `false` to not use a remote extension registry. If not set, the default remote extension registry URL is used.",
-          "oneOf": [
-            { "type": "string", "format": "uri" },
-            { "type": "boolean", "const": false }
-          ]
-        },
-        "allowRemoteExtensions": {
-          "description": "Allow only the explicitly listed remote extensions (by extension ID, such as \"alice/myextension\") from the remote registry. If not set, all remote extensions may be used from the remote registry. To completely disable the remote registry, set `remoteRegistry` to `false`.\n\nOnly available in Sourcegraph Enterprise.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+        "setPassword": {
+          "description": "Email sent on account creation, if a password reset URL is created. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}",
+          "$ref": "#/definitions/EmailTemplate"
         }
       },
-      "default": {
-        "remoteRegistry": "https://sourcegraph.com/.api/registry"
-      },
+      "group": "Email",
       "examples": [
         {
-          "remoteRegistry": "https://sourcegraph.com/.api/registry",
-          "allowRemoteExtensions": ["sourcegraph/java"]
+          "resetPassword": {
+            "subject": "Reset your password on {{.Host}}",
+            "body": "To reset your password on {{.Host}}, please click the link below:\n\n{{.URL}}\n\nIf you did not request a password reset, please ignore this email. Your password will not change until you click the link and set a new password."
+          },
+          "setPassword": {
+            "subject": "Set your password on {{.Host}}",
+            "body": "To set your password on {{.Host}} and complete your account registration, please click the link below:\n\n{{.URL}}\n\nYour username is: {{.Username}}\n\nIf you did not sign up for an account on {{.Host}}, please ignore this email."
+          }
         }
-      ],
-      "group": "Extensions"
+      ]
+    },
+    "executors.frontendURL": {
+      "description": "The URL where Sourcegraph executors can reach the Sourcegraph instance. If not set, defaults to externalURL. URLs with a path (other than `/`) are not allowed. For Docker executors, the special hostname `host.docker.internal` can be used to refer to the Docker container's host.",
+      "type": "string",
+      "examples": ["https://sourcegraph.example.com"]
+    },
+    "executors.srcCLIImage": {
+      "description": "The image to use for src-cli in executors. Use this value to pull from a custom image registry.",
+      "type": "string",
+      "default": "sourcegraph/src-cli"
+    },
+    "executors.srcCLIImageTag": {
+      "description": "The tag to use for the src-cli image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
+      "type": "string",
+      "examples": ["4.1.0"]
+    },
+    "executors.lsifGoImage": {
+      "description": "The tag to use for the lsif-go image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
+      "type": "string",
+      "examples": ["sourcegraph/lsif-go"]
+    },
+    "executors.batcheshelperImage": {
+      "description": "The image to use for batch changes in executors. Use this value to pull from a custom image registry.",
+      "type": "string",
+      "default": "sourcegraph/batcheshelper"
+    },
+    "executors.batcheshelperImageTag": {
+      "description": "The tag to use for the batcheshelper image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
+      "type": "string",
+      "examples": ["4.1.0"]
+    },
+    "executors.accessToken": {
+      "description": "The shared secret between Sourcegraph and executors. The value must contain at least 20 characters.",
+      "type": "string",
+      "pattern": "^(.{20,}|REDACTED)$",
+      "examples": ["my-super-secret-access-token"]
+    },
+    "executors.multiqueue": {
+      "description": "The configuration for multiqueue executors.",
+      "type": "object",
+      "properties": {
+        "dequeueCacheConfig": {
+          "description": "The configuration for the dequeue cache of multiqueue executors. Each queue defines a limit of dequeues in the expiration window as well as a weight, indicating how frequently a queue is picked at random. For example, a weight of 4 for batches and 1 for codeintel means out of 5 dequeues, statistically batches will be picked 4 times and codeintel 1 time (unless one of those queues is at its limit).",
+          "type": "object",
+          "properties": {
+            "batches": {
+              "description": "The configuration for the batches queue.",
+              "type": "object",
+              "required": ["limit", "weight"],
+              "properties": {
+                "limit": {
+                  "description": "The maximum number of dequeues allowed within the expiration window.",
+                  "type": "integer",
+                  "default": 50
+                },
+                "weight": {
+                  "description": "The relative weight of this queue. Higher weights mean a higher chance of being picked at random.",
+                  "type": "integer",
+                  "default": 4
+                }
+              }
+            },
+            "codeintel": {
+              "description": "The configuration for the codeintel queue.",
+              "type": "object",
+              "required": ["limit", "weight"],
+              "properties": {
+                "limit": {
+                  "description": "The maximum number of dequeues allowed within the expiration window.",
+                  "type": "integer",
+                  "default": 250
+                },
+                "weight": {
+                  "description": "The relative weight of this queue. Higher weights mean a higher chance of being picked at random.",
+                  "type": "integer",
+                  "default": 1
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "auth.userOrgMap": {
       "description": "Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{\"*\": [\"org1\", \"org2\"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `\"*\"`.",
@@ -883,7 +1478,11 @@
           "type": "string"
         }
       },
-      "examples": [{ "*": ["myorg1"] }],
+      "examples": [
+        {
+          "*": ["myorg1"]
+        }
+      ],
       "hide": true
     },
     "log": {
@@ -911,38 +1510,155 @@
               "type": "string",
               "pattern": "^https?://"
             }
-          }
+          },
+          "examples": [
+            {
+              "sentry": {
+                "dsn": "https://public_key@sentry.example.com/project_id",
+                "backendDSN": "https://public_key@sentry.example.com/backend_project_id",
+                "codeIntelDSN": "https://public_key@sentry.example.com/codeintel_project_id"
+              }
+            }
+          ]
+        },
+        "auditLog": {
+          "description": "EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "internalTraffic": {
+              "description": "Capture security events performed by the internal traffic (adds significant noise).",
+              "type": "boolean",
+              "default": false
+            },
+            "graphQL": {
+              "description": "Capture GraphQL requests and responses as part of the audit log.",
+              "type": "boolean",
+              "default": false
+            },
+            "gitserverAccess": {
+              "description": "Capture gitserver access logs as part of the audit log.",
+              "type": "boolean",
+              "default": false
+            },
+            "severityLevel": {
+              "deprecationMessage": "No effect, audit logs are always set to SRC_LOG_LEVEL",
+              "description": "DEPRECATED: No effect, audit logs are always set to SRC_LOG_LEVEL",
+              "type": "string",
+              "enum": ["DEBUG", "INFO", "WARN", "ERROR"]
+            }
+          },
+          "required": ["internalTraffic", "graphQL", "gitserverAccess"],
+          "examples": [
+            {
+              "internalTraffic": false,
+              "graphQL": false,
+              "gitserverAccess": false
+            }
+          ]
+        },
+        "securityEventLog": {
+          "description": "EXPERIMENTAL: Configuration for security event logging",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "location": {
+              "description": "Where to output the security event log [none, auditlog, database, all] where auditlog is the default logging to stdout with the specified audit log format",
+              "type": "string",
+              "enum": ["none", "auditlog", "database", "all"],
+              "default": "auditlog"
+            }
+          },
+          "examples": [
+            {
+              "location": "auditlog"
+            }
+          ]
         }
-      },
-      "examples": [{ "sentry": { "dsn": "https://mykey@sentry.io/myproject" } }],
-      "group": "Misc."
+      }
     },
     "externalURL": {
       "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called `appURL`. Only root URLs are allowed.",
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
-    "useJaeger": {
-      "description": "DEPRECATED. Use `\"observability.tracing\": { \"sampling\": \"all\" }`, instead. Enables Jaeger tracing.",
-      "type": "boolean",
-      "group": "Misc."
+    "observability.client": {
+      "description": "EXPERIMENTAL: Configuration for client observability",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "openTelemetry": {
+          "description": "Configuration for the client OpenTelemetry exporter",
+          "type": "object",
+          "properties": {
+            "endpoint": {
+              "description": "OpenTelemetry tracing collector endpoint. By default, Sourcegraph's \"/-/debug/otlp\" endpoint forwards data to the configured collector backend.",
+              "type": "string",
+              "examples": ["/-/debug/otlp", "https://COLLECTOR_ENDPOINT"],
+              "default": "/-/debug/otlp"
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "openTelemetry": {
+            "endpoint": "/-/debug/otlp"
+          }
+        },
+        {
+          "openTelemetry": {
+            "endpoint": "https://opentelemetry.example.com"
+          }
+        }
+      ]
     },
     "observability.tracing": {
-      "description": "Controls the settings for distributed tracing.",
+      "description": "Configures distributed tracing within Sourcegraph. To learn more, refer to https://docs.sourcegraph.com/admin/observability/tracing",
       "type": "object",
       "properties": {
         "sampling": {
-          "description": "Determines the requests for which distributed traces are recorded. \"none\" (default) turns off tracing entirely. \"selective\" sends traces whenever `?trace=1` is present in the URL. \"all\" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. The Jaeger instance must be running for traces to be collected (as described in the Sourcegraph installation instructions). Additional downsampling can be configured in Jaeger, itself (https://www.jaegertracing.io/docs/1.17/sampling)",
+          "description": "Determines the conditions under which distributed traces are recorded. \"none\" turns off tracing entirely. \"selective\" (default) sends traces whenever `?trace=1` is present in the URL (though background jobs may still emit traces). \"all\" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. To learn more about additional sampling and traace export configuration with the default tracing type \"opentelemetry\", refer to https://docs.sourcegraph.com/admin/observability/opentelemetry#tracing ",
           "type": "string",
           "enum": ["selective", "all", "none"],
           "default": "selective"
         },
+        "type": {
+          "description": "Determines what tracing provider to enable. For \"opentelemetry\", the required backend is an OpenTelemetry collector instance (deployed by default with Sourcegraph). For \"jaeger\", a Jaeger instance is required to be configured via Jaeger client environment variables: https://github.com/jaegertracing/jaeger-client-go#environment-variables",
+          "type": "string",
+          "enum": ["opentelemetry", "jaeger"],
+          "default": "opentelemetry"
+        },
         "debug": {
-          "description": "Turns on debug logging of opentracing client requests. This can be useful for debugging connectivity issues between the tracing client and the Jaeger agent, the performance overhead of tracing, and other issues related to the use of distributed tracing.",
+          "description": "Turns on debug logging of tracing client requests. This can be useful for debugging connectivity issues between the tracing client and tracing backend, the performance overhead of tracing, and other issues related to the use of distributed tracing. May have performance implications in production.",
           "type": "boolean",
           "default": false
+        },
+        "urlTemplate": {
+          "description": "Template for linking to trace URLs - '{{ .TraceID }}' is replaced with the trace ID, and {{ .ExternalURL }} is replaced with the value of 'externalURL'. If none is set, no links are generated.",
+          "type": "string",
+          "examples": [
+            "https://ui.honeycomb.io/$ORG/environments/$DATASET/trace?trace_id={{ .TraceID }}",
+            "https://console.cloud.google.com/traces/list?tid={{ .TraceID }}&project=$PROJECT",
+            "https://$ORGANIZATION.grafana.net/explore?orgId=1&left=[\"now-1h\",\"now\",\"$DATASOURCE\",{\"query\":\"{{ .TraceID }}\",\"queryType\":\"traceId\"}]",
+            "{{ .ExternalURL }}/-/debug/jaeger/trace/{{ .TraceID }}"
+          ]
         }
-      }
+      },
+      "examples": [
+        {
+          "sampling": "selective",
+          "type": "opentelemetry",
+          "debug": false,
+          "urlTemplate": "https://ui.honeycomb.io/$ORG/environments/$DATASET/trace?trace_id={{ .TraceID }}"
+        },
+        {
+          "sampling": "all",
+          "type": "jaeger",
+          "debug": true,
+          "urlTemplate": "{{ .ExternalURL }}/-/debug/jaeger/trace/{{ .TraceID }}"
+        }
+      ]
     },
     "observability.alerts": {
       "description": "Configure notifications for Sourcegraph's built-in alerts.",
@@ -965,11 +1681,21 @@
               }
             },
             "oneOf": [
-              { "$ref": "#/definitions/NotifierSlack" },
-              { "$ref": "#/definitions/NotifierPagerduty" },
-              { "$ref": "#/definitions/NotifierWebhook" },
-              { "$ref": "#/definitions/NotifierEmail" },
-              { "$ref": "#/definitions/NotifierOpsGenie" }
+              {
+                "$ref": "#/definitions/NotifierSlack"
+              },
+              {
+                "$ref": "#/definitions/NotifierPagerduty"
+              },
+              {
+                "$ref": "#/definitions/NotifierWebhook"
+              },
+              {
+                "$ref": "#/definitions/NotifierEmail"
+              },
+              {
+                "$ref": "#/definitions/NotifierOpsGenie"
+              }
             ],
             "!go": {
               "taggedUnionType": true
@@ -994,45 +1720,70 @@
             "type": ""
           }
         }
-      }
+      },
+      "examples": [
+        {
+          "level": "critical",
+          "notifier": {
+            "type": "slack",
+            "url": "https://hooks.slack.com/services/...",
+            "channel": "#alerts"
+          }
+        },
+        {
+          "level": "warning",
+          "notifier": {
+            "type": "email",
+            "addresses": ["alerts@example.com"]
+          }
+        }
+      ]
     },
     "observability.silenceAlerts": {
       "description": "Silence individual Sourcegraph alerts by identifier.",
       "type": "array",
       "items": {
         "type": "string"
-      }
+      },
+      "examples": [["warning_gitserver_disk_space_remaining"], ["critical_frontend_down", "warning_high_load"]]
     },
     "observability.logSlowSearches": {
       "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["10000"]]
+      "examples": [10000]
     },
     "observability.logSlowGraphQLRequests": {
       "description": "(debug) logs all GraphQL requests slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["10000"]]
+      "examples": [10000]
     },
-    "insights.historical.frames": {
-      "description": "(debug) number of historical insights timeframes to populate",
+    "observability.captureSlowGraphQLRequestsLimit": {
+      "description": "(debug) Set a limit to the amount of captured slow GraphQL requests being stored for visualization. For defining the threshold for a slow GraphQL request, see observability.logSlowGraphQLRequests.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["6"]]
+      "examples": [2000]
     },
-    "insights.historical.frameLength": {
-      "description": "(debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.",
-      "type": "string",
-      "group": "Debug",
-      "examples": ["30d"]
+    "insights.backfill.interruptAfter": {
+      "description": "Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 60
     },
-    "insights.historical.speedFactor": {
-      "description": "(debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.",
-      "!go": { "pointer": true },
-      "type": "number",
-      "group": "Debug",
-      "examples": ["1.0"]
+    "insights.backfill.repositoryGroupSize": {
+      "description": "Set the number of repositories to batch in a group during backfilling.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 10
+    },
+    "insights.backfill.repositoryConcurrency": {
+      "description": "Number of repositories within the batch to backfill concurrently.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 3,
+      "maximum": 10,
+      "minimum": 1
     },
     "insights.query.worker.concurrency": {
       "description": "Number of concurrent executions of a code insight query on a worker node",
@@ -1045,42 +1796,100 @@
       "description": "Maximum number of Code Insights queries initiated per second on a worker node.",
       "type": "number",
       "group": "CodeInsights",
-      "default": 2,
+      "default": 20,
       "examples": [10.0, 0.5],
-      "!go": { "pointer": true }
+      "!go": {
+        "pointer": true
+      }
+    },
+    "insights.query.worker.rateLimitBurst": {
+      "description": "The allowed burst rate for the Code Insights queries per second rate limiter.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 20,
+      "examples": [10, 20]
     },
     "insights.historical.worker.rateLimit": {
       "description": "Maximum number of historical Code Insights data frames that may be analyzed per second.",
       "type": "number",
       "group": "CodeInsights",
-      "default": 10,
+      "default": 20,
       "examples": [50.0, 0.5],
-      "!go": { "pointer": true }
+      "!go": {
+        "pointer": true
+      }
     },
-    "insights.commit.indexer.interval": {
-      "description": "The interval (in minutes) at which the insights commit indexer will check for new commits.",
+    "insights.historical.worker.rateLimitBurst": {
+      "description": "The allowed burst rate for the Code Insights historical worker rate limiter.",
       "type": "integer",
       "group": "CodeInsights",
-      "default": 60,
-      "examples": [120]
+      "default": 20,
+      "examples": [10, 20]
+    },
+    "insights.aggregations.bufferSize": {
+      "description": "The size of the buffer for aggregations ran in-memory. A higher limit might strain memory for the frontend",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 500
+    },
+    "insights.aggregations.proactiveResultLimit": {
+      "description": "The maximum number of results a proactive search aggregation can accept before stopping",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 50000
+    },
+    "insights.maximumSampleSize": {
+      "description": "The maximum number of data points that will be available to view for a series on a code insight. Points beyond that will be stored in a separate table and available for data export.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 30,
+      "maximum": 90,
+      "examples": [12, 24, 50]
+    },
+    "own.bestEffortTeamMatching": {
+      "description": "The Own service will attempt to match a Team by the last part of its handle if it contains a slash and no match is found for its full handle.",
+      "type": "boolean",
+      "group": "Own",
+      "!go": {
+        "pointer": true
+      },
+      "default": true
+    },
+    "own.background.repoIndexConcurrencyLimit": {
+      "description": "The max number of concurrent Own jobs that will run per worker node.",
+      "type": "integer",
+      "group": "Own",
+      "default": 5
+    },
+    "own.background.repoIndexRateLimit": {
+      "description": "The maximum per second rate of repositories for Own jobs per worker node.",
+      "type": "integer",
+      "group": "Own",
+      "default": 20
+    },
+    "own.background.repoIndexRateBurstLimit": {
+      "description": "The maximum per second burst of repositories for Own jobs per worker node. Generally this value should not be less than the max concurrency.",
+      "type": "integer",
+      "group": "Own",
+      "default": 5
     },
     "htmlHeadTop": {
-      "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
+      "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.",
       "type": "string",
       "group": "Misc."
     },
     "htmlHeadBottom": {
-      "description": "HTML to inject at the bottom of the `<head>` element on each page, for analytics scripts",
+      "description": "HTML to inject at the bottom of the `<head>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.",
       "type": "string",
       "group": "Misc."
     },
     "htmlBodyTop": {
-      "description": "HTML to inject at the top of the `<body>` element on each page, for analytics scripts",
+      "description": "HTML to inject at the top of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.",
       "type": "string",
       "group": "Misc."
     },
     "htmlBodyBottom": {
-      "description": "HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts",
+      "description": "HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.",
       "type": "string",
       "group": "Misc."
     },
@@ -1089,43 +1898,260 @@
       "type": "string",
       "group": "Sourcegraph Enterprise license"
     },
+    "gitHubApp": {
+      "description": "DEPRECATED: The config options for Sourcegraph GitHub App.",
+      "type": "object",
+      "properties": {
+        "slug": {
+          "description": "The slug of the GitHub App for Sourcegraph.",
+          "type": "string"
+        },
+        "appID": {
+          "description": "The app ID of the GitHub App for Sourcegraph.",
+          "type": "string"
+        },
+        "privateKey": {
+          "description": "The base64-encoded private key of the GitHub App for Sourcegraph.",
+          "type": "string"
+        },
+        "clientID": {
+          "type": "string",
+          "description": "The Client ID of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps ."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "The Client Secret of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps ."
+        }
+      },
+      "examples": [
+        {
+          "slug": "sourcegraph",
+          "appID": "1234",
+          "privateKey": "base64-encoded-private-key",
+          "clientID": "client-id",
+          "clientSecret": "client-secret"
+        }
+      ]
+    },
+    "gitRecorder": {
+      "description": "Record git operations that are executed on configured repositories.",
+      "type": "object",
+      "properties": {
+        "size": {
+          "description": "Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.",
+          "type": "integer",
+          "default": 10000,
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "repos": {
+          "description": "List of repositories whose git operations should be recorded. To record commands on all repositories, simply pass in an asterisk as the only item in the array.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ignoredGitCommands": {
+          "description": "List of git commands that should be ignored and not recorded.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["show", "rev-parse", "log", "diff", "ls-tree"]
+        }
+      },
+      "examples": [
+        {
+          "size": 1000,
+          "repos": ["github.com/sourcegraph/sourcegraph", "github.com/gorilla/mux"],
+          "ignoredGitCommands": ["show", "rev-parse", "log", "diff", "ls-tree"]
+        }
+      ]
+    },
+    "batchChanges.rejectUnverifiedCommit": {
+      "description": "Reject unverified commits when creating a Batch Change",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      }
+    },
+    "gitserver.diskUsageWarningThreshold": {
+      "description": "Disk usage threshold at which to display warning notification. Value is a percentage.",
+      "type": "integer",
+      "default": 90,
+      "!go": {
+        "pointer": true
+      }
+    },
     "dotcom": {
       "description": "Configuration options for Sourcegraph.com only.",
       "type": "object",
       "properties": {
+        "minimumExternalAccountAge": {
+          "description": "The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.",
+          "type": "integer",
+          "default": 0
+        },
+        "app.notifications": {
+          "description": "Notifications to display in the Sourcegraph app.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["key", "message"],
+            "properties": {
+              "key": {
+                "description": "e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.",
+                "type": "string",
+                "minLength": 1
+              },
+              "message": {
+                "description": "The Markdown message to display",
+                "type": "string",
+                "minLength": 1
+              },
+              "version.min": {
+                "description": "If present, this message will only be shown to Cody App instances in this inclusive version range.",
+                "type": "string",
+                "minLength": 1
+              },
+              "version.max": {
+                "description": "If present, this message will only be shown to Cody App instances in this inclusive version range.",
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
         "slackLicenseExpirationWebhook": {
           "description": "Slack webhook for upcoming license expiration notifications.",
           "type": "string",
           "group": "Sourcegraph.com"
         },
-        "githubApp.cloud": {
-          "description": "The config options for Sourcegraph Cloud GitHub App.",
+        "slackLicenseAnomallyWebhook": {
+          "description": "Slack webhook for when there is an anomaly detected with license key usage.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        },
+        "srcCliVersionCache": {
+          "description": "Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.",
           "type": "object",
+          "required": ["enabled", "github"],
+          "group": "Sourcegraph.com",
           "properties": {
-            "slug": {
-              "description": "The slug of the GitHub App for Sourcegraph Cloud.",
-              "type": "string"
+            "enabled": {
+              "description": "Enables the src-cli version cache API endpoint.",
+              "type": "boolean",
+              "default": false
             },
-            "appID": {
-              "description": "The app ID of the GitHub App for Sourcegraph Cloud.",
-              "type": "string"
+            "github": {
+              "description": "GitHub configuration, both for queries and receiving release webhooks.",
+              "type": "object",
+              "required": ["token", "webhookSecret"],
+              "properties": {
+                "repository": {
+                  "description": "The repository to get the latest version of.",
+                  "type": "object",
+                  "properties": {
+                    "owner": {
+                      "description": "The repository namespace.",
+                      "type": "string",
+                      "default": "sourcegraph"
+                    },
+                    "name": {
+                      "description": "The repository name.",
+                      "type": "string",
+                      "default": "src-cli"
+                    }
+                  }
+                },
+                "token": {
+                  "description": "The access token to use when communicating with GitHub.",
+                  "type": "string"
+                },
+                "uri": {
+                  "description": "The URI of the GitHub instance.",
+                  "type": "string",
+                  "default": "https://github.com"
+                },
+                "webhookSecret": {
+                  "description": "The release webhook secret.",
+                  "type": "string"
+                }
+              }
             },
-            "privateKey": {
-              "description": "The base64-encoded private key of the GitHub App for Sourcegraph Cloud.",
-              "type": "string"
-            },
-            "clientID": {
+            "interval": {
+              "description": "The interval between version checks, expressed as a string that can be parsed by Go's time.ParseDuration.",
               "type": "string",
-              "description": "The Client ID of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
+              "default": "1h"
+            }
+          }
+        },
+        "codyGateway": {
+          "description": "Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.",
+          "type": "object",
+          "group": "Sourcegraph.com",
+          "properties": {
+            "bigQueryGoogleProjectID": {
+              "description": "The project ID to pull BigQuery Cody Gatewayrelated events from.",
+              "type": "string"
             },
-            "clientSecret": {
-              "type": "string",
-              "description": "The Client Secret of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
+            "bigQueryDataset": {
+              "description": "The dataset to pull BigQuery Cody Gateway related events from.",
+              "type": "string"
+            },
+            "bigQueryTable": {
+              "description": "The table in the dataset to pull BigQuery Cody Gateway related events from.",
+              "type": "string"
             }
           }
         }
       },
       "group": "Sourcegraph.com"
+    },
+    "app": {
+      "description": "Configuration options for App only.",
+      "type": "object",
+      "properties": {
+        "dotcomAuthToken": {
+          "description": "Authentication token for Sourcegraph.com. If present, indicates that the App account is connected to a Sourcegraph.com account.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        }
+      },
+      "examples": [
+        {
+          "app": {
+            "dotcomAuthToken": "abc123"
+          }
+        }
+      ]
+    },
+    "notifications": {
+      "description": "Notifications recieved from Sourcegraph.com to display in Sourcegraph.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "message"],
+        "properties": {
+          "key": {
+            "description": "e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.",
+            "type": "string",
+            "minLength": 1
+          },
+          "message": {
+            "description": "The Markdown message to display",
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "examples": [
+        {
+          "key": "2023-03-10-my-key",
+          "message": "This is a test notification message."
+        }
+      ]
     },
     "auth.providers": {
       "description": "The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including Google Workspace), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).",
@@ -1135,23 +2161,59 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab"]
+            "enum": [
+              "azureDevOps",
+              "bitbucketcloud",
+              "builtin",
+              "gerrit",
+              "github",
+              "gitlab",
+              "http-header",
+              "openidconnect",
+              "saml"
+            ]
           }
         },
         "oneOf": [
-          { "$ref": "#/definitions/BuiltinAuthProvider" },
-          { "$ref": "#/definitions/SAMLAuthProvider" },
-          { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
-          { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
-          { "$ref": "#/definitions/GitHubAuthProvider" },
-          { "$ref": "#/definitions/GitLabAuthProvider" }
+          {
+            "$ref": "#/definitions/AzureDevOpsAuthProvider"
+          },
+          {
+            "$ref": "#/definitions/BitbucketCloudAuthProvider"
+          },
+          {
+            "$ref": "#/definitions/BuiltinAuthProvider"
+          },
+          {
+            "$ref": "#/definitions/GerritAuthProvider"
+          },
+          {
+            "$ref": "#/definitions/GitHubAuthProvider"
+          },
+          {
+            "$ref": "#/definitions/GitLabAuthProvider"
+          },
+          {
+            "$ref": "#/definitions/HTTPHeaderAuthProvider"
+          },
+          {
+            "$ref": "#/definitions/OpenIDConnectAuthProvider"
+          },
+          {
+            "$ref": "#/definitions/SAMLAuthProvider"
+          }
         ],
         "!go": {
           "taggedUnionType": true
         }
       },
       "group": "Authentication",
-      "default": [{ "type": "builtin", "allowSignup": true }]
+      "default": [
+        {
+          "type": "builtin",
+          "allowSignup": true
+        }
+      ]
     },
     "auth.public": {
       "description": "WARNING: This option has been removed as of 3.8.",
@@ -1184,6 +2246,78 @@
       "default": 14400,
       "group": "Authentication"
     },
+    "auth.lockout": {
+      "description": "The config options for account lockout",
+      "type": "object",
+      "properties": {
+        "failedAttemptThreshold": {
+          "description": "The threshold of failed sign-in attempts in a consecutive period",
+          "type": "integer",
+          "default": 5
+        },
+        "lockoutPeriod": {
+          "description": "The number of seconds for the lockout period",
+          "type": "integer",
+          "default": 1800
+        },
+        "consecutivePeriod": {
+          "description": "The number of seconds to be considered as a consecutive period",
+          "type": "integer",
+          "default": 3600
+        }
+      },
+      "examples": [
+        {
+          "failedAttemptThreshold": 3,
+          "lockoutPeriod": 600,
+          "consecutivePeriod": 300
+        }
+      ],
+      "group": "Authentication"
+    },
+    "auth.unlockAccountLinkSigningKey": {
+      "description": "Base64-encoded HMAC signing key to sign the JWT token for account unlock URLs",
+      "type": "string",
+      "group": "Authentication",
+      "examples": [
+        "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJGZ0FBQUhVQkFBQQ"
+      ]
+    },
+    "auth.unlockAccountLinkExpiry": {
+      "description": "Validity expressed in minutes of the unlock account token",
+      "type": "integer",
+      "group": "Authentication",
+      "default": 5
+    },
+    "auth.accessRequest": {
+      "description": "The config options for access requests",
+      "type": "object",
+      "group": "Authentication",
+      "properties": {
+        "enabled": {
+          "description": "Enable/disable the access request feature, which allows users to request access if built-in signup is disabled.",
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          },
+          "default": true
+        }
+      },
+      "examples": [
+        {
+          "enabled": true
+        },
+        {
+          "enabled": false
+        }
+      ]
+    },
+    "auth.primaryLoginProvidersCount": {
+      "description": "The number of auth providers that will be shown to the user on the login screen. Other providers are shown under `Other login methods` section.",
+      "type": "integer",
+      "group": "Authentication",
+      "default": 3
+    },
     "update.channel": {
       "description": "The channel on which to automatically check for Sourcegraph updates.",
       "type": ["string"],
@@ -1192,22 +2326,12 @@
       "examples": ["none"],
       "group": "Misc."
     },
-    "userRepos.maxPerSite": {
-      "description": "The site wide maximum number of repos that can be added by non site admins",
-      "type": "integer",
-      "default": 200000,
-      "group": "Misc."
-    },
-    "userRepos.maxPerUser": {
-      "description": "The per user maximum number of repos that can be added by non site admins",
-      "type": "integer",
-      "default": 2000,
-      "group": "Misc."
-    },
     "productResearchPage.enabled": {
       "description": "Enables users access to the product research page in their settings.",
       "type": "boolean",
-      "!go": { "pointer": true },
+      "!go": {
+        "pointer": true
+      },
       "group": "Misc.",
       "default": true
     },
@@ -1231,59 +2355,39 @@
         "externalServiceKey": {
           "$ref": "#/definitions/EncryptionKey"
         },
+        "gitHubAppKey": {
+          "$ref": "#/definitions/EncryptionKey"
+        },
+        "outboundWebhookKey": {
+          "$ref": "#/definitions/EncryptionKey"
+        },
         "userExternalAccountKey": {
           "$ref": "#/definitions/EncryptionKey"
         },
         "webhookLogKey": {
           "$ref": "#/definitions/EncryptionKey"
+        },
+        "webhookKey": {
+          "$ref": "#/definitions/EncryptionKey"
+        },
+        "executorSecretKey": {
+          "$ref": "#/definitions/EncryptionKey"
         }
-      }
-    },
-    "api.ratelimit": {
-      "description": "Configuration for API rate limiting",
-      "type": "object",
-      "required": ["enabled", "perUser", "perIP"],
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "default": false,
-          "description": "Whether API rate limiting is enabled"
+      },
+      "examples": [
+        {
+          "externalServiceKey": {
+            "type": "mounted",
+            "filePath": "/path/to/external_service.key"
+          }
         },
-        "perUser": {
-          "description": "Limit granted per user per hour",
-          "type": "integer",
-          "minimum": 1,
-          "default": 1000000
-        },
-        "perIP": {
-          "description": "Limit granted per IP per hour, only applied to anonymous users",
-          "type": "integer",
-          "minimum": 1,
-          "default": 1000000
-        },
-        "overrides": {
-          "description": "An array of rate limit overrides",
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "key": {
-                "description": "The key that we want to override for example a username",
-                "type": "string",
-                "minLength": 1
-              },
-              "limit": {
-                "description": "The limit per hour, 'unlimited' or 'blocked'",
-                "oneOf": [
-                  { "type": "string", "const": "unlimited" },
-                  { "type": "string", "const": "blocked" },
-                  { "type": "integer", "minimum": 1 }
-                ]
-              }
-            }
+        {
+          "userExternalAccountKey": {
+            "type": "cloudkms",
+            "keyname": "projects/my-project/locations/global/keyRings/my-keyring/cryptoKeys/my-key"
           }
         }
-      }
+      ]
     },
     "webhook.logging": {
       "description": "Configuration for logging incoming webhooks.",
@@ -1292,14 +2396,37 @@
         "enabled": {
           "description": "Whether incoming webhooks are logged. If omitted, logging is enabled on sites without encryption. If one or more encryption keys are present, this setting must be enabled manually; as webhooks may contain sensitive data, admins of encrypted sites may want to enable webhook encryption via encryption.keys.webhookLogKey.",
           "type": "boolean",
-          "!go": { "pointer": true }
+          "!go": {
+            "pointer": true
+          }
         },
         "retention": {
           "description": "How long incoming webhooks are retained. The string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). Values lower than 1 hour will be treated as 1 hour. By default, this is \"72h\", or three days.",
           "type": "string",
           "default": "72h"
         }
-      }
+      },
+      "examples": [
+        {
+          "enabled": true,
+          "retention": "7d"
+        }
+      ]
+    },
+    "outboundRequestLogLimit": {
+      "description": "The maximum number of outbound requests to retain. This is a global limit across all outbound requests. If the limit is exceeded, older items will be deleted. If the limit is 0, no outbound requests are logged.",
+      "type": "integer",
+      "minimum": 0,
+      "default": 50,
+      "maximum": 500
+    },
+    "redactOutboundRequestHeaders": {
+      "description": "Enables redacting sensitive information from outbound requests. Important: We only respect this setting in development environments. In production, we always redact outbound requests.",
+      "type": "boolean",
+      "!go": {
+        "pointer": true
+      },
+      "examples": [true]
     },
     "organizationInvitations": {
       "description": "Configuration for organization invitations.",
@@ -1315,7 +2442,418 @@
           "description": "Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL.\nMore documentation here: https://pkg.go.dev/github.com/golang-jwt/jwt#SigningMethodHMAC \n\nIf not provided, will fall back to legacy invitation to an organization.\n\nThe legacy invitation will be deprecated in the future and creating an organization invitation will fail with an error if this setting is not present.",
           "type": "string"
         }
-      }
+      },
+      "examples": [
+        {
+          "expiryTime": 48,
+          "signingKey": "your-signing-key"
+        }
+      ]
+    },
+    "cody.enabled": {
+      "description": "Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      },
+      "group": "Cody"
+    },
+    "cody.restrictUsersFeatureFlag": {
+      "description": "Restrict Cody to only be enabled for users that have a feature flag labeled \"cody\" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      },
+      "group": "Cody"
+    },
+    "embeddings": {
+      "description": "Configuration for embeddings service.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Toggles whether embedding service is enabled.",
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          },
+          "default": true
+        },
+        "dimensions": {
+          "description": "The dimensionality of the embedding vectors. Required field if not using the sourcegraph provider.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "model": {
+          "description": "The model used for embedding. A default model will be used for each provider, if not set.",
+          "type": "string"
+        },
+        "accessToken": {
+          "description": "The access token used to authenticate with the external embedding API service. For provider sourcegraph, this is optional.",
+          "type": "string"
+        },
+        "provider": {
+          "type": "string",
+          "description": "The provider to use for generating embeddings. Defaults to sourcegraph.",
+          "enum": ["openai", "azure-openai", "sourcegraph"]
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "The endpoint under which to reach the provider. Sensible default will be used for each provider.",
+          "format": "uri"
+        },
+        "url": {
+          "description": "The url to the external embedding API service. Deprecated, use endpoint instead.",
+          "type": "string",
+          "format": "uri"
+        },
+        "perCommunityUserEmbeddingsMonthlyLimit": {
+          "description": "If > 0, limits the number of tokens allowed to be embedded by a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserEmbeddingsMonthlyLimit": {
+          "description": "If > 0, limits the number of tokens allowed to be embedded by a Pro user in a month. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "fileFilters": {
+          "description": "Filters that allow you to specify which files in a repository should get embedded.",
+          "type": "object",
+          "properties": {
+            "excludedFilePathPatterns": {
+              "description": "A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                ".*ignore",
+                ".gitattributes",
+                ".mailmap",
+                "*.csv",
+                "*.svg",
+                "*.xml",
+                "__fixtures__/",
+                "node_modules/",
+                "testdata/",
+                "mocks/",
+                "vendor/"
+              ]
+            },
+            "includedFilePathPatterns": {
+              "description": "A list of glob patterns that match file paths you want to include in embeddings. If specified, all files not matching these include patterns are excluded.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "examples": ["*.go", "*.ts", "*.md", "src/", "cmd/"]
+            },
+            "maxFileSizeBytes": {
+              "description": "The maximum file size (in bytes) to include in embeddings. Must be between 0 and 100000 (1 MB).",
+              "type": "integer",
+              "default": 1000000
+            }
+          }
+        },
+        "excludedFilePathPatterns": {
+          "description": "A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            ".*ignore",
+            ".gitattributes",
+            ".mailmap",
+            "*.csv",
+            "*.svg",
+            "*.xml",
+            "__fixtures__/",
+            "node_modules/",
+            "testdata/",
+            "mocks/",
+            "vendor/"
+          ],
+          "deprecationMessage": "Deprecated in favor of fileFilers.excludedFilePathPatterns"
+        },
+        "maxCodeEmbeddingsPerRepo": {
+          "description": "The maximum number of embeddings for code files to generate per repo",
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxTextEmbeddingsPerRepo": {
+          "description": "The maximum number of embeddings for text files to generate per repo",
+          "type": "integer",
+          "minimum": 0
+        },
+        "incremental": {
+          "description": "Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.",
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          },
+          "default": true
+        },
+        "minimumInterval": {
+          "description": "The time to wait between runs. Valid time units are \"s\", \"m\", \"h\". Example values: \"30s\", \"5m\", \"1h\".",
+          "type": "string",
+          "default": "24h"
+        },
+        "policyRepositoryMatchLimit": {
+          "description": "The maximum number of repositories that can be matched by a global embeddings policy",
+          "type": "integer",
+          "!go": {
+            "pointer": true
+          },
+          "default": "5000"
+        },
+        "excludeChunkOnError": {
+          "description": "Whether to cancel indexing a repo if embedding a single file fails. If true, the chunk that cannot generate embeddings is not indexed and the remainder of the repository proceeds with indexing.",
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          },
+          "default": true
+        },
+        "qdrant": {
+          "description": "Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.",
+          "type": "object",
+          "$comment": "Skipped fields from HnswConfigDiff: MaxIndexingThreads",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "hnsw": {
+              "description": "Overrides for the HNSW index config.",
+              "type": "object",
+              "properties": {
+                "m": {
+                  "description": "Number of edges per node in the index graph. Larger the value - more accurate the search, more space required.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 8
+                },
+                "efConstruct": {
+                  "description": "Number of neighbours to consider during the index building. Larger the value, more accurate the search, more time required to build the index.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 100
+                },
+                "fullScanThreshold": {
+                  "description": "Minimal size (in KiloBytes) of vectors for additional payload-based indexing.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 1000
+                },
+                "onDisk": {
+                  "description": "Store HNSW index on disk.",
+                  "type": "boolean",
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": true
+                },
+                "payloadM": {
+                  "description": "Number of edges per node in the index graph. Larger the value, more accurate the search, more space required.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 8
+                }
+              }
+            },
+            "quantization": {
+              "description": "Overrides for quantization config.",
+              "type": "object",
+              "$comment": "Skipped fields from ScalarQuantization: AlwaysRam",
+              "properties": {
+                "enabled": {
+                  "description": "Whether to enable int8 scalar quantization",
+                  "type": "boolean",
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": true
+                },
+                "quantile": {
+                  "description": "Any values that lie outside the quantile range will be truncated",
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 0.98
+                }
+              }
+            },
+            "optimizers": {
+              "type": "object",
+              "$comment": "Skipped fields from OptimizersConfigDiff: DeletedThreshold, VacuumMinVectorNumber, DefaultSegmentNumber, MaxSegmentSize, FlushIntervalSec, MaxOptimizationThreads",
+              "properties": {
+                "indexingThreshold": {
+                  "description": "Maximum size (in kilobytes) of vectors allowed for plain index, exceeding this threshold will enable vector indexing. Set to 0 to disable indexing",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 0
+                },
+                "memmapThreshold": {
+                  "description": "Maximum size (in kilobytes) of vectors to store in-memory per segment.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 100
+                }
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "enabled": true,
+          "dimensions": 1536,
+          "model": "text-embedding-ada-002",
+          "accessToken": "your-access-token",
+          "url": "https://api.openai.com/v1/embeddings",
+          "excludedFilePathPatterns": ["*.svg", "**/__mocks__/**", "**/test/**"]
+        }
+      ]
+    },
+    "completions": {
+      "description": "Configuration for the completions service.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "DEPRECATED. Use cody.enabled instead to turn Cody on/off.",
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          },
+          "default": true
+        },
+        "model": {
+          "description": "DEPRECATED. Use chatModel instead.",
+          "type": "string"
+        },
+        "fastChatModel": {
+          "description": "The model used for fast chat completions.",
+          "type": "string"
+        },
+        "fastChatModelMaxTokens": {
+          "description": "The maximum number of tokens to use as client when talking to fastChatModel. If not set, clients need to set their own limit.",
+          "type": "integer"
+        },
+        "chatModel": {
+          "description": "The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.",
+          "type": "string"
+        },
+        "chatModelMaxTokens": {
+          "description": "The maximum number of tokens to use as client when talking to chatModel. If not set, clients need to set their own limit.",
+          "type": "integer"
+        },
+        "completionModel": {
+          "description": "The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.",
+          "type": "string"
+        },
+        "completionModelMaxTokens": {
+          "description": "The maximum number of tokens to use as client when talking to completionModel. If not set, clients need to set their own limit.",
+          "type": "integer"
+        },
+        "accessToken": {
+          "description": "The access token used to authenticate with the external completions provider. If using the default provider 'sourcegraph', and if 'licenseKey' is set, a default access token is generated.",
+          "type": "string"
+        },
+        "provider": {
+          "type": "string",
+          "description": "The external completions provider. Defaults to 'sourcegraph'.",
+          "default": "sourcegraph",
+          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai", "aws-bedrock", "fireworks"]
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"sourcegraph\", \"openai\" and \"anthropic\". The default values are \"https://cody-gateway.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/complete\" for Sourcegraph, OpenAI, and Anthropic, respectively."
+        },
+        "perUserDailyLimit": {
+          "description": "If > 0, limits the number of completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.",
+          "type": "integer",
+          "default": 0
+        },
+        "perUserCodeCompletionsDailyLimit": {
+          "description": "If > 0, limits the number of code completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.",
+          "type": "integer",
+          "default": 0
+        },
+        "perCommunityUserChatMonthlyLLMRequestLimit": {
+          "description": "If > 0, limits the number of completions requests allowed for a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perCommunityUserCodeCompletionsMonthlyLLMRequestLimit": {
+          "description": "If > 0, limits the number of code completions requests allowed for a Community user in a month.  This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserChatDailyLLMRequestLimit": {
+          "description": "If > 0, limits the number of completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserCodeCompletionsDailyLLMRequestLimit": {
+          "description": "If > 0, limits the number of code completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perCommunityUserChatMonthlyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of completions interactions allowed to be made by a single Community user in a month. This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perCommunityUserCodeCompletionsMonthlyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of code completions interactions allowed to be made by a single Community user in a month.  This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserChatDailyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of completions interactions allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserCodeCompletionsDailyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of code completions interactions allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        }
+      },
+      "examples": [
+        {
+          "enabled": true,
+          "chatModel": "chat",
+          "completionModel": "code-completion",
+          "accessToken": "abc123",
+          "provider": "openai",
+          "perUserDailyLimit": 100
+        }
+      ]
     }
   },
   "definitions": {
@@ -1361,7 +2899,21 @@
           "type": "string",
           "const": "openidconnect"
         },
-        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "displayName": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
+        },
+        "displayPrefix": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayPrefix",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "hidden": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "order": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/order"
+        },
         "configID": {
           "description": "An identifier that can be used to reference this authentication provider in other parts of the config. For example, in configuration for a code host, you may want to designate this authentication provider as the identity provider for the code host.",
           "type": "string"
@@ -1390,7 +2942,9 @@
         "allowSignup": {
           "description": "Allows new visitors to sign up for accounts via OpenID Connect authentication. If false, users signing in via OpenID Connect must have an existing Sourcegraph account, which will be linked to their OpenID Connect identity after sign-in.",
           "type": "boolean",
-          "!go": { "pointer": true }
+          "!go": {
+            "pointer": true
+          }
         }
       }
     },
@@ -1413,7 +2967,21 @@
           "description": "An identifier that can be used to reference this authentication provider in other parts of the config. For example, in configuration for a code host, you may want to designate this authentication provider as the identity provider for the code host.",
           "type": "string"
         },
-        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "displayName": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
+        },
+        "displayPrefix": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayPrefix",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "hidden": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "order": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/order"
+        },
         "serviceProviderIssuer": {
           "description": "The SAML Service Provider name, used to identify this Service Provider. This is required if the \"externalURL\" field is not set (as the SAML metadata endpoint is computed as \"<externalURL>.auth/saml/metadata\"), or when using multiple SAML authentication providers.",
           "type": "string"
@@ -1451,16 +3019,22 @@
             "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
             "urn:oasis:names:tc:SAML:1.1:nameid-format:persistent",
             "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
+            "urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName",
+            "urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName",
             "urn:oasis:names:tc:SAML:2.0:nameid-format:emailAddress",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos",
             "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
             "urn:oasis:names:tc:SAML:2.0:nameid-format:transient",
-            "urn:oasis:names:tc:SAML:2.0:nameid-format:unspecified"
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:unspecified",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"
           ]
         },
         "signRequests": {
           "description": "Sign AuthnRequests and LogoutRequests sent to the Identity Provider using the Service Provider's private key (`serviceProviderPrivateKey`). It defaults to true if the `serviceProviderPrivateKey` and `serviceProviderCertificate` are set, and false otherwise.",
           "type": "boolean",
-          "!go": { "pointer": true }
+          "!go": {
+            "pointer": true
+          }
         },
         "insecureSkipAssertionSignatureValidation": {
           "description": "Whether the Service Provider should (insecurely) accept assertions from the Identity Provider without a valid signature.",
@@ -1470,7 +3044,22 @@
         "allowSignup": {
           "description": "Allows new visitors to sign up for accounts via SAML authentication. If false, users signing in via SAML must have an existing Sourcegraph account, which will be linked to their SAML identity after sign-in.",
           "type": "boolean",
-          "!go": { "pointer": true }
+          "!go": {
+            "pointer": true
+          }
+        },
+        "allowGroups": {
+          "description": "Restrict login to members of these groups",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "groupsAttributeName": {
+          "description": "Name of the SAML assertion attribute that holds group membership for allowGroups setting",
+          "type": "string",
+          "default": "groups"
         }
       }
     },
@@ -1524,14 +3113,28 @@
           "type": "string",
           "description": "The Client Secret of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise)."
         },
-        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "displayName": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
+        },
+        "displayPrefix": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayPrefix",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "hidden": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "order": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/order"
+        },
         "allowSignup": {
           "description": "Allows new visitors to sign up for accounts via GitHub authentication. If false, users signing in via GitHub must have an existing Sourcegraph account, which will be linked to their GitHub identity after sign-in.",
           "default": false,
           "type": "boolean"
         },
         "allowOrgs": {
-          "description": "Restricts new logins to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.",
+          "description": "Restricts new logins and signups (if allowSignup is true) to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.",
           "default": [],
           "type": "array",
           "items": {
@@ -1539,13 +3142,25 @@
             "minLength": 1
           }
         },
-        "allowGroupsPermissionsSync": {
-          "description": "Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/repo/permissions#permissions-caching).",
-          "default": false,
-          "type": "boolean"
+        "allowOrgsMap": {
+          "description": "Restricts new logins and signups (if allowSignup is true) to members of GitHub teams. Each list of teams should have their Github org name as a key. Subteams inheritance is not supported, therefore only members of the listed teams will be granted access. Existing sessions won't be invalidated. Leave empty or unset for no team restrictions.",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "examples": [
+            {
+              "orgName": ["team1"],
+              "anotherOrgName": ["team2", "team3"]
+            }
+          ]
         },
-        "hidden": {
-          "description": "Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.",
+        "allowGroupsPermissionsSync": {
+          "description": "Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/external_service/github#teams-and-organizations-permissions-caching).",
           "default": false,
           "type": "boolean"
         }
@@ -1566,6 +3181,11 @@
           "description": "URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.",
           "default": "https://gitlab.com/"
         },
+        "ssoURL": {
+          "type": "string",
+          "description": "An alternate sign-in URL used to ease SSO sign-in flows, such as https://gitlab.com/groups/your-group/saml/sso?token=xxxxxx",
+          "default": ""
+        },
         "clientID": {
           "type": "string",
           "description": "The Client ID of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance)."
@@ -1574,12 +3194,197 @@
           "type": "string",
           "description": "The Client Secret of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance)."
         },
-        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "displayName": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
+        },
+        "displayPrefix": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayPrefix",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "hidden": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "order": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/order"
+        },
         "apiScope": {
           "type": "string",
           "description": "The OAuth API scope that should be used",
           "default": "api",
           "enum": ["api", "read_api"]
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts via GitLab authentication. If false, users signing in via GitLab must have an existing Sourcegraph account, which will be linked to their GitLab identity after sign-in.",
+          "default": true,
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "allowGroups": {
+          "description": "Restricts new logins and signups (if allowSignup is true) to members of these GitLab groups. Existing sessions won't be invalidated. Make sure to inform the full path for groups or subgroups instead of their names. Leave empty or unset for no group restrictions.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["group", "group/subgroup", "group/subgroup/subgroup"]]
+        },
+        "tokenRefreshWindowMinutes": {
+          "description": "Time in minutes before token expiry when we should attempt to refresh it",
+          "default": 10,
+          "type": "integer"
+        },
+        "syncInternalRepoPermissions": {
+          "description": "Whether to sync permissions for internal repositories on GitLab. Setting this to false can be useful when internal repositories are configured to be public on Sourcegraph.",
+          "default": true,
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          }
+        }
+      }
+    },
+    "BitbucketCloudAuthProvider": {
+      "description": "Configures the Bitbucket Cloud OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your Bitbucket Cloud workspace: https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/. The application should have account, email, and repository scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and \"/.auth/bitbucketcloud/callback\".",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "clientKey", "clientSecret"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "bitbucketcloud"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the Bitbucket Cloud instance.",
+          "default": "https://bitbucket.org/"
+        },
+        "clientKey": {
+          "type": "string",
+          "description": "The Key of the Bitbucket OAuth app."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "The Client Secret of the Bitbucket OAuth app."
+        },
+        "displayName": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
+        },
+        "displayPrefix": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayPrefix",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "hidden": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "order": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/order"
+        },
+        "apiScope": {
+          "type": "string",
+          "description": "The OAuth API scope that should be used",
+          "default": "account,email,repository",
+          "enum": ["account", "email", "repository"]
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts via Bitbucket Cloud authentication. If false, users signing in via Bitbucket Cloud must have an existing Sourcegraph account, which will be linked to their Bitbucket Cloud identity after sign-in.",
+          "default": true,
+          "type": "boolean"
+        }
+      }
+    },
+    "GerritAuthProvider": {
+      "description": "Gerrit auth provider",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "url"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "gerrit"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the Gerrit instance, such as https://gerrit-review.googlesource.com or https://gerrit.example.com.",
+          "default": "https://gerrit-review.googlesource.com/"
+        },
+        "displayName": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
+        },
+        "displayPrefix": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayPrefix",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "hidden": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "order": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/order"
+        }
+      }
+    },
+    "AzureDevOpsAuthProvider": {
+      "description": "Azure auth provider for dev.azure.com",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "clientID", "clientSecret"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "azureDevOps"
+        },
+        "clientID": {
+          "type": "string",
+          "description": "The app ID of the Azure OAuth app."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "The client Secret of the Azure OAuth app."
+        },
+        "displayName": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
+        },
+        "displayPrefix": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayPrefix",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "hidden": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "order": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/order"
+        },
+        "apiScope": {
+          "type": "string",
+          "description": "The OAuth API scope that should be used",
+          "default": "vso.code,vso.identity,vso.project"
+        },
+        "allowOrgs": {
+          "description": "Restricts new logins and signups (if allowSignup is true) to members of these Azure DevOps organizations only. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts Azure DevOps authentication. If false, users signing in via Azure DevOps must have an existing Sourcegraph account, which will be linked to their Azure DevOps identity after sign-in.",
+          "default": true,
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          }
         }
       }
     },
@@ -1588,9 +3393,27 @@
       "description": "Common properties for authentication providers.",
       "type": "object",
       "properties": {
+        "hidden": {
+          "description": "Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.",
+          "type": "boolean",
+          "default": false
+        },
+        "order": {
+          "description": "Determines order of auth providers on the login screen. Ordered as numbers, for example 1, 2, 3.",
+          "type": "integer",
+          "minimum": 1
+        },
         "displayName": {
           "description": "The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).",
           "type": "string"
+        },
+        "displayPrefix": {
+          "description": "Defines the prefix of the auth provider button on the login screen. By default we show `Continue with <displayName>`. This propery allows you to change the `Continue with ` part to something else. Useful in cases where the displayName is not compatible with the prefix.",
+          "type": "string",
+          "default": "Continue with ",
+          "!go": {
+            "pointer": true
+          }
         }
       }
     },
@@ -1642,7 +3465,9 @@
           "description": "Severity level for PagerDuty alert",
           "type": "string"
         },
-        "apiUrl": { "type": "string" }
+        "apiUrl": {
+          "type": "string"
+        }
       }
     },
     "NotifierWebhook": {
@@ -1654,10 +3479,18 @@
           "type": "string",
           "const": "webhook"
         },
-        "url": { "type": "string" },
-        "username": { "type": "string" },
-        "password": { "type": "string" },
-        "bearerToken": { "type": "string" }
+        "url": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "bearerToken": {
+          "type": "string"
+        }
       }
     },
     "NotifierEmail": {
@@ -1684,8 +3517,12 @@
           "type": "string",
           "const": "opsgenie"
         },
-        "apiKey": { "type": "string" },
-        "apiUrl": { "type": "string" },
+        "apiKey": {
+          "type": "string"
+        },
+        "apiUrl": {
+          "type": "string"
+        },
         "tags": {
           "description": "Comma separated list of tags attached to the notifications - or a Go template that produces such a list. Sourcegraph provides some default ones if this value isn't specified.",
           "type": "string"
@@ -1704,14 +3541,26 @@
                 "type": "string",
                 "enum": ["team", "user", "escalation", "schedule"]
               },
-              "id": { "type": "string" },
-              "name": { "type": "string" },
-              "username": { "type": "string" }
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string"
+              }
             },
             "oneOf": [
-              { "required": ["type", "id"] },
-              { "required": ["type", "name"] },
-              { "required": ["type", "username"] }
+              {
+                "required": ["type", "id"]
+              },
+              {
+                "required": ["type", "name"]
+              },
+              {
+                "required": ["type", "username"]
+              }
             ]
           }
         }
@@ -1813,6 +3662,24 @@
         "type": {
           "type": "string",
           "const": "noop"
+        }
+      }
+    },
+    "EmailTemplate": {
+      "type": "object",
+      "required": ["subject", "html"],
+      "properties": {
+        "subject": {
+          "description": "Template for email subject header",
+          "type": "string"
+        },
+        "html": {
+          "description": "Template for HTML body",
+          "type": "string"
+        },
+        "text": {
+          "description": "Optional template for plain-text body. If not provided, a plain-text body will be automatically generated from the HTML template.",
+          "type": "string"
         }
       }
     }

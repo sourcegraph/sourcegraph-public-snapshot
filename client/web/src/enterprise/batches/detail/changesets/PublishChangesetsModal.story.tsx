@@ -1,22 +1,26 @@
 import { action } from '@storybook/addon-actions'
-import { storiesOf } from '@storybook/react'
+import type { StoryFn, Meta, Decorator } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 
 import { WebStory } from '../../../../components/WebStory'
 
 import { PublishChangesetsModal } from './PublishChangesetsModal'
 
-const { add } = storiesOf('web/batches/details/PublishChangesetsModal', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/details/PublishChangesetsModal',
+    decorators: [decorator],
+}
+
+export default config
 
 const publishChangesets = () => {
     action('PublishChangesets')
     return Promise.resolve()
 }
 
-add('Confirmation', () => (
+export const Confirmation: StoryFn = () => (
     <WebStory>
         {props => (
             <PublishChangesetsModal
@@ -29,4 +33,4 @@ add('Confirmation', () => (
             />
         )}
     </WebStory>
-))
+)

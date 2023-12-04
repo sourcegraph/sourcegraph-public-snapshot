@@ -1,0 +1,413 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "sass", "ts_project", "vitest_test")
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
+load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
+load("//client/shared/dev:build_code_intel_extensions.bzl", "build_code_intel_extensions")
+load("//client/shared/dev:tools.bzl", "module_style_typings")
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
+
+# TODO(bazel): storybook build
+# gazelle:exclude **/*.story.{ts,tsx}
+
+# gazelle:js_resolve **/*.module.scss :module_style_typings
+
+# Assets included as data
+# gazelle:js_ignore_imports ../../../../assets/img/sourcegraph-mark.svg
+
+# Bundled [s]css:
+# gazelle:js_resolve **/branded.scss :src/branded.css
+
+npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root(
+    config_deps = [
+        "//client/browser/src/end-to-end:tsconfig",
+    ],
+)
+
+# Temporary ESLint target to lint stories. This will be removed once we have a
+# custom gazelle targets. E.g., `gazelle:custom_js_files stories src/**/*.story.tsx`
+eslint_test_with_types(
+    name = "stories_eslint",
+    srcs = glob([
+        "src/**/*.story.tsx",
+        "src/**/*.fixtures.ts",
+    ]),
+    config = ":eslint_config",
+    deps = [
+        ":node_modules/@sourcegraph/shared",  # required for import/extensions rule not to fail.
+        "//:node_modules/@types/node",
+    ],
+)
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/branded:tsconfig",
+        "//client/build-config:tsconfig",
+        "//client/client-api:tsconfig",
+        "//client/codeintellify:tsconfig",
+        "//client/common:tsconfig",
+        "//client/extension-api-types:tsconfig",
+        "//client/http-client:tsconfig",
+        "//client/shared:tsconfig",
+        "//client/wildcard:tsconfig",
+    ],
+)
+
+module_style_typings(
+    name = "module_style_typings",
+    deps = ["//client/wildcard:sass-breakpoints"],
+)
+
+sass(
+    name = "module_styles",
+    srcs = glob(["src/**/*.module.scss"]),
+    deps = [
+        "//client/wildcard:sass-breakpoints",
+    ],
+)
+
+sass(
+    name = "package_styles",
+    srcs = glob(
+        ["src/**/*.scss"],
+        exclude = ["src/**/*.module.scss"],
+    ),
+    deps = [
+        "//:node_modules/open-color",
+        "//client/wildcard:global-styles",
+        "//client/wildcard:sass-breakpoints",
+        "//client/wildcard:sass-utils",
+    ],
+)
+
+js_library(
+    name = "graphql_operations_files",
+    # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
+    srcs = glob(
+        [
+            "src/**/*.ts",
+            "src/**/*.tsx",
+        ],
+        # TODO: Ignore legacy build generated file as it conflicts with the Bazel
+        # build. This can be removed after the migration.
+        [
+            "src/graphql-operations.ts",
+            "src/**/*.module.scss.d.ts",
+        ],
+    ),
+    visibility = ["//client/shared:__pkg__"],
+)
+
+generate_graphql_operations(
+    name = "graphql_operations_ts",
+    srcs = [
+        ":graphql_operations_files",
+        "//client/browser/src/integration:graphql_operations_files",
+    ],
+    out = "src/graphql-operations.ts",
+    interface_name = "BrowserGraphQlOperations",
+    visibility = ["//client/shared:__pkg__"],
+)
+
+ts_project(
+    name = "graphql_operations",
+    srcs = ["src/graphql-operations.ts"],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":node_modules/@sourcegraph/shared",
+    ],
+)
+
+ts_project(
+    name = "browser",
+    srcs = [
+        "code-intel-extensions.json",
+        "src/browser-extension/ThemeWrapper.tsx",
+        "src/browser-extension/after-install-page/AfterInstallPageContent.tsx",
+        "src/browser-extension/browser-action-icon.ts",
+        "src/browser-extension/environmentAssertion.ts",
+        "src/browser-extension/knownCodeHosts.ts",
+        "src/browser-extension/options-menu/OptionsPage.tsx",
+        "src/browser-extension/options-menu/OptionsPageAdvancedSettings.tsx",
+        "src/browser-extension/options-menu/components/OptionsPageContainer.tsx",
+        "src/browser-extension/scripts/afterInstallPage.main.tsx",
+        "src/browser-extension/scripts/backgroundPage.main.ts",
+        "src/browser-extension/scripts/contentPage.main.ts",
+        "src/browser-extension/scripts/optionsPage.main.tsx",
+        "src/browser-extension/util/index.ts",
+        "src/browser-extension/web-extension-api/ExtensionStorageSubject.ts",
+        "src/browser-extension/web-extension-api/fromBrowserEvent.ts",
+        "src/browser-extension/web-extension-api/runtime.ts",
+        "src/browser-extension/web-extension-api/storage.ts",
+        "src/browser-extension/web-extension-api/types.ts",
+        "src/config/background.entry.ts",
+        "src/config/content.entry.ts",
+        "src/config/extension.entry.ts",
+        "src/config/options.entry.ts",
+        "src/config/page.entry.ts",
+        "src/globals.d.ts",
+        "src/native-integration/nativeIntegration.main.ts",
+        "src/native-integration/phabricator/phabricatorNativeIntegration.main.ts",
+        "src/native-integration/phabricator/util.ts",
+        "src/shared/backend/diffs.tsx",
+        "src/shared/backend/extension-api-conversion.tsx",
+        "src/shared/backend/headers.ts",
+        "src/shared/backend/requestGraphQl.ts",
+        "src/shared/backend/search.tsx",
+        "src/shared/backend/server.ts",
+        "src/shared/backend/userEvents.tsx",
+        "src/shared/cli/index.ts",
+        "src/shared/cli/search.ts",
+        "src/shared/code-hosts/bitbucket-cloud/codeHost.ts",
+        "src/shared/code-hosts/bitbucket-cloud/context.ts",
+        "src/shared/code-hosts/bitbucket-cloud/domFunctions.ts",
+        "src/shared/code-hosts/bitbucket-cloud/fileInfo.ts",
+        "src/shared/code-hosts/bitbucket-cloud/scrape.ts",
+        "src/shared/code-hosts/bitbucket/api.ts",
+        "src/shared/code-hosts/bitbucket/codeHost.tsx",
+        "src/shared/code-hosts/bitbucket/context.tsx",
+        "src/shared/code-hosts/bitbucket/domFunctions.ts",
+        "src/shared/code-hosts/bitbucket/fileInfo.ts",
+        "src/shared/code-hosts/bitbucket/scrape.ts",
+        "src/shared/code-hosts/gerrit/codeHost.ts",
+        "src/shared/code-hosts/github/codeHost.tsx",
+        "src/shared/code-hosts/github/domFunctions.ts",
+        "src/shared/code-hosts/github/fileInfo.ts",
+        "src/shared/code-hosts/github/util.tsx",
+        "src/shared/code-hosts/gitlab/api.ts",
+        "src/shared/code-hosts/gitlab/codeHost.ts",
+        "src/shared/code-hosts/gitlab/domFunctions.ts",
+        "src/shared/code-hosts/gitlab/fileInfo.ts",
+        "src/shared/code-hosts/gitlab/scrape.ts",
+        "src/shared/code-hosts/phabricator/backend.tsx",
+        "src/shared/code-hosts/phabricator/codeHost.ts",
+        "src/shared/code-hosts/phabricator/domFunctions.ts",
+        "src/shared/code-hosts/phabricator/fileInfo.ts",
+        "src/shared/code-hosts/phabricator/index.tsx",
+        "src/shared/code-hosts/phabricator/scrape.ts",
+        "src/shared/code-hosts/phabricator/util.tsx",
+        "src/shared/code-hosts/shared/SignInButton.tsx",
+        "src/shared/code-hosts/shared/ViewOnSourcegraphButton.tsx",
+        "src/shared/code-hosts/shared/codeHost.tsx",
+        "src/shared/code-hosts/shared/codeHostTestUtils.ts",
+        "src/shared/code-hosts/shared/codeViews.ts",
+        "src/shared/code-hosts/shared/errors.ts",
+        "src/shared/code-hosts/shared/extensions.tsx",
+        "src/shared/code-hosts/shared/inject.ts",
+        "src/shared/code-hosts/shared/testHelpers.ts",
+        "src/shared/code-hosts/shared/util/fileInfo.ts",
+        "src/shared/code-hosts/shared/util/selections.ts",
+        "src/shared/code-hosts/shared/views.ts",
+        "src/shared/code-hosts/sourcegraph/inject.tsx",
+        "src/shared/components/CodeViewToolbar.tsx",
+        "src/shared/components/OpenDiffOnSourcegraph.tsx",
+        "src/shared/components/OpenOnSourcegraph.tsx",
+        "src/shared/components/ShortcutProvider.tsx",
+        "src/shared/components/SourcegraphIconButton.tsx",
+        "src/shared/components/TrackAnchorClick.tsx",
+        "src/shared/components/WildcardThemeProvider.tsx",
+        "src/shared/context.ts",
+        "src/shared/extensionHostWorker.ts",
+        "src/shared/platform/context.ts",
+        "src/shared/platform/extensionHost.ts",
+        "src/shared/platform/inlineExtensionsService.ts",
+        "src/shared/platform/ports.ts",
+        "src/shared/platform/settings.ts",
+        "src/shared/platform/worker.ts",
+        "src/shared/polyfills.ts",
+        "src/shared/repo/backend.tsx",
+        "src/shared/repo/index.tsx",
+        "src/shared/sentry/index.ts",
+        "src/shared/tracking/eventLogger.tsx",
+        "src/shared/util/context.tsx",
+        "src/shared/util/dom.tsx",
+        "src/shared/util/featureFlags.ts",
+        "src/shared/util/optionFlags.ts",
+        "src/types/ajs/index.d.ts",
+        "src/types/webextension-polyfill/index.d.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":graphql_operations",
+        ":module_style_typings",
+        ":node_modules/@sourcegraph/branded",
+        ":node_modules/@sourcegraph/client-api",
+        ":node_modules/@sourcegraph/codeintellify",
+        ":node_modules/@sourcegraph/common",
+        ":node_modules/@sourcegraph/extension-api-types",
+        ":node_modules/@sourcegraph/http-client",
+        ":node_modules/@sourcegraph/shared",
+        ":node_modules/@sourcegraph/wildcard",
+        "//:node_modules/@mdi/js",
+        "//:node_modules/@reach/combobox",
+        "//:node_modules/@sentry/browser",
+        "//:node_modules/@types/classnames",
+        "//:node_modules/@types/history",
+        "//:node_modules/@types/lodash",
+        "//:node_modules/@types/mz",
+        "//:node_modules/@types/node",
+        "//:node_modules/@types/react",
+        "//:node_modules/@types/react-dom",
+        "//:node_modules/@types/simmerjs",
+        "//:node_modules/@types/uuid",
+        "//:node_modules/classnames",
+        "//:node_modules/comlink",
+        "//:node_modules/graphql",
+        "//:node_modules/history",
+        "//:node_modules/jsonc-parser",
+        "//:node_modules/lodash",
+        "//:node_modules/mdi-react",
+        "//:node_modules/mz",
+        "//:node_modules/react",
+        "//:node_modules/react-dom",
+        "//:node_modules/rxjs",
+        "//:node_modules/simmerjs",
+        "//:node_modules/utility-types",
+        "//:node_modules/uuid",
+        "//:node_modules/vitest",
+        "//:node_modules/webext-domain-permission-toggle",
+        "//:node_modules/webextension-polyfill",  #keep
+    ],
+)
+
+ts_project(
+    name = "browser_tests",
+    testonly = True,
+    srcs = [
+        "src/shared/code-hosts/bitbucket-cloud/codeHost.test.ts",
+        "src/shared/code-hosts/bitbucket/codeHost.test.ts",
+        "src/shared/code-hosts/bitbucket/domFunctions.test.tsx",
+        "src/shared/code-hosts/bitbucket/scrape.test.ts",
+        "src/shared/code-hosts/github/codeHost.test.ts",
+        "src/shared/code-hosts/github/domFunctions.test.tsx",
+        "src/shared/code-hosts/github/fileInfo.test.ts",
+        "src/shared/code-hosts/github/util.test.tsx",
+        "src/shared/code-hosts/gitlab/codeHost.test.ts",
+        "src/shared/code-hosts/gitlab/domFunctions.test.tsx",
+        "src/shared/code-hosts/gitlab/scrape.test.ts",
+        "src/shared/code-hosts/phabricator/codeHost.test.ts",
+        "src/shared/code-hosts/phabricator/domFunctions.test.tsx",
+        "src/shared/code-hosts/phabricator/fileInfo.test.ts",
+        "src/shared/code-hosts/shared/ViewOnSourcegraphButton.test.tsx",
+        "src/shared/code-hosts/shared/codeHost.test.tsx",
+        "src/shared/code-hosts/shared/codeViews.test.ts",
+        "src/shared/code-hosts/shared/views.test.ts",
+        "src/shared/code-hosts/sourcegraph/inject.test.tsx",
+        "src/testSetup.test.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":browser",
+        ":graphql_operations",
+        ":node_modules/@sourcegraph/common",
+        ":node_modules/@sourcegraph/http-client",
+        ":node_modules/@sourcegraph/shared",
+        ":node_modules/@sourcegraph/testing",
+        ":node_modules/@sourcegraph/wildcard",  #keep
+        ":node_modules/sourcegraph",
+        "//:node_modules/@testing-library/jest-dom",  #keep
+        "//:node_modules/@testing-library/react",
+        "//:node_modules/@types/lodash",
+        "//:node_modules/@types/mz",
+        "//:node_modules/@types/node",
+        "//:node_modules/@types/sinon",
+        "//:node_modules/comlink",
+        "//:node_modules/lodash",
+        "//:node_modules/mz",
+        "//:node_modules/process",
+        "//:node_modules/rxjs",
+        "//:node_modules/sinon",
+        "//:node_modules/util",
+        "//:node_modules/utility-types",
+        "//:node_modules/vitest",
+        "//:node_modules/vitest-fetch-mock",
+    ],
+)
+
+filegroup(
+    name = "snapshots",
+    srcs = glob(["src/**/__snapshots__/*"]),
+)
+
+vitest_test(
+    name = "test",
+    timeout = "moderate",
+    data = [
+        ":browser_tests",
+        ":module_styles",
+        ":snapshots",
+    ],
+)
+
+filegroup(
+    name = "entry-configs",
+    srcs = glob(["src/config/*.js"]),
+)
+
+esbuild(
+    name = "bundle",
+    srcs = [
+        # JSON imports
+        "code-intel-extensions.json",
+
+        # SRCS
+        ":browser",
+        ":entry-configs",
+        ":module_styles",
+        ":package_styles",
+
+        # BUNDLE CONFIG
+        "//:package_json",
+
+        # STATIC ASSETS
+        "//client/browser/assets",
+    ],
+    config = "//client/browser/config:esbuild-config_bundle",
+    entry_points = [
+        "src/browser-extension/scripts/backgroundPage.main.js",
+        "src/browser-extension/scripts/contentPage.main.js",
+        "src/browser-extension/scripts/optionsPage.main.js",
+        "src/browser-extension/scripts/afterInstallPage.main.js",
+        "src/native-integration/nativeIntegration.main.js",
+        "src/native-integration/phabricator/phabricatorNativeIntegration.main.js",
+        "src/app.css",
+        "src/branded.css",
+        "src/shared/extensionHostWorker.js",
+    ],
+    deps = [
+        "//:postcss_config_js",  #keep
+        "//client/browser/config",
+    ],
+)
+
+# Mirror `client/browser/scripts/build-inline-extensions.js`
+build_code_intel_extensions(
+    name = "code-intel-extensions",
+    out = "build/extensions",
+    revision = "v5.0.1",
+)
+
+# Mirror `copyIntegrationAssets` from `client/browser/scripts/tasks.ts`
+copy_to_directory(
+    name = "integration-assets",
+    srcs = [
+        "src/native-integration/extensionHostFrame.html",
+        ":bundle",
+        ":code-intel-extensions",
+    ],
+    out = "integration-assets/extension",
+    root_paths = [
+        "client/browser/src/native-integration",
+        "client/browser/bundle",
+        "client/browser/build",
+    ],
+    visibility = ["//visibility:public"],
+)

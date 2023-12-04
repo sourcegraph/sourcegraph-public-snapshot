@@ -1,20 +1,25 @@
-import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
+import React, { type FC } from 'react'
+
+import { useLocation, useNavigate, type NavigateFunction, type Location } from 'react-router-dom'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
 
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { type ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { NamespaceProps } from '../namespaces'
+import type { AuthenticatedUser } from '../auth'
+import type { NamespaceProps } from '../namespaces'
 import { createSavedSearch } from '../search/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
+import { type SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
-interface Props extends RouteComponentProps, NamespaceProps {
+interface Props extends NamespaceProps {
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean
+    location: Location
+    navigate: NavigateFunction
 }
 
 const LOADING = 'loading' as const
@@ -23,7 +28,14 @@ interface State {
     createdOrError: undefined | typeof LOADING | true | ErrorLike
 }
 
-export class SavedSearchCreateForm extends React.Component<Props, State> {
+export const SavedSearchCreateForm: FC<Omit<Props, 'location' | 'navigate'>> = props => {
+    const location = useLocation()
+    const navigate = useNavigate()
+
+    return <InnerSavedSearchCreateForm {...props} location={location} navigate={navigate} />
+}
+
+class InnerSavedSearchCreateForm extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.state = {
@@ -51,14 +63,17 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
                                 map(() => true as const),
                                 catchError((error): [ErrorLike] => [asError(error)])
                             )
-                        )
+                        ).pipe(map(createdOrError => [createdOrError, fields.description] as const))
                     )
                 )
-                .subscribe(createdOrError => {
+                .subscribe(([createdOrError, queryDescription]) => {
                     this.setState({ createdOrError })
                     if (createdOrError === true) {
                         eventLogger.log('SavedSearchCreated')
-                        this.props.history.push(`${this.props.namespace.url}/searches`)
+                        screenReaderAnnounce(`Saved ${queryDescription} search`)
+                        this.props.navigate(`${this.props.namespace.url}/searches`, {
+                            state: { description: queryDescription },
+                        })
                     }
                 })
         )

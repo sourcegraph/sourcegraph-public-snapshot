@@ -31,7 +31,7 @@ body.theme-dark .markdown-body ul li:before {
 
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ Quickstart with <code>sg</code></a>
-<a class="btn" href="#how-tos">How-tos</a>
+<a class="btn" href="../how-to">How-tos</a>
 <a class="btn" href="#troubleshooting">Troubleshooting</a>
 </div>
 
@@ -50,7 +50,6 @@ The quick start guide above provides a standard approach, focused on simplicity 
 
 The following pages list common problems with the local environment and their solutions:
 
-- [_DEPRECATED_: Quickstart without `sg`](deprecated_quickstart.md)
 - [Problems with node_modules or Javascript packages](troubleshooting.md#problems-with-nodemodules-or-javascript-packages)
 - [dial tcp 127.0.0.1:3090: connect: connection refused](troubleshooting.md#dial-tcp-1270013090-connect-connection-refused)
 - [Database migration failures](troubleshooting.md#database-migration-failures)

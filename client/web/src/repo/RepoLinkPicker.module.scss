@@ -1,0 +1,48 @@
+.root {
+    display: flex;
+
+    &--active {
+        .link-button,
+        .dropdown-button {
+            background-color: var(--color-bg-1);
+        }
+    }
+}
+
+.link-button {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: none;
+    white-space: nowrap;
+}
+
+.dropdown-button {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: none;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+}
+
+.popover {
+    padding: 0.5rem;
+}
+
+.combobox {
+    min-width: 20rem;
+}
+
+.loading {
+    min-height: 5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.list {
+    margin-top: 0.5rem;
+}
+
+.item {
+    border-radius: var(--border-radius);
+}

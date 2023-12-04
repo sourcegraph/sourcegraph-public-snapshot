@@ -1,9 +1,9 @@
-import { Observable, ReplaySubject } from 'rxjs'
+import { type Observable, ReplaySubject } from 'rxjs'
 import { catchError, map, mergeMap, tap } from 'rxjs/operators'
 
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
-import { AuthenticatedUser as SharedAuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
-import { CurrentAuthStateResult } from '@sourcegraph/shared/src/graphql-operations'
+import { type AuthenticatedUser as SharedAuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
+import type { CurrentAuthStateResult } from '@sourcegraph/shared/src/graphql-operations'
 
 import { requestGraphQL } from './backend/graphql'
 
@@ -14,6 +14,15 @@ import { requestGraphQL } from './backend/graphql'
  * in, sign out, and account changes all require a full-page reload in the browser to take effect.
  */
 export const authenticatedUser = new ReplaySubject<AuthenticatedUser | null>(1)
+
+/**
+ * Represent the current user info on the initial application load. Instead waiting for the `currentAuthStateQuery` query
+ * we use the value provided us from the server. Subsequent updates are received via `authenticatedUser` subject.
+ *
+ * TODO: migrate the `currentAuthStateQuery` to Apollo Client and then use pre-loaded data to initialize the Apollo cache.
+ */
+export const authenticatedUserValue = (typeof window !== 'undefined' && window.context?.currentUser) || null
+authenticatedUser.next(authenticatedUserValue)
 
 export type AuthenticatedUser = SharedAuthenticatedUser
 
@@ -41,14 +50,6 @@ export function refreshAuthenticatedUser(): Observable<never> {
  * errors, which mislead the user into thinking there is a problem (and make debugging any actual
  * issue much harder).
  */
-export const authRequired = authenticatedUser.pipe(map(user => user === null && !window.context?.sourcegraphDotComMode))
-
-// Populate authenticatedUser.
-if (window.context?.isAuthenticatedUser) {
-    refreshAuthenticatedUser()
-        .toPromise()
-        .then(() => undefined)
-        .catch(error => console.error(error))
-} else {
-    authenticatedUser.next(null)
-}
+export const authRequired = authenticatedUser.pipe(
+    map(user => user === null && typeof window !== 'undefined' && !window.context?.sourcegraphDotComMode)
+)

@@ -8,7 +8,7 @@ interface TrackAnchorClickProps {
 /**
  * Track all anchor link clicks in children components
  */
-export const TrackAnchorClick: React.FunctionComponent<TrackAnchorClickProps> = ({
+export const TrackAnchorClick: React.FunctionComponent<React.PropsWithChildren<TrackAnchorClickProps>> = ({
     children,
     onClick,
     as: Tag = 'div',

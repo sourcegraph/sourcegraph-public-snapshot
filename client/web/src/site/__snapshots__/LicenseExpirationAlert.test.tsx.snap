@@ -1,9 +1,11 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`LicenseExpirationAlert expired 1`] = `
+exports[`LicenseExpirationAlert > expired 1`] = `
 <DocumentFragment>
   <div
+    aria-live="assertive"
     class="alert alertWarning container align-items-center"
+    role="alert"
   >
     <div
       class="content"
@@ -22,7 +24,7 @@ exports[`LicenseExpirationAlert expired 1`] = `
        or 
       <a
         class="anchorLink site-alert__link"
-        href="https://about.sourcegraph.com/contact"
+        href="https://sourcegraph.com/contact"
       >
         <span
           class="underline"
@@ -32,14 +34,16 @@ exports[`LicenseExpirationAlert expired 1`] = `
       </a>
     </div>
     <button
-      aria-label="Close alert"
+      aria-label="Dismiss alert"
       class="btn btnIcon closeButton"
       type="button"
     >
       <svg
-        class="mdi-icon icon-inline"
+        aria-hidden="true"
+        class="mdi-icon iconInline"
         fill="currentColor"
         height="24"
+        role="img"
         viewBox="0 0 24 24"
         width="24"
       >
@@ -52,10 +56,12 @@ exports[`LicenseExpirationAlert expired 1`] = `
 </DocumentFragment>
 `;
 
-exports[`LicenseExpirationAlert expiring soon 1`] = `
+exports[`LicenseExpirationAlert > expiring soon 1`] = `
 <DocumentFragment>
   <div
+    aria-live="assertive"
     class="alert alertWarning container align-items-center"
+    role="alert"
   >
     <div
       class="content"
@@ -74,7 +80,7 @@ exports[`LicenseExpirationAlert expiring soon 1`] = `
        or 
       <a
         class="anchorLink site-alert__link"
-        href="https://about.sourcegraph.com/contact"
+        href="https://sourcegraph.com/contact"
       >
         <span
           class="underline"
@@ -84,14 +90,16 @@ exports[`LicenseExpirationAlert expiring soon 1`] = `
       </a>
     </div>
     <button
-      aria-label="Close alert"
+      aria-label="Dismiss alert"
       class="btn btnIcon closeButton"
       type="button"
     >
       <svg
-        class="mdi-icon icon-inline"
+        aria-hidden="true"
+        class="mdi-icon iconInline"
         fill="currentColor"
         height="24"
+        role="img"
         viewBox="0 0 24 24"
         width="24"
       >

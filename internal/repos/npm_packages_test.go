@@ -2,25 +2,25 @@ package repos
 
 import (
 	"context"
-	"database/sql"
-	"os"
 	"sort"
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestGetNPMDependencyRepos(t *testing.T) {
-	_, store, ctx, _ := setupDependenciesInDB(t)
+func TestGetNpmDependencyRepos(t *testing.T) {
+	ctx := context.Background()
+	depsSvc := testDependenciesService(ctx, t, testDependencyRepos)
 
 	type testCase struct {
 		pkgName string
@@ -35,17 +35,34 @@ func TestGetNPMDependencyRepos(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		deps, err := store.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{
-			ArtifactName: testCase.pkgName,
+		deps, _, hasMore, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+			Scheme:        dependencies.NpmPackagesScheme,
+			Name:          reposource.PackageName(testCase.pkgName),
+			ExactNameOnly: true,
 		})
-		require.Nil(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error listing package repos: %v", err)
+		}
+
+		if hasMore {
+			t.Error("unexpected more-pages flag set, expected no more pages to follow")
+		}
+
 		depStrs := []string{}
 		for _, dep := range deps {
-			pkg, err := reposource.ParseNPMPackageFromPackageSyntax(dep.Package)
-			require.Nil(t, err)
-			depStrs = append(depStrs,
-				reposource.NPMDependency{*pkg, dep.Version}.PackageManagerSyntax(),
-			)
+			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(dep.Name)
+			if err != nil {
+				t.Fatalf("unexpected error parsing package from package name: %v", err)
+			}
+
+			for _, version := range dep.Versions {
+				depStrs = append(depStrs,
+					(&reposource.NpmVersionedPackage{
+						NpmPackageName: pkg,
+						Version:        version.Version,
+					}).VersionedPackageSyntax(),
+				)
+			}
 		}
 		sort.Strings(depStrs)
 		sort.Strings(testCase.matches)
@@ -53,20 +70,27 @@ func TestGetNPMDependencyRepos(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		depStrs := []string{}
-		lastID := 0
-		for i := 0; i < len(testCase.matches); i++ {
-			deps, err := store.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{
-				ArtifactName: testCase.pkgName,
-				After:        lastID,
-				Limit:        1,
-			})
-			require.Nil(t, err)
-			require.Equal(t, len(deps), 1)
-			pkg, err := reposource.ParseNPMPackageFromPackageSyntax(deps[0].Package)
-			require.Nil(t, err)
-			depStrs = append(depStrs, reposource.NPMDependency{*pkg, deps[0].Version}.PackageManagerSyntax())
-			lastID = deps[0].ID
+		var depStrs []string
+		deps, _, _, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+			Scheme:        dependencies.NpmPackagesScheme,
+			Name:          reposource.PackageName(testCase.pkgName),
+			ExactNameOnly: true,
+			Limit:         1,
+		})
+		require.Nil(t, err)
+		if len(testCase.matches) > 0 {
+			require.Equal(t, 1, len(deps))
+		} else {
+			require.Equal(t, 0, len(deps))
+			continue
+		}
+		pkg, err := reposource.ParseNpmPackageFromPackageSyntax(deps[0].Name)
+		require.Nil(t, err)
+		for _, version := range deps[0].Versions {
+			depStrs = append(depStrs, (&reposource.NpmVersionedPackage{
+				NpmPackageName: pkg,
+				Version:        version.Version,
+			}).VersionedPackageSyntax())
 		}
 		sort.Strings(depStrs)
 		sort.Strings(testCase.matches)
@@ -74,82 +98,92 @@ func TestGetNPMDependencyRepos(t *testing.T) {
 	}
 }
 
-func setupDependenciesInDB(t *testing.T) (*sql.DB, *dbstore.Store, context.Context, []string) {
+func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.MinimalPackageRepoRef) *dependencies.Service {
 	t.Helper()
-	db := dbtest.NewDB(t)
-	store := dbstore.NewWithDB(db, &observation.TestContext, nil)
-	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(t))
+	depsSvc := dependencies.TestService(db)
 
-	dependencies := []string{
-		"pkg1@1",
-		"pkg1@2",
-		"pkg2@1",
-		"@scope/pkg1@1",
-		"pkg1@3",
-		"pkg2@0.1-abc",
+	_, _, err := depsSvc.InsertPackageRepoRefs(ctx, dependencyRepos)
+	if err != nil {
+		t.Fatalf(err.Error())
 	}
-	insertDependencies(t, ctx, store, dependencies)
-	return db, store, ctx, dependencies
+
+	return depsSvc
 }
 
-func TestListRepos(t *testing.T) {
-	db, _, ctx, dependencies := setupDependenciesInDB(t)
-	sort.Strings(dependencies)
-
-	dir, err := os.MkdirTemp("", "")
-	require.Nil(t, err)
-	defer os.RemoveAll(dir)
-
-	svc := types.ExternalService{
-		Kind:   extsvc.KindNPMPackages,
-		Config: `{"registry": "https://placeholder.lol", "rateLimit": {"enabled": false}}`,
-	}
-	packageSource, err := NewNPMPackagesSource(&svc)
-	require.Nil(t, err)
-	packageSource.SetDB(db)
-	packageSource.client = &npmtest.MockClient{
-		TarballMap: func() map[string]string {
-			m := map[string]string{}
-			for _, dep := range dependencies {
-				m[dep] = ""
-			}
-			return m
-		}(),
-	}
-	results := make(chan SourceResult, 10)
-	go func() {
-		packageSource.ListRepos(ctx, results)
-		close(results)
-	}()
-	repoURLs := []string{}
-	for val := range results {
-		require.NotNil(t, val.Repo)
-		repoURLs = append(repoURLs, string(val.Repo.Name))
-	}
-	sort.Strings(repoURLs)
-	expectedRepoURLs := []string{}
-	for _, dep := range dependencies {
-		dep, err := reposource.ParseNPMDependency(dep)
-		require.Nil(t, err)
-		expectedRepoURLs = append(expectedRepoURLs, string(dep.Package.RepoName()))
-	}
-	sort.Strings(expectedRepoURLs)
-	// Compare after uniquing after addressing [FIXME: deduplicate-listed-repos].
-	require.Equal(t, expectedRepoURLs, repoURLs)
+var testDependencies = []string{
+	"@scope/pkg1@1",
+	"pkg1@1",
+	"pkg1@2",
+	"pkg1@3",
+	"pkg2@0.1-abc",
+	"pkg2@1",
 }
 
-func insertDependencies(t *testing.T, ctx context.Context, s *dbstore.Store, dependencies []string) {
-	for _, depStr := range dependencies {
-		dep, err := reposource.ParseNPMDependency(depStr)
-		require.Nil(t, err)
-		// See also: enterprise/internal/codeintel/stores/dbstore/dependency_index.go:InsertCloneableDependencyRepo
-		rows, err :=
-			s.Store.Query(ctx, sqlf.Sprintf(
-				`INSERT INTO lsif_dependency_repos (scheme, name, version) VALUES (%s, %s, %s)`,
-				dbstore.NPMPackagesScheme, dep.Package.PackageSyntax(), dep.Version))
-		require.Nil(t, err)
-		for rows.Next() {
+var testDependencyRepos = func() []dependencies.MinimalPackageRepoRef {
+	dependencyRepos := []dependencies.MinimalPackageRepoRef{}
+	for _, depStr := range testDependencies {
+		dep, err := reposource.ParseNpmVersionedPackage(depStr)
+		if err != nil {
+			panic(err.Error())
 		}
-		require.Nil(t, rows.Err())
+
+		dependencyRepos = append(dependencyRepos, dependencies.MinimalPackageRepoRef{
+			Scheme:   dependencies.NpmPackagesScheme,
+			Name:     dep.PackageSyntax(),
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: dep.Version}},
+		})
 	}
+
+	return dependencyRepos
+}()
+
+func TestNPMPackagesSource_ListRepos(t *testing.T) {
+	ctx := context.Background()
+	depsSvc := testDependenciesService(ctx, t, []dependencies.MinimalPackageRepoRef{
+		{
+			Scheme: dependencies.NpmPackagesScheme,
+			Name:   "@sourcegraph/sourcegraph.proposed",
+			Versions: []dependencies.MinimalPackageRepoRefVersion{
+				{Version: "12.0.0"}, // test deduplication with version from config
+				{Version: "12.0.1"}, // test deduplication with version from config
+			},
+		},
+		{
+			Scheme:   dependencies.NpmPackagesScheme,
+			Name:     "@sourcegraph/web-ext",
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "3.0.0-fork.1"}},
+		},
+		{
+			Scheme:   dependencies.NpmPackagesScheme,
+			Name:     "fastq",
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "0.9.9"}}, // test missing modules still create a repo.
+		},
+	})
+
+	svc := typestest.MakeExternalService(t, extsvc.VariantNpmPackages, &schema.NpmPackagesConnection{
+		Registry:     "https://registry.npmjs.org",
+		Dependencies: []string{"@sourcegraph/prettierrc@2.2.0"},
+	})
+
+	cf, save := NewClientFactory(t, t.Name())
+	t.Cleanup(func() { save(t) })
+
+	src, err := NewNpmPackagesSource(ctx, svc, cf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	src.SetDependenciesService(depsSvc)
+
+	repos, err := ListAll(ctx, src)
+	sort.Slice(repos, func(i, j int) bool {
+		return repos[i].Name < repos[j].Name
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), Update(t.Name()), repos)
 }

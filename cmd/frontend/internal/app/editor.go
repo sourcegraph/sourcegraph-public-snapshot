@@ -12,21 +12,24 @@ import (
 
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func editorRev(ctx context.Context, db database.DB, repoName api.RepoName, rev string, beExplicit bool) (string, error) {
+func editorRev(ctx context.Context, logger log.Logger, db database.DB, repoName api.RepoName, rev string, beExplicit bool) string {
 	if beExplicit {
-		return "@" + rev, nil
+		return "@" + rev
 	}
 	if rev == "HEAD" {
-		return "", nil // Detached head state
+		return ""
 	}
-	repos := backend.NewRepos(db.Repos())
+	repos := backend.NewRepos(logger, db, gitserver.NewClient("http.editorrev"))
 	repo, err := repos.GetByName(ctx, repoName)
 	if err != nil {
 		// We weren't able to fetch the repo. This means it either doesn't
@@ -34,36 +37,29 @@ func editorRev(ctx context.Context, db database.DB, repoName api.RepoName, rev s
 		// this case, the best user experience is to send them to the branch
 		// they asked for. The front-end will inform them if the branch does
 		// not exist.
-		return "@" + rev, nil
+		return "@" + rev
 	}
 	// If we are on the default branch we want to return a clean URL without a
 	// branch. If we fail its best to return the full URL and allow the
 	// front-end to inform them of anything that is wrong.
 	defaultBranchCommitID, err := repos.ResolveRev(ctx, repo, "")
 	if err != nil {
-		return "@" + rev, nil
+		return "@" + rev
 	}
 	branchCommitID, err := repos.ResolveRev(ctx, repo, rev)
 	if err != nil {
-		return "@" + rev, nil
+		return "@" + rev
 	}
 	if defaultBranchCommitID == branchCommitID {
-		return "", nil // default branch, so make a clean URL without a branch.
+		return ""
 	}
-	return "@" + rev, nil
+	return "@" + rev
 }
 
 // editorRequest represents the parameters to a Sourcegraph "open file", "search", etc. editor request.
 type editorRequest struct {
-	db database.DB
-
-	// Fields that are required in all requests.
-	editor  string // editor name, e.g. "Atom", "Sublime", etc.
-	version string // editor extension version
-
-	// Fields that are optional in all requests.
-	utmProductName    string // Editor product name. Only present in JetBrains today (e.g. "IntelliJ", "GoLand")
-	utmProductVersion string // Editor product version. Only present in JetBrains today.
+	logger log.Logger
+	db     database.DB
 
 	// openFileRequest is non-nil if this is an "open file on Sourcegraph" request.
 	openFileRequest *editorOpenFileRequest
@@ -104,17 +100,6 @@ type editorSearchRequest struct {
 	file string
 }
 
-// addTracking adds the tracking ?utm_... parameters to the given query values.
-func (r *editorRequest) addTracking(q url.Values) {
-	q.Add("utm_source", r.editor+"-"+r.version)
-	if r.utmProductName != "" {
-		q.Add("utm_product_name", r.utmProductName)
-	}
-	if r.utmProductVersion != "" {
-		q.Add("utm_product_version", r.utmProductVersion)
-	}
-}
-
 // searchRedirect returns the redirect URL for the pre-validated search request.
 func (r *editorRequest) searchRedirect(ctx context.Context) (string, error) {
 	s := r.searchRequest
@@ -123,7 +108,7 @@ func (r *editorRequest) searchRedirect(ctx context.Context) (string, error) {
 	var repoFilter string
 	if s.remoteURL != "" {
 		// Search in this repository.
-		repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, r.db, s.remoteURL)
+		repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, r.db, s.remoteURL)
 		if err != nil {
 			return "", err
 		}
@@ -166,7 +151,6 @@ func (r *editorRequest) searchRedirect(ctx context.Context) (string, error) {
 	q := u.Query()
 	q.Add("q", searchQuery)
 	q.Add("patternType", "literal")
-	r.addTracking(q)
 	u.RawQuery = q.Encode()
 	return u.String(), nil
 }
@@ -175,7 +159,7 @@ func (r *editorRequest) searchRedirect(ctx context.Context) (string, error) {
 func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 	of := r.openFileRequest
 	// Determine the repo name and branch.
-	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, r.db, of.remoteURL)
+	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, r.db, of.remoteURL)
 	if err != nil {
 		return "", err
 	}
@@ -189,20 +173,22 @@ func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 	if inputRev == "" {
 		inputRev, beExplicit = of.branch, false
 	}
-	rev, err := editorRev(ctx, r.db, repoName, inputRev, beExplicit)
-	if err != nil {
-		return "", err
-	}
+
+	rev := editorRev(ctx, r.logger, r.db, repoName, inputRev, beExplicit)
 
 	u := &url.URL{Path: path.Join("/", string(repoName)+rev, "/-/blob/", of.file)}
 	q := u.Query()
 	if of.startRow == of.endRow && of.startCol == of.endCol {
-		q.Add(fmt.Sprintf("L%d:%d", of.startRow+1, of.startCol+1), "")
+		q.Add(fmt.Sprintf("L%d", of.startRow+1), "")
 	} else {
 		q.Add(fmt.Sprintf("L%d:%d-%d:%d", of.startRow+1, of.startCol+1, of.endRow+1, of.endCol+1), "")
 	}
-	r.addTracking(q)
-	u.RawQuery = q.Encode()
+	// Since the line information is added as the key as a query parameter with
+	// an empty value, the URL encoding will add an = sign followed by an empty
+	// string.
+	//
+	// Since we don't want the equal sign as it provides no value, we remove it.
+	u.RawQuery = strings.TrimSuffix(q.Encode(), "=")
 	return u.String(), nil
 }
 
@@ -218,18 +204,13 @@ func (r *editorRequest) redirectURL(ctx context.Context) (string, error) {
 
 // parseEditorRequest parses an editor request from the search query values.
 func parseEditorRequest(db database.DB, q url.Values) (*editorRequest, error) {
+	if q == nil {
+		return nil, errors.New("could not determine query string")
+	}
+
 	v := &editorRequest{
-		db:                db,
-		editor:            q.Get("editor"),
-		version:           q.Get("version"),
-		utmProductName:    q.Get("utm_product_name"),
-		utmProductVersion: q.Get("utm_product_name"),
-	}
-	if v.editor == "" {
-		return nil, errors.New("expected URL parameter missing: editor=$EDITOR_NAME")
-	}
-	if v.version == "" {
-		return nil, errors.New("expected URL parameter missing: version=$EDITOR_EXTENSION_VERSION")
+		db:     db,
+		logger: log.Scoped("editor"),
 	}
 
 	if search := q.Get("search"); search != "" {

@@ -8,20 +8,32 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/grafana/regexp"
 	"github.com/rjeczalik/notify"
+	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/internal/download"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewall bool, verbose bool, cmds ...Command) error {
+const MAX_CONCURRENT_BUILD_PROCS = 4
+
+func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...Command) error {
+	if len(cmds) == 0 {
+		// Exit early if there are no commands to run.
+		return nil
+	}
+
 	chs := make([]<-chan struct{}, 0, len(cmds))
 	monitor := &changeMonitor{}
 	for _, cmd := range cmds {
@@ -34,18 +46,37 @@ func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewa
 	}
 	go monitor.run(pathChanges)
 
-	root, err := root.RepositoryRoot()
+	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
 
+	// binaries get installed to <repository-root>/.bin. If the binary is installed with go build, then go
+	// will create .bin directory. Some binaries (like docsite) get downloaded instead of built and therefore
+	// need the directory to exist before hand.
+	binDir := filepath.Join(repoRoot, ".bin")
+	if err := os.Mkdir(binDir, 0755); err != nil && !os.IsExist(err) {
+		return err
+	}
+
 	wg := sync.WaitGroup{}
+	installSemaphore := semaphore.NewWeighted(MAX_CONCURRENT_BUILD_PROCS)
 	failures := make(chan failedRun, len(cmds))
 	installed := make(chan string, len(cmds))
 	okayToStart := make(chan struct{})
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	runner := &cmdRunner{
+		verbose:          verbose,
+		installSemaphore: installSemaphore,
+		failures:         failures,
+		installed:        installed,
+		okayToStart:      okayToStart,
+		repositoryRoot:   repoRoot,
+		parentEnv:        parentEnv,
+	}
 
 	cmdNames := make(map[string]struct{}, len(cmds))
 
@@ -58,12 +89,12 @@ func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewa
 			defer wg.Done()
 			var err error
 			for first := true; cmd.ContinueWatchOnExit || first; first = false {
-				if err = runWatch(ctx, cmd, root, globalEnv, ch, verbose, installed, okayToStart); err != nil {
+				if err = runner.runAndWatch(ctx, cmd, ch); err != nil {
 					if errors.Is(err, ctx.Err()) { // if error caused by context, terminate
 						return
 					}
 					if cmd.ContinueWatchOnExit {
-						printCmdError(stdout.Out, cmd.Name, err)
+						printCmdError(std.Out.Output, cmd.Name, err)
 						time.Sleep(time.Second * 10) // backoff
 					} else {
 						failures <- failedRun{cmdName: cmd.Name, err: err}
@@ -76,72 +107,231 @@ func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewa
 		}(cmd, chs[i])
 	}
 
-	postInstall := newPostInstall(ctx, cmds, addToMacOSFirewall)
-	err = waitForInstallation(cmdNames, installed, failures, okayToStart, postInstall)
+	err = runner.waitForInstallation(ctx, cmdNames)
 	if err != nil {
+		return err
+	}
+
+	if err := writePid(); err != nil {
 		return err
 	}
 
 	wg.Wait()
 
 	select {
+	case <-ctx.Done():
+		printCmdError(std.Out.Output, "other", ctx.Err())
+		return ctx.Err()
 	case failure := <-failures:
-		printCmdError(stdout.Out, failure.cmdName, failure.err)
+		printCmdError(std.Out.Output, failure.cmdName, failure.err)
 		return failure
 	default:
 		return nil
 	}
 }
 
-func newPostInstall(ctx context.Context, cmds []Command, addToMacOSFirewall bool) func() error {
-	if !addToMacOSFirewall {
-		return func() error { return nil }
+type cmdRunner struct {
+	verbose bool
+
+	installSemaphore *semaphore.Weighted
+	failures         chan failedRun
+	installed        chan string
+	okayToStart      chan struct{}
+
+	repositoryRoot string
+	parentEnv      map[string]string
+}
+
+func (c *cmdRunner) runAndWatch(ctx context.Context, cmd Command, reload <-chan struct{}) error {
+	printDebug := func(f string, args ...any) {
+		if !c.verbose {
+			return
+		}
+		message := fmt.Sprintf(f, args...)
+		std.Out.WriteLine(output.Styledf(output.StylePending, "%s[DEBUG] %s: %s %s", output.StyleBold, cmd.Name, output.StyleReset, message))
 	}
 
-	return func() error {
-		root, err := root.RepositoryRoot()
-		if err != nil {
-			return err
-		}
+	startedOnce := false
 
-		fwCmdPath := "/usr/libexec/ApplicationFirewall/socketfilterfw"
-		stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleWarning, "You may be prompted to enter your password to add exceptions to the firewall."))
-		fcmd := exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "off")
-		err = fcmd.Run()
-		if err != nil {
-			return err
-		}
-		for _, cmd := range cmds {
-			if strings.HasPrefix(cmd.Cmd, ".bin/") {
-				fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--add", filepath.Join(root, cmd.Cmd))
-				err = fcmd.Run()
-				if err != nil {
-					return err
+	var (
+		md5hash    string
+		md5changed bool
+	)
+
+	var wg sync.WaitGroup
+	var cancelFuncs []context.CancelFunc
+
+	errs := make(chan error, 1)
+	defer func() {
+		wg.Wait()
+		close(errs)
+	}()
+
+	for {
+		// Build it
+		if cmd.Install != "" || cmd.InstallFunc != "" {
+			install := func() (string, error) {
+				if err := c.installSemaphore.Acquire(ctx, 1); err != nil {
+					return "", errors.Wrap(err, "lockfiles semaphore")
+				}
+				defer c.installSemaphore.Release(1)
+
+				if startedOnce {
+					std.Out.WriteLine(output.Styledf(output.StylePending, "Installing %s...", cmd.Name))
+				}
+				if cmd.Install != "" && cmd.InstallFunc == "" {
+					return BashInRoot(ctx, cmd.Install, makeEnv(c.parentEnv, cmd.Env))
+				} else if cmd.Install == "" && cmd.InstallFunc != "" {
+					fn, ok := installFuncs[cmd.InstallFunc]
+					if !ok {
+						return "", errors.Newf("no install func with name %q found", cmd.InstallFunc)
+					}
+					return "", fn(ctx, makeEnvMap(c.parentEnv, cmd.Env))
+				}
+
+				return "", nil
+			}
+
+			cmdOut, err := install()
+			if err != nil {
+				if !startedOnce {
+					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
+				} else {
+					printCmdError(std.Out.Output, cmd.Name, reinstallErr{cmdName: cmd.Name, output: cmdOut})
+					// Now we wait for a reload signal before we start to build it again
+					<-reload
+					continue
 				}
 			}
+
+			// clear this signal before starting
+			select {
+			case <-reload:
+			default:
+			}
+
+			if startedOnce {
+				std.Out.WriteLine(output.Styledf(output.StyleSuccess, "%sSuccessfully installed %s%s", output.StyleBold, cmd.Name, output.StyleReset))
+			}
+
+			if cmd.CheckBinary != "" {
+				newHash, err := md5HashFile(filepath.Join(c.repositoryRoot, cmd.CheckBinary))
+				if err != nil {
+					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
+				}
+
+				md5changed = md5hash != newHash
+				md5hash = newHash
+			}
+
 		}
-		fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "on")
-		err = fcmd.Run()
-		if err != nil {
+
+		if !startedOnce {
+			c.installed <- cmd.Name
+			<-c.okayToStart
+		}
+
+		if cmd.CheckBinary == "" || md5changed {
+			for _, cancel := range cancelFuncs {
+				printDebug("Canceling previous process and waiting for it to exit...")
+				cancel() // Stop command
+				<-errs   // Wait for exit
+				printDebug("Previous command exited")
+			}
+			cancelFuncs = nil
+
+			// Run it
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s...", cmd.Name))
+
+			sc, err := startCmd(ctx, c.repositoryRoot, cmd, c.parentEnv)
+			if err != nil {
+				return err
+			}
+			defer sc.cancel()
+
+			cancelFuncs = append(cancelFuncs, sc.cancel)
+
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+
+				err := sc.Wait()
+
+				var e *exec.ExitError
+				if errors.As(err, &e) {
+					err = runErr{
+						cmdName:  cmd.Name,
+						exitCode: e.ExitCode(),
+						stderr:   sc.CapturedStderr(),
+						stdout:   sc.CapturedStdout(),
+					}
+				}
+				if err == nil && cmd.ContinueWatchOnExit {
+					std.Out.WriteLine(output.Styledf(output.StyleSuccess, "Command %s completed", cmd.Name))
+					<-reload // on success, wait for next reload before restarting
+					errs <- nil
+				} else {
+					errs <- err
+				}
+			}()
+
+			// TODO: We should probably only set this after N seconds (or when
+			// we're sure that the command has booted up -- maybe healthchecks?)
+			startedOnce = true
+		} else {
+			std.Out.WriteLine(output.Styled(output.StylePending, "Binary did not change. Not restarting."))
+		}
+
+		select {
+		case <-reload:
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Change detected. Reloading %s...", cmd.Name))
+			continue // Reinstall
+
+		case err := <-errs:
+			// Exited on its own or errored
+			if err == nil {
+				std.Out.WriteLine(output.Styledf(output.StyleSuccess, "%s%s exited without error%s", output.StyleBold, cmd.Name, output.StyleReset))
+			}
 			return err
 		}
-		return nil
 	}
 }
 
-func waitForInstallation(cmdNames map[string]struct{}, installed chan string, failures chan failedRun, okayToStart chan struct{}, postInstallCallback func() error) error {
-	stdout.Out.Write("")
-	stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Installing %d commands...", len(cmdNames)))
-	stdout.Out.Write("")
+func (c *cmdRunner) waitForInstallation(ctx context.Context, cmdNames map[string]struct{}) error {
+	installationStart := time.Now()
+	installationSpans := make(map[string]*analytics.Span, len(cmdNames))
+	for name := range cmdNames {
+		_, installationSpans[name] = analytics.StartSpan(ctx, fmt.Sprintf("install %s", name), "install_command")
+	}
+	interrupt.Register(func() {
+		for _, span := range installationSpans {
+			if span.IsRecording() {
+				span.Cancelled()
+				span.End()
+			}
+		}
+	})
+
+	std.Out.Write("")
+	std.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Installing %d commands...", len(cmdNames)))
+	std.Out.Write("")
 
 	waitingMessages := []string{
 		"Still waiting for %s to finish installing...",
 		"Yup, still waiting for %s to finish installing...",
-		"Looks like we're still waiting for %s to finish installing...",
-		"This is getting awkward now. We're still waiting for %s to finish installing...",
-		"Nothing more to say, I guess. Come on %s ...",
-		"It might be your computer? Still waiting for %s ...",
-		"Anyway... how are you? (Still waiting for %s ...)",
+		"Here's the bad news: still waiting for %s to finish installing. The good news is that we finally have a chance to talk, no?",
+		"Still waiting for %s to finish installing...",
+		"Hey, %s, there's people waiting for you, pal",
+		"Sooooo, how are ya? Yeah, waiting. I hear you. Wish %s would hurry up.",
+		"I mean, what is %s even doing?",
+		"I now expect %s to mean 'producing a miracle' with 'installing'",
+		"Still waiting for %s to finish installing...",
+		"Before this I think the longest I ever had to wait was at Disneyland in '99, but %s is now #1",
+		"Still waiting for %s to finish installing...",
+		"At this point it could be anything - does your computer still have power? Come on, %s",
+		"Might as well check Slack. %s is taking its time...",
+		"In German there's a saying: ein guter Käse braucht seine Zeit - a good cheese needs its time. Maybe %s is cheese?",
+		"If %ss turns out to be cheese I'm gonna lose it. Hey, hurry up, will ya",
 		"Still waiting for %s to finish installing...",
 	}
 	messageCount := 0
@@ -151,19 +341,21 @@ func waitForInstallation(cmdNames map[string]struct{}, installed chan string, fa
 
 	done := 0.0
 	total := float64(len(cmdNames))
-	progress := stdout.Out.Progress([]output.ProgressBar{
+	progress := std.Out.Progress([]output.ProgressBar{
 		{Label: fmt.Sprintf("Installing %d commands", len(cmdNames)), Max: total},
 	}, nil)
 
 	for {
 		select {
-		case cmdName := <-installed:
+		case cmdName := <-c.installed:
 			ticker.Reset(tickInterval)
 
 			delete(cmdNames, cmdName)
 			done += 1.0
+			installationSpans[cmdName].Succeeded()
+			installationSpans[cmdName].End()
 
-			progress.WriteLine(output.Linef("", output.StyleSuccess, "%s installed", cmdName))
+			progress.WriteLine(output.Styledf(output.StyleSuccess, "%s installed", cmdName))
 
 			progress.SetValue(0, done)
 			progress.SetLabelAndRecalc(0, fmt.Sprintf("%d/%d commands installed", int(done), int(total)))
@@ -171,22 +363,28 @@ func waitForInstallation(cmdNames map[string]struct{}, installed chan string, fa
 			// Everything installed!
 			if len(cmdNames) == 0 {
 				progress.Complete()
-				stdout.Out.Write("")
-				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system!"))
-				stdout.Out.Write("")
-				err := postInstallCallback()
-				if err != nil {
-					return err
+
+				duration := time.Since(installationStart)
+
+				std.Out.Write("")
+				if c.verbose {
+					std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Took %s. Booting up the system!", duration))
+				} else {
+					std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system!"))
 				}
-				close(okayToStart)
+				std.Out.Write("")
+
+				close(c.okayToStart)
 				return nil
 			}
 
-		case failure := <-failures:
+		case failure := <-c.failures:
 			progress.Destroy()
+			installationSpans[failure.cmdName].RecordError("failed", failure.err)
+			installationSpans[failure.cmdName].End()
 
 			// Something went wrong with an installation, no need to wait for the others
-			printCmdError(stdout.Out, failure.cmdName, failure.err)
+			printCmdError(std.Out.Output, failure.cmdName, failure.err)
 			return failure
 
 		case <-ticker.C:
@@ -266,7 +464,13 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	case installErr:
 		message = "Failed to build " + cmdName
 		if e.originalErr != nil {
-			message += ": " + e.originalErr.Error()
+			if errWithout, ok := e.originalErr.(errorWithoutOutputer); ok {
+				// If we can, let's strip away the output, otherwise this gets
+				// too noisy.
+				message += ": " + errWithout.ErrorWithoutOutput()
+			} else {
+				message += ": " + e.originalErr.Error()
+			}
 		}
 		cmdOut = e.output
 	case reinstallErr:
@@ -310,157 +514,82 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	}
 }
 
-func runWatch(
-	ctx context.Context,
-	cmd Command,
-	root string,
-	globalEnv map[string]string,
-	reload <-chan struct{},
-	verbose bool,
-	installDone chan string,
-	okayToStart chan struct{},
-) error {
-	printDebug := func(f string, args ...interface{}) {
-		if !verbose {
-			return
-		}
-		message := fmt.Sprintf(f, args...)
-		stdout.Out.WriteLine(output.Linef("", output.StylePending, "%s[DEBUG] %s: %s %s", output.StyleBold, cmd.Name, output.StyleReset, message))
-	}
+type installFunc func(context.Context, map[string]string) error
 
-	startedOnce := false
-
-	var (
-		md5hash    string
-		md5changed bool
-	)
-
-	var wg sync.WaitGroup
-	var cancelFuncs []context.CancelFunc
-
-	errs := make(chan error, 1)
-	defer func() {
-		wg.Wait()
-		close(errs)
-	}()
-
-	for {
-		// Build it
-		if cmd.Install != "" {
-			if startedOnce {
-				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Installing %s...", cmd.Name))
-			}
-
-			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(globalEnv, cmd.Env))
-			if err != nil {
-				if !startedOnce {
-					installDone <- cmd.Name
-					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
-				} else {
-					printCmdError(stdout.Out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: cmdOut})
-					// Now we wait for a reload signal before we start to build it again
-					<-reload
-					continue
-				}
-			}
-
-			// clear this signal before starting
-			select {
-			case <-reload:
-			default:
-			}
-
-			if startedOnce {
-				stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "%sSuccessfully installed %s%s", output.StyleBold, cmd.Name, output.StyleReset))
-			}
-
-			if cmd.CheckBinary != "" {
-				newHash, err := md5HashFile(filepath.Join(root, cmd.CheckBinary))
-				if err != nil {
-					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
-				}
-
-				md5changed = md5hash != newHash
-				md5hash = newHash
-			}
-
+var installFuncs = map[string]installFunc{
+	"installCaddy": func(ctx context.Context, env map[string]string) error {
+		version := env["CADDY_VERSION"]
+		if version == "" {
+			return errors.New("could not find CADDY_VERSION in env")
 		}
 
-		if !startedOnce {
-			installDone <- cmd.Name
-			<-okayToStart
-		}
-
-		if cmd.CheckBinary == "" || md5changed {
-			for _, cancel := range cancelFuncs {
-				printDebug("Canceling previous process and waiting for it to exit...")
-				cancel() // Stop command
-				<-errs   // Wait for exit
-				printDebug("Previous command exited")
-			}
-			cancelFuncs = nil
-
-			// Run it
-			stdout.Out.WriteLine(output.Linef("", output.StylePending, "Running %s...", cmd.Name))
-
-			sc, err := startCmd(ctx, root, cmd, globalEnv)
-			defer sc.cancel()
-
-			if err != nil {
-				return err
-			}
-
-			cancelFuncs = append(cancelFuncs, sc.cancel)
-
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-
-				err := sc.Wait()
-
-				var e *exec.ExitError
-				if errors.As(err, &e) {
-					err = runErr{
-						cmdName:  cmd.Name,
-						exitCode: e.ExitCode(),
-						stderr:   sc.CapturedStderr(),
-						stdout:   sc.CapturedStdout(),
-					}
-				}
-				if err == nil && cmd.ContinueWatchOnExit {
-					stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "Command %s completed", cmd.Name))
-					<-reload // on success, wait for next reload before restarting
-					errs <- nil
-				} else {
-					errs <- err
-				}
-			}()
-
-			// TODO: We should probably only set this after N seconds (or when
-			// we're sure that the command has booted up -- maybe healthchecks?)
-			startedOnce = true
-		} else {
-			stdout.Out.WriteLine(output.Linef("", output.StylePending, "Binary did not change. Not restarting."))
-		}
-
-		select {
-		case <-reload:
-			stdout.Out.WriteLine(output.Linef("", output.StylePending, "Change detected. Reloading %s...", cmd.Name))
-			continue // Reinstall
-
-		case err := <-errs:
-			// Exited on its own or errored
-			if err == nil {
-				stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "%s%s exited without error%s", output.StyleBold, cmd.Name, output.StyleReset))
-			}
+		root, err := root.RepositoryRoot()
+		if err != nil {
 			return err
 		}
-	}
+
+		var os string
+		switch runtime.GOOS {
+		case "linux":
+			os = "linux"
+		case "darwin":
+			os = "mac"
+		}
+
+		archiveName := fmt.Sprintf("caddy_%s_%s_%s", version, os, runtime.GOARCH)
+		url := fmt.Sprintf("https://github.com/caddyserver/caddy/releases/download/v%s/%s.tar.gz", version, archiveName)
+
+		target := filepath.Join(root, fmt.Sprintf(".bin/caddy_%s", version))
+
+		return download.ArchivedExecutable(ctx, url, target, "caddy")
+	},
+	"installJaeger": func(ctx context.Context, env map[string]string) error {
+		version := env["JAEGER_VERSION"]
+
+		// Make sure the data folder exists.
+		disk := env["JAEGER_DISK"]
+		if err := os.MkdirAll(disk, 0755); err != nil {
+			return err
+		}
+
+		if version == "" {
+			return errors.New("could not find JAEGER_VERSION in env")
+		}
+
+		root, err := root.RepositoryRoot()
+		if err != nil {
+			return err
+		}
+
+		archiveName := fmt.Sprintf("jaeger-%s-%s-%s", version, runtime.GOOS, runtime.GOARCH)
+		url := fmt.Sprintf("https://github.com/jaegertracing/jaeger/releases/download/v%s/%s.tar.gz", version, archiveName)
+
+		target := filepath.Join(root, fmt.Sprintf(".bin/jaeger-all-in-one-%s", version))
+
+		return download.ArchivedExecutable(ctx, url, target, fmt.Sprintf("%s/jaeger-all-in-one", archiveName))
+	},
 }
 
-func makeEnv(envs ...map[string]string) []string {
-	combined := os.Environ()
-	expandedEnv := map[string]string{}
+// makeEnv merges environments starting from the left, meaning the first environment will be overriden by the second one, skipping
+// any key that has been explicitly defined in the current environment of this process. This enables users to manually overrides
+// environment variables explictly, i.e FOO=1 sg start will have FOO=1 set even if a command or commandset sets FOO.
+func makeEnv(envs ...map[string]string) (combined []string) {
+	for k, v := range makeEnvMap(envs...) {
+		combined = append(combined, fmt.Sprintf("%s=%s", k, v))
+	}
+	return combined
+}
+
+func makeEnvMap(envs ...map[string]string) map[string]string {
+	combined := map[string]string{}
+	for _, pair := range os.Environ() {
+		elems := strings.SplitN(pair, "=", 2)
+		if len(elems) != 2 {
+			panic("space/time continuum wrong")
+		}
+
+		combined[elems[0]] = elems[1]
+	}
 
 	for _, env := range envs {
 		for k, v := range env {
@@ -490,8 +619,7 @@ func makeEnv(envs ...map[string]string) []string {
 				}
 				return os.Getenv(lookup)
 			})
-			expandedEnv[k] = expanded
-			combined = append(combined, fmt.Sprintf("%s=%s", k, expanded))
+			combined[k] = expanded
 		}
 	}
 
@@ -568,7 +696,7 @@ var watchIgnorePatterns = []*regexp.Regexp{
 }
 
 func watch() (<-chan string, error) {
-	root, err := root.RepositoryRoot()
+	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return nil, err
 	}
@@ -576,7 +704,7 @@ func watch() (<-chan string, error) {
 	paths := make(chan string)
 	events := make(chan notify.EventInfo, 1)
 
-	if err := notify.Watch(root+"/...", events, notify.All); err != nil {
+	if err := notify.Watch(repoRoot+"/...", events, notify.All); err != nil {
 		return nil, err
 	}
 
@@ -586,7 +714,7 @@ func watch() (<-chan string, error) {
 
 	outer:
 		for event := range events {
-			path := strings.TrimPrefix(strings.TrimPrefix(event.Path(), root), "/")
+			path := strings.TrimPrefix(strings.TrimPrefix(event.Path(), repoRoot), "/")
 
 			for _, pattern := range watchIgnorePatterns {
 				if pattern.MatchString(path) {
@@ -601,15 +729,15 @@ func watch() (<-chan string, error) {
 	return paths, nil
 }
 
-func Test(ctx context.Context, cmd Command, args []string, globalEnv map[string]string) error {
-	root, err := root.RepositoryRoot()
+func Test(ctx context.Context, cmd Command, args []string, parentEnv map[string]string) error {
+	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
 
-	stdout.Out.WriteLine(output.Linef("", output.StylePending, "Starting testsuite %q.", cmd.Name))
+	std.Out.WriteLine(output.Styledf(output.StylePending, "Starting testsuite %q.", cmd.Name))
 	if len(args) != 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StylePending, "\tAdditional arguments: %s", args))
+		std.Out.WriteLine(output.Styledf(output.StylePending, "\tAdditional arguments: %s", args))
 	}
 	commandCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -621,13 +749,23 @@ func Test(ctx context.Context, cmd Command, args []string, globalEnv map[string]
 		cmdArgs = append(cmdArgs, cmd.DefaultArgs)
 	}
 
+	secretsEnv, err := getSecrets(ctx, cmd.Name, cmd.ExternalSecrets)
+	if err != nil {
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "[%s] %s %s",
+			cmd.Name, output.EmojiFailure, err.Error()))
+	}
+
+	if cmd.Preamble != "" {
+		std.Out.WriteLine(output.Styledf(output.StyleOrange, "[%s] %s %s", cmd.Name, output.EmojiInfo, cmd.Preamble))
+	}
+
 	c := exec.CommandContext(commandCtx, "bash", "-c", strings.Join(cmdArgs, " "))
-	c.Dir = root
-	c.Env = makeEnv(globalEnv, cmd.Env)
+	c.Dir = repoRoot
+	c.Env = makeEnv(parentEnv, secretsEnv, cmd.Env)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
-	stdout.Out.WriteLine(output.Linef("", output.StylePending, "Running %s in %q...", c, root))
+	std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s in %q...", c, repoRoot))
 
 	return c.Run()
 }

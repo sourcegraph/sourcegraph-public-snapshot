@@ -1,43 +1,53 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
-import PlusIcon from 'mdi-react/PlusIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import SearchIcon from 'mdi-react/SearchIcon'
-import React from 'react'
+import { mdiMagnify, mdiPlus, mdiPuzzleOutline } from '@mdi/js'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
+import { BrandedStory } from '../../stories/BrandedStory'
 import { Button } from '../Button'
 import { FeedbackBadge } from '../Feedback'
+import { Icon } from '../Icon'
 import { Link } from '../Link'
+import { H1, H2 } from '../Typography'
 
 import { PageHeader } from './PageHeader'
 
-const decorator: DecoratorFn = story => (
-    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+const decorator: Decorator = story => (
+    <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 
 const config: Meta = {
     title: 'wildcard/PageHeader',
+    component: PageHeader,
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            enableDarkMode: true,
-        },
-    },
 }
 
 export default config
 
-export const BasicHeader: Story = () => (
-    <PageHeader
-        path={[{ icon: PuzzleOutlineIcon, text: 'Header' }]}
-        actions={
-            <Button to={`${location.pathname}/close`} className="mr-1" variant="secondary" as={Link}>
-                <SearchIcon className="icon-inline" /> Button with icon
-            </Button>
-        }
-    />
+export const BasicHeader: StoryFn = () => (
+    <>
+        <H1>Page Header</H1>
+        <H2>Basic</H2>
+        <div className="mb-3">
+            <PageHeader
+                path={[{ icon: mdiPuzzleOutline, text: 'Header' }]}
+                actions={
+                    <Button to={`${location.pathname}/close`} className="mr-1" variant="secondary" as={Link}>
+                        <Icon aria-hidden={true} svgPath={mdiMagnify} /> Button with icon
+                    </Button>
+                }
+            />
+        </div>
+        <H2>Overflowing</H2>
+        <div className="mb-3">
+            <PageHeader
+                path={[
+                    {
+                        icon: mdiPuzzleOutline,
+                        text: 'Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world.',
+                    },
+                ]}
+            />
+        </div>
+    </>
 )
 
 BasicHeader.storyName = 'Basic header'
@@ -46,15 +56,13 @@ BasicHeader.parameters = {
     design: {
         type: 'figma',
         name: 'Figma',
-        url:
-            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
+        url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
     },
 }
 
-export const ComplexHeader: Story = () => (
+export const ComplexHeader: StoryFn = () => (
     <PageHeader
-        annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
-        path={[{ to: '/level-0', icon: PuzzleOutlineIcon }, { to: '/level-1', text: 'Level 1' }, { text: 'Level 2' }]}
+        annotation={<FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />}
         byline={
             <>
                 Created by <Link to="/page">user</Link> 3 months ago
@@ -67,20 +75,32 @@ export const ComplexHeader: Story = () => (
                     Secondary
                 </Button>
                 <Button as={Link} to="/page" variant="primary" className="text-nowrap">
-                    <PlusIcon className="icon-inline" /> Create
+                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Create
                 </Button>
             </div>
         }
-    />
+    >
+        <PageHeader.Heading as="h2" styleAs="h1">
+            <PageHeader.Breadcrumb to="/level-0" icon={mdiPuzzleOutline} />
+            <PageHeader.Breadcrumb to="/level-1">Level 1</PageHeader.Breadcrumb>
+            <PageHeader.Breadcrumb>Level 2</PageHeader.Breadcrumb>
+            <PageHeader.Breadcrumb>Level 3</PageHeader.Breadcrumb>
+            <PageHeader.Breadcrumb>Level 4</PageHeader.Breadcrumb>
+            <PageHeader.Breadcrumb>Level 5</PageHeader.Breadcrumb>
+        </PageHeader.Heading>
+    </PageHeader>
 )
 
 ComplexHeader.storyName = 'Complex header'
 
 ComplexHeader.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
     design: {
         type: 'figma',
         name: 'Figma',
-        url:
-            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
+        url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
     },
 }

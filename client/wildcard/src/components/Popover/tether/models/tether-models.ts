@@ -1,4 +1,4 @@
-import { Rectangle } from './geometry/rectangle'
+import type { Rectangle } from './geometry/rectangle'
 
 /**
  * Describes padding (offset) of tooltip element and target element.
@@ -15,7 +15,7 @@ export interface Padding {
  */
 export interface Constraint {
     element: Rectangle
-    padding: Rectangle
+    padding: Padding
 }
 
 /**
@@ -74,6 +74,8 @@ export enum Position {
     bottom = 'bottom',
     bottomEnd = 'bottomEnd',
 }
+
+export type ElementPosition = Position | `${Position}`
 
 export enum Strategy {
     /**

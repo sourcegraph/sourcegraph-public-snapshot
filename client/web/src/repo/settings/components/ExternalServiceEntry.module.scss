@@ -1,0 +1,26 @@
+.grid {
+    display: grid;
+    grid-template-columns: max-content 1fr max-content;
+    row-gap: 1rem;
+}
+
+.card {
+    grid-column: 1 / 2;
+}
+
+.grid-button {
+    grid-column: 3;
+}
+
+.invisible-text {
+    visibility: hidden;
+}
+.button {
+    position: relative;
+}
+
+.loader {
+    position: absolute;
+    top: 25%;
+    left: 48%;
+}

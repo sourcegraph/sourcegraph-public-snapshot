@@ -1,13 +1,11 @@
 import { pick } from 'lodash'
 import { from, of } from 'rxjs'
-import { switchMap, take, toArray, first } from 'rxjs/operators'
-import { ViewComponent, Window } from 'sourcegraph'
+import { switchMap, take, toArray } from 'rxjs/operators'
+import type { ViewComponent, Window } from 'sourcegraph'
+import { describe, expect, test } from 'vitest'
 
-import { wrapRemoteObservable } from '../client/api/common'
-import { NotificationType } from '../extension/extensionHostApi'
-import { TextDocumentData } from '../viewerTypes'
-
-import { assertToJSON, integrationTestContext } from './testHelpers'
+import { assertToJSON, integrationTestContext } from '../../testing/testHelpers'
+import type { TextDocumentData } from '../viewerTypes'
 
 describe('Windows (integration)', () => {
     describe('app.activeWindow', () => {
@@ -191,36 +189,6 @@ describe('Windows (integration)', () => {
                     [null, 'foo', null, 'bar']
                 )
             })
-        })
-
-        test('Window#showNotification', async () => {
-            const { extensionAPI, extensionHostAPI } = await integrationTestContext()
-            const value = wrapRemoteObservable(extensionHostAPI.getPlainNotifications()).pipe(first()).toPromise()
-            extensionAPI.app.activeWindow!.showNotification('a', NotificationType.Info)
-            expect(await value).toEqual({ message: 'a', type: NotificationType.Info })
-        })
-
-        test('Window#showMessage', async () => {
-            const showMessageRequests: string[] = []
-            const { extensionAPI } = await integrationTestContext({
-                showMessage: message => {
-                    showMessageRequests.push(message)
-                    return Promise.resolve()
-                },
-            })
-
-            expect(await extensionAPI.app.activeWindow!.showMessage('a')).toBe(undefined)
-            expect(showMessageRequests).toEqual(['a'])
-        })
-
-        test('Window#showInputBox', async () => {
-            const { extensionAPI } = await integrationTestContext({
-                showInputBox: options => Promise.resolve('default value: ' + (options?.value || '')),
-            })
-
-            expect(await extensionAPI.app.activeWindow!.showInputBox({ prompt: 'a', value: 'b' })).toBe(
-                'default value: b'
-            )
         })
     })
 })

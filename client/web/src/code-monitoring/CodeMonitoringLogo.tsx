@@ -1,6 +1,6 @@
-import React, { SVGProps } from 'react'
+import React, { type SVGProps } from 'react'
 
-export const CodeMonitoringLogo: React.FunctionComponent<SVGProps<SVGSVGElement>> = (
+export const CodeMonitoringLogo: React.FunctionComponent<React.PropsWithChildren<SVGProps<SVGSVGElement>>> = (
     props: SVGProps<SVGSVGElement>
 ) => (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...props}>

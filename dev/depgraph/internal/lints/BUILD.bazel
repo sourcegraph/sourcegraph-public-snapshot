@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "lints",
+    srcs = [
+        "lint.go",
+        "no_binary_specific_shared_code.go",
+        "no_dead_packages.go",
+        "no_loose_commands.go",
+        "no_reaching_into_commands.go",
+        "no_unused_shared_command_code.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/depgraph/internal/lints",
+    visibility = ["//dev/depgraph:__subpackages__"],
+    deps = [
+        "//dev/depgraph/internal/graph",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)

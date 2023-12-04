@@ -5,7 +5,8 @@
     --hover-overlay-horizontal-padding: 1rem;
     --hover-overlay-separator-color: var(--border-color);
 
-    // Make very large MarkupContents scroll.
+    // Make very large MarkupContents scroll vertically.
+    overflow-x: hidden;
     overflow-y: auto;
     max-height: 10rem;
     padding-top: var(--hover-overlay-vertical-padding);
@@ -24,7 +25,7 @@
         margin-top: var(--hover-overlay-content-margin-top);
         margin-bottom: 0.5rem;
         // Required for the correct line-height of the `<code>` element.
-        line-height: 1;
+        line-height: 1rem;
     }
 
     code {

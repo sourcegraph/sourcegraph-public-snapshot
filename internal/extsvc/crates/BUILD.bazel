@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "crates",
+    srcs = ["client.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/crates",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/httpcli",
+        "//internal/ratelimit",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

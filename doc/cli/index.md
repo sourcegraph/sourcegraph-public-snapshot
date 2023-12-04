@@ -40,6 +40,8 @@
 ## How-tos
 
 - [Creating an access token](how-tos/creating_an_access_token.md)
+- [Revoking an access token](how-tos/revoking_an_access_token.md)
+- [Use 1Password to securely authenticate the Sourcegraph CLI](https://developer.1password.com/docs/cli/shell-plugins/sourcegraph/)
 
 ## References
 

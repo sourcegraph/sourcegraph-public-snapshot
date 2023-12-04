@@ -7,7 +7,7 @@ import {
     ChangesetState,
 } from '@sourcegraph/shared/src/graphql-operations'
 
-import { ChangesetFields, RepoBatchChange } from '../../../graphql-operations'
+import type { ChangesetFields, RepoBatchChange } from '../../../graphql-operations'
 
 export const now = new Date()
 
@@ -17,9 +17,8 @@ const READY_EXTERNAL_CHANGESET: ChangesetFields = {
     checkState: ChangesetCheckState.PASSED,
     diffStat: {
         __typename: 'DiffStat',
-        added: 10,
-        changed: 9,
-        deleted: 1,
+        added: 19,
+        deleted: 10,
     },
     externalID: '123',
     externalURL: {
@@ -43,6 +42,7 @@ const READY_EXTERNAL_CHANGESET: ChangesetFields = {
     id: 'somev1',
     error: null,
     syncerError: null,
+    commitVerification: null,
     currentSpec: {
         id: 'spec-rand-id-1',
         type: ChangesetSpecType.BRANCH,
@@ -61,9 +61,8 @@ const FAILED_EXTERNAL_CHANGESET: ChangesetFields = {
     checkState: null,
     diffStat: {
         __typename: 'DiffStat',
-        added: 10,
-        changed: 9,
-        deleted: 1,
+        added: 19,
+        deleted: 10,
     },
     externalID: null,
     externalURL: null,
@@ -83,6 +82,7 @@ const FAILED_EXTERNAL_CHANGESET: ChangesetFields = {
     id: 'somev2',
     error: 'Cannot create PR, insufficient token scope.',
     syncerError: null,
+    commitVerification: null,
     currentSpec: {
         id: 'spec-rand-id-2',
         type: ChangesetSpecType.BRANCH,

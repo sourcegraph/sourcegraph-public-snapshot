@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "azuredevops.schema.json#",
+  "title": "AzureDevOpsConnection",
+  "description": "Configuration for a connection to Azure DevOps.",
+  "allowComments": true,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["url", "username", "token"],
+  "properties": {
+    "url": {
+      "description": "URL for Azure DevOps Services, set to https://dev.azure.com.",
+      "type": "string",
+      "pattern": "^https?://",
+      "not": {
+        "type": "string",
+        "pattern": "example\\.com"
+      },
+      "format": "uri",
+      "examples": ["https://dev.azure.com"]
+    },
+    "gitURLType": {
+      "description": "The type of Git URLs to use for cloning and fetching Git repositories.\n\nIf \"http\", Sourcegraph will access repositories using Git URLs of the form http(s)://dev.azure.com/myrepo.git.\n\nIf \"ssh\", Sourcegraph will access repositories using Git URLs of the form git@ssh.dev.azure.com:v3/myrepo. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
+      "type": "string",
+      "enum": ["http", "ssh"],
+      "default": "http"
+    },
+    "enforcePermissions": {
+      "description": "A flag to enforce Azure DevOps repository access permissions",
+      "type": "boolean",
+      "default": false
+    },
+    "username": {
+      "description": "A username for authentication with the Azure DevOps code host.",
+      "type": "string",
+      "minLength": 1
+    },
+    "token": {
+      "description": "The Personal Access Token associated with the Azure DevOps username used for authentication.",
+      "type": "string",
+      "minLength": 1
+    },
+    "projects": {
+      "description": "An array of projects \"org/project\" strings specifying which Azure DevOps projects' repositories should be mirrored on Sourcegraph.",
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+([ ]*[\\w.-]+)*$" },
+      "examples": [["org/project"]]
+    },
+    "orgs": {
+      "description": "An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.",
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[\\w-]+$" },
+      "examples": [["name"], ["kubernetes", "golang", "facebook"]]
+    },
+    "exclude": {
+      "description": "A list of repositories to never mirror from Azure DevOps Services.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "ExcludedAzureDevOpsServerRepo",
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }, { "required": ["pattern"] }],
+        "properties": {
+          "name": {
+            "description": "The name of an Azure DevOps Services organization, project, and repository (\"orgName/projectName/repositoryName\") to exclude from mirroring.",
+            "type": "string",
+            "pattern": "^[\\w./ -]*?$"
+          },
+          "pattern": {
+            "description": "Regular expression which matches against the name of an Azure DevOps Services repo.",
+            "type": "string",
+            "format": "regex"
+          }
+        }
+      },
+      "examples": [
+        [{ "name": "myorg/myproject/myrepo" }],
+        [
+          { "name": "myorg/myproject/myrepo" },
+          { "name": "myorg/myproject/myotherrepo" },
+          { "pattern": "^topsecretproject/.*" }
+        ]
+      ]
+    }
+  }
+}

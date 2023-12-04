@@ -4,6 +4,9 @@ import (
 	"context"
 	"io"
 	"sync"
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 type lazyStore struct {
@@ -30,6 +33,14 @@ func (s *lazyStore) Get(ctx context.Context, key string) (io.ReadCloser, error) 
 	return s.store.Get(ctx, key)
 }
 
+func (s *lazyStore) List(ctx context.Context, prefix string) (*iterator.Iterator[string], error) {
+	if err := s.initOnce(ctx); err != nil {
+		return nil, err
+	}
+
+	return s.store.List(ctx, prefix)
+}
+
 func (s *lazyStore) Upload(ctx context.Context, key string, r io.Reader) (int64, error) {
 	if err := s.initOnce(ctx); err != nil {
 		return 0, err
@@ -52,6 +63,14 @@ func (s *lazyStore) Delete(ctx context.Context, key string) error {
 	}
 
 	return s.store.Delete(ctx, key)
+}
+
+func (s *lazyStore) ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) error {
+	if err := s.initOnce(ctx); err != nil {
+		return err
+	}
+
+	return s.store.ExpireObjects(ctx, prefix, maxAge)
 }
 
 // initOnce serializes access to the underlying store's Init method. If the

@@ -1,211 +1,118 @@
+import React, { useEffect } from 'react'
+
 import { parseISO } from 'date-fns'
-import * as H from 'history'
-import React, { useEffect, useMemo } from 'react'
-import { RouteComponentProps } from 'react-router'
-import { Observable } from 'rxjs'
-import { catchError, map, startWith } from 'rxjs/operators'
+import { useParams } from 'react-router-dom'
+import { validate as validateUUID } from 'uuid'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, useObservable, Link, CardHeader, CardBody, Card, CardFooter } from '@sourcegraph/wildcard'
+import { useQuery } from '@sourcegraph/http-client'
+import { LoadingSpinner, H4, Text, Link, ErrorAlert, PageHeader, Container } from '@sourcegraph/wildcard'
 
-import { queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
-import { mailtoSales } from '../../../productSubscription/helpers'
+import type {
+    UserAreaUserFields,
+    UserProductSubscriptionResult,
+    UserProductSubscriptionVariables,
+} from '../../../graphql-operations'
 import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { CodyServicesSection } from '../../site-admin/dotcom/productSubscriptions/CodyServicesSection'
+import { accessTokenPath, errorForPath } from '../../site-admin/dotcom/productSubscriptions/utils'
 
-import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
-import { ProductSubscriptionBilling } from './ProductSubscriptionBilling'
-import { ProductSubscriptionHistory } from './ProductSubscriptionHistory'
+import { USER_PRODUCT_SUBSCRIPTION } from './backend'
 import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
 
-interface Props extends Pick<RouteComponentProps<{ subscriptionUUID: string }>, 'match'> {
-    user: Pick<GQL.IUser, 'settingsURL'>
-
-    /** For mocking in tests only. */
-    _queryProductSubscription?: typeof queryProductSubscription
-    history: H.History
+interface Props {
+    user: Pick<UserAreaUserFields, 'settingsURL'>
 }
-
-const LOADING = 'loading' as const
 
 /**
  * Displays a product subscription in the user subscriptions area.
  */
-export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<Props> = ({
+export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     user,
-    match: {
-        params: { subscriptionUUID },
-    },
-    _queryProductSubscription = queryProductSubscription,
 }) => {
+    const { subscriptionUUID = '' } = useParams<{ subscriptionUUID: string }>()
+
     useEffect(() => eventLogger.logViewEvent('UserSubscriptionsProductSubscription'), [])
 
-    /**
-     * The product subscription, or loading, or an error.
-     */
-    const productSubscription =
-        useObservable(
-            useMemo(
-                () =>
-                    _queryProductSubscription(subscriptionUUID).pipe(
-                        catchError(error => [asError(error)]),
-                        startWith(LOADING)
-                    ),
-                [_queryProductSubscription, subscriptionUUID]
-            )
-        ) || LOADING
+    const isValidUUID = validateUUID(subscriptionUUID)
+    const validationError = !isValidUUID && new Error('Subscription ID is not a valid UUID')
+
+    const { data, loading, error, refetch } = useQuery<UserProductSubscriptionResult, UserProductSubscriptionVariables>(
+        USER_PRODUCT_SUBSCRIPTION,
+        {
+            variables: { uuid: subscriptionUUID },
+            errorPolicy: 'all',
+        }
+    )
+
+    if (loading) {
+        return <LoadingSpinner />
+    }
+
+    if (!isValidUUID) {
+        return <ErrorAlert className="my-2" error={validationError} />
+    }
+
+    // If there's an error, and the entire request failed loading, simply render an error page.
+    // Otherwise, we want to get more specific with error handling.
+    if (
+        error &&
+        (error.networkError ||
+            error.clientErrors.length > 0 ||
+            !(error.graphQLErrors.length === 1 && errorForPath(error, accessTokenPath)))
+    ) {
+        return <ErrorAlert className="my-2" error={error} />
+    }
+
+    const productSubscription = data!.dotcom.productSubscription
 
     return (
         <div className="user-subscriptions-product-subscription-page">
             <PageTitle title="Subscription" />
-            <div className="d-flex align-items-center justify-content-between">
-                <BackToAllSubscriptionsLink user={user} />
-                {productSubscription !== LOADING &&
-                    !isErrorLike(productSubscription) &&
-                    productSubscription.urlForSiteAdmin && (
-                        <SiteAdminAlert className="small m-0">
-                            <Link to={productSubscription.urlForSiteAdmin} className="mt-2 d-block">
-                                View subscription
-                            </Link>
-                        </SiteAdminAlert>
-                    )}
-            </div>
-            {productSubscription === LOADING ? (
-                <LoadingSpinner />
-            ) : isErrorLike(productSubscription) ? (
-                <ErrorAlert className="my-2" error={productSubscription} />
-            ) : (
-                <>
-                    <h2>Subscription {productSubscription.name}</h2>
-                    {(productSubscription.invoiceItem || productSubscription.activeLicense?.info) && (
-                        <UserProductSubscriptionStatus
-                            subscriptionName={productSubscription.name}
-                            productNameWithBrand={
-                                productSubscription.activeLicense?.info
-                                    ? productSubscription.activeLicense.info.productNameWithBrand
-                                    : productSubscription.invoiceItem!.plan.nameWithBrand
-                            }
-                            userCount={
-                                productSubscription.activeLicense?.info
-                                    ? productSubscription.activeLicense.info.userCount
-                                    : productSubscription.invoiceItem!.userCount
-                            }
-                            expiresAt={
-                                productSubscription.activeLicense?.info
-                                    ? parseISO(productSubscription.activeLicense.info.expiresAt)
-                                    : parseISO(productSubscription.invoiceItem!.expiresAt)
-                            }
-                            licenseKey={productSubscription.activeLicense?.licenseKey ?? null}
-                        />
-                    )}
-                    <Card className="mt-3">
-                        <CardHeader>Billing</CardHeader>
-                        {productSubscription.invoiceItem ? (
-                            <>
-                                <ProductSubscriptionBilling productSubscription={productSubscription} />
-                                <CardFooter>
-                                    <Link
-                                        to={mailtoSales({
-                                            subject: `Change payment method for subscription ${productSubscription.name}`,
-                                        })}
-                                    >
-                                        Contact sales
-                                    </Link>{' '}
-                                    to change your payment method.
-                                </CardFooter>
-                            </>
-                        ) : (
-                            <CardBody>
-                                <span className="text-muted ">
-                                    No billing information is associated with this subscription.{' '}
-                                    <Link
-                                        to={mailtoSales({
-                                            subject: `Billing for subscription ${productSubscription.name}`,
-                                        })}
-                                    >
-                                        Contact sales
-                                    </Link>{' '}
-                                    for help.
-                                </span>
-                            </CardBody>
-                        )}
-                    </Card>
-                    <Card className="mt-3">
-                        <CardHeader>History</CardHeader>
-                        <ProductSubscriptionHistory productSubscription={productSubscription} />
-                    </Card>
-                </>
+            <PageHeader
+                headingElement="h2"
+                path={[
+                    { text: 'Subscriptions', to: `${user.settingsURL}/subscriptions` },
+                    { text: productSubscription.name },
+                ]}
+                className="mb-3"
+            />
+
+            {productSubscription.urlForSiteAdmin && (
+                <SiteAdminAlert className="mb-3">
+                    To manage this subscription for the customer, go to{' '}
+                    <Link to={productSubscription.urlForSiteAdmin}>view subscription</Link>.
+                </SiteAdminAlert>
             )}
+
+            {productSubscription.activeLicense?.info && (
+                <UserProductSubscriptionStatus
+                    subscriptionName={productSubscription.name}
+                    productNameWithBrand={productSubscription.activeLicense?.info.productNameWithBrand}
+                    userCount={productSubscription.activeLicense?.info.userCount}
+                    expiresAt={parseISO(productSubscription.activeLicense.info.expiresAt)}
+                    licenseKey={productSubscription.activeLicense?.licenseKey ?? null}
+                    className="mb-3"
+                />
+            )}
+
+            {productSubscription.activeLicense === null && (
+                <Container className="text-center mb-3">
+                    <H4 className="text-muted">License expired</H4>
+                    <Text className="text-muted mb-0">This subscription has no active subscription attached.</Text>
+                </Container>
+            )}
+
+            <CodyServicesSection
+                viewerCanAdminister={false}
+                currentSourcegraphAccessToken={productSubscription.currentSourcegraphAccessToken}
+                accessTokenError={errorForPath(error, accessTokenPath)}
+                codyGatewayAccess={productSubscription.codyGatewayAccess}
+                productSubscriptionID={productSubscription.id}
+                productSubscriptionUUID={subscriptionUUID}
+                refetchSubscription={refetch}
+            />
         </div>
-    )
-}
-
-function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscription> {
-    return queryGraphQL(
-        gql`
-            query ProductSubscription($uuid: String!) {
-                dotcom {
-                    productSubscription(uuid: $uuid) {
-                        ...ProductSubscriptionFieldsOnSubscriptionPage
-                    }
-                }
-            }
-
-            fragment ProductSubscriptionFieldsOnSubscriptionPage on ProductSubscription {
-                id
-                name
-                account {
-                    id
-                    username
-                    displayName
-                    emails {
-                        email
-                        verified
-                    }
-                }
-                invoiceItem {
-                    plan {
-                        billingPlanID
-                        name
-                        nameWithBrand
-                        pricePerUserPerYear
-                    }
-                    userCount
-                    expiresAt
-                }
-                events {
-                    id
-                    date
-                    title
-                    description
-                    url
-                }
-                activeLicense {
-                    licenseKey
-                    info {
-                        productNameWithBrand
-                        tags
-                        userCount
-                        expiresAt
-                    }
-                }
-                createdAt
-                isArchived
-                url
-                urlForSiteAdmin
-            }
-        `,
-        { uuid }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.dotcom || !data.dotcom.productSubscription || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            return data.dotcom.productSubscription
-        })
     )
 }

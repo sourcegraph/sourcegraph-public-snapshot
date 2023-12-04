@@ -183,9 +183,58 @@ type FileBlock {
 }
 
 """
-Notebook blocks are represented as a union between three distinct block types: Markdown, Query, and File.
+SymbolBlockInput contains the information necessary to find the symbol.
 """
-union NotebookBlock = MarkdownBlock | QueryBlock | FileBlock
+type SymbolBlockInput {
+    """
+    Name of the repository, e.g. "github.com/sourcegraph/sourcegraph".
+    """
+    repositoryName: String!
+    """
+    Path within the repository, e.g. "client/web/file.tsx".
+    """
+    filePath: String!
+    """
+    An optional revision, e.g. "pr/feature-1", "a9505a2947d3df53558e8c88ff8bcef390fc4e3e".
+    If omitted, we use the latest revision (HEAD).
+    """
+    revision: String
+    """
+    Number of lines to show before and after the matched symbol line.
+    """
+    lineContext: Int!
+    """
+    The symbol name.
+    """
+    symbolName: String!
+    """
+    Name of the symbol container.
+    """
+    symbolContainerName: String!
+    """
+    The symbol kind.
+    """
+    symbolKind: SymbolKind!
+}
+
+"""
+FileBlock specifies a symbol to display within the block.
+"""
+type SymbolBlock {
+    """
+    ID of the block.
+    """
+    id: String!
+    """
+    Symbol block input.
+    """
+    symbolInput: SymbolBlockInput!
+}
+
+"""
+Notebook blocks are a union of distinct block types: Markdown, Query, File, Symbol, and Compute.
+"""
+union NotebookBlock = MarkdownBlock | QueryBlock | FileBlock | SymbolBlock
 
 """
 A notebook with an array of blocks.
@@ -321,12 +370,48 @@ input CreateFileBlockInput {
 }
 
 """
+CreateSymbolBlockInput contains the information necessary to create a symbol block.
+"""
+input CreateSymbolBlockInput {
+    """
+    Name of the repository, e.g. "github.com/sourcegraph/sourcegraph".
+    """
+    repositoryName: String!
+    """
+    Path within the repository, e.g. "client/web/file.tsx".
+    """
+    filePath: String!
+    """
+    An optional revision, e.g. "pr/feature-1", "a9505a2947d3df53558e8c88ff8bcef390fc4e3e".
+    If omitted, we use the latest revision (HEAD).
+    """
+    revision: String
+    """
+    Number of lines to show before and after the matched symbol line.
+    """
+    lineContext: Int!
+    """
+    The symbol name.
+    """
+    symbolName: String!
+    """
+    Name of the symbol container.
+    """
+    symbolContainerName: String!
+    """
+    The symbol kind.
+    """
+    symbolKind: SymbolKind!
+}
+
+"""
 Enum of possible block types.
 """
 enum NotebookBlockType {
     MARKDOWN
     QUERY
     FILE
+    SYMBOL
 }
 
 """
@@ -354,6 +439,10 @@ input CreateNotebookBlockInput {
     File input.
     """
     fileInput: CreateFileBlockInput
+    """
+    Symbol input.
+    """
+    symbolInput: CreateSymbolBlockInput
 }
 
 """

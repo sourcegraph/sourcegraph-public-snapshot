@@ -6,9 +6,9 @@ If you are using Docker Toolbox on Windows to run Sourcegraph, you may see an er
 
 ```bash
 frontend |
-     frontend |
-     frontend |
-     frontend |     New state of 'nil' is invalid.
+frontend |
+frontend |
+frontend |     New state of 'nil' is invalid.
 ```
 
 After this error, no more `frontend` log output is printed.
@@ -20,6 +20,8 @@ docker container run -e LOGO=false ... sourcegraph/server
 ```
 
 See [sourcegraph/sourcegraph#398](https://github.com/sourcegraph/sourcegraph/issues/398) for more information.
+
+> WARNING: Running Sourcegraph on Docker Toolbox for Windows is not supported for production deployments.
 
 ### Submitting a metrics dump
 
@@ -67,7 +69,7 @@ Please then upload the `sourcegraph-metrics-dump.tgz` file to Sourcegraph suppor
 
 #### Single-container Sourcegraph deployments
 
-To create a metrics dump from a [single-container `sourcegraph/server` deployment](install/docker/index.md), follow these steps:
+To create a metrics dump from a [single-container `sourcegraph/server` deployment](deploy/docker-single-container/index.md), follow these steps:
 
 * Open a shell to the running container:
     1. Run `docker ps` to get the name of the Sourcegraph server container.
@@ -131,6 +133,15 @@ If you can get repository results when you explicitly include `repo:{your reposi
 
 - The repository is a fork repository (excluded from search results by default) and `fork:yes` is not specified in the search query.
 - The repository is an archived repository (excluded from search results by default) and `archived:yes` is not specified in the search query.
-- Your site config file does not include `"search.index.enabled": true`. It should be included, and you should set it to true; if it's false, it means Sourcegraph won't index anything and will only search in real-time.
 - There is an issue indexing the repository: check the logs of repo-updater and/or search-indexer.
 - The search index is unavailable for some reason: try the search query `repo:<the_repository> index:only`. If it returns no results, the repository has not been indexed.
+
+### Sourcegraph is making unauthorized requests to the git server
+
+This is normal and happens whenever git is used over HTTP. To avoid unnecessarily sending a password over HTTP, git first
+makes a request without the password included. If a 401 Unauthorized is returned, git sends the request with the password.
+
+More information can be found [here](https://confluence.atlassian.com/bitbucketserverkb/two-401-responses-for-every-git-opperation-938854756.html).
+
+If this behaviour is undesired, the `gitURLType` in the [external service configuration](https://docs.sourcegraph.com/admin/external_service/github#configuration)
+should be set to `ssh` instead of `http`. This will also require [ssh keys to be set up](https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication).

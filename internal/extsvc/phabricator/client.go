@@ -31,8 +31,8 @@ type meteredConn struct {
 func (mc *meteredConn) CallContext(
 	ctx context.Context,
 	method string,
-	params interface{},
-	result interface{},
+	params any,
+	result any,
 ) error {
 	start := time.Now()
 	err := mc.Conn.CallContext(ctx, method, params, result)

@@ -1,5 +1,6 @@
-import { renderHook } from '@testing-library/react-hooks'
+import { renderHook } from '@testing-library/react'
 import * as sinon from 'sinon'
+import { afterAll, beforeAll, describe, it } from 'vitest'
 
 import { useTimeoutManager } from './useTimeoutManager'
 

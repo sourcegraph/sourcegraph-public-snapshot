@@ -1,38 +1,40 @@
-import { storiesOf } from '@storybook/react'
-import React from 'react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { NEVER } from 'rxjs'
 import sinon from 'sinon'
 
 import { WebStory } from '../../../components/WebStory'
-import { CodeMonitorFields } from '../../../graphql-operations'
+import type { CodeMonitorFields } from '../../../graphql-operations'
 import { mockCodeMonitor } from '../testing/util'
 
 import { DeleteMonitorModal } from './DeleteMonitorModal'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/DeleteMonitorModal', module).addParameters({
-    chromatic: { disableSnapshot: false },
-})
+const config: Meta = {
+    title: 'web/enterprise/code-monitoring/DeleteMonitorModal',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
+}
 
-add(
-    'DeleteMonitorModal',
-    () => (
-        <WebStory>
-            {props => (
-                <DeleteMonitorModal
-                    {...props}
-                    isOpen={true}
-                    codeMonitor={mockCodeMonitor.node as CodeMonitorFields}
-                    toggleDeleteModal={sinon.fake()}
-                    deleteCodeMonitor={sinon.fake(() => NEVER)}
-                />
-            )}
-        </WebStory>
-    ),
-    {
-        design: {
-            type: 'figma',
-            url:
-                'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=246%3A11',
-        },
-    }
+export default config
+
+export const DeleteMonitorModalStory: StoryFn = () => (
+    <WebStory>
+        {props => (
+            <DeleteMonitorModal
+                {...props}
+                isOpen={true}
+                codeMonitor={mockCodeMonitor.node as CodeMonitorFields}
+                toggleDeleteModal={sinon.fake()}
+                deleteCodeMonitor={sinon.fake(() => NEVER)}
+            />
+        )}
+    </WebStory>
 )
+
+DeleteMonitorModalStory.storyName = 'DeleteMonitorModal'
+DeleteMonitorModalStory.parameters = {
+    design: {
+        type: 'figma',
+        url: 'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=246%3A11',
+    },
+}

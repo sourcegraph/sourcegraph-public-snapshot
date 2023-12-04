@@ -1,0 +1,3 @@
+name: insights_faster_job_status
+parents: [1655737737, 1655763641]
+createIndexConcurrently: true

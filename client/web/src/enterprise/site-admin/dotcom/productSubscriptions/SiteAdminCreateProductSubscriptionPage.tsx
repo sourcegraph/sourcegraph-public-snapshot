@@ -1,38 +1,38 @@
-import * as H from 'history'
-import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect } from 'react'
-import { Redirect, RouteComponentProps } from 'react-router'
-import { merge, of, Observable } from 'rxjs'
+
+import { mdiPlus } from '@mdi/js'
+import { Navigate } from 'react-router-dom'
+import { merge, of, type Observable } from 'rxjs'
 import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, useEventObservable, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Link, Alert, Icon, H2, Form } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../auth'
+import type { AuthenticatedUser } from '../../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
+import type {
+    CreateProductSubscriptionVariables,
+    ProductSubscriptionAccountsResult,
+    ProductSubscriptionAccountsVariables,
+    ProductSubscriptionAccountFields,
+    CreateProductSubscriptionResult,
+} from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 
 interface UserCreateSubscriptionNodeProps {
     /**
      * The user to display in this list item.
      */
-    node: GQL.IUser
-
-    /**
-     * Browser history, used to redirect the user to the new subscription after one is successfully created.
-     */
-    history: H.History
+    node: ProductSubscriptionAccountFields
 }
 
 const createProductSubscription = (
-    args: GQL.ICreateProductSubscriptionOnDotcomMutationArguments
-): Observable<Pick<GQL.IProductSubscription, 'urlForSiteAdmin'>> =>
-    mutateGraphQL(
+    args: CreateProductSubscriptionVariables
+): Observable<CreateProductSubscriptionResult['dotcom']['createProductSubscription']> =>
+    mutateGraphQL<CreateProductSubscriptionResult>(
         gql`
             mutation CreateProductSubscription($accountID: ID!) {
                 dotcom {
@@ -48,14 +48,16 @@ const createProductSubscription = (
         map(data => data.dotcom.createProductSubscription)
     )
 
-const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscriptionNodeProps> = (
+const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildren<UserCreateSubscriptionNodeProps>> = (
     props: UserCreateSubscriptionNodeProps
 ) => {
     const [onSubmit, createdSubscription] = useEventObservable(
         useCallback(
             (
                 submits: Observable<React.FormEvent<HTMLFormElement>>
-            ): Observable<Pick<GQL.IProductSubscription, 'urlForSiteAdmin'> | 'saving' | ErrorLike> =>
+            ): Observable<
+                CreateProductSubscriptionResult['dotcom']['createProductSubscription'] | 'saving' | ErrorLike
+            > =>
                 submits.pipe(
                     tap(event => event.preventDefault()),
                     tap(() => eventLogger.log('NewProductSubscriptionCreated')),
@@ -77,7 +79,9 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
             {createdSubscription &&
                 createdSubscription !== 'saving' &&
                 !isErrorLike(createdSubscription) &&
-                createdSubscription.urlForSiteAdmin && <Redirect to={createdSubscription.urlForSiteAdmin} />}
+                createdSubscription.urlForSiteAdmin && (
+                    <Navigate replace={true} to={createdSubscription.urlForSiteAdmin} />
+                )}
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
@@ -94,7 +98,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
                                 variant="secondary"
                                 size="sm"
                             >
-                                <AddIcon className="icon-inline" /> Create new subscription
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Create new subscription
                             </Button>
                         </Form>
                     </div>
@@ -111,9 +115,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
     )
 }
 
-class FilteredUserConnection extends FilteredConnection<GQL.IUser, Pick<UserCreateSubscriptionNodeProps, 'history'>> {}
-
-interface Props extends RouteComponentProps<{}> {
+interface Props {
     authenticatedUser: AuthenticatedUser
 }
 
@@ -122,15 +124,17 @@ interface Props extends RouteComponentProps<{}> {
  *
  * For use on Sourcegraph.com by Sourcegraph teammates only.
  */
-export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<Props> = props => {
+export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
+    React.PropsWithChildren<Props>
+> = props => {
     useEffect(() => {
         eventLogger.logViewEvent('SiteAdminCreateProductSubscription')
     })
     return (
         <div className="site-admin-create-product-subscription-page">
             <PageTitle title="Create product subscription" />
-            <h2>Create product subscription</h2>
-            <FilteredUserConnection
+            <H2>Create product subscription</H2>
+            <FilteredConnection<ProductSubscriptionAccountFields, {}>
                 {...props}
                 className="list-group list-group-flush mt-3"
                 noun="user"
@@ -143,24 +147,29 @@ export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<Pro
     )
 }
 
-function queryAccounts(args: { first?: number; query?: string }): Observable<GQL.IUserConnection> {
-    return queryGraphQL(
+function queryAccounts(
+    args: Partial<ProductSubscriptionAccountsVariables>
+): Observable<ProductSubscriptionAccountsResult['users']> {
+    return queryGraphQL<ProductSubscriptionAccountsResult>(
         gql`
             query ProductSubscriptionAccounts($first: Int, $query: String) {
                 users(first: $first, query: $query) {
                     nodes {
-                        id
-                        username
-                        emails {
-                            email
-                            verified
-                            isPrimary
-                        }
+                        ...ProductSubscriptionAccountFields
                     }
                     totalCount
                     pageInfo {
                         hasNextPage
                     }
+                }
+            }
+            fragment ProductSubscriptionAccountFields on User {
+                id
+                username
+                emails {
+                    email
+                    verified
+                    isPrimary
                 }
             }
         `,

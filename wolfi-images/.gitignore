@@ -1,0 +1,7 @@
+# Generated images
+local-images/
+*.tar
+
+# SBOM files
+sbom*.cdx
+sbom*.json

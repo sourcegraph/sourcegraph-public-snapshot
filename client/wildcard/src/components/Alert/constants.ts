@@ -4,6 +4,7 @@ export const ALERT_VARIANTS = [
     'success',
     'danger',
     'warning',
+    'waiting',
     'info',
     'merged',
     'note',

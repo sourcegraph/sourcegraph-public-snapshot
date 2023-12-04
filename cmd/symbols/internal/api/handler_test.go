@@ -3,68 +3,89 @@ package api
 import (
 	"context"
 	"net/http/httptest"
-	"os"
-	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/go-ctags"
+	"github.com/sourcegraph/log/logtest"
+	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
+	symbolsdatabase "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {
-	database.Init()
+	symbolsdatabase.Init()
 }
 
 func TestHandler(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { os.RemoveAll(tmpDir) }()
+	tmpDir := t.TempDir()
 
 	cache := diskcache.NewStore(tmpDir, "symbols", diskcache.WithBackgroundTimeout(20*time.Minute))
 
-	parserFactory := func() (ctags.Parser, error) {
-		return newMockParser("x", "y"), nil
+	parserFactory := func(source ctags_config.ParserType) (ctags.Parser, error) {
+		pathToEntries := map[string][]*ctags.Entry{
+			"a.js": {
+				{
+					Name: "x",
+					Path: "a.js",
+					Line: 1, // ctags line numbers are 1-based
+				},
+				{
+					Name: "y",
+					Path: "a.js",
+					Line: 2,
+				},
+			},
+		}
+		return newMockParser(pathToEntries), nil
 	}
-	parserPool, err := parser.NewParserPool(parserFactory, 15)
+	parserPool, err := parser.NewParserPool(parserFactory, 15, parser.DefaultParserTypes)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	files := map[string]string{
-		"a.js": "var x = 1",
+		"a.js": "var x = 1\nvar y = 2",
 	}
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(files))
 
-	parser := parser.NewParser(parserPool, fetcher.NewRepositoryFetcher(gitserverClient, 15, 1000, &observation.TestContext), 0, 10, &observation.TestContext)
-	databaseWriter := writer.NewDatabaseWriter(tmpDir, gitserverClient, parser)
+	symbolParser := parser.NewParser(&observation.TestContext, parserPool, fetcher.NewRepositoryFetcher(&observation.TestContext, gitserverClient, 1000, 1_000_000), 0, 10)
+	databaseWriter := writer.NewDatabaseWriter(observation.TestContextTB(t), tmpDir, gitserverClient, symbolParser, semaphore.NewWeighted(1))
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	handler := NewHandler(cachedDatabaseWriter, &observation.TestContext)
+	handler := NewHandler(MakeSqliteSearchFunc(observation.TestContextTB(t), cachedDatabaseWriter, dbmocks.NewMockDB()), gitserverClient.ReadFile, nil, "")
 
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
+	connectionCache := internalgrpc.NewConnectionCache(logtest.Scoped(t))
+	t.Cleanup(connectionCache.Shutdown)
+
 	client := symbolsclient.Client{
-		URL:        server.URL,
-		HTTPClient: httpcli.InternalDoer,
+		Endpoints:           endpoint.Static(server.URL),
+		GRPCConnectionCache: connectionCache,
+		HTTPClient:          httpcli.InternalDoer,
 	}
 
-	x := result.Symbol{Name: "x", Path: "a.js"}
-	y := result.Symbol{Name: "y", Path: "a.js"}
+	x := result.Symbol{Name: "x", Path: "a.js", Line: 0, Character: 4}
+	y := result.Symbol{Name: "y", Path: "a.js", Line: 1, Character: 4}
 
 	testCases := map[string]struct {
 		args     search.SymbolsParameters
@@ -114,37 +135,35 @@ func TestHandler(t *testing.T) {
 
 	for label, testCase := range testCases {
 		t.Run(label, func(t *testing.T) {
-			result, err := client.Search(context.Background(), testCase.args)
+			resultSymbols, err := client.Search(context.Background(), testCase.args)
 			if err != nil {
 				t.Fatalf("unexpected error performing search: %s", err)
 			}
 
-			if result == nil {
+			if resultSymbols == nil {
 				if testCase.expected != nil {
 					t.Errorf("unexpected search result. want=%+v, have=nil", testCase.expected)
 				}
-			} else if !reflect.DeepEqual(result, testCase.expected) {
-				t.Errorf("unexpected search result. want=%+v, have=%+v", testCase.expected, result)
+			} else if diff := cmp.Diff(resultSymbols, testCase.expected, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("unexpected search result. diff: %s", diff)
 			}
 		})
 	}
 }
 
 type mockParser struct {
-	names []string
+	pathToEntries map[string][]*ctags.Entry
 }
 
-func newMockParser(names ...string) ctags.Parser {
-	return &mockParser{names: names}
+func newMockParser(pathToEntries map[string][]*ctags.Entry) ctags.Parser {
+	return &mockParser{pathToEntries: pathToEntries}
 }
 
-func (m *mockParser) Parse(name string, content []byte) ([]*ctags.Entry, error) {
-	entries := make([]*ctags.Entry, 0, len(m.names))
-	for _, name := range m.names {
-		entries = append(entries, &ctags.Entry{Name: name, Path: "a.js"})
+func (m *mockParser) Parse(path string, content []byte) ([]*ctags.Entry, error) {
+	if entries, ok := m.pathToEntries[path]; ok {
+		return entries, nil
 	}
-
-	return entries, nil
+	return nil, errors.Newf("no mock entries for %s", path)
 }
 
 func (m *mockParser) Close() {}

@@ -1,0 +1,43 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "trace",
+    srcs = [
+        "attributes.go",
+        "buckets.go",
+        "context.go",
+        "httptrace.go",
+        "logger.go",
+        "trace.go",
+        "url.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/trace",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf/conftypes",
+        "//internal/env",
+        "//internal/trace/policy",
+        "//lib/errors",
+        "@com_github_cockroachdb_redact//:redact",
+        "@com_github_felixge_httpsnoop//:httpsnoop",
+        "@com_github_gorilla_mux//:mux",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel//codes",
+        "@io_opentelemetry_go_otel_trace//:trace",
+    ],
+)
+
+go_test(
+    name = "trace_test",
+    srcs = ["attributes_test.go"],
+    embed = [":trace"],
+    deps = [
+        "//lib/errors",
+        "@com_github_stretchr_testify//require",
+    ],
+)

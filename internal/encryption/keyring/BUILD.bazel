@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "keyring",
+    srcs = ["ring.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/encryption/keyring",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/encryption",
+        "//internal/encryption/awskms",
+        "//internal/encryption/cache",
+        "//internal/encryption/cloudkms",
+        "//internal/encryption/mounted",
+        "//lib/errors",
+        "//schema",
+    ],
+)

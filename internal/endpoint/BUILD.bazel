@@ -1,0 +1,54 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "endpoint",
+    srcs = [
+        "endpoint.go",
+        "k8s.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/endpoint",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//lib/errors",
+        "@com_github_cespare_xxhash_v2//:xxhash",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_go_rendezvous//:go-rendezvous",
+        "@com_github_sourcegraph_log//:log",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//informers",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_client_go//tools/cache",
+    ],
+)
+
+go_test(
+    name = "endpoint_test",
+    timeout = "short",
+    srcs = [
+        "endpoint_test.go",
+        "k8s_test.go",
+        "main_test.go",
+    ],
+    embed = [":endpoint"],
+    deps = [
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+        "@com_github_sourcegraph_log//logtest",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//plugin/pkg/client/auth/gcp",
+        "@io_k8s_client_go//tools/clientcmd",
+        "@io_k8s_client_go//util/homedir",
+    ],
+)

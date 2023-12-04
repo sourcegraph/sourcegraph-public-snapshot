@@ -1,0 +1,42 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "handlerutil",
+    srcs = [
+        "doc.go",
+        "error.go",
+        "handler.go",
+        "repo.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/backend",
+        "//cmd/frontend/internal/routevar",
+        "//internal/api",
+        "//internal/database",
+        "//internal/errcode",
+        "//internal/gitserver",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_gorilla_mux//:mux",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "handlerutil_test",
+    timeout = "short",
+    srcs = ["repo_test.go"],
+    embed = [":handlerutil"],
+    deps = [
+        "//cmd/frontend/backend",
+        "//internal/api",
+        "//internal/database/dbmocks",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

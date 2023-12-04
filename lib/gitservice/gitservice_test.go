@@ -90,7 +90,7 @@ func TestHandler(t *testing.T) {
 	}
 }
 
-func runCmd(t *testing.T, dir string, cmd string, arg ...string) string {
+func runCmd(t *testing.T, dir string, cmd string, arg ...string) {
 	t.Helper()
 	c := exec.Command(cmd, arg...)
 	c.Dir = dir
@@ -104,5 +104,4 @@ func runCmd(t *testing.T, dir string, cmd string, arg ...string) string {
 	if err != nil {
 		t.Fatalf("%s %s failed: %s\nOutput: %s", cmd, strings.Join(arg, " "), err, b)
 	}
-	return string(b)
 }

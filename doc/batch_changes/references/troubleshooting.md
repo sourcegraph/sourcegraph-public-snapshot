@@ -58,7 +58,7 @@ on:
 
 # In each repository, run this command. Each repository's resulting diff is captured.
 steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
+  - run: IFS=$'\n'; echo Hello World | tee -a $(find -name README.md)
     container: alpine:3
 
 # Describe the changeset (e.g., GitHub pull request) you want for each repository.
@@ -131,7 +131,7 @@ If that fails, then that points to the Sourcegraph setup or infrastructure as a 
 
 If executing the `steps.run` command fails, you can try to recreate whether executing the step manually in a container works.
 
-An approximiation of what `src` does under the hood is the following command:
+An approximation of what `src` does under the hood is the following command:
 
 ```
 docker run --rm --init --workdir /work \
@@ -162,8 +162,49 @@ src batch preview -workspace volume -f my-spec.yaml
 
 If you're using SELinux then neither workspace is fully supported. See [this issue](https://github.com/sourcegraph/src-cli/issues/570) for more details.
 
+### Are the Docker images running as different users?
+
+Running steps with images that run with different user IDs is unsupported.
+
+While doing so may work in `bind` workspace mode on macOS due to specific implementation details of how Docker for Mac mounts from the host filesystem, this is a common source of confusing permission errors similar to [the previous step](#does-it-work-if-you-switch-to-using-the-workspace-mode-using-docker-volumes).
+
+### Are you on the latest version of Docker?
+
+If not, please update to the latest version of [Docker Desktop](https://docs.docker.com/desktop/release-notes/).
+
+### Have you pruned your Docker Build Cache and restarted the Docker Daemon?
+
+If you're experiencing `src-cli` hanging at the "Determining Workspace Type" step of the Batch Change we have found that clearing the Docker build cache using `docker builder prune` and restarting the Docker Daemon has resolved the issue. Please contact support if this does not resolve your issue. 
+
+### Using Rancher Desktop or Colima?
+
+If you encounter the error `docker: Error response from daemon: invalid mount config for type 'bind': bind source path does not exist`, try configuring the env var SRC_BATCH_TMP_DIR to reference an accessible directory.
+
+For Colima:
+```
+export SRC_BATCH_TMP_DIR=/tmp/colima/batchchange
+```
+
+For Rancher Desktop:
+```
+export SRC_BATCH_TMP_DIR=/tmp/rancher-desktop/batchchange
+```
+
 ## Publishing changesets
 
 ### Do you have the right credentials?
 
 When publishing changesets fails, make sure that you have [configured credentials](../how-tos/configuring_credentials.md) with all of the required scopes and from an account with write access to the changeset's repository on the code host.
+
+### Do you have email privacy enabled on GitHub?
+
+In case you encounter an error informing that your push was rejected due to the presence of an email address that isn't
+permitted to be public, there are a couple of possible solutions.
+
+You can choose either to:
+
+1. Permit your email address to be public.
+2. Disable the feature **Block command line pushes that expose my email**.
+
+Instructions for both of these potential solutions can be found in
+the [GitHub Email Settings](https://github.com/settings/emails).

@@ -16,7 +16,7 @@ mutation CreateUser($username: String!, $email: String) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"username": username,
 		"email":    email,
 	}
@@ -48,7 +48,7 @@ mutation DeleteUser($user: ID!, $hard: Boolean) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"user": id,
 		"hard": hard,
 	}
@@ -56,6 +56,34 @@ mutation DeleteUser($user: ID!, $hard: Boolean) {
 	if err != nil {
 		return errors.Wrap(err, "request GraphQL")
 	}
+	return nil
+}
+
+// SetUserEmailVerified sets the given user's email address verification status.
+//
+// This method requires the authenticated user to be a site admin.
+func (c *Client) SetUserEmailVerified(user, email string, verified bool) error {
+	const query = `
+mutation setUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
+	setUserEmailVerified(user: $user, email: $email, verified: $verified) {
+      alwaysNil
+	}
+}
+`
+	variables := map[string]any{
+		"user":     user,
+		"email":    email,
+		"verified": verified,
+	}
+	var resp struct {
+		Data struct {
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return errors.Wrap(err, "request GraphQL")
+	}
+
 	return nil
 }
 
@@ -72,7 +100,7 @@ query User($username: String) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"username": username,
 	}
 	var resp struct {
@@ -96,4 +124,35 @@ query User($username: String) {
 		names = append(names, node.Name)
 	}
 	return names, nil
+}
+
+// UserPermissions returns repo permissions that given user has.
+func (c *Client) UserPermissions(username string) ([]string, error) {
+	const query = `
+query User($username: String) {
+	user(username: $username) {
+		permissionsInfo {
+			permissions
+		}
+	}
+}
+`
+	variables := map[string]any{
+		"username": username,
+	}
+	var resp struct {
+		Data struct {
+			User struct {
+				PermissionsInfo struct {
+					Permissions []string `json:"permissions"`
+				} `json:"permissionsInfo"`
+			} `json:"user"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.User.PermissionsInfo.Permissions, nil
 }

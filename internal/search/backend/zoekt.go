@@ -3,9 +3,14 @@ package backend
 import (
 	"sync"
 
-	"github.com/google/zoekt"
-	"github.com/google/zoekt/rpc"
-	zoektstream "github.com/google/zoekt/stream"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
+	proto "github.com/sourcegraph/zoekt/grpc/protos/zoekt/webserver/v1"
+	"github.com/sourcegraph/zoekt/rpc"
+	zoektstream "github.com/sourcegraph/zoekt/stream"
+	"google.golang.org/grpc"
+
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -31,16 +36,6 @@ type ZoektStreamFunc func(*zoekt.SearchResult)
 
 func (f ZoektStreamFunc) Send(event *zoekt.SearchResult) {
 	f(event)
-}
-
-// StreamSearchEvent has fields optionally set representing events that happen
-// during a search.
-//
-// This is a Sourcegraph extension.
-type StreamSearchEvent struct {
-	// SearchResult is non-nil if this event is a search result. These should be
-	// combined with previous and later SearchResults.
-	SearchResult *zoekt.SearchResult
 }
 
 // ZoektDialer is a function that returns a zoekt.Streamer for the given endpoint.
@@ -99,15 +94,35 @@ func (c *cachedStreamerCloser) Close() {
 
 // ZoektDial connects to a Searcher HTTP RPC server at address (host:port).
 func ZoektDial(endpoint string) zoekt.Streamer {
-	client := rpc.Client(endpoint)
-	streamClient := &zoektStream{
-		Searcher: client,
-		Client:   zoektstream.NewClient("http://"+endpoint, zoektHTTPClient),
+	return &switchableZoektGRPCClient{
+		httpClient: ZoektDialHTTP(endpoint),
+		grpcClient: ZoektDialGRPC(endpoint),
 	}
+}
+
+// ZoektDialHTTP connects to a Searcher HTTP RPC server at address (host:port).
+func ZoektDialHTTP(endpoint string) zoekt.Streamer {
+	client := rpc.Client(endpoint)
+	streamClient := zoektstream.NewClient("http://"+endpoint, zoektHTTPClient).WithSearcher(client)
 	return NewMeteredSearcher(endpoint, streamClient)
 }
 
-type zoektStream struct {
-	zoekt.Searcher
-	*zoektstream.Client
+// maxRecvMsgSize is the max message size we can receive from Zoekt without erroring.
+// By default, this caps at 4MB, but Zoekt can send payloads significantly larger
+// than that depending on the type of search being executed.
+// 128MiB is a best guess at reasonable size that will rarely fail.
+const maxRecvMsgSize = 128 * 1024 * 1024 // 128MiB
+
+// ZoektDialGRPC connects to a Searcher gRPC server at address (host:port).
+func ZoektDialGRPC(endpoint string) zoekt.Streamer {
+	conn, err := defaults.Dial(
+		endpoint,
+		log.Scoped("zoekt"),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxRecvMsgSize)),
+	)
+	return NewMeteredSearcher(endpoint, &zoektGRPCClient{
+		endpoint: endpoint,
+		client:   proto.NewWebserverServiceClient(conn),
+		dialErr:  err,
+	})
 }

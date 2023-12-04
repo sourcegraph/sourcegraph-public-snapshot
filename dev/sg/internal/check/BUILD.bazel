@@ -1,0 +1,49 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "check",
+    srcs = [
+        "annotation.go",
+        "category.go",
+        "check.go",
+        "functions.go",
+        "helpers.go",
+        "input.go",
+        "runner.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/check",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//dev/sg/internal/analytics",
+        "//dev/sg/internal/std",
+        "//dev/sg/internal/usershell",
+        "//dev/sg/root",
+        "//internal/limiter",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_masterminds_semver//:semver",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_conc//stream",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_trace//:trace",
+        "@org_uber_go_atomic//:atomic",
+    ],
+)
+
+go_test(
+    name = "check_test",
+    timeout = "short",
+    srcs = [
+        "check_test.go",
+        "runner_test.go",
+    ],
+    embed = [":check"],
+    deps = [
+        "//dev/sg/internal/std",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

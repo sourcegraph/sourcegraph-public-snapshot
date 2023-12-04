@@ -1,0 +1,35 @@
+.error-icon {
+    color: var(--danger);
+}
+
+.check-icon {
+    color: var(--icon-color);
+}
+
+.chevron-icon {
+    --icon-inline-size: 1.5rem;
+}
+
+.error-icon-spacer {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+}
+
+.expand-button {
+    padding: 0.375rem 0.75rem;
+}
+
+.container {
+    border-top: 1px solid var(--border-color-2);
+    margin-top: 1rem;
+    padding-top: 1rem;
+}
+
+.expanded-row {
+    grid-column: 1 / span 2;
+    margin-left: 2rem;
+    background-color: var(--body-bg);
+    padding: 0.75rem;
+    border-radius: var(--border-radius);
+}

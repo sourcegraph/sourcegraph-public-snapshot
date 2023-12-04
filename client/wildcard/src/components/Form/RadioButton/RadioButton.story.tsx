@@ -1,32 +1,24 @@
-import { Meta } from '@storybook/react'
 import React, { useCallback } from 'react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import type { Meta, StoryFn } from '@storybook/react'
 
+import { H1, H2 } from '../..'
+import { BrandedStory } from '../../../stories/BrandedStory'
 import { Grid } from '../../Grid'
 
-import { RadioButton, RadioButtonProps } from './RadioButton'
+import { RadioButton, type RadioButtonProps } from './RadioButton'
 
 const config: Meta = {
     title: 'wildcard/RadioButton',
 
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
 
     parameters: {
         component: RadioButton,
-        chromatic: {
-            enableDarkMode: true,
-        },
         design: {
             type: 'figma',
             name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A1943',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=854%3A2792',
         },
     },
 }
@@ -76,26 +68,33 @@ const BaseRadio = ({ name, ...props }: Pick<RadioButtonProps, 'name' | 'isValid'
     )
 }
 
-export const RadioExamples: React.FunctionComponent = () => (
+export const RadioExamples: StoryFn = () => (
     <>
-        <h1>Radio</h1>
+        <H1>Radio</H1>
         <Grid columnCount={4}>
             <div>
-                <h2>Standard</h2>
+                <H2>Standard</H2>
                 <BaseRadio name="standard-example" />
             </div>
             <div>
-                <h2>Valid</h2>
+                <H2>Valid</H2>
                 <BaseRadio name="valid-example" isValid={true} />
             </div>
             <div>
-                <h2>Invalid</h2>
+                <H2>Invalid</H2>
                 <BaseRadio name="invalid-example" isValid={false} />
             </div>
             <div>
-                <h2>Disabled</h2>
+                <H2>Disabled</H2>
                 <BaseRadio name="disabled-example" disabled={true} />
             </div>
         </Grid>
     </>
 )
+
+RadioExamples.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}

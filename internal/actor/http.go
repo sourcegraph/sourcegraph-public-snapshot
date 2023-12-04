@@ -6,14 +6,21 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 const (
 	// headerKeyActorUID is the header key for the actor's user ID.
 	headerKeyActorUID = "X-Sourcegraph-Actor-UID"
+
+	// headerKeyAnonymousActorUID is an optional header to propagate the
+	// anonymous UID of an unauthenticated actor.
+	headerKeyActorAnonymousUID = "X-Sourcegraph-Actor-Anonymous-UID"
 )
 
 const (
@@ -53,16 +60,23 @@ var (
 //
 // 🚨 SECURITY: Wherever possible, prefer to act in the context of a specific user rather
 // than as an internal actor, which can grant a lot of access in some cases.
+//
+// TODO(@bobheadxi): Migrate to httpcli.Doer and httpcli.Middleware
 type HTTPTransport struct {
 	RoundTripper http.RoundTripper
 }
 
 var _ http.RoundTripper = &HTTPTransport{}
 
+// 🚨 SECURITY: Do not send any PII here.
 func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if t.RoundTripper == nil {
 		t.RoundTripper = http.DefaultTransport
 	}
+
+	// RoundTripper should not modify original request. All the code paths
+	// below set a header, so we clone the request immediately.
+	req = req.Clone(req.Context())
 
 	actor := FromContext(req.Context())
 	path := getCondensedURLPath(req.URL.Path)
@@ -77,9 +91,12 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		req.Header.Set(headerKeyActorUID, actor.UIDString())
 		metricOutgoingActors.WithLabelValues(metricActorTypeUser, path).Inc()
 
-	// Indicate no actor is associated with request
+	// Indicate no authenticated actor is associated with request
 	default:
 		req.Header.Set(headerKeyActorUID, headerValueNoActor)
+		if actor.AnonymousUID != "" {
+			req.Header.Set(headerKeyActorAnonymousUID, actor.AnonymousUID)
+		}
 		metricOutgoingActors.WithLabelValues(metricActorTypeNone, path).Inc()
 	}
 
@@ -93,7 +110,7 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 // 🚨 SECURITY: This should *never* be called to wrap externally accessible handlers (i.e.
 // only use for internal endpoints), because internal requests can bypass repository
 // permissions checks.
-func HTTPMiddleware(next http.Handler) http.Handler {
+func HTTPMiddleware(logger log.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 		uidStr := req.Header.Get(headerKeyActorUID)
@@ -108,17 +125,23 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 			ctx = WithInternalActor(ctx)
 			metricIncomingActors.WithLabelValues(metricActorTypeInternal, path).Inc()
 
-		// Request not associated with any actor
+		// Request not associated with an authenticated user
 		case "", headerValueNoActor:
+			// Even though the current user is not authenticated, we may still have an
+			// anonymous UID to propagate.
+			if anonymousUID := req.Header.Get(headerKeyActorAnonymousUID); anonymousUID != "" {
+				ctx = WithActor(ctx, FromAnonymousUser(anonymousUID))
+			}
 			metricIncomingActors.WithLabelValues(metricActorTypeNone, path).Inc()
 
 		// Request associated with authenticated user - add user actor to context
 		default:
 			uid, err := strconv.Atoi(uidStr)
 			if err != nil {
-				log15.Warn("invalid user ID in request",
-					"error", err,
-					"uid", uidStr)
+				trace.Logger(ctx, logger).
+					Warn("invalid user ID in request",
+						log.Error(err),
+						log.String("uid", uidStr))
 				metricIncomingActors.WithLabelValues(metricActorTypeInvalid, path).Inc()
 
 				// Do not proceed with request
@@ -147,4 +170,32 @@ func getCondensedURLPath(urlPath string) string {
 		return "/git/..."
 	}
 	return urlPath
+}
+
+// AnonymousUIDMiddleware sets the actor to an unauthenticated actor with an anonymousUID
+// from the cookie if it exists. It will not overwrite an existing actor.
+func AnonymousUIDMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		// Don't clobber an existing authenticated actor
+		if a := FromContext(req.Context()); !a.IsAuthenticated() && !a.IsInternal() {
+			var anonymousUID string
+
+			// Get from cookie if available, otherwise get from header
+			if cookieAnonymousUID, ok := cookie.AnonymousUID(req); ok {
+				anonymousUID = cookieAnonymousUID
+			} else if headerAnonymousUID := req.Header.Get(headerKeyActorAnonymousUID); headerAnonymousUID != "" {
+				anonymousUID = headerAnonymousUID
+			}
+
+			// If we found an anonymous UID, use that as the actor context
+			ctx := req.Context()
+			if anonymousUID != "" {
+				ctx = WithActor(ctx, FromAnonymousUser(anonymousUID))
+			}
+			next.ServeHTTP(rw, req.WithContext(ctx))
+			return
+		}
+
+		next.ServeHTTP(rw, req)
+	})
 }

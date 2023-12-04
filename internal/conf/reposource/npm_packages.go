@@ -3,8 +3,6 @@ package reposource
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -13,28 +11,32 @@ import (
 
 const (
 	// Exported for [NOTE: npm-tarball-filename-workaround].
-	NPMScopeRegexString = `(?P<scope>[0-9a-z_\\-]+)`
+	// . is allowed in scope names: for example https://www.npmjs.com/package/@dinero.js/core
+	NpmScopeRegexString = `(?P<scope>[\w\-\.]+)`
 	// . is allowed in package names: for example https://www.npmjs.com/package/highlight.js
-	npmPackageNameRegexString = `(?P<name>[0-9a-z_\\-]+(\.[0-9a-z_\\-]+)*)`
+	npmPackageNameRegexString = `(?P<name>[\w\-]+(\.[\w\-]+)*)`
 )
 
 var (
-	npmScopeRegex          = lazyregexp.New(`^` + NPMScopeRegexString + `$`)
+	npmScopeRegex          = lazyregexp.New(`^` + NpmScopeRegexString + `$`)
 	npmPackageNameRegex    = lazyregexp.New(`^` + npmPackageNameRegexString + `$`)
 	scopedPackageNameRegex = lazyregexp.New(
-		`^(@` + NPMScopeRegexString + `/)?` +
+		`^(@` + NpmScopeRegexString + `/)?` +
 			npmPackageNameRegexString +
-			`@(?P<version>[0-9a-zA-Z_\\-]+(\.[0-9a-zA-Z_\\-]+)*)$`)
+			`@(?P<version>[\w\-]+(\.[\w\-]+)*)$`)
+	scopedPackageNameWithoutVersionRegex = lazyregexp.New(
+		`^(@` + NpmScopeRegexString + `/)?` +
+			npmPackageNameRegexString)
 	npmURLRegex = lazyregexp.New(
-		`^npm/(` + NPMScopeRegexString + `/)?` +
+		`^npm/(` + NpmScopeRegexString + `/)?` +
 			npmPackageNameRegexString + `$`)
 )
 
-// An NPM package of the form (@scope/)?name.
+// An npm package of the form (@scope/)?name.
 //
 // The fields are kept private to reduce risk of not handling the empty scope
 // case correctly.
-type NPMPackage struct {
+type NpmPackageName struct {
 	// Optional scope () for a package, can potentially be "".
 	// For more details, see https://docs.npmjs.com/cli/v8/using-npm/scope
 	scope string
@@ -42,22 +44,42 @@ type NPMPackage struct {
 	name string
 }
 
-func NewNPMPackage(scope string, name string) (*NPMPackage, error) {
+func NewNpmPackageName(scope string, name string) (*NpmPackageName, error) {
 	if scope != "" && !npmScopeRegex.MatchString(scope) {
-		return nil, errors.Errorf("illegal scope %s (allowed characters: 0-9, a-z, _, -)", scope)
+		return nil, errors.Errorf("illegal scope %s (allowed characters: 0-9, a-z, A-Z, _, -)", scope)
 	}
 	if !npmPackageNameRegex.MatchString(name) {
-		return nil, errors.Errorf("illegal package name %s (allowed characters: 0-9, a-z, _, -)", name)
+		return nil, errors.Errorf("illegal package name %s (allowed characters: 0-9, a-z, A-Z, _, -)", name)
 	}
-	return &NPMPackage{scope, name}, nil
+	return &NpmPackageName{scope, name}, nil
 }
 
-// ParseNPMPackageFromRepoURL is a convenience function to parse a string in a
-// 'npm/(scope/)?name' format into an NPMPackage.
-func ParseNPMPackageFromRepoURL(urlPath string) (*NPMPackage, error) {
-	match := npmURLRegex.FindStringSubmatch(urlPath)
+func (pkg *NpmPackageName) Equal(other *NpmPackageName) bool {
+	return pkg == other || (pkg != nil && other != nil && *pkg == *other)
+}
+
+// ParseNpmPackageNameWithoutVersion parses a package name with optional scope
+// into NpmPackageName.
+func ParseNpmPackageNameWithoutVersion(input string) (NpmPackageName, error) {
+	match := scopedPackageNameWithoutVersionRegex.FindStringSubmatch(input)
 	if match == nil {
-		return nil, errors.Errorf("expected path in npm/(scope/)?name format but found %s", urlPath)
+		return NpmPackageName{}, errors.Errorf("expected dependency in (@scope/)?name format but found %s", input)
+	}
+	result := make(map[string]string)
+	for i, groupName := range scopedPackageNameWithoutVersionRegex.SubexpNames() {
+		if i != 0 && groupName != "" {
+			result[groupName] = match[i]
+		}
+	}
+	return NpmPackageName{result["scope"], result["name"]}, nil
+}
+
+// ParseNpmPackageFromRepoURL is a convenience function to parse a string in a
+// 'npm/(scope/)?name' format into an NpmPackageName.
+func ParseNpmPackageFromRepoURL(repoName api.RepoName) (*NpmPackageName, error) {
+	match := npmURLRegex.FindStringSubmatch(string(repoName))
+	if match == nil {
+		return nil, errors.Errorf("expected path in npm/(scope/)?name format but found %s", repoName)
 	}
 	result := make(map[string]string)
 	for i, groupName := range npmURLRegex.SubexpNames() {
@@ -66,38 +88,38 @@ func ParseNPMPackageFromRepoURL(urlPath string) (*NPMPackage, error) {
 		}
 	}
 	scope, name := result["scope"], result["name"]
-	return &NPMPackage{scope, name}, nil
+	return &NpmPackageName{scope, name}, nil
 }
 
-// ParseNPMPackageFromPackageSyntax is a convenience function to parse a
-// string in a '(@scope/)?name' format into an NPMPackage.
-func ParseNPMPackageFromPackageSyntax(pkg string) (*NPMPackage, error) {
-	dep, err := ParseNPMDependency(fmt.Sprintf("%s@0", pkg))
+// ParseNpmPackageFromPackageSyntax is a convenience function to parse a
+// string in a '(@scope/)?name' format into an NpmPackageName.
+func ParseNpmPackageFromPackageSyntax(pkg PackageName) (*NpmPackageName, error) {
+	dep, err := ParseNpmVersionedPackage(fmt.Sprintf("%s@0", pkg))
 	if err != nil {
 		return nil, err
 	}
-	return &dep.Package, nil
+	return dep.NpmPackageName, nil
 }
 
-type NPMPackageSerializationHelper struct {
+type NpmPackageSerializationHelper struct {
 	Scope string
 	Name  string
 }
 
-var _ json.Marshaler = &NPMPackage{}
-var _ json.Unmarshaler = &NPMPackage{}
+var _ json.Marshaler = &NpmPackageName{}
+var _ json.Unmarshaler = &NpmPackageName{}
 
-func (pkg *NPMPackage) MarshalJSON() ([]byte, error) {
-	return json.Marshal(NPMPackageSerializationHelper{pkg.scope, pkg.name})
+func (pkg *NpmPackageName) MarshalJSON() ([]byte, error) {
+	return json.Marshal(NpmPackageSerializationHelper{pkg.scope, pkg.name})
 }
 
-func (pkg *NPMPackage) UnmarshalJSON(data []byte) error {
-	var wrapper NPMPackageSerializationHelper
+func (pkg *NpmPackageName) UnmarshalJSON(data []byte) error {
+	var wrapper NpmPackageSerializationHelper
 	err := json.Unmarshal(data, &wrapper)
 	if err != nil {
 		return err
 	}
-	newPkg, err := NewNPMPackage(wrapper.Scope, wrapper.Name)
+	newPkg, err := NewNpmPackageName(wrapper.Scope, wrapper.Name)
 	if err != nil {
 		return err
 	}
@@ -108,7 +130,7 @@ func (pkg *NPMPackage) UnmarshalJSON(data []byte) error {
 // RepoName provides a name that is "globally unique" for a Sourcegraph instance.
 //
 // The returned value is used for repo:... in queries.
-func (pkg *NPMPackage) RepoName() api.RepoName {
+func (pkg *NpmPackageName) RepoName() api.RepoName {
 	if pkg.scope != "" {
 		return api.RepoName(fmt.Sprintf("npm/%s/%s", pkg.scope, pkg.name))
 	}
@@ -116,53 +138,57 @@ func (pkg *NPMPackage) RepoName() api.RepoName {
 }
 
 // CloneURL returns a "URL" that can later be used to download a repo.
-func (pkg *NPMPackage) CloneURL() string {
+func (pkg *NpmPackageName) CloneURL() string {
 	return string(pkg.RepoName())
-}
-
-// MatchesDependencyString checks if a dependency (= package + version pair)
-// refers to the same package as pkg.
-func (pkg NPMPackage) MatchesDependencyString(depPackageSyntax string) bool {
-	return strings.HasPrefix(depPackageSyntax, pkg.PackageSyntax()+"@")
 }
 
 // Format a package using (@scope/)?name syntax.
 //
-// This is largely for "lower-level" code interacting with the NPM API.
+// This is largely for "lower-level" code interacting with the npm API.
 //
-// In most cases, you want to use NPMDependency's PackageManagerSyntax() instead.
-func (pkg NPMPackage) PackageSyntax() string {
+// In most cases, you want to use NpmVersionedPackage's VersionedPackageSyntax() instead.
+func (pkg *NpmPackageName) PackageSyntax() PackageName {
 	if pkg.scope != "" {
-		return fmt.Sprintf("@%s/%s", pkg.scope, pkg.name)
+		return PackageName(fmt.Sprintf("@%s/%s", pkg.scope, pkg.name))
 	}
-	return pkg.name
+	return PackageName(pkg.name)
 }
 
-// NPMDependency is a "versioned package" for use by npm commands, such as
+// NpmVersionedPackage is a "versioned package" for use by npm commands, such as
 // `npm install`.
 //
-// See also: [NOTE: Dependency-terminology]
-//
 // Reference:  https://docs.npmjs.com/cli/v8/commands/npm-install
-type NPMDependency struct {
-	Package NPMPackage
+type NpmVersionedPackage struct {
+	*NpmPackageName
 
 	// The version or tag (such as "latest") for a dependency.
 	//
 	// See https://docs.npmjs.com/cli/v8/using-npm/config#tag for more details
 	// about tags.
 	Version string
+
+	// The URL of the tarball to download. Possibly empty.
+	TarballURL string
+
+	// The description of the package. Possibly empty.
+	PackageDescription string
 }
 
-// ParseNPMDependency parses a string in a '(@scope/)?module@version' format into an NPMDependency.
+// ParseNpmVersionedPackage parses a string in a '(@scope/)?module@version' format into an NpmVersionedPackage.
 //
-// NPM supports many ways of specifying dependencies (https://docs.npmjs.com/cli/v8/commands/npm-install)
+// npm supports many ways of specifying dependencies (https://docs.npmjs.com/cli/v8/commands/npm-install)
 // but we only support exact versions for now.
-func ParseNPMDependency(dependency string) (*NPMDependency, error) {
+//
+// Some packages have names containing multiple '/' characters.
+// (https://sourcegraph.com/search?q=context:global+file:package.json%24+%22name%22:+%22%40%5B%5E%5Cn/%5D%2B/%5B%5E%5Cn/%5D%2B/%5B%5E%5Cn%5D%2B%5C%22&patternType=regexp)
+// So it is possible for indexes to reference packages by that name,
+// but such names are not supported by recent npm versions, so we don't
+// allow those here.
+func ParseNpmVersionedPackage(dependency string) (*NpmVersionedPackage, error) {
 	// We use slightly more restrictive validation compared to the official
 	// rules (https://github.com/npm/validate-npm-package-name#naming-rules).
 	//
-	// For example, NPM does not explicitly forbid package names with @ in them.
+	// For example, npm does not explicitly forbid package names with @ in them.
 	// However, there don't seem to be any such packages in practice (I searched
 	// 100k+ packages and got 0 hits). The web frontend relies on using '@' to
 	// split between the package and rev-like part of the URL, such as
@@ -182,31 +208,54 @@ func ParseNPMDependency(dependency string) (*NPMDependency, error) {
 		}
 	}
 	scope, name, version := result["scope"], result["name"], result["version"]
-	return &NPMDependency{NPMPackage{scope, name}, version}, nil
+	return &NpmVersionedPackage{NpmPackageName: &NpmPackageName{scope, name}, Version: version}, nil
 }
 
-// PackageManagerSyntax returns the dependency in NPM/Yarn syntax. The returned
+func (d *NpmVersionedPackage) Description() string {
+	return d.PackageDescription
+}
+
+type NpmMetadata struct {
+	Package *NpmPackageName
+}
+
+// PackageManagerSyntax returns the dependency in npm/Yarn syntax. The returned
 // string can (for example) be passed to `npm install`.
-func (d NPMDependency) PackageManagerSyntax() string {
-	return fmt.Sprintf("%s@%s", d.Package.PackageSyntax(), d.Version)
+func (d *NpmVersionedPackage) VersionedPackageSyntax() string {
+	return fmt.Sprintf("%s@%s", d.PackageSyntax(), d.Version)
 }
 
-func (d NPMDependency) GitTagFromVersion() string {
+func (d *NpmVersionedPackage) Scheme() string {
+	return "npm"
+}
+
+func (d *NpmVersionedPackage) PackageVersion() string {
+	return d.Version
+}
+
+func (d *NpmVersionedPackage) GitTagFromVersion() string {
 	return "v" + d.Version
 }
 
-// SortDependencies sorts the dependencies by the semantic version in descending
-// order. The latest version of a dependency becomes the first element of the
-// slice.
-func SortNPMDependencies(dependencies []NPMDependency) {
-	sort.Slice(dependencies, func(i, j int) bool {
-		iPkg, jPkg := dependencies[i].Package, dependencies[j].Package
-		if iPkg == jPkg {
-			return versionGreaterThan(dependencies[i].Version, dependencies[j].Version)
-		}
-		if iPkg.scope == jPkg.scope {
-			return iPkg.name > jPkg.name
-		}
-		return iPkg.scope > jPkg.scope
-	})
+func (d *NpmVersionedPackage) Equal(o *NpmVersionedPackage) bool {
+	return d == o || (d != nil && o != nil &&
+		d.NpmPackageName.Equal(o.NpmPackageName) &&
+		d.Version == o.Version)
+}
+
+// Less implements the Less method of the sort.Interface. It sorts
+// dependencies by the semantic version in descending order.
+// The latest version of a dependency becomes the first element of the slice.
+func (d *NpmVersionedPackage) Less(other VersionedPackage) bool {
+	o := other.(*NpmVersionedPackage)
+
+	if d.NpmPackageName.Equal(o.NpmPackageName) {
+		return versionGreaterThan(d.Version, o.Version)
+	}
+
+	if d.scope == o.scope {
+		return d.name > o.name
+	}
+
+	return d.scope > o.scope
 }

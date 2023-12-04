@@ -1,33 +1,77 @@
+import type { InputHTMLAttributes } from 'react'
+
 import classNames from 'classnames'
-import React, { forwardRef } from 'react'
+import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search'
 
-import type { MonacoFieldProps } from '../monaco-field'
-import * as Monaco from '../monaco-field'
+import type { FieldProps } from '../field'
+import { Field, FocusContainer, PreviewLink } from '../field'
+
+import { generateRepoFiltersQuery, getRepoQueryPreview } from './utils/generate-repo-filters-query'
 
 import styles from './InsightQueryInput.module.scss'
 
-export interface InsightQueryInputProps extends MonacoFieldProps {
+type NativeInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'onBlur'>
+type FieldPublicProps = Omit<FieldProps, 'queryState' | 'onChange' | 'aria-invalid'>
+
+export interface InsightQueryInputProps extends FieldPublicProps, NativeInputProps {
+    value: string
+    repoQuery: string | null
+    repositories: string[]
     patternType: SearchPatternType
+    onChange: (value: string) => void
 }
 
-export const InsightQueryInput = forwardRef<HTMLInputElement, InsightQueryInputProps>((props, reference) => {
-    const { children, patternType } = props
+export const InsightQueryInput: React.FunctionComponent<InsightQueryInputProps> = ({
+    value,
+    patternType,
+    repoQuery,
+    repositories = [],
+    'aria-invalid': ariaInvalid,
+    onChange,
+    children,
+    className,
+    ...otherProps
+}) => {
+    const repoQueryPreview =
+        repoQuery !== null ? getRepoQueryPreview(repoQuery) : generateRepoFiltersQuery(repositories)
+    const previewQuery = `${repoQueryPreview} ${value}`.trim()
+
+    const handleOnChange = (queryState: QueryState): void => {
+        if (queryState.query !== value) {
+            onChange(queryState.query)
+        }
+    }
 
     return (
         <div className={styles.root}>
             {children ? (
-                <Monaco.Root className={classNames(props.className, styles.inputWrapper)}>
-                    <Monaco.Field {...props} ref={reference} className={props.className} />
+                <FocusContainer className={classNames(className, styles.inputWrapper)}>
+                    <Field
+                        {...otherProps}
+                        patternType={patternType}
+                        queryState={{ query: value, changeSource: QueryChangeSource.userInput }}
+                        className={className}
+                        onChange={handleOnChange}
+                    />
 
                     {children}
-                </Monaco.Root>
+                </FocusContainer>
             ) : (
-                <Monaco.Field {...props} ref={reference} className={props.className} />
+                <Field
+                    {...otherProps}
+                    patternType={patternType}
+                    queryState={{ query: value, changeSource: QueryChangeSource.userInput }}
+                    className={classNames(styles.inputWrapper, className)}
+                    onChange={handleOnChange}
+                />
             )}
 
-            <Monaco.PreviewLink query={props.value} patternType={patternType} className={styles.previewButton} />
+            <PreviewLink query={previewQuery} patternType={patternType} className={styles.previewButton}>
+                Preview results <LinkExternalIcon size={18} />
+            </PreviewLink>
         </div>
     )
-})
+}

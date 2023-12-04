@@ -11,9 +11,10 @@ import (
 // It is modeled after the RED method, which defines three characteristics for
 // monitoring services:
 //
-//  - number (rate) of requests per second
-//  - number of errors/failed operations
-//  - amount of time per operation
+//   - number (rate) of requests per second
+//   - number of errors/failed operations
+//   - amount of time per operation
+//
 // https://thenewstack.io/monitoring-microservices-red-method/.
 type REDMetrics struct {
 	Count    *prometheus.CounterVec   // How many things were processed?
@@ -28,7 +29,8 @@ func (m *REDMetrics) Observe(secs, count float64, err *error, lvals ...string) {
 	}
 
 	if err != nil && *err != nil {
-		m.Errors.WithLabelValues(lvals...).Add(1)
+		m.Errors.WithLabelValues(lvals...).Inc()
+		m.Count.WithLabelValues(lvals...).Add(0)
 	} else {
 		m.Duration.WithLabelValues(lvals...).Observe(secs)
 		m.Count.WithLabelValues(lvals...).Add(count)
@@ -109,7 +111,7 @@ func NewREDMetrics(r prometheus.Registerer, metricPrefix string, fns ...REDMetri
 		},
 		options.labels,
 	)
-	r.MustRegister(duration)
+	duration = MustRegisterIgnoreDuplicate(r, duration)
 
 	count := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -120,7 +122,7 @@ func NewREDMetrics(r prometheus.Registerer, metricPrefix string, fns ...REDMetri
 		},
 		options.labels,
 	)
-	r.MustRegister(count)
+	count = MustRegisterIgnoreDuplicate(r, count)
 
 	errors := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -131,7 +133,7 @@ func NewREDMetrics(r prometheus.Registerer, metricPrefix string, fns ...REDMetri
 		},
 		options.labels,
 	)
-	r.MustRegister(errors)
+	errors = MustRegisterIgnoreDuplicate(r, errors)
 
 	return &REDMetrics{
 		Duration: duration,
@@ -140,16 +142,29 @@ func NewREDMetrics(r prometheus.Registerer, metricPrefix string, fns ...REDMetri
 	}
 }
 
-type SingletonREDnMetrics struct {
-	sync.Once
+// MustRegisterIgnoreDuplicate is like registerer.MustRegister(collector), except that it returns
+// the already registered collector with the same ID if a duplicate collector is attempted to be
+// registered.
+func MustRegisterIgnoreDuplicate[T prometheus.Collector](registerer prometheus.Registerer, collector T) T {
+	if err := registerer.Register(collector); err != nil {
+		if e, ok := err.(prometheus.AlreadyRegisteredError); ok {
+			return e.ExistingCollector.(T)
+		}
+		panic(err) // otherwise, panic (as registerer.MustRegister would)
+	}
+	return collector
+}
+
+type SingletonREDMetrics struct {
+	once    sync.Once
 	metrics *REDMetrics
 }
 
 // Get returns a RED metrics instance. If no instance has been
 // created yet, one is constructed with the given create function. This method is safe to
 // access concurrently.
-func (m *SingletonREDnMetrics) Get(create func() *REDMetrics) *REDMetrics {
-	m.Do(func() {
+func (m *SingletonREDMetrics) Get(create func() *REDMetrics) *REDMetrics {
+	m.once.Do(func() {
 		m.metrics = create()
 	})
 	return m.metrics

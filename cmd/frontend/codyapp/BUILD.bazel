@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "codyapp",
+    srcs = [
+        "latest_version_handler.go",
+        "manifest.go",
+        "resolvers.go",
+        "update_check_handler.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/codyapp",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/conf/deploy",
+        "//lib/errors",
+        "@com_github_masterminds_semver//:semver",
+        "@com_github_sourcegraph_log//:log",
+        "@com_google_cloud_go_storage//:storage",
+        "@org_golang_google_api//option",
+    ],
+)
+
+go_test(
+    name = "codyapp_test",
+    srcs = [
+        "latest_version_handler_test.go",
+        "update_check_handler_test.go",
+    ],
+    embed = [":codyapp"],
+    deps = [
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

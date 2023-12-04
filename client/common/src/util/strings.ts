@@ -1,6 +1,5 @@
 /**
  * Returns the sum of the number of matches of the patterns in the string.
- *
  * @param patterns Patterns to match in the string.
  */
 export function count(string: string, ...patterns: RegExp[]): number {
@@ -18,7 +17,7 @@ export function count(string: string, ...patterns: RegExp[]): number {
 }
 
 export function numberWithCommas(number: string | number): string {
-    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    return number.toString().replaceAll(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
 export function pluralize(string: string, count: number | bigint, plural = string + 's'): string {
@@ -29,7 +28,7 @@ export function pluralize(string: string, count: number | bigint, plural = strin
  * Replaces all non alphabetic characters with `-` and lowercases the result.
  */
 export function sanitizeClass(value: string): string {
-    return value.replace(/[^A-Za-z]/g, '-').toLowerCase()
+    return value.replaceAll(/[^A-Za-z]/g, '-').toLowerCase()
 }
 
 /**
@@ -37,12 +36,11 @@ export function sanitizeClass(value: string): string {
  * E.g: " a  b  c  " => " a b c "
  */
 export function dedupeWhitespace(value: string): string {
-    return value.replace(/\s+/g, ' ')
+    return value.replaceAll(/\s+/g, ' ').trim()
 }
 
 /**
- * Checkes whether a given string is quoted.
- *
+ * Checks whether a given string is quoted.
  * @param value string to check against
  */
 export function isQuoted(value: string): boolean {
@@ -51,7 +49,6 @@ export function isQuoted(value: string): boolean {
 
 /**
  * Replaces a substring within a string.
- *
  * @param string Original string
  * @param range The range in of the substring to be replaced
  * @param replacement an optional replacement string

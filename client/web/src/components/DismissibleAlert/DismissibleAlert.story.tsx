@@ -1,5 +1,4 @@
-import { storiesOf } from '@storybook/react'
-import React from 'react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { Link } from '@sourcegraph/wildcard'
 
@@ -7,17 +6,26 @@ import { WebStory } from '../WebStory'
 
 import { DismissibleAlert } from './DismissibleAlert'
 
-const { add } = storiesOf('web/DismissibleAlert', module).addDecorator(story => <WebStory>{() => story()}</WebStory>)
+const decorator: Decorator = story => <WebStory>{() => story()}</WebStory>
 
-add('One-line alert', () => (
+const config: Meta = {
+    title: 'web/DismissibleAlert',
+    decorators: [decorator],
+}
+
+export default config
+
+export const OneLineAlert: StoryFn = () => (
     <DismissibleAlert variant="info" partialStorageKey="dismissible-alert-one-line">
         <span>
             1 bulk operation has recently failed running. Click the <Link to="?">bulk operations tab</Link> to view.
         </span>
     </DismissibleAlert>
-))
+)
 
-add('Multiline alert', () => (
+OneLineAlert.storyName = 'One-line alert'
+
+export const MultilineAlert: StoryFn = () => (
     <DismissibleAlert variant="info" partialStorageKey="dismissible-alert-multiline">
         WebAssembly (sometimes abbreviated Wasm) is an open standard that defines a portable binary-code format for
         executable programs, and a corresponding textual assembly language, as well as interfaces for facilitating
@@ -25,4 +33,6 @@ add('Multiline alert', () => (
         high-performance applications on web pages, but the format is designed to be executed and integrated in other
         environments as well, including standalone ones.
     </DismissibleAlert>
-))
+)
+
+MultilineAlert.storyName = 'Multiline alert'

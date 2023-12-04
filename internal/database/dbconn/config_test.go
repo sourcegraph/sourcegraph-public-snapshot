@@ -2,9 +2,12 @@ package dbconn
 
 import (
 	"testing"
+
+	"github.com/sourcegraph/log/logtest"
 )
 
 func TestBuildConfig(t *testing.T) {
+	logger := logtest.Scoped(t)
 	tests := []struct {
 		name                    string
 		dataSource              string
@@ -45,7 +48,7 @@ func TestBuildConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg, err := buildConfig(tt.dataSource, "")
+			cfg, err := buildConfig(logger, tt.dataSource, "")
 			if tt.fails {
 				if err == nil {
 					t.Fatal("error expected")

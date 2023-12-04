@@ -1,39 +1,18 @@
 import * as comlink from 'comlink'
-import { from, Subscription } from 'rxjs'
+import { from, Subscription, type Unsubscribable } from 'rxjs'
 import { first } from 'rxjs/operators'
-import { Unsubscribable } from 'sourcegraph'
 
-import { PlatformContext, ClosableEndpointPair } from '../../platform/context'
+import { logger } from '@sourcegraph/common'
+
+import type { PlatformContext, ClosableEndpointPair } from '../../platform/context'
 import { isSettingsValid } from '../../settings/settings'
-import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
-import { ExtensionHostAPIFactory } from '../extension/api/api'
-import { InitData } from '../extension/extensionHost'
+import type { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
+import type { ExtensionHostAPIFactory } from '../extension/api/api'
+import type { InitData } from '../extension/extensionHost'
 import { registerComlinkTransferHandlers } from '../util'
 
-import { ClientAPI } from './api/api'
-import { ExposedToClient, initMainThreadAPI } from './mainthread-api'
-
-export interface ExtensionHostClientConnection {
-    /**
-     * Closes the connection to and terminates the extension host.
-     */
-    unsubscribe(): void
-}
-
-/**
- * An activated extension.
- */
-export interface ActivatedExtension {
-    /**
-     * The extension's extension ID (which uniquely identifies it among all activated extensions).
-     */
-    id: string
-
-    /**
-     * Deactivate the extension (by calling its "deactivate" function, if any).
-     */
-    deactivate(): void | Promise<void>
-}
+import type { ClientAPI } from './api/api'
+import { type ExposedToClient, initMainThreadAPI } from './mainthread-api'
 
 /**
  * @param endpoints The Worker object to communicate with
@@ -43,14 +22,7 @@ export async function createExtensionHostClientConnection(
     initData: Omit<InitData, 'initialSettings'>,
     platformContext: Pick<
         PlatformContext,
-        | 'settings'
-        | 'updateSettings'
-        | 'getGraphQLClient'
-        | 'requestGraphQL'
-        | 'telemetryService'
-        | 'sideloadedExtensionURL'
-        | 'getScriptURLForExtension'
-        | 'clientApplication'
+        'settings' | 'updateSettings' | 'getGraphQLClient' | 'requestGraphQL' | 'telemetryService' | 'clientApplication'
     >
 ): Promise<{
     subscription: Unsubscribable
@@ -87,6 +59,9 @@ export async function createExtensionHostClientConnection(
     }
 
     comlink.expose(clientAPI, endpoints.expose)
+    proxy.mainThreadAPIInitialized().catch(() => {
+        logger.error('Error notifying extension host of main thread API init.')
+    })
 
     // TODO(tj): return MainThreadAPI and add to Controller interface
     // to allow app to interact with APIs whose state lives in the main thread

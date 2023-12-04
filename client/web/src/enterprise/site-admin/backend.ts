@@ -1,21 +1,25 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { queryGraphQL } from '../../backend/graphql'
+import type { SiteAdminPreciseIndexResult } from '../../graphql-operations'
 
 /**
- * Fetch a single LSIF upload by id.
+ * Fetch a single precise index by id.
  */
-export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpload | null> {
-    return queryGraphQL(
+export function fetchPreciseIndex({
+    id,
+}: {
+    id: string
+}): Observable<Extract<SiteAdminPreciseIndexResult['node'], { __typename: 'PreciseIndex' }> | null> {
+    return queryGraphQL<SiteAdminPreciseIndexResult>(
         gql`
-            query SiteAdminLsifUpload($id: ID!) {
+            query SiteAdminPreciseIndex($id: ID!) {
                 node(id: $id) {
                     __typename
-                    ... on LSIFUpload {
+                    ... on PreciseIndex {
                         projectRoot {
                             commit {
                                 repository {
@@ -35,8 +39,8 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
             if (!node) {
                 return null
             }
-            if (node.__typename !== 'LSIFUpload') {
-                throw new Error(`The given ID is a ${node.__typename}, not an LSIFUpload`)
+            if (node.__typename !== 'PreciseIndex') {
+                throw new Error(`The given ID is a ${node.__typename}, not a PreciseIndex`)
             }
 
             return node

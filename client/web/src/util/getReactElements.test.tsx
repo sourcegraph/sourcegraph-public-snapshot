@@ -1,4 +1,4 @@
-import React from 'react'
+import { describe, expect, it } from 'vitest'
 
 import { getReactElements } from './getReactElements'
 

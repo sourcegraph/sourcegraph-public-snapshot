@@ -1,11 +1,12 @@
+import type { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-operations'
+
 export const defaultDurationValues = [
-    { value: null, displayText: 'Forever' },
-    { value: 168, displayText: '1 week' }, // 168 hours
-    { value: 672, displayText: '1 month' }, // 168 hours * 4
-    { value: 2016, displayText: '3 months' }, // 168 hours * 4 * 3
-    { value: 4032, displayText: '6 months' }, // 168 hours * 4 * 6
-    { value: 8064, displayText: '1 year' }, // 168 hours * 4 * 12
-    { value: 40320, displayText: '5 years' }, // 168 hours * 4 * 12 * 5
+    // These values match the output of date-fns#formatDuration
+    { value: 168, displayText: '7 days' },
+    { value: 744, displayText: '1 month' }, // 31 days
+    { value: 2160, displayText: '3 months' }, // 90 days
+    { value: 8760, displayText: '1 year' }, // 365 days
+    { value: 43824, displayText: '5 years' }, // 4 years + 1 leap day
 ]
 
 export const formatDurationValue = (value: number): string => {
@@ -15,4 +16,19 @@ export const formatDurationValue = (value: number): string => {
     }
 
     return match.displayText
+}
+
+export const hasGlobalPolicyViolation = (policy: CodeIntelligenceConfigurationPolicyFields): boolean => {
+    // If there are no repo patterns, it is assumed that the policy targets all repos.
+    const repoPatterns = policy.repositoryPatterns || []
+
+    return (
+        // User has enabled auto indexing for a policy
+        policy.indexingEnabled &&
+        // Policy isn't targeted at a specific repository
+        !policy.repository &&
+        // Policy does not have a targeted repository pattern.
+        // TODO(#47432): This is flaky as repoPatterns can match all repositories (e.g. '*'). We should return a flag that indicates if this has happened.
+        repoPatterns.length === 0
+    )
 }

@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "oteldefaults",
+    srcs = ["oteldefaults.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@io_opentelemetry_go_contrib_propagators_jaeger//:jaeger",
+        "@io_opentelemetry_go_contrib_propagators_ot//:ot",
+        "@io_opentelemetry_go_otel//propagation",
+    ],
+)

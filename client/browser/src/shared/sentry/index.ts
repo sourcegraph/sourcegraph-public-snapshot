@@ -22,8 +22,6 @@ const callSentryInit = once((extensionID: string) => {
                 keep = event.exception.values.some(
                     ({ stacktrace }) => !!(stacktrace && isExtensionStackTrace(stacktrace, extensionID))
                 )
-            } else if (event.stacktrace) {
-                keep = isExtensionStackTrace(event.stacktrace, extensionID)
             }
             return keep ? event : null
         },

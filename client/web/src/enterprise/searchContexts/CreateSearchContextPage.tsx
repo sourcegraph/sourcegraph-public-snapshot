@@ -1,73 +1,64 @@
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import React, { useCallback } from 'react'
-import { Redirect, RouteComponentProps } from 'react-router'
-import { Observable } from 'rxjs'
 
-import { SearchContextProps } from '@sourcegraph/search'
-import {
+import { mdiMagnify } from '@mdi/js'
+import { Navigate, useLocation } from 'react-router-dom'
+import type { Observable } from 'rxjs'
+
+import type {
     Scalars,
     SearchContextInput,
     SearchContextRepositoryRevisionsInput,
+    SearchContextFields,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ISearchContext } from '@sourcegraph/shared/src/schema'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SearchContextProps } from '@sourcegraph/shared/src/search'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
+import { Page } from '../../components/Page'
+import { PageTitle } from '../../components/PageTitle'
 import { parseSearchURLQuery } from '../../search'
 
 import { SearchContextForm } from './SearchContextForm'
 
 export interface CreateSearchContextPageProps
-    extends RouteComponentProps,
-        ThemeProps,
-        TelemetryProps,
+    extends TelemetryProps,
         Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'>,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
 }
 
-export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<CreateSearchContextPageProps> = props => {
+export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<
+    React.PropsWithChildren<CreateSearchContextPageProps>
+> = props => {
     const { authenticatedUser, createSearchContext, platformContext } = props
 
-    const query = parseSearchURLQuery(props.location.search)
+    const location = useLocation()
+
+    const query = parseSearchURLQuery(location.search)
 
     const onSubmit = useCallback(
         (
             id: Scalars['ID'] | undefined,
             searchContext: SearchContextInput,
             repositories: SearchContextRepositoryRevisionsInput[]
-        ): Observable<ISearchContext> => createSearchContext({ searchContext, repositories }, platformContext),
+        ): Observable<SearchContextFields> => createSearchContext({ searchContext, repositories }, platformContext),
         [createSearchContext, platformContext]
     )
 
     if (!authenticatedUser) {
-        return <Redirect to="/sign-in" />
+        return <Navigate to="/sign-in" replace={true} />
     }
 
     return (
         <div className="w-100">
             <Page>
-                <div className="container col-8">
+                <div className="container col-sm-8">
                     <PageTitle title="Create context" />
                     <PageHeader
-                        path={[
-                            {
-                                icon: MagnifyIcon,
-                                to: '/search',
-                            },
-                            {
-                                to: '/contexts',
-                                text: 'Contexts',
-                            },
-                            { text: 'Create context' },
-                        ]}
                         description={
                             <span className="text-muted">
                                 A search context represents a group of repositories at specified branches or revisions
@@ -82,7 +73,13 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
                             </span>
                         }
                         className="mb-3"
-                    />
+                    >
+                        <PageHeader.Heading as="h2" styleAs="h1">
+                            <PageHeader.Breadcrumb icon={mdiMagnify} to="/search" aria-label="Code Search" />
+                            <PageHeader.Breadcrumb to="/contexts">Contexts</PageHeader.Breadcrumb>
+                            <PageHeader.Breadcrumb>Create context</PageHeader.Breadcrumb>
+                        </PageHeader.Heading>
+                    </PageHeader>
                     <SearchContextForm {...props} query={query} onSubmit={onSubmit} />
                 </div>
             </Page>

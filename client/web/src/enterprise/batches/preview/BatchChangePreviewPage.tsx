@@ -1,71 +1,65 @@
-import { isEqual } from 'lodash'
+import { type FC, useEffect } from 'react'
+
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useEffect, useMemo } from 'react'
-import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
+import { useParams } from 'react-router-dom'
 
-import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { useQuery } from '@sourcegraph/http-client'
+import { Alert, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
+import type { BatchSpecByIDResult, BatchSpecByIDVariables } from '../../../graphql-operations'
 import { Description } from '../Description'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
+import { MissingCredentialsAlert } from '../MissingCredentialsAlert'
 import { MultiSelectContextProvider } from '../MultiSelectContext'
+import { useBatchChangesLicense } from '../useBatchChangesLicense'
 
-import { fetchBatchSpecById as _fetchBatchSpecById, queryApplyPreviewStats as _queryApplyPreviewStats } from './backend'
+import { BATCH_SPEC_BY_ID, type queryApplyPreviewStats as _queryApplyPreviewStats } from './backend'
 import { BatchChangePreviewContextProvider } from './BatchChangePreviewContext'
 import { BatchChangePreviewStatsBar } from './BatchChangePreviewStatsBar'
-import { BatchChangePreviewProps, BatchChangePreviewTabs } from './BatchChangePreviewTabs'
+import { type BatchChangePreviewProps, BatchChangePreviewTabs } from './BatchChangePreviewTabs'
 import { BatchSpecInfoByline } from './BatchSpecInfoByline'
 import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
 import { PreviewList } from './list/PreviewList'
-import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 
-export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
+export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'emails'>
 
-export interface BatchChangePreviewPageProps extends BatchChangePreviewProps {
-    /** Used for testing. */
-    fetchBatchSpecById?: typeof _fetchBatchSpecById
+export interface BatchChangePreviewPageProps extends Omit<BatchChangePreviewProps, 'batchSpecID'> {
     /** Used for testing. */
     queryApplyPreviewStats?: typeof _queryApplyPreviewStats
 }
 
-export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewPageProps> = props => {
-    const {
-        batchSpecID: specID,
-        history,
-        authenticatedUser,
-        telemetryService,
-        fetchBatchSpecById = _fetchBatchSpecById,
-        queryApplyPreviewStats,
-    } = props
+export const BatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props => {
+    const { batchSpecID } = useParams()
 
-    const spec = useObservable(
-        useMemo(
-            () =>
-                fetchBatchSpecById(specID).pipe(
-                    repeatWhen(notifier => notifier.pipe(delay(5000))),
-                    distinctUntilChanged((a, b) => isEqual(a, b))
-                ),
-            [specID, fetchBatchSpecById]
-        )
-    )
+    const { authenticatedUser, telemetryService, queryApplyPreviewStats } = props
+
+    const { data, loading } = useQuery<BatchSpecByIDResult, BatchSpecByIDVariables>(BATCH_SPEC_BY_ID, {
+        variables: {
+            batchSpec: batchSpecID!,
+        },
+        fetchPolicy: 'cache-and-network',
+        pollInterval: 5000,
+    })
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeApplyPage')
     }, [telemetryService])
 
-    if (spec === undefined) {
+    if (loading) {
         return (
             <div className="text-center">
                 <LoadingSpinner className="mx-auto my-4" />
             </div>
         )
     }
-    if (spec === null) {
+    if (data?.node?.__typename !== 'BatchSpec') {
         return <HeroPage icon={AlertCircleIcon} title="Batch spec not found" />
     }
+    const spec = data.node
 
     return (
         <MultiSelectContextProvider>
@@ -77,6 +71,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                             {
                                 icon: BatchChangesIcon,
                                 to: '/batch-changes',
+                                ariaLabel: 'Batch changes',
                             },
                             { to: `${spec.namespace.url}/batch-changes`, text: spec.namespace.namespaceName },
                             { text: spec.description.name },
@@ -96,7 +91,6 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                         queryApplyPreviewStats={queryApplyPreviewStats}
                     />
                     <CreateUpdateBatchChangeAlert
-                        history={history}
                         specID={spec.id}
                         toBeArchived={spec.applyPreview.stats.archive}
                         batchChange={spec.appliesToBatchChange}
@@ -104,7 +98,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                         telemetryService={telemetryService}
                     />
                     <Description description={spec.description.description} />
-                    <BatchChangePreviewTabs spec={spec} {...props} />
+                    <BatchChangePreviewTabs spec={spec} {...props} batchSpecID={spec.id} />
                 </div>
             </BatchChangePreviewContextProvider>
         </MultiSelectContextProvider>
@@ -116,46 +110,50 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
  * current one, but until we are ready to flip the feature flag, we need to keep
  * both around.
  */
-export const NewBatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewPageProps> = props => {
+export const NewBatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props => {
+    const { batchSpecID } = useParams()
+
     const {
-        batchSpecID: specID,
-        history,
-        location,
-        isLightTheme,
         expandChangesetDescriptions,
         queryChangesetApplyPreview,
         queryChangesetSpecFileDiffs,
         authenticatedUser,
         telemetryService,
-        fetchBatchSpecById = _fetchBatchSpecById,
         queryApplyPreviewStats,
     } = props
 
-    const spec = useObservable(
-        useMemo(
-            () =>
-                fetchBatchSpecById(specID).pipe(
-                    repeatWhen(notifier => notifier.pipe(delay(5000))),
-                    distinctUntilChanged((a, b) => isEqual(a, b))
-                ),
-            [specID, fetchBatchSpecById]
-        )
-    )
+    const { data, loading, error } = useQuery<BatchSpecByIDResult, BatchSpecByIDVariables>(BATCH_SPEC_BY_ID, {
+        variables: {
+            batchSpec: batchSpecID!,
+        },
+        fetchPolicy: 'cache-and-network',
+        pollInterval: 5000,
+    })
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeApplyPage')
     }, [telemetryService])
 
-    if (spec === undefined) {
+    const { maxUnlicensedChangesets, exceedsLicense } = useBatchChangesLicense()
+
+    // If we're loading and haven't received any data yet
+    if (loading && !data) {
         return (
             <div className="text-center">
-                <LoadingSpinner className="icon-inline mx-auto my-4" />
+                <LoadingSpinner className="mx-auto my-4" />
             </div>
         )
     }
-    if (spec === null) {
+    // If we received an error before we successfully received any data
+    if (error && !data) {
+        throw new Error(error.message)
+    }
+    // If there weren't any errors and we just didn't receive any data
+    if (data?.node?.__typename !== 'BatchSpec') {
         return <HeroPage icon={AlertCircleIcon} title="Batch spec not found" />
     }
+
+    const spec = data.node
 
     return (
         <MultiSelectContextProvider>
@@ -170,20 +168,29 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<BatchChangePrevi
                         diffStat={spec.diffStat!}
                         queryApplyPreviewStats={queryApplyPreviewStats}
                     />
-                    <CreateUpdateBatchChangeAlert
-                        history={history}
-                        specID={spec.id}
-                        toBeArchived={spec.applyPreview.stats.archive}
-                        batchChange={spec.appliesToBatchChange}
-                        viewerCanAdminister={spec.viewerCanAdminister}
-                        telemetryService={telemetryService}
-                    />
+                    {!exceedsLicense(spec.applyPreview.totalCount) && (
+                        <CreateUpdateBatchChangeAlert
+                            specID={spec.id}
+                            toBeArchived={spec.applyPreview.stats.archive}
+                            batchChange={spec.appliesToBatchChange}
+                            viewerCanAdminister={spec.viewerCanAdminister}
+                            telemetryService={telemetryService}
+                        />
+                    )}
+                    {exceedsLicense(spec.applyPreview.totalCount) && (
+                        <Alert variant="warning">
+                            <div className="mb-2">
+                                <strong>
+                                    Your license only allows for {maxUnlicensedChangesets} changesets per batch change
+                                </strong>
+                            </div>
+                            Since more than {maxUnlicensedChangesets} changesets are generated, you won't be able to
+                            apply the batch change and actually publish the changesets to the code host.
+                        </Alert>
+                    )}
                     <PreviewList
-                        batchSpecID={specID}
-                        history={history}
-                        location={location}
+                        batchSpecID={spec.id}
                         authenticatedUser={authenticatedUser}
-                        isLightTheme={isLightTheme}
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                         expandChangesetDescriptions={expandChangesetDescriptions}

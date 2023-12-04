@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_buf//buf:defs.bzl", "buf_lint_test")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "v1_proto",
+    srcs = ["repoupdater.proto"],
+    strip_import_prefix = "/internal",  # keep
+    visibility = ["//visibility:private"],
+    deps = ["@com_google_protobuf//:timestamp_proto"],
+)
+
+go_proto_library(
+    name = "v1_go_proto",
+    compilers = [
+        "//:gen-go-grpc",
+        "@io_bazel_rules_go//proto:go_proto",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1",
+    proto = ":v1_proto",
+    visibility = ["//visibility:private"],
+)
+
+go_library(
+    name = "repoupdater",
+    embed = [":v1_go_proto"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1",
+    visibility = ["//:__subpackages__"],
+)
+
+# See https://github.com/sourcegraph/sourcegraph/issues/50032
+# write_proto_stubs_to_source(
+#     name = "v1_go_proto_stubs",
+#     output_files = ["repoupdater.pb.go"],
+#     target = ":v1_go_proto",
+# )
+
+buf_lint_test(
+    name = "v1_proto_lint",
+    timeout = "short",
+    config = "//internal:buf.yaml",
+    targets = [":v1_proto"],
+)

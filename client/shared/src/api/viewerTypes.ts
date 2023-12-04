@@ -1,9 +1,9 @@
-import { TextDocument } from 'sourcegraph'
+import type { Selection } from '@sourcegraph/extension-api-types'
 
-import { Selection } from '@sourcegraph/extension-api-types'
+import type { TextDocument } from '../codeintel/legacy-extensions/api'
 
-import { ExtensionCodeEditor } from './extension/api/codeEditor'
-import { ExtensionDirectoryViewer } from './extension/api/directoryViewer'
+import type { ExtensionCodeEditor } from './extension/api/codeEditor'
+import type { ExtensionDirectoryViewer } from './extension/api/directoryViewer'
 
 export type ExtensionViewer = ExtensionCodeEditor | ExtensionDirectoryViewer
 
@@ -61,7 +61,7 @@ export interface CodeEditorWithPartialModel extends CodeEditor {
  *
  * How does this relate to editors? A text document is the file, an editor is the
  * window that the file is shown in. Things like the content and language are properties of the
- * text document; things like decorations and the selection ranges are properties of the editor.
+ * text document; things like selection ranges are properties of the editor.
  */
 export interface TextDocumentData extends Pick<TextDocument, 'uri' | 'languageId' | 'text'> {}
 

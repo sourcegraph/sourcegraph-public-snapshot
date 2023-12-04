@@ -1,0 +1,54 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "adminanalytics",
+    srcs = [
+        "batchchanges.go",
+        "cache.go",
+        "codeinsights.go",
+        "codeintel.go",
+        "codeintelbylanguage.go",
+        "codeinteltoprepositories.go",
+        "extensions.go",
+        "fetcher.go",
+        "notebooks.go",
+        "repos.go",
+        "search.go",
+        "users.go",
+        "utils.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/adminanalytics",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/featureflag",
+        "//internal/redispool",
+        "//lib/errors",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "adminanalytics_test",
+    timeout = "short",
+    srcs = [
+        "users_test.go",
+        "utils_test.go",
+    ],
+    embed = [":adminanalytics"],
+    flaky = True,
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/types",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,5 +1,3 @@
-/* eslint-disable jsdoc/check-indentation */
-
 /**
  * This module provides functions and TS types for pattern matching.
  * Given an input value and a pattern, `matchesValue` returns true if the value
@@ -216,11 +214,10 @@ export type PatternOf<Value, Data = unknown> =
     // A pattern function is always a valid value. The function receives the
     // value to be matched as argument.
     | PatternFunction<Value, Data>
-    | WrapperPattern<Value, Data>
-    | (// Arrays always have to matched with a pattern function
-      // The [...] around the types are necessary to avoid
-      // distributing union types.
-      [Value] extends [any[]]
+    | WrapperPattern<Value, Data> // Arrays always have to matched with a pattern function
+    // The [...] around the types are necessary to avoid
+    // distributing union types.
+    | ([Value] extends [any[]]
           ? never
           : // Note that we are not checking types here (Value extends ...). For
             // one, union types of mixed types (e.g. number|{x: number}) makes

@@ -1,0 +1,15 @@
+:root {
+    --db-column-col: 17.5%;
+}
+
+.table-container {
+    overflow-x: scroll;
+}
+
+.db-column-col {
+    width: var(--db-column-col);
+}
+
+.data-column-col {
+    width: calc((100% - var(--db-column-col)) / 2);
+}

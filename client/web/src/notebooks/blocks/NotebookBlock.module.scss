@@ -1,0 +1,29 @@
+.block-wrapper {
+    position: relative;
+    margin-bottom: 0.125rem;
+}
+
+.block {
+    position: relative;
+    // Prevents moving content
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+
+    &:hover {
+        border: 1px solid var(--border-color);
+    }
+
+    :global(.is-read-only-notebook) &:hover {
+        border-color: transparent;
+    }
+}
+
+.selected {
+    border: 1px solid var(--border-active-color) !important;
+    box-shadow: 0 0 0 0.125rem var(--primary-2);
+}
+
+.selected-not-focused {
+    border: 1px solid var(--border-color);
+}

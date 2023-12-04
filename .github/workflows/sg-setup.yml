@@ -1,0 +1,37 @@
+name: sg-setup
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/sg-setup.yml'
+      - 'dev/sg/dependencies/**.go'
+      - 'dev/sg/internal/check/**.go'
+jobs:
+  test:
+    strategy:
+      matrix:
+        # See https://github.com/actions/virtual-environments#available-environments for
+        # available environments.
+        os:
+        - macos-12
+        - ubuntu-20.04
+      fail-fast: false
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.21.4
+
+      - name: Install asdf plugins
+        uses: asdf-vm/actions/install@v1
+        if: ${{ runner.os == 'Linux' }}
+
+      - name: Test dependencies (${{ matrix.os }})
+        # We add the path since the bash environment does not properly get sourced due to the env not being interactive
+        run: |
+            go test -timeout=30m -v \
+            ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}

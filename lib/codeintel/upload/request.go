@@ -17,13 +17,14 @@ import (
 type uploadRequestOptions struct {
 	UploadOptions
 
-	Payload   io.Reader // Request payload
-	Target    *int      // Pointer to upload id decoded from resp
-	MultiPart bool      // Whether the request is a multipart init
-	NumParts  int       // The number of upload parts
-	UploadID  int       // The multipart upload ID
-	Index     int       // The index part being uploaded
-	Done      bool      // Whether the request is a multipart finalize
+	Payload          io.Reader // Request payload
+	Target           *int      // Pointer to upload id decoded from resp
+	MultiPart        bool      // Whether the request is a multipart init
+	NumParts         int       // The number of upload parts
+	UncompressedSize int64     // The uncompressed size of the upload
+	UploadID         int       // The multipart upload ID
+	Index            int       // The index part being uploaded
+	Done             bool      // Whether the request is a multipart finalize
 }
 
 // ErrUnauthorized occurs when the upload endpoint returns a 401 response.
@@ -50,17 +51,18 @@ func performUploadRequest(ctx context.Context, httpClient Client, opts uploadReq
 
 // makeUploadRequest creates an HTTP request to the upload endpoint described by the given arguments.
 func makeUploadRequest(opts uploadRequestOptions) (*http.Request, error) {
-	url, err := makeUploadURL(opts)
+	uploadURL, err := makeUploadURL(opts)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", url.String(), opts.Payload)
+	req, err := http.NewRequest("POST", uploadURL.String(), opts.Payload)
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Set("Content-Type", "application/x-ndjson+lsif")
+	if opts.UncompressedSize != 0 {
+		req.Header.Set("X-Uncompressed-Size", strconv.Itoa(int(opts.UncompressedSize)))
+	}
 	if opts.SourcegraphInstanceOptions.AccessToken != "" {
 		req.Header.Set("Authorization", fmt.Sprintf("token %s", opts.SourcegraphInstanceOptions.AccessToken))
 	}
@@ -145,6 +147,9 @@ func makeUploadURL(opts uploadRequestOptions) (*url.URL, error) {
 	if opts.SourcegraphInstanceOptions.GitHubToken != "" {
 		qs.Add("github_token", opts.SourcegraphInstanceOptions.GitHubToken)
 	}
+	if opts.SourcegraphInstanceOptions.GitLabToken != "" {
+		qs.Add("gitlab_token", opts.SourcegraphInstanceOptions.GitLabToken)
+	}
 	if opts.UploadRecordOptions.Repo != "" {
 		qs.Add("repository", opts.UploadRecordOptions.Repo)
 	}
@@ -156,6 +161,9 @@ func makeUploadURL(opts uploadRequestOptions) (*url.URL, error) {
 	}
 	if opts.UploadRecordOptions.Indexer != "" {
 		qs.Add("indexerName", opts.UploadRecordOptions.Indexer)
+	}
+	if opts.UploadRecordOptions.IndexerVersion != "" {
+		qs.Add("indexerVersion", opts.UploadRecordOptions.IndexerVersion)
 	}
 	if opts.UploadRecordOptions.AssociatedIndexID != nil {
 		qs.Add("associatedIndexId", formatInt(*opts.UploadRecordOptions.AssociatedIndexID))
@@ -182,13 +190,13 @@ func makeUploadURL(opts uploadRequestOptions) (*url.URL, error) {
 		path = "/.api/lsif/upload"
 	}
 
-	url, err := url.Parse(opts.SourcegraphInstanceOptions.SourcegraphURL + path)
+	parsedUrl, err := url.Parse(opts.SourcegraphInstanceOptions.SourcegraphURL + path)
 	if err != nil {
 		return nil, err
 	}
 
-	url.RawQuery = qs.Encode()
-	return url, nil
+	parsedUrl.RawQuery = qs.Encode()
+	return parsedUrl, nil
 }
 
 func formatInt(v int) string {

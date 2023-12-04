@@ -1,0 +1,63 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "policies",
+    srcs = [
+        "extractor.go",
+        "iface.go",
+        "init.go",
+        "matcher.go",
+        "observability.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/policies",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/codeintel/policies/internal/background",
+        "//internal/codeintel/policies/internal/background/repository_matcher",
+        "//internal/codeintel/policies/internal/store",
+        "//internal/codeintel/policies/shared",
+        "//internal/codeintel/uploads/shared",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/goroutine",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/timeutil",
+        "//lib/errors",
+        "@com_github_gobwas_glob//:glob",
+    ],
+)
+
+go_test(
+    name = "policies_test",
+    timeout = "short",
+    srcs = [
+        "helpers_test.go",
+        "matcher_common_test.go",
+        "matcher_indexing_test.go",
+        "matcher_retention_test.go",
+        "mocks_test.go",
+        "service_test.go",
+    ],
+    embed = [":policies"],
+    deps = [
+        "//internal/api",
+        "//internal/codeintel/policies/internal/store",
+        "//internal/codeintel/policies/shared",
+        "//internal/codeintel/uploads/shared",
+        "//internal/database/dbmocks",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/observation",
+        "//internal/timeutil",
+        "//internal/types",
+        "//lib/pointers",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

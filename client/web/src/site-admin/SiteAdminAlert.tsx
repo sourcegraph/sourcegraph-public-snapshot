@@ -1,8 +1,9 @@
-import classNames from 'classnames'
-import LockIcon from 'mdi-react/LockIcon'
 import * as React from 'react'
 
-import { Alert, AlertProps } from '@sourcegraph/wildcard'
+import { mdiLock } from '@mdi/js'
+import classNames from 'classnames'
+
+import { Alert, type AlertProps, Icon, H2, H5 } from '@sourcegraph/wildcard'
 
 import styles from './SiteAdminAlert.module.scss'
 
@@ -14,15 +15,15 @@ interface SiteAdminAlertProps {
 /**
  * An alert message with a site admin lock icon.
  */
-export const SiteAdminAlert: React.FunctionComponent<SiteAdminAlertProps> = ({
+export const SiteAdminAlert: React.FunctionComponent<React.PropsWithChildren<SiteAdminAlertProps>> = ({
     children,
     className = '',
     variant = 'warning',
 }) => (
     <Alert className={classNames(styles.siteAdminAlert, className)} variant={variant}>
-        <h5>
-            <LockIcon className="icon-inline" /> Site admin
-        </h5>
+        <H5 as={H2}>
+            <Icon aria-hidden={true} svgPath={mdiLock} /> Site admin
+        </H5>
         <div>{children}</div>
     </Alert>
 )

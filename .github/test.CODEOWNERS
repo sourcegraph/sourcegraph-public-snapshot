@@ -1,0 +1,169 @@
+# Sourcegraph uses CODENOTIFY to make individuals or groups aware of changes that are happening in code they care about,
+# without explicitly requiring those engineers to "own" the code.
+# This is a test CODEOWNERS file generated from all the CODENOTIFY files in this repository. It is not intended as a
+# move to use CODEOWNERS again, but rather to dogfood our Own product within Sourcegraph (hence the `.test` naming)
+
+/.github/workflows/codenotify.yml @unknwon
+/.github/workflows/licenses-check.yml          @bobheadxi
+/.github/workflows/licenses-update.yml         @bobheadxi
+/.github/workflows/renovate-downstream.yml     @bobheadxi
+/.github/workflows/renovate-downstream.json    @bobheadxi
+
+/client/branded/src/search-ui/components/** @fkling
+
+/client/jetbrains/** @vdavid @philipp-spiess
+
+/client/shared/src/search/**/* @fkling
+
+/client/shared/src/search/query/**/* @fkling
+
+/client/web/src/enterprise/batches/**/* @eseliger @BolajiOlajide
+
+/client/web/src/enterprise/executors/**/* @eseliger
+
+/client/web/src/integration/batches* @eseliger @BolajiOlajide
+
+/client/web/src/search/**/* @fkling
+
+/cmd/blobstore/**/* @slimsag
+
+/cmd/frontend/graphqlbackend/observability.go @bobheadxi
+/cmd/frontend/graphqlbackend/site_monitoring.go @bobheadxi
+/cmd/frontend/graphqlbackend/*search*.go @keegancsmith
+/cmd/frontend/graphqlbackend/*zoekt*.go @keegancsmith
+/cmd/frontend/graphqlbackend/batches.go @eseliger
+/cmd/frontend/graphqlbackend/insights.go @sourcegraph/code-insights-backend
+
+/cmd/frontend/internal/search/** @keegancsmith
+/cmd/frontend/internal/search/**/* @camdencheek
+/cmd/frontend/internal/search/**/* @jtibshirani
+
+/cmd/searcher/**/* @keegancsmith
+
+/cmd/server/internal/goreman/** @keegancsmith
+
+/cmd/server/internal/goremancmd/** @keegancsmith
+
+/cmd/symbols/** @keegancsmith
+
+/dev/authtest/**/* @unknwon
+
+/dev/gqltest/**/* @unknwon
+
+/doc/dev/background-information/adding_ping_data.md @ebrodymoore @dadlerj
+
+/doc/batch_changes/**/* @eseliger
+
+/doc/code_search/**/* @rvantonder
+
+/doc/dev/adr/**/* @unknwon
+
+/docker-images/cadvisor/**/* @bobheadxi
+
+/docker-images/grafana/**/* @bobheadxi
+
+/docker-images/prometheus/**/* @bobheadxi
+
+/cmd/frontend/internal/auth/**/* @unknwon
+
+/cmd/frontend/internal/authz/**/* @unknwon
+
+/cmd/frontend/internal/executorqueue/**/* @eseliger
+
+/cmd/frontend/internal/licensing/**/* @unknwon
+
+/cmd/repo-updater/internal/authz/**/* @unknwon
+
+/cmd/worker/internal/batches/**/* @eseliger
+
+/cmd/worker/internal/executorqueue/**/* @eseliger
+
+/dev/ci/**/* @bobheadxi
+
+/internal/authz/**/* @unknwon
+
+/internal/batches/**/* @eseliger
+
+/internal/cloud/**/* @unknwon @michaellzc
+
+/internal/codeintel/**/* @Strum355
+
+/internal/database/external_services* @unknwon
+/internal/database/perms_store* @unknwon
+
+/internal/insights/**/* @sourcegraph/code-insights-backend
+
+/internal/license/**/* @unknwon
+
+/internal/licensing/**/* @unknwon
+
+/internal/authz/**/* @unknwon
+
+/internal/codeintel/dependencies/**/* @mrnugget
+
+/internal/database/external* @eseliger
+/internal/database/namespaces* @eseliger
+/internal/database/repos* @eseliger
+/internal/database/permissions* @BolajiOlajide
+/internal/database/user_roles* @BolajiOlajide
+/internal/database/roles* @BolajiOlajide
+/internal/database/role_permissions* @BolajiOlajide
+
+/internal/debugserver/** @keegancsmith
+
+/internal/diskcache/** @keegancsmith
+
+/internal/endpoint/** @keegancsmith
+
+/internal/extsvc/**/* @eseliger
+
+/internal/extsvc/auth/**/* @unknwon
+
+/internal/gqltestutil/**/* @unknwon
+
+/internal/honey/** @keegancsmith
+
+/internal/httpcli/** @keegancsmith
+
+/internal/lazyregexp/** @keegancsmith
+
+/internal/mutablelimiter/** @keegancsmith
+
+/internal/observation/**/* @sourcegraph/dev-experience
+
+/internal/rcache/** @keegancsmith
+
+/internal/redispool/** @keegancsmith
+
+/internal/search/**/* @keegancsmith @camdencheek
+
+/internal/src-cli/**/* @eseliger @BolajiOlajide
+
+/internal/symbols/** @keegancsmith
+
+/internal/sysreq/** @keegancsmith
+
+/internal/trace/** @keegancsmith
+/internal/trace/**/* @sourcegraph/dev-experience
+
+/internal/tracer/** @keegancsmith
+/internal/tracer/**/* @sourcegraph/dev-experience
+
+/internal/usagestats/batches.go @eseliger
+/internal/usagestats/batches_test.go @eseliger
+
+/internal/vcs/** @keegancsmith
+
+/lib/errors/**/* @sourcegraph/dev-experience
+
+/lib/servicecatalog/**/* @sourcegraph/cloud @sourcegraph/security
+
+/monitoring/**/* @bobheadxi @slimsag
+/monitoring/precise_code_intel_* @sourcegraph/code-intelligence
+
+/internal/own/ @sourcegraph/own
+/internal/database/codeowners* @sourcegraph/own
+/cmd/frontend/internal/own/ @sourcegraph/own
+/client/web/src/**/own/ @sourcegraph/own
+/cmd/frontend/graphqlbackend/own* @sourcegraph/own
+/internal/usagestats/own* @sourcegraph/own

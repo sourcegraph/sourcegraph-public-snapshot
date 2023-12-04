@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "scheduler",
+    srcs = [
+        "config.go",
+        "iface.go",
+        "job_scheduler.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background/scheduler",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/api",
+        "//internal/codeintel/autoindexing/internal/inference",
+        "//internal/codeintel/autoindexing/internal/store",
+        "//internal/codeintel/dependencies",
+        "//internal/codeintel/policies",
+        "//internal/codeintel/policies/shared",
+        "//internal/codeintel/uploads/shared",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/env",
+        "//internal/gitserver/gitdomain",
+        "//internal/goroutine",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/timeutil",
+        "//lib/errors",
+        "@org_golang_x_sync//semaphore",
+    ],
+)

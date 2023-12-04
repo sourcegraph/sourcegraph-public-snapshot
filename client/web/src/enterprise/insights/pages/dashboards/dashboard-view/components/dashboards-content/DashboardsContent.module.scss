@@ -1,0 +1,36 @@
+.root {
+    // To compensate visual top margin from wildcard tab container
+    margin-top: -0.5rem;
+    padding-bottom: 2rem;
+}
+
+.header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 1rem;
+    row-gap: 0.5rem;
+}
+
+.dashboard-select-label {
+    font-weight: 500;
+    margin-right: 1rem;
+}
+
+.dashboard-select {
+    margin-right: 0.5rem;
+    flex: 1;
+}
+
+.dashboard-menu {
+    margin-right: auto;
+}
+
+.limited-access-label {
+    margin-top: -0.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.insights {
+    isolation: isolate;
+}

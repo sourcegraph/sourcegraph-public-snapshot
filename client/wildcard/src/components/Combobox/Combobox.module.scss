@@ -1,0 +1,72 @@
+.combobox {
+    width: 100%;
+}
+
+.popover {
+    /**
+        By default reach-ui/combobox sets `font-size` to 85% for the content
+        in the popover block. In order to reset `font-size` we set it to `inherit`
+        explicitly.
+     */
+    font-size: inherit;
+    border-radius: 0;
+    display: flex;
+    justify-content: stretch;
+}
+
+.list {
+    width: 100%;
+    overflow: auto;
+
+    [data-reach-combobox-option]:hover {
+        color: var(--dropdown-link-hover-color);
+
+        :global(.theme-dark) & {
+            background-color: var(--color-bg-3);
+        }
+
+        :global(.theme-light) & {
+            background-color: var(--oc-gray-1);
+        }
+    }
+
+    [data-highlighted],
+    [data-highlighted]:hover {
+        background-color: var(--dropdown-link-active-bg) !important;
+        color: var(--dropdown-link-active-color);
+    }
+
+    /**
+        Reach ui by default highlights suggested value and skips the user value.
+        This is a bit weird and inconsistent with our highlight visual logic
+        in search bar. In order to support consistent logic we override font-weight
+        for suggested and user parts of value.
+     */
+    [data-suggested-value] {
+        font-weight: normal;
+    }
+
+    [data-user-value] {
+        font-weight: bold;
+    }
+}
+
+.item {
+    &--disabled {
+        cursor: not-allowed;
+    }
+}
+
+.group {
+    margin-top: 0.25rem;
+}
+
+.group-heading {
+    display: block;
+    // for use with heading elements
+    margin-bottom: 0.25rem;
+    padding: var(--dropdown-item-padding);
+    font-size: var(--dropdown-header-font-size);
+    color: var(--dropdown-header-color);
+    white-space: nowrap; // as with > li > a
+}

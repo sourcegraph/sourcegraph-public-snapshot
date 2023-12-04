@@ -1,71 +1,52 @@
 #!/usr/bin/env bash
 
-set -eu
+set -e
 
-# HoneyComb's buildevent plumbing.
-# -------------------------------
+# Create the folder for annotations
+mkdir -p ./annotations/
 
-echo "--- Setting up HoneyComb tracing for the build"
+if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" =~ aspect-.* ]]; then
+    exit 0
+fi
 
-# Record start time if we need to exit
-BUILD_START_TIME=$(curl -H "Authorization: Bearer $BUILDKITE_API_TOKEN" "https://api.buildkite.com/v2/organizations/$BUILDKITE_ORGANIZATION_SLUG/pipelines/$BUILDKITE_PIPELINE_SLUG/builds/$BUILDKITE_BUILD_NUMBER/" | jq -r .started_at)
-
-# Convert to UTC & Epoch
-BUILD_START_TIME=$(TZ=UTC date -d "$BUILD_START_TIME" +'%s')
-export BUILD_START_TIME
-
-# Init the step
-STEP_START=$(date +'%s')
-export STEP_START
-
-# ASDF setup
+# asdf setup
 # ----------
+if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" != "bazel" && "$BUILDKITE_AGENT_META_DATA_QUEUE" != "macos" ]]; then
+    echo "~~~ Preparing asdf dependencies"
 
-# TODO remove this when making job the default queue
-# Skip on normal queues because standard agents do not have fresh asdf installs
-if [[ ! "$BUILDKITE_AGENT_META_DATA_QUEUE" =~ .*job.* ]]; then
-    echo "install asdf plugins"
-    asdf install
-    echo "done installing"
-    # We can't use exit 0 here, it would prevent the variables to be exported (that's a particular buildkite hook peculiarity).
-else
-    # We need awscli to use asdf cache
-    echo "install asdf awscli"
-    asdf install awscli
-    echo "done installing"
-
-    # set the buildkite cache access keys
-    AWS_CONFIG_DIR_PATH="/buildkite/.aws"
-    mkdir -p "$AWS_CONFIG_DIR_PATH"
-    AWS_CONFIG_FILE="$AWS_CONFIG_DIR_PATH/config"
-    export AWS_CONFIG_FILE
-    AWS_SHARED_CREDENTIALS_FILE="/buildkite/.aws/credentials"
-    export AWS_SHARED_CREDENTIALS_FILE
-    aws configure set aws_access_key_id "$BUILDKITE_HMAC_KEY" --profile buildkite
-    aws configure set aws_secret_access_key "$BUILDKITE_HMAC_SECRET" --profile buildkite
-
-    asdf_checksum=$(sha1sum .tool-versions | awk '{print $1}')
-    cache_file="cache-asdf-$asdf_checksum.tar.gz"
-    cache_key="$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_NAME/$cache_file"
-
-    echo -e "ASDF 🔍 Locating cache: $cache_key"
-    if aws s3api head-object --bucket "sourcegraph_buildkite_cache" --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" --key "$cache_key"; then
-        echo -e "ASDF 🔥 Cache hit: $cache_key"
-        aws s3 cp --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "s3://sourcegraph_buildkite_cache/$cache_key" "$HOME/"
-        pushd "$HOME"
-        tar xzf "$cache_file"
-        popd
+    if [[ "$BUILDKITE_STEP_KEY" == "pipeline-gen" ]]; then
+        echo "pipeline-gen step: running go install only"
+        asdf install golang
+    elif [[ "$BUILDKITE_STEP_KEY" == "pipeline-upload" || "$BUILDKITE_LABEL" =~ "pipeline-upload" ]]; then
+        echo "pipeline-upload step: skipping asdf install"
+    elif [[ "${BUILDKITE_GROUP_KEY:=\"\"}" == "Publishimages" ]]; then
+        if [[ "${BUILDKITE_STEP_KEY}" =~ "Publishexecutorimage" || "${BUILDKITE_STEP_KEY}" =~ "Publishdockerregistry" ]]; then
+            echo "publish image step that requires asdf"
+            ./dev/ci/asdf-install.sh
+        else
+            echo "publish image step: skipping asdf install"
+        fi
     else
-        echo -e "ASDF 🚨 Cache miss: $cache_key"
-        echo "--- installing all asdf tool versions"
-        asdf install
-        echo "--- caching asdf installation"
-        pushd "$HOME"
-        tar cfz "$cache_file" .asdf
-        popd
-        aws s3 cp --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "$HOME/$cache_file" "s3://sourcegraph_buildkite_cache/$cache_key"
+        echo "running normal install"
+        ./dev/ci/asdf-install.sh
     fi
+    #else
+    # Only enable when you're debugging, this produces about 300 log files
+    # export BUILDKITE_ARTIFACT_PATHS="$(bazel info bazel-testlogs)/**/*.log"
+fi
 
-    unset AWS_SHARED_CREDENTIALS_FILE
-    unset AWS_CONFIG_FILE
+# Check dangling docker containers
+
+if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" == "bazel" ]]; then
+    echo "~~~ Checking dangling docker containers"
+    docker ps -a
+
+    if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
+      SENTRY_DSN="$CI_SENTRY_DSN" sentry-cli send-event \
+        -m "Dangling containers detected" \
+        -e "job_name:$BUILDKITE_LABEL" \
+        -e "job_url:$BUILDKITE_BUILD_URL" \
+        -e "build_number:$BUILDKITE_BUILD_NUMBER" \
+        -e "agent_name:$BUILDKITE_AGENT_NAME"
+    fi
 fi

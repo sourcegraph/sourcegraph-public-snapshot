@@ -1,6 +1,12 @@
 package redispool
 
-import "testing"
+import (
+	"flag"
+	"os"
+	"testing"
+
+	"github.com/sourcegraph/log/logtest"
+)
 
 func TestSchemeMatcher(t *testing.T) {
 	tests := []struct {
@@ -19,4 +25,10 @@ func TestSchemeMatcher(t *testing.T) {
 			t.Errorf("for string %q, exp != got: %v != %v", test.urlMaybe, test.hasScheme, hasScheme)
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	logtest.Init(m)
+	os.Exit(m.Run())
 }

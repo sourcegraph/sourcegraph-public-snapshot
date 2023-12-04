@@ -1,0 +1,36 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "errors",
+    srcs = [
+        "cockroach.go",
+        "errors.go",
+        "filter.go",
+        "multi_error.go",
+        "postgres.go",
+        "warning.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/errors",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_cockroachdb_errors//:errors",
+        "@com_github_cockroachdb_redact//:redact",
+        "@com_github_jackc_pgconn//:pgconn",
+    ],
+)
+
+go_test(
+    name = "errors_test",
+    timeout = "short",
+    srcs = [
+        "errors_test.go",
+        "filter_test.go",
+        "warning_test.go",
+    ],
+    embed = [":errors"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

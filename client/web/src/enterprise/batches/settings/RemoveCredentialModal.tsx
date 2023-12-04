@@ -1,12 +1,11 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
+import { LoaderButton } from '../../../components/LoaderButton'
+import type { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
 
-import { deleteBatchChangesCredential } from './backend'
+import { useDeleteBatchChangesCredential } from './backend'
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
 import { ModalHeader } from './ModalHeader'
 
@@ -18,23 +17,18 @@ export interface RemoveCredentialModalProps {
     afterDelete: () => void
 }
 
-export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModalProps> = ({
+export const RemoveCredentialModal: React.FunctionComponent<React.PropsWithChildren<RemoveCredentialModalProps>> = ({
     codeHost,
     credential,
     onCancel,
     afterDelete,
 }) => {
     const labelId = 'removeCredential'
-    const [isLoading, setIsLoading] = useState<boolean | Error>(false)
+    const [deleteBatchChangesCredential, { loading, error }] = useDeleteBatchChangesCredential()
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
-        setIsLoading(true)
-        try {
-            await deleteBatchChangesCredential(credential.id)
-            afterDelete()
-        } catch (error) {
-            setIsLoading(asError(error))
-        }
-    }, [afterDelete, credential.id])
+        await deleteBatchChangesCredential({ variables: { id: credential.id } })
+        afterDelete()
+    }, [afterDelete, credential.id, deleteBatchChangesCredential])
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <div className="test-remove-credential-modal">
@@ -44,14 +38,14 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
                     externalServiceURL={codeHost.externalServiceURL}
                 />
 
-                <h3 className="text-danger mb-4">Removing credentials is irreversible</h3>
+                <strong className="d-block text-danger my-3">Removing credentials is irreversible.</strong>
 
-                {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
+                {error && <ErrorAlert error={error} />}
 
-                <p>
+                <Text>
                     To create changesets on this code host after removing credentials, you will need to repeat the 'Add
                     credentials' process.
-                </p>
+                </Text>
 
                 {codeHost.requiresSSH && (
                     <CodeHostSshPublicKey
@@ -64,24 +58,18 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
                 )}
 
                 <div className="d-flex justify-content-end pt-1">
-                    <Button
-                        disabled={isLoading === true}
-                        className="mr-2"
-                        onClick={onCancel}
-                        outline={true}
-                        variant="secondary"
-                    >
+                    <Button disabled={loading} className="mr-2" onClick={onCancel} outline={true} variant="secondary">
                         Cancel
                     </Button>
-                    <Button
-                        disabled={isLoading === true}
+                    <LoaderButton
+                        disabled={loading}
                         className="test-remove-credential-modal-submit"
                         onClick={onDelete}
                         variant="danger"
-                    >
-                        {isLoading === true && <LoadingSpinner />}
-                        Remove credentials
-                    </Button>
+                        loading={loading}
+                        alwaysShowLabel={true}
+                        label="Remove credentials"
+                    />
                 </div>
             </div>
         </Modal>

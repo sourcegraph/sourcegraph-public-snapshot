@@ -1,96 +1,156 @@
-import PlusIcon from 'mdi-react/PlusIcon'
-import React from 'react'
-import { matchPath, useHistory, useRouteMatch } from 'react-router'
-import { useLocation } from 'react-router-dom'
+import { Suspense, type FC, memo, useMemo } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, PageHeader, Tabs, TabList, Tab } from '@sourcegraph/wildcard'
+import { mdiPlus } from '@mdi/js'
+import { useParams, useNavigate } from 'react-router-dom'
 
-import { Page } from '../../../components/Page'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import {
+    Button,
+    Link,
+    PageHeader,
+    Tabs,
+    TabList,
+    Tab,
+    Icon,
+    TabPanels,
+    TabPanel,
+    LoadingSpinner,
+    useObservable,
+    Tooltip,
+} from '@sourcegraph/wildcard'
+
 import { CodeInsightsIcon } from '../../../insights/Icons'
-import { ALL_INSIGHTS_DASHBOARD_ID } from '../core/types/dashboard/virtual-dashboard'
+import { CodeInsightsPage } from '../components'
+import { useQueryParameters, useUiFeatures } from '../hooks'
+import { encodeDashboardIdQueryParam } from '../routers.constant'
 
-import { DashboardPageContent } from './dashboards/dashboard-page/DashboardsPage'
-import { CodeInsightsGettingStartedPage } from './getting-started/CodeInsightsGettingStartedPage'
+import { AllInsightsView } from './all-insights-view'
+import { DashboardsView } from './dashboards/dashboard-view/DashboardsView'
 
-export enum CodeInsightsRootPageURLPaths {
-    CodeInsights = '/dashboards/:dashboardId?',
-    GettingStarted = '/about',
-}
+import styles from './CodeInsightsRootPage.module.scss'
+
+const LazyCodeInsightsGettingStartedPage = lazyComponent(
+    () => import('./landing/getting-started/CodeInsightsGettingStartedPage'),
+    'CodeInsightsGettingStartedPage'
+)
 
 export enum CodeInsightsRootPageTab {
-    CodeInsights,
+    Dashboards,
+    AllInsights,
     GettingStarted,
 }
 
-function useQuery(): URLSearchParams {
-    const { search } = useLocation()
-
-    return React.useMemo(() => new URLSearchParams(search), [search])
-}
-
 interface CodeInsightsRootPageProps extends TelemetryProps {
-    activeView: CodeInsightsRootPageTab
+    dashboardId?: string
+    activeTab: CodeInsightsRootPageTab
 }
 
-export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageProps> = props => {
-    const { telemetryService, activeView } = props
-    const match = useRouteMatch()
-    const query = useQuery()
-    const history = useHistory()
+export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = memo(props => {
+    const { activeTab, telemetryService } = props
 
-    const { params } =
-        matchPath<{ dashboardId?: string }>(window.location.pathname, {
-            path: match.path,
-        }) ?? {}
+    const navigate = useNavigate()
+    const { dashboardId } = useParams()
+    const { dashboardId: queryParameterDashboardId } = useQueryParameters(['dashboardId'])
 
-    const dashboardId = params?.dashboardId ?? ALL_INSIGHTS_DASHBOARD_ID
-    const queryParameterDashboardId = query.get('dashboardId') ?? ALL_INSIGHTS_DASHBOARD_ID
+    // Set either active dashboard from the dashboard tab param (dashboard)
+    // or dashboard id from URL query param in case if we're on the about tab or
+    // the all insights tab.
+    const absoluteDashboardId = dashboardId ?? queryParameterDashboardId
 
     const handleTabNavigationChange = (selectedTab: CodeInsightsRootPageTab): void => {
         switch (selectedTab) {
-            case CodeInsightsRootPageTab.CodeInsights:
-                return history.push(`/insights/dashboards/${queryParameterDashboardId}`)
-            case CodeInsightsRootPageTab.GettingStarted:
-                return history.push(`/insights/about?dashboardId=${dashboardId}`)
+            case CodeInsightsRootPageTab.Dashboards: {
+                if (queryParameterDashboardId) {
+                    return navigate(`/insights/dashboards/${queryParameterDashboardId}`)
+                }
+
+                return navigate('/insights/dashboards')
+            }
+            case CodeInsightsRootPageTab.AllInsights: {
+                return navigate(encodeDashboardIdQueryParam('/insights/all', absoluteDashboardId))
+            }
+            case CodeInsightsRootPageTab.GettingStarted: {
+                return navigate(encodeDashboardIdQueryParam('/insights/about', absoluteDashboardId))
+            }
         }
     }
 
     return (
-        <Page>
+        <CodeInsightsPage>
             <PageHeader
-                path={[{ icon: CodeInsightsIcon }, { text: 'Insights' }]}
+                path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
                 actions={
-                    <>
-                        <Button as={Link} to="/insights/add-dashboard" variant="secondary" className="mr-2">
-                            <PlusIcon className="icon-inline" /> Create dashboard
-                        </Button>
-                        <Button
-                            as={Link}
-                            to={`/insights/create?dashboardId=${dashboardId}`}
-                            variant="primary"
-                            onClick={() => telemetryService.log('InsightAddMoreClick')}
-                        >
-                            <PlusIcon className="icon-inline" /> Create insight
-                        </Button>
-                    </>
+                    <CodeInsightHeaderActions dashboardId={absoluteDashboardId} telemetryService={telemetryService} />
                 }
-                className="align-items-start mb-3"
+                className={styles.header}
             />
 
-            <Tabs index={activeView} size="medium" className="mb-3" onChange={handleTabNavigationChange}>
+            <Tabs
+                index={activeTab}
+                lazy={true}
+                size="medium"
+                className={styles.tabs}
+                onChange={handleTabNavigationChange}
+            >
                 <TabList>
-                    <Tab index={CodeInsightsRootPageTab.CodeInsights}>Code Insights</Tab>
-
+                    <Tab index={CodeInsightsRootPageTab.Dashboards}>Dashboards</Tab>
+                    <Tab index={CodeInsightsRootPageTab.AllInsights}>All insights</Tab>
                     <Tab index={CodeInsightsRootPageTab.GettingStarted}>Getting started</Tab>
                 </TabList>
+                <TabPanels className={styles.tabPanels}>
+                    <TabPanel tabIndex={-1}>
+                        <DashboardsView dashboardId={dashboardId} telemetryService={telemetryService} />
+                    </TabPanel>
+                    <TabPanel tabIndex={-1}>
+                        <AllInsightsView telemetryService={telemetryService} />
+                    </TabPanel>
+                    <TabPanel tabIndex={-1}>
+                        <Suspense fallback={<LoadingSpinner aria-label="Loading Code Insights Getting started page" />}>
+                            <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
+                        </Suspense>
+                    </TabPanel>
+                </TabPanels>
             </Tabs>
+        </CodeInsightsPage>
+    )
+})
 
-            {activeView === CodeInsightsRootPageTab.CodeInsights && (
-                <DashboardPageContent telemetryService={telemetryService} dashboardID={params?.dashboardId} />
-            )}
+interface CodeInsightHeaderActionsProps extends TelemetryProps {
+    dashboardId?: string
+}
 
-            {activeView === CodeInsightsRootPageTab.GettingStarted && <CodeInsightsGettingStartedPage />}
-        </Page>
+const CodeInsightHeaderActions: FC<CodeInsightHeaderActionsProps> = props => {
+    const { dashboardId, telemetryService } = props
+
+    const { insight } = useUiFeatures()
+    const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
+
+    const available = creationPermission?.available ?? false
+
+    return (
+        <>
+            <Button
+                as={Link}
+                to="/insights/add-dashboard"
+                variant="secondary"
+                className="mr-2"
+                aria-label="Add dashboard"
+            >
+                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add dashboard
+            </Button>
+
+            <Tooltip content={!available ? 'You have reached your insights limit' : null}>
+                <Button
+                    as={Link}
+                    to={encodeDashboardIdQueryParam('/insights/create', dashboardId)}
+                    variant="primary"
+                    onClick={() => telemetryService.log('InsightAddMoreClick')}
+                    disabled={!available}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Create insight
+                </Button>
+            </Tooltip>
+        </>
     )
 }

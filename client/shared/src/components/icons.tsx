@@ -1,10 +1,12 @@
-import classNames from 'classnames'
 import * as React from 'react'
+
+import classNames from 'classnames'
+
+import type { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 export interface IconProps {
     className?: string
     size?: number
-    'data-tooltip'?: string
 }
 
 function sizeProps(props: IconProps): { width: number; height: number; viewBox: string } {
@@ -17,25 +19,25 @@ function sizeProps(props: IconProps): { width: number; height: number; viewBox: 
     }
 }
 
-export const ChatIcon: React.FunctionComponent<IconProps> = props => (
+export const ChatIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
     <svg {...props} {...sizeProps(props)} className={classNames('mdi-icon', props.className)}>
         <path d="M 2 11.636 A 10 8 0 0 0 4.75 17.146 A 9 9 0 0 1 2 21.636 A 10.4 10.4 0 0 0 8.5 19.13 A 10 8 0 0 0 12 19.636 A 10 8 0 0 0 22 11.636 A 10 8 0 0 0 12 3.636 A 10 8 0 0 0 2 11.636 Z" />
     </svg>
 )
 
-export const CircleChevronLeftIcon: React.FunctionComponent<IconProps> = props => (
+export const CircleChevronLeftIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
     <svg {...props} {...sizeProps(props)} className={classNames('mdi-icon', props.className)}>
         <path d="M22,12c0,5.5-4.5,10-10,10S2,17.5,2,12S6.5,2,12,2S22,6.5,22,12z M15.4,16.6L10.8,12l4.6-4.6L14,6l-6,6l6,6L15.4,16.6z" />
     </svg>
 )
 
-export const CircleChevronRightIcon: React.FunctionComponent<IconProps> = props => (
+export const CircleChevronRightIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
     <svg {...props} {...sizeProps(props)} className={classNames('mdi-icon', props.className)}>
         <path d="M22,12c0,5.5-4.5,10-10,10S2,17.5,2,12S6.5,2,12,2S22,6.5,22,12z M10,18l6-6l-6-6L8.6,7.4l4.6,4.6l-4.6,4.6L10,18z" />
     </svg>
 )
 
-export const RepoQuestionIcon: React.FunctionComponent<IconProps> = props => (
+export const RepoQuestionIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
     <svg {...props} {...sizeProps(props)} className={classNames('mdi-icon', props.className)} viewBox="0 0 64 64">
         <title>Icons 400</title>
         <g>
@@ -51,13 +53,39 @@ export const RepoQuestionIcon: React.FunctionComponent<IconProps> = props => (
     </svg>
 )
 
-export const FormatListBulletedIcon: React.FunctionComponent<IconProps> = props => (
+export const FormatListBulletedIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
     <svg {...props} {...sizeProps(props)} className={classNames('mdi-icon', props.className)}>
         <path d="M7,5H21V7H7V5M7,13V11H21V13H7M4,4.5A1.5,1.5 0 0,1 5.5,6A1.5,1.5 0 0,1 4,7.5A1.5,1.5 0 0,1 2.5,6A1.5,1.5 0 0,1 4,4.5M4,10.5A1.5,1.5 0 0,1 5.5,12A1.5,1.5 0 0,1 4,13.5A1.5,1.5 0 0,1 2.5,12A1.5,1.5 0 0,1 4,10.5M7,19V17H21V19H7M4,16.5A1.5,1.5 0 0,1 5.5,18A1.5,1.5 0 0,1 4,19.5A1.5,1.5 0 0,1 2.5,18A1.5,1.5 0 0,1 4,16.5Z" />
     </svg>
 )
 
-export const PhabricatorIcon: React.FunctionComponent<IconProps> = props => (
+export const PerforceIcon: React.FunctionComponent<React.PropsWithChildren<IconProps & { color?: string }>> = props => (
+    <svg
+        {...props}
+        width={props.size}
+        height={props.size}
+        className={props.className}
+        fill={props.color ?? 'currentColor'}
+        viewBox="0 0 24 24"
+    >
+        <path d="M3.742 8.754c.16-.418.352-.828.57-1.219l-.71-.644c2.773-3.325 6.39-4.32 9.59-3.743.656.09 1.308.247 1.956.485 4.582 1.703 6.903 6.754 5.18 11.285-.172.45-.387.883-.613 1.285.254.219.808.629.777.664-3.078 3.637-7.176 4.48-10.59 3.469-.328-.082-.652-.18-.98-.297-4.574-1.703-6.899-6.75-5.18-11.285zM19.372.98L17.75 2.512c-.54-.301-1.121-.582-1.727-.801C10.82-.227 5.336 1.965 2.316 6.03.738 8.363-.195 11.234.036 14.188c0 0 .007 5.558 5.136 8.832l1.305-1.786c.57.328 1.175.621 1.816.86 5.89 2.183 12.418-.606 14.555-6.23 0 0 1.562-3.43 1.047-7.177 0 0-.399-5.058-4.524-7.71zm0 0" />
+    </svg>
+)
+
+export const HelixSwarmIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
+    <svg viewBox="0 0 38.7 44.4" {...props} width={props.size} height={props.size} className={props.className}>
+        <path
+            d="M.5 10.75c-.3.2-.5.6-.5.9v21.1c0 .3.2.8.5.9l18.3 10.6c.3.2.8.2 1.1 0l18.3-10.6c.3-.2.5-.6.5-.9v-21.1c0-.3-.2-.8-.5-.9L19.9.15c-.3-.2-.8-.2-1.1 0z"
+            fill="#f1f1f2"
+        />
+        <path
+            d="M17.3 24.65c-.3 0-.5-.1-.7-.3l-4.4-3.6 4.3-3.5a1.08 1.08 0 0 1 .7-.3c.3 0 .7.2.9.4s.3.5.3.8-.2.6-.4.8l-2.2 1.8 2.2 1.8c.2.2.4.5.4.8s-.1.6-.3.8c-.1.4-.4.5-.8.5zm4.3 0c-.3 0-.7-.2-.9-.4-.4-.5-.3-1.2.2-1.6l2.2-1.8-2.2-1.8c-.2-.2-.4-.5-.4-.8s.1-.6.3-.8c.2-.3.5-.4.9-.4.3 0 .5.1.7.3l4.3 3.5-4.4 3.6c-.2.2-.5.2-.7.2zm5.8-12.8H11.3a3.8 3.8 0 0 0-3.8 3.8v10a3.8 3.8 0 0 0 3.8 3.8h13.2l-4.5 6.1h3.7l3.7-4.8c.7-1 .9-2 .5-2.9s-1.4-1.4-2.6-1.4h-14c-.4 0-.8-.3-.8-.8v-10c0-.4.3-.8.8-.8h16.1c.4 0 .8.3.8.8v7a1.54 1.54 0 0 0 1.5 1.5 1.54 1.54 0 0 0 1.5-1.5v-7c0-2-1.7-3.8-3.8-3.8z"
+            fill="#63a70a"
+        />
+    </svg>
+)
+
+export const PhabricatorIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
     <svg
         {...props}
         {...sizeProps(props)}
@@ -93,15 +121,17 @@ export const PhabricatorIcon: React.FunctionComponent<IconProps> = props => (
     </svg>
 )
 
-export const WrapDisabledIcon: React.FunctionComponent<IconProps> = props => (
+export const WrapDisabledIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
     <svg {...props} {...sizeProps(props)} className={classNames('mdi-icon', props.className)}>
         <path d="M16,7H3V5H16ZM3,19H16V17H3Zm19-7L18,9v2H3v2H18v2Z" />
     </svg>
 )
 
 // TODO: Rename name when refresh design is complete
-export const CloudAlertIconRefresh: React.FunctionComponent<IconProps> = props => (
+
+export const CloudAlertIconRefresh = React.forwardRef((props, reference) => (
     <svg
+        ref={reference}
         {...props}
         {...sizeProps(props)}
         className={classNames('phabricator-icon mdi-icon', props.className)}
@@ -124,11 +154,14 @@ export const CloudAlertIconRefresh: React.FunctionComponent<IconProps> = props =
             </clipPath>
         </defs>
     </svg>
-)
+)) as ForwardReferenceComponent<'svg', React.PropsWithChildren<IconProps>>
+CloudAlertIconRefresh.displayName = 'CloudAlertIconRefresh'
 
 // TODO: Rename name when refresh design is complete
-export const CloudSyncIconRefresh: React.FunctionComponent<IconProps> = props => (
+
+export const CloudSyncIconRefresh = React.forwardRef((props, reference) => (
     <svg
+        ref={reference}
         {...props}
         {...sizeProps(props)}
         className={classNames('phabricator-icon mdi-icon', props.className)}
@@ -155,11 +188,36 @@ export const CloudSyncIconRefresh: React.FunctionComponent<IconProps> = props =>
             </clipPath>
         </defs>
     </svg>
-)
+)) as ForwardReferenceComponent<'svg', React.PropsWithChildren<IconProps>>
+CloudSyncIconRefresh.displayName = 'CloudSyncIconRefresh'
+
+export const CloudInfoIconRefresh = React.forwardRef((props, reference) => (
+    <svg
+        ref={reference}
+        {...props}
+        {...sizeProps(props)}
+        className={classNames('phabricator-icon mdi-icon', props.className)}
+        viewBox="0 -4 20 20"
+        fill="currentColor"
+        xmlns="http://www.w3.org/2000/svg"
+    >
+        <path
+            d="M10.3872 11.9168H4.96484C3.18134 11.9168 1.71484 10.4503 1.71484 8.66683C1.71484 7.00907 2.9321 5.62911 4.68879 5.40244L5.61324 5.28316L6.03009 4.44945C6.7313 3.04703 8.20576 2.0835 9.96484 2.0835C11.4816 2.0835 12.7994 2.80509 13.6199 3.90816L15.3998 3.43124C14.3159 1.58578 12.3089 0.333496 9.96484 0.333496C7.54818 0.333496 5.46484 1.66683 4.46484 3.66683C1.88151 4.00016 -0.0351562 6.0835 -0.0351562 8.66683C-0.0351562 11.4168 2.21484 13.6668 4.96484 13.6668H10.3872V11.9168Z"
+            fill="#798BAF"
+        />
+        <path
+            d="M19.9649 9.49464C19.9649 11.7987 18.097 13.6665 15.793 13.6665C13.4889 13.6665 11.6211 11.7987 11.6211 9.49464C11.6211 7.19057 13.4889 5.32275 15.793 5.32275C18.097 5.32275 19.9649 7.19057 19.9649 9.49464Z"
+            fill="#0B70DB"
+        />
+    </svg>
+)) as ForwardReferenceComponent<'svg', React.PropsWithChildren<IconProps>>
+CloudInfoIconRefresh.displayName = 'CloudInfoIconRefresh'
 
 // TODO: Rename name when refresh design is complete
-export const CloudCheckIconRefresh: React.FunctionComponent<IconProps> = props => (
+
+export const CloudCheckIconRefresh = React.forwardRef((props, reference) => (
     <svg
+        ref={reference}
         {...props}
         {...sizeProps(props)}
         className={classNames('phabricator-icon mdi-icon', props.className)}
@@ -182,4 +240,5 @@ export const CloudCheckIconRefresh: React.FunctionComponent<IconProps> = props =
             </clipPath>
         </defs>
     </svg>
-)
+)) as ForwardReferenceComponent<'svg', React.PropsWithChildren<IconProps>>
+CloudCheckIconRefresh.displayName = 'CloudCheckIconRefresh'

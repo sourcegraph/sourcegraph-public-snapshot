@@ -1,0 +1,154 @@
+- id: 1
+  team: code-intelligence
+  component: codeintel-db.lsif_data_documents
+  description: Populate num_diagnostics from gob-encoded payload
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 3
+  introduced_version_minor: 25
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
+- id: 2
+  team: campaigns
+  component: frontend-db.authenticators
+  description: Prepare for SSH pushes to code hosts
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 3
+  introduced_version_minor: 26
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
+- id: 4
+  team: code-intelligence
+  component: codeintel-db.lsif_data_definitions
+  description: Populate num_locations from gob-encoded payload
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 3
+  introduced_version_minor: 26
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
+- id: 5
+  team: code-intelligence
+  component: codeintel-db.lsif_data_references
+  description: Populate num_locations from gob-encoded payload
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 3
+  introduced_version_minor: 26
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
+- id: 7
+  team: code-intelligence
+  component: codeintel-db.lsif_data_documents
+  description: Split payload into multiple columns
+  non_destructive: false
+  is_enterprise: true
+  introduced_version_major: 3
+  introduced_version_minor: 27
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
+- id: 13
+  team: batch-changes
+  component: frontend-db.external_services
+  description: Calculate the webhook state of each external service
+  non_destructive: true
+  is_enterprise: false
+  introduced_version_major: 3
+  introduced_version_minor: 34
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
+- id: 14
+  team: code-insights
+  component: db.insights_settings_migration_jobs
+  description: Migrating insight definitions from settings files to database tables as a last stage to use the GraphQL API.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 3
+  introduced_version_minor: 35
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
+- id: 15
+  team: iam
+  component: frontend-db.product_subscriptions
+  description: Attempt to extract account number from the associated user of subscriptions.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 3
+  introduced_version_minor: 43
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
+- id: 16
+  team: iam
+  component: frontend-db.product_licenses
+  description: Extract license fields from the license key text and store them to dedicated columns.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 3
+  introduced_version_minor: 43
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
+- id: 17
+  team: code-insights
+  component: codeinsights-db.insight_series
+  description: Save historical recording times for all existing insights
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 4
+  introduced_version_minor: 3
+  deprecated_version_major: 4
+  deprecated_version_minor: 4
+- id: 18
+  team: code-insights
+  component: db.insights_backfillerv2_migration
+  description: Migrates insight series from the v1 backfiller to v2.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 4
+  introduced_version_minor: 3
+  deprecated_version_major: 4
+  deprecated_version_minor: 4
+- id: 19
+  team: batch-changes
+  component: frontend-db.user_roles
+  description: Assigns roles to existing users
+  non_destructive: true
+  is_enterprise: false
+  introduced_version_major: 4
+  introduced_version_minor: 5
+  deprecated_version_major: 4
+  deprecated_version_minor: 6
+- id: 20
+  team: code-intelligence
+  component: codeintel-db.lsif_data_*
+  description: Convert LSIF data to SCIP.
+  non_destructive: false
+  is_enterprise: true
+  introduced_version_major: 4
+  introduced_version_minor: 5
+  deprecated_version_major: 4
+  deprecated_version_minor: 6
+- id: 21
+  team: batch-changes
+  component: frontend-db.changesets
+  description: Populate external_fork_name column for existing changesets published on Bitbucket Server and Cloud.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 4
+  introduced_version_minor: 5
+- id: 22
+  team: iam
+  component: frontend-db.user_repo_permissions
+  description: Migrate data from user_permissions table to unified user_repo_permissions.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 5
+  introduced_version_minor: 0
+- id: 23
+  team: batch-changes
+  component: frontend-db.batch_specs
+  description: Re-ID empty batch specs belonging to draft batch changes.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 5
+  introduced_version_minor: 0

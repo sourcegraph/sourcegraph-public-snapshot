@@ -1,0 +1,482 @@
+{
+  "actionscript": [
+    "as"
+  ],
+  "ada": [
+    "adb",
+    "ada",
+    "ads"
+  ],
+  "apache": [
+    "apacheconf"
+  ],
+  "apex": [
+    "cls",
+    "apex",
+    "trigger"
+  ],
+  "applescript": [
+    "applescript",
+    "scpt"
+  ],
+  "beancount": [
+    "beancount"
+  ],
+  "bibtex": [
+    "bib"
+  ],
+  "clojure": [
+    "clj",
+    "cljs",
+    "cljx"
+  ],
+  "cmake": [
+    "cmake",
+    "cmake.in",
+    "in"
+  ],
+  "coffescript": [
+    "coffee",
+    "cake",
+    "cson",
+    "cjsx",
+    "iced"
+  ],
+  "cpp": [
+    "c",
+    "cc",
+    "cpp",
+    "cxx",
+    "c++",
+    "h++",
+    "hh",
+    "h",
+    "hpp",
+    // For Pro*C/C++ which was requested by a customer
+    // See: https://github.com/sourcegraph/customer/issues/124
+    // And https://web.archive.org/web/20231107051418/https://otl.sourceforge.net/otl3_ex59.htm
+    "pc",
+    "pcc"
+  ],
+  "csharp": [
+    "cs",
+    "csx"
+  ],
+  "css": [
+    "css"
+  ],
+  "cuda": [
+    "cu",
+    "cuh"
+  ],
+  "d": [
+    "d"
+  ],
+  "dot": [
+    "dot"
+  ],
+  "dart": [
+    "dart"
+  ],
+  "diff": [
+    "diff",
+    "patch"
+  ],
+  "dockerfile": [
+    "Dockerfile"
+  ],
+  "django": [
+    "jinja"
+  ],
+  "dos": [
+    "bat",
+    "cmd"
+  ],
+  "elixir": [
+    "ex",
+    "exs"
+  ],
+  "elm": [
+    "elm"
+  ],
+  "erlang": [
+    "erl"
+  ],
+  "fortran": [
+    "f",
+    "for",
+    "frt",
+    "fr",
+    "forth",
+    "4th",
+    "fth"
+  ],
+  "fsharp": [
+    "fs"
+  ],
+  "go": [
+    "go"
+  ],
+  "graphql": [
+    "graphql"
+  ],
+  "groovy": [
+    "groovy"
+  ],
+  "haml": [
+    "haml"
+  ],
+  "handlebars": [
+    "hbs",
+    "handlebars"
+  ],
+  "haskell": [
+    "hs",
+    "hsc"
+  ],
+  "hcl": [
+    "hcl",
+    "nomad",
+    "tf",
+    "tfvars",
+    "workflow"
+  ],
+  "html": [
+    "htm",
+    "html",
+    "xhtml"
+  ],
+  "ini": [
+    "ini",
+    "cfg",
+    "prefs",
+    "pro",
+    "properties"
+  ],
+  "java": [
+    "java"
+  ],
+  "javascript": [
+    "js",
+    "jsx",
+    "es",
+    "es6",
+    "jss",
+    "jsm"
+  ],
+  "json": [
+    "json",
+    "sublime_metrics",
+    "sublime_session",
+    "sublime-keymap",
+    "sublime-mousemap",
+    "sublime-project",
+    "sublime-settings",
+    "sublime-workspace"
+  ],
+  "jsonnet": [
+    "jsonnet",
+    "libsonnet"
+  ],
+  "julia": [
+    "jl"
+  ],
+  "kotlin": [
+    "kt",
+    "ktm",
+    "kts"
+  ],
+  "less": [
+    "less"
+  ],
+  "lisp": [
+    "lisp",
+    "asd",
+    "cl",
+    "lsp",
+    "l",
+    "ny",
+    "podsl",
+    "sexp",
+    "el"
+  ],
+  "lua": [
+    "lua",
+    "fcgi",
+    "nse",
+    "pd_lua",
+    "rbxs",
+    "wlua"
+  ],
+  "makefile": [
+    "mk",
+    "mak"
+  ],
+  "markdown": [
+    "md",
+    "mkdown",
+    "mkd"
+  ],
+  "nginx": [
+    "nginxconf"
+  ],
+  "objectivec": [
+    "m",
+    "mm"
+  ],
+  "ocaml": [
+    "ml",
+    "eliom",
+    "eliomi",
+    "ml4",
+    "mli",
+    "mll",
+    "mly",
+    "re"
+  ],
+  "pascal": [
+    "p",
+    "pas",
+    "pp"
+  ],
+  "perl": [
+    "pl",
+    "al",
+    "cgi",
+    "perl",
+    "ph",
+    "plx",
+    "pm",
+    "pod",
+    "psgi",
+    "t"
+  ],
+  "php": [
+    "php",
+    "phtml",
+    "php3",
+    "php4",
+    "php5",
+    "php6",
+    "php7",
+    "phps"
+  ],
+  "powershell": [
+    "ps1",
+    "psd1",
+    "psm1"
+  ],
+  "protobuf": [
+    "proto"
+  ],
+  "python": [
+    "py",
+    "pyc",
+    "pyd",
+    "pyo",
+    "pyw",
+    "pyz"
+  ],
+  "r": [
+    "r",
+    "rd",
+    "rsx"
+  ],
+  "repro": [
+    "repro"
+  ],
+  "ruby": [
+    "rb",
+    "rbi",
+    "builder",
+    "eye",
+    "gemspec",
+    "god",
+    "jbuilder",
+    "mspec",
+    "pluginspec",
+    "podspec",
+    "rabl",
+    "rake",
+    "rbuild",
+    "rbw",
+    "rbx",
+    "ru",
+    "ruby",
+    "spec",
+    "thor",
+    "watchr"
+  ],
+  "rust": [
+    "rs",
+    "rs.in"
+  ],
+  "scala": [
+    "sbt",
+    "sc",
+    "scala"
+  ],
+  "scheme": [
+    "scm",
+    "sch",
+    "sls",
+    "sps",
+    "ss"
+  ],
+  "scss": [
+    "sass",
+    "scss"
+  ],
+  "shell": [
+    "sh",
+    "bash",
+    "zsh"
+  ],
+  "smalltalk": [
+    "st"
+  ],
+  "sql": [
+    "sql"
+  ],
+  "starlark": [
+    "bzl",
+    "bazel",
+    "BUILD",
+    "WORKSPACE"
+  ],
+  "stylus": [
+    "styl"
+  ],
+  "svelte": [
+    "svelte"
+  ],
+  "swift": [
+    "swift"
+  ],
+  "thrift": [
+    "thrift"
+  ],
+  "toml": [
+    "toml"
+  ],
+  "twig": [
+    "twig"
+  ],
+  "typescript": [
+    "ts",
+    "tsx"
+  ],
+  "vbnet": [
+    "vb"
+  ],
+  "vbscrip": [
+    "vbs"
+  ],
+  "verilog": [
+    "v",
+    "veo",
+    "sv",
+    "svh",
+    "svi"
+  ],
+  "vhdl": [
+    "vhd",
+    "vhdl"
+  ],
+  "vim": [
+    "vim"
+  ],
+  "xml": [
+    "xml",
+    "adml",
+    "admx",
+    "ant",
+    "axml",
+    "builds",
+    "ccxml",
+    "clixml",
+    "cproject",
+    "csl",
+    "csproj",
+    "ct",
+    "dita",
+    "ditamap",
+    "ditaval",
+    "dll.config",
+    "dotsettings",
+    "filters",
+    "fsproj",
+    "fxml",
+    "glade",
+    "gml",
+    "grxml",
+    "iml",
+    "ivy",
+    "jelly",
+    "jsproj",
+    "kml",
+    "launch",
+    "mdpolicy",
+    "mjml",
+    "mod",
+    "mxml",
+    "nproj",
+    "nuspec",
+    "odd",
+    "osm",
+    "pkgproj",
+    "plist",
+    "props",
+    "ps1xml",
+    "psc1",
+    "pt",
+    "rdf",
+    "resx",
+    "rss",
+    "scxml",
+    "sfproj",
+    "srdf",
+    "storyboard",
+    "stTheme",
+    "sublime-snippet",
+    "targets",
+    "tmCommand",
+    "tml",
+    "tmLanguage",
+    "tmPreferences",
+    "tmSnippet",
+    "tmTheme",
+    "ui",
+    "urdf",
+    "ux",
+    "vbproj",
+    "vcxproj",
+    "vsixmanifest",
+    "vssettings",
+    "vstemplate",
+    "vxml",
+    "wixproj",
+    "wsdl",
+    "wsf",
+    "wxi",
+    "wxl",
+    "wxs",
+    "x3d",
+    "xacro",
+    "xaml",
+    "xib",
+    "xlf",
+    "xliff",
+    "xmi",
+    "xml.dist",
+    "xproj",
+    "xsd",
+    "xspec",
+    "xul",
+    "zcml"
+  ],
+  "yaml": [
+    "yml",
+    "yaml"
+  ]
+}

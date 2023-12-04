@@ -1,70 +1,37 @@
-import classNames from 'classnames'
-import * as React from 'react'
+import type { FC } from 'react'
 
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { toRepoURL, RepoRevision, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { CopyPathAction } from '@sourcegraph/branded'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { type RepoRevision, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { Breadcrumbs } from '@sourcegraph/wildcard'
 
 import { toTreeURL } from '../util/url'
 
 import styles from './FilePathBreadcrumbs.module.scss'
 
-interface Props extends RepoRevision, TelemetryProps {
-    filePath: string
+interface FilePathBreadcrumbsProps extends RepoRevision, TelemetryProps {
     isDir: boolean
-    repoUrl: string
+    filePath: string
 }
 
 /**
  * Displays a file path in a repository in breadcrumb style, with ancestor path
  * links.
  */
-export const FilePathBreadcrumbs: React.FunctionComponent<Props> = ({
-    repoName,
-    revision,
-    filePath,
-    isDir,
-    telemetryService,
-}) => {
-    const parts = filePath.split('/')
-    const partToUrl = (index: number): string => {
-        const partPath = parts.slice(0, index + 1).join('/')
-        if (isDir || index < parts.length - 1) {
+export const FilePathBreadcrumbs: FC<FilePathBreadcrumbsProps> = props => {
+    const { repoName, revision, filePath, isDir, telemetryService } = props
+
+    const partToUrl = (segment: string, index: number, segments: string[]): string => {
+        const partPath = segments.slice(0, index + 1).join('/')
+        if (isDir || index < segments.length - 1) {
             return toTreeURL({ repoName, revision, filePath: partPath })
         }
         return toPrettyBlobURL({ repoName, revision, filePath: partPath })
     }
-    const partToClassName = (index: number): string =>
-        index === parts.length - 1
-            ? 'test-breadcrumb-part-last'
-            : classNames('test-breadcrumb-part-directory', styles.partDirectory)
 
-    const spans: JSX.Element[] = [
-        <LinkOrSpan
-            key="root-dir"
-            className={classNames('test-breadcrumb-part-directory', styles.partDirectory)}
-            to={toRepoURL({ repoName, revision })}
-            aria-current={false}
-            onClick={() => telemetryService.log('RootBreadcrumbClicked', { action: 'click', label: 'root directory' })}
-        >
-            /
-        </LinkOrSpan>,
-    ]
-    for (const [index, part] of parts.entries()) {
-        const link = partToUrl(index)
-        const className = classNames(styles.part, partToClassName?.(index))
-        spans.push(
-            <LinkOrSpan
-                key={`link-${index}`}
-                className={className}
-                to={link}
-                aria-current={index === parts.length - 1 ? 'page' : 'false'}
-            >
-                {index < parts.length - 1 ? `${part} /` : part}
-            </LinkOrSpan>
-        )
-    }
-
-    // Important: do not put spaces between the breadcrumbs or spaces will get added when copying the path
-    return <span className={styles.filePathBreadcrumbs}>{spans}</span>
+    return (
+        <Breadcrumbs filename={filePath} getSegmentLink={partToUrl} className={styles.filePathBreadcrumbs}>
+            <CopyPathAction filePath={filePath} telemetryService={telemetryService} />
+        </Breadcrumbs>
+    )
 }

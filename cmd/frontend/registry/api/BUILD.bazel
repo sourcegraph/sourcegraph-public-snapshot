@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "api",
+    srcs = [
+        "doc.go",
+        "extensions_helpers.go",
+        "gating.go",
+        "http_api.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//cmd/frontend/registry/client",
+        "//lib/errors",
+    ],
+)

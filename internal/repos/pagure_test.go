@@ -4,11 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -17,28 +16,23 @@ func TestPagureSource_ListRepos(t *testing.T) {
 		Url:     "https://src.fedoraproject.org",
 		Pattern: "ac*",
 	}
-	cf, save := newClientFactory(t, t.Name())
+	cf, save := NewClientFactory(t, t.Name())
 	defer save(t)
 
-	lg := log15.New()
-	lg.SetHandler(log15.DiscardHandler())
+	svc := typestest.MakeExternalService(t, extsvc.VariantPagure, conf)
 
-	svc := &types.ExternalService{
-		Kind:   extsvc.KindPagure,
-		Config: marshalJSON(t, conf),
-	}
-
-	src, err := NewPagureSource(svc, cf)
+	ctx := context.Background()
+	src, err := NewPagureSource(ctx, svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	src.perPage = 25 // 2 pages for 47 results
 
-	repos, err := listAll(context.Background(), src)
+	repos, err := ListAll(context.Background(), src)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), update(t.Name()), repos)
+	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), Update(t.Name()), repos)
 }

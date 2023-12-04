@@ -1,15 +1,17 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Notices no notices 1`] = `<DocumentFragment />`;
+exports[`Notices > no notices 1`] = `<DocumentFragment />`;
 
-exports[`Notices shows notices for location 1`] = `
+exports[`Notices > shows notices for location 1`] = `
 <DocumentFragment>
   <div
     class="notices"
   >
     <div
-      class="alert bg transparent border"
+      aria-live="polite"
+      class="alert bg transparent border p-2"
       data-testid="notice-alert"
+      role="alert"
     >
       <div
         class="markdown"
@@ -17,12 +19,12 @@ exports[`Notices shows notices for location 1`] = `
         <p>
           a
         </p>
-        
-
       </div>
     </div>
     <div
-      class="alert container bg transparent border"
+      aria-live="polite"
+      class="alert container bg transparent border p-2"
+      role="alert"
     >
       <div
         class="content"
@@ -33,19 +35,19 @@ exports[`Notices shows notices for location 1`] = `
           <p>
             a
           </p>
-          
-
         </div>
       </div>
       <button
-        aria-label="Close alert"
+        aria-label="Dismiss alert"
         class="btn btnIcon closeButton"
         type="button"
       >
         <svg
-          class="mdi-icon icon-inline"
+          aria-hidden="true"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >

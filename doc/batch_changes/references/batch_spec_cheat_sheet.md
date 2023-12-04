@@ -21,7 +21,7 @@ steps:
   - run: |
       for file in "${{ join repository.search_result_paths " " }}";
       do
-        sed -i 's/OLD-VALUE/NEW-VALUE/g;' "${file}"
+        sed -i 's/OLD-VALUE/NEW-VALUE/g;' ${file}
       done
     container: alpine:3
 ```
@@ -195,7 +195,7 @@ steps:
       mkdir -p .github/workflows
 
       cat <<EOF >.github/workflows/lsif.yml
-      name: LSIF
+      name: Index
       on:
         - push
       jobs:
@@ -207,10 +207,22 @@ steps:
             - name: Generate LSIF data
               run: lsif-go
             - name: Upload LSIF data
-              run: src lsif upload -github-token=${{ "\\${{secrets.GITHUB_TOKEN}}" }}
+              run: src code-intel upload -github-token=${{ "\\${{secrets.GITHUB_TOKEN}}" }}
       EOF
 ```
 
 Since GitHub expression syntax conflicts with Sourcegraph's own template expression syntax, including the expression again as a quoted string within a template expression means that the inner expression will be output as a string (effectively, "ignoring" the contents of the inner expression). For `run:` fields specifically, to avoid the shell also interpreting the GitHub expression as a variable when executing the script, we need to escape the quoted `$` with two backslashes: firstly for the shell script itself, and secondly to escape the backslash within the template expression string.
 
 To use the literal sequence `${{ }}` in non-`run:` fields of the batch spec that [supports templating](batch_spec_templating.md#fields-with-template-support), quoted strings are normally sufficient: `${{ "${{ leave me alone! }}" }}`
+
+### List what files were modified by the batch change in the changeset
+
+```
+changesetTemplate:
+  title: A batch change
+  body: | 
+    This batch change modifies:
+      ${{ range $index, $file := steps.modified_files }}
+       - ${{ $file }}
+      ${{ end }}
+```

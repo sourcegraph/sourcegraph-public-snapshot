@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -186,14 +187,6 @@ func TestCorrelate(t *testing.T) {
 		Diagnostics: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			2: datastructures.IDSetWith(49),
 		}),
-
-		// TODO(slimsag): Documentation extension tests
-		DocumentationResultsData:  map[int]protocol.Documentation{},
-		DocumentationStringsData:  map[int]protocol.MarkupContent{},
-		DocumentationResultRoot:   -1,
-		DocumentationChildren:     map[int][]int{},
-		DocumentationStringLabel:  map[int]int{},
-		DocumentationStringDetail: map[int]int{},
 	}
 
 	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {
@@ -236,14 +229,6 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 		Contains:               datastructures.NewDefaultIDSetMap(),
 		Monikers:               datastructures.NewDefaultIDSetMap(),
 		Diagnostics:            datastructures.NewDefaultIDSetMap(),
-
-		// TODO(slimsag): Documentation extension tests
-		DocumentationResultsData:  map[int]protocol.Documentation{},
-		DocumentationStringsData:  map[int]protocol.MarkupContent{},
-		DocumentationResultRoot:   -1,
-		DocumentationChildren:     map[int][]int{},
-		DocumentationStringLabel:  map[int]int{},
-		DocumentationStringDetail: map[int]int{},
 	}
 
 	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {
@@ -286,17 +271,35 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		Contains:               datastructures.NewDefaultIDSetMap(),
 		Monikers:               datastructures.NewDefaultIDSetMap(),
 		Diagnostics:            datastructures.NewDefaultIDSetMap(),
-
-		// TODO(slimsag): Documentation extension tests
-		DocumentationResultsData:  map[int]protocol.Documentation{},
-		DocumentationStringsData:  map[int]protocol.MarkupContent{},
-		DocumentationResultRoot:   -1,
-		DocumentationChildren:     map[int][]int{},
-		DocumentationStringLabel:  map[int]int{},
-		DocumentationStringDetail: map[int]int{},
 	}
 
 	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {
 		t.Errorf("unexpected state (-want +got):\n%s", diff)
+	}
+}
+
+func TestCorrelateConflictingDocumentProperties(t *testing.T) {
+	dump, err := os.ReadFile("../testdata/dump1.lsif")
+	if err != nil {
+		t.Fatalf("unexpected error reading test file: %s", err)
+	}
+
+	// Change the document value of one of the item edges.
+	oldLine := `{"id": "38", "type": "edge", "label": "item", "outV": "14", "inVs": ["05"], "document": "02"}`
+	newLine := `{"id": "38", "type": "edge", "label": "item", "outV": "14", "inVs": ["05"], "document": "03"}`
+	badDump := []byte(strings.ReplaceAll(string(dump), oldLine, newLine))
+
+	wantErr := "validate: range 5 is contained in document 2, but linked to a different document 3"
+
+	// Make sure correlation fails.
+	_, err = correlateFromReader(context.Background(), bytes.NewReader(badDump), "")
+	if err == nil {
+		t.Fatalf("Expected an error")
+
+	} else if !strings.Contains(err.Error(), wantErr) {
+		t.Errorf("Expected a different error.")
+		t.Errorf("wanted: %s", wantErr)
+		t.Errorf("got   : %s", err)
+		t.Fail()
 	}
 }
