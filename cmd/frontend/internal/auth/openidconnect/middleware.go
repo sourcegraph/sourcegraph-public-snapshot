@@ -25,8 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const stateCookieName = "sg-oidc-state"
-
 // All OpenID Connect endpoints are under this path prefix.
 const authPrefix = auth.AuthURLPrefix + "/openidconnect"
 
