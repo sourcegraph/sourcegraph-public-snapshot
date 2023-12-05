@@ -94,10 +94,14 @@ type ServiceState interface {
 //
 // ServiceState is a standardized reporter for the state of the service.
 func (c Contract) RegisterDiagnosticsHandlers(r HandlerRegisterer, state ServiceState) {
-	// Only enable Prometheus metrics endpoint if we are not in a MSP environment.
+	// Only enable Prometheus metrics endpoint if we are not in a MSP environment,
+	// i.e. in local dev.
 	if !c.MSP {
-		c.internal.logger.Info("enabling Prometheus metrics endpoint at '/-/metrics'")
-		r.Handle("/-/metrics", promhttp.Handler())
+		// Prometheus standard endpoint is '/metrics', we use the same for
+		// convenience.
+		r.Handle("/metrics", promhttp.Handler())
+		// Warn because this should only be enabled in dev
+		c.internal.logger.Warn("enabled Prometheus metrics endpoint at '/metrics'")
 	}
 
 	// Simple auth-less version reporter
@@ -142,6 +146,7 @@ func (c Contract) DiagnosticsAuthMiddleware(next http.Handler) http.Handler {
 
 		if token != *c.internal.diagnosticsSecret {
 			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte("unauthorized"))
 			return false
 		}
 		return true
