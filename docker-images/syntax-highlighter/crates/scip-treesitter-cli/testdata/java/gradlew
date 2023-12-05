@@ -1,5 +1,5 @@
 #!/bin/sh
-
+# shellcheck disable=all
 #
 # Copyright © 2015-2021 the original authors.
 #
