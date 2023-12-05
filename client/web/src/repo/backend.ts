@@ -125,7 +125,7 @@ export const resolveRepoRevision = memoizeObservable(
             { repoName, revision: revision || '' }
         ).pipe(
             map(({ data, errors }) => {
-                if (errors?.length === 1 && errors[0].extensions?.['code'] === 'ErrRepoDenied') {
+                if (errors?.length === 1 && errors[0].extensions?.code === 'ErrRepoDenied') {
                     throw new RepoDeniedError(errors[0].message)
                 }
                 if (!data) {
