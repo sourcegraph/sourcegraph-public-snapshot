@@ -71,7 +71,10 @@ export const EventNamesInputSection = ({ label, value, onChange }: Props): JSX.E
                     id="event-names-input"
                     className={classNames('flex-grow-1 m-0', styles.textarea)}
                     value={value}
-                    onChange={useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => onChange(event.target.value), [onChange])}
+                    onChange={useCallback(
+                        (event: React.ChangeEvent<HTMLTextAreaElement>) => onChange(event.target.value),
+                        [onChange]
+                    )}
                 />
                 <AddEventNamePopover
                     eventNames={allEventNamesResults.data?.site.analytics.allEventNames || []}
