@@ -37,17 +37,6 @@ type ConnectionResolverArgs struct {
 	Before *string
 }
 
-func (c ConnectionResolverArgs) Validate() error {
-	if c.First != nil && c.Last != nil {
-		return errors.New("first and last cannot both be set")
-	}
-	if c.First == nil && c.Last == nil {
-		return errors.New("either first or last must be set")
-	}
-
-	return nil
-}
-
 // Limit returns max nodes limit based on resolver arguments.
 func (a *ConnectionResolverArgs) Limit(options *ConnectionResolverOptions) (limit int) {
 	if a.First != nil {
