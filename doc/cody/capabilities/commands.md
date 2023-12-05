@@ -56,15 +56,16 @@ You can create a custom command by editing the configuration JSON file or using 
 - Open the Cody commands menu (`⌥C` on Mac or `Alt-C` on Windows/Linux)
 - Select **Custom commands > New Custom Command**
 - Type the slash `/` name you want to use, for example, `/my-custom-command`
-- Next, write a suitable description for the command in the sentence case
-- Provide the relevant instructions for Cody that it will follow
+- Next, write a suitable description for the command in the sentence case. For example, `Compare files in open tabs` or `Explain current directory`
+- Provide the relevant instructions for Cody that it will follow. This is the `prompt` that Cody will use to pass relevant context to the LLM
 - Then, make one or more options for the context selection for accurate responses
 - Finally, choose the location where you want to save the custom command
 - Press **Enter** to complete the process, and your custom command is successfully created
+- You can hit `esc` key at any time to discard a new custom command
 
 ### Running Custom Commands
 
-You can invoke custom commands with the same hotkey as predefined commands. Once created, your custom commands would appear with the rest of the predefined commands in the list. Let's type `/my-custom-command` in the chat window, and it will appear. Now, you can run this new command on your code and get answers to your questions accordingly.
+You can invoke custom commands with the same hotkey as predefined commands. Once created, your custom commands will appear with the rest of the predefined commands in the list. Let's type `/my-custom-command` in the chat window, and it will appear. Now, you can run this new command on your code and get answers to your questions accordingly.
 
 ![create-new-custom-command](https://storage.googleapis.com/sourcegraph-assets/Docs/custom-command.png)
 
@@ -76,6 +77,8 @@ Custom Commands can be defined in the following two file paths:
 
 - **User Settings (`~/.vscode/code.json`)**: Stored locally. Use this for personal commands to use across all your projects
 - **Workspace Settings (`.vscode/cody.json`)**: Stored in project’s repository. Use this to share commands with others working on the same codebase and for project-specific commands
+
+If you select **User Settings**, the new custom command will only be available to you. If you select **Workspace Settings** (as an enterprise user), the custom command will also be available to your teammates.
 
 See the [examples](#examples) and [configuration properties](#configuration-properties) below for more details on configuring custom commands.
 

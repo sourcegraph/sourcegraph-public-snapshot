@@ -12,12 +12,12 @@ You can learn more about the IDE support for these functionalities in the [featu
 
 To use Cody's chat, you'll need to have the following:
 
-- An active Sourcegraph instance (free or paid)
+- An active Sourcegraph account (free or enterprise)
 - A supported editor extension (VS Code, JetBrains, and Neovim) installed
 
 ## How does chat work?
 
-Cody uses several methods (including keyword search and graph context) to find files in your codebase that are relevant to your chat questions. It then uses context from those files to provide an informed response based on your codebase. Cody also tells you which code files it reads to generate its responses.
+Cody can use several methods (including keyword search and optional embeddings context) to ask relevant questions. For VS Code extension users, Cody also uses context from the files to provide an informed response based on your codebase. Cody also tells you which code files it reads to generate its responses.
 
 Cody can assist you with various use cases by answering questions such as:
 
@@ -33,7 +33,7 @@ Let's use Cody VS Code extension's chat interface to answer your first question.
 - Next, click the icon for **New Chat** to open a new chat window
 - Here, you can directly write your question or type slash `/` to select one of the commands and then press **Enter**
 
-For example, ask Cody to "What does this file do?"
+For example, ask Cody "What does this file do?"
 
 Cody will take a few seconds to process your question, providing contextual information about the files it reads and generating the answer.
 
@@ -43,13 +43,15 @@ Cody will take a few seconds to process your question, providing contextual info
 
 ## Ask Cody to write code
 
-The chat feature can also write code for your questions. For example, ask Cody to "write a function that sorts an array in ascending order".
+The chat feature can also write code for your questions. For example, in VS Code, ask Cody to "write a function that sorts an array in ascending order".
 
 You are provided with code suggestions in the chat window along with the following options for using the code.
 
 - The **Copy Code** icon to your clipboard and paste the code suggestion into your code editor
 - Insert the code suggestion at the current cursor location by the **Insert Code at Cursor** icon
 - The **Save Code to New File** icon to save the code suggestion to a new file in your project
+
+>NOTE: These options are only available for VS Code extension users.
 
 During the chat, if Cody needs additional context, it can ask you to provide more information with a follow-up question. If your question is beyond the scope of the context, Cody will ask you to provide an alternate question aligned with the context of your codebase.
 

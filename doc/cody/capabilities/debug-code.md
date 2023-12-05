@@ -2,13 +2,13 @@
 
 <p class="subtitle">Learn how Cody helps you identify errors in your code and provides code fixes.</p>
 
-Cody is optimized to identify and fix errors in your code. Its debugging capability and autocomplete suggestions can significantly accelerate your debugging process, increasing the developer productivity. All Cody IDE extensions (VS Code, JetBrains, and Neovim) support code debugging and fixes capabilities.
+Cody is optimized to identify and fix errors in your code. Its debugging capability and autocomplete suggestions can significantly accelerate your debugging process, increasing developer productivity. All Cody IDE extensions (VS Code, JetBrains, and Neovim) support code debugging and fixes capabilities.
 
 ## Use chat for code fixes
 
 When you encounter a code error, you can use the chat interface and ask Cody about it. You can paste the faulty code snippets directly in the chat window, and Cody will provide a fix.
 
-The suggestions can be a corrected code snippet that you can copy and paste into your code. Or a follow-up question for additional context to help you debug the code further. Moreover, you can also paste the error message in chat and ask Cody to provide you with a list of possible solutions.
+The suggestions can be a corrected code snippet that you can copy and paste into your code. Or you can ask a follow-up question for additional context to help you debug the code further. Moreover, you can also paste an error message in chat and ask Cody to provide you with a list of possible solutions.
 
 Let's look at a simple example to understand how Cody can help you debug your code. The following code snippet should print the sum of two numbers.
 
@@ -42,3 +42,24 @@ Let's identify code smells on the same function from the previous example.
 </video>
 
 As you can see, Cody not only detects code smells but also provides suggestions to improve your code.
+
+## Code Actions
+
+Cody VS Code extension users also get to use the **Code Actions** feature whenever there's an error in code syntax. When you make a mistake while writing code, Cody's Code Actions come into play, and a red warning triggers. Along this appears a lightbulb icon.
+
+### How Code Actions work
+
+Let's assume there's an error in the code, and the red warning triggers. Now follow these steps:
+
+- Click this lightbulb icon in the project file
+- Select **Ask Cody to fix** option
+- **Cody is working** notice will appear and provide a quick fix with options for **Edits Applied**, **Retry**, **Undo**, and **Done**
+- If you are satisfied with the fix, click **Edits Applied**
+- To verify the applied changes, you can see a diff view of the fix in a new tab
+- If you are not satisfied with the fix, you can **Retry** or **Undo** the changes
+
+Here's a demo that shows how Code Actions work:
+
+<video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/code-actions.mp4" type="video/mp4">
+</video>

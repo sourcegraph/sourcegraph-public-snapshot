@@ -14,7 +14,7 @@ Autocomplete supports any programming language because it uses LLMs trained on b
 
 To view how Cody provides code completions , you'll need to have the following:
 
-- An active Sourcegraph instance (free or paid)
+- An active Sourcegraph account (free or enterprise)
 - A supported editor extension (VS Code, JetBrains, and Neovim) installed
 
 ## Working with code autocomplete
