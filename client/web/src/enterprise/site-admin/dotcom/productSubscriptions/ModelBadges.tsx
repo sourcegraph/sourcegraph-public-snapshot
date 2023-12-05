@@ -39,7 +39,7 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'anthropic/claude-instant-v1.1':
             case 'anthropic/claude-instant-v1.1-100k':
             case 'anthropic/claude-instant-v1.2':
-            case 'anthropic/claude-instant-1.2-cyan':
+            case 'anthropic/claude-instant-1.2':
             case 'anthropic/claude-instant-1.2-cyan':
             // See here: https://platform.openai.com/docs/models/model-endpoint-compatibility
             // for currently available Anthropic models. Note that we also need to
