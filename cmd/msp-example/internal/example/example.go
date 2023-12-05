@@ -46,28 +46,39 @@ func (s Service) Initialize(
 			return nil, errors.Wrap(err, "initDB")
 		}
 		logger.Info("database configured")
-
-		// Write a single test event
-		bq, err := contract.BigQuery.GetTableWriter(ctx, "example")
-		if err != nil {
-			return nil, errors.Wrap(err, "BigQuery.GetTableWriter")
-		}
-		if err := bq.Write(ctx, BigQueryEntry{
-			Name:      "service.started",
-			CreatedAt: time.Now(),
-		}); err != nil {
-			return nil, errors.Wrap(err, "bq.Write")
-		}
 	}
+
+	h := http.NewServeMux()
+	h.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(fmt.Sprintf("Variable: %s", config.Variable)))
+	}))
+	contract.RegisterDiagnosticsHandlers(h, serviceState{
+		healthCheck: func(ctx context.Context) error {
+			if config.StatelessMode {
+				return nil
+			}
+			// Write a single test event
+			bq, err := contract.BigQuery.GetTableWriter(ctx, "example")
+			if err != nil {
+				return errors.Wrap(err, "BigQuery.GetTableWriter")
+			}
+			if err := bq.Write(ctx, BigQueryEntry{
+				Name:      "service.started",
+				CreatedAt: time.Now(),
+			}); err != nil {
+				return errors.Wrap(err, "bq.Write")
+			}
+
+			return nil
+		},
+	})
 
 	return background.CombinedRoutine{
 		&httpRoutine{
 			log: logger,
 			Server: &http.Server{
-				Addr: fmt.Sprintf(":%d", contract.Port),
-				Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.Write([]byte(fmt.Sprintf("Variable: %s", config.Variable)))
-				}),
+				Addr:    fmt.Sprintf(":%d", contract.Port),
+				Handler: h,
 			},
 		},
 	}, nil
@@ -92,6 +103,14 @@ func (s *httpRoutine) Stop() {
 	} else {
 		s.log.Info("server stopped")
 	}
+}
+
+type serviceState struct {
+	healthCheck func(context.Context) error
+}
+
+func (s serviceState) Healthy(ctx context.Context) error {
+	return s.healthCheck(ctx)
 }
 
 // initDB connects to a database 'primary' based on a DSN provided by contract.
