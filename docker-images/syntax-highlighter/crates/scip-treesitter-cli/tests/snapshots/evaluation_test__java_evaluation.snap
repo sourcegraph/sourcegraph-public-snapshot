@@ -1,0 +1,171 @@
+---
+source: crates/scip-treesitter-cli/tests/evaluation_test.rs
+expression: "String::from_utf8(str).unwrap()"
+---
+{"precision_percent":100.0,"recall_percent":45.080093,"true_positives":39.4,"false_positives":0.0,"false_negatives":48.0}
+
+False negatives (FN): 48
+[FN] src/main/java/Main.java: L0 C8 -- semanticdb maven . . com/
+[FN] src/main/java/Main.java: L0 C12 -- semanticdb maven . . com/sourcegraph/
+[FN] src/main/java/Main.java: L0 C24 -- semanticdb maven . . com/sourcegraph/graph/
+[FN] src/main/java/Main.java: L0 C30 -- semanticdb maven . . com/sourcegraph/graph/twodwo/
+[FN] src/main/java/Main.java: L5 C28 -- semanticdb maven jdk 17 java/lang/String#
+[FN] src/main/java/Main.java: L7 C27 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#`<init>`().
+[FN] src/main/java/Main.java: L9 C12 -- semanticdb maven jdk 17 java/lang/String#
+[FN] src/main/java/Main.java: L10 C21 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#addTodo().
+[FN] src/main/java/Main.java: L10 C33 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#
+[FN] src/main/java/Main.java: L10 C42 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#`<init>`().
+[FN] src/main/java/Main.java: L13 C17 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#addTodo().
+[FN] src/main/java/Main.java: L13 C29 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#
+[FN] src/main/java/Main.java: L13 C38 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#`<init>`(+1).
+[FN] src/main/java/Main.java: L14 C17 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#addTodo().
+[FN] src/main/java/Main.java: L14 C29 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#
+[FN] src/main/java/Main.java: L14 C38 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#`<init>`().
+[FN] src/main/java/Main.java: L17 C17 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#summarise().
+[FN] src/main/java/TodoList.java: L0 C8 -- semanticdb maven . . com/
+[FN] src/main/java/TodoList.java: L0 C12 -- semanticdb maven . . com/sourcegraph/
+[FN] src/main/java/TodoList.java: L0 C24 -- semanticdb maven . . com/sourcegraph/graph/
+[FN] src/main/java/TodoList.java: L0 C30 -- semanticdb maven . . com/sourcegraph/graph/twodwo/
+[FN] src/main/java/TodoList.java: L2 C7 -- semanticdb maven . . java/
+[FN] src/main/java/TodoList.java: L2 C12 -- semanticdb maven . . java/util/
+[FN] src/main/java/TodoList.java: L2 C17 -- semanticdb maven jdk 17 java/util/ArrayList#
+[FN] src/main/java/TodoList.java: L7 C10 -- semanticdb maven jdk 17 java/lang/String#
+[FN] src/main/java/TodoList.java: L10 C14 -- semanticdb maven jdk 17 java/lang/String#
+[FN] src/main/java/TodoList.java: L15 C14 -- semanticdb maven jdk 17 java/lang/String#
+[FN] src/main/java/TodoList.java: L20 C9 -- semanticdb maven jdk 17 java/lang/String#
+[FN] src/main/java/TodoList.java: L25 C9 -- semanticdb maven jdk 17 java/util/ArrayList#
+[FN] src/main/java/TodoList.java: L25 C19 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#
+[FN] src/main/java/TodoList.java: L28 C14 -- semanticdb maven jdk 17 java/util/ArrayList#`<init>`(+1).
+[FN] src/main/java/TodoList.java: L31 C21 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#
+[FN] src/main/java/TodoList.java: L32 C8 -- semanticdb maven jdk 17 java/util/ArrayList#add(+1).
+[FN] src/main/java/TodoList.java: L35 C8 -- semanticdb maven jdk 17 java/util/ArrayList#
+[FN] src/main/java/TodoList.java: L35 C18 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#
+[FN] src/main/java/TodoList.java: L40 C4 -- semanticdb maven jdk 17 java/lang/System#
+[FN] src/main/java/TodoList.java: L40 C11 -- semanticdb maven jdk 17 java/lang/System#out.
+[FN] src/main/java/TodoList.java: L40 C15 -- semanticdb maven jdk 17 java/io/PrintStream#println(+8).
+[FN] src/main/java/TodoList.java: L41 C7 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#
+[FN] src/main/java/TodoList.java: L42 C12 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#done.
+[FN] src/main/java/TodoList.java: L43 C4 -- semanticdb maven jdk 17 java/lang/System#
+[FN] src/main/java/TodoList.java: L43 C11 -- semanticdb maven jdk 17 java/lang/System#out.
+[FN] src/main/java/TodoList.java: L43 C15 -- semanticdb maven jdk 17 java/io/PrintStream#println(+8).
+[FN] src/main/java/TodoList.java: L43 C38 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#getTitle().
+[FN] src/main/java/TodoList.java: L45 C4 -- semanticdb maven jdk 17 java/lang/System#
+[FN] src/main/java/TodoList.java: L45 C11 -- semanticdb maven jdk 17 java/lang/System#out.
+[FN] src/main/java/TodoList.java: L45 C15 -- semanticdb maven jdk 17 java/io/PrintStream#println(+8).
+[FN] src/main/java/TodoList.java: L45 C38 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#getTitle().
+
+True positives: 44
+[TP] src/main/java/Main.java: L3 C13 -- semanticdb maven . . com/sourcegraph/graph/twodwo/Main#`<init>`().
+[TP] src/main/java/Main.java: L5 C23 -- semanticdb maven . . com/sourcegraph/graph/twodwo/Main#main().
+[TP] src/main/java/Main.java: L5 C37 -- local doc-0-0
+[TP] src/main/java/Main.java: L7 C12 -- local doc-0-1
+[TP] src/main/java/Main.java: L9 C19 -- local doc-0-2
+[TP] src/main/java/Main.java: L9 C22 -- local doc-0-0
+[TP] src/main/java/Main.java: L10 C12 -- local doc-0-1
+[TP] src/main/java/Main.java: L10 C47 -- local doc-0-2
+[TP] src/main/java/Main.java: L13 C8 -- local doc-0-1
+[TP] src/main/java/Main.java: L14 C8 -- local doc-0-1
+[TP] src/main/java/Main.java: L17 C8 -- local doc-0-1
+[TP] src/main/java/TodoList.java: L4 C13 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#
+[TP] src/main/java/TodoList.java: L6 C21 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#
+[TP] src/main/java/TodoList.java: L7 C17 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#title.
+[TP] src/main/java/TodoList.java: L8 C18 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#done.
+[TP] src/main/java/TodoList.java: L10 C9 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#`<init>`().
+[TP] src/main/java/TodoList.java: L10 C21 -- local doc-1-0
+[TP] src/main/java/TodoList.java: L11 C8 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#title.
+[TP] src/main/java/TodoList.java: L11 C16 -- local doc-1-0
+[TP] src/main/java/TodoList.java: L12 C8 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#done.
+[TP] src/main/java/TodoList.java: L15 C9 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#`<init>`(+1).
+[TP] src/main/java/TodoList.java: L15 C21 -- local doc-1-1
+[TP] src/main/java/TodoList.java: L15 C36 -- local doc-1-2
+[TP] src/main/java/TodoList.java: L16 C8 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#title.
+[TP] src/main/java/TodoList.java: L16 C16 -- local doc-1-1
+[TP] src/main/java/TodoList.java: L17 C8 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#done.
+[TP] src/main/java/TodoList.java: L17 C15 -- local doc-1-2
+[TP] src/main/java/TodoList.java: L20 C16 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#getTitle().
+[TP] src/main/java/TodoList.java: L21 C15 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#title.
+[TP] src/main/java/TodoList.java: L25 C25 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#todos.
+[TP] src/main/java/TodoList.java: L27 C8 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#`<init>`().
+[TP] src/main/java/TodoList.java: L28 C2 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#todos.
+[TP] src/main/java/TodoList.java: L31 C13 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#addTodo().
+[TP] src/main/java/TodoList.java: L31 C26 -- local doc-1-3
+[TP] src/main/java/TodoList.java: L32 C2 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#todos.
+[TP] src/main/java/TodoList.java: L32 C12 -- local doc-1-3
+[TP] src/main/java/TodoList.java: L35 C24 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#getTodos().
+[TP] src/main/java/TodoList.java: L36 C9 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#todos.
+[TP] src/main/java/TodoList.java: L39 C13 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#summarise().
+[TP] src/main/java/TodoList.java: L41 C12 -- local doc-1-4
+[TP] src/main/java/TodoList.java: L41 C19 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#todos.
+[TP] src/main/java/TodoList.java: L42 C7 -- local doc-1-4
+[TP] src/main/java/TodoList.java: L43 C33 -- local doc-1-4
+[TP] src/main/java/TodoList.java: L45 C33 -- local doc-1-4
+
+Symbol mapping
+scip-ctags . . . Main#
+   1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/Main#`<init>`(). [1/1 occurrences]
+
+scip-ctags . . . Main#main().
+   1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/Main#main(). [1/1 occurrences]
+
+local doc-0-1
+   1.00 local doc-0-0 [2/2 occurrences]
+
+local doc-0-2
+   1.00 local doc-0-1 [5/5 occurrences]
+
+local doc-0-3
+   1.00 local doc-0-2 [2/2 occurrences]
+
+scip-ctags . . . TodoList#
+   1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList# [1/4 occurrences]
+
+scip-ctags . . . TodoList#summarise().
+   1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#summarise(). [1/2 occurrences]
+
+scip-ctags . . . TodoList#getTodos().
+   1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#getTodos(). [1/1 occurrences]
+
+scip-ctags . . . TodoList#addTodo().
+   1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#addTodo(). [1/4 occurrences]
+
+scip-ctags . . . TodoList#TodoList().
+   1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#`<init>`(). [1/2 occurrences]
+
+scip-ctags . . . TodoList#Item#
+   1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item# [1/5 occurrences]
+
+scip-ctags . . . TodoList#Item#getTitle().
+   1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#getTitle(). [1/3 occurrences]
+
+scip-ctags . . . TodoList#Item#Item().
+   0.40 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#`<init>`(). [1/3 occurrences]
+   0.60 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#`<init>`(+1). [1/2 occurrences]
+
+local doc-1-1
+   1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#todos. [5/5 occurrences]
+
+local doc-1-2
+   1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#title. [2/4 occurrences]
+
+local doc-1-3
+   1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#done. [2/4 occurrences]
+
+local doc-1-4
+   0.20 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#title. [1/4 occurrences]
+   0.80 local doc-1-0 [2/2 occurrences]
+
+local doc-1-5
+   0.80 local doc-1-1 [2/2 occurrences]
+   0.20 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#title. [1/4 occurrences]
+
+local doc-1-6
+   0.80 local doc-1-2 [2/2 occurrences]
+   0.20 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#done. [1/4 occurrences]
+
+local doc-1-7
+   1.00 local doc-1-3 [2/2 occurrences]
+
+local doc-1-8
+   1.00 local doc-1-4 [4/4 occurrences]
+
+

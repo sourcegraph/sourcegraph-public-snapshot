@@ -72,11 +72,13 @@ rust_test(
         ],
         allow_empty = False,
     ),
-    data = [":scip-treesitter-cli"] +
-           glob(
-               ["tests/snapshots/**"],
-               allow_empty = False,
-           ) + glob(
+    data = [
+        ":scip-treesitter-cli",
+        ":scip_java_groundtruth_scip",
+    ] + glob(
+        ["tests/snapshots/**"],
+        allow_empty = False,
+    ) + glob(
         ["testdata/**"],
         allow_empty = False,
     ),
@@ -84,6 +86,7 @@ rust_test(
         "INSTA_WORKSPACE_ROOT": ".",
         "RUST_BACKTRACE": "1",
         "SCIP_CLI_LOCATION": "$(rootpath :scip-treesitter-cli)",
+        "SCIP_JAVA_INDEX": "$(rootpath :scip_java_groundtruth_scip)",
     },
     deps = all_crate_deps(
         normal = True,

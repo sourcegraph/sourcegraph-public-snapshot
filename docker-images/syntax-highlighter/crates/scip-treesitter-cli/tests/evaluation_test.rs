@@ -15,13 +15,15 @@ lazy_static::lazy_static! {
 }
 
 #[test]
-fn java_e2e_indexing() {
+fn java_e2e_evaluation() {
     let dir = BASE.join("testdata/java");
 
     let out_dir = temp_dir();
 
     let candidate = out_dir.join("index-tree-sitter.scip");
     let ground_truth = dir.join("index.scip");
+
+    println!("{:?}", std::env::var("SCIP_JAVA_INDEX"));
 
     index_command(
         "java".to_string(),

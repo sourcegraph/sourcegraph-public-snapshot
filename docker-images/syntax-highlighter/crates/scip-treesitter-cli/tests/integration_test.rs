@@ -6,6 +6,8 @@ use std::{env::temp_dir, path::PathBuf};
 use assert_cmd::cargo::cargo_bin;
 use assert_cmd::prelude::*;
 
+use scip_treesitter_cli::evaluate::Evaluator;
+use scip_treesitter_cli::index::{index_command, AnalysisMode, IndexMode, IndexOptions};
 use scip_treesitter_cli::io::read_index_from_file;
 
 lazy_static::lazy_static! {
@@ -15,6 +17,19 @@ lazy_static::lazy_static! {
             _ => cargo_bin("scip-treesitter-cli"),
         }
     };
+        static ref BASE: PathBuf = {
+            match std::env::var("CARGO_MANIFEST_DIR") {
+                Ok(va) => std::env::current_dir().unwrap().join(va),
+                _ => std::env::current_dir().unwrap()            }
+        };
+    static ref SCIP_JAVA_INDEX: PathBuf = {
+        match std::env::var("SCIP_JAVA_INDEX") {
+            Ok(va) => std::env::current_dir().unwrap().join(va),
+            _ => todo!("This needs to be fixed to work without bazel")
+        }
+    };
+
+
 }
 
 use scip_treesitter::snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions};
@@ -29,6 +44,49 @@ fn snapshot_syntax_document(doc: &scip::types::Document, source: &str) -> String
         },
     )
     .expect("dump document")
+}
+
+#[test]
+fn java_e2e_evaluation() {
+    let dir = BASE.join("testdata/java");
+
+    let out_dir = temp_dir();
+
+    let candidate = out_dir.join("index-tree-sitter.scip");
+
+    index_command(
+        "java".to_string(),
+        IndexMode::Workspace {
+            location: dir.clone(),
+        },
+        candidate.clone(),
+        dir.clone(),
+        None,
+        IndexOptions {
+            analysis_mode: AnalysisMode::Full,
+            fail_fast: true,
+        },
+    );
+
+    let mut str = vec![];
+
+    Evaluator::default()
+        .evaluate_files(candidate, SCIP_JAVA_INDEX.to_path_buf())
+        .unwrap()
+        .write_summary(
+            &mut str,
+            scip_treesitter_cli::evaluate::EvaluationOutputOptions {
+                print_false_negatives: true,
+                print_true_positives: true,
+                print_false_positives: true,
+                print_mapping: true,
+                disable_colors: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+    insta::assert_snapshot!("java_evaluation", String::from_utf8(str).unwrap());
 }
 
 #[test]

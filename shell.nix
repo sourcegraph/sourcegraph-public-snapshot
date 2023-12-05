@@ -115,6 +115,8 @@ mkShell {
     bazel-fhs
     bazel-watcher
     bazel-buildtools
+  ] ++ lib.optional hostPlatform.isMacOS [
+    bazel-wrapper
   ]);
 
   # Startup postgres, redis & set nixos specific stuff
