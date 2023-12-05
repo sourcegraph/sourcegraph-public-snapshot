@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
 tarball="$1"
-image_name="$2"
+image_name=scip-java:tmp #"$2"
 project_root="$(dirname "$3")"
 out="$4"
+
+env
 
 # We can't directly mount $project_root, because those are symbolic links created by the sandboxing mechansim. So instead, we copy everything over.
 mkdir tmp
