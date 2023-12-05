@@ -73,6 +73,16 @@
           "description": "Maximum number of estimated fields allowed in a GraphQL response",
           "type": "integer",
           "default": 500000
+        },
+        "graphQLMaxDuplicateFieldCount": {
+          "description": "Maximum number of duplicate fields allowed in a GraphQL request",
+          "type": "integer",
+          "default": 500
+        },
+        "graphQLMaxUniqueFieldCount": {
+          "description": "Maximum number of unique fields allowed in a GraphQL request",
+          "type": "integer",
+          "default": 500
         }
       }
     },
