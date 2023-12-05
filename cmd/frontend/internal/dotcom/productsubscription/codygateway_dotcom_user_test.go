@@ -241,3 +241,169 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 		})
 	}
 }
+
+func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(t))
+
+	var override = 20
+	var perUserDailyLimit = 30
+	var perCommunityUserChatMonthlyLLMRequestLimit = 40
+	var perProUserChatDailyLLMRequestLimit = 50
+
+	// Create feature flags
+	codyPro := "cody-pro"
+	limitsExceeded := "rate-limits-exceeded-for-testing"
+	_, err := db.FeatureFlags().CreateBool(ctx, codyPro, false)
+	require.NoError(t, err)
+	_, err = db.FeatureFlags().CreateBool(ctx, limitsExceeded, false)
+	require.NoError(t, err)
+
+	tru := true
+	cfg := &conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			CodyEnabled: &tru,
+			LicenseKey:  "asdf",
+			Completions: &schema.Completions{
+				Provider: "sourcegraph",
+				PerCommunityUserChatMonthlyLLMRequestLimit: perCommunityUserChatMonthlyLLMRequestLimit,
+				PerProUserChatDailyLLMRequestLimit:         perProUserChatDailyLLMRequestLimit,
+				PerUserDailyLimit:                          perUserDailyLimit,
+			},
+		},
+	}
+	conf.Mock(cfg)
+	defer func() {
+		conf.Mock(nil)
+	}()
+
+	// Non-SSC user
+	nonSscUser, err := db.Users().Create(ctx, database.NewUser{Username: "non-ssc", EmailIsVerified: true, Email: "non-ssc@test.com"})
+	require.NoError(t, err)
+
+	// Non-SSC user with an override
+	userWithOverrides, err := db.Users().Create(ctx, database.NewUser{Username: "override", EmailIsVerified: true, Email: "override@test.com"})
+	require.NoError(t, err)
+	err = db.Users().SetChatCompletionsQuota(context.Background(), userWithOverrides.ID, pointers.Ptr(override))
+	require.NoError(t, err)
+
+	// Cody SSC - Free user
+	sscFreeUser, err := db.Users().Create(ctx, database.NewUser{Username: "ssc-free", EmailIsVerified: true, Email: "ssc-free@test.com"})
+	require.NoError(t, err)
+	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: codyPro, Value: true, UserID: &sscFreeUser.ID})
+	require.NoError(t, err)
+
+	// Cody SSC - Pro user
+	sscProUser, err := db.Users().Create(ctx, database.NewUser{Username: "ssc-pro", EmailIsVerified: true, Email: "ssc-pro@test.com"})
+	require.NoError(t, err)
+	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: codyPro, Value: true, UserID: &sscProUser.ID})
+	require.NoError(t, err)
+	err = db.Users().ChangeCodyPlan(ctx, sscProUser.ID, true)
+	require.NoError(t, err)
+
+	// Rate limited Cody SSC - Free user
+	rateLimitsExceededFreeUser, err := db.Users().Create(ctx, database.NewUser{Username: "free-limited", EmailIsVerified: true, Email: "free-limited@test.com"})
+	require.NoError(t, err)
+	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: codyPro, Value: true, UserID: &rateLimitsExceededFreeUser.ID})
+	require.NoError(t, err)
+	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: limitsExceeded, Value: true, UserID: &rateLimitsExceededFreeUser.ID})
+	require.NoError(t, err)
+
+	// Rate limited Cody SSC - Pro user
+	rateLimitsExceededProUser, err := db.Users().Create(ctx, database.NewUser{Username: "pro-limited", EmailIsVerified: true, Email: "pro-limited@test.com"})
+	require.NoError(t, err)
+	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: codyPro, Value: true, UserID: &rateLimitsExceededProUser.ID})
+	require.NoError(t, err)
+	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: limitsExceeded, Value: true, UserID: &rateLimitsExceededProUser.ID})
+	require.NoError(t, err)
+
+	tests := []struct {
+		name                            string
+		user                            *types.User
+		wantChatLimit                   graphqlbackend.BigInt
+		wantChatLimitInterval           int32
+		wantCodeCompletionLimit         graphqlbackend.BigInt
+		wantCodeCompletionLimitInterval int32
+	}{
+		{
+			name:                            "non-ssc",
+			user:                            nonSscUser,
+			wantChatLimit:                   graphqlbackend.BigInt(perUserDailyLimit),
+			wantChatLimitInterval:           int32(60 * 60 * 24), // oneDayInSeconds
+			wantCodeCompletionLimit:         graphqlbackend.BigInt(0),
+			wantCodeCompletionLimitInterval: int32(60 * 60 * 24), // oneDayInSeconds
+		},
+		{
+			name:                            "override",
+			user:                            userWithOverrides,
+			wantChatLimit:                   graphqlbackend.BigInt(override),
+			wantChatLimitInterval:           int32(60 * 60 * 24), // oneDayInSeconds
+			wantCodeCompletionLimit:         graphqlbackend.BigInt(0),
+			wantCodeCompletionLimitInterval: int32(60 * 60 * 24), // oneDayInSeconds
+		},
+		{
+			name:                            "ssc-free",
+			user:                            sscFreeUser,
+			wantChatLimit:                   graphqlbackend.BigInt(perCommunityUserChatMonthlyLLMRequestLimit),
+			wantChatLimitInterval:           int32(60 * 60 * 24 * 30), // oneDayInSeconds
+			wantCodeCompletionLimit:         graphqlbackend.BigInt(0),
+			wantCodeCompletionLimitInterval: 0,
+		},
+		{
+			name:                            "ssc-pro",
+			user:                            sscProUser,
+			wantChatLimit:                   graphqlbackend.BigInt(perProUserChatDailyLLMRequestLimit),
+			wantChatLimitInterval:           int32(60 * 60 * 24), // oneMonthInSeconds
+			wantCodeCompletionLimit:         graphqlbackend.BigInt(0),
+			wantCodeCompletionLimitInterval: 0,
+		},
+		{
+			name:                            "free-limited",
+			user:                            rateLimitsExceededFreeUser,
+			wantChatLimit:                   graphqlbackend.BigInt(1),
+			wantChatLimitInterval:           math.MaxInt32,
+			wantCodeCompletionLimit:         graphqlbackend.BigInt(1),
+			wantCodeCompletionLimitInterval: math.MaxInt32,
+		},
+		{
+			name:                            "pro-limited",
+			user:                            rateLimitsExceededProUser,
+			wantChatLimit:                   graphqlbackend.BigInt(1),
+			wantChatLimitInterval:           math.MaxInt32,
+			wantCodeCompletionLimit:         graphqlbackend.BigInt(1),
+			wantCodeCompletionLimitInterval: math.MaxInt32,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Make user an admin
+			err = db.Users().SetIsSiteAdmin(ctx, test.user.ID, true)
+			user, err := db.Users().GetByID(ctx, test.user.ID)
+			require.NoError(t, err)
+
+			// Create resolver and get user
+			_, apiToken, err := db.AccessTokens().Create(ctx, user.ID, []string{authz.ScopeUserAll}, "test", user.ID)
+			require.NoError(t, err)
+			gatewayToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(apiToken)
+			require.NoError(t, err)
+
+			// Create a request context from the user
+			userContext := featureflag.WithFlags(actor.WithActor(ctx, actor.FromActualUser(user)), db.FeatureFlags())
+			r := productsubscription.CodyGatewayDotcomUserResolver{Logger: logtest.Scoped(t), DB: db}
+			gatewayUser, err := r.CodyGatewayDotcomUserByToken(userContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: gatewayToken})
+			require.NoError(t, err)
+
+			access := gatewayUser.CodyGatewayAccess()
+			rateLimit, err := access.ChatCompletionsRateLimit(userContext)
+			require.NoError(t, err)
+			require.Equal(t, test.wantChatLimit, rateLimit.Limit())
+			require.Equal(t, test.wantChatLimitInterval, rateLimit.IntervalSeconds())
+
+			rateLimit, err = access.CodeCompletionsRateLimit(userContext)
+			require.NoError(t, err)
+			require.Equal(t, test.wantCodeCompletionLimit, rateLimit.Limit())
+			require.Equal(t, test.wantCodeCompletionLimitInterval, rateLimit.IntervalSeconds())
+		})
+	}
+}
