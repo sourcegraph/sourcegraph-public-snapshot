@@ -75,16 +75,6 @@
 
 # Installing Cody in VS Code
 
-<p class="subtitle">Learn how to use Cody and its features with the VS Code editor.</p>
-
-<aside class="beta">
-<p>
-<span style="margin-right:0.25rem;" class="badge badge-beta">Beta</span> Cody support for VS Code is in the Beta stage.
-<br />
-For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">create a post on X</a>.
-</p>
-</aside>
-
 The Cody extension by Sourcegraph enhances your coding experience in VS Code by providing intelligent code suggestions, context-aware autocomplete, and advanced code analysis. This guide will walk you through the steps to install and set up the Cody within your VS Code environment.
 
 <ul class="limg">
