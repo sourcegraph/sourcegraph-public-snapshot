@@ -53,6 +53,7 @@ export const editorGroups: IEditor[][] = [
     ],
     [
         {
+
             icon: 'PhpStorm',
             name: 'PhpStorm ',
             publisher: 'JetBrains',

@@ -45,7 +45,7 @@ export function VSCodeInstructions({
                             <div className="d-flex flex-column justify-content-center align-items-center mt-4">
                                 <ButtonLink
                                     variant="primary"
-                                    to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai"
+                                    to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai" target="_blank"
                                 >
                                     Open Marketplace
                                 </ButtonLink>

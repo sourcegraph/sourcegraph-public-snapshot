@@ -11,12 +11,31 @@
     content: '';
     position:absolute;
     width: 90%;
-    height:15px;
+    height:25px;
     background: linear-gradient(90deg, #7048E8 0%, #4AC1E8 32.21%, #4D0B79 65.39%, #FF5543 104.43%), #EFF2F5;
     transform: translateZ(-1px);
     filter: blur(30px);
-    opacity: 0.8;
+    opacity: 0.7;
+    animation: modal-shadow 6s ease-in-out infinite;
 }
+
+
+@keyframes modal-shadow {
+    0% {
+        transform: translatey(0px) translateZ(-1px);
+        opacity: 0.2;
+    }
+    50% {
+        transform: translatey(-25px) translateZ(-1px);
+        opacity: 0.9;
+    }
+    100% {
+        transform: translatey(0px) translateZ(-1px);
+        opacity: 0.2;
+    }
+}
+
+
 
 @media (prefers-color-scheme: dark) {
     [data-reach-dialog-overlay] {
