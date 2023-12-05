@@ -3,10 +3,15 @@
 # --- begin runfiles.bash initialization v3 ---
 # Copy-pasted from the Bazel Bash runfiles library v3.
 set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
+# shellcheck disable SC1090
 source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
+  # shellcheck disable SC1090
   source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2- -d' ')" 2>/dev/null || \
+  # shellcheck disable SC1090
   source "$0.runfiles/$f" 2>/dev/null || \
+  # shellcheck disable SC1090
   source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  # shellcheck disable SC1090
   source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
   { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
 # --- end runfiles.bash initialization v3 ---
@@ -25,7 +30,7 @@ GIT_COMMIT="$(git rev-parse HEAD)"
 ## Prepare artifacts
 mkdir -p workdir/linux-amd64
 workdir_abs="$(pwd)/workdir"
-trap "rm -Rf $workdir_abs" EXIT
+trap 'rm -Rf $workdir_abs' EXIT
 
 cp "$executor_binary" workdir/linux-amd64
 echo >>workdir/info.txt
