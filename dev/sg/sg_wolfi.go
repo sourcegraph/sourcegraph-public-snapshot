@@ -138,9 +138,7 @@ Hash references are updated by fetching the ':latest' tag for each base image fr
 						imageName = args[0]
 					}
 
-					wolfi.UpdateHashes(ctx, imageName)
-
-					return nil
+					return wolfi.UpdateHashes(ctx, imageName)
 				},
 			},
 		},

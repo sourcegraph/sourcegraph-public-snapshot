@@ -10,11 +10,11 @@ oci_image(
 oci_tarball(
     name = "image_tarball",
     image = ":image",
-    repo_tags = ["executor_vm:candidate"],
+    repo_tags = ["executor-vm:candidate"],
 )
 
 oci_push(
     name = "candidate_push",
     image = ":image",
-    repository = image_repository("executor_vm"),
+    repository = image_repository("executor-vm"),
 )

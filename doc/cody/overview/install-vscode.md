@@ -74,7 +74,6 @@
 </style>
 
 
-
 # Installing Cody in VS Code
 
 The Cody extension by Sourcegraph enhances your coding experience in VS Code by providing intelligent code suggestions, context-aware autocomplete, and advanced code analysis. This guide will walk you through the steps to install and set up Cody within your VS Code environment.

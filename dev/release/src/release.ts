@@ -82,7 +82,6 @@ import {
     validateNoReleaseBlockers,
     verifyWithInput,
     type ReleaseTag,
-    updateMigratorBazelOuts,
     getContainerRegistryCredential,
 } from './util'
 
@@ -731,7 +730,6 @@ cc @${release.captainGitHubUsername}
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version.version}"' dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
                             updateUpgradeGuides(release.previous.version, release.version.version),
-                            updateMigratorBazelOuts(release.version.version),
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {

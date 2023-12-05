@@ -39,9 +39,9 @@ func TestSanitizeEventURL(t *testing.T) {
 		externalURL string
 		output      string
 	}{{
-		input:       "https://about.sourcegraph.com/test", // CI:URL_OK
+		input:       "https://sourcegraph.com/test", // CI:URL_OK
 		externalURL: "https://sourcegraph.com",
-		output:      "https://about.sourcegraph.com/test", // CI:URL_OK
+		output:      "https://sourcegraph.com/test", // CI:URL_OK
 	}, {
 		input:       "https://test.sourcegraph.com/test",
 		externalURL: "https://sourcegraph.com",

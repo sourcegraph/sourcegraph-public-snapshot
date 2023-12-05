@@ -629,14 +629,16 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 			es.CloudDefault,
 			es.HasWebhooks,
 			es.CodeHostID,
+			es.CreatorID,
+			es.LastUpdaterID,
 		),
 	).Scan(&es.ID)
 }
 
 const createExternalServiceQueryFmtstr = `
 INSERT INTO external_services
-	(kind, display_name, config, encryption_key_id, created_at, updated_at, unrestricted, cloud_default, has_webhooks, code_host_id)
-	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+	(kind, display_name, config, encryption_key_id, created_at, updated_at, unrestricted, cloud_default, has_webhooks, code_host_id, creator_id, last_updater_id)
+	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
@@ -758,6 +760,8 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&keyID,
 			&dbutil.NullBool{B: svcs[i].HasWebhooks},
 			&svcs[i].CodeHostID,
+			&svcs[i].CreatorID,
+			&svcs[i].LastUpdaterID,
 		)
 		if err != nil {
 			return err
@@ -793,6 +797,8 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			s.CloudDefault,
 			s.HasWebhooks,
 			s.CodeHostID,
+			s.CreatorID,
+			s.LastUpdaterID,
 		))
 	}
 
@@ -803,7 +809,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -821,7 +827,9 @@ INSERT INTO external_services (
   unrestricted,
   cloud_default,
   has_webhooks,
-  code_host_id
+  code_host_id,
+  creator_id,
+  last_updater_id
 )
 VALUES %s
 ON CONFLICT(id) DO UPDATE
@@ -838,7 +846,8 @@ SET
   unrestricted       = excluded.unrestricted,
   cloud_default      = excluded.cloud_default,
   has_webhooks       = excluded.has_webhooks,
-  code_host_id       = excluded.code_host_id
+  code_host_id       = excluded.code_host_id,
+  last_updater_id    = excluded.last_updater_id
 RETURNING
 	id,
 	kind,
@@ -853,7 +862,9 @@ RETURNING
 	cloud_default,
 	encryption_key_id,
 	has_webhooks,
-	code_host_id
+	code_host_id,
+	creator_id,
+	last_updater_id
 `
 
 // ExternalServiceUpdate contains optional fields to update.
@@ -864,6 +875,7 @@ type ExternalServiceUpdate struct {
 	TokenExpiresAt *time.Time
 	LastSyncAt     *time.Time
 	NextSyncAt     *time.Time
+	LastUpdaterID  *int32
 }
 
 func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) (err error) {
@@ -958,8 +970,8 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		unrestricted := !envvar.SourcegraphDotComMode() && !gjson.GetBytes(normalized, "authorization").Exists()
 		updates = append(updates,
 			sqlf.Sprintf(
-				"config = %s, encryption_key_id = %s, unrestricted = %s, has_webhooks = %s",
-				encryptedConfig, keyID, unrestricted, hasWebhooks,
+				"config = %s, encryption_key_id = %s, unrestricted = %s, has_webhooks = %s, last_updater_id = %s",
+				encryptedConfig, keyID, unrestricted, hasWebhooks, update.LastUpdaterID,
 			))
 	}
 

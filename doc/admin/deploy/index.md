@@ -22,14 +22,14 @@ Sourcegraph offers multiple deployment options to suit different needs. The appr
 
 Carefully consider your organization's needs and technical expertise when selecting a Sourcegraph deployment method. The method you choose cannot be changed for a running instance, so make an informed decision. The available methods have different capabilities, and the following sections provide recommendations to help you choose.
 
-### [Sourcegraph Cloud](https://about.sourcegraph.com/get-started?t=enterprise)
+### [Sourcegraph Cloud](https://sourcegraph.com/get-started?t=enterprise)
 
 **For Enterprises looking for a managed Cloud solution.**
 
 A cloud instance hosted and maintained by Sourcegraph
 
 <div>
-  <a class="cloud-cta" href="https://about.sourcegraph.com/get-started?t=enterprise" target="_blank" rel="noopener noreferrer">
+  <a class="cloud-cta" href="https://sourcegraph.com/get-started?t=enterprise" target="_blank" rel="noopener noreferrer">
     <div class="cloud-cta-copy">
       <h2>Get Sourcegraph on your code.</h2>
       <h3>A single-tenant instance managed by Sourcegraph.</h3>

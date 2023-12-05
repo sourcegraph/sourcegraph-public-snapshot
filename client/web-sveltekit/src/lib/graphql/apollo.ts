@@ -68,6 +68,9 @@ export const getGraphQLClient = once(async (): Promise<GraphQLClient> => {
                 // highlight requests
                 merge: true,
             },
+            GitBlobLSIFData: {
+                merge: true,
+            },
         },
     })
 

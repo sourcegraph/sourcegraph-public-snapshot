@@ -503,9 +503,7 @@ func allUsersScanner(ctx context.Context, p *Provider, users map[string]struct{}
 				switch line.entityType {
 				case "user":
 					if line.name == "*" {
-						for u := range users {
-							delete(users, u)
-						}
+						clear(users)
 					} else {
 						delete(users, line.name)
 					}
