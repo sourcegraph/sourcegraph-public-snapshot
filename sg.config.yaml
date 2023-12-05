@@ -470,7 +470,6 @@ commands:
 
       ./${RUN_SCRIPT_NAME}
 
-
   syntax-highlighter:
     ignoreStdout: true
     ignoreStderr: true
