@@ -29,9 +29,10 @@ type TokenResponse struct {
 }
 
 type ImageInfo struct {
-	Name   string
-	Digest string
-	Image  string
+	Name     string
+	Digest   string
+	Image    string
+	IsLegacy bool
 }
 
 func getAnonDockerAuthToken(repo string) (string, error) {
@@ -147,7 +148,7 @@ func UpdateHashes(_ *cli.Context, updateImageName string) error {
 				// Only update an image if updateImageName matches the name, or if it's empty (in which case update all images)
 				if updateImageName == imageName || updateImageName == "" {
 					updateImageNameMatch = true
-					currentImage = &ImageInfo{Name: imageName}
+					currentImage = &ImageInfo{Name: imageName, IsLegacy: strings.Contains(imageName, "legacy_")}
 				}
 			}
 		case DigestPattern.MatchString(line):
@@ -156,6 +157,10 @@ func UpdateHashes(_ *cli.Context, updateImageName string) error {
 				currentImage.Digest = strings.Trim(match[1], `"`)
 			}
 		case ImagePattern.MatchString(line):
+			if currentImage.IsLegacy {
+				std.Out.WriteWarningf("Skipping legacy image %q", currentImage.Name)
+				continue
+			}
 			match := ImagePattern.FindStringSubmatch(line)
 			if len(match) > 1 && currentImage != nil {
 				currentImage.Image = strings.Trim(match[1], `"`)
