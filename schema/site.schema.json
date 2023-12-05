@@ -1993,6 +1993,13 @@
           "type": "integer",
           "default": 0
         },
+        "minimumExternalAccountAgeExemptList": {
+          "description": "A list of email addresses that are allowed to be exempted from the minimumExternalAccountAge requirement.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "app.notifications": {
           "description": "Notifications to display in the Sourcegraph app.",
           "type": "array",

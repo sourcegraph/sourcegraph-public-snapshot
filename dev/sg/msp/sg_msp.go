@@ -236,11 +236,7 @@ Supports completions on services and environments.`,
 						}
 						serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
 
-						serviceSpecData, err := os.ReadFile(serviceSpecPath)
-						if err != nil {
-							return err
-						}
-						service, err := spec.Parse(serviceSpecData)
+						service, err := spec.Open(serviceSpecPath)
 						if err != nil {
 							return err
 						}
@@ -412,11 +408,7 @@ type generateTerraformOptions struct {
 func generateTerraform(serviceID string, opts generateTerraformOptions) error {
 	serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
 
-	serviceSpecData, err := os.ReadFile(serviceSpecPath)
-	if err != nil {
-		return err
-	}
-	service, err := spec.Parse(serviceSpecData)
+	service, err := spec.Open(serviceSpecPath)
 	if err != nil {
 		return err
 	}
