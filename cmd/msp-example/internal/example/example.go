@@ -39,9 +39,14 @@ func (s Service) Initialize(
 
 	if !config.StatelessMode {
 		if err := initPostgreSQL(ctx, contract); err != nil {
-			return nil, errors.Wrap(err, "initDB")
+			return nil, errors.Wrap(err, "initPostgreSQL")
 		}
-		logger.Info("database configured")
+		logger.Info("postgresql database configured")
+
+		if err := writeBigQueryEvent(ctx, contract, "service.initialized"); err != nil {
+			return nil, errors.Wrap(err, "writeBigQueryEvent")
+		}
+		logger.Info("bigquery connection checked")
 	}
 
 	requestCounter, err := getRequestCounter()

@@ -18,7 +18,7 @@ func writeBigQueryEvent(ctx context.Context, contract runtime.Contract, eventNam
 	}
 
 	return bq.Write(ctx, bigQueryEntry{
-		Name:      "service.started",
+		Name:      eventName,
 		CreatedAt: time.Now(),
 	})
 }
