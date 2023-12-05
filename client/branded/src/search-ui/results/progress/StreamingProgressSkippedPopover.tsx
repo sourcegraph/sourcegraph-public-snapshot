@@ -348,7 +348,9 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
 
     useEffect(() => {
         const validState = validationError ? 'invalid' : 'valid'
-        !validationLoading && telemetryService.log('SearchJobsSearchFormShown', { validState }, { validState })
+        if (!validationLoading) {
+            telemetryService.log('SearchJobsSearchFormShown', { validState }, { validState })
+        }
     }, [telemetryService, validationError, validationLoading])
 
     const handleCreateSearchJobClick = async (): Promise<void> => {
