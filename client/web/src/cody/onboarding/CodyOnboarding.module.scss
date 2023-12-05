@@ -1,6 +1,6 @@
 .modal {
     width: 54rem;
-    border-width: 1px;
+    border-radius: 6px;
     background-image: repeating-conic-gradient(
         rgba(112, 72, 232, 0.5) 50%,
         rgba(0, 203, 236, 0.5) 75%,
@@ -10,15 +10,17 @@
     );
     background-origin: border-box;
 
-    /* to allow a gradient strole, this is actually de color for the background*/
+    /* to allow a gradient stroke, this is actually where the color of the background is set*/
     box-shadow: inset 0 100vw var(--theme-bg-plain);
+
+    /* to let the gradient on the background act as a stroke*/
+    border: 1px solid transparent;
 
     /* to let gradient shadow be behind the modal*/
     transform-style: preserve-3d;
-    border: 1px solid transparent;
-    border-radius: 6px;
 }
 
+/* Colorful shadow on the modal*/
 .modal::after {
     content: '';
     position: absolute;
