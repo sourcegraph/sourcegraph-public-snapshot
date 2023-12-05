@@ -463,7 +463,13 @@ commands:
 
   docsite:
     description: Docsite instance serving the docs
-    cmd: bazel run --script_path=docsite_run.sh --noshow_progress --noshow_loading_progress //doc:serve && ./docsite_run.sh
+    env:
+      RUN_SCRIPT_NAME: .bin/bazel_run_docsite.sh
+    cmd: |
+      bazel run --script_path=${RUN_SCRIPT_NAME} --noshow_progress --noshow_loading_progress //doc:serve
+
+      ./${RUN_SCRIPT_NAME}
+
 
   syntax-highlighter:
     ignoreStdout: true
