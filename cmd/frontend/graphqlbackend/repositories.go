@@ -147,7 +147,7 @@ func (s *repositoriesConnectionStore) MarshalCursor(node *RepositoryResolver, or
 	case database.RepoListName:
 		value = node.Name()
 	case database.RepoListCreatedAt:
-		value = fmt.Sprintf("'%v'", node.RawCreatedAt())
+		value = node.RawCreatedAt()
 	case database.RepoListSize:
 		size, err := node.DiskSizeBytes(s.ctx)
 		if err != nil {
@@ -199,7 +199,11 @@ func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy dat
 	case database.RepoListCreatedAt:
 		return []any{values[0], repoID}, nil
 	case database.RepoListSize:
-		return []any{values[0], repoID}, nil
+		size, err := strconv.ParseInt(values[0], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		return []any{size, repoID}, nil
 	default:
 		return nil, errors.New("Invalid OrderBy Field.")
 	}
