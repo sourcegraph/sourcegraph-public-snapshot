@@ -4,6 +4,7 @@ import { RouterProvider, createMemoryRouter, type MemoryRouterProps } from 'reac
 
 import { EMPTY_SETTINGS_CASCADE, SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 import { MockedStoryProvider, type MockedStoryProviderProps } from '@sourcegraph/shared/src/stories'
+import { noOpTelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE, type TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
@@ -25,6 +26,7 @@ if (!window.context) {
 
 export type WebStoryChildrenProps = BreadcrumbSetters &
     BreadcrumbsProps &
+    TelemetryV2Props &
     TelemetryProps & {
         isLightTheme: boolean
     }
@@ -63,6 +65,7 @@ export const WebStory: FC<WebStoryProps> = ({
                     {...breadcrumbSetters}
                     isLightTheme={isLightTheme}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             ),
         },

@@ -4,6 +4,7 @@ import { mdiClose, mdiEmailOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, H2, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
@@ -20,7 +21,7 @@ import styles from './TryCodyWidget.module.scss'
 
 const AUTO_DISMISS_ON_EVENTS = new Set([EventName.CODY_SIDEBAR_CHAT_OPENED, EventName.CODY_CHAT_SUBMIT])
 
-interface WidgetContentProps extends TelemetryProps {
+interface WidgetContentProps extends TelemetryProps, TelemetryV2Props {
     type: 'blob' | 'repo'
     theme?: 'light' | 'dark'
     isSourcegraphDotCom: boolean
@@ -57,7 +58,12 @@ function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']):
     return { isDismissed, onDismiss }
 }
 
-const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetryService, context }) => {
+const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({
+    type,
+    telemetryService,
+    telemetryRecorder,
+    context,
+}) => {
     const logEvent = (provider: AuthProvider['serviceType']): void => {
         const eventType = provider === 'builtin' ? 'form' : provider
         const eventPage = type === 'blob' ? 'Blobview' : 'RepositoryPage'
@@ -67,7 +73,7 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
             description: '',
         }
         telemetryService.log(EventName.TRY_CODY_SIGNUP_INITIATED, eventArguments, eventArguments)
-        window.context.telemetryRecorder.recordEvent(EventName.TRY_CODY_SIGNUP_INITIATED, 'initiated', {
+        telemetryRecorder.recordEvent(EventName.TRY_CODY_SIGNUP_INITIATED, 'initiated', {
             privateMetadata: { eventArguments },
         })
     }
@@ -182,7 +188,7 @@ const AuthUserWidgetContent: React.FC<WidgetContentProps> = ({ type, theme, isSo
     )
 }
 
-interface TryCodyWidgetProps extends TelemetryProps {
+interface TryCodyWidgetProps extends TelemetryProps, TelemetryV2Props {
     className?: string
     type: 'blob' | 'repo'
     authenticatedUser: AuthenticatedUser | null
@@ -193,6 +199,7 @@ interface TryCodyWidgetProps extends TelemetryProps {
 export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
     className,
     telemetryService,
+    telemetryRecorder,
     authenticatedUser,
     context,
     type,
@@ -206,7 +213,7 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
         }
         const eventPage = type === 'blob' ? 'BlobPage' : 'RepoPage'
         telemetryService.log(EventName.TRY_CODY_WEB_ONBOARDING_DISPLAYED, { type: eventPage }, { type: eventPage })
-        window.context.telemetryRecorder.recordEvent(EventName.TRY_CODY_WEB_ONBOARDING_DISPLAYED, 'clicked', {
+        telemetryRecorder.recordEvent(EventName.TRY_CODY_WEB_ONBOARDING_DISPLAYED, 'clicked', {
             privateMetadata: { type: eventPage },
         })
     }, [isDismissed, telemetryService, type])
@@ -234,11 +241,13 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
                     type={type}
                     theme={isLightTheme ? 'light' : 'dark'}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     isSourcegraphDotCom={isSourcegraphDotCom}
                 />
             ) : (
                 <NoAuthWidgetContent
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     type={type}
                     context={context}
                     isSourcegraphDotCom={isSourcegraphDotCom}
