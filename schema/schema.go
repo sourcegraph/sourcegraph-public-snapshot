@@ -654,6 +654,8 @@ type Dotcom struct {
 	CodyGateway *CodyGateway `json:"codyGateway,omitempty"`
 	// MinimumExternalAccountAge description: The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.
 	MinimumExternalAccountAge int `json:"minimumExternalAccountAge,omitempty"`
+	// MinimumExternalAccountAgeExemptList description: A list of email addresses that are allowed to be exempted from the minimumExternalAccountAge requirement.
+	MinimumExternalAccountAgeExemptList []string `json:"minimumExternalAccountAgeExemptList,omitempty"`
 	// SlackLicenseAnomallyWebhook description: Slack webhook for when there is an anomaly detected with license key usage.
 	SlackLicenseAnomallyWebhook string `json:"slackLicenseAnomallyWebhook,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
