@@ -1,11 +1,11 @@
 import { useState } from 'react'
 
 import classNames from 'classnames'
+import { Link } from 'react-router-dom'
 
 import { H2, Text, Button, ButtonLink } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
-import {Link} from 'react-router-dom';
 
 export function VSCodeInstructions({
     onBack,
@@ -26,7 +26,7 @@ export function VSCodeInstructions({
                         <H2>Setup instructions for VS Code</H2>
                     </div>
 
-                    <div className={classNames('pt-3 px-3',styles.instructionsContainer)}>
+                    <div className={classNames('pt-3 px-3', styles.instructionsContainer)}>
                         <div className={classNames('border-bottom', styles.highlightStep)}>
                             <div className="d-flex align-items-center">
                                 <div className="mr-1">
@@ -38,14 +38,16 @@ export function VSCodeInstructions({
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
                                         Alternatively, you can reach this page by clicking{' '}
-                                        <strong>View {'>'} Extensions</strong> and searching for <strong>Cody AI</strong>
+                                        <strong>View {'>'} Extensions</strong> and searching for{' '}
+                                        <strong>Cody AI</strong>
                                     </Text>
                                 </div>
                             </div>
                             <div className="d-flex flex-column justify-content-center align-items-center mt-4">
                                 <ButtonLink
                                     variant="primary"
-                                    to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai" target="_blank"
+                                    to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai"
+                                    target="_blank"
                                 >
                                     Open Marketplace
                                 </ButtonLink>
@@ -181,19 +183,22 @@ export function VSCodeInstructions({
                                 Cody will autocomplete your code as you type
                             </Text>
                             <Link to="https://discord.gg/rDPqBejz93" className="d-flex w-100 justify-content-center">
-                            <img
-                                alt="Discord Feedback"
-                                width="50%"
-                                className={classNames('mt-5')}
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/discordCTA.svg"
-                            />
-                            </Link>
-                            <Link to="https://github.com/sourcegraph/cody/discussions/new?category=product-feedback" className="d-flex w-100 justify-content-center">
                                 <img
-                                alt="GitHub Feedback"
-                                width="50%"
-                                className={classNames('mt-4')}
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/feedbackCTA.svg"
+                                    alt="Discord Feedback"
+                                    width="50%"
+                                    className={classNames('mt-5')}
+                                    src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/discordCTA.svg"
+                                />
+                            </Link>
+                            <Link
+                                to="https://github.com/sourcegraph/cody/discussions/new?category=product-feedback"
+                                className="d-flex w-100 justify-content-center"
+                            >
+                                <img
+                                    alt="GitHub Feedback"
+                                    width="50%"
+                                    className={classNames('mt-4')}
+                                    src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/feedbackCTA.svg"
                                 />
                             </Link>
                         </div>

@@ -1,11 +1,11 @@
 import { useState } from 'react'
 
 import classNames from 'classnames'
+import { Link } from 'react-router-dom'
 
 import { H2, Text, Button, ButtonLink } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
-import {Link} from 'react-router-dom';
 
 export function JetBrainsInstructions({
     onBack,
@@ -26,7 +26,7 @@ export function JetBrainsInstructions({
                         <H2>Setup instructions for JetBrains</H2>
                     </div>
 
-                    <div className={classNames('pt-3 px-3',styles.instructionsContainer)}>
+                    <div className={classNames('pt-3 px-3', styles.instructionsContainer)}>
                         <div className={classNames('border-bottom', styles.highlightStep)}>
                             <div className="d-flex align-items-center">
                                 <div className="mr-1">
@@ -37,8 +37,10 @@ export function JetBrainsInstructions({
                                         Open the Plugins Page
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
-                                        Click the Cog icon in the top right corner of your IDE and select <strong>Plugins</strong>
-                                        Alternatively you can go to the settings option (use ⌘ + , for macOS, or File → Settings for Windows), then select "Plugins" from the menu on the left.
+                                        Click the Cog icon in the top right corner of your IDE and select{' '}
+                                        <strong>Plugins</strong>
+                                        Alternatively you can go to the settings option (use ⌘ + , for macOS, or File →
+                                        Settings for Windows), then select "Plugins" from the menu on the left.
                                     </Text>
                                 </div>
                             </div>
@@ -49,7 +51,6 @@ export function JetBrainsInstructions({
                                 >
                                     Open Marketplace
                                 </ButtonLink>
-
                             </div>
                         </div>
                         <div className="mt-3 border-bottom">
@@ -66,29 +67,26 @@ export function JetBrainsInstructions({
                                     </Text>
                                 </div>
                             </div>
-                            <div className="d-flex flex-column justify-content-center align-items-center mt-4">
-
-                        </div>
-                        <div className="mt-3 border-bottom">
-                            <div className="d-flex align-items-center">
-                                <div className="mr-1">
-                                    <div className={classNames('mr-2', styles.step)}>3</div>
+                            <div className="d-flex flex-column justify-content-center align-items-center mt-4"></div>
+                            <div className="mt-3 border-bottom">
+                                <div className="d-flex align-items-center">
+                                    <div className="mr-1">
+                                        <div className={classNames('mr-2', styles.step)}>3</div>
+                                    </div>
+                                    <div>
+                                        <Text className="mb-1" weight="bold">
+                                            Open the Plugin and Login
+                                        </Text>
+                                        <Text className="text-muted mb-0" size="small">
+                                            Cody will be available on the right side of your IDE. Click the Cody icon to
+                                            open the sidebar and login. Alternatively, you should get a notification
+                                            that you need to login to Cody.
+                                        </Text>
+                                    </div>
                                 </div>
-                                <div>
-                                    <Text className="mb-1" weight="bold">
-                                        Open the Plugin and Login
-                                    </Text>
-                                    <Text className="text-muted mb-0" size="small">
-                                        Cody will be available on the right side of your IDE. Click the Cody icon to open the sidebar and login.
-                                        Alternatively, you should get a notification that you need to login to Cody.
-                                    </Text>
-                                </div>
-                            </div>
-                            <div className="d-flex flex-column justify-content-center align-items-center mt-4">
-
+                                <div className="d-flex flex-column justify-content-center align-items-center mt-4"></div>
                             </div>
                         </div>
-                    </div>
                     </div>
 
                     {showStep === undefined ? (
@@ -174,7 +172,10 @@ export function JetBrainsInstructions({
                                     src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/discordCTA.svg"
                                 />
                             </Link>
-                            <Link to="https://github.com/sourcegraph/cody/discussions/new?category=product-feedback" className="d-flex w-100 justify-content-center">
+                            <Link
+                                to="https://github.com/sourcegraph/cody/discussions/new?category=product-feedback"
+                                className="d-flex w-100 justify-content-center"
+                            >
                                 <img
                                     alt="GitHub Feedback"
                                     width="50%"
