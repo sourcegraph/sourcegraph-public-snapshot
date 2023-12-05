@@ -107,3 +107,15 @@ oci_push(
     image = ":image",
     repository = image_repository("executor"),
 )
+
+sh_binary(
+    name = "publish_binary",
+    srcs = ["publish_binary.sh"],
+    args = ["$(location :executor)"],
+    data = [
+        ":executor",
+        "//dev/tools:gsutil",
+    ],
+    tags = ["releasable"],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)

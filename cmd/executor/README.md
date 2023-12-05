@@ -14,3 +14,25 @@ Since executors and Sourcegraph are separate deployments, our agreement is to su
 | 3.43.0                  | 3.45.\*              | 🚫     |
 
 See the [executor queue](../frontend/internal/executorqueue/README.md) for a complete list of queues.
+
+## Building and releasing
+
+Building and releasing is handled automatically by the CI pipeline.
+
+### Binary
+
+The executor binary is simply built with `bazel build //cmd/executor:executor`.
+
+For publishing it, see `//cmd/executor:publish_binary`:
+
+- In every scenario, the binary will be uploaded in `gcs://sourcegraph-artifacts/executors/$GIT_COMMIT/`.
+- If the current branch is `main` when this target is run, it will also be copied over `gcs://sourcegraph-artifacts/executors/latest`.
+- If the env var `EXECUTOR_IS_TAGGED_RELEASE` is set to true, it will also be copied over `gcs://sourcegraph-artifacts/executors/$BUILDKITE_TAG`.
+
+### VM image
+
+TODO
+
+### Docker Mirror
+
+TODO
