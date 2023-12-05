@@ -578,7 +578,7 @@ func TestMembersConnectionStore(t *testing.T) {
 		})
 		require.NoError(t, err)
 		_, err = db.OrgMembers().Create(ctx, org.ID, user.ID)
-		require.NoError(t,err)
+		require.NoError(t, err)
 	}
 
 	connectionStore := &membersConnectionStore{
