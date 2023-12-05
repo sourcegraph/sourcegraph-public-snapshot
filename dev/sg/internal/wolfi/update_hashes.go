@@ -148,7 +148,10 @@ func UpdateHashes(_ *cli.Context, updateImageName string) error {
 				// Only update an image if updateImageName matches the name, or if it's empty (in which case update all images)
 				if updateImageName == imageName || updateImageName == "" {
 					updateImageNameMatch = true
-					currentImage = &ImageInfo{Name: imageName, IsLegacy: strings.Contains(imageName, "legacy_")}
+					currentImage = &ImageInfo{
+						Name:     imageName,
+						IsLegacy: strings.Contains(imageName, "legacy_"),
+					}
 				}
 			}
 		case DigestPattern.MatchString(line):
