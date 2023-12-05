@@ -322,8 +322,10 @@ func getSelfServeUsageLimits(scope types.CompletionsFeature, isProUser bool, cfg
 				return oneMonthInSeconds, pointers.Ptr(cfg.PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit), nil
 			}
 		}
+	default:
+		return 0, nil, errors.Newf("unknown scope (self-serve limiting): %s", scope)
 	}
-	return 0, nil, errors.Newf("unknown scope (self-serve limiting): %s", scope)
+	return oneDayInSeconds, nil, nil
 }
 
 func allowedModels(scope types.CompletionsFeature) []string {
