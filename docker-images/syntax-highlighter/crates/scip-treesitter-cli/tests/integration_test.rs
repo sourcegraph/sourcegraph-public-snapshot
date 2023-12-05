@@ -17,11 +17,13 @@ lazy_static::lazy_static! {
             _ => cargo_bin("scip-treesitter-cli"),
         }
     };
-        static ref BASE: PathBuf = {
-            match std::env::var("CARGO_MANIFEST_DIR") {
-                Ok(va) => std::env::current_dir().unwrap().join(va),
-                _ => std::env::current_dir().unwrap()            }
-        };
+
+    static ref BASE: PathBuf = {
+        match std::env::var("CARGO_MANIFEST_DIR") {
+            Ok(va) => std::env::current_dir().unwrap().join(va),
+            _ => std::env::current_dir().unwrap()            }
+    };
+
     static ref SCIP_JAVA_INDEX: PathBuf = {
         match std::env::var("SCIP_JAVA_INDEX") {
             Ok(va) => std::env::current_dir().unwrap().join(va),
@@ -81,7 +83,6 @@ fn java_e2e_evaluation() {
                 print_false_positives: true,
                 print_mapping: true,
                 disable_colors: true,
-                ..Default::default()
             },
         )
         .unwrap();
