@@ -89,6 +89,18 @@ func bazelPushImagesCmd(version string, isCandidate bool, depKey string) func(*b
 	}
 }
 
+func bazelPublishExecutorBinary(c Config) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		stepOpts := []bk.StepOpt{
+			bk.Agent("queue", "bazel"),
+			bk.Env("VERSION", c.Version),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
+			bk.Cmd(bazelStampedCmd(`run //cmd/executor:publish_binary`)),
+		}
+		pipeline.AddStep(":white_check_mark: Publish executor binary", stepOpts...)
+	}
+}
+
 func bazelStampedCmd(args ...string) string {
 	pre := []string{
 		"bazel",

@@ -33,6 +33,12 @@ go_binary(
     },
 )
 
+# Ensure this builds, so we don't fail at publish time later on in the pipeline.
+build_test(
+    name = "executor_build_test",
+    targets = [":executor"],
+)
+
 go_binary(
     name = "executor_sh",
     basename = "executor",
