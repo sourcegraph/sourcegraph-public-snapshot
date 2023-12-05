@@ -95,6 +95,7 @@ func bazelPublishExecutorBinary(c Config) operations.Operation {
 			bk.Agent("queue", "bazel"),
 			bk.Env("VERSION", c.Version),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
+			bk.Cmd(bazelCmd(`build //cmd/executor:executor`)),
 			bk.Cmd(bazelStampedCmd(`run //cmd/executor:publish_binary`)),
 		}
 		pipeline.AddStep(":bazel::arrow_heading_up: Publish executor binary", stepOpts...)
