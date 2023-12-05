@@ -73,15 +73,17 @@
 
 </style>
 
+
+
 # Installing Cody in VS Code
 
-The Cody extension by Sourcegraph enhances your coding experience in VS Code by providing intelligent code suggestions, context-aware autocomplete, and advanced code analysis. This guide will walk you through the steps to install and set up the Cody within your VS Code environment.
+The Cody extension by Sourcegraph enhances your coding experience in VS Code by providing intelligent code suggestions, context-aware autocomplete, and advanced code analysis. This guide will walk you through the steps to install and set up Cody within your VS Code environment.
 
 <ul class="limg">
   <li>
     <a class="card text-left" target="_blank" href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">
     <h3><img alt="VS Code" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/vscode.svg"/> Cody: VS Code Extension</h3>
-    <p>Install Cody's free and open source extension for VS Code.</p>
+    <p>Install Cody's free extension for VS Code.</p>
     </a>
   </li>
 </ul>
@@ -100,7 +102,7 @@ Follow these steps to install the Cody AI extension for VS Code:
 - Type **Cody AI** in the search bar and click the **Install** button
 - After installing, you may be prompted to reload VS Code to activate the extension
 
-![install-vscode-extension](https://storage.googleapis.com/sourcegraph-assets/Docs/install-cody-vscode.png)
+![install-vscode-extension](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-new-ui.png)
 
 Alternatively, you can also [download and install the extension from the VS Code Marketplace][cody-vscode-marketplace] directly.
 
@@ -110,15 +112,15 @@ After a successful installation, the Cody icon appears in the [Activity sidebar]
 
 ![cody-sign-flow](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-signin-vscode.png)
 
-You can use Sourcegraph Enterprise with the Cody VS Code extension. Click the **Sign in to Enterprise Instance** at the bottom of the Cody panel, and it connects to your enterprise environment.
+You can use Sourcegraph Enterprise with the Cody VS Code extension. Click the **Sign In to Your Enterprise Instance**, and it connects to your enterprise environment.
 
 ## Verifying the installation
 
-Once connected, click the Cody icon from the sidebar again, and a panel will open. To verify that the Cody extension has been successfully installed and is working as expected, let's create an autocomplete suggestion.
+Once connected, click the Cody icon from the sidebar again, and a panel will open. Let's create an autocomplete suggestion to verify that the Cody extension has been successfully installed and is working as expected.
 
 Cody provides intelligent code suggestions and context-aware autocompletions for numerous programming languages like JavaScript, Python, TypeScript, Go, etc.
 
-- Create a new file in VS Code for example, `code.js`
+- Create a new file in VS Code, for example, `code.js`
 - Next, type the following algorithm function to sort an array of numbers
 
 ```js
@@ -126,37 +128,59 @@ function bubbleSort(array){
 ```
 
 - As you start typing, Cody will automatically provide suggestions and context-aware completions based on your coding patterns and the code context
-- These autocomplete suggestions appears as grayed text. To accept the suggestion, press the `Tab` key
+- These autocomplete suggestions appear as grayed text. To accept the suggestion, press the `Tab` key
 
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/cody-in-action.mp4" type="video/mp4">
 </video>
 
+## Chat
+
+Cody chat in VS Code is available in a tab next to your code. Once connected to Sourcegraph, a **New Chat** button opens the chat window on the right. You can have multiple Cody Chats going simultaneously in separate tabs. In addition, each command will also open a new chat session to keep track of your workflow.
+
+All previous and existing chats are stored under the chats panel on the left. You can download these for later use in a `.json` file or delete them altogether.
+
+### Enhanced Context Selector
+
+There is also a settings icon next to the chat typing window to **Configure Enhanced Context**. There are two scenarios if this option is checked or unchecked:
+
+- **Checked**: Use Enhanced Context, which contains results from the embeddings client. If embeddings are not available, use results from symf instead
+- **Unchecked**: Will not use any enhanced context. Instead, a user may include selected code to provide a more chat-based experience
+
+### LLM Selection
+
+VS Code users can choose LLMs for Cody's chat right from the chat panel. The default LLM is set to Claude 2.0 by Anthropic. However, a drop-down allows you to choose between different LLMs.
+
 ## Commands
 
 Cody offers quick, ready-to-use [Commands](./../capabilities.md#commands) for common actions to write, describe, fix, and smell code. These allow you to run predefined actions with smart context-fetching anywhere in the editor, like:
 
-- `/ask`: Asks a question
-- `/edit[instruction]`: Edits code
-- `/doc`: Generates code documentation
-- `/explain`: Explains code
-- `/test`: Generates unit tests
-- `/smell`: Find code smells
-- `/reset`: Clears the Cody chat
+- Ask a question (`ask`)
+- Generate code documentation (`doc`)
+- Explain code (`explain`)
+- Generate unit test (`test`)
+  Find code smells (`smell`)
+- Clear the Cody chat (`reset`)
 
 Let's understand how the `/doc` command generates code documentation for a function.
 
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
-  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/vscode-doc-command.mp4" type="video/mp4">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/code-comments-cody.mp4" type="video/mp4">
 </video>
 
-In addition, to support customization and advanced use cases, you can create Custom Commands tailored to your requirements. Custom Commands are currently supported by Cody for the VS Code extension version 0.8 and above.
+In addition, you can also select which files and symbols to add as additional context. Type `@` to include files of your choice. Currently, only local files are available for this feature to work.
+
+The file paths are relative to your workspace, and you can start with the root folder and type out the rest of the path, for example `src/util/<YOUR-FILE>`.
+
+### Custom Commands
+
+In addition, to support customization and advanced use cases, you can create **Custom Commands** tailored to your requirements. Custom Commands are currently supported by Cody for the VS Code extension version 0.8 and above.
 
 [Learn more about Custom Commands here →](./../custom-commands.md)
 
 ## Enable code graph context for context-aware answers (Optional)
 
-After connecting Cody extension to Sourcegraph.com, you can optionally use [Code Graph Context](./../core-concepts/code-graph.md) to improve Cody's context of existing code. Note that Code Graph Context is only available for public repositories on Sourcegraph.com, which have embeddings.
+After connecting Cody's extension to Sourcegraph.com, you can optionally use [Code Graph Context](./../core-concepts/code-graph.md) to improve Cody's context of existing code. Code Graph Context is only available for public repositories on Sourcegraph.com, which have embeddings.
 
 You can view the [list of repositories with embeddings here](../embedded-repos.md). To add any of these to your dev environment, contact a Sourcegraph team member via [Discord](https://discord.gg/8wJF5EdAyA) to get help with the access and setup.
 
