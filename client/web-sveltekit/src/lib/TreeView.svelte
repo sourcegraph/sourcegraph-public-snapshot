@@ -230,7 +230,6 @@
     }
 
     $: entries = treeProvider.getEntries()
-
     // Make first tree item focusable if none is selected/focused
     $: if (!$treeState.focused && entries.length > 0) {
         $treeState = { ...$treeState, focused: treeProvider.getNodeID(entries[0]) }
