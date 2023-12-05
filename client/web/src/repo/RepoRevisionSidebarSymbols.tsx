@@ -3,7 +3,6 @@ import React, { useState, useMemo, Suspense } from 'react'
 import classNames from 'classnames'
 import { escapeRegExp, groupBy } from 'lodash'
 
-import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import type { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Alert, useDebounce, ErrorMessage } from '@sourcegraph/wildcard'
@@ -20,6 +19,7 @@ import {
 import type { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
 
 import { RepoRevisionSidebarSymbolTree } from './RepoRevisionSidebarSymbolTree'
+import * as util from './utils'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
 
@@ -142,7 +142,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
     const hierarchicalSymbols = useMemo<SymbolWithChildren[]>(
         () =>
             Object.values(groupBy(connection?.nodes ?? [], symbol => symbol.location.resource.path)).flatMap(symbols =>
-                hierarchyOf(symbols)
+                util.hierarchyOf(symbols)
             ),
         [connection?.nodes]
     )
@@ -192,83 +192,6 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
     )
 }
 
-// When searching symbols, results may contain only child symbols without their parents
-// (e.g. when searching for "bar", a class named "Foo" with a method named "bar" will
-// return "bar" as a result, and "bar" will say that "Foo" is its parent).
-// The placeholder symbols exist to show the hierarchy of the results, but these placeholders
-// are not interactive (cannot be clicked to navigate) and don't have any other information.
-export interface SymbolPlaceholder {
-    __typename: 'SymbolPlaceholder'
-    name: string
-}
-
-export type SymbolWithChildren = (SymbolNodeFields | SymbolPlaceholder) & { children: SymbolWithChildren[] }
-
-const hierarchyOf = (symbols: SymbolNodeFields[]): SymbolWithChildren[] => {
-    const fullNameToSymbol = new Map<string, SymbolNodeFields>(symbols.map(symbol => [fullName(symbol), symbol]))
-    const fullNameToSymbolWithChildren = new Map<string, SymbolWithChildren>()
-    const topLevelSymbols: SymbolWithChildren[] = []
-
-    const visit = (fullName: string): void => {
-        if (fullName === '') {
-            return
-        }
-
-        let symbol: SymbolNodeFields | SymbolPlaceholder | undefined = fullNameToSymbol.get(fullName)
-        if (!symbol) {
-            // Symbol doesn't exist, create placeholder at the top level and add current symbol to it.
-            // (This happens when running a search and the result is a child of a symbol that isn't in the result set.)
-            symbol = {
-                __typename: 'SymbolPlaceholder',
-                name: fullName.split('.').at(-1) || fullName,
-            }
-        }
-
-        // symbolWithChildren might already exist if we've already visited a child of this symbol.
-        const symbolWithChildren = fullNameToSymbolWithChildren.get(fullName) || { ...symbol, children: [] }
-        fullNameToSymbolWithChildren.set(fullName, symbolWithChildren)
-
-        const parentFullName =
-            symbol.__typename === 'Symbol' ? symbol.containerName : fullName.split('.').slice(0, -1).join('.')
-        if (!parentFullName) {
-            // No parent, add to top-level
-            topLevelSymbols.push(symbolWithChildren)
-            return
-        }
-
-        const parentSymbol = fullNameToSymbol.get(parentFullName)
-        let parentSymbolWithChildren = fullNameToSymbolWithChildren.get(parentFullName)
-        if (parentSymbolWithChildren) {
-            // Parent exists, add to parent
-            parentSymbolWithChildren.children.push(symbolWithChildren)
-        } else if (parentSymbol) {
-            // Create parent node and add current symbol to it
-            fullNameToSymbolWithChildren.set(parentFullName, { ...parentSymbol, children: [symbolWithChildren] })
-        } else {
-            // Parent doesn't exist, visit it to generate a placeholder hierarchy, then add current symbol to it
-            visit(parentFullName)
-            parentSymbolWithChildren = fullNameToSymbolWithChildren.get(parentFullName) // This should now exist
-            if (parentSymbolWithChildren) {
-                parentSymbolWithChildren.children.push(symbolWithChildren)
-            } else {
-                // This should never happen!!
-                logger.error('RepoRevisionSidebarSymbols: Failed to add symbol to parent', { fullName, parentFullName })
-            }
-        }
-    }
-
-    for (const symbol of symbols) {
-        visit(fullName(symbol))
-    }
-
-    // Sort everything
-    for (const sym of fullNameToSymbolWithChildren.values()) {
-        sym.children.sort((a, b) => a.name.localeCompare(b.name))
-    }
-    topLevelSymbols.sort((a, b) => a.name.localeCompare(b.name))
-
-    return topLevelSymbols
-}
-
-const fullName = (symbol: SymbolNodeFields | SymbolPlaceholder): string =>
-    `${symbol.__typename === 'Symbol' && symbol.containerName ? symbol.containerName + '.' : ''}${symbol.name}`
+// Forward exports to preserve module signature.
+export interface SymbolPlaceholder extends util.SymbolPlaceholder {}
+export type SymbolWithChildren = util.SymbolWithChildren

@@ -54,7 +54,7 @@ class LineLinkManager implements PluginValue {
  * Extension that is only used in the ref panel preview pane. Wraps all lines
  * with an anchor link so that clicking on the line promotes that line from the
  * preview pane into the main blob view.
-*/
+ */
 export function navigateToLineOnAnyClickExtension(navigate: NavigateFunction): Extension {
     return [
         ViewPlugin.fromClass(LineLinkManager, { decorations: plugin => plugin.decorations }),
