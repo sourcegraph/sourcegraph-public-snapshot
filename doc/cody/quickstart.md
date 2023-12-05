@@ -3,7 +3,7 @@
 <p class="subtitle">In this quickstart guide, you'll learn how to use Cody once you have installed the extension in your VS Code editor. Here you will perform the following three tasks:</p>
 
 1. Generate unit tests for your code
-2. Identify errors and suggest code fixes
+2. Identify errors and get suggested code fixes
 3. Adding documentation to your code snippets
 
 ## Prerequisites
@@ -14,11 +14,11 @@
 
 ## Getting started with Cody extension and commands
 
-After installing the extension, the side activity bar will display an icon for **Cody**. Click this icon, and Cody's **Chat** panel will open. This interface is used to ask Cody questions and paste in code snippets.
+After installing the extension, the side activity bar will display an icon for **Cody**. Click this icon, and Cody's panel will open. This interface is used to start a **New Chat**, run Cody **commands** or get access to releavnt resources.
 
 ![Cody icon in side activity bar ](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-quickstart/cody-icon-vscode.png)
 
-Cody also supports **Commands** with VS Code. These are quick, ready-to-use prompt actions that you can apply to any code or text-based snippet you've highlighted. You can run a command in 3 ways:
+Cody supports **Commands** with VS Code. These are quick, ready-to-use prompt actions that you can apply to any code or text-based snippet you've highlighted. You can run a command in 3 ways:
 
 1. Click **New Chat** button, type `/` in the chat bar, and Cody will suggest a list of commands
 2. Right click > Cody > Select a command
@@ -71,7 +71,7 @@ function getTimeAgoDescription(dateString) {
 
 ## 1. Generate a unit test
 
-To ensure code quality and early bug detection, one of the most useful commands that Cody offers is **Generate unit tests**. It quickly helps you write a test code for any snippet that you have highlighted. To generate a unit test for our example function:
+To ensure code quality and early bug detection, one of the most useful commands that Cody offers is **Generate unit tests**. It quickly helps you write test code for any snippet that you have highlighted. To generate a unit test for our example function:
 
 - Open the `date.js` file in VS Code
 - Highlight a code snippet that you'd like to test
