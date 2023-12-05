@@ -8,7 +8,7 @@ use std::{
 };
 
 use anyhow::*;
-use colored::{Color, ColoredString, Colorize};
+use colored::{ColoredString, Colorize};
 use scip::types::Index;
 use scip_treesitter::types::PackedRange;
 use serde::Serializer;
@@ -254,9 +254,9 @@ impl<'e> EvaluationResult<'e> {
         occ: &SymbolOccurrence,
         output: &mut W,
     ) -> anyhow::Result<()> {
-        write!(
+        writeln!(
             output,
-            "[{label}] {}: L{} C{} -- {}\n",
+            "[{label}] {}: L{} C{} -- {}",
             self.path_formatter.display_path(occ.location.path_id),
             occ.range().start_line,
             occ.range().start_col,
@@ -299,9 +299,9 @@ impl<'e> EvaluationResult<'e> {
                 alternatives.into_iter().collect();
             alternatives_vec.sort_by_key(|(sym, _)| *sym);
 
-            write!(
+            writeln!(
                 output,
-                "{}\n",
+                "{}",
                 self.render(
                     self.symbol_formatter.display_symbol(candidate).red(),
                     options
@@ -321,9 +321,9 @@ impl<'e> EvaluationResult<'e> {
                     })
                     .unwrap();
 
-                write!(
+                writeln!(
                     output,
-                    "   {:.2} {} [{}/{} occurrences]\n",
+                    "   {:.2} {} [{}/{} occurrences]",
                     adjusted_weight,
                     self.render(
                         self.symbol_formatter.display_symbol(ground_truth).green(),
@@ -334,7 +334,7 @@ impl<'e> EvaluationResult<'e> {
                 )?;
             }
 
-            write!(output, "\n")?;
+            writeln!(output)?;
         }
 
         Ok(())
@@ -345,14 +345,14 @@ impl<'e> EvaluationResult<'e> {
         output: &mut W,
         options: EvaluationOutputOptions,
     ) -> anyhow::Result<()> {
-        write!(output, "{}\n", serde_json::to_string(&self.summary)?)?;
+        writeln!(output, "{}", serde_json::to_string(&self.summary)?)?;
 
-        if options.print_false_negatives && self.false_negatives.len() > 0 {
-            write!(output, "\n")?;
+        if options.print_false_negatives && !self.false_negatives.is_empty() {
+            writeln!(output)?;
 
-            write!(
+            writeln!(
                 output,
-                "{}: {}\n",
+                "{}: {}",
                 self.render("False negatives (FN)".red(), options),
                 self.render(self.false_negatives.len().to_string().bold(), options)
             )?;
@@ -362,18 +362,18 @@ impl<'e> EvaluationResult<'e> {
             }
         }
 
-        if options.print_false_positives && self.false_positives.len() > 0 {
-            write!(output, "\n")?;
-            write!(
+        if options.print_false_positives && !self.false_positives.is_empty() {
+            writeln!(output)?;
+            writeln!(
                 output,
-                "{}: {}\n",
+                "{}: {}",
                 self.render("False positives".red(), options),
                 self.render(self.false_positives.len().to_string().bold(), options)
             )?;
 
-            write!(
+            writeln!(
                 output,
-                "{}\n",
+                "{}",
                 "How many extra occurrences we reported compared to compiler?".italic()
             )?;
 
@@ -383,10 +383,10 @@ impl<'e> EvaluationResult<'e> {
         }
 
         if options.print_true_positives {
-            write!(output, "\n")?;
-            write!(
+            writeln!(output)?;
+            writeln!(
                 output,
-                "{}: {}\n",
+                "{}: {}",
                 self.render("True positives".green(), options),
                 self.render(self.true_positives.len().to_string().bold(), options)
             )?;
