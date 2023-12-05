@@ -50,12 +50,16 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	dc := conf.Get().Dotcom
-
 	if dc != nil && dc.MinimumExternalAccountAge > 0 {
-
+		exempted := false
+		for _, exemptedEmail := range dc.MinimumExternalAccountAgeExemptList {
+			if exemptedEmail == gUser.Email {
+				exempted = true
+				break
+			}
+		}
 		earliestValidCreationDate := time.Now().Add(time.Duration(-dc.MinimumExternalAccountAge) * 24 * time.Hour)
-
-		if gUser.CreatedAt.After(earliestValidCreationDate) {
+		if !exempted && gUser.CreatedAt.After(earliestValidCreationDate) {
 			return false, nil, fmt.Sprintf("User account was created less than %d days ago", dc.MinimumExternalAccountAge), errors.New("user account too new")
 		}
 	}
