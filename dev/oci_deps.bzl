@@ -208,7 +208,7 @@ def oci_deps():
         image = "index.docker.io/sourcegraph/wolfi-qdrant-base",
     )
 
-    # The following image digests are from tag 252535_2023-11-28_5.2-82b5f4f5d73f
+    # The following image digests are from tag 252535_2023-11-28_5.2-82b5f4f5d73f. sg wolfi update-hashes DOES NOT update these digests.
     # To rebuild these legacy images using docker and outside of bazel you can either push a branch to:
     # - docker-images-candidates-notest/<your banch name here>
     # or you can run `sg ci build docker-images-candidates-notest`
