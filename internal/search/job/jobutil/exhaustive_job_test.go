@@ -197,6 +197,8 @@ func TestNewExhaustive_negative(t *testing.T) {
 		query              string
 		isPatterntypeRegex bool
 	}{
+		// no pattern
+		{query: `type:file index:no`},
 		// >1 type filter.
 		{query: `type:file index:no type:diff content`},
 		{query: `type:file index:no type:path content`},
