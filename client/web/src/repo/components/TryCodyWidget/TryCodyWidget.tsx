@@ -216,7 +216,7 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
         telemetryRecorder.recordEvent(EventName.TRY_CODY_WEB_ONBOARDING_DISPLAYED, 'clicked', {
             privateMetadata: { type: eventPage },
         })
-    }, [isDismissed, telemetryService, type])
+    }, [isDismissed, telemetryService, telemetryRecorder, type])
 
     if (isDismissed) {
         return null
