@@ -945,7 +945,8 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	}
 
 	if update.Config != nil {
-		unrestricted := !envvar.SourcegraphDotComMode() && !gjson.GetBytes(normalized, "authorization").Exists()
+		unrestricted := calcUnrestricted(string(normalized))
+
 		updates = append(updates,
 			sqlf.Sprintf(
 				"config = %s, encryption_key_id = %s, unrestricted = %s, has_webhooks = %s",
@@ -1652,11 +1653,8 @@ WHERE EXISTS(
 	return v && exists, nil
 }
 
-// recalculateFields updates the value of the external service fields that are
-// calculated depending on the external service configuration, namely
-// `Unrestricted` and `HasWebhooks`.
-func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) error {
-	es.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.Get(rawConfig, "authorization").Exists()
+func calcUnrestricted(config string) bool {
+	unrestricted := !envvar.SourcegraphDotComMode() && !gjson.Get(config, "authorization").Exists()
 
 	// Only override the value of es.Unrestricted if `enforcePermissions` is set.
 	//
@@ -1669,14 +1667,23 @@ func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawC
 	//
 	// For existing auth providers, this is forwards compatible. While at the same time if they also
 	// wanted to get on the `enforcePermissions` pattern, this change is backwards compatible.
-	enforcePermissions := gjson.Get(rawConfig, "enforcePermissions")
+	enforcePermissions := gjson.Get(config, "enforcePermissions")
 	if !envvar.SourcegraphDotComMode() {
 		if globals.PermissionsUserMapping().Enabled {
-			es.Unrestricted = false
+			unrestricted = false
 		} else if enforcePermissions.Exists() {
-			es.Unrestricted = !enforcePermissions.Bool()
+			unrestricted = !enforcePermissions.Bool()
 		}
 	}
+
+	return unrestricted
+}
+
+// recalculateFields updates the value of the external service fields that are
+// calculated depending on the external service configuration, namely
+// `Unrestricted` and `HasWebhooks`.
+func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) error {
+	es.Unrestricted = calcUnrestricted(rawConfig)
 
 	hasWebhooks := false
 	cfg, err := extsvc.ParseConfig(es.Kind, rawConfig)
