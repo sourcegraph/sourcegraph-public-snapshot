@@ -97,7 +97,7 @@ func bazelPublishExecutorBinary(c Config) operations.Operation {
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 			bk.Cmd(bazelStampedCmd(`run //cmd/executor:publish_binary`)),
 		}
-		pipeline.AddStep(":white_check_mark: Publish executor binary", stepOpts...)
+		pipeline.AddStep(":bazel::arrow_heading_up: Publish executor binary", stepOpts...)
 	}
 }
 

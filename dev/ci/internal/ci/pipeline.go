@@ -166,6 +166,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			))
 		}
 
+		// TODO QA
+		ops.Append(bazelPublishExecutorBinary(c))
+
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 
@@ -337,6 +340,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
+
 		// Final Bazel images
 		publishOps.Append(bazelPushImagesFinal(c.Version, isAspectWorkflowBuild))
 		ops.Merge(publishOps)
