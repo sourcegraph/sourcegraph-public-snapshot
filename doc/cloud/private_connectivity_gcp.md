@@ -1,12 +1,9 @@
-# Code hosts or artifact registries on GCP without public access
+# Private Resources on GCP via GCP Private Service Connect
 
 <p>Please contact Sourcegraph directly via <a href="https://sourcegraph.com/contact">prefered contact method</a> for more informations</p>
 </aside>
 
-> Important:
-`private dependency` is customer code host or registry hosted in GCP.
-
-As part of the [Enterprise tier](https://sourcegraph.com/pricing), Sourcegraph Cloud supports connecting to customer dependencies on GCP using [GCP Private Service Connect](https://cloud.google.com/vpc/docs/private-service-connect). It creates a secure connection between customer GCP project and Sourcegraph Cloud instance, so that access to a private dependency never occurs over the public internet.
+As part of the [Enterprise tier](https://sourcegraph.com/pricing), Sourcegraph Cloud supports connecting to customer dependencies on GCP using [GCP Private Service Connect](https://cloud.google.com/vpc/docs/private-service-connect). It creates a secure connection between customer GCP project and Sourcegraph Cloud instance, so that access to a private resource never occurs over the public internet.
 
 When a customer has private dependencies inside the GCP and needs to expose it for Sourcegraph Cloud instance, please reach out to your account manager to initiate the process.
 
@@ -14,7 +11,7 @@ When a customer has private dependencies inside the GCP and needs to expose it f
 
 Sourcegraph supports connecting to private dependencies on GCP using GCP [Private Service Connect] (PSC). It is used to securely expose and connect services across the project boundary within GCP.
 
-The customer is the Service Producer (the "producer"), and the Sourcegraph Cloud instance is the Service Consumer (the "consumer"). PSC can expose an internal regional load balancer for the private dependency to the consumer. The consumer can then connect to the private dependency over PSC transparently on their Sourcegraph Cloud instance.
+The customer is the Service Producer (the "producer"), and the Sourcegraph Cloud instance is the Service Consumer (the "consumer"). PSC can expose an internal regional load balancer for the private resource to the consumer. The consumer can then connect to the private resource over PSC transparently on their Sourcegraph Cloud instance.
 
 [link](https://link.excalidraw.com/readonly/Xiz9LWNPCa3DERBJUiZI)
 
@@ -22,7 +19,7 @@ The customer is the Service Producer (the "producer"), and the Sourcegraph Cloud
 
 ## Limitation
 
-Cross-region connectivity is not supported by Google Cloud for [Private Service Connect]. The Sourcegraph Cloud instance and the customer dependency must be in the same region, learn more from our [supported regions](../index.md#multiple-region-availability).
+Cross-region connectivity is not supported by Google Cloud for [Private Service Connect]. The Sourcegraph Cloud instance and the customer resource must be in the same region, learn more from our [supported regions](../index.md#multiple-region-availability).
 
 ## Steps
 
@@ -31,8 +28,8 @@ Cross-region connectivity is not supported by Google Cloud for [Private Service 
 Customer should reach out to their account manager to initiate the process. The account manager will work with the customer to collect the required information and initiate the process, including but not limited to:
 
 - The DNS name of the private code host, e.g. `gitlab.internal.company.net` or private artifact registry, e.g. `artifactory.internal.company.net`.
-- The region of the private dependency on GCP, e.g. `us-central1`.
-- The type of the TLS certificate used by the private dependency, one of self-signed by internal private CA, or issued by a public CA.
+- The region of the private resource on GCP, e.g. `us-central1`.
+- The type of the TLS certificate used by the private resource, one of self-signed by internal private CA, or issued by a public CA.
 - The location of where the TLS connection is terminated, one of the load balancer, or the private dependecy node.
 
 Finally, Sourcegraph will provide the following:
@@ -56,7 +53,7 @@ Once the connection to private artifact registry is established, customer might 
 
 ## FAQ
 
-### How can I restrict access to my private dependency connection?
+### How can I restrict access to my private resource connection?
 
 The customer has full control over the access to the [Service Attachment] by configuring the [accept and reject lists](https://cloud.google.com/vpc/docs/private-service-connect-security#consumer-lists). Sourcegraph will provide the GCP Project ID to be added to the accept list. 
 
@@ -72,19 +69,17 @@ Learn more from documentation of [gcloud compute service-attachments delete](htt
 
 All traffic between the producer and consumer is encrypted in transit. You may learn more from Google's whitepaper about [encryption in transit] and [Sourcegraph's security practices].
 
-[private service connect]: https://cloud.google.com/vpc/docs/private-service-connect
-[service attachment]: https://cloud.google.com/vpc/docs/private-service-connect#service-attachments
-[encryption in transit]: https://cloud.google.com/docs/security/encryption-in-transit
-[Sourcegraph's security practices]: https://sourcegraph.com/security
-
-### Can I use my internal dns name for artifact registry?
-
-Yes, customer can expose their private registry with internal DNS name via AWS Private Link. Sourcegraph will provision dns-proxy, which translates customer private domain to AWS Private Link domain.
-No changes in customer configuration are required.
-
-
 ### What are the next steps when artifact registry connectivity is working?
 
 Only if private artifact registry is protected by authentication, the customer will need to:
 - create executor secrets containing credentials for Sourcegraph to access the private artifact registry - [how to configure executor secrets](../admin/executors/executor_secrets.md#executor-secrets)
 - update auto-indexing inference configuration to create additional files from executor secrets for given programing language - [how to configure auto-indexing](../code_navigation/references/inference_configuration.md)
+
+### Can I use self-signed TLS certificate for my private resources?
+
+Yes. Please work with your account team to add the certificate chain of your internal CA to [site configuration](https://docs.sourcegraph.com/admin/config/site_config#experimentalFeatures) at `experimentalFeatures.tls.external.certificates`.
+
+[private service connect]: https://cloud.google.com/vpc/docs/private-service-connect
+[service attachment]: https://cloud.google.com/vpc/docs/private-service-connect#service-attachments
+[encryption in transit]: https://cloud.google.com/docs/security/encryption-in-transit
+[Sourcegraph's security practices]: https://sourcegraph.com/security

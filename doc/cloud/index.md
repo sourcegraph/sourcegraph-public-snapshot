@@ -111,19 +111,20 @@ If you have specific requirements for the region, please reach out to your Sourc
 
 More details about the locations and data storage can be found in [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/multi-region/)
 
-### Private Code Host and Artifact Registry support
+### Private Connectivity
 
-Public code hosts and artifact registries are supported by Sourcegraph Cloud out-of-the-box. They are either publically accessible or protected by IP-based firewall rules, Sourcegraph Cloud can provide static IP addresses for customers to add to their firewall allowlist. Please let your account team know.
+Sourcegraph Cloud can connect to resources that are publically accessible or protected by IP-based firewall rules out-of-the-box. Sourcegraph can provide static IP addresses for customers to add to their firewall allowlist. Please let your account team know.
 
-Private code hosts or artifact registries refer to dependecies that are not publicly accessible, such as self-hosted GitHub Enterprise servers, self-hosted GitLab instances or self-hosted Nexus instance deployed in a private network that are only accessible through VPN. Learn more about private connectvity support below:
+Private Connectivity enables customers to privately connect Private Resources to the Sourcegraph Cloud instance. Private Resources refer to services that are not publicly accessible, such as self-hosted GitHub Enterprise servers, self-hosted GitLab instances, self-hosted Nexus instance, or Jira Data Center deployed in a private network that are only accessible through VPN. Learn more about Private Connectvity support below:
 
-- [Code hosts and artifact registries on AWS without public access](./private_connectivity_aws.md)
-- [Code hosts and artifact registries on GCP without public access](./private_connectivity_gcp.md)
-- Code hosts and artifact registries on Azure are not supported yet, please reach out to your account manager if you are interested in this feature.
-- Code hosts and artifact registries on custom data center are not supported yet, please reach out to your account manager if you are interested in this feature.
+- [Private Resources on AWS via AWS Private Link](./private_connectivity_aws.md)
+- [Private Resources on GCP via GCP Private Service Connect](./private_connectivity_gcp.md)
+- [Private Resources on on-prem data center via Sourcegraph Connect agent](./private_connectivity_sourcegraph_connect.md)
+- Private Resources on Azure are not supported yet, please reach out to your account manager if you are interested in this feature.
 
-For not supported private connectivity methods, Sourcegraph offers connectivity via customer exposed load balancer:
-- [Code hosts and artifact registries exposed via public load balancer](./private_connectivity_public_lb.md)
+For unsupported private connectivity methods, Sourcegraph offers connectivity via customer-managed alternate public load balancers:
+
+- [Private Resources exposed via alternate public load balancers](./private_connectivity_public_lb.md)
 
 ### Health monitoring, support, and SLAs
 
