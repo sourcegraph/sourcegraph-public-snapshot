@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -21,28 +20,25 @@ func (pcs *permisionConnectionStore) MarshalCursor(node PermissionResolver, _ da
 	return &cursor, nil
 }
 
-func (pcs *permisionConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (pcs *permisionConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
 	nodeID, err := UnmarshalPermissionID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
 
-	id := strconv.Itoa(int(nodeID))
-
-	return &id, nil
+	return []any{nodeID}, nil
 }
 
-func (pcs *permisionConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (pcs *permisionConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	count, err := pcs.db.Permissions().Count(ctx, database.PermissionListOpts{
 		RoleID: pcs.roleID,
 		UserID: pcs.userID,
 	})
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	total := int32(count)
-	return &total, nil
+	return int32(count), nil
 }
 
 func (pcs *permisionConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]PermissionResolver, error) {

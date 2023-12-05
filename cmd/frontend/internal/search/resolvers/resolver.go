@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -117,15 +118,15 @@ type searchJobsConnectionStore struct {
 	userIDs []int32
 }
 
-func (s *searchJobsConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *searchJobsConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	// TODO (stefan) add "Count" method to service
 	jobs, err := s.service.ListSearchJobs(ctx, store.ListArgs{States: s.states, Query: s.query, UserIDs: s.userIDs})
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	total := int32(len(jobs))
-	return &total, nil
+	count := int32(len(jobs))
+	return int32(count), nil
 }
 
 func (s *searchJobsConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.SearchJobResolver, error) {
@@ -154,11 +155,11 @@ func (s *searchJobsConnectionStore) MarshalCursor(node graphqlbackend.SearchJobR
 	var value string
 	switch column {
 	case "created_at":
-		value = fmt.Sprintf("'%v'", node.CreatedAt().Format(time.RFC3339Nano))
+		value = node.CreatedAt().Format(time.RFC3339Nano)
 	case "agg_state":
-		value = fmt.Sprintf("'%v'", strings.ToLower(node.State(s.ctx)))
+		value = strings.ToLower(node.State(s.ctx))
 	case "query":
-		value = fmt.Sprintf("'%v'", node.Query())
+		value = node.Query()
 	default:
 		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected one of (created_at, agg_state, query). Actual: %s", column))
 	}
@@ -176,7 +177,7 @@ func (s *searchJobsConnectionStore) MarshalCursor(node graphqlbackend.SearchJobR
 	return &cursor, nil
 }
 
-func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, error) {
+func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) ([]any, error) {
 	if kind := relay.UnmarshalKind(graphql.ID(cursor)); kind != searchJobsCursorKind {
 		return nil, errors.New(fmt.Sprintf("expected a %q cursor, got %q", searchJobsCursorKind, kind))
 	}
@@ -200,19 +201,17 @@ func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, orderBy datab
 
 	values := []string{spec.Value[0:i], spec.Value[i+1:]}
 
-	csv := ""
+	id, err := strconv.Atoi(values[1])
+	if err != nil {
+		return nil, err
+	}
+
 	switch column {
-	case "created_at":
-		csv = fmt.Sprintf("%v, %v", values[0], values[1])
-	case "agg_state":
-		csv = fmt.Sprintf("%v, %v", values[0], values[1])
-	case "query":
-		csv = fmt.Sprintf("%v, %v", values[0], values[1])
+	case "created_at", "agg_state", "query":
+		return []any{values[0], id}, nil
 	default:
 		return nil, errors.New("Invalid OrderBy Field.")
 	}
-
-	return &csv, nil
 }
 
 func (r *Resolver) SearchJobs(ctx context.Context, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {

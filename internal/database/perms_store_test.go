@@ -3994,7 +3994,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 			Name:   "TestPagination",
 			UserID: 555,
 			Args: &ListUserPermissionsArgs{
-				PaginationArgs: &PaginationArgs{First: pointers.Ptr(2), After: pointers.Ptr("'public_repo_5'"), OrderBy: OrderBy{{Field: "name"}}},
+				PaginationArgs: &PaginationArgs{First: pointers.Ptr(2), After: []any{"public_repo_5"}, OrderBy: OrderBy{{Field: "name"}}},
 			},
 			WantResults: []*listUserPermissionsResult{
 				{
@@ -4191,7 +4191,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			Name:   "TestPaginationWithPrivateRepo",
 			RepoID: 1,
 			Args: &ListRepoPermissionsArgs{
-				PaginationArgs: &PaginationArgs{First: pointers.Ptr(1), After: pointers.Ptr("555"), OrderBy: OrderBy{{Field: "users.id"}}, Ascending: true},
+				PaginationArgs: &PaginationArgs{First: pointers.Ptr(1), After: []any{555}, OrderBy: OrderBy{{Field: "users.id"}}, Ascending: true},
 			},
 			WantResults: []*listRepoPermissionsResult{
 				{

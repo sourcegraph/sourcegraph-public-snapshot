@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type repositoryArgs struct {
@@ -125,7 +124,7 @@ func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs)
 	}
 
 	connectionOptions := graphqlutil.ConnectionResolverOptions{
-		MaxPageSize: &maxPageSize,
+		MaxPageSize: maxPageSize,
 		OrderBy:     database.OrderBy{{Field: string(toDBRepoListColumn(orderBy))}, {Field: "id"}},
 		Ascending:   !args.Descending,
 	}
@@ -169,7 +168,7 @@ func (s *repositoriesConnectionStore) MarshalCursor(node *RepositoryResolver, or
 	return &cursor, nil
 }
 
-func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, error) {
+func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) ([]any, error) {
 	repoCursor, err := UnmarshalRepositoryCursor(&cursor)
 	if err != nil {
 		return nil, err
@@ -184,40 +183,42 @@ func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy dat
 		return nil, errors.New(fmt.Sprintf("Invalid cursor. Expected: %s Actual: %s", column, repoCursor.Column))
 	}
 
-	csv := ""
 	values := strings.Split(repoCursor.Value, "@")
 	if len(values) != 2 {
 		return nil, errors.New(fmt.Sprintf("Invalid cursor. Expected Value: <%s>@<id> Actual Value: %s", column, repoCursor.Value))
 	}
 
+	repoID, err := strconv.Atoi(values[1])
+	if err != nil {
+		return nil, err
+	}
+
 	switch database.RepoListColumn(column) {
 	case database.RepoListName:
-		csv = fmt.Sprintf("'%v', %v", values[0], values[1])
+		return []any{values[0], repoID}, nil
 	case database.RepoListCreatedAt:
-		csv = fmt.Sprintf("%v, %v", values[0], values[1])
+		return []any{values[0], repoID}, nil
 	case database.RepoListSize:
-		csv = fmt.Sprintf("%v, %v", values[0], values[1])
+		return []any{values[0], repoID}, nil
 	default:
 		return nil, errors.New("Invalid OrderBy Field.")
 	}
-
-	return &csv, err
 }
 
-func (s *repositoriesConnectionStore) ComputeTotal(ctx context.Context) (countptr *int32, err error) {
+func (s *repositoriesConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	// 🚨 SECURITY: Only site admins can list all repos, because a total repository
 	// count does not respect repository permissions.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
-		return pointers.Ptr(int32(0)), nil
+		return 0, nil
 	}
 
 	// Counting repositories is slow on Sourcegraph.com. Don't wait very long for an exact count.
 	if envvar.SourcegraphDotComMode() {
-		return pointers.Ptr(int32(0)), nil
+		return 0, nil
 	}
 
 	count, err := s.db.Repos().Count(ctx, s.opt)
-	return pointers.Ptr(int32(count)), err
+	return int32(count), err
 }
 
 func (s *repositoriesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*RepositoryResolver, error) {

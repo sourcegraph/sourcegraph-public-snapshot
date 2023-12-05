@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 const DefaultMaxPageSize = 100
@@ -20,13 +21,13 @@ type ConnectionResolver[N any] struct {
 
 type ConnectionResolverStore[N any] interface {
 	// ComputeTotal returns the total count of all the items in the connection, independent of pagination arguments.
-	ComputeTotal(context.Context) (*int32, error)
+	ComputeTotal(context.Context) (int32, error)
 	// ComputeNodes returns the list of nodes based on the pagination args.
 	ComputeNodes(context.Context, *database.PaginationArgs) ([]N, error)
 	// MarshalCursor returns cursor for a node and is called for generating start and end cursors.
 	MarshalCursor(N, database.OrderBy) (*string, error)
-	// UnmarshalCursor returns node id from after/before cursor string.
-	UnmarshalCursor(string, database.OrderBy) (*string, error)
+	// UnmarshalCursor returns SQL values to be used in the query for fetching nodes based on cursor.
+	UnmarshalCursor(string, database.OrderBy) ([]any, error)
 }
 
 type ConnectionResolverArgs struct {
@@ -36,14 +37,23 @@ type ConnectionResolverArgs struct {
 	Before *string
 }
 
-// Limit returns max nodes limit based on resolver arguments.
-func (a *ConnectionResolverArgs) Limit(options *ConnectionResolverOptions) int {
-	var limit *int32
+func (c ConnectionResolverArgs) Validate() error {
+	if c.First != nil && c.Last != nil {
+		return errors.New("first and last cannot both be set")
+	}
+	if c.First == nil && c.Last == nil {
+		return errors.New("either first or last must be set")
+	}
 
+	return nil
+}
+
+// Limit returns max nodes limit based on resolver arguments.
+func (a *ConnectionResolverArgs) Limit(options *ConnectionResolverOptions) (limit int) {
 	if a.First != nil {
-		limit = a.First
-	} else {
-		limit = a.Last
+		limit = int(*a.First)
+	} else if a.Last != nil {
+		limit = int(*a.Last)
 	}
 
 	return options.ApplyMaxPageSize(limit)
@@ -51,7 +61,8 @@ func (a *ConnectionResolverArgs) Limit(options *ConnectionResolverOptions) int {
 
 type ConnectionResolverOptions struct {
 	// The maximum number of nodes that can be returned in a single page.
-	MaxPageSize *int
+	// If 0, will use DefaultMaxPageSize.
+	MaxPageSize int
 	// Used to enable or disable the automatic reversal of nodes in backward
 	// pagination mode.
 	//
@@ -73,30 +84,30 @@ type ConnectionResolverOptions struct {
 
 // MaxPageSizeOrDefault returns the configured max page limit for the connection.
 func (o *ConnectionResolverOptions) MaxPageSizeOrDefault() int {
-	if o.MaxPageSize != nil {
-		return *o.MaxPageSize
+	if o.MaxPageSize == 0 {
+		return DefaultMaxPageSize
 	}
 
-	return DefaultMaxPageSize
+	return o.MaxPageSize
 }
 
 // ApplyMaxPageSize return max page size by applying the configured max limit to the first, last arguments.
-func (o *ConnectionResolverOptions) ApplyMaxPageSize(limit *int32) int {
+func (o *ConnectionResolverOptions) ApplyMaxPageSize(limit int) int {
 	maxPageSize := o.MaxPageSizeOrDefault()
 
-	if limit == nil {
+	if limit == 0 {
 		return maxPageSize
 	}
 
-	if int(*limit) < maxPageSize {
-		return int(*limit)
+	if limit < maxPageSize {
+		return limit
 	}
 
 	return maxPageSize
 }
 
 type connectionData[N any] struct {
-	total      *int32
+	total      int32
 	totalError error
 
 	nodes      []N
@@ -158,11 +169,7 @@ func (r *ConnectionResolver[N]) TotalCount(ctx context.Context) (int32, error) {
 		r.data.total, r.data.totalError = r.store.ComputeTotal(ctx)
 	})
 
-	if r.data.total != nil {
-		return *r.data.total, r.data.totalError
-	}
-
-	return 0, r.data.totalError
+	return r.data.total, r.data.totalError
 }
 
 // Nodes returns value for connection.Nodes and is called by the graphql api.
@@ -282,6 +289,9 @@ func (p *ConnectionPageInfo[N]) StartCursor() (cursor *string, err error) {
 }
 
 // NewConnectionResolver returns a new connection resolver built using the store and connection args.
+// The default ordering applies is by id.
+// NOTE: If the entity this resolver paginates over doesn't have an id field, you
+// HAVE to provide options with OrderBy set.
 func NewConnectionResolver[N any](store ConnectionResolverStore[N], args *ConnectionResolverArgs, options *ConnectionResolverOptions) (*ConnectionResolver[N], error) {
 	if options == nil {
 		options = &ConnectionResolverOptions{OrderBy: database.OrderBy{{Field: "id"}}}
@@ -297,4 +307,97 @@ func NewConnectionResolver[N any](store ConnectionResolverStore[N], args *Connec
 		options: options,
 		data:    connectionData[N]{},
 	}, nil
+}
+
+type TB interface {
+	Fatal(args ...interface{})
+	Fatalf(format string, args ...interface{})
+}
+
+// TestConnectionResolverStoreSuite can be used in tests to verify that a ConnectionResolverStore
+// implements the interface correctly.
+// This test makes the following assumptions:
+// - There are at least 10 records total in the connection
+func TestConnectionResolverStoreSuite[N any](t TB, store ConnectionResolverStore[N]) {
+	ctx := context.Background()
+	total, err := store.ComputeTotal(ctx)
+	if err != nil {
+		t.Fatalf("failed to compute total: %v", err)
+	}
+	if total < 10 {
+		t.Fatalf("total is less than 10, please create at least 10 entities for this test suite. Have=%d", total)
+	}
+	// Basic case: Getting all without any limits works.
+	allNodes, err := store.ComputeNodes(ctx, &database.PaginationArgs{})
+	if err != nil {
+		t.Fatalf("failed to list all nodes: %v", err)
+	}
+	// Check that all nodes were actually returned.
+	if len(allNodes) != int(total) {
+		t.Fatal("wrong number of nodes returned. want=%d, have=%d", total, len(allNodes))
+	}
+
+	// Pagination tests:
+	// Check that first is properly working:
+	for i := 0; i < int(total); i++ {
+		page, err := store.ComputeNodes(ctx, &database.PaginationArgs{First: pointers.Ptr(i + 1)})
+		if err != nil {
+			t.Fatalf("failed to list page nodes: %v", err)
+		}
+		// Check that all nodes were actually returned.
+		if len(page) != i+1 {
+			t.Fatal("wrong number of nodes returned. want=%d, have=%d", i+1, len(allNodes))
+		}
+	}
+	// Check that last is properly working:
+	for i := 0; i < int(total); i++ {
+		page, err := store.ComputeNodes(ctx, &database.PaginationArgs{Last: pointers.Ptr(i + 1)})
+		if err != nil {
+			t.Fatalf("failed to list page nodes: %v", err)
+		}
+		// Check that all nodes were actually returned.
+		if len(page) != i+1 {
+			t.Fatal("wrong number of nodes returned. want=%d, have=%d", i+1, len(allNodes))
+		}
+	}
+	// Check that first with cursor is properly working:
+	currentCursor := []any{}
+	for i := 0; i < int(total); i++ {
+		page, err := store.ComputeNodes(ctx, &database.PaginationArgs{First: pointers.Ptr(1), After: currentCursor})
+		if err != nil {
+			t.Fatalf("failed to list page nodes: %v", err)
+		}
+		// Check that exactly one node was returned.
+		if len(page) != 1 {
+			t.Fatal("wrong number of nodes returned. want=%d, have=%d", 1, len(allNodes))
+		}
+		encodedCursor, err := store.MarshalCursor(page[0], nil)
+		if err != nil {
+			t.Fatalf("failed to marshal cursor: %v", err)
+		}
+		currentCursor, err = store.UnmarshalCursor(*encodedCursor, nil)
+		if err != nil {
+			t.Fatalf("failed to unmarshal cursor: %v", err)
+		}
+	}
+	// Check that last with cursor is properly working:
+	currentCursor = []any{}
+	for i := 0; i < int(total); i++ {
+		page, err := store.ComputeNodes(ctx, &database.PaginationArgs{Last: pointers.Ptr(1), Before: currentCursor})
+		if err != nil {
+			t.Fatalf("failed to list page nodes: %v", err)
+		}
+		// Check that exactly one node was returned.
+		if len(page) != 1 {
+			t.Fatal("wrong number of nodes returned. want=%d, have=%d", 1, len(allNodes))
+		}
+		encodedCursor, err := store.MarshalCursor(page[0], nil)
+		if err != nil {
+			t.Fatalf("failed to marshal cursor: %v", err)
+		}
+		currentCursor, err = store.UnmarshalCursor(*encodedCursor, nil)
+		if err != nil {
+			t.Fatalf("failed to unmarshal cursor: %v", err)
+		}
+	}
 }
