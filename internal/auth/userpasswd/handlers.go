@@ -142,7 +142,7 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 			"failIfNewUserIsNotInitialSiteAdmin": telemetry.MetadataBool(failIfNewUserIsNotInitialSiteAdmin),
 		},
 	})
-	// Legacy event
+	//lint:ignore SA1019 existing usage of deprecated functionality. TODO: Use only the new V2 event instead.
 	if err = usagestats.LogBackendEvent(db, usr.ID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 		logger.Warn("Failed to log event SignUpSucceeded", log.Error(err))
 	}
@@ -243,6 +243,8 @@ func unsafeSignUp(
 			return nil, http.StatusOK, nil
 		}
 		logger.Error("Error in user signup.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
+		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
+		//lint:ignore SA1019 existing usage of deprecated functionality.
 		if err = usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil); err != nil {
 			logger.Warn("Failed to log event SignUpFailed", log.Error(err))
 		}
@@ -480,6 +482,7 @@ func recordSignInSecurityEvent(r *http.Request, db database.DB, user *types.User
 
 	// Legacy event - TODO: Remove in 5.3, alongside the teestore.WithoutV1
 	// context.
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	_ = usagestats.LogBackendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil)
 }
 

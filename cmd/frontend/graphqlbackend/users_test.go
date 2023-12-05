@@ -377,6 +377,8 @@ func TestUsers_InactiveSince(t *testing.T) {
 			Name:      "testevent",
 			Source:    "test",
 		}
+
+		//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 		if err := db.EventLogs().Insert(ctx, event); err != nil {
 			t.Fatal(err)
 		}
