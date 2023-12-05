@@ -57,29 +57,6 @@ var (
 	gcpRegion = "us-central1"
 )
 
-// makeServiceEnvVarPrefix returns the env var prefix for service-specific
-// env vars that will be set on the Cloud Run service, i.e.
-//
-// - ${local.env_var_prefix}_BIGQUERY_PROJECT_ID
-// - ${local.env_var_prefix}_BIGQUERY_DATASET
-// - ${local.env_var_prefix}_BIGQUERY_TABLE
-//
-// The prefix is an all-uppercase underscore-delimited version of the service ID,
-// for example:
-//
-//	cody-gateway
-//
-// The prefix for various env vars will be:
-//
-//	CODY_GATEWAY_
-//
-// Note that some variables conforming to conventions like DIAGNOSTICS_SECRET,
-// GOOGLE_PROJECT_ID, and REDIS_ENDPOINT do not get prefixed, and custom env
-// vars configured on an environment are not automatically prefixed either.
-func makeServiceEnvVarPrefix(serviceID string) string {
-	return strings.ToUpper(strings.ReplaceAll(serviceID, "-", "_")) + "_"
-}
-
 const tfVarKeyResolvedImageTag = "resolved_image_tag"
 
 // NewStack instantiates the MSP cloudrun stack, which is currently a pretty
@@ -101,11 +78,6 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		return nil, err
 	}
 
-	// Set up a service-specific env var prefix to avoid conflicts where relevant
-	serviceEnvVarPrefix := pointers.Deref(
-		vars.Service.EnvVarPrefix,
-		makeServiceEnvVarPrefix(vars.Service.ID))
-
 	diagnosticsSecret := random.New(stack, resourceid.New("diagnostics-secret"), random.Config{
 		ByteLength: 8,
 	})
@@ -122,16 +94,10 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	}
 
 	// Required to enable tracing etc.
-	//
-	// We don't use serviceEnvVarPrefix here because this is a
-	// convention to indicate the environment's project.
 	cloudRunBuilder.AddEnv("GOOGLE_CLOUD_PROJECT", vars.ProjectID)
 
 	// Set up secret that service should accept for diagnostics
 	// endpoints.
-	//
-	// We don't use serviceEnvVarPrefix here because this is a
-	// convention across MSP services.
 	cloudRunBuilder.AddEnv("DIAGNOSTICS_SECRET", diagnosticsSecret.HexValue)
 
 	// Add the domain as an environment variable.
@@ -190,8 +156,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			return nil, errors.Wrap(err, "failed to render Redis instance")
 		}
 
-		// We don't use serviceEnvVarPrefix here because this is a
-		// Sourcegraph-wide convention.
+		// Configure endpoint string.
 		cloudRunBuilder.AddEnv("REDIS_ENDPOINT", redisInstance.Endpoint)
 
 		// Mount the custom cert and add it to SSL_CERT_DIR
@@ -249,17 +214,25 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 
 	// bigqueryDataset is only created and non-nil if BigQuery is configured for
 	// the environment.
-	if vars.Environment.Resources != nil && vars.Environment.Resources.BigQueryTable != nil {
+	if vars.Environment.Resources != nil && vars.Environment.Resources.BigQueryDataset != nil {
 		bigqueryDataset, err := bigquery.New(stack, resourceid.New("bigquery"), bigquery.Config{
-			DefaultProjectID: vars.ProjectID,
-			Spec:             *vars.Environment.Resources.BigQueryTable,
+			DefaultProjectID:       vars.ProjectID,
+			ServiceID:              vars.Service.ID,
+			WorkloadServiceAccount: vars.CloudRunWorkloadServiceAccount,
+			Spec:                   *vars.Environment.Resources.BigQueryDataset,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render BigQuery dataset")
 		}
-		cloudRunBuilder.AddEnv(serviceEnvVarPrefix+"BIGQUERY_PROJECT_ID", bigqueryDataset.ProjectID)
-		cloudRunBuilder.AddEnv(serviceEnvVarPrefix+"BIGQUERY_DATASET", bigqueryDataset.Dataset)
-		cloudRunBuilder.AddEnv(serviceEnvVarPrefix+"BIGQUERY_TABLE", bigqueryDataset.Table)
+
+		// Add parameters required for writing to the correct BigQuery dataset
+		cloudRunBuilder.AddEnv("BIGQUERY_PROJECT_ID", bigqueryDataset.ProjectID)
+		cloudRunBuilder.AddEnv("BIGQUERY_DATASET_ID", bigqueryDataset.DatasetID)
+
+		// Make sure tables are available before Cloud Run
+		for _, t := range bigqueryDataset.Tables {
+			cloudRunBuilder.AddDependency(t)
+		}
 	}
 
 	// Finalize output of builder

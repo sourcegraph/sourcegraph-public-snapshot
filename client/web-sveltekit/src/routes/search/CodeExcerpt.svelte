@@ -73,6 +73,18 @@
                 </table>
             {/key}
         {/await}
+    {:else}
+        <!--create empty space to fill viewport to avoid layout shifts -->
+        <table>
+            <tbody>
+                {#each range(startLine, endLine) as index}
+                    <tr>
+                        <td class="line" data-line={index + 1} />
+                        <td class="code" />
+                    </tr>
+                {/each}
+            </tbody>
+        </table>
     {/if}
 </code>
 

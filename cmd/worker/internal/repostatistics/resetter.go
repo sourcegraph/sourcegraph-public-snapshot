@@ -65,11 +65,9 @@ var _ goroutine.Handler = &resetterHandler{}
 func (h *resetterHandler) Handle(ctx context.Context) error {
 	// We only run this handler once a week, Sunday morning between 2:00 and
 	// 2:30 UTC, because it might run for 2-3 minutes.
-	//
-	// TODO: We're trying to run this on Monday, for testing purposes
 	now := time.Now().UTC()
-	isSunday := now.Weekday() == time.Monday
-	isBetween2And230 := now.Hour() == 13 && now.Minute() < 30
+	isSunday := now.Weekday() == time.Sunday
+	isBetween2And230 := now.Hour() == 2 && now.Minute() < 30
 
 	if !isSunday || !isBetween2And230 {
 		h.logger.Debug("Skipping deleting and recreating statistics; not Sunday between 2-2:30 UTC")

@@ -3,6 +3,7 @@ package featurelimiter
 import (
 	"context"
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/internal/authbearer"
 	"net/http"
 	"strings"
 	"time"
@@ -71,7 +72,7 @@ func extractFeature(r *http.Request) (codygateway.Feature, error) {
 	return codygateway.Feature(feature), nil
 }
 
-// Handle uses a predefined feature to determine the appropriate per-feature
+// HandleFeature uses a predefined feature to determine the appropriate per-feature
 // rate limits applied for an actor.
 func HandleFeature(
 	baseLogger log.Logger,
@@ -154,7 +155,7 @@ func HandleFeature(
 }
 
 // ListLimitsHandler returns a map of all features and their current rate limit usages.
-func ListLimitsHandler(baseLogger log.Logger, eventLogger events.Logger, redisStore limiter.RedisStore) http.Handler {
+func ListLimitsHandler(baseLogger log.Logger, redisStore limiter.RedisStore) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
 		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
@@ -164,7 +165,7 @@ func ListLimitsHandler(baseLogger log.Logger, eventLogger events.Logger, redisSt
 		// Iterate over all features.
 		for _, f := range codygateway.AllFeatures {
 			// Get the limiter, but don't log any rate limit events, the only limits enforced
-			// here are concurrency limits and we should not care about those.
+			// here are concurrency limits, and we should not care about those.
 			l, ok := act.Limiter(logger, redisStore, f, noopRateLimitNotifier)
 			if !ok {
 				response.JSONError(logger, w, http.StatusForbidden, errors.Newf("no access to feature %s", f))
@@ -209,6 +210,23 @@ func ListLimitsHandler(baseLogger log.Logger, eventLogger events.Logger, redisSt
 	})
 }
 
+func RefreshLimitsHandler(baseLogger log.Logger, sources *actor.Sources) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		act := actor.FromContext(r.Context())
+		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
+
+		token, err := authbearer.ExtractBearer(r.Header)
+		if err != nil {
+			response.JSONError(logger, w, http.StatusBadRequest, err)
+		}
+
+		err = sources.SyncOne(r.Context(), token)
+		if err != nil {
+			response.JSONError(logger, w, http.StatusBadRequest, err)
+		}
+	})
+}
+
 type listLimitElement struct {
 	Limit         int64      `json:"limit"`
 	Interval      string     `json:"interval"`
@@ -217,6 +235,6 @@ type listLimitElement struct {
 	AllowedModels []string   `json:"allowedModels"`
 }
 
-func noopRateLimitNotifier(ctx context.Context, actor codygateway.Actor, feature codygateway.Feature, usageRatio float32, ttl time.Duration) {
+func noopRateLimitNotifier(_ context.Context, _ codygateway.Actor, _ codygateway.Feature, _ float32, _ time.Duration) {
 	// nothing
 }

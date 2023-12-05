@@ -8,6 +8,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
@@ -19,10 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const (
-	stateCookie         = "azure-state-cookie"
-	urnAzureDevOpsOAuth = "AzureDevOpsOAuth"
-)
+const urnAzureDevOpsOAuth = "AzureDevOpsOAuth"
 
 type sessionIssuerHelper struct {
 	*extsvc.CodeHost
@@ -85,10 +83,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	return newUserCreated, actor.FromUser(userID), "", nil
 }
 
-func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {
-	stateConfig := oauth.GetStateConfig(stateCookie)
-	stateConfig.MaxAge = -1
-	http.SetCookie(w, oauth.NewCookie(stateConfig, ""))
+func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter, r *http.Request) {
+	session.SetData(w, r, "oauthState", "")
 }
 
 func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData {

@@ -1229,7 +1229,7 @@
       "minimum": 1
     },
     "branding": {
-      "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
+      "description": "Customize Sourcegraph homepage logo and search icon.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -1992,6 +1992,13 @@
           "description": "The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.",
           "type": "integer",
           "default": 0
+        },
+        "minimumExternalAccountAgeExemptList": {
+          "description": "A list of email addresses that are allowed to be exempted from the minimumExternalAccountAge requirement.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "app.notifications": {
           "description": "Notifications to display in the Sourcegraph app.",

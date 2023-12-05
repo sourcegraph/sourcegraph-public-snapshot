@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -26,10 +27,15 @@ func FromSearchClient(client client.SearchClient) NewSearcher {
 			return nil, err
 		}
 
-		// TODO this hack is an ugly workaround to get the plan and jobs to
-		// get into a shape we like. it will break in bad ways but works for
-		// EAP.
-		q = "type:file index:no " + q
+		// We run queries on searcher only which makes it easier to control limits. Low
+		// latency is not a priority of Search Jobs.
+		q = "index:no " + q
+
+		// TODO this hack is an ugly workaround to limit searches to type:file only.
+		// This is OK for the EAP but we should remove the limitation soon.
+		if !strings.Contains(q, "type:file") {
+			q = "type:file " + q
+		}
 
 		inputs, err := client.Plan(
 			ctx,
