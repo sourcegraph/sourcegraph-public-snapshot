@@ -126,7 +126,7 @@ export function VSCodeInstructions({
             {step === 1 && (
                 <>
                     <div className="mb-3 pb-3 border-bottom">
-                        <H2>Using Cody on VS Code</H2>
+                        <H2>Cody Features</H2>
                     </div>
                     <div className="d-flex">
                         <div className="flex-1 p-3 border-right d-flex flex-column justify-content-center align-items-center">

@@ -1,21 +1,27 @@
 .modal {
     width: 54rem;
     border-width: 1px;
-    border-image: conic-gradient(rgba(112, 72, 232, 0.2), rgba(74, 193, 232, 0.2), rgba(77, 11, 121, 0.2), rgba(255, 85, 67, 0.2), rgba(112, 72, 232, 0.2)) 1;
+    background-image: repeating-conic-gradient(rgba(112, 72, 232, 0.5) 50%, rgba(0, 203, 236, 0.5) 75%, rgba(161, 18, 255, 0.5) 100%, rgba(255, 85, 67, 0.5) 125%, rgba(112, 72, 232, 0.5) 150%);
+    background-origin: border-box;
+
+    /* to allow a gradient strole, this is actually de color for the background*/
+    box-shadow: inset 0 100vw var(--theme-bg-plain);
 
     /* to let gradient shadow be behind the modal*/
     transform-style: preserve-3d;
+    border: 1px solid transparent;
+    border-radius:6px;
 }
 
 .modal::after{
     content: '';
     position:absolute;
     width: 90%;
-    height:25px;
+    height:45px;
     background: linear-gradient(90deg, #7048E8 0%, #4AC1E8 32.21%, #4D0B79 65.39%, #FF5543 104.43%), #EFF2F5;
-    transform: translateZ(-1px);
+    transform: translateZ(-1px) ;
     filter: blur(30px);
-    opacity: 0.7;
+    opacity: 0.9;
     animation: modal-shadow 6s ease-in-out infinite;
 }
 
@@ -23,15 +29,15 @@
 @keyframes modal-shadow {
     0% {
         transform: translatey(0px) translateZ(-1px);
-        opacity: 0.2;
+        opacity: 0.3;
     }
     50% {
         transform: translatey(-25px) translateZ(-1px);
-        opacity: 0.9;
+        opacity: 0.7;
     }
     100% {
         transform: translatey(0px) translateZ(-1px);
-        opacity: 0.2;
+        opacity: 0.3;
     }
 }
 
@@ -39,17 +45,23 @@
 
 @media (prefers-color-scheme: dark) {
     [data-reach-dialog-overlay] {
-        background: linear-gradient(180deg, rgba(17, 20, 27, 0.95) 0%, rgba(13, 16, 25, 0.92) 100%);
+        background: linear-gradient(180deg, rgba(17, 20, 27, 0.92) 0%, rgba(13, 16, 25, 0.92) 100%);
+        backdrop-filter: blur(7px);
     }
 
     .highlight-step {
-        background: radial-gradient(50% 100% at 50% 100%, var(--gray-09) 0%, transparent 100%)
+        background: radial-gradient(50% 100% at 50% 100%, var(--gray-09) 0%, transparent 100%);
+    }
+
+    .modal {
+        background-image: repeating-conic-gradient(rgba(112, 72, 232, 0.3) 50%, rgba(0, 203, 236, 0.3) 75%, rgba(161, 18, 255, 0.5) 100%, rgba(255, 85, 67, 0.3) 125%, #7048E8 150%);
     }
 }
 
 @media (prefers-color-scheme: light) {
     [data-reach-dialog-overlay] {
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(244, 244, 244, 0.9) 100%);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(244, 244, 244, 0.9) 100%);
+        backdrop-filter: blur(7px);
     }
 
     .highlight-step {
@@ -100,3 +112,78 @@
     font-size: 1rem;
 }
 
+
+/* Initial welcome*/
+
+.welcome-title {
+    font-size: 2rem;
+    font-weight: 500;
+    letter-spacing: -0.2px;
+}
+
+.welcome-subtitle{
+    font-size: 1.1rem;
+    font-weight: 300;
+}
+
+
+.fade-in {
+    animation: 2.5s fadeInUp;
+}
+
+.fade-first{
+    animation-delay:3s;
+    opacity: 0;
+    /* to keep opacity*/
+    animation-fill-mode: forwards;
+
+}
+
+.fade-second{
+    animation-delay:3.2s;
+    opacity: 0;
+    /* to keep opacity*/
+    animation-fill-mode: forwards;
+
+}
+
+.fade-third{
+    animation-delay:4s;
+    opacity: 0;
+
+    /* to keep opacity*/
+    animation-fill-mode: forwards;
+
+}
+
+.welcome-video {
+    animation: 2.5s moveUp 3s;
+    transform: translateY(70%);
+    animation-fill-mode: forwards;
+}
+
+
+@keyframes moveUp {
+    0% {
+        transform: translateY(70%);
+    }
+    100% {
+        transform: translateY(0%);
+    }
+}
+
+
+@keyframes fadeInUp {
+    0% {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0%);
+        opacity: 1;
+    }
+}
+
+.fadeInUp-animation {
+    animation: 1.5s fadeInUp;
+}
