@@ -109,9 +109,6 @@ oci_tarball(
 
 genrule(
     name = "scip_java_groundtruth_scip",
-    env_inherit = [
-        "DOCKER_HOST",
-    ],
     srcs = [
         "testdata/stuff.sh",
         ":scip_java_image_tarball",
