@@ -256,7 +256,7 @@ var planDetails = map[Plan]PlanDetails{
 		},
 	},
 	PlanCodeSearch: {
-		DisplayName: "PlanCodeSearch",
+		DisplayName: "Sourcegraph Code Search",
 		Features: []Feature{
 			FeatureSSO,
 			FeatureACLs,
@@ -269,7 +269,7 @@ var planDetails = map[Plan]PlanDetails{
 		},
 	},
 	PlanCIP: {
-		DisplayName: "PlanCIP",
+		DisplayName: "Sourcegraph Code Intelligence Platform",
 		Features: []Feature{
 			FeatureSSO,
 			FeatureACLs,
@@ -294,7 +294,7 @@ var planDetails = map[Plan]PlanDetails{
 		},
 	},
 	PlanCodeAIPro: {
-		DisplayName: "PlanCodeAIPro",
+		DisplayName: "Code AI Pro",
 		Features: []Feature{
 			FeatureSSO,
 			FeatureACLs,
@@ -306,7 +306,7 @@ var planDetails = map[Plan]PlanDetails{
 		},
 	},
 	PlanCodyEnterprise: {
-		DisplayName: "PlanCodyEnterprise",
+		DisplayName: "Cody Enterprise",
 		Features: []Feature{
 			FeatureSSO,
 			FeatureACLs,
@@ -316,7 +316,7 @@ var planDetails = map[Plan]PlanDetails{
 		},
 	},
 	PlanCodeSearchEnterprise: {
-		DisplayName: "PlanCodeSearchEnterprise",
+		DisplayName: "Code Search Enterprise",
 		Features: []Feature{
 			FeatureSSO,
 			FeatureACLs,
@@ -330,7 +330,7 @@ var planDetails = map[Plan]PlanDetails{
 		},
 	},
 	PlanCodeAIEnterprise: {
-		DisplayName: "PlanCodeAIEnterprise",
+		DisplayName: "Code AI Enterprise",
 		Features: []Feature{
 			FeatureSSO,
 			FeatureACLs,
