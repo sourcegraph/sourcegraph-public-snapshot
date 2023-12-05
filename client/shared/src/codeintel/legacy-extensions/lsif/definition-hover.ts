@@ -33,8 +33,11 @@ const definitionAndHoverQuery = gql`
         $character: Int!
     ) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
+                id
                 blob(path: $path) {
+                    canonicalURL
                     lsif {
                         definitions(line: $line, character: $character) {
                             nodes {

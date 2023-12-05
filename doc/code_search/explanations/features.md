@@ -32,13 +32,13 @@ Searching for symbols makes it easier to find specific functions, variables, and
 
 ## Smart Search
 
-Smart Search helps find search results that are likely to be more useful than showing "no results" by trying slight variations of a user's original query. Smart Search automatically tries alternative queries based on a handful of rules (we know how easy it is to get tripped up by query syntax). When a query alternative finds results, those results are shown immediately. Smart Search is activated by toggling the lightning bolt <span style="display:inline-flex; vertical-align:middle; margin:2px"><img style="width:20px; height:20px" src="https://storage.googleapis.com/sourcegraph-assets/about.sourcegraph.com/blog/2022/smart-search-bar-lightning.png"/></span> in the search bar, and is on by default. Smart Search is only enabled in the web application and its results view (Search APIs remain the same and are unaffected).
+Smart Search helps find search results that are likely to be more useful than showing "no results" by trying slight variations of a user's original query. Smart Search automatically tries alternative queries based on a handful of rules (we know how easy it is to get tripped up by query syntax). When a query alternative finds results, those results are shown immediately. Smart Search is activated by toggling the lightning bolt <span style="display:inline-flex; vertical-align:middle; margin:2px"><img style="width:20px; height:20px" src="https://storage.googleapis.com/sourcegraph-assets/sourcegraph.com/blog/2022/smart-search-bar-lightning.png"/></span> in the search bar, and is on by default. Smart Search is only enabled in the web application and its results view (Search APIs remain the same and are unaffected).
 
 ### Example
 
 Take a query like `go buf byte parser`, for example. Normally, Sourcegraph will search for the string "go buf byte parser" with those tokens in that order. If there are **_no_** results, Smart Search attempts variations of the query. One rule applies a `lang:` filter to known languages. For example, `go` may refer to the `Go` language, so we convert this token to a `lang:Go` filter. Another rule relaxes the ordering on remaining tokens so that we search for `buf AND byte AND parser` anywhere in the file. Here's an example of what Smart Search looks like in action:
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/about.sourcegraph.com/blog/2022/smart-search-example.png" alt="Smart Search example"/>
+<img src="https://storage.googleapis.com/sourcegraph-assets/sourcegraph.com/blog/2022/smart-search-example.png" alt="Smart Search example"/>
 <br />
 
 Note that if the original query finds results (which depends on the code it runs on), Smart Search has no effect. Smart Search does not otherwise intervene or interfere with search queries if those queries return results, and Sourcegraph behaves as usual.

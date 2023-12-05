@@ -71,7 +71,7 @@ pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
             "clear_all_data" => prompt_to_clear_all_data(app),
 
             "about" => {
-                shell::open(&app.shell_scope(), "https://about.sourcegraph.com", None)
+                shell::open(&app.shell_scope(), "https://sourcegraph.com", None)
                     .unwrap_or_else(|e| eprintln!("Failed to open URL: {:?}", e));
             }
             "restart" => app.restart(),

@@ -59,31 +59,6 @@ const (
 	// setting repository permissions.
 	FeatureExplicitPermissionsAPI BasicFeature = "explicit-permissions-api"
 
-	// FeatureExtensionRegistry is whether publishing extensions to this Sourcegraph instance has been
-	// purchased. If not, then extensions must be published to Sourcegraph.com. All instances may use
-	// extensions published to Sourcegraph.com.
-	FeatureExtensionRegistry BasicFeature = "private-extension-registry"
-
-	// FeatureRemoteExtensionsAllowDisallow is whether explicitly specify a list of allowed remote
-	// extensions and prevent any other remote extensions from being used has been purchased. It
-	// does not apply to locally published extensions.
-	FeatureRemoteExtensionsAllowDisallow BasicFeature = "remote-extensions-allow-disallow"
-
-	// FeatureBranding is whether custom branding of this Sourcegraph instance has been purchased.
-	FeatureBranding BasicFeature = "branding"
-
-	// FeatureCampaigns is whether campaigns (now: batch changes) on this Sourcegraph instance has been purchased.
-	//
-	// DEPRECATED: See FeatureBatchChanges.
-	FeatureCampaigns BasicFeature = "campaigns"
-
-	// FeatureMonitoring is whether monitoring on this Sourcegraph instance has been purchased.
-	FeatureMonitoring BasicFeature = "monitoring"
-
-	// FeatureBackupAndRestore is whether builtin backup and restore on this Sourcegraph instance
-	// has been purchased.
-	FeatureBackupAndRestore BasicFeature = "backup-and-restore"
-
 	// FeatureCodeInsights is whether Code Insights on this Sourcegraph instance has been purchased.
 	FeatureCodeInsights BasicFeature = "code-insights"
 
@@ -110,12 +85,6 @@ var AllFeatures = []Feature{
 	FeatureSSO,
 	FeatureACLs,
 	FeatureExplicitPermissionsAPI,
-	FeatureExtensionRegistry,
-	FeatureRemoteExtensionsAllowDisallow,
-	FeatureBranding,
-	FeatureCampaigns,
-	FeatureMonitoring,
-	FeatureBackupAndRestore,
 	FeatureCodeInsights,
 	&FeatureBatchChanges{},
 	FeatureSCIM,
@@ -145,14 +114,8 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			FeatureACLs,
 			FeatureExplicitPermissionsAPI,
-			FeatureExtensionRegistry,
-			FeatureRemoteExtensionsAllowDisallow,
-			FeatureBranding,
-			FeatureCampaigns,
 			&FeatureBatchChanges{Unrestricted: true},
 			&FeaturePrivateRepositories{Unrestricted: true},
-			FeatureMonitoring,
-			FeatureBackupAndRestore,
 			FeatureCodeInsights,
 			FeatureSCIM,
 			FeatureCody,
@@ -191,7 +154,6 @@ var planDetails = map[Plan]PlanDetails{
 	PlanBusiness0: {
 		Features: []Feature{
 			FeatureACLs,
-			FeatureCampaigns,
 			&FeatureBatchChanges{Unrestricted: true},
 			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureCodeInsights,
@@ -206,7 +168,6 @@ var planDetails = map[Plan]PlanDetails{
 	PlanEnterprise1: {
 		Features: []Feature{
 			FeatureACLs,
-			FeatureCampaigns,
 			FeatureCodeInsights,
 			&FeatureBatchChanges{Unrestricted: true},
 			&FeaturePrivateRepositories{Unrestricted: true},
@@ -222,7 +183,6 @@ var planDetails = map[Plan]PlanDetails{
 	PlanEnterpriseExtension: {
 		Features: []Feature{
 			FeatureACLs,
-			FeatureCampaigns,
 			FeatureCodeInsights,
 			&FeatureBatchChanges{Unrestricted: true},
 			&FeaturePrivateRepositories{Unrestricted: true},
@@ -238,7 +198,6 @@ var planDetails = map[Plan]PlanDetails{
 	PlanFree0: {
 		Features: []Feature{
 			FeatureSSO,
-			FeatureMonitoring,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureCodeMonitors,
@@ -248,7 +207,6 @@ var planDetails = map[Plan]PlanDetails{
 	},
 	PlanFree1: {
 		Features: []Feature{
-			FeatureMonitoring,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
 			FeatureCodeMonitors,
@@ -259,7 +217,6 @@ var planDetails = map[Plan]PlanDetails{
 	PlanAirGappedEnterprise: {
 		Features: []Feature{
 			FeatureACLs,
-			FeatureCampaigns,
 			FeatureCodeInsights,
 			&FeatureBatchChanges{Unrestricted: true},
 			&FeaturePrivateRepositories{Unrestricted: true},
