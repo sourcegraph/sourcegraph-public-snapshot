@@ -32,7 +32,7 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 				return customModel, nil
 			}
 			if requestParams.Model != "" {
-				return "", errors.Newf("Unsupported chat model %q", requestParams.Model)
+				return "", errors.Newf("Unsupported code completion model %q", requestParams.Model)
 			}
 			return c.CompletionModel, nil
 		},
