@@ -2,7 +2,7 @@
 source: crates/scip-treesitter-cli/tests/evaluation_test.rs
 expression: "String::from_utf8(str).unwrap()"
 ---
-{"precision_percent":100.0,"recall_percent":45.080093,"true_positives":39.4,"false_positives":0.0,"false_negatives":48.0}
+{"precision_percent":"100.0","recall_percent":"45.1","true_positives":"39.4","false_positives":"0.0","false_negatives":"48.0"}
 
 False negatives (FN): 48
 [FN] src/main/java/Main.java: L0 C8 -- semanticdb maven . . com/

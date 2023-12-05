@@ -25,7 +25,7 @@ lazy_static::lazy_static! {
     static ref SCIP_JAVA_INDEX: PathBuf = {
         match std::env::var("SCIP_JAVA_INDEX") {
             Ok(va) => std::env::current_dir().unwrap().join(va),
-            _ => todo!("This needs to be fixed to work without bazel")
+            _ => BASE.join("testdata/java/index.scip")
         }
     };
 

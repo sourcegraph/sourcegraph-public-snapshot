@@ -11,6 +11,7 @@ use anyhow::*;
 use colored::{Color, ColoredString, Colorize};
 use scip::types::Index;
 use scip_treesitter::types::PackedRange;
+use serde::Serializer;
 use string_interner::{symbol::SymbolU32, StringInterner, Symbol};
 
 use crate::{io::read_index_from_file, progress::*};
@@ -138,12 +139,24 @@ pub struct EvaluationOutputOptions {
     pub disable_colors: bool,
 }
 
+fn round_serialize<S>(x: &f32, s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    s.serialize_str(format!("{:.1}", x).as_str())
+}
+
 #[derive(serde::Serialize, Debug)]
 pub struct EvaluationSummary {
+    #[serde(serialize_with = "round_serialize")]
     pub precision_percent: f32,
+    #[serde(serialize_with = "round_serialize")]
     pub recall_percent: f32,
+    #[serde(serialize_with = "round_serialize")]
     pub true_positives: f32,
+    #[serde(serialize_with = "round_serialize")]
     pub false_positives: f32,
+    #[serde(serialize_with = "round_serialize")]
     pub false_negatives: f32,
 }
 
