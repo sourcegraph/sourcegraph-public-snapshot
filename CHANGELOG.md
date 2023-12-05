@@ -61,6 +61,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed an issue where updating a generic git code host would cause it to become unrestricted if permissions user mapping is enabled. [#58772](https://github.com/sourcegraph/sourcegraph/pull/58772)
+
 ### Changed
 
 ### Removed
