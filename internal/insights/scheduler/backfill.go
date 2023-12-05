@@ -379,11 +379,11 @@ func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQ
 	// therefore we can't use the where clause it generates.  Below builds the correct where from the before or after
 	// from the cursor
 
-	if pagination.After != nil {
-		where = append(where, sqlf.Sprintf("isb.id > %s", *pagination.After))
+	if len(pagination.After) > 0 {
+		where = append(where, sqlf.Sprintf("isb.id > %s", pagination.After[0].(int32)))
 	}
-	if pagination.Before != nil {
-		where = append(where, sqlf.Sprintf(" isb.id < %s", *pagination.Before))
+	if len(pagination.Before) > 0 {
+		where = append(where, sqlf.Sprintf("isb.id < %s", pagination.Before[0].(int32)))
 	}
 	query := sqlf.Sprintf(backfillQueueSQL, sqlf.Sprintf("WHERE %s", sqlf.Join(where, " AND ")))
 	query = p.AppendOrderToQuery(query)

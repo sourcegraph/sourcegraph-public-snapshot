@@ -221,15 +221,13 @@ type repoMetaKeysConnectionStore struct {
 	listOptions database.RepoKVPListKeysOptions
 }
 
-func (s *repoMetaKeysConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *repoMetaKeysConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	count, err := s.db.RepoKVPs().CountKeys(ctx, s.listOptions)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	totalCount := int32(count)
-
-	return &totalCount, nil
+	return int32(count), nil
 }
 
 func (s *repoMetaKeysConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]string, error) {
@@ -242,13 +240,12 @@ func (s *repoMetaKeysConnectionStore) MarshalCursor(node string, _ database.Orde
 	return &cursor, nil
 }
 
-func (s *repoMetaKeysConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *repoMetaKeysConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
 	var value string
 	if err := relay.UnmarshalSpec(graphql.ID(cursor), &value); err != nil {
 		return nil, err
 	}
-	value = fmt.Sprintf("'%v'", value)
-	return &value, nil
+	return []any{value}, nil
 }
 
 func (r *repoMetaResolver) Key(ctx context.Context, args *struct{ Key string }) (*repoMetaKeyResolver, error) {
@@ -296,15 +293,13 @@ type repoMetaValuesConnectionStore struct {
 	listOptions database.RepoKVPListValuesOptions
 }
 
-func (s *repoMetaValuesConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *repoMetaValuesConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	count, err := s.db.RepoKVPs().CountValues(ctx, s.listOptions)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	totalCount := int32(count)
-
-	return &totalCount, nil
+	return int32(count), nil
 }
 
 func (s *repoMetaValuesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]string, error) {
@@ -317,11 +312,10 @@ func (s *repoMetaValuesConnectionStore) MarshalCursor(node string, _ database.Or
 	return &cursor, nil
 }
 
-func (s *repoMetaValuesConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *repoMetaValuesConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
 	var value string
 	if err := relay.UnmarshalSpec(graphql.ID(cursor), &value); err != nil {
 		return nil, err
 	}
-	value = fmt.Sprintf("'%v'", value)
-	return &value, nil
+	return []any{value}, nil
 }
