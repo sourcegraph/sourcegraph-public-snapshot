@@ -26,6 +26,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
+import { SHOW_BUSINESS_FEATURES } from '../enterprise/dotcom/productSubscriptions/features'
 import { canReadLicenseManagement } from '../rbac/check'
 import { useV2QueryInput } from '../search/useV2QueryInput'
 import { enableDevSettings, isSourcegraphDev, useDeveloperSettings } from '../stores'
@@ -226,7 +227,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     Site admin
                                 </MenuLink>
                             )}
-                            {canReadLicenseManagement(authenticatedUser) && (
+                            {SHOW_BUSINESS_FEATURES && canReadLicenseManagement(authenticatedUser) && (
                                 <MenuLink as={Link} to="/license-admin/product/subscriptions">
                                     License Management
                                 </MenuLink>

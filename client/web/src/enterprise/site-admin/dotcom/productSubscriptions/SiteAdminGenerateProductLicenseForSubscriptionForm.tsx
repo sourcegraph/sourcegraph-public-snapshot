@@ -4,7 +4,7 @@ import { mdiChatQuestionOutline } from '@mdi/js'
 import classNames from 'classnames'
 import addDays from 'date-fns/addDays'
 import endOfDay from 'date-fns/endOfDay'
-import { noop } from 'lodash'
+import _, { noop } from 'lodash'
 
 import { useMutation } from '@sourcegraph/http-client'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -325,7 +325,15 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                                 <option value="" disabled={true}>
                                     Select a plan
                                 </option>
-                                {ALL_PLANS.map(plan => (
+                                {ALL_PLANS.filter(plan => !plan.deprecated).map(plan => (
+                                    <option key={plan.label} value={plan.label}>
+                                        {plan.name}
+                                    </option>
+                                ))}
+                                <option value="" disabled={true}>
+                                    Deprecated plans
+                                </option>
+                                {ALL_PLANS.filter(plan => plan.deprecated).map(plan => (
                                     <option key={plan.label} value={plan.label}>
                                         {plan.name}
                                     </option>

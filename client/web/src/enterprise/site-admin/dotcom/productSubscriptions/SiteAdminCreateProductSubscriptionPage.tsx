@@ -152,7 +152,6 @@ export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
     )
 }
 
-// TODO: Not allowed on dotcom for license-management users.
 function queryAccounts(
     args: Partial<ProductSubscriptionAccountsVariables>
 ): Observable<ProductSubscriptionAccountsResult['users']> {
