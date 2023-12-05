@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package grpc.example.weather.v1;
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/grpc/example/weather/v1";
+
+// The weather service definition.
+service WeatherService {
+  // Unary RPC: Get current weather for a location.
+  rpc GetCurrentWeather(LocationRequest) returns (WeatherResponse) {}
+
+  // Server Streaming RPC: Subscribe to severe weather alerts.
+  rpc SubscribeWeatherAlerts(AlertRequest) returns (stream AlertResponse) {}
+
+  // Client Streaming RPC: Send weather data from sensors.
+  rpc UploadWeatherData(stream SensorData) returns (UploadStatus) {}
+
+  // Bidirectional Streaming RPC: Real-time weather updates.
+  rpc RealTimeWeather(stream LocationUpdate) returns (stream WeatherResponse) {}
+}
+
+// Request and response messages.
+message LocationRequest {
+  string location = 1;
+}
+
+message WeatherResponse {
+  string description = 1;
+  double temperature = 2;
+  // Additional fields can be added here.
+}
+
+message AlertRequest {
+  string region = 1;
+}
+
+message AlertResponse {
+  string alert = 1;
+  // Additional fields can be added here.
+}
+
+message SensorData {
+  string sensorId = 1;
+  double temperature = 2;
+  double humidity = 3;
+  // Additional sensor data fields.
+}
+
+message UploadStatus {
+  string message = 1;
+}
+
+message LocationUpdate {
+  string location = 1;
+}

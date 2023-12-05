@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "server_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/example/server",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//internal/grpc/example/weather/v1:weather",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+go_binary(
+    name = "server",
+    embed = [":server_lib"],
+    visibility = ["//:__subpackages__"],
+)
