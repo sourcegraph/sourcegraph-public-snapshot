@@ -95,6 +95,9 @@ func bazelPublishExecutorBinary(c Config) operations.Operation {
 			bk.Agent("queue", "bazel"),
 			bk.Env("VERSION", c.Version),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
+			// We need this while we're running this on our own bazel CI agents, as it seems that a
+			// bazel run doesn't always build everything it needs for that run command.
+			// This doesn't happen on aspect workflows CI agents.
 			bk.Cmd(bazelCmd(`build //cmd/executor:executor`)),
 			bk.Cmd(bazelStampedCmd(`run //cmd/executor:publish_binary`)),
 		}

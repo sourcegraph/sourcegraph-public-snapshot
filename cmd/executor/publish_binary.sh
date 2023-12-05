@@ -29,7 +29,9 @@ trap "rm -Rf $workdir_abs" EXIT
 
 cp "$executor_binary" workdir/linux-amd64
 echo >>workdir/info.txt
-git log -n1 >>"workdir/info.txt"
+# We need --no-mailmap to prevent git to try reading the .mailmap at the root of the repository,
+# which will lead to a "too many levels of symbolic links" noisy warning.
+git log --no-mailmap -n1 >>"workdir/info.txt"
 sha256sum workdir/linux-amd64/executor >>workdir/linux-amd64/executor_SHA256SUM
 
 # Set GCP Project to sourcegraph-dev, that's where the GCS bucket lives.
