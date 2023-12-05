@@ -5,7 +5,6 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import type { ErrorLike } from '@sourcegraph/common'
 import {
     type CloneInProgressError,
-    type RepoDeniedError,
     isCloneInProgressErrorLike,
     isRevisionNotFoundErrorLike,
     isRepoNotFoundErrorLike,
