@@ -49,6 +49,7 @@ func (s *Store) StoreEvents(ctx context.Context, events []*telemetrygatewayv1.Ev
 	})
 	if !shouldDisableV1(ctx) {
 		wg.Go(func() error {
+			//lint:ignore SA1019 we translate the new format into the existing store for local reference.
 			err := s.eventLogs.BulkInsert(ctx, toEventLogs(time.Now, events))
 			counterV1Events.
 				WithLabelValues(strconv.FormatBool(err != nil)).

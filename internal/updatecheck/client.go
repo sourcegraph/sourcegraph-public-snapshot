@@ -486,6 +486,7 @@ func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (
 		return nil, err
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	err = db.EventLogs().Insert(ctx, &database.Event{
 		UserID:          0,
 		Name:            "ping",
@@ -753,6 +754,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		return nil, err
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	err = db.EventLogs().Insert(ctx, &database.Event{
 		UserID:          0,
 		Name:            "ping",
