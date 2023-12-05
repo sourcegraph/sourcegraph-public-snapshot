@@ -11,7 +11,7 @@ cp -R -L "$project_root"/* tmp/
 trap "rm -Rf tmp" EXIT
 
 # @anton You'll need to fix your local env, we cannot merge an absolute path here
-/usr/local/bin/docker load --input="$tarball"
-/usr/local/bin/docker run -v ./tmp:/sources "$image_name" -- scip-java index
+docker load --input="$tarball"
+docker run -v ./tmp:/sources "$image_name" -- scip-java index
 
 cp tmp/index.scip "$out"
