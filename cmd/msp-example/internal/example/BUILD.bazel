@@ -13,6 +13,7 @@ go_library(
         "//lib/errors",
         "//lib/managedservicesplatform/runtime",
         "@com_github_sourcegraph_log//:log",
+        "@com_google_cloud_go_bigquery//:bigquery",
         "@io_gorm_driver_postgres//:postgres",
         "@io_gorm_gorm//:gorm",
     ],
