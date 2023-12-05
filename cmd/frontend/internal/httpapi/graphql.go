@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -50,12 +49,16 @@ func actorTypeLabel(isInternal, anonymous bool, requestSource trace.SourceType) 
 	return "unknown"
 }
 
-func writeViolationError(w http.ResponseWriter, message string) error {
+func exceedsLimit(costValue, limitValue int) bool {
+	return costValue > limitValue
+}
+
+func writeViolationError(w http.ResponseWriter) error {
 	w.WriteHeader(http.StatusBadRequest) // 400 because retrying won't help
 	return writeJSON(w, graphql.Response{
 		Errors: []*gqlerrors.QueryError{
 			{
-				Message: message,
+				Message: "query exceeds maximum query cost",
 			},
 		},
 	})
@@ -116,7 +119,7 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 		var cost *graphqlbackend.QueryCost
 		var costErr error
 
-		// Don't attempt to estimate or rate limit a request that has failed validation
+		// Calculating the cost is cheaper than validating the schema. We calculate the cost first to prevent resource exhaustion.
 		cost, costErr = graphqlbackend.EstimateQueryCost(params.Query, params.Variables)
 		if costErr != nil {
 			logger.Debug("failed to estimate GraphQL cost",
@@ -129,26 +132,14 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 			costHistogram.WithLabelValues(actorTypeLabel(isInternal, anonymous, requestSource)).Observe(float64(cost.FieldCount))
 
 			rl := conf.RateLimits()
-
-			if !isInternal && (cost.AliasCount > rl.GraphQLMaxAliases) {
-				return writeViolationError(w, "query exceeds maximum query cost")
+			if !isInternal && (exceedsLimit(cost.AliasCount, rl.GraphQLMaxAliases) ||
+				exceedsLimit(cost.HighestDuplicateFieldCount, rl.GraphQLMaxDuplicateFieldCount) ||
+				exceedsLimit(cost.UniqueFieldCount, rl.GraphQLMaxUniqueFieldCount) ||
+				exceedsLimit(cost.FieldCount, rl.GraphQLMaxFieldCount)) {
+				writeViolationError(w)
+				return
 			}
 
-			if !isInternal && (cost.MaxDuplicateFieldCount > 500) { // TODO use defined from rate limits
-				return writeViolationError(w, "query exceeds maximum query cost")
-			}
-
-			// TODO add for unique as well: https://www.apollographql.com/docs/router/configuration/operation-limits/#max_root_fields
-
-			if !isInternal && (cost.FieldCount > rl.GraphQLMaxFieldCount) {
-				if envvar.SourcegraphDotComMode() { // temporarily logging queries that exceed field count limit on Sourcegraph.com
-					logger.Warn("GQL cost limit exceeded", log.String("query", params.Query))
-				}
-
-				return writeViolationError(w, "query exceeds maximum query cost")
-			}
-
-			// Calculating the cost is cheaper than validating the schema. We calculate the cost first to prevent resource exhaustion.
 			if rl, enabled := rlw.Get(); enabled {
 				limited, result, err := rl.RateLimit(r.Context(), uid, cost.FieldCount, graphqlbackend.LimiterArgs{
 					IsIP:          isIP,
@@ -173,8 +164,7 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 
 		validationErrs := schema.ValidateWithVariables(params.Query, params.Variables)
 		if len(validationErrs) > 0 {
-			// TODO IMPROVE MESSAGE
-			return errors.Wrap(err, "failed to marshal GraphQL response")
+			return errors.Wrap(err, "failed to validate the GraphQL query")
 		}
 
 		traceData.execStart = time.Now()
