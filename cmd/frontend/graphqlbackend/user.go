@@ -797,7 +797,7 @@ func (r *UserResolver) Permissions() (*graphqlutil.ConnectionResolver[Permission
 	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, userID); err != nil {
 		return nil, err
 	}
-	connectionStore := &permisionConnectionStore{
+	connectionStore := &permissionConnectionStore{
 		db:     r.db,
 		userID: userID,
 	}
