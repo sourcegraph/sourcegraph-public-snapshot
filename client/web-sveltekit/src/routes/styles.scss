@@ -3,3 +3,17 @@
 .match-highlight {
     background-color: var(--mark-bg);
 }
+
+a[data-sveltekit-reload='true'] {
+    display: flex !important;
+    align-items: center;
+
+    &::after {
+        margin-left: 0.25rem;
+        width: 1rem;
+        height: 1rem;
+        display: inline-block;
+        content: '';
+        background-image: url(/react-logo.svg);
+    }
+}

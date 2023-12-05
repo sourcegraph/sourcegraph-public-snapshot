@@ -16,6 +16,7 @@
 
     import type { LayoutData, Snapshot } from './$types'
     import { createFeatureFlagStore, fetchEvaluatedFeatureFlags } from '$lib/featureflags'
+    import InfoBanner from './InfoBanner.svelte'
 
     export let data: LayoutData
 
@@ -80,6 +81,7 @@
 </svelte:head>
 
 <div class="app" class:overflowHidden={!$scrollAll}>
+    <InfoBanner />
     <Header authenticatedUser={$user} />
 
     <main bind:this={main}>
