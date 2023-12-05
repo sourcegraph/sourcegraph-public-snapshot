@@ -2,6 +2,7 @@ package productsubscription_test
 
 import (
 	"context"
+	"math"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -25,8 +26,8 @@ import (
 )
 
 func TestCodyGatewayDotcomUserResolver(t *testing.T) {
-	var chatOverrideLimit int = 200
-	var codeOverrideLimit int = 400
+	var chatOverrideLimit = 200
+	var codeOverrideLimit = 400
 
 	tru := true
 	cfg := &conf.Unified{
@@ -190,10 +191,10 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	require.NoError(t, err)
 
 	// cody user
-	coydUser, err := db.Users().Create(ctx, database.NewUser{Username: "cody", EmailIsVerified: true, Email: "cody@test.com"})
+	codyUser, err := db.Users().Create(ctx, database.NewUser{Username: "cody", EmailIsVerified: true, Email: "cody@test.com"})
 	require.NoError(t, err)
 	// Generate a token for the cody user
-	_, codyUserApiToken, err := db.AccessTokens().Create(context.Background(), coydUser.ID, []string{authz.ScopeUserAll}, "cody", coydUser.ID)
+	_, codyUserApiToken, err := db.AccessTokens().Create(context.Background(), codyUser.ID, []string{authz.ScopeUserAll}, "cody", codyUser.ID)
 	require.NoError(t, err)
 	codyUserGatewayToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(codyUserApiToken)
 	require.NoError(t, err)
