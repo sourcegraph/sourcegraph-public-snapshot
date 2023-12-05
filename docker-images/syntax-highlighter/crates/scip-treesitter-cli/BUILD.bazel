@@ -115,7 +115,7 @@ genrule(
     ] + glob(["testdata/java/**"]),
     outs = ["index.scip"],
     cmd = """\
-    $(location testdata/stuff.sh) $(location :scip_java_image_tarball) scip-java:tmp $(location testdata/java/index.scip) $@
+    $(location testdata/stuff.sh) $(location :scip_java_image_tarball) scip-java:tmp $(location testdata/java/build.gradle) $@
     """,
     tags = ["requires-network"],
 )
