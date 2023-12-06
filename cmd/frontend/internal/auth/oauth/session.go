@@ -138,7 +138,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 		if newUserCreated {
 			dc := conf.Get().Dotcom
 			verifiedEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: true})
-			if dc != nil && err != nil && dc.MinimumExternalAccountAge > 0 {
+			if dc != nil && err != nil {
 				exempted := false
 				for _, exemptedEmail := range dc.MinimumExternalAccountAgeExemptList {
 					for _, verifiedEmail := range verifiedEmails {
@@ -153,6 +153,10 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 				}
 				if exempted {
 					_, err = db.FeatureFlags().CreateOverride(context.Background(), &featureflag.Override{FlagName: "cody-pro", Value: true, UserID: &user.ID})
+					if err != nil {
+						logger.Error("failed to create feature flag override", log.Error(err))
+						// Don't fail, though.
+					}
 				}
 			}
 		}
