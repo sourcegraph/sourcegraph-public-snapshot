@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/iam"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/monitoring"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/terraformversion"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/tfcbackend"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/project"
@@ -53,6 +54,7 @@ func (r *Renderer) RenderEnvironment(
 	svc spec.ServiceSpec,
 	build spec.BuildSpec,
 	env spec.EnvironmentSpec,
+	mntrng spec.MonitoringSpec,
 ) (*CDKTF, error) {
 	terraformVersion := terraform.Version
 	stackSetOptions := []stack.NewStackOption{
@@ -117,6 +119,20 @@ func (r *Renderer) RenderEnvironment(
 		StableGenerate: r.StableGenerate,
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create cloudrun stack")
+	}
+
+	// We only create the instance_count alert when MaxCount > 5 so default to 0 if unspecified
+	maxCount := 0
+	if env.Instances.Scaling != nil {
+		maxCount = pointers.Deref(env.Instances.Scaling.MaxCount, 0)
+	}
+	if _, err := monitoring.NewStack(stacks, monitoring.Variables{
+		ProjectID:  *projectOutput.Project.ProjectId(),
+		Service:    svc,
+		Monitoring: mntrng,
+		MaxCount:   maxCount,
+	}); err != nil {
+		return nil, errors.Wrap(err, "failed to create monitoring stack")
 	}
 
 	// Return CDKTF representation for caller to synthesize

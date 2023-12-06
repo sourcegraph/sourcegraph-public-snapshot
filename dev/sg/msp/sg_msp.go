@@ -274,7 +274,7 @@ Supports completions on services and environments.`,
 								return errors.Newf("environment %q not found in service spec", targetEnv)
 							}
 
-							if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, *env); err != nil {
+							if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, *env, service.Monitoring); err != nil {
 								return errors.Wrapf(err, "sync env %q", env.ID)
 							}
 						} else {
@@ -282,7 +282,7 @@ Supports completions on services and environments.`,
 								return errors.New("second argument environment ID is required without the '-all' flag")
 							}
 							for _, env := range service.Environments {
-								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, env); err != nil {
+								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, env, service.Monitoring); err != nil {
 									return errors.Wrapf(err, "sync env %q", env.ID)
 								}
 							}
@@ -323,7 +323,7 @@ Supports completions on services and environments.`,
 	}
 }
 
-func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, build spec.BuildSpec, env spec.EnvironmentSpec) error {
+func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, build spec.BuildSpec, env spec.EnvironmentSpec, monitoring spec.MonitoringSpec) error {
 	if os.TempDir() == "" {
 		return errors.New("no temp dir available")
 	}
@@ -341,7 +341,7 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 	renderPending := std.Out.Pending(output.Styledf(output.StylePending,
 		"[%s] Rendering required Terraform Cloud workspaces for environment %q",
 		service.ID, env.ID))
-	cdktf, err := renderer.RenderEnvironment(service, build, env)
+	cdktf, err := renderer.RenderEnvironment(service, build, env, monitoring)
 	if err != nil {
 		return err
 	}
@@ -452,7 +452,7 @@ func generateTerraform(serviceID string, opts generateTerraformOptions) error {
 		}
 
 		// Render environment
-		cdktf, err := renderer.RenderEnvironment(service.Service, service.Build, env)
+		cdktf, err := renderer.RenderEnvironment(service.Service, service.Build, env, service.Monitoring)
 		if err != nil {
 			return err
 		}
