@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/coreos/go-oidc"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -26,7 +27,7 @@ type ExternalAccountData struct {
 // getOrCreateUser gets or creates a user account based on the OpenID Connect token. It returns the
 // authenticated actor if successful; otherwise it returns a friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
-func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims, usernamePrefix, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, _ *actor.Actor, safeErrMsg string, err error) {
+func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, token *oauth2.Token, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims, usernamePrefix, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, _ *actor.Actor, safeErrMsg string, err error) {
 	if userInfo.Email == "" {
 		return false, nil, "Only users with an email address may authenticate to Sourcegraph.", errors.New("no email address in claims")
 	}
@@ -65,7 +66,11 @@ func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, idToken *
 			errors.Wrap(err, "normalize username")
 	}
 
-	serialized, err := json.Marshal(ExternalAccountData{
+	serializedToken, err := json.Marshal(token)
+	if err != nil {
+		return false, nil, "", err
+	}
+	serializedUser, err := json.Marshal(ExternalAccountData{
 		IDToken:    *idToken,
 		UserInfo:   *userInfo,
 		UserClaims: *claims,
@@ -74,7 +79,8 @@ func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, idToken *
 		return false, nil, "", err
 	}
 	data := extsvc.AccountData{
-		Data: extsvc.NewUnencryptedData(serialized),
+		AuthData: extsvc.NewUnencryptedData(serializedToken),
+		Data:     extsvc.NewUnencryptedData(serializedUser),
 	}
 
 	newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, db, auth.GetAndSaveUserOp{
