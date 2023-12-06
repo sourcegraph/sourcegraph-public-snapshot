@@ -445,7 +445,7 @@ function isPrecise(hover: HoverMerged | null | undefined): boolean {
 /**
  * Facet for registering the code intel API.
  */
-export const codeIntelAPI = Facet.define<CodeIntelAPIAdapter, CodeIntelAPIAdapter | null>({
+export const codeIntelAPIAdapter = Facet.define<CodeIntelAPIAdapter, CodeIntelAPIAdapter | null>({
     combine(values) {
         return values[0] ?? null
     },
@@ -455,21 +455,21 @@ export const codeIntelAPI = Facet.define<CodeIntelAPIAdapter, CodeIntelAPIAdapte
  * Helper function for getting a reference to the current code intel API.
  * Throws an error if it is not set.
  */
-function getCodeIntelAPI(state: EditorState): CodeIntelAPIAdapter {
-    const api = state.facet(codeIntelAPI)
-    if (!api) {
+function getCodeIntelAPIAdapter(state: EditorState): CodeIntelAPIAdapter {
+    const apiAdapter = state.facet(codeIntelAPIAdapter)
+    if (!apiAdapter) {
         throw new Error('A CodeIntelAPI instance has to be provided via the `codeIntelAPI` facet.')
     }
-    return api
+    return apiAdapter
 }
 
 /**
  * Returns true if the token at this position has a definition. Lookup is cached.
  */
 export async function hasDefinitionAt(state: EditorState, offset: number): Promise<boolean> {
-    const api = getCodeIntelAPI(state)
-    const occurrence = api.findOccurrenceAt(offset, state).occurrence
-    return !!occurrence && (await api.getDefinition(state, occurrence)).type !== 'none'
+    const apiAdapter = getCodeIntelAPIAdapter(state)
+    const occurrence = apiAdapter.findOccurrenceAt(offset, state).occurrence
+    return !!occurrence && (await apiAdapter.getDefinition(state, occurrence)).type !== 'none'
 }
 
 /**
@@ -477,7 +477,7 @@ export async function hasDefinitionAt(state: EditorState, offset: number): Promi
  * Lookup is cached.
  */
 export function findOccurrenceRangeAt(state: EditorState, offset: number): { from: number; to: number } | null {
-    return getCodeIntelAPI(state).findOccurrenceAt(offset, state).range
+    return getCodeIntelAPIAdapter(state).findOccurrenceAt(offset, state).range
 }
 
 /**
@@ -485,7 +485,7 @@ export function findOccurrenceRangeAt(state: EditorState, offset: number): { fro
  * Lookup is cached.
  */
 export function getDocumentHighlights(state: EditorState, offset: number): Promise<{ from: number; to: number }[]> {
-    return getCodeIntelAPI(state).getDocumentHighlights(state, offset)
+    return getCodeIntelAPIAdapter(state).getDocumentHighlights(state, offset)
 }
 
 /**
@@ -493,7 +493,7 @@ export function getDocumentHighlights(state: EditorState, offset: number): Promi
  * Looltip is cached.
  */
 export function getHoverTooltip(state: EditorState, offset: number): Promise<(Tooltip & { end: number }) | null> {
-    return getCodeIntelAPI(state).getHoverTooltip(state, offset)
+    return getCodeIntelAPIAdapter(state).getHoverTooltip(state, offset)
 }
 
 /**
@@ -505,10 +505,10 @@ export async function goToDefinitionAt(
     offset: number,
     options?: GoToDefinitionOptions
 ): Promise<void> {
-    const api = getCodeIntelAPI(view.state)
-    const occurrence = api.findOccurrenceAt(offset, view.state).occurrence
+    const apiAdapter = getCodeIntelAPIAdapter(view.state)
+    const occurrence = apiAdapter.findOccurrenceAt(offset, view.state).occurrence
     if (occurrence) {
-        await api.goToDefinitionAtOccurrence(view, occurrence, options)
+        await apiAdapter.goToDefinitionAtOccurrence(view, occurrence, options)
     }
 }
 
