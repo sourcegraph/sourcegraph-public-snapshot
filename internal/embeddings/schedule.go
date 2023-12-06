@@ -31,9 +31,8 @@ func ScheduleRepositories(
 		}
 
 		refName, latestRevision, err := gitserverClient.GetDefaultBranch(ctx, r.Name, false)
-		// enqueue with an empty revision and let handler determine whether job can execute
 		if err != nil || refName == "" {
-			latestRevision = ""
+			return err
 		}
 
 		if !forceReschedule {

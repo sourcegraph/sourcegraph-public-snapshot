@@ -162,8 +162,8 @@ func TestScheduleRepositoriesInvalidDefaultBranch(t *testing.T) {
 	gitserverClient := gitserver.NewMockClient()
 	gitserverClient.GetDefaultBranchFunc.PushReturn("", "sgrevision", nil)
 
-	repoNames := []api.RepoName{"github.com/sourcegraph/sourcegraph"}
-	err = ScheduleRepositories(ctx, repoNames, false, db, store, gitserverClient)
+	repoIDs := []api.RepoID{createdRepo0.ID}
+	err = ScheduleRepositoriesForPolicy(ctx, repoIDs, db, store, gitserverClient)
 	require.NoError(t, err)
 	count, err := store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
@@ -199,8 +199,8 @@ func TestScheduleRepositoriesFailed(t *testing.T) {
 	gitserverClient.GetDefaultBranchFunc.PushReturn("", "sgrevision", nil)
 	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "zoektrevision", nil)
 
-	repoNames := []api.RepoName{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/zoekt"}
-	err = ScheduleRepositories(ctx, repoNames, false, db, store, gitserverClient)
+	repoIDs := []api.RepoID{createdRepo0.ID, createdRepo1.ID}
+	err = ScheduleRepositoriesForPolicy(ctx, repoIDs, db, store, gitserverClient)
 	require.NoError(t, err)
 	count, err := store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
@@ -229,7 +229,7 @@ func TestScheduleRepositoriesFailed(t *testing.T) {
 	gitserverClient.GetDefaultBranchFunc.PushReturn("", "sgrevision", nil)
 	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "zoektrevision", nil)
 
-	err = ScheduleRepositories(ctx, repoNames, false, db, store, gitserverClient)
+	err = ScheduleRepositoriesForPolicy(ctx, repoIDs, db, store, gitserverClient)
 	require.NoError(t, err)
 	count, err = store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
@@ -240,7 +240,7 @@ func TestScheduleRepositoriesFailed(t *testing.T) {
 	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "sgrevision", nil)
 	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "zoektrevision", nil)
 
-	err = ScheduleRepositories(ctx, repoNames, false, db, store, gitserverClient)
+	err = ScheduleRepositoriesForPolicy(ctx, repoIDs, db, store, gitserverClient)
 	require.NoError(t, err)
 	count, err = store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
