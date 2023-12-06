@@ -185,13 +185,13 @@ const TextSearchIndexedReference: React.FunctionComponent<
 > = ({ repo, indexedRef, lastIndexed }) => {
     const isCurrent = indexedRef.indexed && indexedRef.current
 
-    const indexingDelay = !indexedRef.current && lastIndexed && Date.now() - new Date(lastIndexed).getTime()
-    const showWarning = indexingDelay && indexingDelay > largeIndexingDelayMs
+    const lastIndexTime = !indexedRef.current && lastIndexed && new Date(lastIndexed).getTime()
+    const indexingDelayed = lastIndexTime && (Date.now() - lastIndexTime) > largeIndexingDelayMs
 
     return (
         <li className={styles.ref}>
-            {showWarning ? (
-                <Tooltip content="Indexing has been delayed for over 8 hours. Please check the Zoekt indexserver logs.">
+            {indexingDelayed ? (
+                <Tooltip content="Indexing hasn't completed for over 8 hours, which usually indicates an error. Please check the Zoekt indexserver logs.">
                     <Icon className={classNames(styles.refIcon)} svgPath={mdiAlert} aria-hidden={true} />
                 </Tooltip>
             ) : (
@@ -207,7 +207,7 @@ const TextSearchIndexedReference: React.FunctionComponent<
             &nbsp;&mdash;&nbsp;
             {indexedRef.indexed ? (
                 <span>
-                    {indexedRef.current ? 'up to date.' : 'queued for indexing.'}
+                    {indexedRef.current ? 'up to date.' : (indexingDelayed ? 'indexing is delayed.' : 'queued for indexing.')}
                     {' Last indexing job ran at '}
                     <Code>
                         <LinkOrSpan
