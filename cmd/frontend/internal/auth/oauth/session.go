@@ -125,7 +125,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			return
 		}
 
-		// Since we obtained a valid user from the OAuth token, we consider the GitHub login successful at this point
+		// Since we obtained a valid user from the OAuth token, we consider the login successful at this point
 		ctx, err = session.SetActorFromUser(ctx, w, r, user, expiryDuration)
 		if err != nil {
 			span.SetError(err)
