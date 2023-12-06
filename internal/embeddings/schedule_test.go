@@ -101,7 +101,7 @@ func TestScheduleRepositoriesRepoNotFound(t *testing.T) {
 	gitserverClient := gitserver.NewMockClient()
 	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "sgrevision", nil)
 
-	repoNames := []api.RepoName{"github.com/repo/notfound", "github.com/sourcegraph/sourcegraph"}
+	repoNames := []api.RepoName{"github.com/sourcegraph/sourcegraph", "github.com/repo/notfound"}
 	err = ScheduleRepositories(ctx, repoNames, false, db, store, gitserverClient)
 	require.Error(t, err, database.RepoNotFoundErr{})
 

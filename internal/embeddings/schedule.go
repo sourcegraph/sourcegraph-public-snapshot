@@ -16,7 +16,7 @@ func ScheduleRepositories(
 	db database.DB,
 	repoEmbeddingJobsStore repo.RepoEmbeddingJobsStore,
 	gitserverClient gitserver.Client,
-) error {
+) (err error) {
 	tx, err := repoEmbeddingJobsStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -56,7 +56,7 @@ func ScheduleRepositoriesForPolicy(
 	db database.DB,
 	repoEmbeddingJobsStore repo.RepoEmbeddingJobsStore,
 	gitserverClient gitserver.Client,
-) error {
+) (err error) {
 	tx, err := repoEmbeddingJobsStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -65,7 +65,6 @@ func ScheduleRepositoriesForPolicy(
 
 	repoStore := db.Repos()
 	repos, err := repoStore.ListMinimalRepos(ctx, database.ReposListOptions{IDs: repoIDs})
-
 	if err != nil {
 		return err
 	}
