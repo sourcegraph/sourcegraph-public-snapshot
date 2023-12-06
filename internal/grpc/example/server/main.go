@@ -85,6 +85,8 @@ func (s *weatherGRPCServer) SubscribeWeatherAlerts(req *pb.AlertRequest, stream 
 		// Send a message to the client
 		err := stream.Send(WeatherAlertToProto(a))
 		if err != nil {
+			// We don't need to explicitly assign a gRPC status code to issues that occur while sending,
+			// since the gRPC library generates the error and will most likely already have set the appropriate error code.
 			return errors.Wrap(err, "failed to send alert across gRPC stream")
 		}
 
