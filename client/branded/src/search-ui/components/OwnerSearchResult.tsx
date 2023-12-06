@@ -8,6 +8,7 @@ import type { BuildSearchQueryURLParameters, QueryState, SearchContextProps } fr
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { getOwnerMatchUrl, type OwnerMatch } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link } from '@sourcegraph/wildcard'
 
@@ -16,7 +17,10 @@ import { ResultContainer } from './ResultContainer'
 import styles from './OwnerSearchResult.module.scss'
 import resultStyles from './SearchResult.module.scss'
 
-export interface OwnerSearchResultProps extends Pick<SearchContextProps, 'selectedSearchContextSpec'>, TelemetryProps {
+export interface OwnerSearchResultProps
+    extends Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        TelemetryProps,
+        TelemetryV2Props {
     result: OwnerMatch
     onSelect: () => void
     containerClassName?: string

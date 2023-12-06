@@ -234,6 +234,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 onSelect={() => logSearchResultClicked?.(index, 'person')}
                                 containerClassName={resultClassName}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 queryState={queryState}
                                 buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
                             />
@@ -258,6 +259,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             prefetchFile,
             location,
             telemetryService,
+            telemetryRecorder,
             allExpanded,
             fetchHighlightedFileLineRanges,
             settingsCascade,
