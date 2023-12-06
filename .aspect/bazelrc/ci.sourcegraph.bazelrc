@@ -46,6 +46,7 @@ common --test_env=INCLUDE_ADMIN_ONBOARDING=false
 
 # Used for container_structure_tests
 common --test_env=DOCKER_HOST
+common --action_env=DOCKER_HOST
 
 # Used by migration rules
 common --action_env=PGUSER=postgres
