@@ -21,7 +21,6 @@ const (
 )
 
 func TestSubRepoPermissionsPerforce(t *testing.T) {
-	t.Skip("disabled pending p4 trust fix")
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot, false)
