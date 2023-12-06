@@ -8,6 +8,7 @@ contents:
 
     # redis packages
     - redis-6.2
+    - redis-cli-6.2
 
 accounts:
   groups:
