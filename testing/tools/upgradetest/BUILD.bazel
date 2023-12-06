@@ -10,6 +10,7 @@ go_library(
         "@com_github_masterminds_semver//:semver",
         "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_run//:run",
+        "@io_k8s_utils//strings/slices",
     ],
 )
 
