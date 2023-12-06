@@ -13,7 +13,7 @@ Cody offers a rich set of capabilities and features that help you write better c
 
 Learn more about each by exploring their respective documentation:
 
-- [Chat](/cody/capabilities/chat.md)
-- [Autocomplete](/cody/capabilities/autocomplete.md)
-- [Commands & Custom Commands](/cody/capabilities/commands.md)
-- [Debug Code](/cody/capabilities/debug-code.md)
+- [Chat](./chat.md)
+- [Autocomplete](./autocomplete.md)
+- [Commands & Custom Commands](./commands.md)
+- [Debug Code](./debug-code.md)
