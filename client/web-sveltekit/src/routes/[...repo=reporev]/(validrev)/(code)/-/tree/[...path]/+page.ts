@@ -20,6 +20,7 @@ export const load: PageLoad = async ({ params, parent, url }) => {
     )
 
     return {
+        filePath: params.path,
         deferred: {
             treeEntries,
             readme: treeEntries.then(result => {
