@@ -46,6 +46,18 @@ func (s *weatherServer) GetCurrentWeather(ctx context.Context, req *pb.LocationR
 		// - https://cloud.google.com/apis/design/errors (intended for Google developers, but generally applicable advice)
 		err := status.Errorf(codes.InvalidArgument, "We don't go to Ravenholm.")
 		return nil, err
+	} else if location == "Black Mesa" {
+		// You can also use the status.New function to create a Status object with a custom error code and message.
+		s, err := status.New(codes.Internal, "The resonance cascade has begun.").WithDetails(&pb.SensorOfflineError{
+			SensorId: "anomalous-materials",
+			Message:  "Sensor is offline. A resonance cascade is imminent.",
+		})
+
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create gRPC status")
+		}
+
+		return nil, s.Err()
 	}
 
 	// Now that we know that we have a "valid" location, we can safely return the response.

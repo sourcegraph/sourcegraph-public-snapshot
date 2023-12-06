@@ -30,6 +30,14 @@ message WeatherResponse {
   // Additional fields can be added here.
 }
 
+message SensorOfflineError {
+  // Note: renaming this message would break backwards compatibility, as older clients would not be able to
+  // identify this message since it would be passed as an "Any" type when sending the error details.
+
+  string sensorId = 1;
+  string message = 2;
+}
+
 message AlertRequest {
   string region = 1;
 }

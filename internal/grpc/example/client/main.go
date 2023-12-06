@@ -50,6 +50,26 @@ func main() {
 		log.Fatalf("Expected InvalidArgument error for going to Ravenholm, got %v, code: %s", err, status.Code(err))
 	}
 
+	weather, err = client.GetCurrentWeather(context.Background(), &pb.LocationRequest{Location: "Black Mesa"})
+	s := status.Convert(err)
+	if s.Code() != codes.Internal { // You can extract the error code from the error object using the status.Code function, and then assert on it.
+		log.Fatalf("Expected Internal error for going to Black Mesa, got %v, code: %s", err, s.Code())
+	}
+
+	for _, d := range s.Details() {
+		switch info := d.(type) {
+		// You can also extract the error details from the error object using the status.Details function, and then assert on it.
+		// This allows you to pass arbitrary structs over the wire with as much context as you need to do something in the application.
+		case *pb.SensorOfflineError:
+			log.Printf("Sensor %q is offline: %s", info.GetSensorId(), info.GetMessage())
+		default:
+			// If you don't recognize the error detail, you can log it / ignore it and move on.
+			// This is helpful for forwards compatibility
+			// (newer server versions may send new error details that older clients don't know about).
+			log.Printf("Unexpected error detail: %v", info)
+		}
+	}
+
 	// Server Streaming RPC: get weather alerts for a specific region
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(5*time.Second)) // Set a deadline for the RPC
 	defer cancel()
