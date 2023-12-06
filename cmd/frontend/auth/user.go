@@ -278,7 +278,6 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 	// Enable the cody-pro feature flag for new users who are on the "exempted from the minimum external account age" list
 	dc := conf.Get().Dotcom
 	verifiedEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{UserID: userID, OnlyVerified: true})
-	fmt.Println("XXX verifiedEmails", verifiedEmails, dc, err)
 	if dc != nil && err == nil {
 		exempted := false
 		for _, exemptedEmail := range dc.MinimumExternalAccountAgeExemptList {
@@ -292,7 +291,6 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 				break
 			}
 		}
-		fmt.Println("XXX exempted", exempted)
 		if exempted {
 			_, err = db.FeatureFlags().CreateOverride(context.Background(), &featureflag.Override{FlagName: "cody-pro", Value: true, UserID: &userID})
 			if err != nil {
