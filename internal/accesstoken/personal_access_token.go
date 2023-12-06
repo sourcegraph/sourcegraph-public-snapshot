@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// personalAccessTokenPrefix is the token prefix for Sourcegraph personal access tokens. Its purpose
+// PersonalAccessTokenPrefix is the token prefix for Sourcegraph personal access tokens. Its purpose
 // is to make it easier to identify that a given string (in a file, document, etc.) is a secret
 // Sourcegraph personal access token (vs. some arbitrary high-entropy hex-encoded value).
 const PersonalAccessTokenPrefix = "sgp_"
@@ -21,7 +21,7 @@ const InstanceIdentifierHmacKey = "instance_identifier_hmac_key" // Public as we
 
 var personalAccessTokenRegex = lazyregexp.New("^(?:sgp_|sgph_)?(?:[a-fA-F0-9]{16}_|local_)?([a-fA-F0-9]{40})$")
 
-// ParseAccessToken parses a personal access token to remove prefixes and extract the <token> that is stored in the database
+// ParsePersonalAccessToken parses a personal access token to remove prefixes and extract the <token> that is stored in the database
 // Personal access tokens can take several forms:
 //   - <token>
 //   - sgp_<token>
