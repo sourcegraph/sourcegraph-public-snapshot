@@ -134,7 +134,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			return
 		}
 
-		// If the user is new, check if they should be exempted from the minimum external account age
+		// Enable the cody-pro feature flag for new users who are on the "exempted from the minimum external account age" list
 		if newUserCreated {
 			dc := conf.Get().Dotcom
 			verifiedEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: true})
