@@ -333,11 +333,6 @@ const ReferencesList: React.FunctionComponent<
         // Make sure this effect only runs once
     }, [loading])
 
-    const references = data?.references.nodes ?? LocationsGroup.empty
-    const definitions = data?.definitions.nodes ?? LocationsGroup.empty
-    const implementations = data?.implementations.nodes ?? LocationsGroup.empty
-    const prototypes = data?.prototypes.nodes ?? LocationsGroup.empty
-
     // The "active URL" is the URL of the highlighted line number in SideBlob,
     // which also influences which item gets highlighted inside
     // CollapsibleLocationList. This URL is persisted to session storage so that
@@ -372,18 +367,6 @@ const ReferencesList: React.FunctionComponent<
             false
         return result
     }
-
-    // If props.jumpToFirst is true and we finished loading (and have
-    // definitions) we select the first definition. We set it as activeLocation
-    // and push it to the blobMemoryHistory so the code blob is open.
-    useEffect(() => {
-        if (props.jumpToFirst) {
-            const firstDef = definitions.first
-            if (firstDef) {
-                setActiveLocation(firstDef)
-            }
-        }
-    }, [setActiveLocation, props.jumpToFirst, definitions.first, setActiveURL])
 
     const onBlobNav = (url: string): void => {
         // Store the URL that the user promoted even if no definition/reference
@@ -420,6 +403,20 @@ const ReferencesList: React.FunctionComponent<
     if (!data) {
         return <>Nothing found</>
     }
+
+    const definitions = data.definitions.nodes
+
+    // If props.jumpToFirst is true and we finished loading (and have
+    // definitions) we select the first definition. We set it as activeLocation
+    // and push it to the blobMemoryHistory so the code blob is open.
+    useEffect(() => {
+        if (props.jumpToFirst) {
+            const firstDef = definitions.first
+            if (firstDef) {
+                setActiveLocation(firstDef)
+            }
+        }
+    }, [setActiveLocation, props.jumpToFirst, definitions.first])
 
     return (
         <div className={classNames('align-items-stretch', styles.panel)}>
@@ -460,7 +457,7 @@ const ReferencesList: React.FunctionComponent<
                     <CollapsibleLocationList
                         {...props}
                         name="references"
-                        locationsGroup={references}
+                        locationsGroup={data.references.nodes}
                         hasMore={referencesHasNextPage}
                         fetchMore={fetchMoreReferences}
                         loadingMore={fetchMoreReferencesLoading}
@@ -475,7 +472,7 @@ const ReferencesList: React.FunctionComponent<
                     <CollapsibleLocationList
                         {...props}
                         name="implementations"
-                        locationsGroup={implementations}
+                        locationsGroup={data.implementations.nodes}
                         hasMore={implementationsHasNextPage}
                         fetchMore={fetchMoreImplementations}
                         loadingMore={fetchMoreImplementationsLoading}
@@ -490,7 +487,7 @@ const ReferencesList: React.FunctionComponent<
                     <CollapsibleLocationList
                         {...props}
                         name="prototypes"
-                        locationsGroup={prototypes}
+                        locationsGroup={data.prototypes.nodes}
                         hasMore={prototypesHasNextPage}
                         fetchMore={fetchMorePrototypes}
                         loadingMore={fetchMorePrototypesLoading}
