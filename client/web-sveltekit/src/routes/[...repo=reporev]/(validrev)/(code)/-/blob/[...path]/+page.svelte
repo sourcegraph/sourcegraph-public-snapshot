@@ -51,6 +51,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>{data.filePath} - {data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
+
 <FileHeader>
     <Icon slot="icon" svgPath={data.deferred.compare ? mdiCodeBracesBox : mdiFileCodeOutline} />
     <svelte:fragment slot="actions">

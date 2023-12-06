@@ -10,9 +10,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/internal/opentelemetry"
 )
 
-type Service[ConfigT any] interface {
+type ServiceMetadata interface {
 	Name() string
 	Version() string
+}
+
+type Service[ConfigT any] interface {
+	ServiceMetadata
 	// Initialize should use given configuration to build a combined background
 	// routine that implements starting and stopping the service.
 	Initialize(
@@ -48,7 +52,9 @@ func Start[
 	defer liblog.Sync()
 
 	ctx := context.Background()
-	logger := log.Scoped("msp.run")
+
+	// logger should only be used within Start
+	logger := log.Scoped("msp.start")
 
 	env, err := newEnv()
 	if err != nil {
@@ -60,7 +66,7 @@ func Start[
 
 	// Load configuration variables from environment
 	config.Load(env)
-	contract := newContract(env)
+	contract := newContract(log.Scoped("msp.contract"), env, service)
 
 	// Enable Sentry error log reporting
 	if contract.internal.sentryDSN != nil {
@@ -100,4 +106,5 @@ func Start[
 
 	// Start service routine, and block until it stops.
 	background.Monitor(ctx, routine)
+	logger.Info("service stopped")
 }

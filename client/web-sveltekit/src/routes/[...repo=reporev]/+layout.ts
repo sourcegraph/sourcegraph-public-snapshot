@@ -2,7 +2,7 @@ import { redirect, error, type Redirect } from '@sveltejs/kit'
 
 import { asError, loadMarkdownSyntaxHighlighting, type ErrorLike } from '$lib/common'
 import { resolveRepoRevision, type ResolvedRevision } from '$lib/repo/api/repo'
-import { isRepoSeeOtherErrorLike, isRevisionNotFoundErrorLike, parseRepoRevision } from '$lib/shared'
+import { displayRepoName, isRepoSeeOtherErrorLike, isRevisionNotFoundErrorLike, parseRepoRevision } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
 
@@ -41,6 +41,7 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
     return {
         repoURL: '/' + params.repo,
         repoName,
+        displayRepoName: displayRepoName(repoName),
         revision,
         resolvedRevisionOrError,
     }
