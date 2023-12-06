@@ -349,10 +349,9 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	})
 
 	esOther := &types.ExternalService{
-		Kind:          extsvc.KindOther,
-		DisplayName:   "Other",
-		Config:        extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repos": [ "sourcegraph/sourcegraph" ] }`),
-		LastUpdaterID: &user.ID,
+		Kind:        extsvc.KindOther,
+		DisplayName: "Other",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repos": [ "sourcegraph/sourcegraph" ] }`),
 	}
 	err = db.ExternalServices().Create(ctx, confGet, esOther)
 	if err != nil {
