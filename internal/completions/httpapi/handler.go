@@ -93,6 +93,7 @@ func newCompletionsHandler(
 		isDotcom := envvar.SourcegraphDotComMode()
 		isProviderCodyGateway := completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
 		if isCodyProEnabled && isDotcom && isProviderCodyGateway {
+			// Note: if we have no Authorization header, that's fine too, this will return an error
 			apiToken, _, err := authz.ParseAuthorizationHeader(r.Header.Get("Authorization"))
 			if err != nil {
 				// No actor either, so we fail.
