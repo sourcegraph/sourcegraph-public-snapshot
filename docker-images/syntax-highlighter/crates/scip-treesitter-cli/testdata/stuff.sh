@@ -10,7 +10,7 @@ out="$4"
 tmp_folder=$(pwd)/tmp
 mkdir "$tmp_folder"
 cp -R -L "$project_root"/* $tmp_folder/
-trap "rm -Rf $tmp_folder" EXIT
+# trap "rm -Rf $tmp_folder" EXIT
 
 echo $project_root
 echo $tmp_folder
