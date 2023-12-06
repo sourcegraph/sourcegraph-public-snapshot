@@ -29,6 +29,7 @@ contents:
     - prometheus
     - prometheus-alertmanager
     - redis-6.2
+    - redis-cli-6.2
     - sqlite-libs
     - su-exec
 
