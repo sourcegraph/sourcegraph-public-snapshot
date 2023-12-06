@@ -348,7 +348,7 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 			wantChatLimit:                   graphqlbackend.BigInt(perCommunityUserChatMonthlyLLMRequestLimit),
 			wantChatLimitInterval:           oneDayInSeconds * 30,
 			wantCodeCompletionLimit:         graphqlbackend.BigInt(0),
-			wantCodeCompletionLimitInterval: 0,
+			wantCodeCompletionLimitInterval: oneDayInSeconds,
 		},
 		{
 			name:                            "ssc-pro",
@@ -356,7 +356,7 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 			wantChatLimit:                   graphqlbackend.BigInt(perProUserChatDailyLLMRequestLimit),
 			wantChatLimitInterval:           oneDayInSeconds,
 			wantCodeCompletionLimit:         graphqlbackend.BigInt(0),
-			wantCodeCompletionLimitInterval: 0,
+			wantCodeCompletionLimitInterval: oneDayInSeconds,
 		},
 		{
 			name:                            "free-limited",
