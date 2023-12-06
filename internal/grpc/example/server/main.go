@@ -8,6 +8,7 @@ import (
 	logger "github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/example/server/service"
 	pb "github.com/sourcegraph/sourcegraph/internal/grpc/example/weather/v1"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -178,6 +179,53 @@ func (s *weatherGRPCServer) RealTimeWeather(stream pb.WeatherService_RealTimeWea
 			return err
 		}
 	}
+}
+
+func (w *weatherGRPCServer) UploadWeatherScreenshot(stream pb.WeatherService_UploadWeatherScreenshotServer) error {
+	msg, err := stream.Recv()
+	if err != nil {
+		return errors.Wrap(err, "failed to receive screenshot metadata")
+	}
+
+	// First, we pull the first message off the stream, which should be the image metadata.
+	switch v := msg.GetContent().(type) {
+	case *pb.UploadWeatherScreenshotRequest_Metadata_:
+		w.logger.Info("Received screenshot metadata",
+			logger.String("sensorID", v.Metadata.GetSensorId()),
+			logger.String("filename", v.Metadata.GetFileName()),
+			logger.String("location", v.Metadata.GetLocation()))
+	default:
+		return errors.Errorf("expected first message to be image metadata, instead got unexpected message type %T", v)
+	}
+
+	// Next, we read the image data from the stream.
+	// We have an abstraction called streamio.Reader that allows us to read from a gRPC stream that contains bytes as if it were an io.Reader.
+	// This is useful because it allows us to hide the mechanics of fetching more gRPC messages from users of the reader.
+	reader := streamio.NewReader(func() ([]byte, error) {
+		msg, err := stream.Recv()
+		if err != nil {
+			return nil, err
+		}
+
+		switch v := msg.GetContent().(type) {
+		case *pb.UploadWeatherScreenshotRequest_Payload_:
+			return v.Payload.GetData(), nil
+		default:
+			// Note: Depending on your use-case, you could choose to ignore unknown message types and just continue reading.
+			// This could be beneficial if you want to add new message types in the future without breaking existing clients.
+			return nil, errors.Errorf("unexpected message type %T", v)
+		}
+	})
+
+	err = w.service.StoreWeatherScreenshot(reader)
+	if err != nil {
+		return errors.Wrap(err, "failed to store weather screenshot")
+	}
+
+	// Once we've read all the data from the stream, we can send a final message to the client and close our end of the stream.
+	return stream.SendAndClose(&pb.UploadWeatherScreenshotResponse{
+		Message: "Screenshot received successfully.",
+	})
 }
 
 func main() {

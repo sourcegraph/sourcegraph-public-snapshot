@@ -2,18 +2,24 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"io"
 	"log"
 	"strconv"
+	"sync"
 	"time"
 
 	logger "github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	pb "github.com/sourcegraph/sourcegraph/internal/grpc/example/weather/v1"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+//go:embed sun.png
+var sunDrawingImage []byte
 
 func main() {
 	l := logger.Scoped("weather-client")
@@ -147,13 +153,62 @@ clientstreaming:
 	}
 	log.Printf("Upload status: %s", uploadStatus.GetMessage())
 
+	// Upload a weather screenshot using our helpers to send a byte stream.
+	stream, err := client.UploadWeatherScreenshot(context.Background())
+	if err != nil {
+		log.Fatalf("Error on upload weather screenshot: %v", err)
+	}
+
+	err = stream.Send(&pb.UploadWeatherScreenshotRequest{
+		Content: &pb.UploadWeatherScreenshotRequest_Metadata_{
+			Metadata: &pb.UploadWeatherScreenshotRequest_Metadata{
+				Location: "Philadelphia",
+				SensorId: "sensor-123",
+				FileName: "sun.png",
+			},
+		},
+	})
+
+	if err != nil {
+		log.Fatalf("Error while sending image metadata: %v", err)
+	}
+
+	// Send the image data in chunks.
+	// We have a helper package named "streamio" that chunks a byte stream into smaller gRPC messages that can
+	// be incrementally handled by the server.
+	writer := streamio.NewWriter(func(p []byte) error {
+		return stream.Send(&pb.UploadWeatherScreenshotRequest{
+			Content: &pb.UploadWeatherScreenshotRequest_Payload_{
+				Payload: &pb.UploadWeatherScreenshotRequest_Payload{
+					Data: p,
+				},
+			},
+		})
+	})
+
+	_, err = writer.Write(sunDrawingImage)
+	if err != nil {
+		log.Fatalf("Error while sending image data: %v", err)
+	}
+	response, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatalf("Error while receiving upload status: %v", err)
+	}
+
+	log.Printf("Image upload status: %s", response.GetMessage())
+
 	// Bidirectional Streaming RPC
 	biStream, err := client.RealTimeWeather(context.Background())
 	if err != nil {
 		log.Fatalf("Error on real-time weather: %v", err)
 	}
 
-	go func() { // Receive messages from the server in a separate goroutine
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		// Receive messages from the server in a separate goroutine
 		for {
 			weather, err := biStream.Recv()
 			if errors.Is(err, io.EOF) {
@@ -181,4 +236,6 @@ clientstreaming:
 	if err != nil {
 		log.Fatalf("Error while closing client end of bidirectional stream: %v", err)
 	}
+
+	wg.Wait()
 }

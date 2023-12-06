@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -54,6 +55,15 @@ func (s *WeatherService) SubscribeWeatherAlerts(ctx context.Context, region stri
 
 func (s *WeatherService) StoreSensorData(ctx context.Context, data *SensorData) error {
 	// Imaginary floppy drive starts spinning.
+
+	return nil
+}
+
+func (s *WeatherService) StoreWeatherScreenshot(r io.Reader) error {
+	_, err := io.Copy(io.Discard, r)
+	if err != nil {
+		return errors.Wrap(err, "failed to copy screenshot")
+	}
 
 	return nil
 }

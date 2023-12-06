@@ -17,6 +17,9 @@ service WeatherService {
 
   // Bidirectional Streaming RPC: Real-time weather updates.
   rpc RealTimeWeather(stream LocationUpdate) returns (stream WeatherResponse) {}
+
+  // Client Streaming RPC: Upload a weather screenshot.
+  rpc UploadWeatherScreenshot(stream UploadWeatherScreenshotRequest) returns (UploadWeatherScreenshotResponse) {}
 }
 
 message LocationRequest {
@@ -49,6 +52,27 @@ message SensorOfflineError {
   string message = 2;
 }
 
+message UploadWeatherScreenshotRequest {
+  message Metadata {
+    string location = 1;
+    string sensorId = 2;
+    string fileName = 3;
+  }
+
+  message Payload {
+    bytes data = 1;
+  }
+
+  oneof content {
+    Metadata metadata = 1;
+    Payload payload = 2;
+  }
+}
+
+message UploadStatus {
+  string message = 1;
+}
+
 message AlertRequest {
   string region = 1;
 }
@@ -63,7 +87,7 @@ message SensorData {
   double humidity = 3;
 }
 
-message UploadStatus {
+message UploadWeatherScreenshotResponse {
   string message = 1;
 }
 

@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	WeatherService_GetCurrentWeather_FullMethodName      = "/grpc.example.weather.v1.WeatherService/GetCurrentWeather"
-	WeatherService_SubscribeWeatherAlerts_FullMethodName = "/grpc.example.weather.v1.WeatherService/SubscribeWeatherAlerts"
-	WeatherService_UploadWeatherData_FullMethodName      = "/grpc.example.weather.v1.WeatherService/UploadWeatherData"
-	WeatherService_RealTimeWeather_FullMethodName        = "/grpc.example.weather.v1.WeatherService/RealTimeWeather"
+	WeatherService_GetCurrentWeather_FullMethodName       = "/grpc.example.weather.v1.WeatherService/GetCurrentWeather"
+	WeatherService_SubscribeWeatherAlerts_FullMethodName  = "/grpc.example.weather.v1.WeatherService/SubscribeWeatherAlerts"
+	WeatherService_UploadWeatherData_FullMethodName       = "/grpc.example.weather.v1.WeatherService/UploadWeatherData"
+	WeatherService_RealTimeWeather_FullMethodName         = "/grpc.example.weather.v1.WeatherService/RealTimeWeather"
+	WeatherService_UploadWeatherScreenshot_FullMethodName = "/grpc.example.weather.v1.WeatherService/UploadWeatherScreenshot"
 )
 
 // WeatherServiceClient is the client API for WeatherService service.
@@ -37,6 +38,8 @@ type WeatherServiceClient interface {
 	UploadWeatherData(ctx context.Context, opts ...grpc.CallOption) (WeatherService_UploadWeatherDataClient, error)
 	// Bidirectional Streaming RPC: Real-time weather updates.
 	RealTimeWeather(ctx context.Context, opts ...grpc.CallOption) (WeatherService_RealTimeWeatherClient, error)
+	// Client Streaming RPC: Upload a weather screenshot.
+	UploadWeatherScreenshot(ctx context.Context, opts ...grpc.CallOption) (WeatherService_UploadWeatherScreenshotClient, error)
 }
 
 type weatherServiceClient struct {
@@ -153,6 +156,40 @@ func (x *weatherServiceRealTimeWeatherClient) Recv() (*WeatherResponse, error) {
 	return m, nil
 }
 
+func (c *weatherServiceClient) UploadWeatherScreenshot(ctx context.Context, opts ...grpc.CallOption) (WeatherService_UploadWeatherScreenshotClient, error) {
+	stream, err := c.cc.NewStream(ctx, &WeatherService_ServiceDesc.Streams[3], WeatherService_UploadWeatherScreenshot_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &weatherServiceUploadWeatherScreenshotClient{stream}
+	return x, nil
+}
+
+type WeatherService_UploadWeatherScreenshotClient interface {
+	Send(*UploadWeatherScreenshotRequest) error
+	CloseAndRecv() (*UploadWeatherScreenshotResponse, error)
+	grpc.ClientStream
+}
+
+type weatherServiceUploadWeatherScreenshotClient struct {
+	grpc.ClientStream
+}
+
+func (x *weatherServiceUploadWeatherScreenshotClient) Send(m *UploadWeatherScreenshotRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *weatherServiceUploadWeatherScreenshotClient) CloseAndRecv() (*UploadWeatherScreenshotResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(UploadWeatherScreenshotResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // WeatherServiceServer is the server API for WeatherService service.
 // All implementations must embed UnimplementedWeatherServiceServer
 // for forward compatibility
@@ -165,6 +202,8 @@ type WeatherServiceServer interface {
 	UploadWeatherData(WeatherService_UploadWeatherDataServer) error
 	// Bidirectional Streaming RPC: Real-time weather updates.
 	RealTimeWeather(WeatherService_RealTimeWeatherServer) error
+	// Client Streaming RPC: Upload a weather screenshot.
+	UploadWeatherScreenshot(WeatherService_UploadWeatherScreenshotServer) error
 	mustEmbedUnimplementedWeatherServiceServer()
 }
 
@@ -183,6 +222,9 @@ func (UnimplementedWeatherServiceServer) UploadWeatherData(WeatherService_Upload
 }
 func (UnimplementedWeatherServiceServer) RealTimeWeather(WeatherService_RealTimeWeatherServer) error {
 	return status.Errorf(codes.Unimplemented, "method RealTimeWeather not implemented")
+}
+func (UnimplementedWeatherServiceServer) UploadWeatherScreenshot(WeatherService_UploadWeatherScreenshotServer) error {
+	return status.Errorf(codes.Unimplemented, "method UploadWeatherScreenshot not implemented")
 }
 func (UnimplementedWeatherServiceServer) mustEmbedUnimplementedWeatherServiceServer() {}
 
@@ -288,6 +330,32 @@ func (x *weatherServiceRealTimeWeatherServer) Recv() (*LocationUpdate, error) {
 	return m, nil
 }
 
+func _WeatherService_UploadWeatherScreenshot_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(WeatherServiceServer).UploadWeatherScreenshot(&weatherServiceUploadWeatherScreenshotServer{stream})
+}
+
+type WeatherService_UploadWeatherScreenshotServer interface {
+	SendAndClose(*UploadWeatherScreenshotResponse) error
+	Recv() (*UploadWeatherScreenshotRequest, error)
+	grpc.ServerStream
+}
+
+type weatherServiceUploadWeatherScreenshotServer struct {
+	grpc.ServerStream
+}
+
+func (x *weatherServiceUploadWeatherScreenshotServer) SendAndClose(m *UploadWeatherScreenshotResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *weatherServiceUploadWeatherScreenshotServer) Recv() (*UploadWeatherScreenshotRequest, error) {
+	m := new(UploadWeatherScreenshotRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // WeatherService_ServiceDesc is the grpc.ServiceDesc for WeatherService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -315,6 +383,11 @@ var WeatherService_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "RealTimeWeather",
 			Handler:       _WeatherService_RealTimeWeather_Handler,
 			ServerStreams: true,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "UploadWeatherScreenshot",
+			Handler:       _WeatherService_UploadWeatherScreenshot_Handler,
 			ClientStreams: true,
 		},
 	},
