@@ -531,9 +531,9 @@ func testAccessTokens_tokenSHA256Hash(t *testing.T) {
 		wantError bool
 	}{
 		{name: "old prefix-less format", token: "0123456789012345678901234567890123456789"},
-		{name: "old prefix format", token: "sgp_01234567890123456789" + "01234567890123456789"},
-		{name: "new local identifier format", token: "sgp_local_01234567890123456789" + "01234567890123456789"},
-		{name: "new identifier format", token: "sgp_abcdef0123456789_01234567890123456789" + "01234567890123456789"},
+		{name: "old prefix format", token: "sgp_0123456789012345678901234567890123456789"},
+		{name: "new local identifier format", token: "sgp_local_0123456789012345678901234567890123456789"},
+		{name: "new identifier format", token: "sgp_abcdef0123456789_0123456789012345678901234567890123456789"},
 		{name: "empty", token: "", wantError: true},
 		{name: "invalid", token: "×", wantError: true},
 		{name: "invalid", token: "xxx", wantError: true},
