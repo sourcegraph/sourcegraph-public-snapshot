@@ -8,6 +8,7 @@ go_library(
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/internal/resourceid",
+        "//dev/managedservicesplatform/spec",
         "//lib/pointers",
         "@com_github_aws_constructs_go_constructs_v10//:constructs",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//monitoringalertpolicy",
