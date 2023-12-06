@@ -135,5 +135,8 @@ clientstreaming:
 		time.Sleep(2 * time.Second)
 	}
 
-	biStream.CloseSend()
+	err = biStream.CloseSend()
+	if err != nil {
+		log.Fatalf("Error while closing client end of bidirectional stream: %v", err)
+	}
 }
