@@ -157,16 +157,16 @@ function PurposeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
                     tabIndex={0}
                     className="flex-1 d-flex flex-column justify-content-center cursor-pointer align-items-center py-3 px-2"
                     onKeyDown={() => {
-                        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_PERSONAL, { useCase: 'personal' })
+                        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase: 'personal' })
                         onNext()
                     }}
                     onClick={() => {
-                        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_PERSONAL, { useCase: 'personal' })
+                        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase: 'personal' })
                         onNext()
                     }}
                 >
                     <PersonalIcon />
-                    <H3 className="mb-0 mt-2">Personal Projects</H3>
+                    <H3 className="mb-0 mt-2">Personal projects</H3>
                 </div>
             </div>
             <Text size="small" className="text-muted text-center mb-0">
