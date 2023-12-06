@@ -6,6 +6,8 @@ import { Modal, Icon, Button, H1, H2, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import type { ChangeCodyPlanResult, ChangeCodyPlanVariables } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
+import { EventName } from '../../util/constants'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
 
 import { CHANGE_CODY_PLAN } from './queries'
@@ -151,9 +153,13 @@ export function UpgradeToProModal({
                             <div className="d-flex justify-content-center mt-4 pt-4">
                                 <Button
                                     variant="primary"
-                                    onClick={() =>
+                                    onClick={() => {
+                                        eventLogger.log(EventName.CODY_SUBSCRIPTION_PLAN_CONFIRMED, {
+                                            tier: 'pro',
+                                        })
+
                                         changeCodyPlan({ variables: { pro: true, id: authenticatedUser.id } })
-                                    }
+                                    }}
                                 >
                                     <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
                                     Start Trial
