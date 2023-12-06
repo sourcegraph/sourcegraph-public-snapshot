@@ -21,6 +21,7 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
@@ -58,6 +59,7 @@ export interface StreamingSearchResultsProps
         SettingsCascadeProps,
         PlatformContextProps<'settings' | 'requestGraphQL' | 'sourcegraphURL'>,
         TelemetryProps,
+        TelemetryV2Props,
         CodeInsightsProps,
         SearchAggregationProps,
         CodeMonitoringProps,
@@ -72,6 +74,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         streamSearch,
         authenticatedUser,
         telemetryService,
+        telemetryRecorder,
         isSourcegraphDotCom,
         searchAggregationEnabled,
         codeMonitoringEnabled,
@@ -125,7 +128,13 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         [caseSensitive, patternType, searchMode, trace, featureOverrides]
     )
 
-    const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, telemetryService)
+    const results = useCachedSearchResults(
+        streamSearch,
+        submittedURLQuery,
+        options,
+        telemetryService,
+        telemetryRecorder
+    )
 
     const resultsLength = results?.results.length || 0
     const logSearchResultClicked = useCallback(

@@ -185,7 +185,7 @@ function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Eleme
     const showMultilineSearchConsole = useExperimentalFeatures(features => features.showMultilineSearchConsole)
 
     return showMultilineSearchConsole ? (
-        <SearchConsolePage {...props} />
+        <SearchConsolePage {...props} telemetryRecorder={window.context.telemetryRecorder} />
     ) : (
         <Navigate replace={true} to={PageRoutes.Search} />
     )

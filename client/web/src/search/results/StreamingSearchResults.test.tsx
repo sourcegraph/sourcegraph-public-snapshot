@@ -9,6 +9,7 @@ import { spy, assert } from 'sinon'
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
 import type { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
@@ -34,6 +35,7 @@ describe('StreamingSearchResults', () => {
 
     const defaultProps: StreamingSearchResultsProps = {
         telemetryService: NOOP_TELEMETRY_SERVICE,
+        telemetryRecorder: noOpTelemetryRecorder,
 
         authenticatedUser: null,
 
@@ -172,12 +174,29 @@ describe('StreamingSearchResults', () => {
             log: logSpy,
             logViewEvent: logViewEventSpy,
         }
+        const telemetrySpy = spy()
+        const recordViewEventSpy = spy()
+        const telemetryRecorder = {
+            ...noOpTelemetryRecorder,
+            log: telemetrySpy,
+            recordViewEvent: recordViewEventSpy,
+        }
 
-        renderWrapper(<StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />)
+        renderWrapper(
+            <StreamingSearchResults
+                {...defaultProps}
+                telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
+            />
+        )
 
         assert.calledOnceWithExactly(logViewEventSpy, 'SearchResults')
         assert.calledWith(logSpy, 'SearchResultsQueried')
         assert.calledWith(logSpy, 'SearchResultsFetched')
+
+        assert.calledOnceWithExactly(recordViewEventSpy, 'SearchResults')
+        assert.calledWith(telemetrySpy, 'SearchResultsQueried')
+        assert.calledWith(telemetrySpy, 'SearchResultsFetched')
     })
 
     it('should log events when clicking on search result', () => {
@@ -186,8 +205,19 @@ describe('StreamingSearchResults', () => {
             ...NOOP_TELEMETRY_SERVICE,
             log: logSpy,
         }
+        const telemetrySpy = spy()
+        const telemetryRecorder = {
+            ...noOpTelemetryRecorder,
+            log: telemetrySpy,
+        }
 
-        renderWrapper(<StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />)
+        renderWrapper(
+            <StreamingSearchResults
+                {...defaultProps}
+                telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
+            />
+        )
 
         userEvent.click(screen.getAllByTestId('result-container')[0])
         assert.calledWith(logSpy, 'SearchResultClicked')
@@ -197,10 +227,24 @@ describe('StreamingSearchResults', () => {
             ranked: false,
             resultsLength: 3,
         })
+        assert.calledWith(telemetrySpy, 'SearchResultClicked')
+        assert.calledWith(telemetrySpy, 'search.ranking.result-clicked', {
+            index: 0,
+            type: 'fileMatch',
+            ranked: false,
+            resultsLength: 3,
+        })
 
         userEvent.click(screen.getAllByTestId('result-container')[2])
         assert.calledWith(logSpy, 'SearchResultClicked')
         assert.calledWith(logSpy, 'search.ranking.result-clicked', {
+            index: 2,
+            type: 'fileMatch',
+            ranked: false,
+            resultsLength: 3,
+        })
+        assert.calledWith(telemetrySpy, 'SearchResultClicked')
+        assert.calledWith(telemetrySpy, 'search.ranking.result-clicked', {
             index: 2,
             type: 'fileMatch',
             ranked: false,

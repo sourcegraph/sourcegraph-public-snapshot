@@ -17,6 +17,7 @@ import {
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
@@ -32,7 +33,8 @@ import styles from './SearchConsolePage.module.scss'
 interface SearchConsolePageProps
     extends SearchStreamingProps,
         Omit<StreamingSearchResultsListProps, 'allExpanded' | 'executedQuery' | 'showSearchContext'>,
-        OwnConfigProps {
+        OwnConfigProps,
+        TelemetryV2Props {
     isMacPlatform: boolean
 }
 

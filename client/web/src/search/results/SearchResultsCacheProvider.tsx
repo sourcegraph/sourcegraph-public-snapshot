@@ -15,6 +15,7 @@ import { merge, of } from 'rxjs'
 import { last, share, tap, throttleTime } from 'rxjs/operators'
 
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/wildcard'
 
@@ -42,7 +43,8 @@ export function useCachedSearchResults(
     streamSearch: SearchStreamingProps['streamSearch'],
     query: string,
     options: StreamSearchOptions,
-    telemetryService: TelemetryService
+    telemetryService: TelemetryService,
+    telemetryRecorder: TelemetryRecorder
 ): AggregateStreamingSearchResults | undefined {
     const cachedResults = useContext(SearchResultsCacheContext)
 
@@ -97,6 +99,9 @@ export function useCachedSearchResults(
 
         if (navigationType === 'POP') {
             telemetryService.log('SearchResultsCacheRetrieved', { cacheHit: cacheExists }, { cacheHit: cacheExists })
+            telemetryRecorder.recordEvent('SearchResultsCache', 'retrieved', {
+                metadata: { cacheHit: cacheExists ? 1 : 0 },
+            })
         }
         // Only log on first render
         // eslint-disable-next-line react-hooks/exhaustive-deps

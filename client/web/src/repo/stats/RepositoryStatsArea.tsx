@@ -2,6 +2,7 @@ import { type FC, useMemo } from 'react'
 
 import { useSearchParams } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -11,7 +12,7 @@ import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { RepositoryStatsContributorsPage } from './RepositoryStatsContributorsPage'
 
-interface Props extends BreadcrumbSetters, TelemetryProps {
+interface Props extends BreadcrumbSetters, TelemetryProps, TelemetryV2Props {
     repo: RepositoryFields | undefined
 }
 
@@ -31,7 +32,7 @@ const BREADCRUMB = { key: 'contributors', element: 'Contributors' }
  * Renders pages related to repository stats.
  */
 export const RepositoryStatsArea: FC<Props> = props => {
-    const { useBreadcrumb, repo, telemetryService } = props
+    const { useBreadcrumb, repo, telemetryService, telemetryRecorder } = props
     const [searchParams] = useSearchParams()
     const filePath = searchParams.get('path') ?? ''
 
@@ -51,6 +52,7 @@ export const RepositoryStatsArea: FC<Props> = props => {
                         filePath={filePath}
                         isDir={true}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 ),
             }
