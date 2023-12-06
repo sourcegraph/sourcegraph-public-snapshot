@@ -33,7 +33,7 @@ func NewCompletionsResolver(db database.DB, logger log.Logger) graphqlbackend.Co
 }
 
 func (c *completionsResolver) Completions(ctx context.Context, args graphqlbackend.CompletionsArgs) (_ string, err error) {
-	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
+	if isEnabled := cody.IsCodyEnabled(ctx, c.db); !isEnabled {
 		return "", errors.New("cody experimental feature flag is not enabled for current user")
 	}
 
