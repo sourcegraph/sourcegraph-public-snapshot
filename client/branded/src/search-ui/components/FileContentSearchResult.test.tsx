@@ -14,6 +14,7 @@ import {
 
 import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { FileContentSearchResult } from './FileContentSearchResult'
@@ -33,6 +34,7 @@ describe('FileContentSearchResult', () => {
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         settingsCascade: NOOP_SETTINGS_CASCADE,
         telemetryService: NOOP_TELEMETRY_SERVICE,
+        telemetryRecorder: noOpTelemetryRecorder,
     }
 
     it('renders one result container', () => {
