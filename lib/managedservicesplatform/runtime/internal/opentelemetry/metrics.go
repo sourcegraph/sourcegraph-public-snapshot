@@ -34,9 +34,6 @@ func maybeEnableMetrics(_ context.Context, logger log.Logger, config Config, res
 		if err != nil {
 			return nil, errors.Wrap(err, "exporters.NewPrometheusExporter")
 		}
-		// TODO(@bobheadxi)
-		// Must register promhttp.Handler() somewhere to enable collection in
-		// this mode.
 	}
 
 	// Create and set global tracer
