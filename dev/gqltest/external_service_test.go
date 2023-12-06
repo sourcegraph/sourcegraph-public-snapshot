@@ -162,7 +162,6 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 }
 
 func TestExternalService_Perforce(t *testing.T) {
-	t.Skip("disabled pending p4 trust fix")
 	for _, tc := range []struct {
 		name      string
 		depot     string
