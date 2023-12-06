@@ -466,6 +466,14 @@ commands:
     env:
       RUN_SCRIPT_NAME: .bin/bazel_run_docsite.sh
     cmd: |
+      # We tell bazel to write out a script to run docsite and run that script via sg otherwise
+      # when we get a SIGINT ... bazel gets killed but docsite doesn't get killed properly. So we use --script_path
+      # which tells bazel to write out a script to run docsite, and let sg run that script rather, which means
+      # any signal gets propagated and docsite gets properly terminated.
+      #
+      # We also specifically put this in .bin, since that directory is gitignored, otherwise the run script is left
+      # around and currently there is no clean way to remove it - even using a bash trap doesn't work, since the trap
+      # never gets executed due to sg running the script.
       bazel run --script_path=${RUN_SCRIPT_NAME} --noshow_progress --noshow_loading_progress //doc:serve
 
       ./${RUN_SCRIPT_NAME}
