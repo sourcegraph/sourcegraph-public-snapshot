@@ -125,6 +125,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>{queryFromURL} - Sourcegraph</title>
+</svelte:head>
+
 <section>
     <div class="search">
         <SearchInput bind:this={searchInput} {queryState} showSmartSearchButton />
