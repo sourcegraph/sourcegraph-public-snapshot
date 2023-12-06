@@ -1,40 +1,17 @@
-import { containsTest } from "$lib/web"
 import {
     mdiBash,
     mdiCodeJson,
-    mdiDocker,
     mdiFileCode,
-    mdiFileGifBox,
     mdiFileJpgBox,
     mdiFilePngBox,
-    mdiGit,
-    mdiGraphql,
-    mdiLanguageC,
-    mdiLanguageCpp,
-    mdiLanguageCsharp,
-    mdiLanguageCss3,
-    mdiLanguageFortran,
-    mdiLanguageGo,
-    mdiLanguageHaskell,
-    mdiLanguageHtml5,
-    mdiLanguageJava,
-    mdiLanguageJavascript,
-    mdiLanguageKotlin,
-    mdiLanguageLua,
     mdiLanguageMarkdown,
     mdiLanguageMarkdownOutline,
-    mdiLanguagePhp,
-    mdiLanguagePython,
-    mdiLanguageR,
-    mdiLanguageRuby,
-    mdiLanguageRust,
-    mdiLanguageSwift,
-    mdiLanguageTypescript,
-    mdiNpm,
-    mdiReact,
+    mdiNix,
     mdiSvg,
     mdiText,
 } from '@mdi/js'
+
+import { containsTest } from '$lib/web'
 
 // Icon Colors
 const BLUE = 'var(--blue)'
@@ -123,459 +100,272 @@ export enum FileExtension {
     ZIG = 'zig',
 }
 
-const getIcon = (extension: string): string => {
+interface IconInfo {
+    value: string
+    kind: 'mdi' | 'devicon'
+}
+
+const getIcon = (extension: string): IconInfo => {
     switch (extension) {
         case FileExtension.ASSEMBLY: {
-            return mdiFileCode
+            return { value: mdiFileCode, kind: 'mdi' }
         }
         case FileExtension.BASH: {
-            return mdiBash
+            return { value: mdiBash, kind: 'mdi' }
         }
         case FileExtension.BASIC: {
-            return mdiFileCode
+            return { value: mdiFileCode, kind: 'mdi' }
         }
         case FileExtension.C: {
-            return mdiLanguageC
+            return { value: 'c', kind: 'devicon' }
         }
         case FileExtension.CLOJURE_CLJ: {
-            return mdiFileCode
+            return { value: 'clojure', kind: 'devicon' }
         }
         case FileExtension.CLOJURE_CLJC: {
-            return mdiFileCode
+            return { value: 'clojure', kind: 'devicon' }
         }
         case FileExtension.CLOJURE_CLJR: {
-            return mdiFileCode
+            return { value: 'clojure', kind: 'devicon' }
         }
         case FileExtension.CLOJURE_CLJS: {
-            return mdiFileCode
+            return { value: 'clojurescript', kind: 'devicon' }
         }
         case FileExtension.CLOJURE_EDN: {
-            return mdiFileCode
+            return { value: 'clojure', kind: 'devicon' }
         }
         case FileExtension.CPP: {
-            return mdiLanguageCpp
+            return { value: 'cplusplus', kind: 'devicon' }
         }
         case FileExtension.CSHARP: {
-            return mdiLanguageCsharp
+            return { value: 'csharp', kind: 'devicon' }
         }
         case FileExtension.CSS: {
-            return mdiLanguageCss3
+            return { value: 'css3', kind: 'devicon' }
         }
         case FileExtension.DART: {
-            return mdiFileCode
+            return { value: 'dart', kind: 'devicon' }
         }
         case FileExtension.DEFAULT: {
-            return mdiFileCode
+            return { value: mdiFileCode, kind: 'mdi' }
         }
         case FileExtension.DOCKERFILE: {
-            return mdiDocker
+            return { value: 'docker', kind: 'devicon' }
         }
         case FileExtension.DOCKERIGNORE: {
-            return mdiDocker
+            return { value: 'docker', kind: 'devicon' }
         }
         case FileExtension.FORTRAN_F: {
-            return mdiLanguageFortran
+            return { value: mdiFileCode, kind: 'mdi' }
         }
         case FileExtension.FORTRAN_FOR: {
-            return mdiLanguageFortran
+            return { value: mdiFileCode, kind: 'mdi' }
         }
         case FileExtension.FORTRAN_FTN: {
-            return mdiLanguageFortran
+            return { value: mdiFileCode, kind: 'mdi' }
         }
         case FileExtension.FSHARP: {
-            return mdiFileCode
+            return { value: 'fsharp', kind: 'devicon' }
         }
         case FileExtension.FSI: {
-            return mdiFileCode
+            return { value: 'fsharp', kind: 'devicon' }
         }
         case FileExtension.FSX: {
-            return mdiFileCode
-        }
-        case FileExtension.GIF: {
-            return mdiFileGifBox
-        }
-        case FileExtension.GIFF: {
-            return mdiFileGifBox
+            return { value: 'fsharp', kind: 'devicon' }
         }
         case FileExtension.GITIGNORE: {
-            return mdiGit
+            return { value: 'git', kind: 'devicon' }
         }
         case FileExtension.GITATTRIBUTES: {
-            return mdiGit
+            return { value: 'git', kind: 'devicon' }
         }
         case FileExtension.GO: {
-            return mdiLanguageGo
-        }
-        case FileExtension.GOMOD: {
-            return mdiLanguageGo
-        }
-        case FileExtension.GOSUM: {
-            return mdiLanguageGo
+            return { value: 'go', kind: 'devicon' }
         }
         case FileExtension.GRAPHQL: {
-            return mdiGraphql
+            return { value: 'graphql', kind: 'devicon' }
         }
         case FileExtension.GROOVY: {
-            return mdiFileCode
+            return { value: 'groovy', kind: 'devicon' }
         }
         case FileExtension.HASKELL: {
-            return mdiLanguageHaskell
+            return { value: 'haskell', kind: 'devicon' }
         }
         case FileExtension.HTML: {
-            return mdiLanguageHtml5
+            return { value: 'html5', kind: 'devicon' }
         }
         case FileExtension.JAVA: {
-            return mdiLanguageJava
+            return { value: 'java', kind: 'devicon' }
         }
         case FileExtension.JAVASCRIPT: {
-            return mdiLanguageJavascript
+            return { value: 'javascript', kind: 'devicon' }
         }
         case FileExtension.JPG: {
-            return mdiFileJpgBox
+            return { value: mdiFileJpgBox, kind: 'mdi' }
         }
         case FileExtension.JPEG: {
-            return mdiFileJpgBox
+            return { value: mdiFileJpgBox, kind: 'mdi' }
         }
         case FileExtension.JSON: {
-            return mdiCodeJson
+            return { value: mdiCodeJson, kind: 'mdi' }
         }
         case FileExtension.JSX: {
-            return mdiReact
+            return { value: 'react', kind: 'devicon' }
         }
         case FileExtension.JULIA: {
-            return mdiFileCode
+            return { value: 'julia', kind: 'devicon' }
         }
         case FileExtension.KOTLIN: {
-            return mdiLanguageKotlin
+            return { value: 'kotlin', kind: 'devicon' }
         }
         case FileExtension.LOCKFILE: {
-            return mdiCodeJson
+            return { value: mdiCodeJson, kind: 'mdi' }
         }
         case FileExtension.LUA: {
-            return mdiLanguageLua
+            return { value: 'lua', kind: 'devicon' }
         }
         case FileExtension.MARKDOWN: {
-            return mdiLanguageMarkdown
+            return { value: mdiLanguageMarkdownOutline, kind: 'mdi' }
         }
         case FileExtension.MDX: {
-            return mdiLanguageMarkdownOutline
+            return { value: mdiLanguageMarkdown, kind: 'mdi' }
         }
         case FileExtension.NCL: {
-            return mdiFileCode
+            return { value: mdiNix, kind: 'mdi' }
         }
         case FileExtension.NIX: {
-            return mdiFileCode
+            return { value: mdiNix, kind: 'mdi' }
         }
         case FileExtension.NPM: {
-            return mdiNpm
+            return { value: 'npm', kind: 'devicon' }
         }
         case FileExtension.OCAML: {
-            return mdiFileCode
+            return { value: 'ocaml', kind: 'devicon' }
         }
         case FileExtension.PHP: {
-            return mdiLanguagePhp
+            return { value: 'php', kind: 'devicon' }
         }
         case FileExtension.PERL: {
-            return mdiFileCode
+            return { value: 'perl', kind: 'devicon' }
         }
         case FileExtension.PERL_PM: {
-            return mdiFileCode
+            return { value: 'perl', kind: 'devicon' }
         }
         case FileExtension.PNG: {
-            return mdiFilePngBox
+            return { value: mdiFilePngBox, kind: 'mdi' }
         }
         case FileExtension.POWERSHELL_PS1: {
-            return mdiBash
+            return { value: mdiBash, kind: 'mdi' }
         }
         case FileExtension.POWERSHELL_PSM1: {
-            return mdiBash
+            return { value: mdiBash, kind: 'mdi' }
         }
         case FileExtension.PYTHON: {
-            return mdiLanguagePython
+            return { value: 'python', kind: 'devicon' }
         }
         case FileExtension.R: {
-            return mdiLanguageR
+            return { value: 'r', kind: 'devicon' }
         }
         case FileExtension.R_CAP: {
-            return mdiLanguageR
+            return { value: 'r', kind: 'devicon' }
         }
         case FileExtension.RUBY: {
-            return mdiLanguageRuby
+            return { value: 'ruby', kind: 'devicon' }
         }
         case FileExtension.GEMFILE: {
-            return mdiLanguageRuby
+            return { value: 'ruby', kind: 'devicon' }
         }
         case FileExtension.RUST: {
-            return mdiLanguageRust
+            return { value: 'rust', kind: 'devicon' }
         }
         case FileExtension.SCALA: {
-            return mdiFileCode
+            return { value: 'scala', kind: 'devicon' }
         }
         case FileExtension.SASS: {
-            return mdiLanguageCss3
+            return { value: 'sass', kind: 'devicon' }
         }
         case FileExtension.SQL: {
-            return mdiFileCode
+            return { value: mdiFileCode, kind: 'mdi' }
         }
         case FileExtension.SVELTE: {
-            return mdiFileCode
+            return { value: 'svelte', kind: 'devicon' }
         }
         case FileExtension.SVG: {
-            return mdiSvg
+            return { value: mdiSvg, kind: 'mdi' }
         }
         case FileExtension.SWIFT: {
-            return mdiLanguageSwift
+            return { value: 'swift', kind: 'devicon' }
         }
         case FileExtension.TEST: {
-            return mdiFileCode
+            return { value: mdiFileCode, kind: 'mdi' }
         }
         case FileExtension.TYPESCRIPT: {
-            return mdiLanguageTypescript
+            return { value: 'typescript', kind: 'devicon' }
         }
         case FileExtension.TSX: {
-            return mdiReact
+            return { value: 'react', kind: 'devicon' }
         }
         case FileExtension.TEXT: {
-            return mdiText
+            return { value: mdiText, kind: 'mdi' }
         }
         case FileExtension.YAML: {
-            return mdiCodeJson
+            return { value: mdiCodeJson, kind: 'mdi' }
         }
         case FileExtension.YML: {
-            return mdiCodeJson
+            return { value: mdiCodeJson, kind: 'mdi' }
         }
         case FileExtension.ZIG: {
-            return mdiFileCode
+            return { value: 'zig', kind: 'devicon' }
         }
         default: {
-            return mdiFileCode
+            return { value: mdiFileCode, kind: 'mdi' }
         }
     }
 }
 
 const getColor = (extension: string): string => {
     switch (extension) {
-        case FileExtension.ASSEMBLY: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.BASH: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.BASIC: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.C: {
+        case (FileExtension.C,
+        FileExtension.CPP,
+        FileExtension.CSHARP,
+        FileExtension.CSS,
+        FileExtension.DART,
+        FileExtension.DOCKERFILE,
+        FileExtension.DOCKERIGNORE,
+        FileExtension.GO,
+        FileExtension.GROOVY,
+        FileExtension.HASKELL,
+        FileExtension.JSX,
+        FileExtension.LUA,
+        FileExtension.MARKDOWN,
+        FileExtension.MDX,
+        FileExtension.SVG,
+        FileExtension.SWIFT,
+        FileExtension.TYPESCRIPT,
+        FileExtension.TSX): {
             return BLUE
         }
-        case FileExtension.CLOJURE_CLJ: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.CLOJURE_CLJC: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.CLOJURE_CLJR: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.CLOJURE_CLJS: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.CLOJURE_EDN: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.CPP: {
-            return BLUE
-        }
-        case FileExtension.CSHARP: {
-            return BLUE
-        }
-        case FileExtension.CSS: {
-            return BLUE
-        }
-        case FileExtension.DART: {
-            return BLUE
-        }
-        case FileExtension.DEFAULT: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.DOCKERFILE: {
-            return BLUE
-        }
-        case FileExtension.DOCKERIGNORE: {
-            return BLUE
-        }
-        case FileExtension.FORTRAN_F: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.FORTRAN_FOR: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.FORTRAN_FTN: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.FSHARP: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.FSI: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.FSX: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.GIF: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.GIFF: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.GITIGNORE: {
+        case (FileExtension.GITIGNORE,
+        FileExtension.GITATTRIBUTES,
+        FileExtension.HTML,
+        FileExtension.NPM,
+        FileExtension.R,
+        FileExtension.R_CAP,
+        FileExtension.RUBY,
+        FileExtension.GEMFILE): {
             return RED
         }
-        case FileExtension.GITATTRIBUTES: {
-            return RED
-        }
-        case FileExtension.GO: {
-            return BLUE
-        }
-        case FileExtension.GOMOD: {
+        case (FileExtension.GOMOD, FileExtension.GOSUM, FileExtension.GRAPHQL, FileExtension.SASS): {
             return PINK
         }
-        case FileExtension.GOSUM: {
-            return PINK
-        }
-        case FileExtension.GROOVY: {
-            return BLUE
-        }
-        case FileExtension.GRAPHQL: {
-            return PINK
-        }
-        case FileExtension.HASKELL: {
-            return BLUE
-        }
-        case FileExtension.HTML: {
-            return BLUE
-        }
-        case FileExtension.JAVA: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.JAVASCRIPT: {
+        case (FileExtension.JAVASCRIPT, FileExtension.PYTHON): {
             return YELLOW
-        }
-        case FileExtension.JPG: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.JPEG: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.JSON: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.JSX: {
-            return BLUE
-        }
-        case FileExtension.JULIA: {
-            return DEFAULT_ICON
         }
         case FileExtension.KOTLIN: {
             return GREEN
         }
-        case FileExtension.LOCKFILE: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.LUA: {
-            return BLUE
-        }
-        case FileExtension.MARKDOWN: {
-            return BLUE
-        }
-        case FileExtension.MDX: {
-            return BLUE
-        }
-        case FileExtension.NCL: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.NIX: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.NPM: {
-            return RED
-        }
-        case FileExtension.OCAML: {
-            return DEFAULT_ICON
-        }
         case FileExtension.PHP: {
             return CYAN
-        }
-        case FileExtension.PERL: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.PERL_PM: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.PNG: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.POWERSHELL_PS1: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.POWERSHELL_PSM1: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.PYTHON: {
-            return YELLOW
-        }
-        case FileExtension.R: {
-            return RED
-        }
-        case FileExtension.R_CAP: {
-            return RED
-        }
-        case FileExtension.RUBY: {
-            return RED
-        }
-        case FileExtension.GEMFILE: {
-            return RED
-        }
-        case FileExtension.RUST: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.SCALA: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.SASS: {
-            return PINK
-        }
-        case FileExtension.SQL: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.SVELTE: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.SVG: {
-            return BLUE
-        }
-        case FileExtension.SWIFT: {
-            return BLUE
-        }
-        case FileExtension.TEST: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.TYPESCRIPT: {
-            return BLUE
-        }
-        case FileExtension.TSX: {
-            return BLUE
-        }
-        case FileExtension.TEXT: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.YAML: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.YML: {
-            return DEFAULT_ICON
-        }
-        case FileExtension.ZIG: {
-            return DEFAULT_ICON
         }
         default: {
             return DEFAULT_ICON
@@ -584,13 +374,17 @@ const getColor = (extension: string): string => {
 }
 
 export interface IconInfoSvelte {
-    svgPath: string
+    info: {
+        value: string
+        kind: 'mdi' | 'devicon'
+    }
+    // color will be ignored if kind is "devicon"
     color: string
 }
 
-const getIconInfo = (extension: FileExtension) => {
+const getIconInfo = (extension: FileExtension): IconInfoSvelte => {
     return {
-        svgPath: getIcon(extension),
+        info: getIcon(extension),
         color: getColor(extension),
     }
 }
@@ -671,6 +465,83 @@ export const FILE_ICONS: Map<FileExtension, IconInfoSvelte> = new Map([
     [FileExtension.YML, { ...getIconInfo(FileExtension.YML) }],
     [FileExtension.ZIG, { ...getIconInfo(FileExtension.ZIG) }],
 ])
+
+/* export const FILE_ICONS: Map<FileExtension, IconInfoSvelte> = new Map([
+    [FileExtension.ASSEMBLY, { ...getIconInfo(FileExtension.ASSEMBLY) }],
+    [FileExtension.BASH, { ...getIconInfo(FileExtension.BASH) }],
+    [FileExtension.BASIC, { ...getIconInfo(FileExtension.BASIC) }],
+    [FileExtension.C, { ...getIconInfo(FileExtension.C) }],
+    [FileExtension.CLOJURE_CLJ, { ...getIconInfo(FileExtension.CLOJURE_CLJ) }],
+    [FileExtension.CLOJURE_CLJC, { ...getIconInfo(FileExtension.CLOJURE_CLJC) }],
+    [FileExtension.CLOJURE_CLJR, { ...getIconInfo(FileExtension.CLOJURE_CLJR) }],
+    [FileExtension.CLOJURE_CLJS, { ...getIconInfo(FileExtension.CLOJURE_CLJS) }],
+    [FileExtension.CLOJURE_EDN, { ...getIconInfo(FileExtension.CLOJURE_EDN) }],
+    [FileExtension.COFFEE, { ...getIconInfo(FileExtension.COFFEE) }],
+    [FileExtension.CPP, { ...getIconInfo(FileExtension.CPP) }],
+    [FileExtension.CSHARP, { ...getIconInfo(FileExtension.CSHARP) }],
+    [FileExtension.CSS, { ...getIconInfo(FileExtension.CSS) }],
+    [FileExtension.DART, { ...getIconInfo(FileExtension.DART) }],
+    [FileExtension.DEFAULT, { ...getIconInfo(FileExtension.DEFAULT) }],
+    [FileExtension.DOCKERFILE, { ...getIconInfo(FileExtension.DOCKERFILE) }],
+    [FileExtension.DOCKERIGNORE, { ...getIconInfo(FileExtension.DOCKERIGNORE) }],
+    [FileExtension.FORTRAN_F, { ...getIconInfo(FileExtension.FORTRAN_F) }],
+    [FileExtension.FORTRAN_FOR, { ...getIconInfo(FileExtension.FORTRAN_FOR) }],
+    [FileExtension.FORTRAN_FTN, { ...getIconInfo(FileExtension.FORTRAN_FTN) }],
+    [FileExtension.FSHARP, { ...getIconInfo(FileExtension.FSHARP) }],
+    [FileExtension.FSI, { ...getIconInfo(FileExtension.FSI) }],
+    [FileExtension.FSX, { ...getIconInfo(FileExtension.FSX) }],
+    [FileExtension.GIF, { ...getIconInfo(FileExtension.GIF) }],
+    [FileExtension.GIFF, { ...getIconInfo(FileExtension.GIFF) }],
+    [FileExtension.GITIGNORE, { ...getIconInfo(FileExtension.GITIGNORE) }],
+    [FileExtension.GITATTRIBUTES, { ...getIconInfo(FileExtension.GITATTRIBUTES) }],
+    [FileExtension.GO, { ...getIconInfo(FileExtension.GO) }],
+    [FileExtension.GOMOD, { ...getIconInfo(FileExtension.GOMOD) }],
+    [FileExtension.GOSUM, { ...getIconInfo(FileExtension.GOSUM) }],
+    [FileExtension.GROOVY, { ...getIconInfo(FileExtension.GROOVY) }],
+    [FileExtension.GRAPHQL, { ...getIconInfo(FileExtension.GRAPHQL) }],
+    [FileExtension.HASKELL, { ...getIconInfo(FileExtension.HASKELL) }],
+    [FileExtension.HTML, { ...getIconInfo(FileExtension.HTML) }],
+    [FileExtension.JAVA, { ...getIconInfo(FileExtension.JAVA) }],
+    [FileExtension.JAVASCRIPT, { ...getIconInfo(FileExtension.JAVASCRIPT) }],
+    [FileExtension.JPG, { ...getIconInfo(FileExtension.JPG) }],
+    [FileExtension.JPEG, { ...getIconInfo(FileExtension.JPEG) }],
+    [FileExtension.JSX, { ...getIconInfo(FileExtension.JSX) }],
+    [FileExtension.JSON, { ...getIconInfo(FileExtension.JSON) }],
+    [FileExtension.JULIA, { ...getIconInfo(FileExtension.JULIA) }],
+    [FileExtension.KOTLIN, { ...getIconInfo(FileExtension.KOTLIN) }],
+    [FileExtension.LOCKFILE, { ...getIconInfo(FileExtension.LOCKFILE) }],
+    [FileExtension.LUA, { ...getIconInfo(FileExtension.LUA) }],
+    [FileExtension.MARKDOWN, { ...getIconInfo(FileExtension.MARKDOWN) }],
+    [FileExtension.MDX, { ...getIconInfo(FileExtension.MDX) }],
+    [FileExtension.NCL, { ...getIconInfo(FileExtension.NCL) }],
+    [FileExtension.NIX, { ...getIconInfo(FileExtension.NIX) }],
+    [FileExtension.NPM, { ...getIconInfo(FileExtension.NPM) }],
+    [FileExtension.OCAML, { ...getIconInfo(FileExtension.OCAML) }],
+    [FileExtension.PHP, { ...getIconInfo(FileExtension.PHP) }],
+    [FileExtension.PERL, { ...getIconInfo(FileExtension.PERL) }],
+    [FileExtension.PERL_PM, { ...getIconInfo(FileExtension.PERL_PM) }],
+    [FileExtension.PNG, { ...getIconInfo(FileExtension.PNG) }],
+    [FileExtension.POWERSHELL_PS1, { ...getIconInfo(FileExtension.POWERSHELL_PS1) }],
+    [FileExtension.POWERSHELL_PSM1, { ...getIconInfo(FileExtension.POWERSHELL_PSM1) }],
+    [FileExtension.PYTHON, { ...getIconInfo(FileExtension.PYTHON) }],
+    [FileExtension.R, { ...getIconInfo(FileExtension.R) }],
+    [FileExtension.R_CAP, { ...getIconInfo(FileExtension.R_CAP) }],
+    [FileExtension.RUBY, { ...getIconInfo(FileExtension.RUBY) }],
+    [FileExtension.GEMFILE, { ...getIconInfo(FileExtension.GEMFILE) }],
+    [FileExtension.RUST, { ...getIconInfo(FileExtension.RUST) }],
+    [FileExtension.SCALA, { ...getIconInfo(FileExtension.SCALA) }],
+    [FileExtension.SASS, { ...getIconInfo(FileExtension.SASS) }],
+    [FileExtension.SQL, { ...getIconInfo(FileExtension.SQL) }],
+    [FileExtension.SVELTE, { ...getIconInfo(FileExtension.SVELTE) }],
+    [FileExtension.SVG, { ...getIconInfo(FileExtension.SVG) }],
+    [FileExtension.SWIFT, { ...getIconInfo(FileExtension.SWIFT) }],
+    [FileExtension.TYPESCRIPT, { ...getIconInfo(FileExtension.TYPESCRIPT) }],
+    [FileExtension.TSX, { ...getIconInfo(FileExtension.TSX) }],
+    [FileExtension.TEXT, { ...getIconInfo(FileExtension.TEXT) }],
+    [FileExtension.YAML, { ...getIconInfo(FileExtension.YAML) }],
+    [FileExtension.YML, { ...getIconInfo(FileExtension.YML) }],
+    [FileExtension.ZIG, { ...getIconInfo(FileExtension.ZIG) }],
+])*/
 
 interface FileInfo {
     extension: FileExtension

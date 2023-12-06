@@ -226,6 +226,9 @@ importers:
       detect-indent:
         specifier: ^6.1.0
         version: 6.1.0
+      devicon:
+        specifier: ^2.15.1
+        version: 2.15.1
       downshift:
         specifier: ^3.4.8
         version: 3.4.8(react@18.1.0)
@@ -14265,6 +14268,10 @@ packages:
   /devalue@4.3.2:
     resolution: {integrity: sha512-KqFl6pOgOW+Y6wJgu80rHpo2/3H07vr8ntR9rkkFIRETewbf5GaYYcakYfiKz89K+sLsuPkQIZaXDMjUObZwWg==}
     dev: true
+
+  /devicon@2.15.1:
+    resolution: {integrity: sha512-iyapbDVaq1PgMSMZ4IekgjH230aSUU4kHmZ142lQ2TJ+9HB4P4V78eNDkyaQEEoi0KJhxIGPcTSFqxHaZ4OMyw==}
+    dev: false
 
   /devtools-protocol@0.0.981744:
     resolution: {integrity: sha512-0cuGS8+jhR67Fy7qG3i3Pc7Aw494sb9yG9QgpG97SFVWwolgYjlhJg7n+UaHxOQT30d1TYu/EYe9k01ivLErIg==}

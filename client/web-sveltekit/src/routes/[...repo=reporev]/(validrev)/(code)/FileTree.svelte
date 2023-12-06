@@ -12,21 +12,29 @@
     import { createForwardStore } from '$lib/utils'
     import { replaceRevisionInURL } from '$lib/web'
     import { FILE_ICONS, getFileInfo } from '$lib/repo/fileIcons'
+    import FileIcon from '$lib/FileIcon.svelte'
 
     export let treeProvider: FileTreeProvider
     export let selectedPath: string
     export let revision: string
 
+    interface IconPath {
+        info?: {
+            value?: string | undefined
+            kind: 'mdi' | 'devicon'
+        }
+        color?: string
+    }
+
     /**
      * Returns the corresponding icon and css class for `entry`
-     * TODO: implement with different icons
      */
-    function getIconPath(entry: TreeEntryFields, open: boolean): { svgPath?: string; color?: string } {
+    function getIconPath(entry: TreeEntryFields, open: boolean): IconPath {
         if (entry === treeRoot) {
-            return { svgPath: mdiFolderArrowUpOutline, color: 'var(--gray-07)' }
+            return { info: { value: mdiFolderArrowUpOutline, kind: 'mdi' } }
         }
         if (entry.isDirectory) {
-            return { svgPath: open ? mdiFolderOpenOutline : mdiFolderOutline, color: 'var(--gray-07)' }
+            return { info: { value: open ? mdiFolderOpenOutline : mdiFolderOutline, kind: 'mdi' } }
         }
         const fileInfo = getFileInfo(entry.name)
         return { ...FILE_ICONS.get(fileInfo.extension) }
@@ -118,7 +126,7 @@
                 <!-- todo: create alert component -->
                 <span class="note">Full list is too long to display. Use search to find a specific file.</span>
             {:else}
-                {@const { svgPath, color } = getIconPath(entry, expanded)}
+                {@const iconProps = getIconPath(entry, expanded)}
                 <!--
                     We handle navigation via the TreeView's select event, to preserve the focus state.
                     Using a link here allows us to benefit from data preloading.
@@ -128,8 +136,19 @@
                     on:click|preventDefault={() => {}}
                     tabindex={-1}
                     data-go-up={isRoot ? true : undefined}
+                    class="icons"
                 >
-                    <Icon svgPath={svgPath ?? mdiFileCodeOutline} inline --color={color ?? ''} />
+                    <span class="icons">
+                        {#if iconProps.info?.kind === 'mdi'}
+                            <Icon
+                                svgPath={iconProps?.info.value ?? mdiFileCodeOutline}
+                                inline
+                                color={iconProps.color ?? ''}
+                            />
+                        {:else if iconProps.info?.kind === 'devicon'}
+                            <FileIcon value={iconProps?.info?.value ?? ''} />
+                        {/if}
+                    </span>
                     {isRoot ? '..' : entry.name}
                 </a>
             {/if}
@@ -138,6 +157,9 @@
 </div>
 
 <style lang="scss">
+    .icons {
+        margin-right: 0.2rem;
+    }
     div {
         overflow: scroll;
 

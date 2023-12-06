@@ -340,6 +340,7 @@
     "date-fns": "^2.16.1",
     "delay": "^4.4.1",
     "detect-indent": "^6.1.0",
+    "devicon": "^2.15.1",
     "downshift": "^3.4.8",
     "escape-html": "^1.0.3",
     "eventsource": "1.1.1",
