@@ -33,7 +33,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not get weather: %v", err)
 	}
-	log.Printf("Weather in NYC - description: %s, temp: %f", weather.GetDescription(), weather.GetTemperature())
+
+	// We use the generated getter method to safety access the location
+	// since there are no required fields in Protobuf messages:
+	// The getters return the zero value for the type if the field is not set.
+	//
+	// See https://protobuf.dev/programming-guides/field_presence/ and https://stackoverflow.com/a/42634681 for more information.
+	w, t := weather.GetDescription(), weather.GetTemperature()
+	log.Printf("Weather in NYC - description: %s, temp: %f", w, t)
 
 	// Unary RPC: Error case - get weather for a specific location (that doesn't exist for didactic purposes)
 	weather, err = client.GetCurrentWeather(context.Background(), &pb.LocationRequest{Location: "Ravenholm"})
