@@ -107,7 +107,7 @@ Alternatively, you can also [download and install the extension from the VS Code
 
 ## Connect the extension to Sourcegraph
 
-After a successful installation, the Cody icon appears in the [Activity sidebar](https://code.visualstudio.com/api/ux-guidelines/activity-bar). Clicking it prompts you to start with codehosts like GitHub, GitLab, and your Google login. This allows Cody to access your Sourcegraph.com account.
+After a successful installation, the Cody icon appears in the [Activity sidebar](https://code.visualstudio.com/api/ux-guidelines/activity-bar). Users on free Cody tier can sign in to their Sourcegraph.com accounts through GitHub, GitLab, or Google.
 
 ![cody-sign-flow](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-signin-vscode.png)
 
@@ -115,7 +115,11 @@ You can use Sourcegraph Enterprise with the Cody VS Code extension. Click the **
 
 ## Verifying the installation
 
-Once connected, click the Cody icon from the sidebar again, and a panel will open. Let's create an autocomplete suggestion to verify that the Cody extension has been successfully installed and is working as expected.
+Once connected, click the Cody icon from the sidebar again. The Cody extension will open in a configurable side panel.
+
+![code-panel](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-new-panel.png)
+
+Let's create an autocomplete suggestion to verify that the Cody extension has been successfully installed and is working as expected.
 
 Cody provides intelligent code suggestions and context-aware autocompletions for numerous programming languages like JavaScript, Python, TypeScript, Go, etc.
 
@@ -135,31 +139,33 @@ function bubbleSort(array){
 
 ## Chat
 
-Cody chat in VS Code is available in a tab next to your code. Once connected to Sourcegraph, a **New Chat** button opens the chat window on the right. You can have multiple Cody Chats going simultaneously in separate tabs. In addition, each command will also open a new chat session to keep track of your workflow.
+Cody chat in VS Code is available in a tab next to your code. Once connected to Sourcegraph, a **New Chat** button opens the chat window on the right. You can have multiple Cody Chats going simultaneously in separate tabs.
 
-All previous and existing chats are stored under the chats panel on the left. You can download these for later use in a `.json` file or delete them altogether.
+All previous and existing chats are stored under the chats panel on the left. You can download these to share or use later in a `.json` file, or delete them altogether.
 
 ### Enhanced Context Selector
 
-There is also a settings icon next to the chat typing window to **Configure Enhanced Context**. There are two scenarios if this option is checked or unchecked:
+Cody's Enhanced Context enables Cody to leverage search and embeddings-based context. It's enabled by default, though embeddings for Enterprise users are controlled by administrators and community users will need to generate embeddings for their projects by clicking the icon next to the chat input. The icon is also where you can disable Enhanced Context if you'd like more granular control of Cody's context by tagging `@-file` or `@#-symbol` in the chat input.
 
-- **Checked**: Use Enhanced Context, which contains results from the embeddings client. If embeddings are not available, use results from symf instead
-- **Unchecked**: Will not use any enhanced context. Instead, a user may include selected code to provide a more chat-based experience
+![](https://storage.googleapis.com/sourcegraph-assets/Docs/enhanced-context.png)
 
 ### LLM Selection
 
-VS Code users can choose LLMs for Cody's chat right from the chat panel. The default LLM is set to Claude 2.0 by Anthropic. However, a drop-down allows you to choose between different LLMs.
+Cody Community users can choose the LLM they'd like Cody to use for chats right within the chat panel. The default LLM is set to Claude 2.0 by Anthropic, but the drop-down allows you to experiment with different LLMs and choose the one that's best for you. For Enterprise users, the LLM is determined by the administrator and cannot be changed within the editor.
+
+![](https://storage.googleapis.com/sourcegraph-assets/Docs/llm-select.png)
 
 ## Commands
 
 Cody offers quick, ready-to-use [Commands](./../capabilities.md#commands) for common actions to write, describe, fix, and smell code. These allow you to run predefined actions with smart context-fetching anywhere in the editor, like:
 
-- Ask a question (`ask`)
-- Generate code documentation (`doc`)
-- Explain code (`explain`)
-- Generate unit test (`test`)
-  Find code smells (`smell`)
-- Clear the Cody chat (`reset`)
+- Ask Cody a question
+- Add code documentation
+- Edit code with instructions
+- Explain code
+- Identify code smells
+- Generate unit tests
+- Custom commands
 
 Let's understand how the `/doc` command generates code documentation for a function.
 
