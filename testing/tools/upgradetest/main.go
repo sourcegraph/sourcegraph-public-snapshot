@@ -11,27 +11,43 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/Masterminds/semver"
 	_ "github.com/lib/pq"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/run"
 )
 
+// This is a CI test intended to verify that the upgrade process works as expected. For the three primary Sourcegraph databases (frontend, codeintel-db, and codeinsights-db)
+// We conduct multiversion upgrades, and standard upgrades, based on their respective upgrade policies.
+// - For Standard upgrades (migrator up) we test each patch version defined in the previous minor version of sourcegraph.
+// - For MVU upgrades (migrator upgrade) we test all versions defined at least two minor versions prior to the latest patch release. i.e. all versions for which a standard upgrade will not work.
+// - TODO: autoupgrades
+// A test consists of upgradeing from an initial version to a candidate version. Defined as the latest builds of frontend, migrator, and the db schemes as found on the local branch.
+// This test does not test Sourcegraph features, only the basic operations of schema upgrade paths.
+// TODO: test OOB migrations by seeding data.
+// TODO: definition file for tests with known bugs and tests to be run
 func main() {
-
 	ctx := context.Background()
-
-	// Get init versions to use for initializing upgrade environments for tests
-	latestMinorVersion, latestVersion, randomVersion, stdVersions, mvuVersions, err := getVersions(ctx)
-	if err != nil {
-		fmt.Println("🚨 Error: could not get latest major or minor releases: ", err, randomVersion)
+	// check docker is running
+	if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
+		fmt.Println("🚨 Error: could not connect to docker: ", err)
 		os.Exit(1)
 	}
+
+	// Get init versions to use for initializing upgrade environments for tests
+	latestMinorVersion, latestVersion, stdVersions, mvuVersions, err := getVersions(ctx)
+	if err != nil {
+		fmt.Println("🚨 Error: failed to get test version ranges: ", err)
+		os.Exit(1)
+	}
+
 	fmt.Println("Latest version: ", latestVersion)
 	fmt.Println("Latest minor version: ", latestMinorVersion)
 	fmt.Println("Standard Versions:", stdVersions)
@@ -42,16 +58,20 @@ func main() {
 	fmt.Println(args[1])
 	fmt.Println(args[2])
 	fmt.Println(args[3])
-	// run.Cmd(ctx, "ls", args[3]).Run().Stream(os.Stdout)
-	// run.Cmd(ctx, "cat", args[3]+"/_schema.json").Run().Stream(os.Stdout)
 
 	// initialize test results
 	var results TestResults
 
-	// Run Standard Upgrade Tests
-	stdTestPool := pool.New().WithMaxGoroutines(10).WithErrors()
+	// Run Standard Upgrade Tests in goroutines. The current limit is set as 3 concurrent goroutines per test type (std, mvu, auto). This is to address
+	// dynamic port allocation issues that occur in docker when creating many bridge networks, but tests begin to fail when a sufficient number of
+	// goroutines are running on local machine. We may tune this in CI.
+	// TODO this should likely be made an env var or something to make it easy to swamp out depending on the test box.
+	stdTestPool := pool.New().WithMaxGoroutines(3).WithErrors()
 	for _, version := range stdVersions {
 		version := version
+		if slices.Contains(knownBugVersions, version.String()) {
+			continue
+		}
 		stdTestPool.Go(func() error {
 			fmt.Println("std: ", version)
 			start := time.Now()
@@ -66,9 +86,12 @@ func main() {
 	}
 
 	// Run MVU Upgrade Tests
-	mvuTestPool := pool.New().WithMaxGoroutines(10).WithErrors()
+	mvuTestPool := pool.New().WithMaxGoroutines(3).WithErrors()
 	for _, version := range mvuVersions {
 		version := version
+		if slices.Contains(knownBugVersions, version.String()) {
+			continue
+		}
 		mvuTestPool.Go(func() error {
 			fmt.Println("mvu: ", version)
 			start := time.Now()
@@ -82,44 +105,53 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// TODO
 	if err := autoUpgradeTest(ctx); err != nil {
 		fmt.Println("--- 🚨 Auto Upgrade Test Failed: ", err)
 		os.Exit(1)
 	}
 
-	results.DisplayErrors()
+	// This is where we do the majority of our printing to stdout.
+	results.OrderByVersion()
 	results.SimpleResults()
 }
 
+// Tests are the basic unit of this program and represent a version being tested. Its methods are generally used to control its logging behavior.
+// Tests are further organized by TestResults, a test result aggregation.
 type Test struct {
-	Version  string
+	Version  semver.Version
 	Type     string
 	Runtime  time.Duration
 	LogLines []string
 	Errors   []error
 }
 
+// Register a log
 func (t *Test) AddLog(log string) {
 	t.LogLines = append(t.LogLines, log)
 }
 
+// register an error
 func (t *Test) AddError(err error) {
 	t.LogLines = append(t.LogLines, err.Error())
 	t.Errors = append(t.Errors, err)
 }
 
+// Print errors to stdout
 func (t *Test) DisplayErrors() {
 	for _, err := range t.Errors {
 		fmt.Println(err)
 	}
 }
 
+// Print logs to stdout
 func (t *Test) DisplayLog() {
 	for _, log := range t.LogLines {
 		fmt.Println(log)
 	}
 }
 
+// TestResults is a collection of tests, organized by type. Its methods are generally used to control its logging behavior.
 type TestResults struct {
 	StandardUpgradeTests []Test
 	MVUUpgradeTests      []Test
@@ -127,82 +159,116 @@ type TestResults struct {
 	Mutex                sync.Mutex
 }
 
+// Add a standard test to the results
 func (r *TestResults) AddStdTest(test Test) {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 	r.StandardUpgradeTests = append(r.StandardUpgradeTests, test)
 }
 
+// Add a multiversion upgrade test to the results
 func (r *TestResults) AddMVUTest(test Test) {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 	r.MVUUpgradeTests = append(r.MVUUpgradeTests, test)
 }
 
+// Add an autoupgrade test to the results
 func (r *TestResults) AddAutoTest(test Test) {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 	r.AutoupgradeTests = append(r.AutoupgradeTests, test)
 }
 
+// Known bug versions
+// versions 4.1.0 to v4.4.2 are affected by a known bug in MVU if initialized in these versions: https://github.com/sourcegraph/sourcegraph/pull/46969
+var knownBugVersions = []string{
+	"4.1.0",
+	"4.1.1",
+	"4.1.2",
+	"4.1.3",
+	"4.2.0",
+	"4.2.1",
+	"4.3.0",
+	"4.3.1",
+	"4.4.0",
+	"4.4.1",
+	"4.4.2",
+}
+
+// Display quick view of test resutls, errors will log the first error line only.
 func (r *TestResults) SimpleResults() {
 	stdRes := []string{}
 	for _, test := range r.StandardUpgradeTests {
 		if 0 < len(test.Errors) {
-			stdRes = append(stdRes, fmt.Sprintf("🚨 %s Failed -- %s", test.Version, test.Runtime))
+			stdRes = append(stdRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[0]))
 		} else {
-			stdRes = append(stdRes, fmt.Sprintf("✅ %s Passed -- %s ", test.Version, test.Runtime))
+			stdRes = append(stdRes, fmt.Sprintf("✅ %s Passed -- %s ", test.Version.String(), test.Runtime))
 		}
 	}
 	mvuRes := []string{}
 	for _, test := range r.MVUUpgradeTests {
 		if 0 < len(test.Errors) {
-			mvuRes = append(mvuRes, fmt.Sprintf("🚨 %s Failed -- %s", test.Version, test.Runtime))
+			mvuRes = append(mvuRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[0]))
 		} else {
-			mvuRes = append(mvuRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version, test.Runtime))
+			mvuRes = append(mvuRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version.String(), test.Runtime))
 		}
 	}
 	autoRes := []string{}
 	for _, test := range r.AutoupgradeTests {
 		if 0 < len(test.Errors) {
-			autoRes = append(autoRes, fmt.Sprintf("🚨 %s Failed -- %s", test.Version, test.Runtime))
+			autoRes = append(autoRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[0]))
 		} else {
-			autoRes = append(autoRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version, test.Runtime))
+			autoRes = append(autoRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version.String(), test.Runtime))
 		}
 	}
-	fmt.Println("--- Standard Upgrade Tests: \n", strings.Join(stdRes, "\n"))
-	fmt.Println("--- Multiversion Upgrade Tests: \n", strings.Join(mvuRes, "\n"))
-	fmt.Println("--- Auto Upgrade Tests: \n", strings.Join(autoRes, "\n"))
+	fmt.Println("--- Standard Upgrade Tests:")
+	fmt.Println(strings.Join(stdRes, "\n"))
+	fmt.Println("--- Multiversion Upgrade Tests:")
+	fmt.Println(strings.Join(mvuRes, "\n"))
+	fmt.Println("--- Auto Upgrade Tests:")
+	fmt.Println(strings.Join(autoRes, "\n"))
 }
 
+// Display test Errors, prints errors for all tests that errored.
 func (r *TestResults) DisplayErrors() {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 	for _, test := range r.StandardUpgradeTests {
 		if 0 < len(test.Errors) {
-			fmt.Printf("--- 🚨 Standard Upgrade Test %s Failed:\n", test.Version)
-			test.DisplayLog()
+			fmt.Printf("--- 🚨 Standard Upgrade Test %s Failed:\n", test.Version.String())
 			test.DisplayErrors()
 		}
 	}
 	for _, test := range r.MVUUpgradeTests {
 		if 0 < len(test.Errors) {
-			fmt.Printf("--- 🚨 Multiversion Upgrade Test %s Failed:\n", test.Version)
-			test.DisplayLog()
+			fmt.Printf("--- 🚨 Multiversion Upgrade Test %s Failed:\n", test.Version.String())
 			test.DisplayErrors()
 		}
 	}
 	for _, test := range r.AutoupgradeTests {
 		if 0 < len(test.Errors) {
-			fmt.Printf("--- 🚨 Auto Upgrade Test %s Failed:\n", test.Version)
-			test.DisplayLog()
+			fmt.Printf("--- 🚨 Auto Upgrade Test %s Failed:\n", test.Version.String())
 			test.DisplayErrors()
 		}
 	}
 }
 
+// Sort tests TestResults by their test.Version value
+func (r *TestResults) OrderByVersion() {
+	sort.Slice(r.StandardUpgradeTests, func(i, j int) bool {
+		return r.StandardUpgradeTests[i].Version.LessThan(&r.StandardUpgradeTests[j].Version)
+	})
+	sort.Slice(r.MVUUpgradeTests, func(i, j int) bool {
+		return r.MVUUpgradeTests[i].Version.LessThan(&r.MVUUpgradeTests[j].Version)
+	})
+	sort.Slice(r.AutoupgradeTests, func(i, j int) bool {
+		return r.AutoupgradeTests[i].Version.LessThan(&r.AutoupgradeTests[j].Version)
+	})
+}
+
 // standardUpgradeTest initializes Sourcegraph's dbs and runs a standard upgrade
-// i.e. an upgrade test between the last minor version and the current release candidate
+// i.e. an upgrade test between some last minor version and the current release candidate
 func standardUpgradeTest(ctx context.Context, initVersion, migratorVersion *semver.Version) Test {
 	//start test env
 	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "standard", initVersion)
@@ -251,11 +317,11 @@ func standardUpgradeTest(ctx context.Context, initVersion, migratorVersion *semv
 	return test
 }
 
-// multiversionUpgradeTest initializes Sourcegraph's dbs at a random version greater than v3.20,
-// it then runs a multiversion upgrade to the latest release candidate schema and checks for drift
-func multiversionUpgradeTest(ctx context.Context, randomVersion, latestVersion *semver.Version) Test {
+// multiversionUpgradeTest tests the migrator upgrade command,
+// initializing the three main dbs and conducting an upgrade to the release candidate version
+func multiversionUpgradeTest(ctx context.Context, initVersion, latestVersion *semver.Version) Test {
 
-	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "multiversion", randomVersion)
+	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "multiversion", initVersion)
 	if err != nil {
 		fmt.Println("failed to setup env: ", err)
 		cleanup()
@@ -265,16 +331,18 @@ func multiversionUpgradeTest(ctx context.Context, randomVersion, latestVersion *
 
 	// ensure env correctly initialized, always use latest migrator for drift check,
 	// this allows us to avoid issues from changes in migrators invocation
-	if err := validateDBs(ctx, &test, randomVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestVersion.String()), networkName, dbs, false); err != nil {
+	if err := validateDBs(ctx, &test, initVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestVersion.String()), networkName, dbs, false); err != nil {
 		test.AddError(fmt.Errorf("🚨 Initializing env in multiversion test failed: %w", err))
 		return test
 	}
 
 	// Run multiversion upgrade using candidate image
-	// TODO: target the schema of the candidate version rather than latest released tag on branch
-	test.AddLog(fmt.Sprintf("-- ⚙️  performing multiversion upgrade (--from %s --to %s)", randomVersion.String(), latestVersion.String()))
+	// TODO: target the schema of the candidate version rather than latest released tag on branch, this has less effect than you might expect.
+	// migrator upgrade only applies migrations defined between first minor versions i.e. 5.1 -> 5.2, migrator `up` incorperates migrations defined in a patch version and is run later in the test.
+	// We may be able to work around this furhter in CI
+	test.AddLog(fmt.Sprintf("-- ⚙️  performing multiversion upgrade (--from %s --to %s)", initVersion.String(), latestVersion.String()))
 	out, err := run.Cmd(ctx,
-		dockerMigratorBaseString(test, fmt.Sprintf("upgrade --from %s --to %s", randomVersion.String(), latestVersion.String()), "migrator:candidate", networkName, dbs)...).
+		dockerMigratorBaseString(test, fmt.Sprintf("upgrade --from %s --to %s", initVersion.String(), latestVersion.String()), "migrator:candidate", networkName, dbs)...).
 		Run().String()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to upgrade: %w", err))
@@ -315,11 +383,13 @@ func multiversionUpgradeTest(ctx context.Context, randomVersion, latestVersion *
 	return test
 }
 
+// TODO
 func autoUpgradeTest(ctx context.Context) error {
 	fmt.Println("--- 🕵️  auto upgrade test")
 	return nil
 }
 
+// testDB is an organizational type to make orchestrating the three dbs easier, and also to store a dynamically allocated port for postgres
 type testDB struct {
 	DbName            string
 	ContainerName     string
@@ -327,12 +397,12 @@ type testDB struct {
 	ContainerHostPort string
 }
 
-// Create a docker network for testing as well as instances of our three databases. Returning a cleanup function.
+// Initialize a test environment ad object. Create a docker network for testing as well as instances of our three databases. Returning a cleanup function.
 // An instance of Sourcegraph-Frontend is also started to initialize the versions table of the database.
 // TODO: setupTestEnv should seed some initial data at the target initVersion. This will be usefull for testing OOB migrations
 func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Version) (test Test, networkName string, dbs []*testDB, cleanup func(), err error) {
 	test = Test{
-		Version:  initVersion.String(),
+		Version:  *initVersion,
 		Type:     testType,
 		LogLines: []string{},
 		Errors:   []error{},
@@ -349,8 +419,8 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 
 	// Create a docker network for testing
 	//
-	// TODO: currently this test run against its full range of versions runs out of unique IPv4 addresses
-	// see https://straz.to/2021-09-08-docker-address-pools/ need to investigate bazel friendly strategy or set up semaphore.
+	// Docker bridge networks take up a lot of the docker daemons available port allocation. We run only a limited amount of test parallelization to get around this.
+	// see https://straz.to/2021-09-08-docker-address-pools/
 	networkName = fmt.Sprintf("wg_test_%s", initVersion)
 	test.AddLog(fmt.Sprintf("🐋 creating network %s", networkName))
 
@@ -388,6 +458,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 		if err != nil {
 			test.AddError(fmt.Errorf("🚨 failed to create test databases: %s", err))
 		}
+		// get the dynamically allocated port and register it to the test
 		port, err := run.Cmd(ctx, "docker", "port", db.ContainerName, "5432").Run().String()
 		if err != nil {
 			test.AddError(fmt.Errorf("🚨 failed to get port for %s: %s", db.ContainerName, err))
@@ -395,6 +466,8 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 		db.ContainerHostPort = port
 	}
 
+	// Create a 10 minute timeout to validate the databases have initialized, this is to prevent a hung test
+	// When many goroutines are running this test this is a point of failure.
 	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Minute*10)
 	wgDbPing := pool.New().WithErrors().WithContext(dbPingTimeout)
 	defer cancel()
@@ -468,7 +541,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 		}
 	}
 
-	//start frontend and poll db until initial version is set
+	//start frontend and poll db until initial version is set by frontend
 	var cleanFrontend func()
 	cleanFrontend, err = startFrontend(ctx, test, "sourcegraph/frontend", initVersion.String(), networkName, dbs)
 	if err != nil {
@@ -502,7 +575,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 }
 
 // validateDBs runs a few tests to assess the readiness of the database and wether or not drift exists on the schema.
-// It is used in initializing a new db as well as "validating" the db after an version change. This behavior is controlledg by the upgrade parameter.
+// It is used in initializing a new db as well as "validating" the db after an version change. This behavior is controlled by the upgrade parameter.
 func validateDBs(ctx context.Context, test *Test, version, migratorImage, networkName string, dbs []*testDB, upgrade bool) error {
 	test.AddLog("-- ⚙️  validating dbs")
 
@@ -695,7 +768,7 @@ func dockerMigratorBaseString(test Test, cmd, migratorImage, networkName string,
 	}
 }
 
-// Generate random hash for naming containers in test
+// Generate random hash for naming containers in test, used for frontend and migrator
 func newContainerHash() ([]byte, error) {
 	hash := make([]byte, 4)
 	_, err := rand.Read(hash)
@@ -706,19 +779,16 @@ func newContainerHash() ([]byte, error) {
 }
 
 // getLatestVersions returns the latest minor semver version, as well as the latest full semver version.
-// It also returns a random version greater than v3.38, this is the range of versions MVU should work over.
 //
 // Technically MVU is supported v3.20 and forward, but in older versions codeinsights-db didnt exist and postgres was using version 11.4
 // so we reduced the scope of the test.
-//
-// randomVersion will only be versions v3.39 and greater, see comments inside function for more details.
-func getVersions(ctx context.Context) (latestMinor, latestFull, randomVersion *semver.Version, stdVersions, mvuVersions []*semver.Version, err error) {
+func getVersions(ctx context.Context) (latestMinor, latestFull *semver.Version, stdVersions, mvuVersions []*semver.Version, err error) {
 	tags, err := run.Cmd(ctx, "git",
 		"for-each-ref",
 		"--format", "'%(refname:short)'",
 		"refs/tags").Run().Lines()
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	var validTags []*semver.Version
@@ -734,6 +804,12 @@ func getVersions(ctx context.Context) (latestMinor, latestFull, randomVersion *s
 		if v.Prerelease() != "" {
 			continue // skip prereleases
 		}
+		// To simplify this testing range we'll only select a version tags from versions greater than v3.38
+		// In v3.39 many things were normalized in the dbs:
+		// - codeinsights-db moved from timescaleDB to posgres-12
+		// - our image for codeintel-db and pgsql was normalized to postgres-12-alpine
+		// - the migration_logs table exists, this was renamed from schema_migrations in v3.36.0
+		// - migrator is introduced in v3.38.0
 		if v.LessThan(semver.MustParse("v3.39.0")) {
 			continue
 		}
@@ -748,7 +824,7 @@ func getVersions(ctx context.Context) (latestMinor, latestFull, randomVersion *s
 		}
 		latestMinorVer, err = semver.NewVersion(fmt.Sprintf("%d.%d.0", latestFullVer.Major(), latestFullVer.Minor()))
 		if err != nil {
-			return nil, nil, nil, nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 	}
 
@@ -758,7 +834,7 @@ func getVersions(ctx context.Context) (latestMinor, latestFull, randomVersion *s
 		if err != nil {
 			fmt.Println("🚨 failed to collect versions for standard upgrade test: ", err)
 		}
-		// Get tags within a minor version of the latest full version
+		// Sort versions into those for the standard test (one minor version behind the latest release candidate), and those for multiversion testing.
 		if std.Check(tag) {
 			stdVersions = append(stdVersions, tag)
 		} else {
@@ -766,55 +842,13 @@ func getVersions(ctx context.Context) (latestMinor, latestFull, randomVersion *s
 		}
 	}
 
-	// Get random tag version greater than v3.38
-	var randomVersions []*semver.Version
-	for _, tag := range tags {
-		v, err := semver.NewVersion(tag)
-		if err != nil {
-			continue
-		}
-		// no prereleases
-		if v.Prerelease() != "" {
-			continue
-		}
-		// versions at least two behind the current latest version
-		if v.Major() == latestFullVer.Major() && v.Minor() >= latestFullVer.Minor()-1 {
-			continue
-		}
-		// skip version v4.3 which is affected by a known bug. See https://docs.sourcegraph.com/admin/updates/docker_compose#v4-3-v4-4-1
-		if v.GreaterThan(semver.MustParse("v4.0.1")) && v.LessThan(semver.MustParse("v4.5.0")) {
-			continue
-		}
-
-		// To simplify this testing range we'll only select a random version tag from versions greater than v3.38
-		// In v3.39 many things were normalized in the dbs:
-		// - codeinsights-db moved from timescaleDB to posgres-12
-		// - our image for codeintel-db and pgsql was normalized to postgres-12-alpine
-		// - the migration_logs table exists, this was renamed from schema_migrations in v3.36.0
-		// - migrator is introduced in v3.38.0
-		if v.GreaterThan(semver.MustParse("v3.38.1")) { // theres was only one patch in v3.38
-			randomVersions = append(randomVersions, v)
-		}
-	}
-
-	if len(randomVersions) == 0 {
-		return nil, nil, nil, nil, nil, errors.New("No valid random semver tags found")
-	}
-
-	// Select random index
-	randIndex := rand.Intn(len(randomVersions))
-	randomVersion = randomVersions[randIndex]
-
 	if latestMinorVer == nil {
-		return nil, nil, nil, nil, nil, errors.New("No valid minor semver tags found")
+		return nil, nil, nil, nil, errors.New("No valid minor semver tags found")
 	}
 	if latestFullVer == nil {
-		return nil, nil, nil, nil, nil, errors.New("No valid full semver tags found")
-	}
-	if randomVersion == nil {
-		return nil, nil, nil, nil, nil, errors.New("No valid random semver tag found")
+		return nil, nil, nil, nil, errors.New("No valid full semver tags found")
 	}
 
-	return latestMinorVer, latestFullVer, randomVersion, stdVersions, mvuVersions, nil
+	return latestMinorVer, latestFullVer, stdVersions, mvuVersions, nil
 
 }
