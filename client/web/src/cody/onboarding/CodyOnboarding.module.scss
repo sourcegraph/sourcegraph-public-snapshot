@@ -10,22 +10,22 @@
     );
     background-origin: border-box;
 
-    /* to allow a gradient stroke, this is actually where the color of the background is set*/
+    /* to allow a gradient stroke, this is actually where the color of the background is set */
     box-shadow: inset 0 100vw var(--theme-bg-plain);
 
-    /* to let the gradient on the background act as a stroke*/
+    /* to let the gradient on the background act as a stroke */
     border: 1px solid transparent;
 
-    /* to let gradient shadow be behind the modal*/
+    /* to let gradient shadow be behind the modal */
     transform-style: preserve-3d;
 }
 
-/* Colorful shadow on the modal*/
+/* Colorful shadow on the modali */
 .modal::after {
     content: '';
     position: absolute;
     width: 90%;
-    height: 45px;
+    height: 2.8125rem;
     background: linear-gradient(90deg, #7048e8 0%, #4ac1e8 32.21%, #4d0b79 65.39%, #ff5543 104.43%), #eff2f5;
     transform: translateZ(-1px);
     filter: blur(30px);
@@ -35,15 +35,15 @@
 
 @keyframes modal-shadow {
     0% {
-        transform: translatey(0px) translateZ(-1px);
+        transform: translateY(0) translateZ(-1px);
         opacity: 0.4;
     }
     50% {
-        transform: translatey(-25px) translateZ(-1px);
+        transform: translateY(-25px) translateZ(-1px);
         opacity: 0.9;
     }
     100% {
-        transform: translatey(0px) translateZ(-1px);
+        transform: translateY(0) translateZ(-1px);
         opacity: 0.4;
     }
 }
@@ -84,7 +84,7 @@
     color: var(--gray-07);
 }
 
-/*Step section on instructions*/
+/* Step section on instructions */
 .step {
     background: #343a4d;
     color: #ffffff;
@@ -98,7 +98,7 @@
 }
 
 .instructions-container {
-    /*adds vertical scroll to long instructions and prevents "next" and "back buttons" to be under the fold*/
+    /* adds vertical scroll to long instructions and prevents "next" and "back buttons" to be under the fold */
     max-height: 80vh;
     overflow-y: auto;
 }
@@ -119,7 +119,7 @@
     font-size: 1rem;
 }
 
-/* Initial welcome*/
+/* Initial welcome */
 
 .welcome-title {
     font-size: 2rem;
@@ -139,14 +139,16 @@
 .fade-first {
     animation-delay: 3s;
     opacity: 0;
-    /* to keep opacity*/
+
+    /* to keep opacity */
     animation-fill-mode: forwards;
 }
 
 .fade-second {
     animation-delay: 3.2s;
     opacity: 0;
-    /* to keep opacity*/
+
+    /* to keep opacity */
     animation-fill-mode: forwards;
 }
 
@@ -154,7 +156,7 @@
     animation-delay: 4s;
     opacity: 0;
 
-    /* to keep opacity*/
+    /* to keep opacity */
     animation-fill-mode: forwards;
 }
 
@@ -184,6 +186,6 @@
     }
 }
 
-.fadeInUp-animation {
+.fade-in-up-animation {
     animation: 1.5s fadeInUp;
 }
