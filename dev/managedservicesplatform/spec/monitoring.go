@@ -1,8 +1,9 @@
 package spec
 
 import (
-	"regexp"
 	"time"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
