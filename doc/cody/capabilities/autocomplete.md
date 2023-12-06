@@ -39,7 +39,7 @@ By default, a fully configured Sourcegraph instance picks a default LLM to gener
 
 > NOTE: Self-hosted customers must update to version 5.0.4 or more to use autocomplete.
 
-Before configuring the autocomplete feature, it's recommended to read more about [Enabling Cody on Sourcegraph Enterprise](overview/enable-cody-enterprise.md) guide.
+Before configuring the autocomplete feature, it's recommended to read more about [Enabling Cody on Sourcegraph Enterprise](../overview/enable-cody-enterprise.md) guide.
 
 Cody Autocomplete goes beyond basic suggestions. It understands your code context, offering tailored recommendations based on your current project, language, and coding patterns. Let's view a quick demo using the VS Code extension.
 
