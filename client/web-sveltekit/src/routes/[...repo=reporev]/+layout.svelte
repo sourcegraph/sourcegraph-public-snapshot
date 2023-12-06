@@ -3,7 +3,6 @@
 
     import { page } from '$app/stores'
     import Icon from '$lib/Icon.svelte'
-    import { displayRepoName } from '$lib/shared'
 
     import type { LayoutData } from './$types'
 
@@ -22,14 +21,16 @@
         )
     }
 
-    $: ({ repo } = $page.params)
-
-    $: repoName = displayRepoName(repo.split('@')[0])
+    $: ({ repoName, displayRepoName } = data)
 </script>
+
+<svelte:head>
+    <title>{data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
 
 <div class="header">
     <nav>
-        <h1><a href="/{repo}"><Icon svgPath={mdiSourceRepository} inline /> {repoName}</a></h1>
+        <h1><a href="/{repoName}"><Icon svgPath={mdiSourceRepository} inline /> {displayRepoName}</a></h1>
         <!--
             TODO: Add back revision
             {#if revisionLabel}
