@@ -10,6 +10,9 @@ mkdir tmp
 cp -R -L "$project_root"/* tmp/
 trap "rm -Rf tmp" EXIT
 
+echo $project_root
+ls -R tmp
+
 # @anton You'll need to fix your local env, we cannot merge an absolute path here
 docker load --input="$tarball"
 docker run -v ./tmp:/sources "$image_name" -- scip-java index
