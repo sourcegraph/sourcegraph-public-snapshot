@@ -4,7 +4,7 @@
 
 Cody **chat** allows you to ask coding-related questions about your entire codebase or a specific code snippet. You can do it from the **Chat** panel of the supported editor extensions (VS Code, JetBrains, and Neovim) or via the **Ask Cody** button in the web app.
 
-The feature allows you to have an engaging conversation experience with Cody across VS Code, JetBrains, and Neovim. Key functionalities in the VS Code extension include support for multiple simultaneous chats, enhanced chat context configurability through `@` and `#` commands, detailed visibility into the code that Cody read before providing a response, and more.
+The feature allows you to have an engaging conversation experience with Cody across VS Code, JetBrains, and Neovim. Key functionalities in the VS Code extension include support for multiple simultaneous chats, enhanced chat context configurability through `@` commands, detailed visibility into the code that Cody read before providing a response, and more.
 
 You can learn more about the IDE support for these functionalities in the [feature parity reference](./../feature-reference.md#chat).
 
