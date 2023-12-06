@@ -1,11 +1,12 @@
 package monitoringalertpolicy
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringalertpolicy"
@@ -148,7 +149,7 @@ func thresholdAggregation(scope constructs.Construct, id resourceid.ID, config *
 	} else if config.ServiceKind == spec.ServiceKindJob {
 		// No default for this
 	} else {
-		return nil, fmt.Errorf("invalid service kind %q", config.ServiceKind)
+		return nil, errors.Newf("invalid service kind %q", config.ServiceKind)
 	}
 
 	if config.ThresholdAggregation.Comparison == "" {
