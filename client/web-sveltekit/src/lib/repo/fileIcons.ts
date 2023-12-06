@@ -1,4 +1,4 @@
-import { containsTest } from '@sourcegraph/web/src/repo/utils'
+import { containsTest } from "$lib/web"
 import {
     mdiBash,
     mdiCodeJson,
