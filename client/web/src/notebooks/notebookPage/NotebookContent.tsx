@@ -6,6 +6,7 @@ import type { Observable } from 'rxjs'
 import type { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import type { Block, BlockInit } from '..'
@@ -18,6 +19,7 @@ import { NotebookComponent } from '../notebook/NotebookComponent'
 export interface NotebookContentProps
     extends SearchStreamingProps,
         TelemetryProps,
+        TelemetryV2Props,
         Omit<
             StreamingSearchResultsListProps,
             'allExpanded' | 'platformContext' | 'executedQuery' | 'enableOwnershipSearch'
@@ -43,6 +45,7 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
         onUpdateBlocks,
         streamSearch,
         telemetryService,
+        telemetryRecorder,
         searchContextsEnabled,
         ownEnabled,
         isSourcegraphDotCom,
@@ -82,6 +85,7 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
             <NotebookComponent
                 streamSearch={streamSearch}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 searchContextsEnabled={searchContextsEnabled}
                 ownEnabled={ownEnabled}
                 isSourcegraphDotCom={isSourcegraphDotCom}

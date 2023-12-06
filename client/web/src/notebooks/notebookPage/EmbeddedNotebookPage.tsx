@@ -32,7 +32,10 @@ const LOADING = 'loading' as const
 export const EmbeddedNotebookPage: FC<EmbeddedNotebookPageProps> = ({ platformContext, ...props }) => {
     const { notebookId } = useParams()
 
-    useEffect(() => eventLogger.logPageView('EmbeddedNotebookPage'), [])
+    useEffect(() => {
+        eventLogger.logPageView('EmbeddedNotebookPage')
+        window.context.telemetryRecorder.recordEvent('EmbeddedNotebookPage', 'viewed')
+    }, [window.context.telemetryRecorder])
 
     const notebookOrError = useObservable(
         useMemo(
@@ -78,6 +81,7 @@ export const EmbeddedNotebookPage: FC<EmbeddedNotebookPageProps> = ({ platformCo
                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     streamSearch={aggregateStreamingSearch}
                     telemetryService={eventLogger}
+                    telemetryRecorder={window.context.telemetryRecorder}
                     platformContext={platformContext}
                     exportedFileName={convertNotebookTitleToFileName(notebookOrError.title)}
                     // Copying is not supported in embedded notebooks

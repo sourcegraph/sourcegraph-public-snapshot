@@ -16,6 +16,7 @@ import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { getFileMatchUrl, getRepositoryUrl, getRevision, type SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 
@@ -24,7 +25,7 @@ import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
 import { RepoFileLink } from './RepoFileLink'
 
-export interface SymbolSearchResultProps extends TelemetryProps, SettingsCascadeProps {
+export interface SymbolSearchResultProps extends TelemetryProps, TelemetryV2Props, SettingsCascadeProps {
     result: SymbolMatch
     openInNewTab?: boolean
     repoDisplayName: string
@@ -41,6 +42,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
     containerClassName,
     index,
     telemetryService,
+    telemetryRecorder,
     settingsCascade,
     fetchHighlightedFileLineRanges,
 }) => {
@@ -71,13 +73,15 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                 filePath={result.path}
                 className={searchResultStyles.copyButton}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
             />
         </span>
     )
 
     const logEventOnCopy = useCallback(() => {
         telemetryService.log(...codeCopiedEvent('file-match'))
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('file-match', 'copied')
+    }, [telemetryService, telemetryRecorder])
 
     const fetchSymbolMatchLineRanges = useCallback(
         (startLine: number, endLine: number, format: HighlightResponseFormat) => {
@@ -102,13 +106,16 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         { durationMs: endTime - startTime },
                         { durationMs: endTime - startTime }
                     )
+                    telemetryRecorder.recordEvent('search.latencies.frontend.code', 'loaded', {
+                        metadata: { durationMs: endTime - startTime },
+                    })
                     return lines[
                         result.symbols.findIndex(symbol => symbol.line - 1 === startLine && symbol.line === endLine)
                     ]
                 })
             )
         },
-        [result, fetchHighlightedFileLineRanges, telemetryService]
+        [result, fetchHighlightedFileLineRanges, telemetryService, telemetryRecorder]
     )
 
     const fetchHighlightedSymbolMatchLineRanges = useCallback(

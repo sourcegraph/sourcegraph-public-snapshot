@@ -2,6 +2,7 @@ import React, { type FC, useMemo } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiDomain, mdiLock, mdiWeb } from '@mdi/js'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Icon, Menu, MenuButton, MenuItem, MenuList } from '@sourcegraph/wildcard'
 
@@ -17,7 +18,7 @@ export interface ShareOption {
     isPublic: boolean
 }
 
-interface NotebookShareOptionsDropdownProps extends TelemetryProps {
+interface NotebookShareOptionsDropdownProps extends TelemetryProps, TelemetryV2Props {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser
     selectedShareOption: ShareOption
@@ -66,10 +67,18 @@ const ShareOptionComponent: React.FunctionComponent<
 }
 
 export const NotebookShareOptionsDropdown: FC<NotebookShareOptionsDropdownProps> = props => {
-    const { isSourcegraphDotCom, telemetryService, authenticatedUser, selectedShareOption, onSelectShareOption } = props
+    const {
+        isSourcegraphDotCom,
+        telemetryService,
+        telemetryRecorder,
+        authenticatedUser,
+        selectedShareOption,
+        onSelectShareOption,
+    } = props
 
     const handleTriggerClick = (): void => {
         telemetryService.log('NotebookVisibilitySettingsDropdownToggled')
+        telemetryRecorder.recordEvent('NotebookVisibilitySettingsDropdown', 'toggled')
     }
 
     const shareOptions: ShareOption[] = useMemo(

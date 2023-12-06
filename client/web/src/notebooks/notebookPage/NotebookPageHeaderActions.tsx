@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import type { Observable } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Menu,
@@ -34,7 +35,7 @@ import { ShareNotebookModal } from './ShareNotebookModal'
 
 import styles from './NotebookPageHeaderActions.module.scss'
 
-export interface NotebookPageHeaderActionsProps extends TelemetryProps {
+export interface NotebookPageHeaderActionsProps extends TelemetryProps, TelemetryV2Props {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
     namespace: NotebookFields['namespace']
@@ -65,6 +66,7 @@ export const NotebookPageHeaderActions: React.FunctionComponent<
     createNotebookStar,
     deleteNotebookStar,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const [showShareModal, setShowShareModal] = useState(false)
     const toggleShareModal = useCallback(() => setShowShareModal(show => !show), [setShowShareModal])
@@ -119,6 +121,7 @@ export const NotebookPageHeaderActions: React.FunctionComponent<
                 createNotebookStar={createNotebookStar}
                 deleteNotebookStar={deleteNotebookStar}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
             />
             {authenticatedUser && viewerCanManage && namespace && selectedShareOption && (
                 <>
@@ -135,6 +138,7 @@ export const NotebookPageHeaderActions: React.FunctionComponent<
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         toggleModal={toggleShareModal}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         authenticatedUser={authenticatedUser}
                         selectedShareOption={selectedShareOption}
                         setSelectedShareOption={setSelectedShareOption}
@@ -147,13 +151,14 @@ export const NotebookPageHeaderActions: React.FunctionComponent<
                     notebookId={notebookId}
                     deleteNotebook={deleteNotebook}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
         </div>
     )
 }
 
-interface NotebookSettingsDropdownProps extends TelemetryProps {
+interface NotebookSettingsDropdownProps extends TelemetryProps, TelemetryV2Props {
     notebookId: string
     deleteNotebook: typeof _deleteNotebook
 }
@@ -162,6 +167,7 @@ const NotebookSettingsDropdown: React.FunctionComponent<React.PropsWithChildren<
     notebookId,
     deleteNotebook,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const toggleDeleteModal = useCallback(() => setShowDeleteModal(show => !show), [setShowDeleteModal])
@@ -191,12 +197,13 @@ const NotebookSettingsDropdown: React.FunctionComponent<React.PropsWithChildren<
                 toggleDeleteModal={toggleDeleteModal}
                 deleteNotebook={deleteNotebook}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
             />
         </>
     )
 }
 
-interface NotebookStarsButtonProps extends TelemetryProps {
+interface NotebookStarsButtonProps extends TelemetryProps, TelemetryV2Props {
     notebookId: string
     disabled: boolean
     starsCount: number
@@ -213,6 +220,7 @@ const NotebookStarsButton: React.FunctionComponent<React.PropsWithChildren<Noteb
     createNotebookStar,
     deleteNotebookStar,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const [starsCount, setStarsCount] = useState(initialStarsCount)
     const [viewerHasStarred, setViewerHasStarred] = useState(initialViewerHasStarred)
@@ -224,6 +232,7 @@ const NotebookStarsButton: React.FunctionComponent<React.PropsWithChildren<Noteb
                     // Immediately update the UI.
                     tap(viewerHasStarred => {
                         telemetryService.log(`SearchNotebook${viewerHasStarred ? 'Remove' : 'Add'}Star`)
+                        telemetryRecorder.recordEvent('SearchNotebookStar', `${viewerHasStarred ? 'removed' : 'added'}`)
                         if (viewerHasStarred) {
                             setStarsCount(starsCount => starsCount - 1)
                             setViewerHasStarred(() => false)
@@ -248,6 +257,7 @@ const NotebookStarsButton: React.FunctionComponent<React.PropsWithChildren<Noteb
                 initialStarsCount,
                 initialViewerHasStarred,
                 telemetryService,
+                telemetryRecorder,
             ]
         )
     )
