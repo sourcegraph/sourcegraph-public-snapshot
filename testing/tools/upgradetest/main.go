@@ -2,6 +2,7 @@
 //
 // TODO
 // - Test things in CI
+// - Turn the rule for this from a bazel run into a bazel test
 // - Use urfave/cli to parse args
 
 package main

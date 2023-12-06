@@ -32,18 +32,33 @@ go_cross_binary(
 sh_binary(
     name = "sh_upgradetest",
     srcs = ["test.sh"],
-    args = [
-        "$(location :upgradetest-darwin-amd64)",
-        "$(location //cmd/migrator:image_tarball)",
-        "$(location //cmd/frontend:image_tarball)",
-        "$(locations //internal/database:generate_schemas)",
-    ],
-    data = [
-        ":upgradetest-darwin-amd64",
-        "//cmd/frontend:image_tarball",
-        "//cmd/migrator:image_tarball",
-        "//internal/database:generate_schemas",
-    ],
-
+    args = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": [
+            "$(location :upgradetest-darwin-amd64)",
+            "$(location //cmd/migrator:image_tarball)",
+            "$(location //cmd/frontend:image_tarball)",
+            "$(locations //internal/database:generate_schemas)",
+        ],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+            "$(location :go_upgradetest)",
+            "$(location //cmd/migrator:image_tarball)",
+            "$(location //cmd/frontend:image_tarball)",
+            "$(locations //internal/database:generate_schemas)",
+        ],
+    }),
+    data = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": [
+            ":upgradetest-darwin-amd64",
+            "//cmd/frontend:image_tarball",
+            "//cmd/migrator:image_tarball",
+            "//internal/database:generate_schemas",
+        ],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+            ":go_upgradetest",
+            "//cmd/frontend:image_tarball",
+            "//cmd/migrator:image_tarball",
+            "//internal/database:generate_schemas",
+        ],
+    }),
     # tags = ["requires-network", "no-sandbox"]
 )
