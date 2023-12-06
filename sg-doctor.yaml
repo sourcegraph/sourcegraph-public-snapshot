@@ -1,0 +1,20 @@
+diagnostics:
+  general:
+      name: current path
+      cmd: pwd
+      name: current commit
+      cmd: git rev-parse --abbrev-ref HEAD
+  bazel:
+    name: architecture
+      cmd: file -L bazel
+    path:
+      cmd: which bazel
+    info:
+      cmd: bazel info
+  go:
+    architecture:
+      cmd: file -L go
+    path:
+      cmd: which go
+    version:
+      cmd: go version
