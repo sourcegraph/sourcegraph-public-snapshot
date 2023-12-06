@@ -16,9 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
-	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/sourcegraph/log"
 
