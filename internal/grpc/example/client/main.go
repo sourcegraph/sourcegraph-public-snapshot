@@ -39,7 +39,7 @@ func main() {
 	//
 	// See https://protobuf.dev/programming-guides/field_presence/ and https://stackoverflow.com/a/42634681 for more information.
 	w, t := weather.GetDescription(), weather.GetTemperature()
-	log.Printf("Weather in NYC - description: %s, temp: %f", w, t)
+	log.Printf("Weather in NYC - description: %s, temp: %v", w, t)
 
 	// Unary RPC: Error case - get weather for a specific location (that doesn't exist for didactic purposes)
 	weather, err = client.GetCurrentWeather(context.Background(), &pb.LocationRequest{Location: "Ravenholm"})
@@ -110,9 +110,12 @@ clientstreaming:
 	}
 	for i := 0; i < 5; i++ {
 		err := dataStream.Send(&pb.SensorData{
-			SensorId:    "sensor-123",
-			Temperature: 26.5,
-			Humidity:    80.0,
+			SensorId: "sensor-123",
+			Temperature: &pb.Temperature{
+				Value: 26.5,
+				Unit:  pb.Temperature_UNIT_CELSIUS,
+			},
+			Humidity: 80.0,
 		})
 		if err != nil {
 			log.Fatalf("Error while sending data: %v", err)

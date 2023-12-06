@@ -19,15 +19,26 @@ service WeatherService {
   rpc RealTimeWeather(stream LocationUpdate) returns (stream WeatherResponse) {}
 }
 
-// Request and response messages.
 message LocationRequest {
   string location = 1;
 }
 
 message WeatherResponse {
   string description = 1;
-  double temperature = 2;
+  Temperature temperature = 2;
+
   // Additional fields can be added here.
+}
+
+message Temperature {
+  enum Unit {
+    UNIT_CELSIUS = 0;
+    UNIT_FAHRENHEIT = 1;
+    UNIT_KELVIN = 2;
+  }
+
+  double value = 1;
+  Unit unit = 2;
 }
 
 message SensorOfflineError {
@@ -44,14 +55,12 @@ message AlertRequest {
 
 message AlertResponse {
   string alert = 1;
-  // Additional fields can be added here.
 }
 
 message SensorData {
   string sensorId = 1;
-  double temperature = 2;
+  Temperature temperature = 2;
   double humidity = 3;
-  // Additional sensor data fields.
 }
 
 message UploadStatus {

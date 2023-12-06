@@ -4,9 +4,9 @@ import (
 	"context"
 	"io"
 	"net"
-	"time"
 
 	logger "github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/example/server/service"
 	pb "github.com/sourcegraph/sourcegraph/internal/grpc/example/weather/v1"
 	"google.golang.org/grpc"
 
@@ -15,8 +15,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type weatherServer struct {
+type weatherGRPCServer struct {
 	logger logger.Logger
+
+	service *service.WeatherService
 
 	// All gRPC services should embed the Unimplemented*Server structs to ensure forwards compatibility (if the service is
 	// compiled against a newer version of the proto file, the server will still have default implementations of any new
@@ -25,15 +27,15 @@ type weatherServer struct {
 }
 
 // GetCurrentWeather is a Unary RPC (single request, single response) that returns the current weather for the requested location.
-func (s *weatherServer) GetCurrentWeather(ctx context.Context, req *pb.LocationRequest) (*pb.WeatherResponse, error) {
+func (s *weatherGRPCServer) GetCurrentWeather(ctx context.Context, req *pb.LocationRequest) (*pb.WeatherResponse, error) {
 	// We use the generated getter method to safety access the location since there are no required fields in Protobuf messages:
 	// The getters return the zero value for the type if the field is not set.
 	//
 	// See https://protobuf.dev/programming-guides/field_presence/ and https://stackoverflow.com/a/42634681 for more information.
 	location := req.GetLocation()
 
-	if location == "Ravenholm" { // Let's pretend this location is not real to demonstrate error handling.
-
+	response, err := s.service.GetCurrentWeather(ctx, location)
+	if err != nil {
 		// gRPC errors are Status objects, which contain an error code (akin to HTTP status codes: ), a message, and optional details.
 		//
 		// For well-known error cases, you can use the status.Errorf function to create a Status object with the appropriate
@@ -44,63 +46,70 @@ func (s *weatherServer) GetCurrentWeather(ctx context.Context, req *pb.LocationR
 		// - https://avi.im/grpc-errors/#go
 		// - https://godoc.org/google.golang.org/grpc/codes
 		// - https://cloud.google.com/apis/design/errors (intended for Google developers, but generally applicable advice)
-		err := status.Errorf(codes.InvalidArgument, "We don't go to Ravenholm.")
-		return nil, err
-	} else if location == "Black Mesa" {
-		// You can also use the status.New function to create a Status object with a custom error code and message.
-		s, err := status.New(codes.Internal, "The resonance cascade has begun.").WithDetails(&pb.SensorOfflineError{
-			SensorId: "anomalous-materials",
-			Message:  "Sensor is offline. A resonance cascade is imminent.",
-		})
 
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create gRPC status")
+		var invalidPlaceErr *service.InvalidPlaceError
+		if errors.As(err, &invalidPlaceErr) {
+			// The client requested a location that doesn't exist.
+			//
+			// We can use the status.Errorf function to create a Status object with the appropriate
+			// error code and message.
+			return nil, status.Errorf(codes.InvalidArgument, "invalid place: %s", invalidPlaceErr.Place)
 		}
 
-		return nil, s.Err()
+		var sensorOfflineErr *service.SensorOfflineError
+		if errors.As(err, &sensorOfflineErr) {
+			// The client requested a location that doesn't exist.
+			//
+			// We can use the status.Errorf function to create a Status object with the appropriate
+			// error code and message.
+			s, err := status.New(codes.Internal, "The resonance cascade has begun.").WithDetails(SensorOfflineErrorToProto(sensorOfflineErr))
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create gRPC status")
+			}
+
+			return nil, s.Err()
+		}
+
+		// If we don't recognize the error, we can return it directly. The gRPC library will massage it into a Status object
+		// with code "Unknown" and handle it appropriately.
+		return nil, err
 	}
 
-	// Now that we know that we have a "valid" location, we can safely return the response.
-	response := &pb.WeatherResponse{
-		Description: "It's always Sunny!",
-		Temperature: 25.0,
-	}
-
-	// Note: The gRPC library handles serializing the response to the client - we can return the response struct directly.
-	return response, nil
+	return WeatherResponseToProto(response), nil
 }
 
-// SubscribeWeatherAlerts is a Server Streaming (aingle request, multiple responses) RPC that returns a stream of relevant weather alerts.
-func (s *weatherServer) SubscribeWeatherAlerts(req *pb.AlertRequest, stream pb.WeatherService_SubscribeWeatherAlertsServer) error {
+// SubscribeWeatherAlerts is a Server Streaming (single request, multiple responses) RPC that returns a stream of relevant weather alerts.
+func (s *weatherGRPCServer) SubscribeWeatherAlerts(req *pb.AlertRequest, stream pb.WeatherService_SubscribeWeatherAlertsServer) error {
 	ctx := stream.Context()
-	for i := 0; i < 5; i++ {
-		select {
-		case <-ctx.Done(): // The client either explicitly canceled the operation or the context timed out.
+	callback := func(a *service.WeatherAlert) error {
+		// Send a message to the client
+		err := stream.Send(WeatherAlertToProto(a))
+		if err != nil {
+			return errors.Wrap(err, "failed to send alert across gRPC stream")
+		}
 
+		return nil
+	}
+
+	err := s.service.SubscribeWeatherAlerts(ctx, req.GetRegion(), callback)
+	if err != nil {
+		if ctx.Err() != nil {
 			// status.FromContextError is a convenience function that converts a context error
 			// to a Status object (with code codes.Canceled or codes.DeadlineExceeded).
 			//
 			// Returning a proper status (instead of a nil error) here makes it clearer to the caller / service-wide observability tools that look at
 			// response codes what exactly happened with this RPC call.
 			return status.FromContextError(ctx.Err()).Err()
-
-		case <-time.After(2 * time.Second): // Wait 2 seconds between the fake alerts we're sending.
-
-			// Send a message to the client
-			err := stream.Send(&pb.AlertResponse{
-				Alert: "Severe weather alert!",
-			})
-			if err != nil {
-				return err
-			}
 		}
+
+		return err
 	}
 
 	return nil
 }
 
 // UploadWeatherData is a long-running Client Streaming RPC (multiple request messages) is that is used to receive weather sensor data from a client.
-func (s *weatherServer) UploadWeatherData(stream pb.WeatherService_UploadWeatherDataServer) error {
+func (s *weatherGRPCServer) UploadWeatherData(stream pb.WeatherService_UploadWeatherDataServer) error {
 	ctx := stream.Context()
 	for {
 		if err := ctx.Err(); err != nil {
@@ -124,13 +133,15 @@ func (s *weatherServer) UploadWeatherData(stream pb.WeatherService_UploadWeather
 
 		s.logger.Info("Received data from sensor", logger.String("sensorID", data.SensorId))
 
-		// (Extra logic to actually process the weather data goes here ...)
+		if err := s.service.StoreSensorData(ctx, SensorDataFromProto(data)); err != nil {
+			return status.Errorf(codes.Internal, "failed to store sensor data:%v", err)
+		}
 	}
 }
 
 // RealTimeWeather is a Bidirectional streaming RPC (multiple request messages, multiple response messages) that is used to
 // receive location data from a client and respond with the current weather for the requested location.
-func (s *weatherServer) RealTimeWeather(stream pb.WeatherService_RealTimeWeatherServer) error {
+func (s *weatherGRPCServer) RealTimeWeather(stream pb.WeatherService_RealTimeWeatherServer) error {
 	ctx := stream.Context()
 	for { // Loop until the client closes its end of the stream, or we encounter an error.
 
@@ -147,17 +158,20 @@ func (s *weatherServer) RealTimeWeather(stream pb.WeatherService_RealTimeWeather
 			return err
 		}
 
-		description := "Cloudy"
 		location := locUpdate.GetLocation()
-		if location == "Philadelphia" {
-			description = "Sunny!"
+
+		weather, err := s.service.GetCurrentWeather(ctx, location)
+		if err != nil {
+			// On an error, we stop the bidi-stream.
+			// Alternative patterns could be:
+			// - To collect all the errors in a multierror and report the failed calls to service.GetCurrentWeather at the
+			//   end of the stream.
+			// - Make the response type have a oneOf field to encode a failed attempt.
+			return status.Errorf(codes.Internal, "failed to get weather for %s: %v", location, err)
 		}
 
 		// Send a message back to the client with the current weather for the requested location.
-		err = stream.Send(&pb.WeatherResponse{
-			Description: description,
-			Temperature: 22.0,
-		})
+		err = stream.Send(WeatherResponseToProto(weather))
 		if err != nil {
 			return err
 		}
@@ -172,7 +186,7 @@ func main() {
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterWeatherServiceServer(s, &weatherServer{
+	pb.RegisterWeatherServiceServer(s, &weatherGRPCServer{
 		logger: l,
 	})
 	l.Info("Server listening", logger.String("address", lis.Addr().String()))
