@@ -61,8 +61,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway",
     visibility = ["//visibility:private"],
     deps = [
-        "//cmd/telemetry-gateway/shared",
-        "//internal/env",
+        "//cmd/telemetry-gateway/service",
         "//lib/managedservicesplatform/runtime",
     ],
 )

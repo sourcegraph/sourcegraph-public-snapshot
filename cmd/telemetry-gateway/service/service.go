@@ -1,12 +1,12 @@
-package shared
+package service
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/sourcegraph/log"
-	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
@@ -58,6 +58,8 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	}
 	telemetrygatewayv1.RegisterTelemeteryGatewayServiceServer(grpcServer, telemetryGatewayServer)
 
+	listenAddr := fmt.Sprintf(":%d", contract.Port)
+
 	// Set up diagnostics endpoints
 	diagnosticsServer := http.NewServeMux()
 	contract.RegisterDiagnosticsHandlers(diagnosticsServer, &serviceStatus{
@@ -66,13 +68,13 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	if !contract.MSP {
 		// Requires GRPC_WEB_UI_ENABLED to be set to enable - only use in local
 		// development!
-		grpcUI := debugserver.NewGRPCWebUIEndpoint("telemetry-gateway", config.GetListenAdress())
+		grpcUI := debugserver.NewGRPCWebUIEndpoint("telemetry-gateway", listenAddr)
 		diagnosticsServer.Handle(grpcUI.Path, grpcUI.Handler)
 	}
 
 	return background.CombinedRoutine{
 		httpserver.NewFromAddr(
-			config.GetListenAdress(),
+			listenAddr,
 			&http.Server{
 				ReadTimeout:  2 * time.Minute,
 				WriteTimeout: 2 * time.Minute,
@@ -82,7 +84,10 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 				),
 			},
 		),
-		grpcServerStopper{server: grpcServer},
+		background.CallbackRoutine{
+			// No Start - serving is handled by httpserver
+			StopFunc: func() { grpcServer.GracefulStop() },
+		},
 	}, nil
 }
 
@@ -90,14 +95,11 @@ type serviceStatus struct {
 	eventsTopic pubsub.TopicClient
 }
 
+var _ runtime.ServiceState = (*serviceStatus)(nil)
+
 func (s *serviceStatus) Healthy(ctx context.Context) error {
 	if err := s.eventsTopic.Ping(ctx); err != nil {
 		return errors.Wrap(err, "eventsPubSubClient.Ping")
 	}
 	return nil
 }
-
-type grpcServerStopper struct{ server *grpc.Server }
-
-func (g grpcServerStopper) Start() {} // nothing to do
-func (g grpcServerStopper) Stop()  { g.server.GracefulStop() }
