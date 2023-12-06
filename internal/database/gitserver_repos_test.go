@@ -203,6 +203,7 @@ func TestListReposWithLastError(t *testing.T) {
 		name         string
 		cloudDefault bool
 		hasLastError bool
+		blocked      bool
 	}
 	type testCase struct {
 		name               string
@@ -257,6 +258,23 @@ func TestListReposWithLastError(t *testing.T) {
 			},
 			expectedReposFound: nil,
 		},
+		{
+			name: "filter out blocked repos",
+			testRepos: []testRepo{
+				{
+					name:         "github.com/sourcegraph/repo1",
+					cloudDefault: true,
+					hasLastError: true,
+					blocked:      true,
+				},
+				{
+					name:         "github.com/sourcegraph/repo2",
+					cloudDefault: true,
+					hasLastError: true,
+				},
+			},
+			expectedReposFound: []api.RepoName{"github.com/sourcegraph/repo2"},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -270,9 +288,8 @@ func TestListReposWithLastError(t *testing.T) {
 			nonCloudDefaultService := createTestExternalService(ctx, t, now, db, false)
 			for i, tr := range tc.testRepos {
 				testRepo := &types.Repo{
-					Name:        api.RepoName(tr.name),
-					URI:         tr.name,
-					Description: "",
+					Name: api.RepoName(tr.name),
+					URI:  tr.name,
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          fmt.Sprintf("repo%d-external", i),
 						ServiceType: extsvc.TypeGitHub,
@@ -292,6 +309,13 @@ func TestListReposWithLastError(t *testing.T) {
 
 				if tr.hasLastError {
 					if err := db.GitserverRepos().SetLastError(ctx, testRepo.Name, "an error", "test"); err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				if tr.blocked {
+					q := sqlf.Sprintf(`UPDATE repo SET blocked = %s WHERE name = %s`, []byte(`{"reason": "test"}`), testRepo.Name)
+					if _, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 						t.Fatal(err)
 					}
 				}
