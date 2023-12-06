@@ -56,6 +56,25 @@ func main() {
 		log.Fatalf("Expected Internal error for going to Black Mesa, got %v, code: %s", err, s.Code())
 	}
 
+	// Demonstrate that all string fields must be utf-8 encoded.
+	//
+	// The protobuf spec says that all strings must be utf-8 encoded (https://protobuf.dev/programming-guides/proto3/#scalar).
+	// ("A string must always contain UTF-8 encoded or 7-bit ASCII text ...").
+	//
+	// When sending protobuf strings that come from user input,
+	// you need to ensure that they are utf-8 encoded or otherwise sanitized. Otherwise, the gRPC library will return an error.
+	//
+	// If you can't guarantee that the string is utf-8 encoded, you can try to switch the type of the underlying field to bytes instead.
+	// See https://github.com/sourcegraph/zoekt/pull/641 for an example of this.
+	//
+	// See https://github.com/sourcegraph/sourcegraph/issues/52181 for more context.
+	locationFromUnsanitizedUserInput := "\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80"
+	weather, err = client.GetCurrentWeather(context.Background(), &pb.LocationRequest{Location: locationFromUnsanitizedUserInput})
+	if err == nil {
+		log.Fatalf("Expected error for invalid utf-8 input, got %v", weather)
+	}
+	log.Printf("got expected utf-8 string error when sending in unsanitized user input: %v", err)
+
 	for _, d := range s.Details() {
 		switch info := d.(type) {
 		// You can also extract the error details from the error object using the status.Details function, and then assert on it.
