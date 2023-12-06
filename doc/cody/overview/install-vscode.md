@@ -117,7 +117,7 @@ You can use Sourcegraph Enterprise with the Cody VS Code extension. Click the **
 
 Once connected, click the Cody icon from the sidebar again. The Cody extension will open in a configurable side panel.
 
-![code-panel](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-new-panel.png)
+![code-panel](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-nw-panel-.png)
 
 Let's create an autocomplete suggestion to verify that the Cody extension has been successfully installed and is working as expected.
 
@@ -148,6 +148,14 @@ All previous and existing chats are stored under the chats panel on the left. Yo
 Cody's Enhanced Context enables Cody to leverage search and embeddings-based context. It's enabled by default, though embeddings for Enterprise users are controlled by administrators and community users will need to generate embeddings for their projects by clicking the icon next to the chat input. The icon is also where you can disable Enhanced Context if you'd like more granular control of Cody's context by tagging `@-file` or `@#-symbol` in the chat input.
 
 ![](https://storage.googleapis.com/sourcegraph-assets/Docs/enhanced-context.png)
+
+The following tables shows what happens when Enhanced Context Selection is enabled or disabled.
+
+|                          | Opened Files                 | Highlighted Code            | Embeddings (If available)  | Symf (as backup)            | Graph Context (BFG)         |
+|--------------------------|------------------------------|-----------------------------|-----------------------------|-----------------------------|-----------------------------|
+| Enhanced Context Enabled  | ✅                           | ✅                          | ✅                          | ✅                          | ❌                          |
+| Enhanced Context Disabled | ❌                           | ❌                          | ❌                          | ❌                          | ❌                          |
+
 
 ### LLM Selection
 
