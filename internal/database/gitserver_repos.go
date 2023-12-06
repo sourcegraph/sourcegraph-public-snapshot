@@ -165,6 +165,7 @@ JOIN external_service_repos esr ON gr.repo_id = esr.repo_id
 JOIN external_services es on esr.external_service_id = es.id
 WHERE
 	gr.last_error != ''
+	AND r.blocked IS NULL
 	AND r.deleted_at IS NULL
 	AND es.cloud_default IS TRUE
 `
@@ -183,6 +184,7 @@ JOIN external_service_repos esr ON repo.id = esr.repo_id
 JOIN external_services es on esr.external_service_id = es.id
 WHERE
 	gr.last_error != ''
+	AND repo.blocked IS NULL
 	AND repo.deleted_at IS NULL
 	AND es.cloud_default IS TRUE
 `

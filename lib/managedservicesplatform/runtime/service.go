@@ -63,12 +63,12 @@ func Start[
 	contract := newContract(env)
 
 	// Enable Sentry error log reporting
-	if contract.sentryDSN != nil {
+	if contract.internal.sentryDSN != nil {
 		liblog.Update(func() log.SinksConfig {
 			return log.SinksConfig{
 				Sentry: &log.SentrySink{
 					ClientOptions: sentry.ClientOptions{
-						Dsn: *contract.sentryDSN,
+						Dsn: *contract.internal.sentryDSN,
 					},
 				},
 			}
@@ -81,7 +81,7 @@ func Start[
 	}
 
 	// Initialize things dependent on configuration being loaded
-	otelCleanup, err := opentelemetry.Init(ctx, logger, contract.opentelemetryContract, res)
+	otelCleanup, err := opentelemetry.Init(ctx, logger, contract.internal.opentelemetry, res)
 	if err != nil {
 		logger.Fatal("failed to initialize OpenTelemetry", log.Error(err))
 	}

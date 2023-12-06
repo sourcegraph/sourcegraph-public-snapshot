@@ -42,6 +42,7 @@ func TestGetArchive(t *testing.T) {
 		Timestamp: now,
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	err = db.EventLogs().Insert(ctx, event)
 	if err != nil {
 		t.Fatal(err)

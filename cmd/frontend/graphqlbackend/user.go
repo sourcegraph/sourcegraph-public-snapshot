@@ -301,13 +301,27 @@ func (r *UserResolver) codyCurrentPeriodDateRange(ctx context.Context) (*gqlutil
 		return nil, nil, err
 	}
 
+	// to allow mocking current time during tests
+	currentDate := currentTimeFromCtx(ctx)
+
 	subscriptionStartDate := r.user.CreatedAt
+	gaReleaseDate := time.Date(2023, 12, 14, 0, 0, 0, 0, subscriptionStartDate.Location())
+
+	if r.user.CodyProEnabledAt == nil && currentDate.Before(gaReleaseDate) {
+		startDate := &gqlutil.DateTime{Time: time.Date(2023, 12, 14, 0, 0, 0, 0, subscriptionStartDate.Location())}
+		endDate := &gqlutil.DateTime{Time: time.Date(2024, 1, 13, 23, 59, 59, 59, subscriptionStartDate.Location())}
+
+		return startDate, endDate, nil
+	}
+
+	if subscriptionStartDate.Before(gaReleaseDate) {
+		subscriptionStartDate = gaReleaseDate
+	}
+
 	if r.user.CodyProEnabledAt != nil {
 		subscriptionStartDate = *r.user.CodyProEnabledAt
 	}
 
-	// to allow mocking current time during tests
-	currentDate := currentTimeFromCtx(ctx)
 	targetDay := subscriptionStartDate.Day()
 	startDayOfTheMonth := targetDay
 	endDayOfTheMonth := targetDay - 1
@@ -480,6 +494,10 @@ func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPla
 
 	if !featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
 		return nil, errors.New("this feature is not enabled")
+	}
+
+	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
+		return nil, errors.New("this user is not allowed to change their plan")
 	}
 
 	userID, err := UnmarshalUserID(args.User)
@@ -779,7 +797,7 @@ func (r *UserResolver) Permissions() (*graphqlutil.ConnectionResolver[Permission
 	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, userID); err != nil {
 		return nil, err
 	}
-	connectionStore := &permisionConnectionStore{
+	connectionStore := &permissionConnectionStore{
 		db:     r.db,
 		userID: userID,
 	}

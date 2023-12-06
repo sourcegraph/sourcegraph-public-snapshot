@@ -169,7 +169,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			FireworksAllowedModels:                      config.Fireworks.AllowedModels,
 			FireworksLogSelfServeCodeCompletionRequests: config.Fireworks.LogSelfServeCodeCompletionRequests,
 			EmbeddingsAllowedModels:                     config.AllowedEmbeddingsModels,
-		})
+		}, sources)
 	if err != nil {
 		return errors.Wrap(err, "httpapi.NewHandler")
 	}

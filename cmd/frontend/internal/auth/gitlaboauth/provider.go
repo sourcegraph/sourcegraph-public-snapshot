@@ -5,13 +5,11 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/dghubble/gologin/v2"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -47,7 +45,6 @@ func parseProvider(logger log.Logger, db database.DB, callbackURL string, p *sch
 			}
 		},
 		SourceConfig: sourceCfg,
-		StateConfig:  getStateConfig(),
 		ServiceID:    codeHost.ServiceID,
 		ServiceType:  codeHost.ServiceType,
 		Login: func(oauth2Cfg oauth2.Config) http.Handler {
@@ -73,15 +70,4 @@ func parseProvider(logger log.Logger, db database.DB, callbackURL string, p *sch
 			)
 		},
 	}), messages
-}
-
-func getStateConfig() gologin.CookieConfig {
-	cfg := gologin.CookieConfig{
-		Name:     "gitlab-state-cookie",
-		Path:     "/",
-		MaxAge:   900, // 15 minutes
-		HTTPOnly: true,
-		Secure:   conf.IsExternalURLSecure(),
-	}
-	return cfg
 }

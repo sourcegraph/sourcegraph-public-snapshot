@@ -3,6 +3,7 @@ package graphqlutil
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -38,11 +39,11 @@ func (s *testConnectionStore) testPaginationArgs(args *database.PaginationArgs) 
 	}
 }
 
-func (s *testConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *testConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	s.ComputeTotalCalled = s.ComputeTotalCalled + 1
 	total := testTotalCount
 
-	return &total, nil
+	return int32(total), nil
 }
 
 func (s *testConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*testConnectionNode, error) {
@@ -60,8 +61,9 @@ func (*testConnectionStore) MarshalCursor(n *testConnectionNode, _ database.Orde
 	return &cursor, nil
 }
 
-func (*testConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	return &cursor, nil
+func (*testConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
+	i, err := strconv.Atoi(cursor)
+	return []any{i}, err
 }
 
 func newInt32(n int) *int32 {
@@ -106,14 +108,14 @@ func withLastPA(last int, a *database.PaginationArgs) *database.PaginationArgs {
 	return a
 }
 
-func withAfterPA(after string, a *database.PaginationArgs) *database.PaginationArgs {
-	a.After = &after
+func withAfterPA(after int, a *database.PaginationArgs) *database.PaginationArgs {
+	a.After = []any{after}
 
 	return a
 }
 
-func withBeforePA(before string, a *database.PaginationArgs) *database.PaginationArgs {
-	a.Before = &before
+func withBeforePA(before int, a *database.PaginationArgs) *database.PaginationArgs {
+	a.Before = []any{before}
 
 	return a
 }
@@ -201,19 +203,19 @@ func TestConnectionNodes(t *testing.T) {
 		},
 		{
 			name:               "after arg",
-			wantPaginationArgs: withAfterPA("0", withFirstPA(6, buildPaginationArgs())),
+			wantPaginationArgs: withAfterPA(0, withFirstPA(6, buildPaginationArgs())),
 			connectionArgs:     withAfterCA("0", withFirstCA(5, &ConnectionResolverArgs{})),
 			wantNodes:          2,
 		},
 		{
 			name:               "before arg",
-			wantPaginationArgs: withBeforePA("0", withLastPA(6, buildPaginationArgs())),
+			wantPaginationArgs: withBeforePA(0, withLastPA(6, buildPaginationArgs())),
 			connectionArgs:     withBeforeCA("0", withLastCA(5, &ConnectionResolverArgs{})),
 			wantNodes:          2,
 		},
 		{
 			name:               "with limit",
-			wantPaginationArgs: withBeforePA("0", withLastPA(2, buildPaginationArgs())),
+			wantPaginationArgs: withBeforePA(0, withLastPA(2, buildPaginationArgs())),
 			connectionArgs:     withBeforeCA("0", withLastCA(1, &ConnectionResolverArgs{})),
 			wantNodes:          1,
 		},

@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -21,27 +20,24 @@ func (rcs *roleConnectionStore) MarshalCursor(node RoleResolver, _ database.Orde
 	return &cursor, nil
 }
 
-func (rcs *roleConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (rcs *roleConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
 	nodeID, err := UnmarshalRoleID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
 
-	id := strconv.Itoa(int(nodeID))
-
-	return &id, nil
+	return []any{nodeID}, nil
 }
 
-func (rcs *roleConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (rcs *roleConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	count, err := rcs.db.Roles().Count(ctx, database.RolesListOptions{
 		UserID: rcs.userID,
 	})
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	total := int32(count)
-	return &total, nil
+	return int32(count), nil
 }
 
 func (rcs *roleConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]RoleResolver, error) {

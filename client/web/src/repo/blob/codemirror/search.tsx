@@ -113,7 +113,7 @@ class SearchPanel implements Panel {
 
     constructor(private view: EditorView, private navigate: NavigateFunction, config?: SearchPanelConfig) {
         this.dom = createElement('div', {
-            className: 'cm-sg-search-container d-flex align-items-center',
+            className: classNames('cm-sg-search-container', styles.root),
             id: BLOB_SEARCH_CONTAINER_ID,
             onkeydown: this.onkeydown,
         })
@@ -223,7 +223,7 @@ class SearchPanel implements Panel {
                     this.input?.select()
                 }}
             >
-                <div className="cm-sg-search-input d-flex align-items-center pr-2 mr-1">
+                <div className={classNames('cm-sg-search-input', styles.input)}>
                     <Input
                         ref={element => (this.input = element)}
                         type="search"
@@ -252,7 +252,7 @@ class SearchPanel implements Panel {
                     />
                 </div>
                 {totalMatches > 1 && (
-                    <div className="ml-2">
+                    <div>
                         <Button
                             className={classNames(styles.bgroupLeft, 'p-1')}
                             type="button"
@@ -282,17 +282,15 @@ class SearchPanel implements Panel {
                 )}
 
                 {searchQuery.search ? (
-                    <div>
-                        <Text className="cm-search-results mt-0 mr-0 mb-0 ml-2 small">
-                            {currentMatchIndex !== null && `${currentMatchIndex} of `}
-                            {totalMatches} {pluralize('result', totalMatches)}
-                        </Text>
-                    </div>
+                    <Text className="cm-search-results m-0 small">
+                        {currentMatchIndex !== null && `${currentMatchIndex} of `}
+                        {totalMatches} {pluralize('result', totalMatches)}
+                    </Text>
                 ) : null}
 
                 {isFullMode && (
-                    <div className="ml-auto">
-                        <Label className="mb-0">
+                    <div className={styles.actions}>
+                        <Label className={styles.actionsLabel}>
                             <Toggle
                                 className="mr-1 align-text-bottom"
                                 value={overrideBrowserSearch}
@@ -301,7 +299,7 @@ class SearchPanel implements Panel {
                             {searchKeybinding}
                         </Label>
                         {searchKeybindingTooltip}
-                        <span className={classNames(styles.closeButton, 'ml-4')}>
+                        <span className={styles.closeButton}>
                             <Icon
                                 className={classNames(styles.x)}
                                 onClick={() => closeSearchPanel(this.view)}

@@ -55,7 +55,19 @@ All notable changes to Sourcegraph are documented in this file.
 - The feature flag `search-ranking` is now completely removed. [#58156](https://github.com/sourcegraph/sourcegraph/pull/58156)
 - The notepad UI, notebook creation feature. [#58217](https://github.com/sourcegraph/sourcegraph/pull/58217)
 
-## Unreleased 5.2.4
+## Unreleased
+
+### Added
+
+### Fixed
+
+- Fixed an issue where updating a generic git code host would cause it to become unrestricted if permissions user mapping is enabled. [#58772](https://github.com/sourcegraph/sourcegraph/pull/58772)
+
+### Changed
+
+### Removed
+
+## 5.2.4
 
 ### Added
 
@@ -65,10 +77,6 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed two issues in Zoekt that could cause out of memory errors during search indexing. [sourcegraph/zoekt#686](https://github.com/sourcegraph/zoekt/pull/686), [sourcegraph/zoekt#689](https://github.com/sourcegraph/zoekt/pull/689)
-
-### Changed
-
-### Removed
 
 ## 5.2.3
 

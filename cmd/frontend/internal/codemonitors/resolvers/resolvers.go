@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -657,6 +658,9 @@ func (r *Resolver) withTransact(ctx context.Context, f func(*Resolver) error) er
 
 // isAllowedToEdit checks whether an actor is allowed to edit a given monitor.
 func (r *Resolver) isAllowedToEdit(ctx context.Context, id graphql.ID) error {
+	if envvar.SourcegraphDotComMode() {
+		return errors.New("Code Monitors are disabled on sourcegraph.com")
+	}
 	monitorID, err := unmarshalMonitorID(id)
 	if err != nil {
 		return err
@@ -675,6 +679,9 @@ func (r *Resolver) isAllowedToEdit(ctx context.Context, id graphql.ID) error {
 // - she is a member of the organization which is the owner of the monitor
 // - she is a site-admin
 func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) error {
+	if envvar.SourcegraphDotComMode() {
+		return errors.New("Code Monitors are disabled on sourcegraph.com")
+	}
 	var ownerInt32 int32
 	err := relay.UnmarshalSpec(owner, &ownerInt32)
 	if err != nil {

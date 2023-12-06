@@ -6,7 +6,7 @@ As of 3.20, Sourcegraph supports 6 authentication methods as listed in our [User
 
 Among these authentication methods, there are 4 that require Sourcegraph to send requests to the authentication provider, including GitHub OAuth, GitLab OAuth, OpenID Connect and SAML.
 
-If a GitHub OAuth method is configured in Sourcegraph, users should be redirected to the GitHub instance (GitHub.com, GitHub Enterprise, etc.) to authorize the Sourcegraph OAuth application upon sign in. Once the user is authenticated on the GitHub instance and has authorized the application, the GitHub instance should redirect the user directly back to the Sourcegraph instance. 
+If a GitHub OAuth method is configured in Sourcegraph, users should be redirected to the GitHub instance (GitHub.com, GitHub Enterprise, etc.) to authorize the Sourcegraph OAuth application upon sign in. Once the user is authenticated on the GitHub instance and has authorized the application, the GitHub instance should redirect the user directly back to the Sourcegraph instance.
 
 This redirection contains critical and confidential information that Sourcegraph consumes (as an OAuth consumer), and information may be stripped or expired if there is a third-party in the way.
 
@@ -19,7 +19,7 @@ For an OAuth application against GitHub.com (GitHub OAuth), the authentication f
 ```
    Sourcegraph (choose to sign in with GitHub.com)
 -> GitHub.com (authorize the application)
--> Sourcegraph 
+-> Sourcegraph
 ```
 
 ### The authentication provider always redirects back to its direct consumer
@@ -92,14 +92,6 @@ Things to note:
     Without the URL parameter `baseAdminUrl`, it displays a static warning:
 
     ![Okta static warning](https://storage.googleapis.com/sourcegraph-assets/docs/images/auth/troubleshooting_okta_static_warning.png)
-
-### Sourcegraph specific cookies
-
-For GitHub OAuth, Sourcegraph uses a special cookie called `github-state-cookie`, which should be sent by browser automatically when the user redirected back to Sourcegraph (the callback URL):
-
-![Sourcegraph state cookie](https://storage.googleapis.com/sourcegraph-assets/docs/images/auth/troubleshooting_sourcegraph_state_cookie.png)
-
-If the cookie is not found in the **Request Headers**, then there is a problem. It may be due to proxy server stripping out any unrecognized cookies (so the browser won’t be able to receive the cookie back from the Sourcegraph instance in the first place).
 
 ### Things to collect for async analysis
 
