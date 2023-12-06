@@ -65,29 +65,25 @@ func ScheduleRepositoriesForPolicy(
 	defer func() { err = tx.Done(err) }()
 
 	repoStore := db.Repos()
-	r, err := repoStore.GetReposSetByIDs(ctx, repoIDs...)
+	repos, err := repoStore.ListMinimalRepos(ctx, database.ReposListOptions{IDs: repoIDs})
+
 	if err != nil {
 		return err
 	}
 
-	for _, repoID := range repoIDs {
-		// Skip over any repositories we can no longer find
-		if r[repoID] == nil {
-			continue
-		}
-
-		refName, latestRevision, err := gitserverClient.GetDefaultBranch(ctx, r[repoID].Name, false)
+	for _, r := range repos {
+		refName, latestRevision, err := gitserverClient.GetDefaultBranch(ctx, r.Name, false)
 		// enqueue with an empty revision and let handler determine whether job can execute
 		if err != nil || refName == "" {
 			latestRevision = ""
 		}
 
-		job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, repoID, latestRevision)
+		job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, r.ID, latestRevision)
 		if job != nil && isScheduledOrCompleted(job) {
 			continue
 		}
 
-		_, err = tx.CreateRepoEmbeddingJob(ctx, repoID, latestRevision)
+		_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision)
 		if err != nil {
 			return err
 		}
