@@ -1,12 +1,18 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "server_lib",
-    srcs = ["main.go"],
+    srcs = [
+        "conversion.go",
+        "main.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/example/server",
     visibility = ["//visibility:private"],
     deps = [
+        "//internal/grpc/example/server/service",
         "//internal/grpc/example/weather/v1:weather",
+        "//internal/grpc/streamio",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
         "@org_golang_google_grpc//:go_default_library",
@@ -19,4 +25,14 @@ go_binary(
     name = "server",
     embed = [":server_lib"],
     visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "server_test",
+    srcs = ["conversion_test.go"],
+    embed = [":server_lib"],
+    deps = [
+        "//internal/grpc/example/server/service",
+        "@com_github_google_go_cmp//cmp",
+    ],
 )
