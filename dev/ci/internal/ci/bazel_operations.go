@@ -528,6 +528,8 @@ func verifyBazelCommand(command string) error {
 	// command must be either build or test.
 	switch strs[0] {
 	case "build":
+	// TODO(@jhchabran)
+	case "run":
 	case "test":
 	default:
 		return errors.Newf("disallowed bazel command: %q", strs[0])
