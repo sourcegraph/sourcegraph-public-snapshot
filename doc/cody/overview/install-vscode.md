@@ -162,8 +162,6 @@ Let's understand how the `/doc` command generates code documentation for a funct
 
 In addition, to support customization and advanced use cases, you can create Custom Commands tailored to your requirements. Custom Commands are currently supported by Cody for the VS Code extension version 0.8 and above.
 
-[Learn more about Custom Commands here →](./../custom-commands.md)
-
 ## Enable code graph context for context-aware answers (Optional)
 
 After connecting Cody extension to Sourcegraph.com, you can optionally use [Code Graph Context](./../core-concepts/code-graph.md) to improve Cody's context of existing code. Note that Code Graph Context is only available for public repositories on Sourcegraph.com, which have embeddings.
