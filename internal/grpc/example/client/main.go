@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"strconv"
@@ -44,7 +43,9 @@ func main() {
 
 	// Unary RPC: Error case - get weather for a specific location (that doesn't exist for didactic purposes)
 	weather, err = client.GetCurrentWeather(context.Background(), &pb.LocationRequest{Location: "Ravenholm"})
-	fmt.Println(err)
+
+	log.Printf("This is what a gRPC status error looks like: %v", err)
+
 	if status.Code(err) != codes.InvalidArgument { // You can extract the error code from the error object using the status.Code function, and then assert on it.
 		log.Fatalf("Expected InvalidArgument error for going to Ravenholm, got %v, code: %s", err, status.Code(err))
 	}
