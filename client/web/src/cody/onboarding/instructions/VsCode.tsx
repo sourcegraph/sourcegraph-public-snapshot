@@ -141,7 +141,7 @@ export function VSCodeInstructions({
                             <img
                                 alt="Cody Autocomplete"
                                 width="90%"
-                                className={classNames('mt-4', styles.guideIllustration)}
+                                className="mt-4"
                                 src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/autoCompleteIllustration.svg"
                             />
                         </div>
@@ -155,7 +155,7 @@ export function VSCodeInstructions({
                             <img
                                 alt="Cody Chat"
                                 width="80%"
-                                className={classNames('mt-4')}
+                                className="mt-4"
                                 src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/chatIllustration.svg"
                             />
                         </div>
@@ -171,7 +171,7 @@ export function VSCodeInstructions({
                             <img
                                 alt="Cody Commands"
                                 width="80%"
-                                className={classNames('mt-4')}
+                                className="mt-4"
                                 src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/commandsIllustration.svg"
                             />
                         </div>
@@ -186,7 +186,7 @@ export function VSCodeInstructions({
                                 <img
                                     alt="Discord Feedback"
                                     width="50%"
-                                    className={classNames('mt-5')}
+                                    className="mt-4"
                                     src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/discordCTA.svg"
                                 />
                             </Link>
@@ -197,7 +197,7 @@ export function VSCodeInstructions({
                                 <img
                                     alt="GitHub Feedback"
                                     width="50%"
-                                    className={classNames('mt-4')}
+                                    className="mt-4"
                                     src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/feedbackCTA.svg"
                                 />
                             </Link>
