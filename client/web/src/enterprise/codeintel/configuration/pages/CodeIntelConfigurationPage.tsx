@@ -19,6 +19,7 @@ import { Subject } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Button, Container, ErrorAlert, H3, Icon, Link, PageHeader, Text, Tooltip } from '@sourcegraph/wildcard'
 
@@ -36,12 +37,13 @@ import { hasGlobalPolicyViolation } from '../shared'
 
 import styles from './CodeIntelConfigurationPage.module.scss'
 
-export interface CodeIntelConfigurationPageProps extends TelemetryProps {
+export interface CodeIntelConfigurationPageProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     queryPolicies?: typeof defaultQueryPolicies
     repo?: { id: string; name: string }
     indexingEnabled?: boolean
     telemetryService: TelemetryService
+    telemetryRecorder: TelemetryRecorder
 }
 
 export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfigurationPageProps> = ({
@@ -50,8 +52,12 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
     repo,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     telemetryService,
+    telemetryRecorder,
 }) => {
-    useEffect(() => telemetryService.logViewEvent('CodeIntelConfiguration'), [telemetryService])
+    useEffect(() => {
+        telemetryService.logViewEvent('CodeIntelConfiguration')
+        telemetryRecorder.recordEvent('CodeIntelConfiguration', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const navigate = useNavigate()
     const location = useLocation()

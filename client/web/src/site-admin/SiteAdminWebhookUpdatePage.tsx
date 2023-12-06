@@ -3,6 +3,7 @@ import { type FC, useEffect } from 'react'
 import { mdiWebhook } from '@mdi/js'
 import { useParams } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
@@ -13,12 +14,16 @@ import { PageTitle } from '../components/PageTitle'
 import { useWebhookQuery } from './backend'
 import { WebhookCreateUpdatePage } from './WebhookCreateUpdatePage'
 
-export interface SiteAdminWebhookUpdatePageProps extends TelemetryProps {}
+export interface SiteAdminWebhookUpdatePageProps extends TelemetryProps, TelemetryV2Props {}
 
-export const SiteAdminWebhookUpdatePage: FC<SiteAdminWebhookUpdatePageProps> = ({ telemetryService }) => {
+export const SiteAdminWebhookUpdatePage: FC<SiteAdminWebhookUpdatePageProps> = ({
+    telemetryService,
+    telemetryRecorder,
+}) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminWebhookUpdatePage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SiteAdminWebhookUpdatePage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const { id = '' } = useParams<{ id: string }>()
 

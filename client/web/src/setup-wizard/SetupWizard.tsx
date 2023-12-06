@@ -4,6 +4,7 @@ import type { ApolloClient } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H1, H2, useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -55,10 +56,10 @@ const CORE_STEPS: StepConfiguration[] = [
     },
 ]
 
-interface SetupWizardProps extends TelemetryProps {}
+interface SetupWizardProps extends TelemetryProps, TelemetryV2Props {}
 
 export const SetupWizard: FC<SetupWizardProps> = props => {
-    const { telemetryService } = props
+    const { telemetryService, telemetryRecorder } = props
 
     const navigate = useNavigate()
     const [activeStepId, setStepId, status] = useTemporarySetting('setup.activeStepId')
@@ -85,8 +86,9 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
     const handleSkip = useCallback(() => {
         setSkipWizardState(true)
         telemetryService.log('SetupWizardQuits')
+        telemetryRecorder.recordEvent('SetupWizard', 'quit')
         navigate('/search')
-    }, [navigate, telemetryService, setSkipWizardState])
+    }, [navigate, telemetryService, telemetryRecorder, setSkipWizardState])
 
     if (status !== 'loaded') {
         return null
@@ -114,6 +116,7 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
                     <SetupStepsContent
                         contentContainerClass={styles.contentContainer}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         isCodyApp={false}
                     />
                 </div>

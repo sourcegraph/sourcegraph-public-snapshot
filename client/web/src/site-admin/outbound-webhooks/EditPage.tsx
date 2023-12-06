@@ -5,6 +5,7 @@ import { noop } from 'lodash'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, ErrorAlert, Form, Input, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
@@ -23,15 +24,16 @@ import { SubmitButton } from './create-edit/SubmitButton'
 import { DeleteButton } from './delete/DeleteButton'
 import { Logs } from './logs/Logs'
 
-export interface EditPageProps extends TelemetryProps {}
+export interface EditPageProps extends TelemetryProps, TelemetryV2Props {}
 
-export const EditPage: FC<EditPageProps> = ({ telemetryService }) => {
+export const EditPage: FC<EditPageProps> = ({ telemetryService, telemetryRecorder }) => {
     const navigate = useNavigate()
     const { id = '' } = useParams<{ id: string }>()
 
     useEffect(() => {
         telemetryService.logPageView('OutboundWebhooksEditPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('OutboundWebhooksEditPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const { data, loading, error, refetch } = useQuery<OutboundWebhookByIDResult, OutboundWebhookByIDVariables>(
         OUTBOUND_WEBHOOK_BY_ID,

@@ -128,18 +128,13 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         [caseSensitive, patternType, searchMode, trace, featureOverrides]
     )
 
-    const results = useCachedSearchResults(
-        streamSearch,
-        submittedURLQuery,
-        options,
-        telemetryService,
-        telemetryRecorder
-    )
+    const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, telemetryService)
 
     const resultsLength = results?.results.length || 0
     const logSearchResultClicked = useCallback(
         (index: number, type: string) => {
             telemetryService.log('SearchResultClicked')
+            telemetryRecorder.recordEvent('SearchResult', 'clicked')
             // This data ends up in Prometheus and is not part of the ping payload.
             telemetryService.log('search.ranking.result-clicked', {
                 index,
@@ -148,17 +143,18 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 ranked: rankingEnabled,
             })
         },
-        [telemetryService, resultsLength, rankingEnabled]
+        [telemetryService, telemetryRecorder, resultsLength, rankingEnabled]
     )
 
     // Log view event on first load
     useEffect(
         () => {
             telemetryService.logViewEvent('SearchResults')
+            telemetryRecorder.recordEvent('SearchResults', 'viewed')
         },
         // Only log view on initial load
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
+        [telemetryRecorder]
     )
 
     // Log search query event when URL changes
@@ -195,9 +191,20 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 },
             }
         )
+        telemetryRecorder.recordEvent('SearchResults', 'queried', {
+            privateMetadata: {
+                code_serach: {
+                    query_data: {
+                        query: metrics,
+                        combined: submittedURLQuery,
+                        empty: !submittedURLQuery,
+                    },
+                },
+            },
+        })
         // Only log when the query changes
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [submittedURLQuery])
+    }, [submittedURLQuery, telemetryRecorder])
 
     // Log events when search completes or fails
     useEffect(() => {
@@ -216,15 +223,39 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                     },
                 },
             })
+            telemetryRecorder.recordEvent('SearchResults', 'fetched', {
+                privateMetadata: {
+                    code_search: {
+                        // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
+                        query_data: {
+                            combined: submittedURLQuery,
+                        },
+                        results: {
+                            results_count: results.progress.matchCount,
+                            limit_hit: limitHit(results.progress),
+                            any_cloning: results.progress.skipped.some(
+                                skipped => skipped.reason === 'repository-cloning'
+                            ),
+                            alert: results.alert ? results.alert.title : null,
+                        },
+                    },
+                },
+            })
             if (results.results.length > 0) {
                 telemetryService.log('SearchResultsNonEmpty')
+                telemetryRecorder.recordEvent('SearchResults', 'non-empty')
             }
         } else if (results?.state === 'error') {
             telemetryService.log('SearchResultsFetchFailed', {
                 code_search: { error_message: asError(results.error).message },
             })
+            telemetryRecorder.recordEvent('SearchResults', 'fetch-failed', {
+                privateMetadata: {
+                    code_search: { error_message: asError(results.error).message },
+                },
+            })
         }
-    }, [results, submittedURLQuery, telemetryService])
+    }, [results, submittedURLQuery, telemetryService, telemetryRecorder])
 
     useEffect(() => {
         if (results?.state === 'complete') {
@@ -250,9 +281,13 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             )
             for (const event of events) {
                 telemetryService.log(event)
+                telemetryRecorder.recordEvent(
+                    event as 'Regexp' | 'Unquote' | 'And' | 'Lang' | 'Type' | 'Other',
+                    'searched'
+                )
             }
         }
-    }, [results, telemetryService])
+    }, [results, telemetryService, telemetryRecorder])
 
     // Reset expanded state when new search is started
     useEffect(() => {
@@ -280,7 +315,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const onExpandAllResultsToggle = useCallback(() => {
         setAllExpanded(oldValue => !oldValue)
         telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
-    }, [allExpanded, telemetryService])
+        telemetryRecorder.recordEvent(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed', 'toggled')
+    }, [allExpanded, telemetryService, telemetryRecorder])
     useEffect(() => {
         setAllExpanded(false) // Reset expanded state when new search is started
     }, [location.search])
@@ -291,7 +327,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const onSaveQueryModalClose = useCallback(() => {
         setShowSavedSearchModal(false)
         telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SavedQueries', 'creating', {
+            privateMetadata: { queries: { creating: false } },
+        })
+    }, [telemetryService, telemetryRecorder])
 
     // Export results to CSV
     const [showCsvExportModal, setShowCsvExportModal] = useState(false)
@@ -326,6 +365,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
             telemetryService.log('SearchSkippedResultsAgainClicked')
+            telemetryRecorder.recordEvent('SearchSkippedResultsAgain', 'clicked')
 
             const { selectedSearchContextSpec } = props
             submitSearch({
@@ -338,7 +378,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 source: 'excludedResults',
             })
         },
-        [telemetryService, props, navigate, location, caseSensitive, patternType, submittedURLQuery]
+        [telemetryService, telemetryRecorder, props, navigate, location, caseSensitive, patternType, submittedURLQuery]
     )
 
     /**
@@ -405,6 +445,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 aggregationUIMode={aggregationUIMode}
                 settingsCascade={props.settingsCascade}
                 telemetryService={props.telemetryService}
+                telemetryRecorder={props.telemetryRecorder}
                 caseSensitive={caseSensitive}
                 className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
                 onNavbarQueryChange={setQueryState}
@@ -415,6 +456,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                     <GettingStartedTour
                         className="mb-1"
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                         authenticatedUser={authenticatedUser}
                     />
                 )}
@@ -429,6 +471,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                     className={styles.contents}
                     onQuerySubmit={handleSearchAggregationBarClick}
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.telemetryRecorder}
                 />
             )}
 
@@ -459,6 +502,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                                 showTrace={!!trace}
                                 isSearchJobsEnabled={isSearchJobsEnabled()}
                                 telemetryService={props.telemetryService}
+                                telemetryRecorder={props.telemetryRecorder}
                             />
                         }
                     />
@@ -466,6 +510,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                     <div className={styles.contents}>
                         <DidYouMean
                             telemetryService={props.telemetryService}
+                            telemetryRecorder={props.telemetryRecorder}
                             query={submittedURLQuery}
                             patternType={patternType}
                             caseSensitive={caseSensitive}
@@ -498,6 +543,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                                 results={results}
                                 sourcegraphURL={platformContext.sourcegraphURL}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 onClose={() => setShowCsvExportModal(false)}
                             />
                         )}

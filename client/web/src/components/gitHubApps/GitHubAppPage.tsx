@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import type { ErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
@@ -37,7 +38,7 @@ import { RemoveGitHubAppModal } from './RemoveGitHubAppModal'
 
 import styles from './GitHubAppCard.module.scss'
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     /**
      * The parent breadcrumb item to show for this page in the header.
      */
@@ -46,14 +47,20 @@ interface Props extends TelemetryProps {
     headerAnnotation?: React.ReactNode
 }
 
-export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcrumb, headerAnnotation }) => {
+export const GitHubAppPage: FC<Props> = ({
+    telemetryService,
+    telemetryRecorder,
+    headerParentBreadcrumb,
+    headerAnnotation,
+}) => {
     const { appID } = useParams()
     const navigate = useNavigate()
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminGitHubApp')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SiteAdminGitHubApp', 'viewed')
+    }, [telemetryService, telemetryRecorder])
     const [fetchError, setError] = useState<ErrorLike>()
 
     const { data, loading, error } = useQuery<GitHubAppByIDResult, GitHubAppByIDVariables>(GITHUB_APP_BY_ID_QUERY, {

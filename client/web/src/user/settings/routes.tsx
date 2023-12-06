@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom'
 
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -65,7 +66,11 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     },
 ]
 
-interface UserSettingAreaIndexPageProps extends PlatformContextProps, SettingsCascadeProps, TelemetryProps {
+interface UserSettingAreaIndexPageProps
+    extends PlatformContextProps,
+        SettingsCascadeProps,
+        TelemetryProps,
+        TelemetryV2Props {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser
     user: UserSettingsAreaUserFields

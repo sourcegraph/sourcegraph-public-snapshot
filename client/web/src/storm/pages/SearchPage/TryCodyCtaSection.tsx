@@ -4,6 +4,7 @@ import { mdiArrowRight, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, ButtonLink, H2, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
@@ -68,7 +69,7 @@ const MeetCodySVG: React.FC = () => (
     </svg>
 )
 
-interface TryCodyCtaSectionProps extends TelemetryProps {
+interface TryCodyCtaSectionProps extends TelemetryProps, TelemetryV2Props {
     isSourcegraphDotCom: boolean
     className?: string
 }
@@ -76,12 +77,17 @@ interface TryCodyCtaSectionProps extends TelemetryProps {
 export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
     className,
     telemetryService,
+    telemetryRecorder,
     isSourcegraphDotCom,
 }) => {
     const [isDismissed = true, setIsDismissed] = useTemporarySetting('cody.searchPageCta.dismissed', false)
     const onDismiss = (): void => setIsDismissed(true)
-    const logEvent = (eventName: EventName): void =>
+    const logEvent = (eventName: EventName): void => {
         telemetryService.log(eventName, { type: 'ComHome' }, { type: 'ComHome' })
+        telemetryRecorder.recordEvent(eventName, 'clicked', {
+            privateMetadata: { type: 'ComHome' },
+        })
+    }
     const onViewEditorExtensionsClick = (): void => logEvent(EventName.VIEW_EDITOR_EXTENSIONS)
     const onTryWebClick = (): void => logEvent(EventName.TRY_CODY_WEB)
 

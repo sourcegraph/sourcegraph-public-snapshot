@@ -5,6 +5,7 @@ import { NEVER, type Observable } from 'rxjs'
 import { catchError, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Text, ErrorAlert, Card, H1, H2, useEventObservable } from '@sourcegraph/wildcard'
@@ -21,7 +22,10 @@ import { createAccessToken } from './create'
 
 import styles from './UserSettingsCreateAccessTokenCallbackPage.module.scss'
 
-interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>, TelemetryProps {
+interface Props
+    extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>,
+        TelemetryProps,
+        TelemetryV2Props {
     /**
      * Called when a new access token is created and should be temporarily displayed to the user.
      */
@@ -107,6 +111,7 @@ export function isAccessTokenCallbackPage(): boolean {
  */
 export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     telemetryService,
+    telemetryRecorder,
     onDidCreateAccessToken,
     user,
     isSourcegraphDotCom,
@@ -117,7 +122,8 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     const location = useLocation()
     useEffect(() => {
         telemetryService.logPageView('NewAccessTokenCallback')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('NewAccessTokenCallback', 'completed')
+    }, [telemetryService, telemetryRecorder])
 
     /** Get the requester, port, and destination from the url parameters */
     const urlSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search])

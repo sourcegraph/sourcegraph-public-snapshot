@@ -4,6 +4,7 @@ import { useApolloClient } from '@apollo/client'
 import { useLocation } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, H4, Link, PageHeader } from '@sourcegraph/wildcard'
 
@@ -13,20 +14,22 @@ import { refreshSiteFlags } from '../site/backend'
 
 import { SiteAdminRepositoriesContainer } from './SiteAdminRepositoriesContainer'
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     isCodyApp: boolean
 }
 
 /** A page displaying the repositories on this site */
 export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    telemetryRecorder,
     isCodyApp,
 }) => {
     const location = useLocation()
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminRepos')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SiteAdminRepos', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     // Refresh global alert about enabling repositories when the user visits & navigates away from this page.
     const client = useApolloClient()

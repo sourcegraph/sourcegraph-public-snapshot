@@ -12,6 +12,7 @@ import type { ContributionOptions } from '../api/extension/extensionHostApi'
 import { getContributedActionItems } from '../contributions/contributions'
 import type { RequiredExtensionsControllerProps } from '../extensions/controller'
 import type { PlatformContextProps } from '../platform/context'
+import { TelemetryV2Props } from '../telemetry'
 import type { TelemetryProps } from '../telemetry/telemetryService'
 
 import { ActionItem, type ActionItemAction } from './ActionItem'
@@ -24,7 +25,7 @@ export interface ActionsProps
     listClass?: string
     location: H.Location
 }
-interface Props extends ActionsProps, TelemetryProps {
+interface Props extends ActionsProps, TelemetryProps, TelemetryV2Props {
     /**
      * Called with the array of contributed items to produce the rendered component. If not set, uses a default
      * render function that renders a <ActionItem> for each item.

@@ -22,13 +22,14 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Code } from '@sourcegraph/wildcard'
 
 import type { HighlightLineRange } from '../../../graphql-operations'
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
-interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
+interface FileMatchProps extends SettingsCascadeProps, TelemetryProps, TelemetryV2Props {
     location?: H.Location
     result: ContentMatch | SymbolMatch | PathMatch
     grouped: MatchGroup[]
@@ -142,7 +143,7 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
 }
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
-    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService } = props
+    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, telemetryRecorder } = props
 
     const { openFile, openSymbol } = useOpenSearchResultsContext()
 
@@ -170,11 +171,14 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                         { durationMs: Date.now() - startTime },
                         { durationMs: Date.now() - startTime }
                     )
+                    telemetryRecorder.recordEvent('search.latencies.frontend.code-load', 'loaded', {
+                        metadata: { durationMs: Date.now() - startTime },
+                    })
                     return lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
                 })
             )
         },
-        [result, fetchHighlightedFileLineRanges, grouped, telemetryService]
+        [result, fetchHighlightedFileLineRanges, grouped, telemetryService, telemetryRecorder]
     )
 
     const createCodeExcerptLink = (group: MatchGroup): string => {

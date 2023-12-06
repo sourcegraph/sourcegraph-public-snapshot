@@ -5,6 +5,7 @@ import { Routes, Route } from 'react-router-dom'
 import { useQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
@@ -24,7 +25,7 @@ const CreateGitHubAppPage = lazyComponent(
 const GitHubAppPage = lazyComponent(() => import('../components/gitHubApps/GitHubAppPage'), 'GitHubAppPage')
 const GitHubAppsPage = lazyComponent(() => import('../components/gitHubApps/GitHubAppsPage'), 'GitHubAppsPage')
 
-interface Props extends TelemetryProps, PlatformContextProps {
+interface Props extends TelemetryProps, TelemetryV2Props, PlatformContextProps {
     authenticatedUser: AuthenticatedUser
     isCodyApp: boolean
     batchChangesEnabled: boolean

@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, Code, Link, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -16,7 +17,7 @@ import { BatchChangePreviewContext } from './BatchChangePreviewContext'
 
 import styles from './CreateUpdateBatchChangeAlert.module.scss'
 
-export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
+export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps, TelemetryV2Props {
     specID: string
     toBeArchived: number
     batchChange: BatchSpecFields['appliesToBatchChange']
@@ -25,7 +26,7 @@ export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
 
 export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
     React.PropsWithChildren<CreateUpdateBatchChangeAlertProps>
-> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, telemetryService }) => {
+> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, telemetryService, telemetryRecorder }) => {
     const navigate = useNavigate()
 
     const batchChangeID = batchChange?.id
@@ -73,10 +74,21 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                 navigate(batchChange.url)
             }
             telemetryService.logViewEvent(`BatchChangeDetailsPageAfter${batchChangeID ? 'Create' : 'Update'}`)
+            telemetryRecorder.recordEvent('BatchChangeDetailsPageAfter', `${batchChangeID ? 'created' : 'updated'}`)
         } catch (error) {
             setIsLoading(error)
         }
-    }, [canApply, specID, setIsLoading, navigate, batchChangeID, telemetryService, toBeArchived, publicationStates])
+    }, [
+        canApply,
+        specID,
+        setIsLoading,
+        navigate,
+        batchChangeID,
+        telemetryService,
+        telemetryRecorder,
+        toBeArchived,
+        publicationStates,
+    ])
 
     return (
         <>

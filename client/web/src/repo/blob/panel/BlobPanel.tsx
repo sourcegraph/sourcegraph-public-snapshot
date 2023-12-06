@@ -11,6 +11,7 @@ import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensio
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { type AbsoluteRepoFile, type ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { Text } from '@sourcegraph/wildcard'
@@ -30,7 +31,8 @@ interface Props
         PlatformContextProps,
         Pick<CodeIntelligenceProps, 'useCodeIntel'>,
         OwnConfigProps,
-        TelemetryProps {
+        TelemetryProps,
+        TelemetryV2Props {
     repoID: Scalars['ID']
     isPackage: boolean
     repoName: string
@@ -54,6 +56,7 @@ function useBlobPanelViews({
     platformContext,
     useCodeIntel,
     telemetryService,
+    telemetryRecorder,
     fetchHighlightedFileLineRanges,
     ownEnabled,
 }: Props): void {
@@ -90,6 +93,7 @@ function useBlobPanelViews({
                                   platformContext={platformContext}
                                   extensionsController={extensionsController}
                                   telemetryService={telemetryService}
+                                  telemetryRecorder={telemetryRecorder}
                                   key="references"
                                   fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                   useCodeIntel={useCodeIntel}
@@ -138,6 +142,7 @@ function useBlobPanelViews({
                                       revision={revision}
                                       filePath={filePath}
                                       telemetryService={telemetryService}
+                                      telemetryRecorder={telemetryRecorder}
                                   />
                               </PanelContent>
                           ),
@@ -153,6 +158,7 @@ function useBlobPanelViews({
             platformContext,
             extensionsController,
             telemetryService,
+            telemetryRecorder,
             fetchHighlightedFileLineRanges,
             useCodeIntel,
             repoID,

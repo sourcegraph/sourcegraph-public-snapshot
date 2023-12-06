@@ -3,6 +3,7 @@ import { type FC, useEffect } from 'react'
 import { mdiServer } from '@mdi/js'
 import classNames from 'classnames'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H3, PageHeader, Text, ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -13,12 +14,13 @@ import { useGitserversConnection } from './backend'
 
 import styles from './SiteAdminGitserversPage.module.scss'
 
-export interface GitserversPageProps extends TelemetryProps {}
+export interface GitserversPageProps extends TelemetryProps, TelemetryV2Props {}
 
-export const SiteAdminGitserversPage: FC<GitserversPageProps> = ({ telemetryService }) => {
+export const SiteAdminGitserversPage: FC<GitserversPageProps> = ({ telemetryService, telemetryRecorder }) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminGitserversPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SiteAdminGitserversPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const { data, loading, error } = useGitserversConnection()
 

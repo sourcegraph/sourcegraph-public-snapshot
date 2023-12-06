@@ -388,6 +388,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         authenticatedUser={authenticatedUser}
                         platformContext={props.platformContext}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                     />
 
                     <RepoHeaderContributionPortal

@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, type FormChangeEvent, H4, Link, useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -20,14 +21,14 @@ import { getRepositoriesSettings } from './github/helpers'
 
 import styles from './CodeHostCreation.module.scss'
 
-interface CodeHostCreationProps extends TelemetryProps {}
+interface CodeHostCreationProps extends TelemetryProps, TelemetryV2Props {}
 
 /**
  * Renders creation UI for any supported code hosts (GitHub, Gitlab) based on
  * "codeHostType" URL param see root component routing logic.
  */
 export const CodeHostCreation: FC<CodeHostCreationProps> = props => {
-    const { telemetryService } = props
+    const { telemetryService, telemetryRecorder } = props
 
     const { codeHostType } = useParams()
     const codeHostKind = getCodeHostKindFromURLParam(codeHostType!)
@@ -38,7 +39,10 @@ export const CodeHostCreation: FC<CodeHostCreationProps> = props => {
         }
 
         telemetryService.log('SetupWizardCodeHostCreation', { kind: codeHostKind }, { kind: codeHostKind })
-    }, [telemetryService, codeHostKind])
+        telemetryRecorder.recordEvent('SetupWizardCodeHostCreation', 'rendered', {
+            privateMetadata: { kind: codeHostKind },
+        })
+    }, [telemetryService, telemetryRecorder, codeHostKind])
 
     if (codeHostKind === null) {
         return (
@@ -52,7 +56,11 @@ export const CodeHostCreation: FC<CodeHostCreationProps> = props => {
     // We render content inside react fragment because this view is rendered
     // within Container UI (avoid unnecessary DOM nesting)
     return (
-        <CodeHostCreationView codeHostKind={codeHostKind} telemetryService={telemetryService}>
+        <CodeHostCreationView
+            codeHostKind={codeHostKind}
+            telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
+        >
             {state => (
                 <footer className={styles.footer}>
                     <LoaderButton
@@ -73,7 +81,7 @@ export const CodeHostCreation: FC<CodeHostCreationProps> = props => {
     )
 }
 
-interface CodeHostCreationFormProps extends TelemetryProps {
+interface CodeHostCreationFormProps extends TelemetryProps, TelemetryV2Props {
     codeHostKind: ExternalServiceKind
     children: (state: CodeHostJSONFormState) => ReactNode
 }
@@ -84,7 +92,7 @@ interface CodeHostCreationFormProps extends TelemetryProps {
  * UI with pickers and other form UI.
  */
 const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
-    const { codeHostKind, children, telemetryService } = props
+    const { codeHostKind, children, telemetryService, telemetryRecorder } = props
 
     const navigate = useNavigate()
     const externalServiceOptions = defaultExternalServices[codeHostKind]
@@ -162,12 +170,18 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
             }
 
             telemetryService.log('SetupWizardConnectRemoteCodeHost', eventProperties, eventProperties)
+            telemetryRecorder.recordEvent('SetupWizardConnectRemoteCodeHost', 'rendered', {
+                privateMetadata: { eventProperties },
+            })
         } else {
             telemetryService.log(
                 'SetupWizardConnectRemoteCodeHost',
                 { code_host: codeHostKind },
                 { code_host: codeHostKind }
             )
+            telemetryRecorder.recordEvent('SetupWizardConnectRemoteCodeHost', 'rendered', {
+                privateMetadata: { code_host: codeHostKind },
+            })
         }
 
         // Reset local storage values
@@ -181,6 +195,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
             <GithubConnectView
                 initialValues={localValues}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 onChange={handleFormChange}
                 onSubmit={handleFormSubmit}
             >

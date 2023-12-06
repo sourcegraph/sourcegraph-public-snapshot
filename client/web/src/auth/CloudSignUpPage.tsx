@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
@@ -20,7 +21,7 @@ import { type SignUpArguments, SignUpForm } from './SignUpForm'
 
 import styles from './CloudSignUpPage.module.scss'
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
@@ -55,6 +56,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     onSignUp,
     context,
     telemetryService,
+    telemetryRecorder,
     isSourcegraphDotCom,
 }) => {
     const location = useLocation()
@@ -81,6 +83,9 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     const logEventAndSetFlags = (type: AuthProvider['serviceType']): void => {
         const eventType = type === 'builtin' ? 'form' : type
         telemetryService.log('SignupInitiated', { type: eventType }, { type: eventType })
+        telemetryRecorder.recordEvent('Signup', 'initiated', {
+            privateMetadata: { type: eventType },
+        })
     }
 
     const signUpForm = (

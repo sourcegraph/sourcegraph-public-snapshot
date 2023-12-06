@@ -11,6 +11,7 @@ import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { getDefaultSearchContextSpec, type SearchContextInputProps } from '@sourcegraph/shared/src/search'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Badge,
@@ -34,7 +35,8 @@ import styles from './SearchContextMenu.module.scss'
 export interface SearchContextMenuProps
     extends Omit<SearchContextInputProps, 'setSelectedSearchContextSpec'>,
         PlatformContextProps<'requestGraphQL'>,
-        TelemetryProps {
+        TelemetryProps,
+        TelemetryV2Props {
     showSearchContextManagement: boolean
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean | null
@@ -69,6 +71,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
         showSearchContextManagement,
         platformContext,
         telemetryService,
+        telemetryRecorder,
         isSourcegraphDotCom,
         className,
     } = props
@@ -165,8 +168,9 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
             selectSearchContextSpec(context)
             onMenuClose(true)
             telemetryService.log('SearchContextSelected')
+            telemetryRecorder.recordEvent('SearchContext', 'selected')
         },
-        [onMenuClose, selectSearchContextSpec, telemetryService]
+        [onMenuClose, selectSearchContextSpec, telemetryService, telemetryRecorder]
     )
 
     const defaultContextExists = useObservable(
@@ -257,11 +261,14 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                                     To search across your team's private repositories,{' '}
                                     <Link
                                         to="https://about.sourcegraph.com"
-                                        onClick={() =>
+                                        onClick={() => {
                                             telemetryService.log('ClickedOnEnterpriseCTA', {
                                                 location: 'ContextDropDown',
                                             })
-                                        }
+                                            telemetryRecorder.recordEvent('ClickedOnEnterpriseCTA', 'clicked', {
+                                                privateMetadata: { location: 'ContextDropDown' },
+                                            })
+                                        }}
                                     >
                                         get Sourcegraph Enterprise
                                     </Link>

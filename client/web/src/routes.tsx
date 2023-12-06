@@ -74,7 +74,17 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.SignUp,
-        element: <LegacyRoute render={props => <SignUpPage {...props} context={window.context} />} />,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <SignUpPage
+                        {...props}
+                        context={window.context}
+                        telemetryRecorder={window.context.telemetryRecorder}
+                    />
+                )}
+            />
+        ),
     },
     {
         path: PageRoutes.UnlockAccount,
@@ -103,7 +113,11 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.Organizations,
-        element: <LegacyRoute render={props => <OrgsArea {...props} />} />,
+        element: (
+            <LegacyRoute
+                render={props => <OrgsArea {...props} telemetryRecorder={window.context.telemetryRecorder} />}
+            />
+        ),
     },
     {
         path: PageRoutes.SiteAdminInit,
@@ -136,7 +150,11 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.UserArea,
-        element: <LegacyRoute render={props => <UserArea {...props} />} />,
+        element: (
+            <LegacyRoute
+                render={props => <UserArea {...props} telemetryRecorder={window.context.telemetryRecorder} />}
+            />
+        ),
     },
     {
         path: PageRoutes.Survey,

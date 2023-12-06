@@ -6,6 +6,7 @@ import { concat, Subject } from 'rxjs'
 import { catchError, concatMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
@@ -30,7 +31,7 @@ import type { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { createAccessToken } from './create'
 
-interface Props extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps {
+interface Props extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps, TelemetryV2Props {
     /**
      * Called when a new access token is created and should be temporarily displayed to the user.
      */
@@ -42,6 +43,7 @@ interface Props extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryPro
  */
 export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    telemetryRecorder,
     onDidCreateAccessToken,
     user,
 }) => {
@@ -49,7 +51,8 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
 
     useMemo(() => {
         telemetryService.logViewEvent('NewAccessToken')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('NewAccessToken', 'created')
+    }, [telemetryService, telemetryRecorder])
 
     /** The contents of the note input field. */
     const defaultNoteValue = new URLSearchParams(location.search).get('description') || undefined

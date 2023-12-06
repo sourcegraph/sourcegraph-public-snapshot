@@ -12,6 +12,7 @@ import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensio
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { QueryState, SearchContextInputProps, SearchContextProps } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, useObservable, Link, Card, Icon, Code, H2, H3, Text } from '@sourcegraph/wildcard'
 
@@ -30,6 +31,7 @@ import styles from './CommunitySearchContextPage.module.scss'
 export interface CommunitySearchContextPageProps
     extends SettingsCascadeProps<Settings>,
         TelemetryProps,
+        TelemetryV2Props,
         ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         SearchContextInputProps,
@@ -52,11 +54,13 @@ export const CommunitySearchContextPage: React.FunctionComponent<
         query: '',
     })
 
-    useEffect(
-        () =>
-            props.telemetryService.logViewEvent(`CommunitySearchContext:${props.communitySearchContextMetadata.spec}`),
-        [props.communitySearchContextMetadata.spec, props.telemetryService]
-    )
+    useEffect(() => {
+        props.telemetryService.logViewEvent(`CommunitySearchContext:${props.communitySearchContextMetadata.spec}`)
+        props.telemetryRecorder.recordEvent(
+            `CommunitySearchContext:${props.communitySearchContextMetadata.spec}`,
+            'viewed'
+        )
+    }, [props.communitySearchContextMetadata.spec, props.telemetryService, props.telemetryRecorder])
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
 
     const contextQuery = `context:${props.communitySearchContextMetadata.spec}`

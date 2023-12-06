@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom'
 
 import { RepoMetadata, type RepoMetadataItem } from '@sourcegraph/branded'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader, ErrorAlert, Input, Text, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
@@ -24,22 +25,29 @@ import { DELETE_REPO_METADATA_GQL, GET_REPO_METADATA_GQL } from './query'
 
 const BREADCRUMB = { key: 'metadata', element: 'Metadata' }
 
-interface RepoMetadataPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'>, TelemetryProps {
+interface RepoMetadataPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'>, TelemetryProps, TelemetryV2Props {
     repo: Pick<RepositoryFields, 'name' | 'url' | 'metadata' | 'id'>
 }
 
 /**
  * The repository metadata page.
  */
-export const RepoMetadataPage: FC<RepoMetadataPageProps> = ({ telemetryService, useBreadcrumb, repo, ...props }) => {
+export const RepoMetadataPage: FC<RepoMetadataPageProps> = ({
+    telemetryService,
+    telemetryRecorder,
+    useBreadcrumb,
+    repo,
+    ...props
+}) => {
     useBreadcrumb(BREADCRUMB)
     const [repoMetadataEnabled, status] = useFeatureFlag('repository-metadata', true)
 
     useEffect(() => {
         if (repoMetadataEnabled) {
             telemetryService.log('repoPage:ownershipPage:viewed')
+            telemetryRecorder.recordEvent('repoPage.ownershipPage', 'viewed')
         }
-    }, [repoMetadataEnabled, telemetryService])
+    }, [repoMetadataEnabled, telemetryService, telemetryRecorder])
 
     const {
         data,

@@ -3,6 +3,7 @@ import { memo, type RefObject, useCallback, useEffect, useLayoutEffect, useRef, 
 import { isEqual } from 'lodash'
 import type { Layout, Layouts } from 'react-grid-layout'
 
+import { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -17,7 +18,7 @@ export interface GridApi {
     resetGridLayout: () => void
 }
 
-interface SmartInsightsViewGridProps extends TelemetryProps {
+interface SmartInsightsViewGridProps extends TelemetryProps, TelemetryV2Props {
     id: string
     insights: Insight[]
     persistSizeAndOrder?: boolean
@@ -30,7 +31,15 @@ interface SmartInsightsViewGridProps extends TelemetryProps {
  * the insights settings (settings cascade subjects).
  */
 export const SmartInsightsViewGrid = memo<SmartInsightsViewGridProps>(function SmartInsightsViewGrid(props) {
-    const { id, insights, persistSizeAndOrder = true, telemetryService, className, onGridCreate } = props
+    const {
+        id,
+        insights,
+        persistSizeAndOrder = true,
+        telemetryService,
+        telemetryRecorder,
+        className,
+        onGridCreate,
+    } = props
 
     // eslint-disable-next-line no-restricted-syntax
     const [localStorageLayouts, setLocalStorageLayouts] = useLocalStorage<Layouts | null>(
@@ -62,9 +71,9 @@ export const SmartInsightsViewGrid = memo<SmartInsightsViewGridProps>(function S
 
     const handleDragStart = useCallback(
         (item: Layout) => {
-            trackUICustomization(telemetryService, item, insights)
+            trackUICustomization(telemetryService, telemetryRecorder, item, insights)
         },
-        [telemetryService, insights]
+        [telemetryService, telemetryRecorder, insights]
     )
 
     const handleDragStop = useCallback(() => {
@@ -76,9 +85,9 @@ export const SmartInsightsViewGrid = memo<SmartInsightsViewGridProps>(function S
     const handleResizeStart = useCallback(
         (item: Layout) => {
             setResizeView(item)
-            trackUICustomization(telemetryService, item, insights)
+            trackUICustomization(telemetryService, telemetryRecorder, item, insights)
         },
-        [telemetryService, insights]
+        [telemetryService, telemetryRecorder, insights]
     )
 
     const handleResizeStop = useCallback((): void => {
@@ -108,6 +117,7 @@ export const SmartInsightsViewGrid = memo<SmartInsightsViewGridProps>(function S
                     key={insight.id}
                     insight={insight}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     resizing={resizingView?.i === insight.id}
                 />
             ))}
@@ -115,7 +125,12 @@ export const SmartInsightsViewGrid = memo<SmartInsightsViewGridProps>(function S
     )
 }, equalSmartGridProps)
 
-function trackUICustomization(telemetryService: TelemetryService, item: Layout, insights: Insight[]): void {
+function trackUICustomization(
+    telemetryService: TelemetryService,
+    telemetryRecorder: TelemetryRecorder,
+    item: Layout,
+    insights: Insight[]
+): void {
     try {
         const insight = insights.find(insight => item.i === insight.id)
 
@@ -123,6 +138,9 @@ function trackUICustomization(telemetryService: TelemetryService, item: Layout, 
             const insightType = getTrackingTypeByInsightType(insight.type)
 
             telemetryService.log('InsightUICustomization', { insightType }, { insightType })
+            telemetryRecorder.recordEvent('InsightUICustomization', 'clicked', {
+                privateMetadata: { insightType },
+            })
         }
     } catch {
         // noop

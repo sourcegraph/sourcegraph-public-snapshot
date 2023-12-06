@@ -10,6 +10,7 @@ import type {
 } from 'src/graphql-operations'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
@@ -49,7 +50,7 @@ const DEFAULT_VALUE = JSON.stringify(
 const ajv = new AJV({ strict: false })
 addFormats(ajv)
 
-interface Props extends TelemetryProps {}
+interface Props extends TelemetryProps, TelemetryV2Props {}
 
 export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {
     const isLightTheme = useIsLightTheme()

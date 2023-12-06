@@ -12,6 +12,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import { getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
@@ -32,6 +33,7 @@ import styles from './NotebookSymbolBlock.module.scss'
 interface NotebookSymbolBlockProps
     extends BlockProps<SymbolBlock>,
         TelemetryProps,
+        TelemetryV2Props,
         PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'> {
     isSourcegraphDotCom: boolean
 }
@@ -51,6 +53,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<React.PropsWithChildre
             input,
             output,
             telemetryService,
+            telemetryRecorder,
             isSelected,
             showMenu,
             isReadOnly,
@@ -139,7 +142,8 @@ export const NotebookSymbolBlock: React.FunctionComponent<React.PropsWithChildre
 
             const logEventOnCopy = useCallback(() => {
                 telemetryService.log(...codeCopiedEvent('notebook-symbols'))
-            }, [telemetryService])
+                telemetryRecorder.recordEvent('notebook-symbols', 'copied')
+            }, [telemetryService, telemetryRecorder])
 
             return (
                 <NotebookBlock

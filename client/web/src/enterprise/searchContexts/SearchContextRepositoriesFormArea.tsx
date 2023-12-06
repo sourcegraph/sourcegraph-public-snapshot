@@ -6,6 +6,7 @@ import type { Observable } from 'rxjs'
 import { delay, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import type { SearchContextRepositoryRevisionsFields } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, useEventObservable, Alert, Icon } from '@sourcegraph/wildcard'
 
@@ -73,7 +74,7 @@ const actions: {
     },
 ]
 
-export interface SearchContextRepositoriesFormAreaProps extends TelemetryProps {
+export interface SearchContextRepositoriesFormAreaProps extends TelemetryProps, TelemetryV2Props {
     isLightTheme: boolean
     repositories: SearchContextRepositoryRevisionsFields[] | undefined
     validateRepositories: () => Observable<Error[]>
@@ -82,7 +83,7 @@ export interface SearchContextRepositoriesFormAreaProps extends TelemetryProps {
 
 export const SearchContextRepositoriesFormArea: React.FunctionComponent<
     React.PropsWithChildren<SearchContextRepositoriesFormAreaProps>
-> = ({ isLightTheme, telemetryService, repositories, onChange, validateRepositories }) => {
+> = ({ isLightTheme, telemetryService, telemetryRecorder, repositories, onChange, validateRepositories }) => {
     const [hasTestedConfig, setHasTestedConfig] = useState(false)
     const [triggerTestConfig, triggerTestConfigErrors] = useEventObservable(
         useCallback(
@@ -139,6 +140,7 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<
                 height={300}
                 isLightTheme={isLightTheme}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 blockNavigationIfDirty={false}
             />
             {triggerTestConfigErrors && triggerTestConfigErrors !== LOADING && triggerTestConfigErrors.length > 0 && (

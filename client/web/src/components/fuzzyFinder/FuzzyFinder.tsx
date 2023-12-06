@@ -4,6 +4,7 @@ import type * as H from 'history'
 
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { FuzzyModal } from './FuzzyModal'
@@ -14,6 +15,7 @@ const DEFAULT_MAX_RESULTS = 50
 
 export interface FuzzyFinderContainerProps
     extends TelemetryProps,
+        TelemetryV2Props,
         Pick<FuzzyFinderProps, 'location'>,
         SettingsCascadeProps,
         FuzzyTabsProps {
@@ -83,15 +85,21 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
     useEffect(() => {
         if (isVisible) {
             props.telemetryService.log('FuzzyFinderViewed', { action: 'shortcut open' })
+            props.telemetryRecorder.recordEvent('FuzzyFinder', 'viewed', {
+                privateMetadata: { action: 'shortcut open' },
+            })
         }
-    }, [props.telemetryService, isVisible])
+    }, [props.telemetryService, props.telemetryRecorder, isVisible])
 
     const handleItemClick = useCallback(
         (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => {
             props.telemetryService.log(eventName, { activeTab, scope }, { activeTab, scope })
+            props.telemetryRecorder.recordEvent('FuzyFinderResult', 'clicked', {
+                privateMetadata: { activeTab, scope },
+            })
             setIsVisible(false)
         },
-        [props.telemetryService, setIsVisible, activeTab, scope]
+        [props.telemetryService, props.telemetryRecorder, setIsVisible, activeTab, scope]
     )
 
     if (tabs.isAllDisabled()) {

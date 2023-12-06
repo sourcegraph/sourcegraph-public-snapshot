@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
@@ -12,7 +13,10 @@ import styles from './ButtonDropdownCta.module.scss'
 
 // Debt: this is a fork of the web <ButtonDropdownCta>.
 
-export interface ButtonDropdownCtaProps extends TelemetryProps, Pick<WebviewPageProps, 'extensionCoreAPI'> {
+export interface ButtonDropdownCtaProps
+    extends TelemetryProps,
+        TelemetryV2Props,
+        Pick<WebviewPageProps, 'extensionCoreAPI'> {
     button: JSX.Element
     icon: JSX.Element
     title: string
@@ -31,6 +35,7 @@ export const ButtonDropdownCta: React.FunctionComponent<React.PropsWithChildren<
     title,
     copyText,
     telemetryService,
+    telemetryRecorder,
     source,
     viewEventName,
     returnTo,
@@ -49,6 +54,9 @@ export const ButtonDropdownCta: React.FunctionComponent<React.PropsWithChildren<
     useEffect(() => {
         if (isDropdownOpen) {
             telemetryService.log(viewEventName)
+            telemetryRecorder.recordEvent('dropdown', 'viewed', {
+                privateMetadata: { viewEventName },
+            })
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isDropdownOpen])
@@ -62,6 +70,7 @@ export const ButtonDropdownCta: React.FunctionComponent<React.PropsWithChildren<
 
     const onClick = (): void => {
         telemetryService.log(`VSCE${source}SignUpModalClick`)
+        telemetryRecorder.recordEvent(`VSCE${source}SignUpModal`, 'clicked')
         extensionCoreAPI.openLink(signUpURL).catch(() => {
             console.error('Error opening sign up link')
         })

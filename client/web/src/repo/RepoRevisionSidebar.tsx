@@ -7,6 +7,7 @@ import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import type { RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
@@ -34,7 +35,7 @@ import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebar.module.scss'
 
-interface RepoRevisionSidebarProps extends RepoFile, TelemetryProps, SettingsCascadeProps {
+interface RepoRevisionSidebarProps extends RepoFile, TelemetryProps, TelemetryV2Props, SettingsCascadeProps {
     repoID?: Scalars['ID']
     isDir: boolean
     defaultBranch: string
@@ -76,15 +77,21 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                 action: 'click',
                 label: 'expand / collapse file tree view',
             })
+            props.telemetryRecorder.recordEvent('FileTreeView', 'clicked', {
+                privateMetadata: {
+                    action: 'click',
+                    label: 'expand / collapse file tree view',
+                },
+            })
             setPersistedIsVisible(value)
             setIsVisible(value)
         },
-        [setPersistedIsVisible, props.telemetryService]
+        [setPersistedIsVisible, props.telemetryService, props.telemetryRecorder]
     )
-    const handleSymbolClick = useCallback(
-        () => props.telemetryService.log('SymbolTreeViewClicked'),
-        [props.telemetryService]
-    )
+    const handleSymbolClick = useCallback(() => {
+        props.telemetryService.log('SymbolTreeViewClicked')
+        props.telemetryRecorder.recordEvent('SymbolTreeView', 'clicked')
+    }, [props.telemetryService, props.telemetryRecorder])
 
     const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
     const focusFileTreeShortcut = useKeyboardShortcut('focusFileTree')
@@ -107,6 +114,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             <GettingStartedTour
                                 className="mr-3"
                                 telemetryService={props.telemetryService}
+                                telemetryRecorder={props.telemetryRecorder}
                                 authenticatedUser={props.authenticatedUser}
                             />
                         )}
@@ -164,6 +172,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                                 filePath={props.filePath}
                                                 filePathIsDirectory={props.isDir}
                                                 telemetryService={props.telemetryService}
+                                                telemetryRecorder={props.telemetryRecorder}
                                             />
                                         </TabPanel>
                                         <TabPanel>

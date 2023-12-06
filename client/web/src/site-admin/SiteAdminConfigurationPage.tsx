@@ -9,6 +9,7 @@ import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
 import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
@@ -212,7 +213,7 @@ const quickConfigureActions: {
     },
 ]
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     isLightTheme: boolean
     client: ApolloClient<{}>
     isCodyApp: boolean
@@ -231,7 +232,7 @@ interface State {
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
-export const SiteAdminConfigurationPage: FC<TelemetryProps & { isCodyApp: boolean }> = props => {
+export const SiteAdminConfigurationPage: FC<TelemetryProps & TelemetryV2Props & { isCodyApp: boolean }> = props => {
     const client = useApolloClient()
     return <SiteAdminConfigurationContent {...props} isLightTheme={useIsLightTheme()} client={client} />
 }
@@ -437,6 +438,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                                 onSave={this.onSave}
                                 actions={this.props.isCodyApp ? [] : quickConfigureActions}
                                 telemetryService={this.props.telemetryService}
+                                telemetryRecorder={this.props.telemetryRecorder}
                                 explanation={
                                     <Text className="form-text text-muted">
                                         <small>

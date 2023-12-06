@@ -12,6 +12,7 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
@@ -55,6 +56,7 @@ import styles from './NotebookPage.module.scss'
 interface NotebookPageProps
     extends SearchStreamingProps,
         TelemetryProps,
+        TelemetryV2Props,
         Omit<
             StreamingSearchResultsListProps,
             'allExpanded' | 'platformContext' | 'executedQuery' | 'enableOwnershipSearch'

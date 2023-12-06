@@ -7,6 +7,7 @@ import { catchError, map, mergeMap } from 'rxjs/operators'
 
 import { asError, type ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { aggregateStreamingSearch, type ContentMatch, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, PageHeader, Container, Code, H3, Text, Icon, Tooltip, ButtonLink } from '@sourcegraph/wildcard'
 
@@ -18,7 +19,7 @@ import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
 
 import styles from './SiteAdminFeatureFlagsPage.module.scss'
 
-interface SiteAdminFeatureFlagsPageProps extends TelemetryProps {
+interface SiteAdminFeatureFlagsPageProps extends TelemetryProps, TelemetryV2Props {
     fetchFeatureFlags?: typeof defaultFetchFeatureFlags
     productVersion?: string
 }

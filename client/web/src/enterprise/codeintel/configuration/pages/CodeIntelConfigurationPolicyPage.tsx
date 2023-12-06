@@ -11,6 +11,7 @@ import { useLazyQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { displayRepoName, RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
@@ -57,7 +58,7 @@ const DEBOUNCED_WAIT = 250
 
 const MS_IN_HOURS = 60 * 60 * 1000
 
-export interface CodeIntelConfigurationPolicyPageProps extends TelemetryProps {
+export interface CodeIntelConfigurationPolicyPageProps extends TelemetryProps, TelemetryV2Props {
     repo?: { id: string; name: string }
     authenticatedUser: AuthenticatedUser | null
     indexingEnabled?: boolean
@@ -76,12 +77,16 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
     domain = 'scip',
     telemetryService,
+    telemetryRecorder,
 }) => {
     const navigate = useNavigate()
     const location = useLocation()
     const { id } = useParams<{ id: string }>()
 
-    useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPolicy'), [telemetryService])
+    useEffect(() => {
+        telemetryService.logViewEvent('CodeIntelConfigurationPolicy')
+        telemetryRecorder.recordEvent('CodeIntelConfigurationPolicy', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     // Handle local policy state
     const [policy, setPolicy] = useState<CodeIntelligenceConfigurationPolicyFields | undefined>()

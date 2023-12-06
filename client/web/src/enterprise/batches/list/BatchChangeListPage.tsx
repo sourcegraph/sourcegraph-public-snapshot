@@ -7,6 +7,7 @@ import { pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
@@ -48,7 +49,7 @@ import { useBatchChangeListFilters } from './useBatchChangeListFilters'
 
 import styles from './BatchChangeListPage.module.scss'
 
-export interface BatchChangeListPageProps extends TelemetryProps, SettingsCascadeProps<Settings> {
+export interface BatchChangeListPageProps extends TelemetryProps, TelemetryV2Props, SettingsCascadeProps<Settings> {
     // canCreate indicates whether or not the currently-authenticated user has sufficient
     // permissions to create a batch change in whatever context this list page is being
     // presented. If not, canCreate will be a string reason why the user cannot create.
@@ -75,11 +76,15 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     openTab,
     settingsCascade,
     telemetryService,
+    telemetryRecorder,
     isSourcegraphDotCom,
     authenticatedUser,
 }) => {
     const location = useLocation()
-    useEffect(() => telemetryService.logViewEvent('BatchChangesListPage'), [telemetryService])
+    useEffect(() => {
+        telemetryService.logViewEvent('BatchChangesListPage')
+        telemetryRecorder.recordEvent('BatchChangesListPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
     const isBatchChangesLicensed = !!window.context.licenseInfo?.batchChanges?.unrestricted

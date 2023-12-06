@@ -19,12 +19,13 @@ import { noop } from 'lodash'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, Routes, Route, Navigate, matchPath } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SetupSteps.module.scss'
 
-export interface StepComponentProps extends TelemetryProps {
+export interface StepComponentProps extends TelemetryProps, TelemetryV2Props {
     baseURL: string
     className?: string
     isCodyApp: boolean
@@ -164,14 +165,22 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
     return <SetupStepsContext.Provider value={cachedContext}>{children}</SetupStepsContext.Provider>
 }
 
-interface SetupStepsContentProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
+interface SetupStepsContentProps extends TelemetryProps, TelemetryV2Props, HTMLAttributes<HTMLElement> {
     contentContainerClass?: string
     isCodyApp: boolean
     setStepId?: (stepId: string) => void
 }
 
 export const SetupStepsContent: FC<SetupStepsContentProps> = props => {
-    const { contentContainerClass, className, telemetryService, isCodyApp, setStepId, ...attributes } = props
+    const {
+        contentContainerClass,
+        className,
+        telemetryService,
+        telemetryRecorder,
+        isCodyApp,
+        setStepId,
+        ...attributes
+    } = props
     const { steps, activeStepIndex } = useContext(SetupStepsContext)
 
     return (
@@ -187,6 +196,7 @@ export const SetupStepsContent: FC<SetupStepsContentProps> = props => {
                                 setStepId={setStepId}
                                 className={classNames(contentContainerClass, styles.content)}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 isCodyApp={isCodyApp}
                             />
                         }

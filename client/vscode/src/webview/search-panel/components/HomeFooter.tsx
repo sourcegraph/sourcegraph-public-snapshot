@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import type { QueryState } from '@sourcegraph/shared/src/search'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Card, Text } from '@sourcegraph/wildcard'
 
@@ -13,10 +14,10 @@ import { type SearchExample, exampleQueries } from './SearchExamples'
 
 import styles from './HomeFooter.module.scss'
 
-export interface HomeFooterProps extends TelemetryProps {
+export interface HomeFooterProps extends TelemetryProps, TelemetryV2Props {
     setQuery: (newState: QueryState) => void
 }
-interface SearchExamplesProps extends TelemetryProps {
+interface SearchExamplesProps extends TelemetryProps, TelemetryV2Props {
     title: string
     subtitle: string
     examples: SearchExample[]
@@ -30,14 +31,18 @@ const SearchExamples: React.FunctionComponent<React.PropsWithChildren<SearchExam
     examples,
     icon,
     telemetryService,
+    telemetryRecorder,
     setQuery,
 }) => {
     const searchExampleClicked = useCallback(
         (trackEventName: string, fullQuery: string) => (): void => {
             setQuery({ query: fullQuery })
             telemetryService.log(trackEventName)
+            telemetryRecorder.recordEvent('footer', 'clicked', {
+                privateMetadata: { trackEventName },
+            })
         },
-        [setQuery, telemetryService]
+        [setQuery, telemetryService, telemetryRecorder]
     )
     return (
         <div className={styles.searchExamplesWrapper}>
@@ -93,7 +98,10 @@ export const HomeFooter: React.FunctionComponent<React.PropsWithChildren<HomeFoo
                                 src: 'DtL9ZJs/vsce-watch-and-learn.png',
                                 alt: 'Watch and learn video thumbnail',
                             }}
-                            onToggle={() => props.telemetryService.log('VSCEHomeWatch&Lean')}
+                            onToggle={() => {
+                                props.telemetryService.log('VSCEHomeWatch&Lean')
+                                props.telemetryRecorder.recordEvent('VSCEHomeWatch&Learn', 'toggled')
+                            }}
                             // assetsRoot="https://sourcegraph.com/.assets/"
                             assetsRoot="https://i.ibb.co/"
                         />

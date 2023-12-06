@@ -8,6 +8,7 @@ import { catchError, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Button, useEventObservable, Alert, ButtonLink } from '@sourcegraph/wildcard'
 
@@ -22,7 +23,7 @@ import { NotebooksGettingStartedTab } from './NotebooksGettingStartedTab'
 import { NotebooksList, type NotebooksListProps } from './NotebooksList'
 import { NotebooksListPageHeader } from './NotebooksListPageHeader'
 
-export interface NotebooksListPageProps extends TelemetryProps {
+export interface NotebooksListPageProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     fetchNotebooks?: typeof _fetchNotebooks
     createNotebook?: typeof _createNotebook
@@ -62,12 +63,14 @@ interface NotebooksFilter extends Pick<NotebooksListProps, 'creatorUserID' | 'st
 export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<NotebooksListPageProps>> = ({
     authenticatedUser,
     telemetryService,
+    telemetryRecorder,
     fetchNotebooks = _fetchNotebooks,
     createNotebook = _createNotebook,
 }) => {
     useEffect(() => {
         telemetryService.logPageView('SearchNotebooksListPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SearchNotebooksListPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const [importState, setImportState] = useState<typeof LOADING | ErrorLike | undefined>()
     const navigate = useNavigate()
@@ -91,8 +94,11 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
             setSelectedTab(tab)
             setSelectedLocationTab(location, navigate, tab)
             telemetryService.log(logName)
+            telemetryRecorder.recordEvent('notebooksTab.logName', 'clicked', {
+                privateMetadata: { logName },
+            })
         },
-        [navigate, location, setSelectedTab, telemetryService]
+        [navigate, location, setSelectedTab, telemetryService, telemetryRecorder]
     )
 
     const orderOptions: FilteredConnectionFilter[] = [
@@ -234,6 +240,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
 
     if (importedNotebookOrError && importedNotebookOrError !== LOADING) {
         telemetryService.log('SearchNotebookImportedFromMarkdown')
+        telemetryRecorder.recordEvent('SearchNotebookImportedFromMarkdown', 'imported')
         return <Navigate to={EnterprisePageRoutes.Notebook.replace(':id', importedNotebookOrError.id)} replace={true} />
     }
 
@@ -248,6 +255,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                 importNotebook={importNotebook}
                                 setImportState={setImportState}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                             />
                         )
                     }
@@ -310,6 +318,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                     starredByUserID={selectedFilter.starredByUserID}
                                     namespace={selectedFilter.namespace}
                                     telemetryService={telemetryService}
+                                    telemetryRecorder={telemetryRecorder}
                                 />
                             )}
                         </div>
@@ -319,6 +328,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                 {selectedTab === 'getting-started' && (
                     <NotebooksGettingStartedTab
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         authenticatedUser={authenticatedUser}
                     />
                 )}

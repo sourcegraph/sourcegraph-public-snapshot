@@ -9,6 +9,7 @@ import { map } from 'rxjs/operators'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -30,7 +31,7 @@ import { EmptyPanelView } from './views/EmptyPanelView'
 
 import styles from './TabbedPanelContent.module.scss'
 
-interface TabbedPanelContentProps extends PlatformContextProps, SettingsCascadeProps, TelemetryProps {
+interface TabbedPanelContentProps extends PlatformContextProps, SettingsCascadeProps, TelemetryProps, TelemetryV2Props {
     repoName?: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
@@ -91,8 +92,11 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     const [currentTabLabel, currentTabID] = hash.split('=')
 
     const trackTabClick = useCallback(
-        (title: string) => props.telemetryService.log(`ReferencePanelClicked${title}`),
-        [props.telemetryService]
+        (title: string) => {
+            props.telemetryService.log(`ReferencePanelClicked${title}`)
+            props.telemetryRecorder.recordEvent(`ReferencePanele${title}`, 'clicked')
+        },
+        [props.telemetryService, props.telemetryRecorder]
     )
 
     const panels: Panel[] | undefined = useObservable(

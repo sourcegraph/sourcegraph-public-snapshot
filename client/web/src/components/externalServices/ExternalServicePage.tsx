@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Subject } from 'rxjs'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Alert, Button, Container, ErrorAlert, H2, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
@@ -35,7 +36,7 @@ import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
 import styles from './ExternalServicePage.module.scss'
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     afterDeleteRoute: string
 
     externalServicesFromFile: boolean
@@ -52,6 +53,7 @@ const NotFoundPage: FC = () => (
 export const ExternalServicePage: FC<Props> = props => {
     const {
         telemetryService,
+        telemetryRecorder,
         afterDeleteRoute,
         externalServicesFromFile,
         allowEditExternalServicesWithFile,
@@ -64,7 +66,8 @@ export const ExternalServicePage: FC<Props> = props => {
 
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalService')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SiteAdminExternalService', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const [syncInProgress, setSyncInProgress] = useState<boolean>(false)
     // Callback used in ExternalServiceSyncJobsList to update the state in current component.
@@ -269,6 +272,7 @@ export const ExternalServicePage: FC<Props> = props => {
                         isLightTheme={isLightTheme}
                         className="test-external-service-editor"
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 )}
                 <ExternalServiceWebhook externalService={externalService} className="mt-3" />

@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { EditorHint, type QueryState } from '@sourcegraph/shared/src/search'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -26,7 +27,7 @@ import { useQueryExamples, type QueryExamplesSection } from './useQueryExamples'
 
 import styles from './QueryExamples.module.scss'
 
-export interface QueryExamplesProps extends TelemetryProps {
+export interface QueryExamplesProps extends TelemetryProps, TelemetryV2Props {
     selectedSearchContextSpec?: string
     queryState?: QueryState
     setQueryState: (newState: QueryState) => void
@@ -55,6 +56,7 @@ export const queryToTip = (id: string | undefined): Tip | null => {
 export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
     selectedSearchContextSpec,
     telemetryService,
+    telemetryRecorder,
     queryState = { query: '' },
     setQueryState,
     isSourcegraphDotCom = false,
@@ -75,12 +77,18 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
             // Run search for dotcom longer query examples
             if (isSourcegraphDotCom && queryExampleTabActive) {
                 telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
+                telemetryRecorder.recordEvent('QueryExample', 'clicked', {
+                    privateMetadata: { queryExample: query },
+                })
                 navigate(slug!)
             }
 
             setQueryState({ query: `${queryState.query} ${query}`.trimStart(), hint: EditorHint.Focus })
 
             telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
+            telemetryRecorder.recordEvent('QueryExample', 'clicked', {
+                privateMetadata: { queryExample: query },
+            })
 
             // Clear any previously set timeout.
             if (selectTipTimeout) {
@@ -104,6 +112,7 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
         },
         [
             telemetryService,
+            telemetryRecorder,
             queryState.query,
             setQueryState,
             selectedTip,

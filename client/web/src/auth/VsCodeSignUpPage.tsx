@@ -4,6 +4,7 @@ import { mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
@@ -16,7 +17,7 @@ import { type SignUpArguments, SignUpForm } from './SignUpForm'
 import styles from './VsCodeSignUpPage.module.scss'
 
 export const ShowEmailFormQueryParameter = 'showEmail'
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
@@ -43,6 +44,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
     onSignUp,
     context,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const location = useLocation()
 
@@ -62,6 +64,9 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
             { type: eventType, source: 'vs-code' },
             { type: eventType, source: 'vs-code' }
         )
+        telemetryRecorder.recordEvent('Signup', 'initiated', {
+            privateMetadata: { type: eventType, source: 'vs-code' },
+        })
     }
 
     const signUpForm = (

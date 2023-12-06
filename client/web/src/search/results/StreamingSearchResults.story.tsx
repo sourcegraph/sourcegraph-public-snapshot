@@ -4,6 +4,7 @@ import { EMPTY, NEVER, of } from 'rxjs'
 
 import { SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
 import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     HIGHLIGHTED_FILE_LINES_LONG_REQUEST,
@@ -33,6 +34,7 @@ const streamingSearchResult: AggregateStreamingSearchResults = {
 
 const defaultProps: StreamingSearchResultsProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    telemetryRecorder: noOpTelemetryRecorder,
 
     authenticatedUser: {
         url: '/users/alice',

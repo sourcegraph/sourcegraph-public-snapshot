@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
@@ -147,7 +148,7 @@ const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodePr
     )
 }
 
-interface SiteAdminPackagesPageProps extends TelemetryProps {}
+interface SiteAdminPackagesPageProps extends TelemetryProps, TelemetryV2Props {}
 
 const DEFAULT_FIRST = 15
 
@@ -161,6 +162,7 @@ interface PackagesModalState {
  */
 export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChildren<SiteAdminPackagesPageProps>> = ({
     telemetryService,
+    telemetryRecorder,
 }) => {
     const location = useLocation()
     const navigate = useNavigate()
@@ -168,7 +170,8 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminPackages')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SiteAdminPackages', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const {
         loading: extSvcLoading,

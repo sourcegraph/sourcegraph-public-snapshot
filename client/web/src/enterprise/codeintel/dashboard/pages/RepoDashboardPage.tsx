@@ -6,6 +6,7 @@ import { type Location, useLocation, useNavigate } from 'react-router-dom'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
@@ -28,7 +29,7 @@ import { useRepoCodeIntelStatus } from '../hooks/useRepoCodeIntelStatus'
 
 import styles from './RepoDashboardPage.module.scss'
 
-export interface RepoDashboardPageProps extends TelemetryProps {
+export interface RepoDashboardPageProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     repo: { id: string; name: string }
     now?: () => Date
@@ -94,6 +95,7 @@ const buildFilterStateFromParams = ({ search }: Location, indexingEnabled: boole
 
 export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> = ({
     telemetryService,
+    telemetryRecorder,
     repo,
     authenticatedUser,
     now,
@@ -101,7 +103,8 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
 }) => {
     useEffect(() => {
         telemetryService.logPageView('CodeIntelRepoDashboard')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('CodeIntelRepoDashboard', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const location = useLocation()
     const navigate = useNavigate()

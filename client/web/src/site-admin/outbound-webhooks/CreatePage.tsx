@@ -5,6 +5,7 @@ import { noop } from 'lodash'
 import { useNavigate } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, ErrorAlert, Form, Input, PageHeader } from '@sourcegraph/wildcard'
 
@@ -16,13 +17,14 @@ import { CREATE_OUTBOUND_WEBHOOK } from './backend'
 import { EventTypes } from './create-edit/EventTypes'
 import { SubmitButton } from './create-edit/SubmitButton'
 
-export interface CreatePageProps extends TelemetryProps {}
+export interface CreatePageProps extends TelemetryProps, TelemetryV2Props {}
 
-export const CreatePage: FC<CreatePageProps> = ({ telemetryService }) => {
+export const CreatePage: FC<CreatePageProps> = ({ telemetryService, telemetryRecorder }) => {
     const navigate = useNavigate()
     useEffect(() => {
         telemetryService.logPageView('OutboundWebhooksCreatePage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('OutboundWebhooksCreatePage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const [url, setURL] = useState('')
     const [secret, setSecret] = useState(generateSecret())

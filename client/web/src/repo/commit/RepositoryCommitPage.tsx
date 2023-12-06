@@ -9,6 +9,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -33,7 +34,11 @@ import { CHANGELIST_QUERY, COMMIT_QUERY } from './backend'
 
 import styles from './RepositoryCommitPage.module.scss'
 
-interface RepositoryCommitPageProps extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
+interface RepositoryCommitPageProps
+    extends TelemetryProps,
+        TelemetryV2Props,
+        PlatformContextProps,
+        SettingsCascadeProps {
     repo: RepositoryFields
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 }
@@ -107,7 +112,11 @@ export const RepositoryChangelistPage: React.FunctionComponent<RepositoryCommitP
     )
 }
 
-interface RepositoryRevisionNodesProps extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
+interface RepositoryRevisionNodesProps
+    extends TelemetryProps,
+        TelemetryV2Props,
+        PlatformContextProps,
+        SettingsCascadeProps {
     error?: ApolloError
     loading: boolean
 
@@ -126,7 +135,8 @@ const RepositoryRevisionNodes: React.FunctionComponent<RepositoryRevisionNodesPr
 
     useEffect(() => {
         props.telemetryService.logViewEvent('RepositoryCommit')
-    }, [props.telemetryService])
+        props.telemetryRecorder.recordEvent('RepositoryCommit', 'viewed')
+    }, [props.telemetryService, props.telemetryRecorder])
 
     useEffect(() => {
         if (commit) {

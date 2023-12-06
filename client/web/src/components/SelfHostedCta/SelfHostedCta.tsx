@@ -3,12 +3,13 @@ import React from 'react'
 import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, Icon, H3 } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../MarketingBlock'
 
-export interface SelfHostedCtaProps extends TelemetryProps {
+export interface SelfHostedCtaProps extends TelemetryProps, TelemetryV2Props {
     className?: string
     contentClassName?: string
     // the name of the page the CTA will be posted. DO NOT include full URLs
@@ -21,6 +22,7 @@ export const SelfHostedCta: React.FunctionComponent<React.PropsWithChildren<Self
     className,
     contentClassName,
     telemetryService,
+    telemetryRecorder,
     page,
     children,
 }) => {
@@ -28,10 +30,16 @@ export const SelfHostedCta: React.FunctionComponent<React.PropsWithChildren<Self
 
     const gettingStartedCTAOnClick = (): void => {
         telemetryService.log('InstallSourcegraphCTAClicked', { page }, { page })
+        telemetryRecorder.recordEvent('InstallSourcegraphCTA', 'clicked', {
+            privateMetadata: { page },
+        })
     }
 
     const helpGettingStartedCTAOnClick = (): void => {
         telemetryService.log('HelpGettingStartedCTA', { page }, { page })
+        telemetryRecorder.recordEvent('HelpGettingStartedCTA', 'clicked', {
+            privateMetadata: { page },
+        })
     }
 
     return (

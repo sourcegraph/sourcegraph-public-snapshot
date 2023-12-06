@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, ErrorAlert, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
@@ -12,7 +13,7 @@ import { autoIndexJobsToFormData } from './inference-form/auto-index-to-form-job
 import { InferenceForm } from './inference-form/InferenceForm'
 import type { InferenceFormData, SchemaCompatibleInferenceFormData } from './inference-form/types'
 
-interface ConfigurationFormProps extends TelemetryProps {
+interface ConfigurationFormProps extends TelemetryProps, TelemetryV2Props {
     repoId: string
     authenticatedUser: AuthenticatedUser | null
 }

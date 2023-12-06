@@ -13,6 +13,7 @@ import { useObservable } from '@sourcegraph/wildcard'
 import { wrapRemoteObservable } from '../api/client/api/common'
 import type { ContributionScope } from '../api/extension/api/context/context'
 import { getContributedActionItems } from '../contributions/contributions'
+import { TelemetryV2Props } from '../telemetry'
 import type { TelemetryProps } from '../telemetry/telemetryService'
 
 import { ActionItem, type ActionItemProps } from './ActionItem'
@@ -43,6 +44,7 @@ export interface ActionsNavItemsProps
     extends ActionsProps,
         ActionNavItemsClassProps,
         TelemetryProps,
+        TelemetryV2Props,
         Pick<ActionItemProps, 'showLoadingSpinnerDuringExecution' | 'actionItemStyleProps'> {
     /**
      * If true, it renders a `<ul className="nav">...</ul>` around the items. If there are no items, it renders `null`.

@@ -9,6 +9,7 @@ import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilt
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral, type Pattern, type Token } from '@sourcegraph/shared/src/search/query/token'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Link, createLinkUrl, Icon } from '@sourcegraph/wildcard'
@@ -120,12 +121,14 @@ interface DidYouMeanProps
     extends SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
-        TelemetryProps {
+        TelemetryProps,
+        TelemetryV2Props {
     query: string
 }
 
 export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouMeanProps>> = ({
     telemetryService,
+    telemetryRecorder,
     query,
     patternType,
     caseSensitive,
@@ -136,8 +139,9 @@ export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouM
     useEffect(() => {
         if (suggestions.length > 0) {
             telemetryService.log('SearchDidYouMeanDisplayed')
+            telemetryRecorder.recordEvent('SearchDidYouMean', 'displayed')
         }
-    }, [suggestions, telemetryService])
+    }, [suggestions, telemetryService, telemetryRecorder])
 
     if (suggestions.length > 0) {
         return (
@@ -153,9 +157,12 @@ export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouM
                         return (
                             <li key={suggestion.query} className={styles.listItem}>
                                 <Link
-                                    onClick={() =>
+                                    onClick={() => {
                                         telemetryService.log('SearchDidYouMeanClicked', { type: suggestion.type })
-                                    }
+                                        telemetryRecorder.recordEvent('SearchDidYouMean', 'clicked', {
+                                            privateMetadata: { type: suggestion.type },
+                                        })
+                                    }}
                                     to={createLinkUrl({ pathname: '/search', search: builtURLQuery })}
                                     className={styles.link}
                                 >

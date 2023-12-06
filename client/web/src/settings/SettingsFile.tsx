@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
@@ -14,7 +15,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './SettingsFile.module.scss'
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     settings: SiteAdminSettingsCascadeFields['subjects'][number]['latestSettings'] | null
 
     /**

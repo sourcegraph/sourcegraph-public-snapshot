@@ -5,6 +5,7 @@ import type * as _monaco from 'monaco-editor'
 import { Subscription } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
@@ -20,7 +21,8 @@ const disposableToFunc = (disposable: _monaco.IDisposable) => () => disposable.d
 
 interface Props<T extends object>
     extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema' | 'language'>,
-        TelemetryProps {
+        TelemetryProps,
+        TelemetryV2Props {
     value: string
     isLightTheme: boolean
 

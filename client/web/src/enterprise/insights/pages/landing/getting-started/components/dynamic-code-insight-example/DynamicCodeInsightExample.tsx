@@ -2,9 +2,11 @@ import { type FC, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
+import { te } from 'date-fns/locale'
 import { noop } from 'rxjs'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -39,10 +41,13 @@ const INITIAL_INSIGHT_VALUES: CodeInsightExampleFormValues = {
     query: 'TODO',
 }
 
-interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {}
+interface DynamicCodeInsightExampleProps
+    extends TelemetryProps,
+        TelemetryV2Props,
+        React.HTMLAttributes<HTMLDivElement> {}
 
 export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = props => {
-    const { telemetryService, ...otherProps } = props
+    const { telemetryService, telemetryRecorder, ...otherProps } = props
 
     const { repositoryUrl, loading: repositoryValueLoading } = useExampleRepositoryUrl()
 
@@ -81,17 +86,20 @@ export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = pro
     useEffect(() => {
         if (debouncedQuery !== INITIAL_INSIGHT_VALUES.query) {
             telemetryService.log('InsightsGetStartedPageQueryModification')
+            telemetryRecorder.recordEvent('InsightsGetStartedPageQueryModification', 'rendered')
         }
-    }, [debouncedQuery, telemetryService])
+    }, [debouncedQuery, telemetryService, telemetryRecorder])
 
     useEffect(() => {
         if (debouncedRepositories !== INITIAL_INSIGHT_VALUES.repositories) {
             telemetryService.log('InsightsGetStartedPageRepositoriesModification')
+            telemetryRecorder.recordEvent('InsightsGetStartedPageRepositoriesModification', 'rendered')
         }
-    }, [debouncedRepositories, telemetryService])
+    }, [debouncedRepositories, telemetryService, telemetryRecorder])
 
     const handleGetStartedClick = (): void => {
         telemetryService.log('InsightsGetStartedPrimaryCTAClick')
+        telemetryRecorder.recordEvent('InsightsGetStartedPrimaryCTA', 'clicked')
     }
 
     const hasValidLivePreview =
@@ -105,6 +113,7 @@ export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = pro
             <form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit} className={styles.chartSection}>
                 <DynamicInsightPreview
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     disabled={!hasValidLivePreview}
                     repositories={repositories.input.value}
                     query={query.input.value}

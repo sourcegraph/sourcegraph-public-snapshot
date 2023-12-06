@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -18,15 +19,17 @@ import type { OwnershipPanelProps } from './TreeOwnershipPanel'
 
 import styles from './FileOwnershipPanel.module.scss'
 
-export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & TelemetryProps> = ({
+export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & TelemetryProps & TelemetryV2Props> = ({
     repoID,
     revision,
     filePath,
     telemetryService,
+    telemetryRecorder,
 }) => {
     React.useEffect(() => {
         telemetryService.log('OwnershipPanelOpened')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('OwnershipPanel', 'opened')
+    }, [telemetryService, telemetryRecorder])
 
     const { data, loading, error, refetch } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
         variables: {

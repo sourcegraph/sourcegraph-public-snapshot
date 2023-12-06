@@ -415,6 +415,7 @@ export const TreePage: FC<Props> = ({
                             commitID={commitID}
                             isPackage={isPackage}
                             authenticatedUser={authenticatedUser}
+                            telemetryRecorder={telemetryRecorder}
                             {...props}
                         />
                     )}

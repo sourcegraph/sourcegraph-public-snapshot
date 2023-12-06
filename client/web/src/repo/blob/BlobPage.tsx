@@ -448,6 +448,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                     <GoToRawAction
                         {...context}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                         key="raw-action"
                         repoName={repoName}
                         revision={props.revision}
@@ -603,6 +604,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                         settingsCascade={props.settingsCascade}
                         onHoverShown={props.onHoverShown}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                         role="region"
                         ariaLabel="File blob"
                         isBlameVisible={isBlameVisible}

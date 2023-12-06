@@ -3,6 +3,7 @@ import { type FC, useEffect } from 'react'
 import { mdiAlertCircle, mdiWebhook, mdiMapSearch, mdiPencil, mdiPlus } from '@mdi/js'
 
 import { pluralize } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonLink, Container, H3, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
@@ -23,12 +24,13 @@ import { DeleteButton } from './delete/DeleteButton'
 
 import styles from './OutboundWebhooksPage.module.scss'
 
-export interface OutboundWebhooksPageProps extends TelemetryProps {}
+export interface OutboundWebhooksPageProps extends TelemetryProps, TelemetryV2Props {}
 
-export const OutboundWebhooksPage: FC<OutboundWebhooksPageProps> = ({ telemetryService }) => {
+export const OutboundWebhooksPage: FC<OutboundWebhooksPageProps> = ({ telemetryService, telemetryRecorder }) => {
     useEffect(() => {
         telemetryService.logPageView('OutboundWebhooksPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('OutboundWebhooksPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useOutboundWebhooksConnection()
 

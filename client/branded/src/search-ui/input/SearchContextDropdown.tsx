@@ -7,6 +7,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import type { SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Code,
@@ -32,6 +33,7 @@ const popoverPadding = createRectangle(0, 0, 0, 2)
 export interface SearchContextDropdownProps
     extends SearchContextInputProps,
         TelemetryProps,
+        TelemetryV2Props,
         Partial<Pick<SubmitSearchProps, 'submitSearch'>>,
         PlatformContextProps<'requestGraphQL'> {
     query: string
@@ -56,6 +58,7 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
         className,
         menuClassName,
         telemetryService,
+        telemetryRecorder,
         onEscapeMenuClose,
     } = props
 
@@ -90,8 +93,9 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
 
             setIsOpen(false)
             telemetryService.log('SearchContextDropdownToggled')
+            telemetryRecorder.recordEvent('SearchContextDropdown', 'toggled')
         },
-        [onEscapeMenuClose, telemetryService]
+        [onEscapeMenuClose, telemetryService, telemetryRecorder]
     )
 
     const handlePopoverToggle = (event: PopoverOpenEvent): void => {
@@ -107,15 +111,18 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
         }
 
         telemetryService.log('SearchContextDropdownToggled')
+        telemetryRecorder.recordEvent('SearchContextDropdown', 'toggled')
 
         if (isOpen && authenticatedUser) {
             // Log search context dropdown view event whenever dropdown is opened, if user is authenticated
             telemetryService.log('SearchContextsDropdownViewed')
+            telemetryRecorder.recordEvent('SearchContextDropdown', 'viewed')
         }
 
         if (isOpen && !authenticatedUser) {
             // Log CTA view event whenever dropdown is opened, if user is not authenticated
             telemetryService.log('SearchResultContextsCTAShown')
+            telemetryRecorder.recordEvent('SearchResultContextCTA', 'shown')
         }
     }
 

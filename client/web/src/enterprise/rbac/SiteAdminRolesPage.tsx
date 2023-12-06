@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { mdiPlus } from '@mdi/js'
 import { groupBy, noop } from 'lodash'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Button, Icon, ProductStatusBadge, ErrorAlert, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
@@ -14,14 +15,16 @@ import { RoleNode } from './components/RoleNode'
 
 import styles from './SiteAdminRolesPage.module.scss'
 
-export interface SiteAdminRolesPageProps extends TelemetryProps {}
+export interface SiteAdminRolesPageProps extends TelemetryProps, TelemetryV2Props {}
 
 export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren<SiteAdminRolesPageProps>> = ({
     telemetryService,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminRoles')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SiteAdminRoles', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const [permissions, setPermissions] = useState<PermissionsMap>({} as PermissionsMap)
 

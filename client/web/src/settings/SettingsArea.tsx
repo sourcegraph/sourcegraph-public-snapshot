@@ -10,6 +10,7 @@ import { gql } from '@sourcegraph/http-client'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, PageHeader, ErrorMessage } from '@sourcegraph/wildcard'
 
@@ -23,7 +24,11 @@ import { eventLogger } from '../tracking/eventLogger'
 import { SettingsPage } from './SettingsPage'
 
 /** Props shared by SettingsArea and its sub-pages. */
-interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, TelemetryProps {
+interface SettingsAreaPageCommonProps
+    extends PlatformContextProps,
+        SettingsCascadeProps,
+        TelemetryProps,
+        TelemetryV2Props {
     /** The subject whose settings to edit. */
     subject: Pick<SettingsSubject, '__typename' | 'id'>
 
@@ -155,6 +160,7 @@ export class SettingsArea extends React.Component<Props, State> {
             platformContext: this.props.platformContext,
             settingsCascade: this.props.settingsCascade,
             telemetryService: this.props.telemetryService,
+            telemetryRecorder: this.props.telemetryRecorder,
         }
 
         return (

@@ -5,6 +5,7 @@ import addFormats from 'ajv-formats'
 import { parse } from 'jsonc-parser'
 
 import type { ErrorLike } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
@@ -28,7 +29,10 @@ import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDis
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
 import type { AddExternalServiceOptions } from './externalServices'
 
-interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, TelemetryProps {
+interface Props
+    extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>,
+        TelemetryProps,
+        TelemetryV2Props {
     input: AddExternalServiceInput
     externalServiceID?: string
     error?: ErrorLike
@@ -53,6 +57,7 @@ addFormats(ajv)
  */
 export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    telemetryRecorder,
     jsonSchema,
     editorActions,
     input,
@@ -142,6 +147,7 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                     actions={editorActions}
                     className="test-external-service-editor"
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     explanation={
                         <Text className="form-text text-muted">
                             <small>

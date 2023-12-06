@@ -1,5 +1,6 @@
 import { type FC, useCallback, useEffect } from 'react'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H2 } from '@sourcegraph/wildcard'
 
@@ -16,7 +17,7 @@ import { NotebookNode, type NotebookNodeProps } from './NotebookNode'
 
 import styles from './NotebooksList.module.scss'
 
-export interface NotebooksListProps extends TelemetryProps {
+export interface NotebooksListProps extends TelemetryProps, TelemetryV2Props {
     title: string
     logEventName: string
     orderOptions: FilteredConnectionFilter[]
@@ -35,11 +36,12 @@ export const NotebooksList: FC<NotebooksListProps> = ({
     namespace,
     fetchNotebooks,
     telemetryService,
+    telemetryRecorder,
 }) => {
-    useEffect(
-        () => telemetryService.logViewEvent(`SearchNotebooksList${logEventName}`),
-        [logEventName, telemetryService]
-    )
+    useEffect(() => {
+        telemetryService.logViewEvent(`SearchNotebooksList${logEventName}`)
+        telemetryRecorder.recordEvent(`SearchNotebooksList${logEventName}`, 'viewed')
+    }, [logEventName, telemetryService, telemetryRecorder])
 
     const queryConnection = useCallback(
         (args: Partial<ListNotebooksVariables>) => {

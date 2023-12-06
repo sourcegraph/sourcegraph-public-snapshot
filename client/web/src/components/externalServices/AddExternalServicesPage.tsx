@@ -9,6 +9,7 @@ import { useLocation } from 'react-router-dom'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Alert, H3, Icon, Text, Container, PageHeader } from '@sourcegraph/wildcard'
 
@@ -19,7 +20,7 @@ import { AddExternalServicePage } from './AddExternalServicePage'
 import { ExternalServiceGroup, type AddExternalServiceOptionsWithID } from './ExternalServiceGroup'
 import { allExternalServices, type AddExternalServiceOptions, gitHubAppConfig } from './externalServices'
 
-export interface AddExternalServicesPageProps extends TelemetryProps {
+export interface AddExternalServicesPageProps extends TelemetryProps, TelemetryV2Props {
     /**
      * The list of code host external services to be displayed.
      * Pick items from externalServices.codeHostExternalServices.
@@ -46,6 +47,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
     codeHostExternalServices,
     nonCodeHostExternalServices,
     telemetryService,
+    telemetryRecorder,
     autoFocusForm,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
@@ -91,6 +93,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         return (
             <AddExternalServicePage
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 externalService={externalService}
                 autoFocusForm={autoFocusForm}
                 externalServicesFromFile={externalServicesFromFile}

@@ -13,6 +13,7 @@ import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
 import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     createRectangle,
@@ -33,7 +34,7 @@ import styles from './SearchHistoryDropdown.module.scss'
 
 const buttonContent: React.ReactElement = <Icon svgPath={mdiClockOutline} aria-hidden="true" />
 
-interface SearchHistoryDropdownProps extends TelemetryProps {
+interface SearchHistoryDropdownProps extends TelemetryProps, TelemetryV2Props {
     className?: string
     recentSearches: RecentSearch[]
     onSelect: (search: RecentSearch) => void
@@ -44,24 +45,26 @@ interface SearchHistoryDropdownProps extends TelemetryProps {
 const popoverPadding = createRectangle(0, 0, 0, 2)
 
 export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdownProps> = React.memo(
-    function SearchHistoryDropdown({ recentSearches = [], onSelect, className, telemetryService }) {
+    function SearchHistoryDropdown({ recentSearches = [], onSelect, className, telemetryService, telemetryRecorder }) {
         const [isOpen, setIsOpen] = useState(false)
 
         const handlePopoverToggle = useCallback(
             (event: PopoverOpenEvent): void => {
                 setIsOpen(event.isOpen)
                 telemetryService.log(event.isOpen ? 'RecentSearchesListOpened' : 'RecentSearchesListDismissed')
+                telemetryRecorder.recordEvent('RecentSearchesList', event.isOpen ? 'opened' : 'dismissed')
             },
-            [telemetryService, setIsOpen]
+            [telemetryService, telemetryRecorder, setIsOpen]
         )
 
         const onSelectInternal = useCallback(
             (search: RecentSearch) => {
                 telemetryService.log('RecentSearchSelected')
+                telemetryRecorder.recordEvent('RecentSearch', 'selected')
                 onSelect(search)
                 setIsOpen(false)
             },
-            [telemetryService, onSelect, setIsOpen]
+            [telemetryService, telemetryRecorder, onSelect, setIsOpen]
         )
 
         return (

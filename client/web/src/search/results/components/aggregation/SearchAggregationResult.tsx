@@ -2,6 +2,7 @@ import { type FC, type HTMLAttributes, useEffect, useState } from 'react'
 
 import { mdiArrowCollapse } from '@mdi/js'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H2, Icon, Code, Card, CardBody } from '@sourcegraph/wildcard'
 
@@ -20,7 +21,7 @@ import { AggregationUIMode } from './types'
 
 import styles from './SearchAggregationResult.module.scss'
 
-interface SearchAggregationResultProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
+interface SearchAggregationResultProps extends TelemetryProps, TelemetryV2Props, HTMLAttributes<HTMLElement> {
     /**
      * Current submitted query, note that this query isn't a live query
      * that is synced with typed query in the search box, this query is submitted
@@ -42,7 +43,8 @@ interface SearchAggregationResultProps extends TelemetryProps, HTMLAttributes<HT
 }
 
 export const SearchAggregationResult: FC<SearchAggregationResultProps> = props => {
-    const { query, patternType, caseSensitive, onQuerySubmit, telemetryService, ...attributes } = props
+    const { query, patternType, caseSensitive, onQuerySubmit, telemetryService, telemetryRecorder, ...attributes } =
+        props
 
     const [extendedTimeout, setExtendedTimeoutLocal] = useState(false)
     const [, setAggregationUIMode] = useAggregationUIMode()
@@ -55,11 +57,15 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
         proactive: true,
         extendedTimeout,
         telemetryService,
+        telemetryRecorder,
     })
 
     const handleCollapseClick = (): void => {
         setAggregationUIMode(AggregationUIMode.Sidebar)
         telemetryService.log(GroupResultsPing.CollapseFullViewPanel, { aggregationMode }, { aggregationMode })
+        telemetryRecorder.recordEvent(GroupResultsPing.CollapseFullViewPanel, 'clicked', {
+            privateMetadata: { aggregationMode },
+        })
     }
 
     const handleBarLinkClick = (query: string, index: number): void => {

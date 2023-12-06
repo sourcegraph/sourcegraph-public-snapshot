@@ -4,6 +4,7 @@ import { mdiCog, mdiAccount, mdiDelete, mdiPlus } from '@mdi/js'
 import { Subject } from 'rxjs'
 
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Icon, H2, Text, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -91,18 +92,22 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
     )
 }
 
-interface Props extends TelemetryProps {}
+interface Props extends TelemetryProps, TelemetryV2Props {}
 
 /**
  * A page displaying the orgs on this site.
  */
-export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemetryService }) => {
+export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    telemetryService,
+    telemetryRecorder,
+}) => {
     const orgUpdates = useMemo(() => new Subject<void>(), [])
     const onDidUpdateOrg = useCallback((): void => orgUpdates.next(), [orgUpdates])
 
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminOrgs')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SiteAdminOrgs', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <div className="site-admin-orgs-page">

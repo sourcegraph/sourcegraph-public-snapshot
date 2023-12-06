@@ -6,6 +6,7 @@ import { appWindow, LogicalSize } from '@tauri-apps/api/window'
 import { useNavigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Theme, ThemeContext, ThemeSetting, useTheme } from '@sourcegraph/shared/src/theme'
 
@@ -60,7 +61,7 @@ const APP_SETUP_STEPS: StepConfiguration[] = [
  * App related setup wizard component, see {@link SetupWizard} component
  * for any other deploy type setup flows.
  */
-export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
+export const AppSetupWizard: FC<TelemetryProps & TelemetryV2Props> = ({ telemetryService, telemetryRecorder }) => {
     const { theme } = useTheme()
     const [activeStepId, setStepId, status] = useTemporarySetting('app-setup.activeStepId')
 
@@ -157,6 +158,7 @@ export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
                 >
                     <SetupStepsContent
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         className={styles.content}
                         isCodyApp={true}
                         setStepId={setStepId}

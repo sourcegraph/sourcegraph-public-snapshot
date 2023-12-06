@@ -11,6 +11,7 @@ import type { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerF
 import { type HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { type ContentMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 
@@ -19,7 +20,7 @@ import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from '.
 
 import styles from './FileMatchChildren.module.scss'
 
-interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
+interface FileMatchProps extends SettingsCascadeProps, TelemetryProps, TelemetryV2Props {
     result: ContentMatch
     grouped: MatchGroup[]
     /* Clicking on a match opens the link in a new tab */
@@ -37,7 +38,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         !isErrorLike(props.settingsCascade.final) &&
         props.settingsCascade.final.experimentalFeatures?.enableLazyFileResultSyntaxHighlighting
 
-    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService } = props
+    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, telemetryRecorder } = props
 
     const fetchFileRangeMatches = useCallback(
         (args: { format?: HighlightResponseFormat; ranges: HighlightLineRange[] }): Observable<string[][]> =>
@@ -74,11 +75,14 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                         { durationMs: endTime - startTime },
                         { durationMs: endTime - startTime }
                     )
+                    telemetryRecorder.recordEvent('search.latencies.frontend.code', 'loaded', {
+                        metadata: { durationMs: endTime - startTime },
+                    })
                     return lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
                 })
             )
         },
-        [fetchFileRangeMatches, grouped, telemetryService]
+        [fetchFileRangeMatches, grouped, telemetryService, telemetryRecorder]
     )
 
     const fetchPlainTextFileMatchLineRanges = React.useCallback(
@@ -114,7 +118,8 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
     const logEventOnCopy = useCallback(() => {
         telemetryService.log(...codeCopiedEvent('file-match'))
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('file-match', 'copied')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <div

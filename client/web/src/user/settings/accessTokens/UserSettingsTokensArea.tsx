@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { Route, Routes } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { NotFoundPage } from '../../../components/HeroPage'
@@ -12,7 +13,10 @@ import { UserSettingsCreateAccessTokenCallbackPage } from './UserSettingsCreateA
 import { UserSettingsCreateAccessTokenPage } from './UserSettingsCreateAccessTokenPage'
 import { UserSettingsTokensPage } from './UserSettingsTokensPage'
 
-interface Props extends Pick<UserSettingsAreaRouteContext, 'user' | 'authenticatedUser'>, TelemetryProps {
+interface Props
+    extends Pick<UserSettingsAreaRouteContext, 'user' | 'authenticatedUser'>,
+        TelemetryProps,
+        TelemetryV2Props {
     isSourcegraphDotCom: boolean
     isCodyApp: boolean
 }

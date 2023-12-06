@@ -3,6 +3,7 @@ import React, { useCallback, useMemo } from 'react'
 import { mdiPlus } from '@mdi/js'
 import { Subject } from 'rxjs'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, ButtonLink, Container, Icon, PageHeader } from '@sourcegraph/wildcard'
 
@@ -14,7 +15,7 @@ import { AccessTokenNode, type AccessTokenNodeProps } from '../settings/tokens/A
 
 import { queryAccessTokens } from './backend'
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
 }
 
@@ -24,10 +25,12 @@ interface Props extends TelemetryProps {
 export const SiteAdminTokensPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     telemetryService,
+    telemetryRecorder,
 }) => {
     useMemo(() => {
         telemetryService.logViewEvent('SiteAdminTokens')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SiteAdminTokens', 'viewed')
+    }, [telemetryService, telemetryRecorder])
     const accessTokenUpdates = useMemo(() => new Subject<void>(), [])
     const onDidUpdateAccessToken = useCallback(() => accessTokenUpdates.next(), [accessTokenUpdates])
     const accessTokensEnabled = window.context.accessTokensAllow !== 'none'

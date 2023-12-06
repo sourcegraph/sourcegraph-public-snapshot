@@ -8,6 +8,7 @@ import { takeWhile } from 'rxjs/operators'
 
 import { type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
@@ -48,7 +49,7 @@ import { useReindexPreciseIndex as defaultUseReindexPreciseIndex } from '../hook
 
 import styles from './CodeIntelPreciseIndexPage.module.scss'
 
-export interface CodeIntelPreciseIndexPageProps extends TelemetryProps {
+export interface CodeIntelPreciseIndexPageProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     now?: () => Date
     queryDependencyGraph?: typeof defaultQueryDependencyGraph
@@ -71,12 +72,16 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     useReindexPreciseIndex = defaultUseReindexPreciseIndex,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const location = useLocation()
 
-    useEffect(() => telemetryService.logViewEvent('CodeIntelPreciseIndexPage'), [telemetryService])
+    useEffect(() => {
+        telemetryService.logViewEvent('CodeIntelPreciseIndexPage')
+        telemetryRecorder.recordEvent('CodeIntelPreciseIndexPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const apolloClient = useApolloClient()
     const { handleReindexPreciseIndex, reindexError } = useReindexPreciseIndex()

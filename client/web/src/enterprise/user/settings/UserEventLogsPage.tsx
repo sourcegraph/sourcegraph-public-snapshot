@@ -6,6 +6,7 @@ import { map } from 'rxjs/operators'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader, Link, Code } from '@sourcegraph/wildcard'
 
@@ -57,7 +58,10 @@ export interface UserEventLogsPageProps
     extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'isSourcegraphDotCom'>,
         UserEventLogsPageContentProps {}
 
-export interface UserEventLogsPageContentProps extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps {}
+export interface UserEventLogsPageContentProps
+    extends Pick<UserSettingsAreaRouteContext, 'user'>,
+        TelemetryProps,
+        TelemetryV2Props {}
 
 /**
  * A page displaying usage statistics for the site.
@@ -66,6 +70,7 @@ export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<
     isSourcegraphDotCom,
     authenticatedUser,
     telemetryService,
+    telemetryRecorder,
     user,
 }) => {
     if (isSourcegraphDotCom && authenticatedUser && user.id !== authenticatedUser.id) {
@@ -75,15 +80,22 @@ export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<
             </SiteAdminAlert>
         )
     }
-    return <UserEventLogsPageContent telemetryService={telemetryService} user={user} />
+    return (
+        <UserEventLogsPageContent
+            telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
+            user={user}
+        />
+    )
 }
 
 export const UserEventLogsPageContent: React.FunctionComponent<
     React.PropsWithChildren<UserEventLogsPageContentProps>
-> = ({ telemetryService, user }) => {
+> = ({ telemetryService, telemetryRecorder, user }) => {
     useMemo(() => {
         telemetryService.logViewEvent('UserEventLogPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('UserEventLogPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const queryUserEventLogs = useCallback(
         (args: { first?: number }): Observable<UserEventLogsConnectionFields> =>

@@ -10,6 +10,7 @@ import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { SearchJobsOrderBy, SearchJobState } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
@@ -119,12 +120,12 @@ export const SEARCH_JOBS_QUERY = gql`
     }
 `
 
-interface SearchJobsPageProps extends TelemetryProps {
+interface SearchJobsPageProps extends TelemetryProps, TelemetryV2Props {
     isAdmin: boolean
 }
 
 export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
-    const { isAdmin, telemetryService } = props
+    const { isAdmin, telemetryService, telemetryRecorder } = props
 
     const [searchTerm, setSearchTerm] = useState<string>('')
     const [searchStateTerm, setSearchStateTerm] = useState('')
@@ -164,7 +165,8 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
 
     useEffect(() => {
         telemetryService.logViewEvent('SearchJobsListPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SearchJobsListPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const handleSearchJobCreate = (): void => {
         setJobToRestart(null)
@@ -273,6 +275,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
                                 job={searchJob}
                                 withCreatorColumn={isAdmin}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 onRerun={setJobToRestart}
                                 onCancel={setJobToCancel}
                                 onDelete={setJobToDelete}
@@ -303,7 +306,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
 const formatDate = timeFormat('%Y-%m-%d %H:%M:%S')
 const formatDateSlim = timeFormat('%Y-%m-%d')
 
-interface SearchJobProps extends TelemetryProps {
+interface SearchJobProps extends TelemetryProps, TelemetryV2Props {
     job: SearchJobNode
     withCreatorColumn: boolean
     onRerun: (job: SearchJobNode) => void
@@ -312,7 +315,7 @@ interface SearchJobProps extends TelemetryProps {
 }
 
 const SearchJob: FC<SearchJobProps> = props => {
-    const { job, withCreatorColumn, telemetryService, onRerun, onCancel, onDelete } = props
+    const { job, withCreatorColumn, telemetryService, telemetryRecorder, onRerun, onCancel, onDelete } = props
     const { repoStats } = job
 
     const startDate = useMemo(() => (job.startedAt ? formatDateSlim(new Date(job.startedAt)) : ''), [job.startedAt])
@@ -353,6 +356,7 @@ const SearchJob: FC<SearchJobProps> = props => {
                     className={styles.jobViewLogs}
                     onClick={() => {
                         telemetryService.log('SearchJobsResultViewLogsClick', {}, {})
+                        telemetryRecorder.recordEvent('SearchJobsResultViewLogs', 'clicked')
                     }}
                 >
                     View logs
@@ -407,6 +411,7 @@ const SearchJob: FC<SearchJobProps> = props => {
                     className={styles.jobDownload}
                     onClick={() => {
                         telemetryService.log('SearchJobsResultDownloadClick', {}, {})
+                        telemetryRecorder.recordEvent('SearchJobsResultDownload', 'clicked')
                     }}
                 >
                     <Icon svgPath={mdiDownload} aria-hidden={true} />

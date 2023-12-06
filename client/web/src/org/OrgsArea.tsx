@@ -4,6 +4,7 @@ import { Routes, Route, useParams, useLocation, useNavigate } from 'react-router
 
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import type { AuthenticatedUser } from '../auth'
@@ -23,6 +24,7 @@ export interface Props
     extends PlatformContextProps,
         SettingsCascadeProps,
         TelemetryProps,
+        TelemetryV2Props,
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps {

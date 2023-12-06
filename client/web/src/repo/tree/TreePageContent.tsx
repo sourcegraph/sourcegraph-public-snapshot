@@ -15,6 +15,7 @@ import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { RepositoryType, SearchPatternType, type TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Badge, ButtonLink, Card, CardHeader, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
@@ -267,7 +268,11 @@ const ExtraInfoSection: React.FC<{
     )
 }
 
-interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
+interface TreePageContentProps
+    extends ExtensionsControllerProps,
+        TelemetryProps,
+        TelemetryV2Props,
+        PlatformContextProps {
     filePath: string
     tree: TreeFields
     repo: TreePageRepositoryFields

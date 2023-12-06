@@ -3,6 +3,7 @@ import { useCallback, type FC } from 'react'
 import { mdiHelpCircleOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     PopoverTrigger,
@@ -21,7 +22,7 @@ import {
 
 import styles from './SearchHelpDropdownButton.module.scss'
 
-interface SearchHelpDropdownButtonProps extends TelemetryProps {
+interface SearchHelpDropdownButtonProps extends TelemetryProps, TelemetryV2Props {
     isSourcegraphDotCom?: boolean
     className?: string
 }
@@ -31,11 +32,12 @@ interface SearchHelpDropdownButtonProps extends TelemetryProps {
  * syntax.
  */
 export const SearchHelpDropdownButton: FC<SearchHelpDropdownButtonProps> = props => {
-    const { isSourcegraphDotCom, className, telemetryService } = props
+    const { isSourcegraphDotCom, className, telemetryService, telemetryRecorder } = props
 
     const onQueryDocumentationLinkClicked = useCallback(() => {
         telemetryService.log('SearchHelpDropdownQueryDocsLinkClicked')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SearchHelpDropdownQueryDocsLink', 'clicked')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <Popover>

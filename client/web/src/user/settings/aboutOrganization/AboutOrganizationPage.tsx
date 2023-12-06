@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Text } from '@sourcegraph/wildcard'
 
@@ -8,14 +9,16 @@ import { SelfHostedCta } from '../../../components/SelfHostedCta'
 
 import styles from './AboutOrganizationPage.module.scss'
 
-interface AboutOrganizationPageProps extends TelemetryProps {}
+interface AboutOrganizationPageProps extends TelemetryProps, TelemetryV2Props {}
 
 export const AboutOrganizationPage: React.FunctionComponent<React.PropsWithChildren<AboutOrganizationPageProps>> = ({
     telemetryService,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('AboutOrg')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('AboutOrg', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <>
@@ -30,6 +33,7 @@ export const AboutOrganizationPage: React.FunctionComponent<React.PropsWithChild
                 contentClassName={styles.selfHostedCtaContent}
                 page="organizations"
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
             >
                 <Text className="mb-2">
                     <strong>Need more enterprise features? Run Sourcegraph self-hosted</strong>

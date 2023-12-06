@@ -3,6 +3,7 @@ import type { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
@@ -147,6 +148,7 @@ export const SearchAggregationResultDemo: Story = () => (
                     patternType={SearchPatternType.literal}
                     caseSensitive={false}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                     onQuerySubmit={noop}
                 />
             </MockedTestProvider>

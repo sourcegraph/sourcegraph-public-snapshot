@@ -2,6 +2,7 @@ import { type FC, useEffect, useState, memo } from 'react'
 
 import { mdiArrowExpand } from '@mdi/js'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -20,7 +21,7 @@ import {
 
 import styles from './SearchAggregations.module.scss'
 
-interface SearchAggregationsProps extends TelemetryProps {
+interface SearchAggregationsProps extends TelemetryProps, TelemetryV2Props {
     /**
      * Current submitted query, note that this query isn't a live query
      * that is synced with typed query in the search box, this query is submitted
@@ -45,7 +46,7 @@ interface SearchAggregationsProps extends TelemetryProps {
 }
 
 export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
-    const { query, patternType, proactive, caseSensitive, telemetryService, onQuerySubmit } = props
+    const { query, patternType, proactive, caseSensitive, telemetryService, telemetryRecorder, onQuerySubmit } = props
 
     const [extendedTimeout, setExtendedTimeoutLocal] = useState(false)
 
@@ -59,6 +60,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         caseSensitive,
         extendedTimeout,
         telemetryService,
+        telemetryRecorder,
     })
 
     // When query is updated reset extendedTimeout as per business rules

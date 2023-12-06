@@ -11,6 +11,7 @@ import { type ErrorLike, isErrorLike, asError, logger } from '@sourcegraph/commo
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, ErrorMessage } from '@sourcegraph/wildcard'
 
@@ -90,6 +91,7 @@ export interface OrgAreaProps
     extends PlatformContextProps,
         SettingsCascadeProps,
         TelemetryProps,
+        TelemetryV2Props,
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps {
@@ -124,6 +126,7 @@ export interface OrgAreaRouteContext
     extends PlatformContextProps,
         SettingsCascadeProps,
         TelemetryProps,
+        TelemetryV2Props,
         NamespaceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
@@ -238,6 +241,7 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             settingsCascade: this.props.settingsCascade,
             namespace: this.state.orgOrError,
             telemetryService: this.props.telemetryService,
+            telemetryRecorder: this.props.telemetryRecorder,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
             isCodyApp: this.props.isCodyApp,
             batchChangesEnabled: this.props.batchChangesEnabled,

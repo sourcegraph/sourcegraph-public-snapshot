@@ -14,6 +14,7 @@ import { parse as parseJSONC } from 'jsonc-parser'
 
 import { modify } from '@sourcegraph/common'
 import { gql, useLazyQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Tabs,
@@ -56,7 +57,7 @@ import { getAccessTokenValue, getRepositoriesSettings } from './helpers'
 
 import styles from './GithubConnectView.module.scss'
 
-interface GithubConnectViewProps extends TelemetryProps {
+interface GithubConnectViewProps extends TelemetryProps, TelemetryV2Props {
     initialValues: CodeHostConnectFormFields
     externalServiceId?: string
 
@@ -76,13 +77,15 @@ interface GithubConnectViewProps extends TelemetryProps {
  * storage
  */
 export const GithubConnectView: FC<GithubConnectViewProps> = props => {
-    const { initialValues, externalServiceId, telemetryService, children, onChange, onSubmit } = props
+    const { initialValues, externalServiceId, telemetryService, telemetryRecorder, children, onChange, onSubmit } =
+        props
 
     return (
         <GithubConnectForm
             initialValues={initialValues}
             externalServiceId={externalServiceId}
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
             onChange={onChange}
             onSubmit={onSubmit}
         >
@@ -96,7 +99,7 @@ enum GithubConnectFormTab {
     JSONC,
 }
 
-interface GithubConnectFormProps extends TelemetryProps {
+interface GithubConnectFormProps extends TelemetryProps, TelemetryV2Props {
     initialValues: CodeHostConnectFormFields
     externalServiceId?: string
     children: (state: CodeHostJSONFormState) => ReactNode
@@ -109,7 +112,8 @@ interface GithubConnectFormProps extends TelemetryProps {
  * configuration UI.
  */
 export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
-    const { initialValues, externalServiceId, telemetryService, children, onChange, onSubmit } = props
+    const { initialValues, externalServiceId, telemetryService, telemetryRecorder, children, onChange, onSubmit } =
+        props
 
     const [activeTab, setActiveTab] = useState(GithubConnectFormTab.Form)
     const form = useForm<CodeHostConnectFormFields>({
@@ -133,7 +137,10 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
     useEffect(() => {
         const view = getViewKindByIndex(activeTab)
         telemetryService.log('SetupWizardCreationTabView', { view }, { view })
-    }, [activeTab, telemetryService])
+        telemetryRecorder.recordEvent('SetupWizardCreationTabView', 'viewed', {
+            privateMetadata: { view },
+        })
+    }, [activeTab, telemetryService, telemetryRecorder])
 
     return (
         <Tabs

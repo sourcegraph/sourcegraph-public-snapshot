@@ -274,6 +274,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     settingsCascade={settingsCascade}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     openInNewTab={openInNewTab}
                 />
                 {collapsible && (

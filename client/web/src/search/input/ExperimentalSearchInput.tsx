@@ -19,6 +19,7 @@ import type { SearchContextProps, SubmitSearchParameters } from '@sourcegraph/sh
 import { FILTERS, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { createSuggestionsSource, type SuggestionsSourceConfig } from './suggestions'
@@ -90,6 +91,7 @@ export interface ExperimentalSearchInputProps
     extends Omit<CodeMirrorQueryInputWrapperProps, 'suggestionSource' | 'extensions' | 'placeholder'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         TelemetryProps,
+        TelemetryV2Props,
         Omit<SuggestionsSourceConfig, 'getSearchContext'> {
     submitSearch(parameters: Partial<SubmitSearchParameters>): void
 }
@@ -100,6 +102,7 @@ export interface ExperimentalSearchInputProps
 export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInputProps>> = ({
     children,
     telemetryService,
+    telemetryRecorder,
     platformContext,
     authenticatedUser,
     fetchSearchContexts,
@@ -169,6 +172,9 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
                     type: option.kind,
                     source,
                 })
+                telemetryRecorder.recordEvent(`SearchInput${eventNameMap[action.type]}`, 'rendered', {
+                    privateMetadata: { type: option.kind, source },
+                })
             }),
             Prec.low(
                 exampleSuggestions({
@@ -178,7 +184,7 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
                 })
             ),
         ],
-        [telemetryService, addExample]
+        [telemetryService, telemetryRecorder, addExample]
     )
 
     return (

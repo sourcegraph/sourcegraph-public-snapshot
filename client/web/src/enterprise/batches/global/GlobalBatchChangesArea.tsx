@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom'
 
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -43,7 +44,7 @@ const BatchChangeClosePage = lazyComponent<BatchChangeClosePageProps, 'BatchChan
     'BatchChangeClosePage'
 )
 
-interface Props extends TelemetryProps, SettingsCascadeProps {
+interface Props extends TelemetryProps, TelemetryV2Props, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
