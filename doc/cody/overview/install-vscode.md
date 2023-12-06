@@ -183,6 +183,30 @@ In addition, to support customization and advanced use cases, you can create **C
 
 [Learn more about Custom Commands here →](./../custom-commands.md)
 
+## Cody VS Code Actions
+
+Cody VS Code extension users can also use the **Code Actions** feature to `fix`, `explain`, and `edit` code. These Code Actions are triggered by the following:
+
+- Ask Cody to Fix
+- Ask Cody to Explain
+- Ask Cody to Edit
+
+These Code Actions can be initiated by clicking the **lightbulb** icon in your code file. For example, whenever there's an error in code syntax, and you make a mistake while writing code, Cody's Code Actions come into play, and a red warning triggers. Along this appears the lightbulb icon. Click this lightbulb icon in the project file.
+
+- Select **Ask Cody to fix** option
+- **Cody is working** notice will appear and provide a quick fix with options for **Edits Applied**, **Retry**, **Undo**, and **Done**
+- If you are satisfied with the fix, click **Edits Applied**
+- To verify the applied changes, you can see a diff view of the fix in a new tab
+- If you are not satisfied with the fix, you can **Retry** or **Undo** the changes
+
+Here's a demo that shows how Code Actions work to fix an error:
+
+<video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/code-actions.mp4" type="video/mp4">
+</video>
+
+A similar process applies to explain and edit Code Actions.
+
 ## Enable code graph context for context-aware answers (Optional)
 
 After connecting Cody's extension to Sourcegraph.com, you can optionally use [Code Graph Context](./../core-concepts/code-graph.md) to improve Cody's context of existing code. Code Graph Context is only available for public repositories on Sourcegraph.com, which have embeddings.
