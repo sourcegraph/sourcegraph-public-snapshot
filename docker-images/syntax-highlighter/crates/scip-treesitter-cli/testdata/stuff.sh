@@ -15,6 +15,6 @@ ls -R tmp
 
 # @anton You'll need to fix your local env, we cannot merge an absolute path here
 docker load --input="$tarball"
-docker run -v ./tmp:/sources "$image_name" -- scip-java index
+docker run -v $(pwd)/tmp:/sources "$image_name" -- scip-java index
 
 cp tmp/index.scip "$out"
