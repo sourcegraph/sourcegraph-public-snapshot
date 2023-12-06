@@ -119,7 +119,7 @@ func TestMakeRawEvent(t *testing.T) {
       "product": "EXAMPLE"
     },
     "metadata": {
-      "foobar": "3"
+      "foobar": 3
     },
     "privateMetadata": {
       "barbaz": "hello world!"

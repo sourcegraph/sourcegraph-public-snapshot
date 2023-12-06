@@ -139,7 +139,7 @@ func newExternalClientFactory(cache bool, testOpt bool, middleware ...Middleware
 	mw = append(mw, middleware...)
 
 	externalTransportOpt := ExternalTransportOpt
-	if testOpt || env.InsecureDev {
+	if testOpt {
 		externalTransportOpt = TestExternalTransportOpt
 	}
 
@@ -407,6 +407,10 @@ var defaultDenylist = []denyRule{
 	{pattern: "169.254.169.254"},
 }
 
+var localDevDenylist = []denyRule{
+	{pattern: "169.254.169.254"},
+}
+
 // TestTransportOpt creates a transport for tests that does not apply any denylisting
 func TestExternalTransportOpt(cli *http.Client) error {
 	tr, err := getTransportForMutation(cli)
@@ -429,17 +433,23 @@ func ExternalTransportOpt(cli *http.Client) error {
 		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
 
-	var denyList = hostmatcher.ParseHostMatchList("EXTERNAL_DENY_LIST", externalDenyList)
-	for _, rule := range defaultDenylist {
+	var denyMatchList = hostmatcher.ParseHostMatchList("EXTERNAL_DENY_LIST", externalDenyList)
+
+	denyList := defaultDenylist
+	if env.InsecureDev {
+		denyList = localDevDenylist
+	}
+
+	for _, rule := range denyList {
 		if rule.builtin != "" {
-			denyList.AppendBuiltin(rule.builtin)
+			denyMatchList.AppendBuiltin(rule.builtin)
 		} else if rule.pattern != "" {
-			denyList.AppendPattern(rule.pattern)
+			denyMatchList.AppendPattern(rule.pattern)
 		}
 	}
 
 	// this dialer will match resolved domain names against the deny list
-	tr.DialContext = hostmatcher.NewDialContext("", nil, denyList)
+	tr.DialContext = hostmatcher.NewDialContext("", nil, denyMatchList)
 	cli.Transport = &externalTransport{base: tr}
 	return nil
 }

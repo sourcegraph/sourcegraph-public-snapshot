@@ -122,7 +122,7 @@ trap "rm -rf $job_file" EXIT
 
 # shellcheck disable=SC2068
 for target in ${images[@]}; do
-  [[ "$target" =~ ([A-Za-z0-9_-]+): ]]
+  [[ "$target" =~ ([A-Za-z0-9_.-]+): ]]
   name="${BASH_REMATCH[1]}"
   # Append push commands for dev registries
   create_push_command "${dev_registries[*]}" "$name" "$target" "$dev_tags_args" >>"$job_file"

@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -63,10 +64,14 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
+	userID := actor.FromContext(ctx).UID
+
 	externalService := &types.ExternalService{
-		Kind:        args.Input.Kind,
-		DisplayName: args.Input.DisplayName,
-		Config:      extsvc.NewUnencryptedConfig(args.Input.Config),
+		Kind:          args.Input.Kind,
+		DisplayName:   args.Input.DisplayName,
+		Config:        extsvc.NewUnencryptedConfig(args.Input.Config),
+		CreatorID:     &userID,
+		LastUpdaterID: &userID,
 	}
 
 	// Create the external service in the database.
@@ -136,11 +141,15 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
+	userID := actor.FromContext(ctx).UID
+
 	ps := conf.Get().AuthProviders
 	update := &database.ExternalServiceUpdate{
-		DisplayName: args.Input.DisplayName,
-		Config:      args.Input.Config,
+		DisplayName:   args.Input.DisplayName,
+		Config:        args.Input.Config,
+		LastUpdaterID: &userID,
 	}
+
 	// Update the external service in the database.
 	if err = r.db.ExternalServices().Update(ctx, ps, id, update); err != nil {
 		return nil, err

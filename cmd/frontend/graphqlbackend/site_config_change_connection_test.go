@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -20,12 +19,6 @@ type siteConfigStubs struct {
 	db            database.DB
 	users         []*types.User
 	expectedDiffs map[int32]string
-}
-
-func toStringPtr(n int) *string {
-	str := strconv.Itoa(n)
-
-	return &str
 }
 
 func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
@@ -573,7 +566,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "first: 2, after: 6",
 			paginationArgs: &database.PaginationArgs{
 				First: pointers.Ptr(2),
-				After: toStringPtr(6),
+				After: []any{int32(6)},
 			},
 			expectedSiteConfigIDs:         []int32{4, 3},
 			expectedPreviousSiteConfigIDs: []int32{3, 2},
@@ -582,7 +575,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "first: 10, after: 6",
 			paginationArgs: &database.PaginationArgs{
 				First: pointers.Ptr(10),
-				After: toStringPtr(6),
+				After: []any{int32(6)},
 			},
 			expectedSiteConfigIDs:         []int32{4, 3, 2, 1},
 			expectedPreviousSiteConfigIDs: []int32{3, 2, 1, 0},
@@ -591,7 +584,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "first: 2, after: 1",
 			paginationArgs: &database.PaginationArgs{
 				First: pointers.Ptr(2),
-				After: toStringPtr(1),
+				After: []any{int32(1)},
 			},
 			expectedSiteConfigIDs:         []int32{},
 			expectedPreviousSiteConfigIDs: []int32{},
@@ -600,7 +593,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "last: 2, before: 2",
 			paginationArgs: &database.PaginationArgs{
 				Last:   pointers.Ptr(2),
-				Before: toStringPtr(2),
+				Before: []any{int32(2)},
 			},
 			expectedSiteConfigIDs:         []int32{3, 4},
 			expectedPreviousSiteConfigIDs: []int32{2, 3},
@@ -609,7 +602,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "last: 10, before: 2",
 			paginationArgs: &database.PaginationArgs{
 				Last:   pointers.Ptr(10),
-				Before: toStringPtr(2),
+				Before: []any{int32(2)},
 			},
 			expectedSiteConfigIDs:         []int32{3, 4, 6},
 			expectedPreviousSiteConfigIDs: []int32{2, 3, 4},
@@ -618,7 +611,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "last: 2, before: 6",
 			paginationArgs: &database.PaginationArgs{
 				Last:   pointers.Ptr(2),
-				Before: toStringPtr(6),
+				Before: []any{int32(6)},
 			},
 			expectedSiteConfigIDs:         []int32{},
 			expectedPreviousSiteConfigIDs: []int32{},
@@ -682,8 +675,8 @@ func TestModifyArgs(t *testing.T) {
 		},
 		{
 			name:             "first: 5, after: 10 (next page)",
-			args:             &database.PaginationArgs{First: pointers.Ptr(5), After: toStringPtr(10)},
-			expectedArgs:     &database.PaginationArgs{First: pointers.Ptr(6), After: toStringPtr(10)},
+			args:             &database.PaginationArgs{First: pointers.Ptr(5), After: []any{int32(10)}},
+			expectedArgs:     &database.PaginationArgs{First: pointers.Ptr(6), After: []any{int32(10)}},
 			expectedModified: true,
 		},
 		{
@@ -694,30 +687,27 @@ func TestModifyArgs(t *testing.T) {
 		},
 		{
 			name:             "last: 5, before: 10 (previous page)",
-			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(10)},
-			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(6), Before: toStringPtr(9)},
+			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: []any{int32(10)}},
+			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(6), Before: []any{int32(9)}},
 			expectedModified: true,
 		},
 		{
 			name:             "last: 5, before: 1 (edge case)",
-			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(1)},
-			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(6), Before: toStringPtr(0)},
+			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: []any{int32(1)}},
+			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(6), Before: []any{int32(0)}},
 			expectedModified: true,
 		},
 		{
 			name:             "last: 5, before: 0 (same as last page but a mathematical  edge case)",
-			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(0)},
-			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(0)},
+			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: []any{int32(0)}},
+			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(5), Before: []any{int32(0)}},
 			expectedModified: false,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			modified, err := modifyArgs(tc.args)
-			if err != nil {
-				t.Fatal(err)
-			}
+			modified := modifyArgs(tc.args)
 
 			if modified != tc.expectedModified {
 				t.Errorf("Expected modified to be %v, but got %v", modified, tc.expectedModified)

@@ -47,7 +47,7 @@ export interface Location {
     readonly range: Range
 }
 
-type Definition =
+export type Definition =
     | {
           type: 'at-definition' | 'single' | 'multiple'
           readonly destination: Location
@@ -56,11 +56,11 @@ type Definition =
       }
     | { type: 'none'; occurrence: Occurrence }
 
-interface GoToDefinitionOptions {
+export interface GoToDefinitionOptions {
     newWindow: boolean
 }
 
-interface DocumentInfo {
+export interface DocumentInfo {
     repoName: string
     filePath: string
     commitID: string

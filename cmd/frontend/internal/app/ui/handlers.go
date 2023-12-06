@@ -235,6 +235,10 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 				dangerouslyServeError(w, r, db, errors.New("repository could not be cloned"), http.StatusInternalServerError)
 				return nil, nil
 			}
+			if errcode.IsRepoDenied(err) {
+				serveError(w, r, db, err, http.StatusNotFound)
+				return nil, nil
+			}
 			if gitdomain.IsRepoNotExist(err) {
 				if gitdomain.IsCloneInProgress(err) {
 					// Repo is cloning.

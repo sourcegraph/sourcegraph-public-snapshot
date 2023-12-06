@@ -13107,6 +13107,19 @@
           "Comment": ""
         },
         {
+          "Name": "creator_id",
+          "Index": 18,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "deleted_at",
           "Index": 7,
           "TypeName": "timestamp with time zone",
@@ -13188,6 +13201,19 @@
           "Name": "last_sync_at",
           "Index": 8,
           "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_updater_id",
+          "Index": 19,
+          "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -13362,6 +13388,20 @@
           "RefTableName": "code_hosts",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (code_host_id) REFERENCES code_hosts(id) ON UPDATE CASCADE ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED"
+        },
+        {
+          "Name": "external_services_creator_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE"
+        },
+        {
+          "Name": "external_services_last_updater_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (last_updater_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE"
         },
         {
           "Name": "external_services_max_1_namespace",
@@ -24528,6 +24568,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX repo_embedding_jobs_pkey ON repo_embedding_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "repo_embedding_jobs_repo",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX repo_embedding_jobs_repo ON repo_embedding_jobs USING btree (repo_id, revision)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": null,

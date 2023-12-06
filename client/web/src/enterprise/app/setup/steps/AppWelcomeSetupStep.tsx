@@ -129,7 +129,7 @@ const CodyInfo: FC = () => (
         </Text>
         By signing in, you’re connecting Cody to your app and agreeing to Sourcegraph’s Cody Usage Privacy Notice.{' '}
         <Link
-            to="https://about.sourcegraph.com/terms/cody-notice"
+            to="https://sourcegraph.com/terms/cody-notice"
             target="_blank"
             rel="noopener"
             className={styles.actionsTermLink}

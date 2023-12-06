@@ -491,7 +491,7 @@ Come experience the power of great code search.
 
 Learn more about Sourcegraph:
 
-https://about.sourcegraph.com
+https://sourcegraph.com
 `,
 	HTML: `
 <p>Sourcegraph enables you to quickly understand, fix, and automate changes to your code.</p>
@@ -508,6 +508,6 @@ https://about.sourcegraph.com
 
 <p><strong><a href="{{.URL}}">Come experience the power of great code search</a></strong></p>
 
-<p><a href="https://about.sourcegraph.com">Learn more about Sourcegraph</a></p>
+<p><a href="https://sourcegraph.com">Learn more about Sourcegraph</a></p>
 `,
 })

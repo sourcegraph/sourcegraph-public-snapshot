@@ -132,7 +132,7 @@ sg start -describe single-program
 				Destination: &onlyServices,
 			},
 		},
-		BashComplete: completions.CompleteOptions(func() (options []string) {
+		BashComplete: completions.CompleteArgs(func() (options []string) {
 			config, _ := getConfig()
 			if config == nil {
 				return
@@ -159,7 +159,7 @@ func constructStartCmdLongHelp() string {
 	}
 
 	fmt.Fprintf(&out, "\n\n")
-	fmt.Fprintf(&out, "Available comamndsets in `%s`:\n", configFile)
+	fmt.Fprintf(&out, "Available commandsets in `%s`:\n", configFile)
 
 	var names []string
 	for name := range config.Commandsets {

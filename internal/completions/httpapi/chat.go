@@ -21,6 +21,8 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 
 	return newCompletionsHandler(
 		logger,
+		db.Users(),
+		db.AccessTokens(),
 		telemetryrecorder.New(db),
 		types.CompletionsFeatureChat,
 		rl,
@@ -50,6 +52,7 @@ func isAllowedCustomChatModel(model string) bool {
 		"anthropic/claude-2.0",
 		"anthropic/claude-2.1",
 		"anthropic/claude-instant-1.2-cyan",
+		"anthropic/claude-instant-1.2",
 		"openai/gpt-3.5-turbo",
 		"openai/gpt-4-1106-preview":
 		return true

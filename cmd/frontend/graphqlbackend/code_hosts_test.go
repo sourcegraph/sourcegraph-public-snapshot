@@ -20,7 +20,7 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 	testCodeHosts := []*types.CodeHost{
 		newCodeHost(1, "github.com", extsvc.KindGitHub, 1),
 		newCodeHost(2, "gitlab.com", extsvc.KindGitLab, 2),
-		newCodeHost(3, "bitbucket-cloud.com", extsvc.KindBitbucketServer, 0),
+		newCodeHost(3, "bitbucket.server.com", extsvc.KindBitbucketServer, 0),
 		newCodeHost(4, "bitbucket-cloud.com", extsvc.KindBitbucketCloud, 4),
 	}
 

@@ -166,8 +166,14 @@ func (s *Server) handleHealthz(w http.ResponseWriter, req *http.Request) {
 
 // notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful no notifcation is sent
 func (s *Server) notifyIfFailed(b *build.Build) error {
+	if !b.IsFinished() {
+		s.logger.Info("build not finished yet, skipping notification", log.Int("buildNumber", b.GetNumber()))
+	}
 	// This determines the final build status
 	info := determineBuildStatusNotification(b)
+	if info.BuildStatus == string(build.BuildInProgress) {
+		return errors.Newf("build %d is finished, but final status is still in progress with %d jobs", info.BuildNumber, len(info.InProgress))
+	}
 
 	if info.BuildStatus == string(build.BuildFailed) || info.BuildStatus == string(build.BuildFixed) {
 		s.logger.Info("sending notification for build", log.Int("buildNumber", b.GetNumber()), log.String("status", string(info.BuildStatus)))
@@ -243,6 +249,7 @@ func determineBuildStatusNotification(b *build.Build) *notify.BuildNotification 
 		BuildURL:           b.GetWebURL(),
 		Fixed:              []notify.JobLine{},
 		Failed:             []notify.JobLine{},
+		InProgress:         []notify.JobLine{},
 	}
 
 	// You may notice we do not check if the build is Failed and exit early, this is because of the following scenario
@@ -257,12 +264,13 @@ func determineBuildStatusNotification(b *build.Build) *notify.BuildNotification 
 	for _, j := range groups[build.JobFailed] {
 		info.Failed = append(info.Failed, j)
 	}
+	for _, j := range groups[build.JobInProgress] {
+		info.InProgress = append(info.InProgress, j)
+	}
 
-	if len(groups[build.JobInProgress]) > 0 {
-		info.BuildStatus = string(build.BuildInProgress)
-	} else if len(groups[build.JobFailed]) > 0 {
+	if len(info.Failed) > 0 {
 		info.BuildStatus = string(build.BuildFailed)
-	} else if len(groups[build.JobFixed]) > 0 {
+	} else if len(info.Fixed) > 0 {
 		info.BuildStatus = string(build.BuildFixed)
 	} else {
 		info.BuildStatus = string(build.BuildPassed)
