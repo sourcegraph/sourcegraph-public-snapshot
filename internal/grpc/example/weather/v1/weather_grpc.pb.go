@@ -24,6 +24,7 @@ const (
 	WeatherService_UploadWeatherData_FullMethodName       = "/grpc.example.weather.v1.WeatherService/UploadWeatherData"
 	WeatherService_RealTimeWeather_FullMethodName         = "/grpc.example.weather.v1.WeatherService/RealTimeWeather"
 	WeatherService_UploadWeatherScreenshot_FullMethodName = "/grpc.example.weather.v1.WeatherService/UploadWeatherScreenshot"
+	WeatherService_GetCurrentWeatherOld_FullMethodName    = "/grpc.example.weather.v1.WeatherService/GetCurrentWeatherOld"
 )
 
 // WeatherServiceClient is the client API for WeatherService service.
@@ -40,6 +41,9 @@ type WeatherServiceClient interface {
 	RealTimeWeather(ctx context.Context, opts ...grpc.CallOption) (WeatherService_RealTimeWeatherClient, error)
 	// Client Streaming RPC: Upload a weather screenshot.
 	UploadWeatherScreenshot(ctx context.Context, opts ...grpc.CallOption) (WeatherService_UploadWeatherScreenshotClient, error)
+	// Deprecated: Do not use.
+	// Deprecated RPC: Get current weather for a location.
+	GetCurrentWeatherOld(ctx context.Context, in *LocationRequest, opts ...grpc.CallOption) (*WeatherResponse, error)
 }
 
 type weatherServiceClient struct {
@@ -190,6 +194,16 @@ func (x *weatherServiceUploadWeatherScreenshotClient) CloseAndRecv() (*UploadWea
 	return m, nil
 }
 
+// Deprecated: Do not use.
+func (c *weatherServiceClient) GetCurrentWeatherOld(ctx context.Context, in *LocationRequest, opts ...grpc.CallOption) (*WeatherResponse, error) {
+	out := new(WeatherResponse)
+	err := c.cc.Invoke(ctx, WeatherService_GetCurrentWeatherOld_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WeatherServiceServer is the server API for WeatherService service.
 // All implementations must embed UnimplementedWeatherServiceServer
 // for forward compatibility
@@ -204,6 +218,9 @@ type WeatherServiceServer interface {
 	RealTimeWeather(WeatherService_RealTimeWeatherServer) error
 	// Client Streaming RPC: Upload a weather screenshot.
 	UploadWeatherScreenshot(WeatherService_UploadWeatherScreenshotServer) error
+	// Deprecated: Do not use.
+	// Deprecated RPC: Get current weather for a location.
+	GetCurrentWeatherOld(context.Context, *LocationRequest) (*WeatherResponse, error)
 	mustEmbedUnimplementedWeatherServiceServer()
 }
 
@@ -225,6 +242,9 @@ func (UnimplementedWeatherServiceServer) RealTimeWeather(WeatherService_RealTime
 }
 func (UnimplementedWeatherServiceServer) UploadWeatherScreenshot(WeatherService_UploadWeatherScreenshotServer) error {
 	return status.Errorf(codes.Unimplemented, "method UploadWeatherScreenshot not implemented")
+}
+func (UnimplementedWeatherServiceServer) GetCurrentWeatherOld(context.Context, *LocationRequest) (*WeatherResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentWeatherOld not implemented")
 }
 func (UnimplementedWeatherServiceServer) mustEmbedUnimplementedWeatherServiceServer() {}
 
@@ -356,6 +376,24 @@ func (x *weatherServiceUploadWeatherScreenshotServer) Recv() (*UploadWeatherScre
 	return m, nil
 }
 
+func _WeatherService_GetCurrentWeatherOld_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LocationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WeatherServiceServer).GetCurrentWeatherOld(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WeatherService_GetCurrentWeatherOld_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WeatherServiceServer).GetCurrentWeatherOld(ctx, req.(*LocationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WeatherService_ServiceDesc is the grpc.ServiceDesc for WeatherService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -366,6 +404,10 @@ var WeatherService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCurrentWeather",
 			Handler:    _WeatherService_GetCurrentWeather_Handler,
+		},
+		{
+			MethodName: "GetCurrentWeatherOld",
+			Handler:    _WeatherService_GetCurrentWeatherOld_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

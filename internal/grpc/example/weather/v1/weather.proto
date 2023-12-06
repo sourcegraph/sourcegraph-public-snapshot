@@ -20,6 +20,13 @@ service WeatherService {
 
   // Client Streaming RPC: Upload a weather screenshot.
   rpc UploadWeatherScreenshot(stream UploadWeatherScreenshotRequest) returns (UploadWeatherScreenshotResponse) {}
+
+  // Deprecated RPC: Get current weather for a location.
+  rpc GetCurrentWeatherOld(LocationRequest) returns (WeatherResponse) {
+    option deprecated = true; // Mark the RPC as deprecated. Nobody should use this anymore.
+    // When generating go code, the deprecated option will be translated to a deprecated comment. And gopls and various tools
+    // will show a warning when using this RPC.
+  }
 }
 
 message LocationRequest {
