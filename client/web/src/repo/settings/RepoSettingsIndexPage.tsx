@@ -191,7 +191,7 @@ const TextSearchIndexedReference: React.FunctionComponent<
     return (
         <li className={styles.ref}>
             {showWarning ? (
-                <Tooltip content="Indexing has been delayed for over 8 hours. Please check logs for the indexed search service.">
+                <Tooltip content="Indexing has been delayed for over 8 hours. Please check the Zoekt indexserver logs.">
                     <Icon className={classNames(styles.refIcon)} svgPath={mdiAlert} aria-hidden={true} />
                 </Tooltip>
             ) : (
