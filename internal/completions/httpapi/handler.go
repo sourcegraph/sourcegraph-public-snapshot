@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,6 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
+	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -34,6 +39,7 @@ const maxRequestDuration = time.Minute
 func newCompletionsHandler(
 	logger log.Logger,
 	userStore database.UserStore,
+	accessTokenStore database.AccessTokenStore,
 	events *telemetry.EventRecorder,
 	feature types.CompletionsFeature,
 	rl RateLimiter,
@@ -89,15 +95,30 @@ func newCompletionsHandler(
 		if isCodyProEnabled && isDotcom && isProviderCodyGateway {
 			apiToken, _, err := authz.ParseAuthorizationHeader(r.Header.Get("Authorization"))
 			if err != nil {
-				trace.Logger(ctx, logger).Info("Error parsing auth header", log.String("Authorization header", r.Header.Get("Authorization")), log.Error(err))
-				http.Error(w, "Error parsing auth header", http.StatusUnauthorized)
-				return
-			}
-			accessToken, err = accesstoken.GenerateDotcomUserGatewayAccessToken(apiToken)
-			if err != nil {
-				trace.Logger(ctx, logger).Info("Access token generation failed", log.String("API token", apiToken), log.Error(err))
-				http.Error(w, "Access token generation failed", http.StatusUnauthorized)
-				return
+				// No actor either, so we fail.
+				if r.Header.Get("Authorization") != "" || sgactor.FromContext(ctx) == nil {
+					trace.Logger(ctx, logger).Info("Error parsing auth header", log.String("Authorization header", r.Header.Get("Authorization")), log.Error(err))
+					http.Error(w, "Error parsing auth header", http.StatusUnauthorized)
+					return
+				}
+
+				// Get or create an internal token to use.
+				actor := sgactor.FromContext(ctx)
+				apiTokenSha256, err := accessTokenStore.GetOrCreateInternalToken(ctx, actor.UID, []string{"user:all"})
+				if err != nil {
+					trace.Logger(ctx, logger).Info("Error creating internal access token", log.Error(err))
+					http.Error(w, "Missing auth header", http.StatusUnauthorized)
+					return
+				}
+				// Convert the user's sha256-encoded access token to an "sgd_" token for Cody Gateway.
+				accessToken = "sgd_" + hex.EncodeToString(hashutil.ToSHA256Bytes(apiTokenSha256))
+			} else {
+				accessToken, err = accesstoken.GenerateDotcomUserGatewayAccessToken(apiToken)
+				if err != nil {
+					trace.Logger(ctx, logger).Info("Access token generation failed", log.String("API token", apiToken), log.Error(err))
+					http.Error(w, "Access token generation failed", http.StatusUnauthorized)
+					return
+				}
 			}
 		}
 
