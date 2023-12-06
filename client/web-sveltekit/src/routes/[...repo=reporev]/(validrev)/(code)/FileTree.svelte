@@ -11,55 +11,25 @@
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
     import { createForwardStore } from '$lib/utils'
     import { replaceRevisionInURL } from '$lib/web'
-    import { FILE_ICONS, FileExtension } from '$lib/repo/fileIcons'
-    import { containsTest } from '@sourcegraph/web/src/repo/utils'
+    import { FILE_ICONS, getFileInfo } from '$lib/repo/fileIcons'
 
     export let treeProvider: FileTreeProvider
     export let selectedPath: string
     export let revision: string
 
     /**
-     * Returns the corresponding icon for `entry`
+     * Returns the corresponding icon and css class for `entry`
      * TODO: implement with different icons
      */
-    function getIconPath(entry: TreeEntryFields, open: boolean): { svgPath?: string; iconClass?: string } {
+    function getIconPath(entry: TreeEntryFields, open: boolean): { svgPath?: string; color?: string } {
         if (entry === treeRoot) {
-            return { svgPath: mdiFolderArrowUpOutline, iconClass: 'default-icon' }
+            return { svgPath: mdiFolderArrowUpOutline, color: 'var(--gray-07)' }
         }
         if (entry.isDirectory) {
-            return { svgPath: open ? mdiFolderOpenOutline : mdiFolderOutline, iconClass: 'default-icon' }
+            return { svgPath: open ? mdiFolderOpenOutline : mdiFolderOutline, color: 'var(--gray-07)' }
         }
-        const fileInfo = getFileInfo(entry.name, false)
+        const fileInfo = getFileInfo(entry.name)
         return { ...FILE_ICONS.get(fileInfo.extension) }
-    }
-
-    interface FileInfo {
-        extension: FileExtension
-        isTest: boolean
-    }
-
-    const getFileInfo = (file: string, isDirectory: boolean): FileInfo => {
-        if (isDirectory) {
-            return {
-                extension: 'default' as FileExtension,
-                isTest: false,
-            }
-        }
-
-        const extension = file.split('.').at(-1)
-        const isValidExtension = Object.values(FileExtension).includes(extension as FileExtension)
-
-        if (extension && isValidExtension) {
-            return {
-                extension: extension as FileExtension,
-                isTest: containsTest(file),
-            }
-        }
-
-        return {
-            extension: 'default' as FileExtension,
-            isTest: false,
-        }
     }
 
     /**
@@ -148,7 +118,7 @@
                 <!-- todo: create alert component -->
                 <span class="note">Full list is too long to display. Use search to find a specific file.</span>
             {:else}
-                {@const { iconClass, svgPath } = getIconPath(entry, expanded)}
+                {@const { svgPath, color } = getIconPath(entry, expanded)}
                 <!--
                     We handle navigation via the TreeView's select event, to preserve the focus state.
                     Using a link here allows us to benefit from data preloading.
@@ -159,7 +129,7 @@
                     tabindex={-1}
                     data-go-up={isRoot ? true : undefined}
                 >
-                    <Icon iconClass={iconClass ?? ''} svgPath={svgPath ?? mdiFileCodeOutline} inline />
+                    <Icon svgPath={svgPath ?? mdiFileCodeOutline} inline --color={color ?? ''} />
                     {isRoot ? '..' : entry.name}
                 </a>
             {/if}

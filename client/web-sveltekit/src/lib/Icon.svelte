@@ -13,17 +13,17 @@
     interface $$Props extends SVGAttributes<SVGElement> {
         svgPath: string
         inline?: boolean
-        iconClass: string
+        color: string
     }
 
     export let svgPath: string
     export let inline: boolean = false
-    export let iconClass: string
+    export let color: string
 </script>
 
 <svg
-    class={iconClass ?? 'default-icon'}
     class:icon-inline={inline}
+    color={color ?? 'default-icon'}
     height="24"
     width="24"
     viewBox="0 0 24 24"
@@ -36,37 +36,5 @@
     svg {
         color: var(--color, inherit);
         fill: currentColor;
-    }
-
-    .blue {
-        color: var(--blue);
-    }
-
-    .pink {
-        color: var(--pink);
-    }
-
-    .yellow {
-        color: var(--yellow);
-    }
-
-    .red {
-        color: var(--red);
-    }
-
-    .gray {
-        color: var(--gray-05);
-    }
-
-    .green {
-        color: var(--green);
-    }
-
-    .cyan {
-        color: var(--cyan);
-    }
-
-    .default-icon {
-        color: var(--gray-07);
     }
 </style>

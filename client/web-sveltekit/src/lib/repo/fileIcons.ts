@@ -1,3 +1,4 @@
+import { containsTest } from '@sourcegraph/web/src/repo/utils'
 import {
     mdiBash,
     mdiCodeJson,
@@ -34,6 +35,16 @@ import {
     mdiSvg,
     mdiText,
 } from '@mdi/js'
+
+// Icon Colors
+const BLUE = 'var(--blue)'
+const PINK = 'var(--pink)'
+const YELLOW = 'var(--yellow)'
+const RED = 'var(--red)'
+const GRAY = 'var(--gray)'
+const GREEN = 'var(--green)'
+const CYAN = 'var(--blue)'
+const DEFAULT_ICON = 'var(--gray-07)'
 
 export enum FileExtension {
     ASSEMBLY = 'asm',
@@ -96,6 +107,7 @@ export enum FileExtension {
     R = 'r',
     R_CAP = 'R',
     RUBY = 'rb',
+    GEMFILE = 'Gemfile',
     RUST = 'rs',
     SCALA = 'scala',
     SASS = 'scss',
@@ -114,81 +126,104 @@ export enum FileExtension {
 
 export interface IconInfoSvelte {
     svgPath: string
-    iconClass: string
+    color: string
 }
 
 export const FILE_ICONS: Map<FileExtension, IconInfoSvelte> = new Map([
-    [FileExtension.ASSEMBLY, { svgPath: mdiFileCode, iconClass: 'default-icon' }],
-    [FileExtension.BASH, { svgPath: mdiBash, iconClass: 'default-icon' }],
-    [FileExtension.BASIC, { svgPath: mdiFileCode, iconClass: 'default-icon' }],
-    [FileExtension.C, { svgPath: mdiLanguageC, iconClass: 'blue' }],
-    [FileExtension.CLOJURE_CLJ, { svgPath: mdiFileCode, iconClass: 'blue' }],
-    [FileExtension.CLOJURE_CLJC, { svgPath: mdiFileCode, iconClass: 'blue' }],
-    [FileExtension.CLOJURE_CLJR, { svgPath: mdiFileCode, iconClass: 'blue' }],
-    [FileExtension.CLOJURE_CLJS, { svgPath: mdiFileCode, iconClass: 'blue' }],
-    [FileExtension.CLOJURE_EDN, { svgPath: mdiFileCode, iconClass: 'blue' }],
-    [FileExtension.COFFEE, { svgPath: mdiFileCode, iconClass: 'default-icon' }],
-    [FileExtension.CPP, { svgPath: mdiLanguageCpp, iconClass: 'blue' }],
-    [FileExtension.CSHARP, { svgPath: mdiLanguageCsharp, iconClass: 'blue' }],
-    [FileExtension.CSS, { svgPath: mdiLanguageCss3, iconClass: 'blue' }],
-    [FileExtension.DART, { svgPath: mdiFileCode, iconClass: 'blue' }],
-    [FileExtension.DEFAULT, { svgPath: mdiFileCode, iconClass: 'gray' }],
-    [FileExtension.DOCKERFILE, { svgPath: mdiDocker, iconClass: 'blue' }],
-    [FileExtension.DOCKERIGNORE, { svgPath: mdiDocker, iconClass: 'blue' }],
-    [FileExtension.FORTRAN_F, { svgPath: mdiLanguageFortran, iconClass: 'default-icon' }],
-    [FileExtension.FORTRAN_FOR, { svgPath: mdiLanguageFortran, iconClass: 'default-icon' }],
-    [FileExtension.FORTRAN_FTN, { svgPath: mdiLanguageFortran, iconClass: 'default-icon' }],
-    [FileExtension.FSHARP, { svgPath: mdiFileCode, iconClass: 'blue' }],
-    [FileExtension.FSI, { svgPath: mdiFileCode, iconClass: 'blue' }],
-    [FileExtension.FSX, { svgPath: mdiFileCode, iconClass: 'blue' }],
-    [FileExtension.GIF, { svgPath: mdiFileGifBox, iconClass: 'default-icon' }],
-    [FileExtension.GIFF, { svgPath: mdiFileGifBox, iconClass: 'default-icon' }],
-    [FileExtension.GITIGNORE, { svgPath: mdiGit, iconClass: 'red' }],
-    [FileExtension.GITATTRIBUTES, { svgPath: mdiGit, iconClass: 'red' }],
-    [FileExtension.GO, { svgPath: mdiLanguageGo, iconClass: 'blue' }],
-    [FileExtension.GOMOD, { svgPath: mdiLanguageGo, iconClass: 'pink' }],
-    [FileExtension.GOSUM, { svgPath: mdiLanguageGo, iconClass: 'pink' }],
-    [FileExtension.GROOVY, { svgPath: mdiFileCode, iconClass: 'blue' }],
-    [FileExtension.GRAPHQL, { svgPath: mdiGraphql, iconClass: 'pink' }],
-    [FileExtension.HASKELL, { svgPath: mdiLanguageHaskell, iconClass: 'blue' }],
-    [FileExtension.HTML, { svgPath: mdiLanguageHtml5, iconClass: 'blue' }],
-    [FileExtension.JAVA, { svgPath: mdiLanguageJava, iconClass: 'default-icon' }],
-    [FileExtension.JAVASCRIPT, { svgPath: mdiLanguageJavascript, iconClass: 'yellow' }],
-    [FileExtension.JPG, { svgPath: mdiFileJpgBox, iconClass: 'yellow' }],
-    [FileExtension.JPEG, { svgPath: mdiFileJpgBox, iconClass: 'yellow' }],
-    [FileExtension.JSX, { svgPath: mdiReact, iconClass: 'yellow' }],
-    [FileExtension.JSON, { svgPath: mdiCodeJson, iconClass: 'default-icon' }],
-    [FileExtension.JULIA, { svgPath: mdiFileCode, iconClass: 'default-icon' }],
-    [FileExtension.KOTLIN, { svgPath: mdiLanguageKotlin, iconClass: 'green' }],
-    [FileExtension.LOCKFILE, { svgPath: mdiCodeJson, iconClass: 'default-icon' }],
-    [FileExtension.LUA, { svgPath: mdiLanguageLua, iconClass: 'blue' }],
-    [FileExtension.MARKDOWN, { svgPath: mdiLanguageMarkdown, iconClass: 'blue' }],
-    [FileExtension.MDX, { svgPath: mdiLanguageMarkdownOutline, iconClass: 'blue' }],
-    [FileExtension.NCL, { svgPath: mdiFileCode, iconClass: 'default-icon' }],
-    [FileExtension.NIX, { svgPath: mdiFileCode, iconClass: 'gray' }],
-    [FileExtension.NPM, { svgPath: mdiNpm, iconClass: 'red' }],
-    [FileExtension.OCAML, { svgPath: mdiFileCode, iconClass: 'yellow' }],
-    [FileExtension.PHP, { svgPath: mdiLanguagePhp, iconClass: 'cyan' }],
-    [FileExtension.PERL, { svgPath: mdiFileCode, iconClass: 'default-icon' }],
-    [FileExtension.PERL_PM, { svgPath: mdiFileCode, iconClass: 'default-icon' }],
-    [FileExtension.PNG, { svgPath: mdiFilePngBox, iconClass: 'default-icon' }],
-    [FileExtension.POWERSHELL_PS1, { svgPath: mdiBash, iconClass: 'default-icon' }],
-    [FileExtension.POWERSHELL_PSM1, { svgPath: mdiBash, iconClass: 'default-icon' }],
-    [FileExtension.PYTHON, { svgPath: mdiLanguagePython, iconClass: 'blue' }],
-    [FileExtension.R, { svgPath: mdiLanguageR, iconClass: 'red' }],
-    [FileExtension.R_CAP, { svgPath: mdiLanguageR, iconClass: 'red' }],
-    [FileExtension.RUBY, { svgPath: mdiLanguageRuby, iconClass: 'red' }],
-    [FileExtension.RUST, { svgPath: mdiLanguageRust, iconClass: 'default-icon' }],
-    [FileExtension.SCALA, { svgPath: mdiFileCode, iconClass: 'red' }],
-    [FileExtension.SASS, { svgPath: mdiFileCode, iconClass: 'pink' }],
-    [FileExtension.SQL, { svgPath: mdiFileCode, iconClass: 'blue' }],
-    [FileExtension.SVELTE, { svgPath: mdiFileCode, iconClass: 'red' }],
-    [FileExtension.SVG, { svgPath: mdiSvg, iconClass: 'blue' }],
-    [FileExtension.SWIFT, { svgPath: mdiLanguageSwift, iconClass: 'blue' }],
-    [FileExtension.TYPESCRIPT, { svgPath: mdiLanguageTypescript, iconClass: 'blue' }],
-    [FileExtension.TSX, { svgPath: mdiReact, iconClass: 'blue' }],
-    [FileExtension.TEXT, { svgPath: mdiText, iconClass: 'default-icon' }],
-    [FileExtension.YAML, { svgPath: mdiFileCode, iconClass: 'default-icon' }],
-    [FileExtension.YML, { svgPath: mdiFileCode, iconClass: 'default-icon' }],
-    [FileExtension.ZIG, { svgPath: mdiFileCode, iconClass: 'yellow' }],
+    [FileExtension.ASSEMBLY, { svgPath: mdiFileCode, color: DEFAULT_ICON }],
+    [FileExtension.BASH, { svgPath: mdiBash, color: DEFAULT_ICON }],
+    [FileExtension.BASIC, { svgPath: mdiFileCode, color: DEFAULT_ICON }],
+    [FileExtension.C, { svgPath: mdiLanguageC, color: BLUE }],
+    [FileExtension.CLOJURE_CLJ, { svgPath: mdiFileCode, color: BLUE }],
+    [FileExtension.CLOJURE_CLJC, { svgPath: mdiFileCode, color: BLUE }],
+    [FileExtension.CLOJURE_CLJR, { svgPath: mdiFileCode, color: BLUE }],
+    [FileExtension.CLOJURE_CLJS, { svgPath: mdiFileCode, color: BLUE }],
+    [FileExtension.CLOJURE_EDN, { svgPath: mdiFileCode, color: BLUE }],
+    [FileExtension.COFFEE, { svgPath: mdiFileCode, color: DEFAULT_ICON }],
+    [FileExtension.CPP, { svgPath: mdiLanguageCpp, color: BLUE }],
+    [FileExtension.CSHARP, { svgPath: mdiLanguageCsharp, color: BLUE }],
+    [FileExtension.CSS, { svgPath: mdiLanguageCss3, color: BLUE }],
+    [FileExtension.DART, { svgPath: mdiFileCode, color: BLUE }],
+    [FileExtension.DEFAULT, { svgPath: mdiFileCode, color: GRAY }],
+    [FileExtension.DOCKERFILE, { svgPath: mdiDocker, color: BLUE }],
+    [FileExtension.DOCKERIGNORE, { svgPath: mdiDocker, color: BLUE }],
+    [FileExtension.FORTRAN_F, { svgPath: mdiLanguageFortran, color: DEFAULT_ICON }],
+    [FileExtension.FORTRAN_FOR, { svgPath: mdiLanguageFortran, color: DEFAULT_ICON }],
+    [FileExtension.FORTRAN_FTN, { svgPath: mdiLanguageFortran, color: DEFAULT_ICON }],
+    [FileExtension.FSHARP, { svgPath: mdiFileCode, color: BLUE }],
+    [FileExtension.FSI, { svgPath: mdiFileCode, color: BLUE }],
+    [FileExtension.FSX, { svgPath: mdiFileCode, color: BLUE }],
+    [FileExtension.GIF, { svgPath: mdiFileGifBox, color: DEFAULT_ICON }],
+    [FileExtension.GIFF, { svgPath: mdiFileGifBox, color: DEFAULT_ICON }],
+    [FileExtension.GITIGNORE, { svgPath: mdiGit, color: RED }],
+    [FileExtension.GITATTRIBUTES, { svgPath: mdiGit, color: RED }],
+    [FileExtension.GO, { svgPath: mdiLanguageGo, color: BLUE }],
+    [FileExtension.GOMOD, { svgPath: mdiLanguageGo, color: PINK }],
+    [FileExtension.GOSUM, { svgPath: mdiLanguageGo, color: PINK }],
+    [FileExtension.GROOVY, { svgPath: mdiFileCode, color: BLUE }],
+    [FileExtension.GRAPHQL, { svgPath: mdiGraphql, color: PINK }],
+    [FileExtension.HASKELL, { svgPath: mdiLanguageHaskell, color: BLUE }],
+    [FileExtension.HTML, { svgPath: mdiLanguageHtml5, color: BLUE }],
+    [FileExtension.JAVA, { svgPath: mdiLanguageJava, color: DEFAULT_ICON }],
+    [FileExtension.JAVASCRIPT, { svgPath: mdiLanguageJavascript, color: YELLOW }],
+    [FileExtension.JPG, { svgPath: mdiFileJpgBox, color: YELLOW }],
+    [FileExtension.JPEG, { svgPath: mdiFileJpgBox, color: YELLOW }],
+    [FileExtension.JSX, { svgPath: mdiReact, color: YELLOW }],
+    [FileExtension.JSON, { svgPath: mdiCodeJson, color: DEFAULT_ICON }],
+    [FileExtension.JULIA, { svgPath: mdiFileCode, color: DEFAULT_ICON }],
+    [FileExtension.KOTLIN, { svgPath: mdiLanguageKotlin, color: GREEN }],
+    [FileExtension.LOCKFILE, { svgPath: mdiCodeJson, color: DEFAULT_ICON }],
+    [FileExtension.LUA, { svgPath: mdiLanguageLua, color: BLUE }],
+    [FileExtension.MARKDOWN, { svgPath: mdiLanguageMarkdown, color: BLUE }],
+    [FileExtension.MDX, { svgPath: mdiLanguageMarkdownOutline, color: BLUE }],
+    [FileExtension.NCL, { svgPath: mdiFileCode, color: DEFAULT_ICON }],
+    [FileExtension.NIX, { svgPath: mdiFileCode, color: GRAY }],
+    [FileExtension.NPM, { svgPath: mdiNpm, color: RED }],
+    [FileExtension.OCAML, { svgPath: mdiFileCode, color: YELLOW }],
+    [FileExtension.PHP, { svgPath: mdiLanguagePhp, color: CYAN }],
+    [FileExtension.PERL, { svgPath: mdiFileCode, color: DEFAULT_ICON }],
+    [FileExtension.PERL_PM, { svgPath: mdiFileCode, color: DEFAULT_ICON }],
+    [FileExtension.PNG, { svgPath: mdiFilePngBox, color: DEFAULT_ICON }],
+    [FileExtension.POWERSHELL_PS1, { svgPath: mdiBash, color: DEFAULT_ICON }],
+    [FileExtension.POWERSHELL_PSM1, { svgPath: mdiBash, color: DEFAULT_ICON }],
+    [FileExtension.PYTHON, { svgPath: mdiLanguagePython, color: BLUE }],
+    [FileExtension.R, { svgPath: mdiLanguageR, color: RED }],
+    [FileExtension.R_CAP, { svgPath: mdiLanguageR, color: RED }],
+    [FileExtension.RUBY, { svgPath: mdiLanguageRuby, color: RED }],
+    [FileExtension.GEMFILE, { svgPath: mdiLanguageRuby, color: RED }],
+    [FileExtension.RUST, { svgPath: mdiLanguageRust, color: DEFAULT_ICON }],
+    [FileExtension.SCALA, { svgPath: mdiFileCode, color: RED }],
+    [FileExtension.SASS, { svgPath: mdiFileCode, color: PINK }],
+    [FileExtension.SQL, { svgPath: mdiFileCode, color: BLUE }],
+    [FileExtension.SVELTE, { svgPath: mdiFileCode, color: RED }],
+    [FileExtension.SVG, { svgPath: mdiSvg, color: BLUE }],
+    [FileExtension.SWIFT, { svgPath: mdiLanguageSwift, color: BLUE }],
+    [FileExtension.TYPESCRIPT, { svgPath: mdiLanguageTypescript, color: BLUE }],
+    [FileExtension.TSX, { svgPath: mdiReact, color: BLUE }],
+    [FileExtension.TEXT, { svgPath: mdiText, color: DEFAULT_ICON }],
+    [FileExtension.YAML, { svgPath: mdiFileCode, color: DEFAULT_ICON }],
+    [FileExtension.YML, { svgPath: mdiFileCode, color: DEFAULT_ICON }],
+    [FileExtension.ZIG, { svgPath: mdiFileCode, color: YELLOW }],
 ])
+
+interface FileInfo {
+    extension: FileExtension
+    isTest: boolean
+}
+
+export const getFileInfo = (file: string): FileInfo => {
+    const extension = file.split('.').at(-1)
+    const isValidExtension = Object.values(FileExtension).includes(extension as FileExtension)
+
+    if (extension && isValidExtension) {
+        return {
+            extension: extension as FileExtension,
+            isTest: containsTest(file),
+        }
+    }
+
+    return {
+        extension: 'default' as FileExtension,
+        isTest: false,
+    }
+}
