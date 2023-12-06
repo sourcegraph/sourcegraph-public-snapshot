@@ -581,6 +581,7 @@ func testAccessTokens_GetOrCreateInternalToken(t *testing.T) {
 		_, token, err := db.AccessTokens().CreateInternal(ctx, u.ID, []string{"a"}, "n0", u.ID)
 		assert.NoError(t, err)
 		hashedToken, err := tokenSHA256Hash(token)
+		assert.NoError(t, err)
 
 		// Get token and compare it
 		sha256, err := db.AccessTokens().GetOrCreateInternalToken(ctx, u.ID, []string{"a"})
