@@ -6,15 +6,18 @@ project_root="$(dirname "$3")"
 out="$4"
 
 # We can't directly mount $project_root, because those are symbolic links created by the sandboxing mechansim. So instead, we copy everything over.
-mkdir tmp
-cp -R -L "$project_root"/* tmp/
-trap "rm -Rf tmp" EXIT
+
+tmp_folder=$(pwd)/tmp
+mkdir "$tmp_folder"
+cp -R -L "$project_root"/* $tmp_folder/
+trap "rm -Rf $tmp_folder" EXIT
 
 echo $project_root
-ls -R tmp
+echo $tmp_folder
+ls -R $tmp_folder
 
 # @anton You'll need to fix your local env, we cannot merge an absolute path here
 docker load --input="$tarball"
-docker run -v $(pwd)/tmp:/sources "$image_name" -- scip-java index
+docker run -v $tmp_folder:/sources "$image_name" -- ls -R /sources
 
-cp tmp/index.scip "$out"
+cp "$tmp_folder"/index.scip "$out"
