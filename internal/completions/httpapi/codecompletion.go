@@ -22,6 +22,7 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 	return newCompletionsHandler(
 		logger,
 		db.Users(),
+		db.AccessTokens(),
 		telemetryrecorder.New(db),
 		types.CompletionsFeatureCode,
 		rl,
