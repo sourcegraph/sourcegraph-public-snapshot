@@ -26,6 +26,7 @@ import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operati
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { type ModeSpec, parseQueryAndHash, type RepoFile } from '@sourcegraph/shared/src/util/url'
@@ -96,6 +97,7 @@ interface BlobPageProps
         SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
+        TelemetryV2Props,
         ExtensionsControllerProps,
         HoverThresholdProps,
         BreadcrumbSetters,
@@ -149,7 +151,10 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
         props.telemetryService.logViewEvent('Blob', { repoName, filePath })
-    }, [repoName, commitID, filePath, renderMode, props.telemetryService])
+        props.telemetryRecorder.recordEvent('Blob', 'viewed', {
+            privateMetadata: { repoName, filePath },
+        })
+    }, [repoName, commitID, filePath, renderMode, props.telemetryService, props.telemetryRecorder])
 
     useNotepad(
         useMemo(
@@ -186,6 +191,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                         filePath={filePath}
                         isDir={false}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                     />
                 ),
             }
@@ -366,6 +372,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
             {(props.isSourcegraphDotCom || isCodyEnabled()) && (
                 <TryCodyWidget
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.telemetryRecorder}
                     type="blob"
                     authenticatedUser={props.authenticatedUser}
                     context={context}

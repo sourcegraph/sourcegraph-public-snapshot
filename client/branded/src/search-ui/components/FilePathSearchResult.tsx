@@ -3,6 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { getFileMatchUrl, getRepositoryUrl, getRevision, type PathMatch } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CopyPathAction } from './CopyPathAction'
@@ -19,14 +20,9 @@ export interface FilePathSearchResult {
     index: number
 }
 
-export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult & TelemetryProps> = ({
-    result,
-    repoDisplayName,
-    onSelect,
-    containerClassName,
-    index,
-    telemetryService,
-}) => {
+export const FilePathSearchResult: React.FunctionComponent<
+    FilePathSearchResult & TelemetryProps & TelemetryV2Props
+> = ({ result, repoDisplayName, onSelect, containerClassName, index, telemetryService, telemetryRecorder }) => {
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
 
@@ -46,7 +42,12 @@ export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult 
                 className={styles.titleInner}
                 isKeyboardSelectable={true}
             />
-            <CopyPathAction filePath={result.path} className={styles.copyButton} telemetryService={telemetryService} />
+            <CopyPathAction
+                filePath={result.path}
+                className={styles.copyButton}
+                telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
+            />
         </span>
     )
 

@@ -26,6 +26,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import {
@@ -65,6 +66,7 @@ export interface Props
         ExtensionsControllerProps,
         PlatformContextProps,
         TelemetryProps,
+        TelemetryV2Props,
         CodeIntelligenceProps,
         BatchChangesProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
@@ -80,6 +82,7 @@ export interface Props
     className?: string
     authenticatedUser: AuthenticatedUser | null
     context: Pick<SourcegraphContext, 'authProviders'>
+    telemetryRecorder: TelemetryV2Props['telemetryRecorder']
 }
 
 export const treePageRepositoryFragment = gql`
@@ -112,6 +115,7 @@ export const TreePage: FC<Props> = ({
     ownEnabled,
     className,
     context,
+    telemetryRecorder,
     ...props
 }) => {
     const isRoot = filePath === ''
@@ -123,10 +127,12 @@ export const TreePage: FC<Props> = ({
     useEffect(() => {
         if (isRoot) {
             props.telemetryService.logViewEvent('Repository')
+            telemetryRecorder.recordEvent('Repository', 'viewed')
         } else {
             props.telemetryService.logViewEvent('Tree')
+            telemetryRecorder.recordEvent('Tree', 'viewed')
         }
-    }, [isRoot, props.telemetryService])
+    }, [isRoot, props.telemetryService, telemetryRecorder])
 
     useBreadcrumb(
         useMemo(() => {
@@ -145,10 +151,11 @@ export const TreePage: FC<Props> = ({
                         filePath={filePath}
                         isDir={true}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 ),
             }
-        }, [isRoot, filePath, repoName, revision, props.telemetryService])
+        }, [isRoot, filePath, repoName, revision, props.telemetryService, telemetryRecorder])
     )
 
     const treeOrError = useObservable(
@@ -364,6 +371,7 @@ export const TreePage: FC<Props> = ({
                 <TryCodyWidget
                     className="mb-2"
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     type="repo"
                     authenticatedUser={authenticatedUser}
                     context={context}

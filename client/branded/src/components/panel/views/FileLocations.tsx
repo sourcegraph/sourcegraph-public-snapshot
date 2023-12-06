@@ -14,6 +14,7 @@ import type { Badged } from '@sourcegraph/shared/src/codeintel/legacy-extensions
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import type { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Alert, Icon } from '@sourcegraph/wildcard'
@@ -42,7 +43,7 @@ export const FileLocationsNoGroupSelected: React.FunctionComponent<React.PropsWi
     </div>
 )
 
-interface Props extends SettingsCascadeProps, TelemetryProps {
+interface Props extends SettingsCascadeProps, TelemetryProps, TelemetryV2Props {
     location: H.Location
     /**
      * The observable that emits the locations.
@@ -190,6 +191,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
             index={index}
             location={this.props.location}
             telemetryService={this.props.telemetryService}
+            telemetryRecorder={this.props.telemetryRecorder}
             defaultExpanded={true}
             result={referencesToContentMatch(uri, locationsByURI.get(uri)!)}
             onSelect={this.onSelect}
