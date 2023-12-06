@@ -14,10 +14,10 @@ cp -R -L "$project_root"/* $tmp_folder/
 
 echo $project_root
 echo $tmp_folder
-ls -R $tmp_folder
+ls -lR $tmp_folder
 
 # @anton You'll need to fix your local env, we cannot merge an absolute path here
 docker load --input="$tarball"
-docker run -v $tmp_folder:/sources "$image_name" -- ls -R /sources
+docker run -v $tmp_folder:/sources "$image_name" -- ls -lR /sources
 
 cp "$tmp_folder"/index.scip "$out"
