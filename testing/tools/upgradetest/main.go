@@ -1,4 +1,8 @@
 // Run with bazel run //testing/tools/upgradetest:sh_upgradetest --config=darwin-docker
+//
+// TODO
+// - Test things in CI
+// - Use urfave/cli to parse args
 
 package main
 
@@ -113,7 +117,7 @@ func main() {
 
 	// This is where we do the majority of our printing to stdout.
 	results.OrderByVersion()
-	results.SimpleResults()
+	results.PrintSimpleResults()
 }
 
 // Tests are the basic unit of this program and represent a version being tested. Its methods are generally used to control its logging behavior.
@@ -126,24 +130,25 @@ type Test struct {
 	Errors   []error
 }
 
-// Register a log
+// Addlog registers a log entry.
 func (t *Test) AddLog(log string) {
 	t.LogLines = append(t.LogLines, log)
 }
 
-// register an error
+// AddError registers an error.
 func (t *Test) AddError(err error) {
 	t.LogLines = append(t.LogLines, err.Error())
 	t.Errors = append(t.Errors, err)
 }
 
-// Print errors to stdout
+// DisplayErrors prints errors to stdout
 func (t *Test) DisplayErrors() {
 	for _, err := range t.Errors {
 		fmt.Println(err)
 	}
 }
 
+// TODO godoc should always start with the function/method name.
 // Print logs to stdout
 func (t *Test) DisplayLog() {
 	for _, log := range t.LogLines {
@@ -197,7 +202,7 @@ var knownBugVersions = []string{
 }
 
 // Display quick view of test resutls, errors will log the first error line only.
-func (r *TestResults) SimpleResults() {
+func (r *TestResults) PrintSimpleResults() {
 	stdRes := []string{}
 	for _, test := range r.StandardUpgradeTests {
 		if 0 < len(test.Errors) {
