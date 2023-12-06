@@ -3,6 +3,8 @@ package oauth
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"net/http"
 	"time"
 
@@ -130,6 +132,29 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			logger.Error("OAuth failed: could not initiate session.", log.Error(err))
 			http.Error(w, fmt.Sprintf("Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: %s", err.Error()), http.StatusInternalServerError)
 			return
+		}
+
+		// If the user is new, check if they should be exempted from the minimum external account age
+		if newUserCreated {
+			dc := conf.Get().Dotcom
+			verifiedEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: true})
+			if dc != nil && err != nil && dc.MinimumExternalAccountAge > 0 {
+				exempted := false
+				for _, exemptedEmail := range dc.MinimumExternalAccountAgeExemptList {
+					for _, verifiedEmail := range verifiedEmails {
+						if verifiedEmail.Email == exemptedEmail {
+							exempted = true
+							break
+						}
+					}
+					if exempted {
+						break
+					}
+				}
+				if exempted {
+					_, err = db.FeatureFlags().CreateOverride(context.Background(), &featureflag.Override{FlagName: "cody-pro", Value: true, UserID: &user.ID})
+				}
+			}
 		}
 
 		db.SecurityEventLogs().LogEvent(ctx, &database.SecurityEvent{
