@@ -86,171 +86,169 @@ describe('hiararchyOf', () => {
         }
     }
 
-    it('structures deeply nested hierarchies', () => {
-        // Arrange
-        const symbols: SymbolNodeFields[] = [
-            {
-                __typename: 'Symbol',
-                name: 'StaticClass',
-                containerName: 'repo.ParentClass',
-                language: 'Java',
-                url: 'github.com/repo/ParentClass.java?L8:5-18:15',
-                kind: SymbolKind.CLASS,
-                location: {
-                    __typename: 'Location',
-                    resource: { path: 'ParentClass.java' },
-                    range: { start: { line: 8, character: 5 }, end: { line: 8, character: 15 } },
+    const tests: {
+        name: string
+        symbols: SymbolNodeFields[]
+        expectFunc: (res: SymbolWithChildren[]) => void
+    }[] = [
+        {
+            name: 'structures deeply nested hierarchies',
+            symbols: [
+                {
+                    __typename: 'Symbol',
+                    name: 'StaticClass',
+                    containerName: 'repo.ParentClass',
+                    language: 'Java',
+                    url: 'github.com/repo/ParentClass.java?L8:5-18:15',
+                    kind: SymbolKind.CLASS,
+                    location: {
+                        __typename: 'Location',
+                        resource: { path: 'ParentClass.java' },
+                        range: { start: { line: 8, character: 5 }, end: { line: 8, character: 15 } },
+                    },
                 },
-            },
-            {
-                __typename: 'Symbol',
-                name: 'PrivateClass',
-                containerName: 'repo',
-                language: 'Java',
-                url: 'github.com/repo/ParentClass.java?L18:2-18:10',
-                kind: SymbolKind.CLASS,
-                location: {
-                    __typename: 'Location',
-                    resource: { path: 'ParentClass.java' },
-                    range: { start: { line: 18, character: 2 }, end: { line: 18, character: 10 } },
+                {
+                    __typename: 'Symbol',
+                    name: 'PrivateClass',
+                    containerName: 'repo',
+                    language: 'Java',
+                    url: 'github.com/repo/ParentClass.java?L18:2-18:10',
+                    kind: SymbolKind.CLASS,
+                    location: {
+                        __typename: 'Location',
+                        resource: { path: 'ParentClass.java' },
+                        range: { start: { line: 18, character: 2 }, end: { line: 18, character: 10 } },
+                    },
                 },
-            },
-            {
-                __typename: 'Symbol',
-                name: 'StaticClassProperty',
-                containerName: 'repo.ParentClass.StaticClass',
-                language: 'Java',
-                url: 'github.com/repo/ParentClass.java?L26:2-26:11',
-                kind: SymbolKind.PROPERTY,
-                location: {
-                    __typename: 'Location',
-                    resource: { path: 'ParentClass.java' },
-                    range: { start: { line: 26, character: 2 }, end: { line: 26, character: 11 } },
+                {
+                    __typename: 'Symbol',
+                    name: 'StaticClassProperty',
+                    containerName: 'repo.ParentClass.StaticClass',
+                    language: 'Java',
+                    url: 'github.com/repo/ParentClass.java?L26:2-26:11',
+                    kind: SymbolKind.PROPERTY,
+                    location: {
+                        __typename: 'Location',
+                        resource: { path: 'ParentClass.java' },
+                        range: { start: { line: 26, character: 2 }, end: { line: 26, character: 11 } },
+                    },
                 },
-            },
 
-            {
-                __typename: 'Symbol',
-                name: 'ParentClass',
-                containerName: 'repo',
-                language: 'Java',
-                url: 'github.com/repo/ParentClass.java?L35:1-35:6',
-                kind: SymbolKind.CLASS,
-                location: {
-                    __typename: 'Location',
-                    resource: { path: 'ParentClass.java' },
-                    range: { start: { line: 35, character: 1 }, end: { line: 35, character: 6 } },
+                {
+                    __typename: 'Symbol',
+                    name: 'ParentClass',
+                    containerName: 'repo',
+                    language: 'Java',
+                    url: 'github.com/repo/ParentClass.java?L35:1-35:6',
+                    kind: SymbolKind.CLASS,
+                    location: {
+                        __typename: 'Location',
+                        resource: { path: 'ParentClass.java' },
+                        range: { start: { line: 35, character: 1 }, end: { line: 35, character: 6 } },
+                    },
                 },
+            ],
+            expectFunc: (got: SymbolWithChildren[]) => {
+                const topLevel: SymbolWithChildren[] = got[0].children
+                let parent: SymbolWithChildren | undefined
+
+                topLevel.forEach(sym => {
+                    if (sym.children.length) {
+                        parent = sym
+                        return
+                    }
+                })
+                expect(parent).not.toBeUndefined()
+                expect(parent!.children).toHaveLength(1)
+
+                const child: SymbolWithChildren = parent!.children[0]
+                expect(child.children).toHaveLength(1)
             },
-        ]
+        },
+        {
+            name: 'handles orphaned symbols',
+            symbols: [
+                {
+                    __typename: 'Symbol',
+                    name: 'ChildNodeA',
+                    containerName: 'Parent',
+                    language: 'Python',
+                    url: 'github.com/repo/file.py?L15:2-15:10',
+                    kind: SymbolKind.CLASS,
+                    location: {
+                        __typename: 'Location',
+                        resource: { path: 'file.py' },
+                        range: { start: { line: 15, character: 2 }, end: { line: 15, character: 10 } },
+                    },
+                },
+                {
+                    __typename: 'Symbol',
+                    name: 'ChildNodeB',
+                    containerName: 'Parent',
+                    language: 'Python',
+                    url: 'github.com/repo/file.py?L18:2-18:10',
+                    kind: SymbolKind.FIELD,
+                    location: {
+                        __typename: 'Location',
+                        resource: { path: 'file.py' },
+                        range: { start: { line: 18, character: 2 }, end: { line: 18, character: 10 } },
+                    },
+                },
+            ],
+            expectFunc: (got: SymbolWithChildren[]) => {
+                const parent = got[0]
+                expect(parent.__typename).toEqual('SymbolPlaceholder')
+                expect(parent.children).toHaveLength(2)
+            },
+        },
+        {
+            name: 'handles variables with identical names in the same scope',
+            symbols: [
+                {
+                    __typename: 'Symbol',
+                    name: '_',
+                    containerName: 'pkg',
+                    language: 'Go',
+                    url: 'github.com/repo/file.go?L5:1-5:2',
+                    kind: SymbolKind.VARIABLE,
+                    location: {
+                        __typename: 'Location',
+                        resource: { path: 'file.go' },
+                        range: { start: { line: 1, character: 1 }, end: { line: 5, character: 2 } },
+                    },
+                },
+                {
+                    __typename: 'Symbol',
+                    name: '_',
+                    containerName: 'pkg',
+                    language: 'Go',
+                    url: 'github.com/repo/file.go?L1:1-1:2',
+                    kind: SymbolKind.VARIABLE,
+                    location: {
+                        __typename: 'Location',
+                        resource: { path: 'file.go' },
+                        range: { start: { line: 1, character: 1 }, end: { line: 5, character: 2 } },
+                    },
+                },
+            ],
+            expectFunc: (got: SymbolWithChildren[]) => {
+                const topLevel = got[0].children
+                expect(topLevel).toHaveLength(2)
 
-        // Act
-        const got = hierarchyOf(symbols)
+                const sym1 = topLevel[0] as SymbolNodeFields,
+                    sym2 = topLevel[1] as SymbolNodeFields
+                expect(sym1.url).not.toEqual(sym2.url)
+            },
+        },
+    ]
 
-        // Assert
-        expect(got).toHaveLength(1)
+    for (const t of tests) {
+        it(t.name, () => {
+            const got = hierarchyOf(t.symbols)
 
-        const topLevel: SymbolWithChildren[] = got[0].children
-        expectOrdered(topLevel)
-
-        let parent: SymbolWithChildren | undefined
-        topLevel.forEach(sym => {
-            if (sym.children.length) {
-                parent = sym
-                return
-            }
+            expect(got).toHaveLength(1)
+            expectOrdered(got)
+            t.expectFunc(got)
         })
-        expect(parent).not.toBeUndefined()
-        expect(parent!.children).toHaveLength(1)
-
-        const child: SymbolWithChildren = parent!.children[0]
-        expect(child.children).toHaveLength(1)
-    })
-
-    it('handles orphaned symbols', () => {
-        // Arrange
-        const symbols: SymbolNodeFields[] = [
-            {
-                __typename: 'Symbol',
-                name: 'ChildNodeA',
-                containerName: 'Parent',
-                language: 'Python',
-                url: 'github.com/repo/file.py?L15:2-15:10',
-                kind: SymbolKind.CLASS,
-                location: {
-                    __typename: 'Location',
-                    resource: { path: 'file.py' },
-                    range: { start: { line: 15, character: 2 }, end: { line: 15, character: 10 } },
-                },
-            },
-            {
-                __typename: 'Symbol',
-                name: 'ChildNodeB',
-                containerName: 'Parent',
-                language: 'Python',
-                url: 'github.com/repo/file.py?L18:2-18:10',
-                kind: SymbolKind.FIELD,
-                location: {
-                    __typename: 'Location',
-                    resource: { path: 'file.py' },
-                    range: { start: { line: 18, character: 2 }, end: { line: 18, character: 10 } },
-                },
-            },
-        ]
-
-        // Act
-        const got = hierarchyOf(symbols)
-
-        // Assert
-        expect(got).toHaveLength(1)
-
-        const parent = got[0]
-        expect(parent.__typename).toEqual('SymbolPlaceholder')
-        expect(parent.children).toHaveLength(2)
-    })
-
-    it('handles variables with identical names in the same scope', () => {
-        const symbols: SymbolNodeFields[] = [
-            {
-                __typename: 'Symbol',
-                name: '_',
-                containerName: 'pkg',
-                language: 'Go',
-                url: 'github.com/repo/file.go?L5:1-5:2',
-                kind: SymbolKind.VARIABLE,
-                location: {
-                    __typename: 'Location',
-                    resource: { path: 'file.go' },
-                    range: { start: { line: 1, character: 1 }, end: { line: 5, character: 2 } },
-                },
-            },
-            {
-                __typename: 'Symbol',
-                name: '_',
-                containerName: 'pkg',
-                language: 'Go',
-                url: 'github.com/repo/file.go?L1:1-1:2',
-                kind: SymbolKind.VARIABLE,
-                location: {
-                    __typename: 'Location',
-                    resource: { path: 'file.go' },
-                    range: { start: { line: 1, character: 1 }, end: { line: 5, character: 2 } },
-                },
-            },
-        ]
-
-        // Act
-        const got = hierarchyOf(symbols)
-
-        // Assert
-        expect(got).toHaveLength(1)
-
-        const topLevel = got[0].children
-        expect(topLevel).toHaveLength(2)
-        expectOrdered(topLevel)
-
-        const sym1 = topLevel[0] as SymbolNodeFields,
-            sym2 = topLevel[1] as SymbolNodeFields
-        expect(sym1.url).not.toEqual(sym2.url)
-    })
+    }
 })
