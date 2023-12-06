@@ -186,7 +186,7 @@ const TextSearchIndexedReference: React.FunctionComponent<
     const isCurrent = indexedRef.indexed && indexedRef.current
 
     const lastIndexTime = !indexedRef.current && lastIndexed && new Date(lastIndexed).getTime()
-    const indexingDelayed = lastIndexTime && (Date.now() - lastIndexTime) > largeIndexingDelayMs
+    const indexingDelayed = lastIndexTime && Date.now() - lastIndexTime > largeIndexingDelayMs
 
     return (
         <li className={styles.ref}>
@@ -207,7 +207,11 @@ const TextSearchIndexedReference: React.FunctionComponent<
             &nbsp;&mdash;&nbsp;
             {indexedRef.indexed ? (
                 <span>
-                    {indexedRef.current ? 'up to date.' : (indexingDelayed ? 'indexing is delayed.' : 'queued for indexing.')}
+                    {indexedRef.current
+                        ? 'up to date.'
+                        : indexingDelayed
+                        ? 'indexing is delayed.'
+                        : 'queued for indexing.'}
                     {' Last indexing job ran at '}
                     <Code>
                         <LinkOrSpan
