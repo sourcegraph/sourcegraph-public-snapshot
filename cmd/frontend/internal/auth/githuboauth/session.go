@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -53,7 +54,6 @@ func (s *sessionIssuerHelper) GetServiceID() string {
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
 	ghUser, err := github.UserFromContext(ctx)
-
 	if ghUser == nil {
 		if err != nil {
 			err = errors.Wrap(err, "could not read user from context")
@@ -61,16 +61,6 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			err = errors.New("could not read user from context")
 		}
 		return false, nil, "Could not read GitHub user from callback request.", err
-	}
-	dc := conf.Get().Dotcom
-
-	if dc != nil && dc.MinimumExternalAccountAge > 0 {
-
-		earliestValidCreationDate := time.Now().Add(time.Duration(-dc.MinimumExternalAccountAge) * 24 * time.Hour)
-
-		if ghUser.CreatedAt.After(earliestValidCreationDate) {
-			return false, nil, fmt.Sprintf("User account was created less than %d days ago", dc.MinimumExternalAccountAge), errors.New("user account too new")
-		}
 	}
 
 	login, err := auth.NormalizeUsername(deref(ghUser.Login))
@@ -84,6 +74,21 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	verifiedEmails := getVerifiedEmails(ctx, ghClient)
 	if len(verifiedEmails) == 0 {
 		return false, nil, "Could not get verified email for GitHub user. Check that your GitHub account has a verified email that matches one of your Sourcegraph verified emails.", errors.New("no verified email")
+	}
+
+	dc := conf.Get().Dotcom
+	if dc != nil && dc.MinimumExternalAccountAge > 0 {
+		exempted := false
+		for _, exemptedEmail := range dc.MinimumExternalAccountAgeExemptList {
+			if slices.Contains(verifiedEmails, exemptedEmail) {
+				exempted = true
+				break
+			}
+		}
+		earliestValidCreationDate := time.Now().Add(time.Duration(-dc.MinimumExternalAccountAge) * 24 * time.Hour)
+		if !exempted && ghUser.CreatedAt.After(earliestValidCreationDate) {
+			return false, nil, fmt.Sprintf("User account was created less than %d days ago", dc.MinimumExternalAccountAge), errors.New("user account too new")
+		}
 	}
 
 	// 🚨 SECURITY: Ensure that the user is part of one of the allow listed orgs or teams, if any.

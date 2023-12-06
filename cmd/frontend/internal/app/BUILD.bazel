@@ -105,7 +105,6 @@ go_test(
         "//lib/errors",
         "//schema",
         "@com_github_derision_test_go_mockgen//testutil/require",
-        "@com_github_google_go_cmp//cmp",
         "@com_github_gorilla_mux//:mux",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_temoto_robotstxt//:robotstxt",

@@ -507,8 +507,6 @@ type BrandAssets struct {
 }
 
 // Branding description: Customize Sourcegraph homepage logo and search icon.
-//
-// Only available in Sourcegraph Enterprise.
 type Branding struct {
 	// BrandName description: String to display everywhere the brand name should be displayed. Defaults to "Sourcegraph"
 	BrandName string       `json:"brandName,omitempty"`
@@ -654,6 +652,8 @@ type Dotcom struct {
 	CodyGateway *CodyGateway `json:"codyGateway,omitempty"`
 	// MinimumExternalAccountAge description: The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.
 	MinimumExternalAccountAge int `json:"minimumExternalAccountAge,omitempty"`
+	// MinimumExternalAccountAgeExemptList description: A list of email addresses that are allowed to be exempted from the minimumExternalAccountAge requirement.
+	MinimumExternalAccountAgeExemptList []string `json:"minimumExternalAccountAgeExemptList,omitempty"`
 	// SlackLicenseAnomallyWebhook description: Slack webhook for when there is an anomaly detected with license key usage.
 	SlackLicenseAnomallyWebhook string `json:"slackLicenseAnomallyWebhook,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
@@ -2585,8 +2585,6 @@ type SiteConfiguration struct {
 	// BatchChangesRolloutWindows description: Specifies specific windows, which can have associated rate limits, to be used when reconciling published changesets (creating or updating). All days and times are handled in UTC.
 	BatchChangesRolloutWindows *[]*BatchChangeRolloutWindow `json:"batchChanges.rolloutWindows,omitempty"`
 	// Branding description: Customize Sourcegraph homepage logo and search icon.
-	//
-	// Only available in Sourcegraph Enterprise.
 	Branding *Branding `json:"branding,omitempty"`
 	// CloneProgressLog description: Whether clone progress should be logged to a file. If enabled, logs are written to files in the OS default path for temporary files.
 	CloneProgressLog bool `json:"cloneProgress.log,omitempty"`

@@ -7,7 +7,6 @@ go_library(
         "doc.go",
         "enforcement.go",
         "external_services.go",
-        "monitoring.go",
         "users.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/enforcement",

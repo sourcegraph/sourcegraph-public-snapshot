@@ -2,10 +2,12 @@ package example
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
+	"cloud.google.com/go/bigquery"
 	"github.com/sourcegraph/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -44,6 +46,18 @@ func (s Service) Initialize(
 			return nil, errors.Wrap(err, "initDB")
 		}
 		logger.Info("database configured")
+
+		// Write a single test event
+		bq, err := contract.BigQuery.GetTableWriter(ctx, "example")
+		if err != nil {
+			return nil, errors.Wrap(err, "BigQuery.GetTableWriter")
+		}
+		if err := bq.Write(ctx, BigQueryEntry{
+			Name:      "service.started",
+			CreatedAt: time.Now(),
+		}); err != nil {
+			return nil, errors.Wrap(err, "bq.Write")
+		}
 	}
 
 	return background.CombinedRoutine{
@@ -84,7 +98,7 @@ func (s *httpRoutine) Stop() {
 // It then sets up a few example databases using Gorm, in a manner similar to
 // https://github.com/sourcegraph/accounts.sourcegraph.com
 func initDB(ctx context.Context, contract runtime.Contract) error {
-	sqlDB, err := contract.GetPostgreSQLDB(ctx, "primary")
+	sqlDB, err := contract.PostgreSQL.OpenDatabase(ctx, "primary")
 	if err != nil {
 		return errors.Wrap(err, "GetPostgreSQLDB")
 	}
@@ -135,4 +149,45 @@ type Email struct {
 
 	// ⚠️ DO NOT USE: This field is only used for creating foreign key constraint.
 	User *User `gorm:"foreignKey:UserID"`
+}
+
+// BigQueryEntry is based on the schema:
+//
+//	[{
+//		"name": "name",
+//		"type": "STRING",
+//		"mode": "REQUIRED",
+//		"description": "The name of the event"
+//	},
+//	{
+//		"name": "metadata",
+//		"type": "JSON",
+//		"mode": "NULLABLE",
+//		"description": "The event-specific metadata"
+//	},
+//	{
+//		"name": "created_at",
+//		"type": "TIMESTAMP",
+//		"mode": "REQUIRED",
+//		"description": "The event capture time"
+//	}]
+type BigQueryEntry struct {
+	Name      string
+	Metadata  map[string]any
+	CreatedAt time.Time
+}
+
+func (e BigQueryEntry) Save() (map[string]bigquery.Value, string, error) {
+	row := map[string]bigquery.Value{
+		"name":       e.Name,
+		"created_at": e.CreatedAt,
+	}
+	if e.Metadata != nil {
+		metadata, err := json.Marshal(e.Metadata)
+		if err != nil {
+			return nil, "", errors.Wrap(err, "marshal metadata")
+		}
+		row["metadata"] = string(metadata)
+	}
+	return row, "", nil
 }

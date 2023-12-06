@@ -36,7 +36,7 @@ func (r *schemaResolver) permissionByID(ctx context.Context, id graphql.ID) (Per
 }
 
 func (r *schemaResolver) Permissions(ctx context.Context, args *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
-	connectionStore := permisionConnectionStore{
+	connectionStore := permissionConnectionStore{
 		db: r.db,
 	}
 
