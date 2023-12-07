@@ -34,6 +34,7 @@ export const FEATURE_FLAGS = [
     'cody-chat-mock-test',
     'signup-survey-enabled',
     'cody-pro',
+    'opencodegraph',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

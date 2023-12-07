@@ -113,6 +113,8 @@ func NewHandler(
 	m.PathPrefix("/scim/v2").Methods("GET", "POST", "PUT", "PATCH", "DELETE").Handler(trace.Route(handlers.SCIMHandler))
 	m.Path("/graphql").Methods("POST").Handler(trace.Route(jsonHandler(serveGraphQL(logger, schema, rateLimiter, false))))
 
+	m.Path("/opencodegraph").Methods("POST").Handler(trace.Route(jsonHandler(serveOpenCodeGraph(logger))))
+
 	// Webhooks
 	//
 	// First: register handlers

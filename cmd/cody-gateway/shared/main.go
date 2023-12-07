@@ -168,6 +168,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			FireworksAccessToken:                        config.Fireworks.AccessToken,
 			FireworksAllowedModels:                      config.Fireworks.AllowedModels,
 			FireworksLogSelfServeCodeCompletionRequests: config.Fireworks.LogSelfServeCodeCompletionRequests,
+			FireworksDisableSingleTenant:                config.Fireworks.DisableSingleTenant,
 			EmbeddingsAllowedModels:                     config.AllowedEmbeddingsModels,
 		}, sources)
 	if err != nil {

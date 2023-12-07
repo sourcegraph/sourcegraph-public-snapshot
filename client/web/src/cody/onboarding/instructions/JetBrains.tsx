@@ -6,7 +6,7 @@ import { H2, Text, Button, ButtonLink, Link } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
 
-export function VSCodeInstructions({
+export function JetBrainsInstructions({
     onBack,
     onClose,
     showStep,
@@ -22,7 +22,7 @@ export function VSCodeInstructions({
             {step === 0 && (
                 <>
                     <div className="pb-3 border-bottom">
-                        <H2>Setup instructions for VS Code</H2>
+                        <H2>Setup instructions for JetBrains</H2>
                     </div>
 
                     <div className={classNames('pt-3 px-3', styles.instructionsContainer)}>
@@ -33,12 +33,13 @@ export function VSCodeInstructions({
                                 </div>
                                 <div>
                                     <Text className="mb-1" weight="bold">
-                                        Install Cody
+                                        Open the Plugins Page
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
-                                        Alternatively, you can reach this page by clicking{' '}
-                                        <strong>View {'>'} Extensions</strong> and searching for{' '}
-                                        <strong>Cody AI</strong>
+                                        Click the Cog icon in the top right corner of your IDE and select{' '}
+                                        <strong>Plugins</strong>
+                                        Alternatively you can go to the settings option (use ⌘ + , for macOS, or File →
+                                        Settings for Windows), then select "Plugins" from the menu on the left.
                                     </Text>
                                 </div>
                             </div>
@@ -46,16 +47,9 @@ export function VSCodeInstructions({
                                 <ButtonLink
                                     variant="primary"
                                     to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai"
-                                    target="_blank"
                                 >
                                     Open Marketplace
                                 </ButtonLink>
-                                <img
-                                    alt="VS Code Marketplace"
-                                    className="mt-4"
-                                    width="70%"
-                                    src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/__step1.png"
-                                />
                             </div>
                         </div>
                         <div className="mt-3 border-bottom">
@@ -65,43 +59,31 @@ export function VSCodeInstructions({
                                 </div>
                                 <div>
                                     <Text className="mb-1" weight="bold">
-                                        Open Cody from the Sidebar on the Left
+                                        Install the Cody Plugin
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
-                                        Typically Cody will be the last item in the sidebar
+                                        Type "Cody" in the search bar and install the plugin.
                                     </Text>
                                 </div>
                             </div>
-                            <div className="d-flex flex-column justify-content-center align-items-center mt-4">
-                                <img
-                                    alt="VS Code Marketplace"
-                                    className="mt-2"
-                                    width="70%"
-                                    src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/__step2.png"
-                                />
-                            </div>
-                        </div>
-                        <div className="mt-3 border-bottom">
-                            <div className="d-flex align-items-center">
-                                <div className="mr-1">
-                                    <div className={classNames('mr-2', styles.step)}>3</div>
+                            <div className="d-flex flex-column justify-content-center align-items-center mt-4" />
+                            <div className="mt-3 border-bottom">
+                                <div className="d-flex align-items-center">
+                                    <div className="mr-1">
+                                        <div className={classNames('mr-2', styles.step)}>3</div>
+                                    </div>
+                                    <div>
+                                        <Text className="mb-1" weight="bold">
+                                            Open the Plugin and Login
+                                        </Text>
+                                        <Text className="text-muted mb-0" size="small">
+                                            Cody will be available on the right side of your IDE. Click the Cody icon to
+                                            open the sidebar and login. Alternatively, you should get a notification
+                                            that you need to login to Cody.
+                                        </Text>
+                                    </div>
                                 </div>
-                                <div>
-                                    <Text className="mb-1" weight="bold">
-                                        Login
-                                    </Text>
-                                    <Text className="text-muted mb-0" size="small">
-                                        Choose the same login method you used when you created your account
-                                    </Text>
-                                </div>
-                            </div>
-                            <div className="d-flex flex-column justify-content-center align-items-center mt-4">
-                                <img
-                                    alt="VS Code Marketplace"
-                                    className="mt-2"
-                                    width="70%"
-                                    src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/__step3.png"
-                                />
+                                <div className="d-flex flex-column justify-content-center align-items-center mt-4" />
                             </div>
                         </div>
                     </div>

@@ -711,7 +711,11 @@ func freeUpSpace(ctx context.Context, logger log.Logger, db database.DB, shardID
 	for _, d := range gitDirs {
 		mt, err := gitDirModTime(d)
 		if err != nil {
-			return errors.Wrap(err, "computing mod time of git dir")
+			// If we get an error here, we move it to the end of the queue,
+			// since it's the janitor's job to clean/fix this.
+			logger.Warn("computing mod time of git dir failed", log.String("dir", string(d)), log.Error(err))
+			dirModTimes[d] = time.Now()
+			continue
 		}
 		dirModTimes[d] = mt
 	}
@@ -741,7 +745,8 @@ func freeUpSpace(ctx context.Context, logger log.Logger, db database.DB, shardID
 
 		delta := gitserverfs.DirSize(d.Path("."))
 		if err := gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, d, true); err != nil {
-			return errors.Wrap(err, "removing repo directory")
+			logger.Warn("failed to remove least recently used repo", log.String("dir", string(d)), log.Error(err))
+			continue
 		}
 		spaceFreed += delta
 		reposRemovedDiskPressure.Inc()

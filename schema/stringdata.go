@@ -104,3 +104,13 @@ var SettingsSchemaJSON string
 //
 //go:embed site.schema.json
 var SiteSchemaJSON string
+
+// OpenCodeGraphSchemaJSON is the content of the file "opencodegraph.schema.json".
+//
+//go:embed opencodegraph.schema.json
+var OpenCodeGraphSchemaJSON string
+
+// OpenCodeGraphProtocolSchemaJSON is the content of the file "opencodegraph-protocol.schema.json".
+//
+//go:embed opencodegraph-protocol.schema.json
+var OpenCodeGraphProtocolSchemaJSON string
