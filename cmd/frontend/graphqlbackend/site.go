@@ -113,10 +113,28 @@ func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfiguratio
 		// The only way a non-admin can access this field is when `returnSafeConfigsOnly`
 		// is set to true.
 		if returnSafeConfigsOnly {
+			event := &database.SecurityEvent{
+				Name:      database.SecurityEventNameSiteConfigRedactedViewed,
+				URL:       "",
+				UserID:    uint32(actor.FromContext(ctx).UID),
+				Argument:  nil,
+				Source:    "BACKEND",
+				Timestamp: time.Now(),
+			}
+			r.db.SecurityEventLogs().LogEvent(ctx, event)
 			return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 		}
 		return nil, err
 	}
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameSiteConfigViewed,
+		URL:       "",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  nil,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	r.db.SecurityEventLogs().LogEvent(ctx, event)
 	return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 }
 

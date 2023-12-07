@@ -2,6 +2,7 @@ package productsubscription
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
@@ -84,6 +86,15 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		return "", errors.Wrap(err, "insert")
 	}
 
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameDotComLicenseCreated,
+		URL:       "",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  nil,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	s.db.SecurityEventLogs().LogEvent(ctx, event)
 	return id, nil
 }
 
@@ -275,6 +286,20 @@ ORDER BY created_at DESC
 		}
 		results = append(results, &v)
 	}
+
+	// Fix compiler error by converting q.Args() to json.RawMessage
+	argsJSON, _ := json.Marshal(q.Args())
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameDotComLicenseViewed,
+		URL:       "",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+
+	s.db.SecurityEventLogs().LogEvent(ctx, event)
+
 	return results, nil
 }
 
