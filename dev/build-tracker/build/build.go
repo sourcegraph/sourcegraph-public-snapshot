@@ -53,8 +53,8 @@ func (s *Step) LogURL() string {
 type BuildStatus string
 
 const (
+	// The following are statuses we consider the build to be in
 	BuildStatusUnknown BuildStatus = ""
-	BuildInProgress    BuildStatus = "InProgress"
 	BuildPassed        BuildStatus = "Passed"
 	BuildFailed        BuildStatus = "Failed"
 	BuildFixed         BuildStatus = "Fixed"
@@ -62,7 +62,12 @@ const (
 	EventJobFinished   = "job.finished"
 	EventBuildFinished = "build.finished"
 
+	// The following are states tje job received from buildkite can be in. These are terminal states
 	JobFinishedState = "finished"
+	JobPassedState   = "passed"
+	JobFailedState   = "failed"
+	JobTimedOutState = "timed_out"
+	JobUnknnownState = "unknown"
 )
 
 func (b *Build) AddJob(j *Job) error {
@@ -269,8 +274,6 @@ func (s *Store) Add(event *Event) {
 			// We got a pass, reset the global count
 			s.consecutiveFailures[failuresKey] = 0
 		}
-		// Build is finished so
-		return
 	}
 
 	// Keep track of the job, if there is one
@@ -280,14 +283,22 @@ func (s *Store) Add(event *Event) {
 		s.logger.Warn("job not added",
 			log.Error(err),
 			log.Int("buildNumber", event.GetBuildNumber()),
-			log.Object("job", log.String("name", newJob.GetName()), log.String("id", newJob.GetID())),
+			log.Object("job",
+				log.String("name", newJob.GetName()),
+				log.String("id", newJob.GetID()),
+				log.String("status", string(newJob.status())),
+				log.Int("exit", newJob.exitStatus())),
 			log.Int("totalSteps", len(build.Steps)),
 		)
 	} else {
 		s.logger.Debug("job added to step",
 			log.Int("buildNumber", event.GetBuildNumber()),
 			log.Object("step", log.String("name", newJob.GetName()),
-				log.Object("job", log.String("state", newJob.state()), log.String("id", newJob.GetID())),
+				log.Object("job",
+					log.String("name", newJob.GetName()),
+					log.String("id", newJob.GetID()),
+					log.String("status", string(newJob.status())),
+					log.Int("exit", newJob.exitStatus())),
 			),
 			log.Int("totalSteps", len(build.Steps)),
 		)

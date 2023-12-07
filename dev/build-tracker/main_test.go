@@ -2,9 +2,10 @@ package main
 
 import (
 	"testing"
-	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/build"
 )
@@ -41,14 +42,13 @@ func TestToBuildNotification(t *testing.T) {
 			}},
 			Steps: map[string]*build.Step{
 				":one: fake step": build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
-				":two: fake step": build.NewStepFromJob(newJob(t, ":two: fake step", exit)),
 			},
 		}
 
-		notification := determineBuildStatusNotification(b)
+		notification := determineBuildStatusNotification(logtest.NoOp(t), b)
 
-		if len(notification.Failed) != 2 {
-			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 2)
+		if len(notification.Failed) != 1 {
+			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 1)
 		}
 		if notification.BuildStatus != string(build.BuildFailed) {
 			t.Errorf("got %s, wanted %s for Build Status in Notification", notification.BuildStatus, build.BuildFailed)
@@ -83,7 +83,7 @@ func TestToBuildNotification(t *testing.T) {
 			},
 		}
 
-		notification := determineBuildStatusNotification(b)
+		notification := determineBuildStatusNotification(logtest.NoOp(t), b)
 		if len(notification.Failed) != 0 {
 			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 0)
 		}
@@ -96,7 +96,7 @@ func TestToBuildNotification(t *testing.T) {
 			t.Fatalf("failed to add job to build: %v", err)
 		}
 
-		notification = determineBuildStatusNotification(b)
+		notification = determineBuildStatusNotification(logtest.NoOp(t), b)
 		if len(notification.Failed) != 1 {
 			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 1)
 		}
@@ -109,7 +109,7 @@ func TestToBuildNotification(t *testing.T) {
 			t.Fatalf("failed to add job to build: %v", err)
 		}
 
-		notification = determineBuildStatusNotification(b)
+		notification = determineBuildStatusNotification(logtest.NoOp(t), b)
 		if len(notification.Failed) != 1 {
 			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 1)
 		}
@@ -121,7 +121,7 @@ func TestToBuildNotification(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to add job to build: %v", err)
 		}
-		notification = determineBuildStatusNotification(b)
+		notification = determineBuildStatusNotification(logtest.NoOp(t), b)
 		if len(notification.Failed) != 1 {
 			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 1)
 		}
@@ -158,7 +158,7 @@ func TestToBuildNotification(t *testing.T) {
 			},
 		}
 
-		notification := determineBuildStatusNotification(b)
+		notification := determineBuildStatusNotification(logtest.NoOp(t), b)
 		if len(notification.Failed) != 2 {
 			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 2)
 		}
@@ -171,64 +171,8 @@ func TestToBuildNotification(t *testing.T) {
 			t.Fatalf("failed to add job to build: %v", err)
 		}
 
-		notification = determineBuildStatusNotification(b)
+		notification = determineBuildStatusNotification(logtest.NoOp(t), b)
 		if len(notification.Failed) != 3 {
-			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 3)
-		}
-		if notification.BuildStatus != string(build.BuildFailed) {
-			t.Errorf("got %s, wanted %s for Build Status in Notification", notification.BuildStatus, build.BuildFailed)
-		}
-	})
-	t.Run("Finished build, with 2 failed jobs and then a late in progress job", func(t *testing.T) {
-		b := &build.Build{
-			Build: buildkite.Build{
-				Message: &msg,
-				WebURL:  &url,
-				Creator: &buildkite.Creator{
-					AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
-				},
-				Pipeline: &buildkite.Pipeline{
-					ID:   &pipelineID,
-					Name: &pipelineID,
-				},
-				Author: &buildkite.Author{
-					Name:  "William Bezuidenhout",
-					Email: "william.bezuidenhout@sourcegraph.com",
-				},
-				Number:     &num,
-				URL:        &url,
-				Commit:     &commit,
-				State:      buildkite.String("failed"),
-				FinishedAt: &buildkite.Timestamp{time.Now()},
-			},
-			Pipeline: &build.Pipeline{buildkite.Pipeline{
-				Name: &pipelineID,
-			}},
-			Steps: map[string]*build.Step{
-				":one: fake step": build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
-				":two: fake step": build.NewStepFromJob(newJob(t, ":two: fake step", exit)),
-			},
-		}
-
-		notification := determineBuildStatusNotification(b)
-		if len(notification.Failed) != 2 {
-			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 2)
-		}
-		if notification.BuildStatus != string(build.BuildFailed) {
-			t.Errorf("got %s, wanted %s for Build Status in Notification", notification.BuildStatus, build.BuildFailed)
-		}
-
-		lateJob := newJob(t, ":three: fake inprogress step", exit)
-		state := string(build.JobInProgress)
-		lateJob.State = &state
-		err := b.AddJob(lateJob)
-		if err != nil {
-			t.Fatalf("failed to add job to build: %v", err)
-		}
-
-		notification = determineBuildStatusNotification(b)
-		// 2 Failed since there is one in progress job
-		if len(notification.Failed) != 2 {
 			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 3)
 		}
 		if notification.BuildStatus != string(build.BuildFailed) {
@@ -264,7 +208,7 @@ func TestToBuildNotification(t *testing.T) {
 			},
 		}
 
-		notification := determineBuildStatusNotification(b)
+		notification := determineBuildStatusNotification(logtest.NoOp(t), b)
 		if len(notification.Failed) != 2 {
 			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 2)
 		}
@@ -278,7 +222,7 @@ func TestToBuildNotification(t *testing.T) {
 			t.Fatalf("failed to add job to build: %v", err)
 		}
 
-		notification = determineBuildStatusNotification(b)
+		notification = determineBuildStatusNotification(logtest.NoOp(t), b)
 		if len(notification.Failed) != 1 {
 			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 1)
 		}
@@ -296,7 +240,7 @@ func TestToBuildNotification(t *testing.T) {
 			t.Fatalf("failed to add job to build: %v", err)
 		}
 
-		notification = determineBuildStatusNotification(b)
+		notification = determineBuildStatusNotification(logtest.NoOp(t), b)
 		// All jobs should be fixed now
 		if len(notification.Failed) != 0 {
 			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 2)

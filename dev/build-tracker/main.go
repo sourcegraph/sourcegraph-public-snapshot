@@ -170,16 +170,12 @@ func (s *Server) notifyIfFailed(b *build.Build) error {
 		s.logger.Info("build not finished yet, skipping notification", log.Int("buildNumber", b.GetNumber()))
 	}
 	// This determines the final build status
-	info := determineBuildStatusNotification(b)
-	if info.BuildStatus == string(build.BuildInProgress) {
-		return errors.Newf("build %d is finished, but final status is still in progress with %d jobs", info.BuildNumber, len(info.InProgress))
-	}
+	info := determineBuildStatusNotification(s.logger, b)
 	s.logger.Debug("build status notification",
 		log.Int("buildNumber", info.BuildNumber),
 		log.Int("Passed", len(info.Passed)),
 		log.Int("Failed", len(info.Failed)),
 		log.Int("Fixed", len(info.Fixed)),
-		log.Int("InProgress", len(info.InProgress)),
 	)
 
 	if info.BuildStatus == string(build.BuildFailed) || info.BuildStatus == string(build.BuildFixed) {
@@ -244,7 +240,7 @@ func (s *Server) processEvent(event *build.Event) {
 	}
 }
 
-func determineBuildStatusNotification(b *build.Build) *notify.BuildNotification {
+func determineBuildStatusNotification(logger log.Logger, b *build.Build) *notify.BuildNotification {
 	info := notify.BuildNotification{
 		BuildNumber:        b.GetNumber(),
 		ConsecutiveFailure: b.ConsecutiveFailure,
@@ -256,7 +252,6 @@ func determineBuildStatusNotification(b *build.Build) *notify.BuildNotification 
 		BuildURL:           b.GetWebURL(),
 		Fixed:              []notify.JobLine{},
 		Failed:             []notify.JobLine{},
-		InProgress:         []notify.JobLine{},
 		Passed:             []notify.JobLine{},
 		TotalSteps:         len(b.Steps),
 	}
@@ -273,11 +268,11 @@ func determineBuildStatusNotification(b *build.Build) *notify.BuildNotification 
 	for _, j := range groups[build.JobFailed] {
 		info.Failed = append(info.Failed, j)
 	}
-	for _, j := range groups[build.JobInProgress] {
-		info.InProgress = append(info.InProgress, j)
-	}
 	for _, j := range groups[build.JobPassed] {
 		info.Passed = append(info.Passed, j)
+	}
+	for _, j := range groups[build.JobUnknown] {
+		logger.Debug("unknown job status", log.Int("buildNumber", b.GetNumber()), log.Object("job", log.String("name", j.Name), log.String("state", j.LastJob().GetState())))
 	}
 
 	if len(info.Failed) > 0 {
