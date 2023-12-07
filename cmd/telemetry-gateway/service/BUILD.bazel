@@ -30,7 +30,6 @@ go_library(
     name = "service",
     srcs = [
         "config.go",
-        "helpers.go",
         "service.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/service",
