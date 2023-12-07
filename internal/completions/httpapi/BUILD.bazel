@@ -24,6 +24,7 @@ go_library(
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/featureflag",
+        "//internal/hashutil",
         "//internal/honey",
         "//internal/redispool",
         "//internal/requestclient",

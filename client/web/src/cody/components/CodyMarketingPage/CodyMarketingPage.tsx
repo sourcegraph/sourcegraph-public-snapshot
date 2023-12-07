@@ -24,6 +24,8 @@ interface CodyPlatformCardProps {
     illustration: string
 }
 
+/* eslint-disable  @sourcegraph/sourcegraph/check-help-links */
+
 const onSpeakToAnEngineer = (): void => eventLogger.log(EventName.SPEAK_TO_AN_ENGINEER_CTA)
 const onClickCTAButton = (type: string): void =>
     eventLogger.log('SignupInitiated', { type, source: 'cody-signed-out' }, { type, page: 'cody-signed-out' })

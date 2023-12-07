@@ -88,10 +88,9 @@ To verify that your CAA records are set correctly, you can use the following com
 
 ```sh
 dig acme.com caa +short
-dig src.acme.com caa +short
 ```
 
-If the output is empty, you don't have to do anything. If the output is not empty, and it does not contain `letsencrypt.org` and `pki.goog`, you need to add them to your CAA records to the apex domain or your desired subdomain, e.g., `src.acme.com`.
+If the output is empty, you don't have to do anything. If the output is not empty, and it does not contain `letsencrypt.org` and `pki.goog`, you need to add them to your CAA records to the apex domain.
 
 #### Limitations
 

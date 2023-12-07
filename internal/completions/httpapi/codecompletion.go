@@ -22,6 +22,7 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 	return newCompletionsHandler(
 		logger,
 		db.Users(),
+		db.AccessTokens(),
 		telemetryrecorder.New(db),
 		types.CompletionsFeatureCode,
 		rl,
@@ -74,7 +75,8 @@ func allowedCustomModel(ctx context.Context, model string) string {
 		"fireworks/accounts/fireworks/models/llama-v2-34b-code-instruct",
 		"fireworks/accounts/fireworks/models/mistral-7b-instruct-4k",
 		"fireworks/accounts/fireworks/models/wizardcoder-15b",
-		"anthropic/claude-instant-1.2-cyan":
+		"anthropic/claude-instant-1.2-cyan",
+		"anthropic/claude-instant-1.2":
 		return model
 	}
 
