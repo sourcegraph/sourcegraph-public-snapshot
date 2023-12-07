@@ -2,13 +2,13 @@ package httpapi
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"net/http"
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -30,15 +30,18 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 		rl,
 		"chat",
 		func(ctx context.Context, requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
-			actor := sgactor.FromContext(ctx)
-			user, err := actor.User(ctx, db.Users())
-			if err != nil {
-				return "", err
-			}
-			isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
-			isProUser := user.CodyProEnabledAt != nil
-			if isAllowedCustomChatModel(requestParams.Model, isProUser || !isCodyProEnabled) {
-				return requestParams.Model, nil
+			// Allow a number of additional models on Dotcom
+			if envvar.SourcegraphDotComMode() {
+				actor := sgactor.FromContext(ctx)
+				user, err := actor.User(ctx, db.Users())
+				if err != nil {
+					return "", err
+				}
+				isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
+				isProUser := user.CodyProEnabledAt != nil
+				if isAllowedCustomChatModel(requestParams.Model, isProUser || !isCodyProEnabled) {
+					return requestParams.Model, nil
+				}
 			}
 			// No user defined models for now.
 			if requestParams.Fast {
@@ -52,10 +55,6 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 // We only allow dotcom clients to select a custom chat model and maintain an allowlist for which
 // custom values we support
 func isAllowedCustomChatModel(model string, isProUser bool) bool {
-	if !(envvar.SourcegraphDotComMode()) {
-		return false
-	}
-
 	if isProUser {
 		switch model {
 		case "anthropic/claude-2",
