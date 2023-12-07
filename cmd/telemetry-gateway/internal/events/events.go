@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 
 	"google.golang.org/protobuf/encoding/protojson"
 
@@ -62,7 +63,12 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 
 			// Publish a single message in each callback to manage concurrency
 			// ourselves, and
-			if err := p.topic.Publish(ctx, payload); err != nil {
+			if err := p.topic.PublishMessage(ctx, payload, map[string]string{
+				"event.feature": event.Feature,
+				"event.action":  event.Action,
+				"event.hasPrivateMetadata": strconv.FormatBool(
+					event.GetParameters().GetPrivateMetadata() != nil),
+			}); err != nil {
 				return errors.Wrap(err, "publishing event")
 			}
 
