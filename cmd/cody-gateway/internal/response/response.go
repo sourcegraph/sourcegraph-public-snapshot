@@ -58,6 +58,7 @@ func (r *StatusHeaderRecorder) WriteHeader(statusCode int) {
 	r.ResponseWriter.WriteHeader(statusCode)
 }
 
+//nolint:bodyclose
 func (r *StatusHeaderRecorder) Flush() {
 	rc := http.NewResponseController(r.ResponseWriter)
 	// we're implementing a stdlib interface that doesn't return the error, so we log
