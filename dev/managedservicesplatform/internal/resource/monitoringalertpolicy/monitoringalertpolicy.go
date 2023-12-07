@@ -211,8 +211,8 @@ func buildFilter(config *Config) string {
 		filters = append(filters, fmt.Sprintf(`%s = "%s"`, key, val))
 	}
 
-	// Sort to ensure stable output for testing
-	// This code runs so infreuqently that sort performance is not a concern and there are only a couple elements
+	// Sort to ensure stable output for testing, because
+	// config.ThresholdAggregation.Filters is a map.
 	sort.Strings(filters)
 
 	if config.ServiceKind == spec.ServiceKindService {
