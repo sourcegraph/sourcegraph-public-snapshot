@@ -36,6 +36,7 @@ type Config struct {
 	OpenAIOrgID                                 string
 	OpenAIAllowedModels                         []string
 	FireworksAccessToken                        string
+	FireworksDisableSingleTenant                bool
 	FireworksAllowedModels                      []string
 	FireworksLogSelfServeCodeCompletionRequests bool
 	EmbeddingsAllowedModels                     []string
@@ -193,6 +194,7 @@ func NewHandler(
 								config.FireworksAccessToken,
 								config.FireworksAllowedModels,
 								config.FireworksLogSelfServeCodeCompletionRequests,
+								config.FireworksDisableSingleTenant,
 							),
 						),
 					),
