@@ -31,10 +31,13 @@ func JSONError(logger log.Logger, w http.ResponseWriter, code int, err error) {
 type StatusHeaderRecorder struct {
 	StatusCode int
 	http.ResponseWriter
+	Logger log.Logger
 }
 
-func NewStatusHeaderRecorder(w http.ResponseWriter) *StatusHeaderRecorder {
-	return &StatusHeaderRecorder{ResponseWriter: w}
+var _ http.Flusher = &StatusHeaderRecorder{}
+
+func NewStatusHeaderRecorder(w http.ResponseWriter, logger log.Logger) *StatusHeaderRecorder {
+	return &StatusHeaderRecorder{ResponseWriter: w, Logger: logger}
 }
 
 // Write writes the data to the connection as part of an HTTP reply.
@@ -53,6 +56,14 @@ func (r *StatusHeaderRecorder) Write(b []byte) (int, error) {
 func (r *StatusHeaderRecorder) WriteHeader(statusCode int) {
 	r.StatusCode = statusCode
 	r.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (r *StatusHeaderRecorder) Flush() {
+	rc := http.NewResponseController(r.ResponseWriter)
+	// we're implementing a stdlib interface that doesn't return the error, so we log
+	if err := rc.Flush(); err != nil {
+		r.Logger.Warn("flushing response failed", log.Error(err))
+	}
 }
 
 // NewHTTPStatusCodeError records a status code error returned from a request.
