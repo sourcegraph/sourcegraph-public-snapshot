@@ -4,12 +4,12 @@ import { fileURLToPath } from 'url'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { defineConfig, mergeConfig, type Plugin, type UserConfig } from 'vite'
 import inspect from 'vite-plugin-inspect'
+import graphql from '@rollup/plugin-graphql'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 async function generateGraphQLOperations(): Promise<Plugin> {
-    const outputPath = './src/lib/graphql-operations.ts'
-    const documents = ['src/lib/**/*.{ts,graphql}', '!src/lib/graphql-operations.ts']
+    const documents = ['src/lib/**/*.{ts,graphql,gql}', 'src/routes/**/*.{ts,graphql,gql}', '!src/lib/graphql-{types,operations}.ts' ]
 
     // We have to dynamically import this module to not make it a dependency when using
     // Bazel
@@ -19,11 +19,10 @@ async function generateGraphQLOperations(): Promise<Plugin> {
         // Keep in sync with client/shared/dev/generateGraphQlOperations.ts
         config: {
             generates: {
-                [outputPath]: {
-                    documents: 'src/lib/**/*.{ts,graphql}',
+                // "legacy" graphql operations file
+                './src/lib/graphql-operations.ts' : {
                     config: {
                         onlyOperationTypes: true,
-                        noExport: false,
                         enumValues: '@sourcegraph/shared/src/graphql-operations',
                         interfaceNameForOperations: 'SvelteKitGraphQlOperations',
                     },
@@ -33,12 +32,27 @@ async function generateGraphQLOperations(): Promise<Plugin> {
                         'typescript-operations',
                     ],
                 },
+                // All graphql types
+                "src/lib/graphql-types.ts": {
+                    plugins: ['typescript'],
+                },
+                // GraphQL operations colocated with their source files.
+                // Generates typed documents and operation types.
+                "src/": {
+                    preset: 'near-operation-file',
+                    presetConfig: {
+                        extension: '.gql.ts',
+                        baseTypesPath: 'lib/graphql-types.ts',
+                    },
+                    plugins: ['typescript-operations', 'typed-document-node'],
+                },
             },
             schema: '../../cmd/frontend/graphqlbackend/*.graphql',
             errorsOnly: true,
             silent: true,
             config: {
                 // https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-operations#config-api-reference
+                useTypeImports: true,
                 arrayInputCoercion: false,
                 preResolveTypes: true,
                 operationResultSuffix: 'Result',
@@ -79,6 +93,8 @@ export default defineConfig(({ mode }) => {
             // by bazel targets
             process.env.BAZEL ? null : generateGraphQLOperations(),
             inspect(),
+            // Necessary to enable fragment imports in graphql files
+            graphql(),
         ],
         define:
             mode === 'test'

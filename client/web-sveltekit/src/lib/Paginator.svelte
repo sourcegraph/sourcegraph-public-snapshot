@@ -1,28 +1,3 @@
-<script context="module" lang="ts">
-    enum Param {
-        before = '$before',
-        after = '$after',
-        last = '$last',
-    }
-
-    export function getPaginationParams(
-        searchParams: URLSearchParams,
-        pageSize: number
-    ):
-        | { first: number; last: null; before: null; after: string | null }
-        | { first: null; last: number; before: string | null; after: null } {
-        if (searchParams.has('$before')) {
-            return { first: null, last: pageSize, before: searchParams.get(Param.before), after: null }
-        } else if (searchParams.has('$after')) {
-            return { first: pageSize, last: null, before: null, after: searchParams.get(Param.after) }
-        } else if (searchParams.has('$last')) {
-            return { first: null, last: pageSize, before: null, after: null }
-        } else {
-            return { first: pageSize, last: null, before: null, after: null }
-        }
-    }
-</script>
-
 <script lang="ts">
     import { mdiPageFirst, mdiPageLast, mdiChevronRight, mdiChevronLeft } from '@mdi/js'
 
@@ -30,14 +5,17 @@
 
     import Icon from './Icon.svelte'
     import { Button } from './wildcard'
+    import { Param } from './Paginator'
 
-    export let pageInfo: {
-        hasPreviousPage: boolean
-        hasNextPage: boolean
-        startCursor: string | null
-        endCursor: string | null
-    }
-    export let disabled: boolean
+    type PageInfo =
+        // Bidirection pagination
+        | {hasPreviousPage: boolean, hasNextPage: boolean, startCursor: string | null, endCursor: string | null}
+        // Unidirection pagination
+        | {hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string |null, startCursor?: undefined, previousEndCursor: string | null}
+
+    export let pageInfo: PageInfo
+    export let disabled: boolean = false
+    export let showLastpageButton: boolean = true
 
     function urlWithParameter(name: string, value: string | null): string {
         const url = new URL($page.url)
@@ -59,14 +37,17 @@
 
     let firstPageURL = urlWithParameter('', null)
     let lastPageURL = urlWithParameter(Param.last, '')
-    $: previousPageURL = urlWithParameter(Param.before, pageInfo.startCursor)
+    $: previousPageURL = pageInfo.startCursor !== undefined ?
+        urlWithParameter(Param.before, pageInfo.startCursor) :
+        urlWithParameter(Param.after, pageInfo.previousEndCursor)
     $: nextPageURL = urlWithParameter(Param.after, pageInfo.endCursor)
     $: firstAndPreviousDisabled = disabled || !pageInfo.hasPreviousPage
     $: nextAndLastDisabled = disabled || !pageInfo.hasNextPage
 </script>
 
-<!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- The event handler is used for event delegation -->
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<!-- svelte-ignore a11y-no-static-element-interactions -->
 <div on:click={preventClickOnDisabledLink}>
     <Button variant="secondary" outline>
         <a slot="custom" let:className href={firstPageURL} class={className} aria-disabled={firstAndPreviousDisabled}>
@@ -89,11 +70,13 @@
             Next <Icon svgPath={mdiChevronRight} inline />
         </a>
     </Button>
-    <Button variant="secondary" outline>
-        <a slot="custom" let:className class={className} href={lastPageURL} aria-disabled={nextAndLastDisabled}>
-            <Icon svgPath={mdiPageLast} inline />
-        </a>
-    </Button>
+    {#if showLastpageButton}
+        <Button variant="secondary" outline>
+            <a slot="custom" let:className class={className} href={lastPageURL} aria-disabled={nextAndLastDisabled}>
+                <Icon svgPath={mdiPageLast} inline />
+            </a>
+        </Button>
+    {/if}
 </div>
 
 <style lang="scss">

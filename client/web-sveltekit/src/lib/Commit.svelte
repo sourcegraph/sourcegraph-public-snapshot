@@ -1,25 +1,44 @@
 <script lang="ts">
     import { mdiDotsHorizontal } from '@mdi/js'
 
-    import type { GitCommitFields } from '$lib/graphql-operations'
+    import type { Commit } from './Commit.gql'
     import Icon from '$lib/Icon.svelte'
     import UserAvatar from '$lib/UserAvatar.svelte'
-    import Timestamp from './Timestamp.svelte'
+    import Timestamp from '$lib/Timestamp.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
 
-    export let commit: GitCommitFields
+    export let commit: Commit
     export let alwaysExpanded: boolean = false
 
+    function getCommitter({committer}: Commit): Commit['committer']['person']|null {
+        if (!committer) {
+            return null
+        }
+        // Do not show if committer is GitHub (e.g. squash merge)
+        if (committer.person.name === 'GitHub' && committer.person.email === 'noreply@github.com') {
+            return null
+        }
+        return committer.person
+    }
+
     $: commitDate = new Date(commit.committer ? commit.committer.date : commit.author.date)
+    $: author = commit.author.person
+    $: committer = getCommitter(commit)
+    $: authorAvatarTooltip = author.name + (committer ? ' (author)' : '')
     let expanded = alwaysExpanded
 </script>
 
 <div class="root">
     <div class="avatar">
-        <UserAvatar user={commit.author.person} />
+        <Tooltip tooltip={authorAvatarTooltip}>
+            <UserAvatar user={author} />
+        </Tooltip>
     </div>
-    {#if commit.committer}
+    {#if committer && committer.name !== author.name}
         <div class="avatar">
-            <UserAvatar user={commit.committer.person} />
+            <Tooltip tooltip="{committer.name} (committer)">
+                <UserAvatar user={committer} />
+            </Tooltip>
         </div>
     {/if}
     <div class="info">

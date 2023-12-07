@@ -421,6 +421,9 @@
   },
   "packageManager": "pnpm@8.9.2",
   "pnpm": {
+    "overrides": {
+      "@graphql-tools/utils": "^10.0.6"
+    },
     "packageExtensions": {
       "hnswlib-node": {
         "dependencies": {
