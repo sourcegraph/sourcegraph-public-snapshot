@@ -71,6 +71,8 @@ const (
 // Must specify a `metric.type` filter. Additional filters are optional.
 //
 // All filters are joined with ` AND `
+//
+// `GroupByField` is an optional field for Jobs for specifying the time series aggregation target label
 type ThresholdAggregation struct {
 	Filters      map[string]string
 	GroupByField string
