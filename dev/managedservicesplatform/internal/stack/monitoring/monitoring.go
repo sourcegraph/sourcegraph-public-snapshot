@@ -69,14 +69,14 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	id := resourceid.New("monitoring")
 	err = commonAlerts(stack, id, vars)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create common alerts")
 	}
 
 	switch pointers.Deref(vars.Service.Kind, spec.ServiceKindService) {
 	case spec.ServiceKindService:
 		err = serviceAlerts(stack, id, vars)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to create service alerts")
 		}
 
 		if vars.Monitoring.Alerts.ResponseCodeRatios != nil {
@@ -84,12 +84,12 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		}
 
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to create response code metrics")
 		}
 	case spec.ServiceKindJob:
 		err = jobAlerts(stack, id, vars)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to create job alerts")
 		}
 	default:
 		return nil, errors.New("unknown service kind")
