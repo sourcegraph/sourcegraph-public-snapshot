@@ -215,6 +215,15 @@ Here's a demo that shows how Code Actions work to fix an error:
 
 A similar process applies to explain and edit Code Actions.
 
+<!-- ## Cody Natural Language Search
+
+<aside class="beta">
+<p>
+<span class="badge badge-beta">Beta</span>
+Cody Natural Language Search is currently available in beta for all users.
+</p>
+</aside> -->
+
 ## Enable code graph context for context-aware answers (Optional)
 
 After connecting Cody's extension to Sourcegraph.com, you can optionally use [Code Graph Context](./../core-concepts/code-graph.md) to improve Cody's context of existing code. Code Graph Context is only available for public repositories on Sourcegraph.com, which have embeddings.
