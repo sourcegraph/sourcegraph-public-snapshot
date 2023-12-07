@@ -5,8 +5,8 @@ import classNames from 'classnames'
 import type * as H from 'history'
 import { capitalize } from 'lodash'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { type Observable, of } from 'rxjs'
-import { map } from 'rxjs/operators'
+import VisibilitySensor from 'react-visibility-sensor'
+import type { Observable } from 'rxjs'
 
 import { CodeExcerpt } from '@sourcegraph/branded'
 import { type ErrorLike, logger, pluralize } from '@sourcegraph/common'
@@ -68,12 +68,12 @@ interface HighlightedFileLineRangesProps {
 
 export interface ReferencesPanelProps
     extends SettingsCascadeProps,
-        PlatformContextProps,
-        Pick<CodeIntelligenceProps, 'useCodeIntel'>,
-        TelemetryProps,
-        HoverThresholdProps,
-        ExtensionsControllerProps,
-        HighlightedFileLineRangesProps {
+    PlatformContextProps,
+    Pick<CodeIntelligenceProps, 'useCodeIntel'>,
+    TelemetryProps,
+    HoverThresholdProps,
+    ExtensionsControllerProps,
+    HighlightedFileLineRangesProps {
     /** Whether to show the first loaded reference in mini code view */
     jumpToFirst?: boolean
 
@@ -564,9 +564,9 @@ interface ActiveLocationProps {
 
 interface CollapsibleLocationListProps
     extends ActiveLocationProps,
-        CollapseProps,
-        SearchTokenProps,
-        HighlightedFileLineRangesProps {
+    CollapseProps,
+    SearchTokenProps,
+    HighlightedFileLineRangesProps {
     name: string
     locationsGroup: LocationsGroup
     filter: string | undefined
@@ -583,9 +583,8 @@ const CollapsibleLocationList: React.FunctionComponent<
 
     const repoCount = props.locationsGroup.repoCount
     const locationsCount = props.locationsGroup.locationsCount
-    const quantityLabel = `(${locationsCount} ${pluralize('item', locationsCount)}${
-        repoCount > 1 ? ` from ${repoCount} repositories` : ''
-    } displayed${props.hasMore ? ', more available' : ''})`
+    const quantityLabel = `(${locationsCount} ${pluralize('item', locationsCount)}${repoCount > 1 ? ` from ${repoCount} repositories` : ''
+        } displayed${props.hasMore ? ', more available' : ''})`
 
     return (
         <Collapse isOpen={isOpen} onOpenChange={isOpen => props.handleOpenChange(props.name, isOpen)}>
@@ -686,14 +685,14 @@ function parseSideBlobProps(
 const CollapsibleRepoLocationGroup: React.FunctionComponent<
     React.PropsWithChildren<
         ActiveLocationProps &
-            CollapseProps &
-            SearchTokenProps &
-            HighlightedFileLineRangesProps & {
-                filter: string | undefined
-                locations: LocationsGroupedByRepo
-                openByDefault: boolean
-                activeURL: string
-            }
+        CollapseProps &
+        SearchTokenProps &
+        HighlightedFileLineRangesProps & {
+            filter: string | undefined
+            locations: LocationsGroupedByRepo
+            openByDefault: boolean
+            activeURL: string
+        }
     >
 > = ({
     locations,
@@ -707,60 +706,60 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
     fetchHighlightedFileLineRanges,
     activeURL,
 }) => {
-    const repoName = locations.repoName
-    const open = isOpen(repoName) ?? openByDefault
+        const repoName = locations.repoName
+        const open = isOpen(repoName) ?? openByDefault
 
-    return (
-        <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(repoName, isOpen)}>
-            <div className={styles.repoLocationGroup}>
-                <CollapseHeader
-                    as={Button}
-                    aria-expanded={open}
-                    aria-label={`Repository ${repoName}`}
-                    type="button"
-                    className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
-                >
-                    <Icon aria-hidden="true" svgPath={open ? mdiChevronDown : mdiChevronRight} />
-                    <small>
-                        <span className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}>
-                            {displayRepoName(repoName)}
-                        </span>
-                    </small>
-                </CollapseHeader>
+        return (
+            <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(repoName, isOpen)}>
+                <div className={styles.repoLocationGroup}>
+                    <CollapseHeader
+                        as={Button}
+                        aria-expanded={open}
+                        aria-label={`Repository ${repoName}`}
+                        type="button"
+                        className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
+                    >
+                        <Icon aria-hidden="true" svgPath={open ? mdiChevronDown : mdiChevronRight} />
+                        <small>
+                            <span className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}>
+                                {displayRepoName(repoName)}
+                            </span>
+                        </small>
+                    </CollapseHeader>
 
-                <CollapsePanel id={repoName}>
-                    {locations.perFileGroups.map(group => (
-                        <CollapsibleLocationGroup
-                            key={group.path + repoName}
-                            activeURL={activeURL}
-                            searchToken={searchToken}
-                            repoName={repoName}
-                            group={group}
-                            isActiveLocation={isActiveLocation}
-                            setActiveLocation={setActiveLocation}
-                            filter={filter}
-                            handleOpenChange={(id, isOpen) => handleOpenChange(repoName + id, isOpen)}
-                            isOpen={id => isOpen(repoName + id)}
-                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                        />
-                    ))}
-                </CollapsePanel>
-            </div>
-        </Collapse>
-    )
-}
+                    <CollapsePanel id={repoName}>
+                        {locations.perFileGroups.map(group => (
+                            <CollapsibleLocationGroup
+                                key={group.path + repoName}
+                                activeURL={activeURL}
+                                searchToken={searchToken}
+                                repoName={repoName}
+                                group={group}
+                                isActiveLocation={isActiveLocation}
+                                setActiveLocation={setActiveLocation}
+                                filter={filter}
+                                handleOpenChange={(id, isOpen) => handleOpenChange(repoName + id, isOpen)}
+                                isOpen={id => isOpen(repoName + id)}
+                                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                            />
+                        ))}
+                    </CollapsePanel>
+                </div>
+            </Collapse>
+        )
+    }
 
 const CollapsibleLocationGroup: React.FunctionComponent<
     React.PropsWithChildren<
         ActiveLocationProps &
-            CollapseProps &
-            SearchTokenProps &
-            HighlightedFileLineRangesProps & {
-                repoName: string
-                group: LocationsGroupedByFile
-                filter: string | undefined
-                activeURL: string
-            }
+        CollapseProps &
+        SearchTokenProps &
+        HighlightedFileLineRangesProps & {
+            repoName: string
+            group: LocationsGroupedByFile
+            filter: string | undefined
+            activeURL: string
+        }
     >
 > = ({
     repoName,
@@ -772,34 +771,39 @@ const CollapsibleLocationGroup: React.FunctionComponent<
     handleOpenChange,
     fetchHighlightedFileLineRanges,
 }) => {
-    // On the first load, update the scroll position towards the active
-    // location.  Without this behavior, the scroll position points at the top
-    // of the reference panel when reloading the page or going back/forward in
-    // the browser history.
-    useLayoutEffect(() => {
-        const activeLocationElement = document.querySelector('.' + styles.locationActive)
-        if (activeLocationElement) {
-            activeLocationElement.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' })
+        // On the first load, update the scroll position towards the active
+        // location.  Without this behavior, the scroll position points at the top
+        // of the reference panel when reloading the page or going back/forward in
+        // the browser history.
+        useLayoutEffect(() => {
+            const activeLocationElement = document.querySelector('.' + styles.locationActive)
+            if (activeLocationElement) {
+                activeLocationElement.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' })
+            }
+        }, [])
+        let highlighted = [group.path]
+        if (filter !== undefined) {
+            highlighted = group.path.split(filter)
         }
-    }, [])
-    let highlighted = [group.path]
-    if (filter !== undefined) {
-        highlighted = group.path.split(filter)
-    }
 
-    const { repo, commitID, file } = group.locations[0]
-    const ranges = useMemo(
-        () =>
-            group.locations.map(location => ({
-                startLine: location.range?.start.line ?? 0,
-                endLine: (location.range?.end.line ?? 0) + 1,
-            })),
-        [group.locations]
-    )
+        const { repo, commitID, file } = group.locations[0]
+        const ranges = useMemo(
+            () =>
+                group.locations.map(location => ({
+                    startLine: location.range?.start.line ?? 0,
+                    endLine: (location.range?.end.line ?? 0) + 1,
+                })),
+            [group.locations]
+        )
 
-    const fetchHighlightedFileRangeLines = useCallback(
-        (startLine: number, endLine: number): Observable<string[]> =>
-            fetchHighlightedFileLineRanges(
+        const [highlightedRanges, setHighlightedRanges] = useState<string[][] | undefined>(undefined)
+        const [hasBeenVisible, setHasBeenVisible] = useState(false)
+        const onVisible = useCallback(() => {
+            if (hasBeenVisible) {
+                return
+            }
+            setHasBeenVisible(true)
+            const subscription = fetchHighlightedFileLineRanges(
                 {
                     repoName: repo,
                     commitID,
@@ -809,167 +813,158 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     ranges,
                 },
                 false
-            ).pipe(
-                map(
-                    lines =>
-                        lines[ranges.findIndex(group => group.startLine === startLine && group.endLine === endLine + 1)]
-                )
-            ),
-        [fetchHighlightedFileLineRanges, repo, commitID, file, ranges]
-    )
+            ).subscribe(setHighlightedRanges)
+            return () => subscription.unsubscribe()
+        }, [fetchHighlightedFileLineRanges, repo, commitID, file, ranges, hasBeenVisible])
 
-    const fetchPlainTextFileRangeLines = (location: Location): Observable<string[]> => {
-        const range = location.range
-        if (range !== undefined) {
-            const lineNumber = range.start.line + 1
-            const lineContent = location.lines[range.start.line]
-            const tableLine = `<tr><td class="line" data-line="${lineNumber}"></td><td class="code">${lineContent}</td></tr>`
-            return of([tableLine])
-        }
-        return of([])
+        const open = isOpen(group.path) ?? true
+        const navigate = useNavigate()
+
+        return (
+            <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(group.path, isOpen)}>
+                <div className={styles.locationGroup}>
+                    <CollapseHeader
+                        as={Button}
+                        aria-expanded={open}
+                        type="button"
+                        className={classNames(
+                            'bg-transparent border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100',
+                            styles.locationGroupHeader
+                        )}
+                    >
+                        {open ? (
+                            <Icon aria-hidden={true} svgPath={mdiChevronDown} />
+                        ) : (
+                            <Icon aria-hidden={true} svgPath={mdiChevronRight} />
+                        )}
+                        <small className={styles.locationGroupHeaderFilename}>
+                            <span>
+                                <span
+                                    aria-label={`File path ${group.path}`}
+                                    className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}
+                                >
+                                    {highlighted.length === 2 ? (
+                                        <span>
+                                            {highlighted[0]}
+                                            <mark>{filter}</mark>
+                                            {highlighted[1]}
+                                        </span>
+                                    ) : (
+                                        group.path
+                                    )}{' '}
+                                </span>
+                                <span className={classNames('ml-2 text-muted', styles.cardHeaderSmallText)}>
+                                    ({group.locations.length}{' '}
+                                    {pluralize('occurrence', group.locations.length, 'occurrences')})
+                                </span>
+                            </span>
+                            <Badge small={true} variant="secondary" className="ml-4">
+                                {group.quality}
+                            </Badge>
+                        </small>
+                    </CollapseHeader>
+
+                    <CollapsePanel id={repoName + group.path} className="ml-0">
+                        <VisibilitySensor
+                            onChange={(visible: boolean) => visible && onVisible()}
+                            partialVisibility={true}
+                            offset={{ bottom: -500 }}
+                        >
+                            <div className={styles.locationContainer}>
+                                <ul className="list-unstyled mb-0">
+                                    {group.locations.map((reference, index) => {
+                                        const isActive = isActiveLocation(reference)
+                                        const isFirstInActive =
+                                            isActive && !(index > 0 && isActiveLocation(group.locations[index - 1]))
+                                        const locationActive = isActive ? styles.locationActive : ''
+                                        const clickReference = (event: MouseEvent<HTMLElement>): void => {
+                                            // If anything other than a normal primary click is detected,
+                                            // treat this as a normal link click and let the browser handle
+                                            // it.
+                                            if (
+                                                event.button !== 0 ||
+                                                event.altKey ||
+                                                event.ctrlKey ||
+                                                event.metaKey ||
+                                                event.shiftKey
+                                            ) {
+                                                return
+                                            }
+
+                                            event.preventDefault()
+                                            if (isActive) {
+                                                navigate(locationToUrl(reference))
+                                            } else {
+                                                setActiveLocation(reference)
+                                            }
+                                        }
+                                        const doubleClickReference = (event: MouseEvent<HTMLElement>): void => {
+                                            event.preventDefault()
+                                            navigate(locationToUrl(reference))
+                                        }
+
+                                        const plaintextLines = reference.range
+                                            ? [reference.lines[reference.range.start.line]]
+                                            : []
+
+                                        return (
+                                            <li
+                                                key={reference.url}
+                                                className={classNames('border-0 rounded-0 mb-0', styles.location)}
+                                            >
+                                                {/* eslint-disable-next-line react/forbid-elements */}
+                                                <a
+                                                    data-testid={`reference-item-${group.path}-${index}`}
+                                                    tabIndex={0}
+                                                    onClick={clickReference}
+                                                    onDoubleClick={doubleClickReference}
+                                                    href={reference.url}
+                                                    className={classNames(styles.locationLink, locationActive)}
+                                                >
+                                                    <CodeExcerpt
+                                                        className={styles.locationLinkCodeExcerpt}
+                                                        commitID={reference.commitID}
+                                                        filePath={reference.file}
+                                                        repoName={reference.repo}
+                                                        highlightRanges={[
+                                                            {
+                                                                startLine: reference.range?.start.line ?? 0,
+                                                                startCharacter: reference.range?.start.character ?? 0,
+                                                                endLine: reference.range?.end.line ?? 0,
+                                                                endCharacter: reference.range?.end.character ?? 0,
+                                                            },
+                                                        ]}
+                                                        startLine={reference.range?.start.line ?? 0}
+                                                        endLine={reference.range?.end.line ?? 0}
+                                                        plaintextLines={plaintextLines}
+                                                        highlightedLines={highlightedRanges?.[index]}
+                                                    />
+                                                    {isFirstInActive ? (
+                                                        <span className={classNames('ml-2', styles.locationActiveIcon)}>
+                                                            <Tooltip
+                                                                content="Click again to open line in full view"
+                                                                placement="left"
+                                                            >
+                                                                <Icon
+                                                                    aria-label="Open line in full view"
+                                                                    size="sm"
+                                                                    svgPath={mdiOpenInNew}
+                                                                />
+                                                            </Tooltip>
+                                                        </span>
+                                                    ) : null}
+                                                </a>
+                                            </li>
+                                        )
+                                    })}
+                                </ul>
+                            </div>
+                        </VisibilitySensor>
+                    </CollapsePanel>
+                </div>
+            </Collapse>
+        )
     }
-
-    const open = isOpen(group.path) ?? true
-    const navigate = useNavigate()
-
-    return (
-        <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(group.path, isOpen)}>
-            <div className={styles.locationGroup}>
-                <CollapseHeader
-                    as={Button}
-                    aria-expanded={open}
-                    type="button"
-                    className={classNames(
-                        'bg-transparent border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100',
-                        styles.locationGroupHeader
-                    )}
-                >
-                    {open ? (
-                        <Icon aria-hidden={true} svgPath={mdiChevronDown} />
-                    ) : (
-                        <Icon aria-hidden={true} svgPath={mdiChevronRight} />
-                    )}
-                    <small className={styles.locationGroupHeaderFilename}>
-                        <span>
-                            <span
-                                aria-label={`File path ${group.path}`}
-                                className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}
-                            >
-                                {highlighted.length === 2 ? (
-                                    <span>
-                                        {highlighted[0]}
-                                        <mark>{filter}</mark>
-                                        {highlighted[1]}
-                                    </span>
-                                ) : (
-                                    group.path
-                                )}{' '}
-                            </span>
-                            <span className={classNames('ml-2 text-muted', styles.cardHeaderSmallText)}>
-                                ({group.locations.length}{' '}
-                                {pluralize('occurrence', group.locations.length, 'occurrences')})
-                            </span>
-                        </span>
-                        <Badge small={true} variant="secondary" className="ml-4">
-                            {group.quality}
-                        </Badge>
-                    </small>
-                </CollapseHeader>
-
-                <CollapsePanel id={repoName + group.path} className="ml-0">
-                    <div className={styles.locationContainer}>
-                        <ul className="list-unstyled mb-0">
-                            {group.locations.map((reference, index) => {
-                                const isActive = isActiveLocation(reference)
-                                const isFirstInActive =
-                                    isActive && !(index > 0 && isActiveLocation(group.locations[index - 1]))
-                                const locationActive = isActive ? styles.locationActive : ''
-                                const clickReference = (event: MouseEvent<HTMLElement>): void => {
-                                    // If anything other than a normal primary click is detected,
-                                    // treat this as a normal link click and let the browser handle
-                                    // it.
-                                    if (
-                                        event.button !== 0 ||
-                                        event.altKey ||
-                                        event.ctrlKey ||
-                                        event.metaKey ||
-                                        event.shiftKey
-                                    ) {
-                                        return
-                                    }
-
-                                    event.preventDefault()
-                                    if (isActive) {
-                                        navigate(locationToUrl(reference))
-                                    } else {
-                                        setActiveLocation(reference)
-                                    }
-                                }
-                                const doubleClickReference = (event: MouseEvent<HTMLElement>): void => {
-                                    event.preventDefault()
-                                    navigate(locationToUrl(reference))
-                                }
-
-                                return (
-                                    <li
-                                        key={reference.url}
-                                        className={classNames('border-0 rounded-0 mb-0', styles.location)}
-                                    >
-                                        {/* eslint-disable-next-line react/forbid-elements */}
-                                        <a
-                                            data-testid={`reference-item-${group.path}-${index}`}
-                                            tabIndex={0}
-                                            onClick={clickReference}
-                                            onDoubleClick={doubleClickReference}
-                                            href={reference.url}
-                                            className={classNames(styles.locationLink, locationActive)}
-                                        >
-                                            <CodeExcerpt
-                                                className={styles.locationLinkCodeExcerpt}
-                                                commitID={reference.commitID}
-                                                filePath={reference.file}
-                                                repoName={reference.repo}
-                                                highlightRanges={[
-                                                    {
-                                                        startLine: reference.range?.start.line ?? 0,
-                                                        startCharacter: reference.range?.start.character ?? 0,
-                                                        endLine: reference.range?.end.line ?? 0,
-                                                        endCharacter: reference.range?.end.character ?? 0,
-                                                    },
-                                                ]}
-                                                startLine={reference.range?.start.line ?? 0}
-                                                endLine={reference.range?.end.line ?? 0}
-                                                fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
-                                                visibilityOffset={{ bottom: 0 }}
-                                                fetchPlainTextFileRangeLines={(): Observable<string[]> =>
-                                                    fetchPlainTextFileRangeLines(reference)
-                                                }
-                                            />
-                                            {isFirstInActive ? (
-                                                <span className={classNames('ml-2', styles.locationActiveIcon)}>
-                                                    <Tooltip
-                                                        content="Click again to open line in full view"
-                                                        placement="left"
-                                                    >
-                                                        <Icon
-                                                            aria-label="Open line in full view"
-                                                            size="sm"
-                                                            svgPath={mdiOpenInNew}
-                                                        />
-                                                    </Tooltip>
-                                                </span>
-                                            ) : null}
-                                        </a>
-                                    </li>
-                                )
-                            })}
-                        </ul>
-                    </div>
-                </CollapsePanel>
-            </div>
-        </Collapse>
-    )
-}
 
 const LoadingCodeIntel: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <>
@@ -1005,15 +1000,15 @@ function locationToUrl(location: Location): string {
         commitID: location.commitID,
         range: location.range
             ? {
-                  start: {
-                      line: location.range.start.line + 1,
-                      character: location.range.start.character + 1,
-                  },
-                  end: {
-                      line: location.range.end.line + 1,
-                      character: location.range.end.character + 1,
-                  },
-              }
+                start: {
+                    line: location.range.start.line + 1,
+                    character: location.range.start.character + 1,
+                },
+                end: {
+                    line: location.range.end.line + 1,
+                    character: location.range.end.character + 1,
+                },
+            }
             : undefined,
     })
 }

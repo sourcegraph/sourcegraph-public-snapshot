@@ -1854,6 +1854,7 @@ ts_project(
         "//:node_modules/react-router-dom",
         "//:node_modules/react-spring",
         "//:node_modules/react-sticky-box",
+        "//:node_modules/react-visibility-sensor",
         "//:node_modules/recharts",
         "//:node_modules/rxjs",
         "//:node_modules/semver",

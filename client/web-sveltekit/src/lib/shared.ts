@@ -39,6 +39,8 @@ export {
     type SymbolMatch,
     type PathMatch,
     type ContentMatch,
+    type ChunkMatch,
+    type LineMatch,
     type SearchMatch,
     type OwnerMatch,
     type TeamMatch,
@@ -48,15 +50,14 @@ export {
     type Range,
     type Filter,
 } from '@sourcegraph/shared/src/search/stream'
-export type {
-    MatchItem,
-    MatchGroupMatch,
-    MatchGroup,
-    PerFileResultRanking,
-    RankingResult,
+export {
+    type MatchItem,
+    type MatchGroupMatch,
+    type MatchGroup,
+    rankPassthrough,
+    rankByLine,
+    truncateGroups,
 } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
-export { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
-export { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
 export { type AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'

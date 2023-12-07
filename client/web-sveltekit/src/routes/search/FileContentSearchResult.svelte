@@ -17,7 +17,7 @@
         toPositionOrRangeQueryParameter,
     } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import { getFileMatchUrl, type ContentMatch, ZoektRanking, LineRanking } from '$lib/shared'
+    import { getFileMatchUrl, type ContentMatch } from '$lib/shared'
 
     import SearchResult from './SearchResult.svelte'
     import { getSearchResultsContext } from './searchResultsContext'
@@ -34,13 +34,15 @@
     $: contextLines = $settings?.['search.contextLines'] ?? DEFAULT_CONTEXT_LINES
     $: ranking =
         $settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING
-            ? new LineRanking(MAX_LINE_MATCHES)
-            : new ZoektRanking(MAX_ZOEKT_RESULTS)
-    $: ({ expandedMatchGroups, collapsedMatchGroups, collapsible, hiddenMatchesCount } = rankContentMatch(
+            ? rankByLine
+            : rankPassthrough
+    $: ({ expandedMatchGroups, collapsedMatchGroups, hiddenMatchesCount } = rankContentMatch(
         result,
         ranking,
+        MAX_ZOEKT_RESULTS, // TODO: rename this to be sensical
         contextLines
     ))
+    $: collapsible = hiddenMatchesCount > 0
     $: fileURL = getFileMatchUrl(result)
 
     const searchResultContext = getSearchResultsContext()

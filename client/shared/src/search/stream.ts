@@ -95,7 +95,7 @@ export interface LineMatch {
     offsetAndLengths: number[][]
 }
 
-interface ChunkMatch {
+export interface ChunkMatch {
     content: string
     contentStart: Location
     ranges: Range[]
@@ -126,7 +126,6 @@ type MarkdownText = string
 /**
  * Our batch based client requests generic fields from GraphQL to represent repo and commit/diff matches.
  * We currently are only using it for commit. To simplify the PoC we are keeping this interface for commits.
- *
  * @see GQL.IGenericSearchResultInterface
  */
 export interface CommitMatch {
@@ -236,17 +235,17 @@ export interface Skipped {
      * - display :: we hit the display limit, so we stopped sending results from the backend.
      */
     reason:
-        | 'document-match-limit'
-        | 'shard-match-limit'
-        | 'repository-limit'
-        | 'shard-timedout'
-        | 'repository-cloning'
-        | 'repository-missing'
-        | 'backend-missing'
-        | 'excluded-fork'
-        | 'excluded-archive'
-        | 'display'
-        | 'error'
+    | 'document-match-limit'
+    | 'shard-match-limit'
+    | 'repository-limit'
+    | 'shard-timedout'
+    | 'repository-cloning'
+    | 'repository-missing'
+    | 'backend-missing'
+    | 'excluded-fork'
+    | 'excluded-archive'
+    | 'display'
+    | 'error'
     /**
      * A short message. eg 1,200 timed out.
      */
@@ -566,7 +565,6 @@ function initiateSearchStream(
 /**
  * Initiates a streaming search.
  * This is a type safe wrapper around Sourcegraph's streaming search API (using Server Sent Events). The observable will emit each event returned from the backend.
- *
  * @param queryObservable is an observables that resolves to a query string
  * @param options contains the search query and the necessary context to perform the search (version, patternType, caseSensitive, etc.)
  * @param messageHandlers provide handler functions for each possible `SearchEvent` type
