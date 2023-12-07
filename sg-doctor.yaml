@@ -1,20 +1,37 @@
 diagnostics:
   general:
-      name: current path
+    - name: current env
+      cmd: env
+    - name: current path
       cmd: pwd
-      name: current commit
+    - name: current branch
       cmd: git rev-parse --abbrev-ref HEAD
+    - cmd: show current commit
+      name: git rev-parse HEAD
+    - name: os kernel
+      cmd: uname -s
   bazel:
-    name: architecture
-      cmd: file -L bazel
-    path:
+    - name: architecture
+      cmd: file -L $(which bazel)
+    - name: where is bazel
       cmd: which bazel
-    info:
+    - name: bazel info
       cmd: bazel info
   go:
-    architecture:
-      cmd: file -L go
-    path:
+    - name: architecture
+      cmd: file -L $(which go)
+    - name: where is go
       cmd: which go
-    version:
+    - name: version of go
       cmd: go version
+  node:
+    - name: architecture
+      cmd: file -L $(which node)
+    - name: where is node
+      cmd: which node
+    - name: version of node
+      cmd: node --version
+    - name: version of pnpm
+      cmd: pnpm --version
+    - name: where is pnpm
+      cmd: which pnpm
