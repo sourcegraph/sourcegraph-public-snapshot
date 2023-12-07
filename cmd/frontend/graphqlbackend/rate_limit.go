@@ -130,7 +130,10 @@ func EstimateQueryCost(query string, variables map[string]any) (totalCost *Query
 		}
 		totalCost.FieldCount += cost.FieldCount
 		totalCost.AliasCount += cost.AliasCount
-		totalCost.HighestDuplicateFieldCount += cost.HighestDuplicateFieldCount
+
+		if cost.HighestDuplicateFieldCount > totalCost.HighestDuplicateFieldCount {
+			totalCost.HighestDuplicateFieldCount = cost.HighestDuplicateFieldCount
+		}
 		totalCost.UniqueFieldCount += cost.UniqueFieldCount
 		if totalCost.MaxDepth < cost.MaxDepth {
 			totalCost.MaxDepth = cost.MaxDepth
