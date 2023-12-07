@@ -62,6 +62,13 @@ export function esbuildBuildOptions(ENVIRONMENT_CONFIG: EnvironmentConfig): esbu
 
                           // Misc.
                           recharts: '/dev/null',
+
+                          // TODO(sqs): force use of same version when developing on opencodegraph because `pnpm link` breaks
+                          '@codemirror/state': path.join(ROOT_PATH, 'node_modules/@codemirror/state'),
+                          '@codemirror/view': path.join(ROOT_PATH, 'node_modules/@codemirror/view'),
+                          react: path.join(ROOT_PATH, 'node_modules/react'),
+                          'react-dom': path.join(ROOT_PATH, 'node_modules/react-dom'),
+                          'react-dom/client': path.join(ROOT_PATH, 'node_modules/react-dom/client'),
                       }
                     : null),
             }),
