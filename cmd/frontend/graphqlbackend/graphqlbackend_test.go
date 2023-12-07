@@ -216,7 +216,7 @@ func TestResolverTo(t *testing.T) {
 		typ := reflect.TypeOf(r)
 		t.Run(typ.Name(), func(t *testing.T) {
 			for i := 0; i < typ.NumMethod(); i++ {
-				if name := typ.Method(i).Name; strings.HasPrefix(name, "To") {
+				if name := typ.Method(i).Name; strings.HasPrefix(name, "To") && name != "Topics" {
 					reflect.ValueOf(r).MethodByName(name).Call(nil)
 				}
 			}

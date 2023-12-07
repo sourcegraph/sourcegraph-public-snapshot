@@ -497,6 +497,7 @@ go_test(
         "//internal/extsvc",
         "//internal/extsvc/gerrit",
         "//internal/extsvc/github",
+        "//internal/extsvc/gitlab",
         "//internal/featureflag",
         "//internal/fileutil",
         "//internal/gitserver",

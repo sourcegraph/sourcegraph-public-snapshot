@@ -461,6 +461,7 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 		repoEvent.Archived = r.Archived
 		repoEvent.Private = r.Private
 		repoEvent.Metadata = r.KeyValuePairs
+		repoEvent.Topics = r.Topics
 	}
 
 	return repoEvent

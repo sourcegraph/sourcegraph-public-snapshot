@@ -160,6 +160,7 @@ export interface RepositoryMatch {
     branches?: string[]
     descriptionMatches?: Range[]
     metadata?: Record<string, string | undefined>
+    topics?: string[]
 }
 
 export type OwnerMatch = PersonMatch | TeamMatch
