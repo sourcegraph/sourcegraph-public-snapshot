@@ -46,6 +46,8 @@ const logEvent = (eventName: string, type?: string, source?: string): void =>
 
 const logPageView = (pageTitle: string): void => eventLogger.logPageView(pageTitle)
 
+/* eslint-disable  @sourcegraph/sourcegraph/check-help-links */
+
 export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authenticatedUser, context }) => {
     const navigate = useNavigate()
     const location = useLocation()
