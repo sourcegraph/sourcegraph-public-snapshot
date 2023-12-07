@@ -202,11 +202,11 @@ func (r *externalServiceResolver) WebhookURL(ctx context.Context) (*string, erro
 }
 
 func (r *externalServiceResolver) Creator(ctx context.Context) (*UserResolver, error) {
-	if r.externalService.CreatorID <= 0 {
+	if *r.externalService.CreatorID <= 0 {
 		return nil, nil
 	}
 
-	user, err := r.db.Users().GetByID(ctx, r.externalService.CreatorID)
+	user, err := r.db.Users().GetByID(ctx, *r.externalService.CreatorID)
 	if err != nil {
 		if database.IsUserNotFoundErr(err) {
 			return nil, nil
@@ -218,11 +218,11 @@ func (r *externalServiceResolver) Creator(ctx context.Context) (*UserResolver, e
 }
 
 func (r *externalServiceResolver) LastUpdater(ctx context.Context) (*UserResolver, error) {
-	if r.externalService.LastUpdaterID <= 0 {
+	if *r.externalService.LastUpdaterID <= 0 {
 		return nil, nil
 	}
 
-	user, err := r.db.Users().GetByID(ctx, r.externalService.LastUpdaterID)
+	user, err := r.db.Users().GetByID(ctx, *r.externalService.LastUpdaterID)
 	if err != nil {
 		if database.IsUserNotFoundErr(err) {
 			return nil, nil

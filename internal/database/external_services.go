@@ -760,8 +760,8 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&keyID,
 			&dbutil.NullBool{B: svcs[i].HasWebhooks},
 			&svcs[i].CodeHostID,
-			&dbutil.NullInt32{N: &svcs[i].CreatorID},
-			&dbutil.NullInt32{N: &svcs[i].LastUpdaterID},
+			&svcs[i].CreatorID,
+			&svcs[i].LastUpdaterID,
 		)
 		if err != nil {
 			return err
@@ -1547,8 +1547,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			keyID           string
 			hasWebhooks     sql.NullBool
 			tokenExpiresAt  sql.NullTime
-			creatorID       sql.NullInt32
-			lastUpdaterID   sql.NullInt32
 		)
 		if err := rows.Scan(
 			&h.ID,
@@ -1566,8 +1564,8 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			&hasWebhooks,
 			&tokenExpiresAt,
 			&h.CodeHostID,
-			&creatorID,
-			&lastUpdaterID,
+			&h.CreatorID,
+			&h.LastUpdaterID,
 		); err != nil {
 			return nil, err
 		}
@@ -1586,12 +1584,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		}
 		if tokenExpiresAt.Valid {
 			h.TokenExpiresAt = &tokenExpiresAt.Time
-		}
-		if creatorID.Valid {
-			h.CreatorID = creatorID.Int32
-		}
-		if lastUpdaterID.Valid {
-			h.LastUpdaterID = lastUpdaterID.Int32
 		}
 		h.Config = extsvc.NewEncryptedConfig(encryptedConfig, keyID, e.getEncryptionKey())
 
