@@ -82,7 +82,7 @@ type ThresholdAggregation struct {
 	Duration     string
 }
 
-// ResponseCodeMetric for alerting when the numer of a certain response code exceeds a threshold
+// ResponseCodeMetric for alerting when the number of a certain response code exceeds a threshold
 //
 // Must specify either `Code` (e.g. 404) or `CodeClass` (e.g. 4xx)
 //
