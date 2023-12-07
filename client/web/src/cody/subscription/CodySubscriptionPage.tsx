@@ -3,6 +3,7 @@ import type { ReactElement } from 'react'
 
 import { mdiTrendingUp } from '@mdi/js'
 import classNames from 'classnames'
+import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Icon, PageHeader, Button, H1, H2, H3, Text, ButtonLink, useSearchParameters, H4 } from '@sourcegraph/wildcard'
@@ -45,6 +46,14 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     const [isEnabled] = useFeatureFlag('cody-pro', false)
     const [showUpgradeToPro, setShowUpgradeToPro] = useState<boolean>(false)
     const [showCancelPro, setShowCancelPro] = useState<boolean>(false)
+
+    const navigate = useNavigate()
+
+    useEffect(() => {
+        if (!!data && !data?.currentUser) {
+            navigate('/sign-in?returnTo=/cody/subscription')
+        }
+    }, [data, navigate])
 
     if (!isCodyEnabled() || !isSourcegraphDotCom || !isEnabled || !data?.currentUser || !authenticatedUser) {
         return null
@@ -225,6 +234,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 className="flex-1 mt-3"
                                 variant="secondary"
                                 outline={true}
+                                to="https://sourcegraph.com/contact/request-info?utm_source=cody_subscription_page"
+                                target="_blank"
                                 onClick={() => {
                                     eventLogger.log(EventName.CODY_SUBSCRIPTION_PLAN_CLICKED, { tier: 'enterprise' })
                                 }}
