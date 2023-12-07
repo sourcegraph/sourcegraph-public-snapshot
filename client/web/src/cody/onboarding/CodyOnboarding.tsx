@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react'
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { Modal, H1, H2, H3, Text, Button, useSearchParameters } from '@sourcegraph/wildcard'
+import { Modal, H5, H2, H3, Text, Button, useSearchParameters } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
-import { CodyColorIcon } from '../chat/CodyPageIcon'
 
+import { JetBrainsInstructions } from './instructions/JetBrains'
 import { VSCodeInstructions } from './instructions/VsCode'
 
 import styles from './CodyOnboarding.module.scss'
@@ -17,31 +17,37 @@ export interface IEditor {
     icon: string
     name: string
     publisher: string
+    releaseStage: string
     instructions?: React.FC<{ onBack?: () => void; onClose: () => void; showStep?: number }>
 }
 
 export const editorGroups: IEditor[][] = [
     [
         {
-            icon: 'VSCode',
+            icon: 'VsCode',
             name: 'VS Code',
             publisher: 'Microsoft',
+            releaseStage: 'Stable',
             instructions: VSCodeInstructions,
         },
         {
             icon: 'IntelliJ',
             name: 'IntelliJ IDEA',
             publisher: 'JetBrains',
+            releaseStage: 'Beta',
+            instructions: JetBrainsInstructions,
         },
         {
-            icon: 'Neovim',
+            icon: 'NeoVim',
             name: 'Neovim',
             publisher: 'Neovim Team',
+            releaseStage: 'Experimental',
         },
         {
             icon: 'AndroidStudio',
             name: 'Android Studio',
             publisher: 'Google',
+            releaseStage: 'Beta',
         },
     ],
     [
@@ -49,21 +55,25 @@ export const editorGroups: IEditor[][] = [
             icon: 'PhpStorm',
             name: 'PhpStorm ',
             publisher: 'JetBrains',
+            releaseStage: 'Beta',
         },
         {
             icon: 'PyCharm',
             name: 'PyCharm',
             publisher: 'Jetbrains',
+            releaseStage: 'Beta',
         },
         {
             icon: 'WebStorm',
             name: 'WebStorm',
             publisher: 'JetBrains',
+            releaseStage: 'Beta',
         },
         {
             icon: 'RubyMine',
             name: 'RubyMine',
             publisher: 'JetBrains',
+            releaseStage: 'Beta',
         },
     ],
     [
@@ -71,11 +81,13 @@ export const editorGroups: IEditor[][] = [
             icon: 'GoLand',
             name: 'GoLand',
             publisher: 'JetBrains',
+            releaseStage: 'Beta',
         },
         {
             icon: 'Emacs',
             name: 'Emacs',
             publisher: 'Free Software Foundation',
+            releaseStage: 'Coming Soon',
         },
     ],
 ]
@@ -111,12 +123,21 @@ function WelcomeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
     }, [pro])
 
     return (
-        <div className="d-flex flex-column align-items-center">
-            <CodyColorIcon width={60} height={60} className="mb-4" />
-            <H1>Welcome {pro ? 'to Cody Pro Trial' : 'to Cody by Sourcegraph!'}</H1>
-            <Text className="mb-4 pb-4">Let's walk through a few quick steps to get you started with Cody.</Text>
-            <Button onClick={onNext} variant="primary" size="sm">
-                Let's Start!
+        <div className={classNames('d-flex flex-column align-items-center p-5')}>
+            <video width="180" className={classNames('mb-5', styles.welcomeVideo)} autoPlay={true} muted={true}>
+                <source src="https://storage.googleapis.com/sourcegraph-assets/codyWelcomeAnim.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+            </video>
+            <Text className={classNames('mb-4 pb-4', styles.fadeIn, styles.fadeSecond, styles.welcomeSubtitle)}>
+                Ready to breeze through the basics and get comfortable with Cody{pro ? ' to Cody Pro Trial' : ''}?
+            </Text>
+            <Button
+                onClick={onNext}
+                variant="primary"
+                size="lg"
+                className={classNames(styles.fadeIn, styles.fadeThird)}
+            >
+                Sure, let's dive in!
             </Button>
         </div>
     )
@@ -131,7 +152,7 @@ function PurposeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
         <>
             <div className="border-bottom pb-3 mb-3">
                 <H2 className="mb-1">What are you using Cody for?</H2>
-                <Text className="mb-0" size="small">
+                <Text className="mb-0 text-muted" size="small">
                     This will allow us to understand our audience better and guide your journey
                 </Text>
             </div>
@@ -203,7 +224,7 @@ function EditorStep({
         <>
             <div className="border-bottom pb-3 mb-3">
                 <H2 className="mb-1">Choose your editor</H2>
-                <Text className="mb-0" size="small">
+                <Text className="mb-0 text-muted" size="small">
                     Most of Cody experience happens in the IDE. Let's get that set up.
                 </Text>
             </div>
@@ -218,7 +239,7 @@ function EditorStep({
                         {group.map((editor, index) => (
                             <div
                                 key={index}
-                                className={classNames('d-flex flex-column flex-1 p-3 cursor-pointer', {
+                                className={classNames('d-flex flex-column flex-1 p-3 cursor-pointer', styles.ideGrid, {
                                     'border-left': index !== 0,
                                 })}
                                 role="button"
@@ -239,13 +260,13 @@ function EditorStep({
                                     setEditor(editor)
                                 }}
                             >
-                                <div className="d-flex">
+                                <div className="d-flex align-items-center">
                                     <div>
                                         <img
                                             alt={editor.name}
-                                            src={`https://storage.googleapis.com/sourcegraph-assets/cody-ide-icons/${editor.icon}.png`}
+                                            src={`https://storage.googleapis.com/sourcegraph-assets/ideIcons/ideIcon${editor.icon}.svg`}
                                             width={34}
-                                            className="mr-2"
+                                            className="mr-3"
                                         />
                                     </div>
                                     <div>
@@ -253,6 +274,7 @@ function EditorStep({
                                             {editor.publisher}
                                         </Text>
                                         <Text className={classNames('mb-0', styles.ideName)}>{editor.name}</Text>
+                                        <H5 className={styles.releaseStage}>{editor.releaseStage}</H5>
                                     </div>
                                 </div>
                             </div>

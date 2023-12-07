@@ -44,6 +44,20 @@ js_library(
     ],
 )
 
+js_library(
+    name = "opencodegraph",
+    srcs = [
+        "opencodegraph.schema.json",
+    ],
+)
+
+js_library(
+    name = "opencodegraph-protocol",
+    srcs = [
+        "opencodegraph-protocol.schema.json",
+    ],
+)
+
 go_library(
     name = "schema",
     srcs = [
@@ -79,6 +93,8 @@ go_library(
         "site.schema.json",
         "azuredevops.schema.json",
         "localgit.schema.json",
+        "opencodegraph.schema.json",
+        "opencodegraph-protocol.schema.json",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/schema",
     visibility = ["//visibility:public"],
