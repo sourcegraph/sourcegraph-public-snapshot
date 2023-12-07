@@ -548,6 +548,10 @@ func (r *schemaResolver) refreshGatewayRateLimits(ctx context.Context) error {
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", gatewayToken))
 
 	resp, err := httpcli.UncachedExternalDoer.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+	if err != nil {
+		return err
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		return errors.New("errored refreshing rate limits from Cody Gateway")
