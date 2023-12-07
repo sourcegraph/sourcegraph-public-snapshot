@@ -94,7 +94,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         <div>
                             <H2>My Subscription</H2>
                             <Text className="text-muted mb-0">
-                                You are on a {codyProEnabled ? 'pro' : 'community'} tier.
+                                You are on the Cody {codyProEnabled ? 'Pro' : 'Free'} tier.
                             </Text>
                         </div>
                         {codyProEnabled ? (
@@ -117,7 +117,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             {codyProEnabled ? (
                                 <ProTierIcon />
                             ) : (
-                                <Text className={classNames(styles.planName, 'mb-0')}>Community</Text>
+                                <Text className={classNames(styles.planName, 'mb-0')}>Free</Text>
                             )}
                             <Text className="text-muted mb-0" size="small">
                                 tier
@@ -178,7 +178,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     <LoadingSpinner />
                                 )}
                             </div>
-                            <H4 className="mb-0">Chat Messages</H4>
+                            <H4 className="mb-0">Chats and Commands used</H4>
                             {!codyProEnabled && (
                                 <Text className="text-muted mb-0" size="small">
                                     this month
