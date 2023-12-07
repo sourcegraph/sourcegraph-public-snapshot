@@ -218,11 +218,15 @@ func buildFilter(config *Config) string {
 	sort.Strings(filters)
 
 	if config.ServiceKind == spec.ServiceKindService {
-		filters = append(filters, `resource.type = "cloud_run_revision"`)
-		filters = append(filters, fmt.Sprintf(`resource.labels.service_name = "%s"`, config.ServiceName))
+		filters = append(filters,
+			`resource.type = "cloud_run_revision"`,
+			fmt.Sprintf(`resource.labels.service_name = "%s"`, config.ServiceName),
+		)
 	} else if config.ServiceKind == spec.ServiceKindJob {
-		filters = append(filters, `resource.type = "cloud_run_job"`)
-		filters = append(filters, fmt.Sprintf(`resource.labels.job_name = "%s"`, config.ServiceName))
+		filters = append(filters,
+			`resource.type = "cloud_run_job"`,
+			fmt.Sprintf(`resource.labels.job_name = "%s"`, config.ServiceName),
+		)
 	}
 
 	return strings.Join(filters, " AND ")
