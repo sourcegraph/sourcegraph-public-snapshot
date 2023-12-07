@@ -54,7 +54,7 @@ func (r *Renderer) RenderEnvironment(
 	svc spec.ServiceSpec,
 	build spec.BuildSpec,
 	env spec.EnvironmentSpec,
-	mntrng spec.MonitoringSpec,
+	monitoringSpec spec.MonitoringSpec,
 ) (*CDKTF, error) {
 	terraformVersion := terraform.Version
 	stackSetOptions := []stack.NewStackOption{
@@ -129,7 +129,7 @@ func (r *Renderer) RenderEnvironment(
 	if _, err := monitoring.NewStack(stacks, monitoring.Variables{
 		ProjectID:  *projectOutput.Project.ProjectId(),
 		Service:    svc,
-		Monitoring: mntrng,
+		Monitoring: monitoringSpec,
 		MaxCount:   maxCount,
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create monitoring stack")
