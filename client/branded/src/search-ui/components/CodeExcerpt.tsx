@@ -77,13 +77,16 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     className,
     onCopy,
 }) => {
-    const [plainTextBlobLinesOrError, setPlainTextBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
-    const [highlightedBlobLinesOrError, setHighlightedBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
+    const [plainTextBlobLinesOrError, setPlainTextBlobLinesOrError] = useState<string[] | ErrorLike | undefined>(
+        blobLines
+    )
+    const [highlightedBlobLinesOrError, setHighlightedBlobLinesOrError] = useState<string[] | ErrorLike | undefined>(undefined)
     const [isVisible, setIsVisible] = useState(false)
 
-    const blobLinesOrError = fetchPlainTextFileRangeLines
-        ? highlightedBlobLinesOrError || plainTextBlobLinesOrError
-        : highlightedBlobLinesOrError
+    const blobLinesOrError = useMemo<string[] | ErrorLike | undefined>(
+        () => highlightedBlobLinesOrError || plainTextBlobLinesOrError,
+        [highlightedBlobLinesOrError, plainTextBlobLinesOrError]
+    )
 
     // Both the behavior subject and the React state are needed here. The behavior subject is
     // used for hoverified events while the React state is used for match highlighting.
@@ -98,28 +101,28 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
         [tableContainerElements]
     )
 
-    // Get the plain text (unhighlighted) blob lines
+    // Get the plain text (unhighlighted) blob lines if we don't already have it
     useEffect(() => {
         let subscription: Subscription | undefined
-        if (isVisible && fetchPlainTextFileRangeLines) {
+        if (isVisible && fetchPlainTextFileRangeLines && !plainTextBlobLinesOrError) {
             subscription = fetchPlainTextFileRangeLines(startLine, endLine).subscribe(blobLinesOrError => {
                 setPlainTextBlobLinesOrError(blobLinesOrError)
             })
         }
         return () => subscription?.unsubscribe()
-    }, [blobLines, endLine, fetchPlainTextFileRangeLines, isVisible, startLine])
+    }, [blobLines, endLine, fetchPlainTextFileRangeLines, isVisible, startLine, plainTextBlobLinesOrError])
 
     // Get the syntax highlighted blob lines
     useEffect(() => {
         let subscription: Subscription | undefined
         if (isVisible) {
-            const observable = blobLines ? of(blobLines) : fetchHighlightedFileRangeLines(startLine, endLine)
+            const observable = fetchHighlightedFileRangeLines(startLine, endLine)
             subscription = observable.pipe(catchError(error => [asError(error)])).subscribe(blobLinesOrError => {
                 setHighlightedBlobLinesOrError(blobLinesOrError)
             })
         }
         return () => subscription?.unsubscribe()
-    }, [blobLines, endLine, fetchHighlightedFileRangeLines, isVisible, startLine])
+    }, [endLine, fetchHighlightedFileRangeLines, isVisible, startLine])
 
     // Highlight the search matches
     useLayoutEffect(() => {

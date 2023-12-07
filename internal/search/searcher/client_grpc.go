@@ -34,6 +34,7 @@ func SearchGRPC(
 	p *search.TextPatternInfo,
 	fetchTimeout time.Duration,
 	features search.Features,
+	contextLines int,
 	onMatch func(*proto.FileMatch),
 ) (limitHit bool, err error) {
 	r := (&protocol.Request{
@@ -58,8 +59,9 @@ func SearchGRPC(
 			PatternMatchesContent:        p.PatternMatchesContent,
 			PatternMatchesPath:           p.PatternMatchesPath,
 		},
-		Indexed:      indexed,
-		FetchTimeout: fetchTimeout,
+		Indexed:         indexed,
+		FetchTimeout:    fetchTimeout,
+		NumContextLines: contextLines,
 	}).ToProto()
 
 	// Searcher caches the file contents for repo@commit since it is

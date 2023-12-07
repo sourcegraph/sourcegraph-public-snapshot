@@ -277,9 +277,9 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	metricArchiveSize.Observe(float64(bytes))
 
 	if p.IsStructuralPat {
-		return filteredStructuralSearch(ctx, s.Log, zipPath, zf, &p.PatternInfo, p.Repo, sender)
+		return filteredStructuralSearch(ctx, s.Log, zipPath, zf, &p.PatternInfo, p.Repo, sender, int32(p.NumContextLines))
 	} else {
-		return regexSearch(ctx, rg, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
+		return regexSearch(ctx, rg, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender, int32(p.NumContextLines))
 	}
 }
 

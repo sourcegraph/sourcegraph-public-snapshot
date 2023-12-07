@@ -9,7 +9,7 @@ import { isErrorLike, pluralize } from '@sourcegraph/common'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import type { AggregableBadge } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
-import type { MatchItem } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
+import type { MatchGroup, MatchItem } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
 import {
     type ContentMatch,
@@ -115,67 +115,69 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
     }, [settingsCascade])
 
     // The number of lines of context to show before and after each match.
-    const context = useMemo(() => {
-        if (location?.pathname === '/search') {
-            // Check if search.contextLines is configured in settings.
-            const contextLinesSetting =
-                isSettingsValid(settingsCascade) && settingsCascade.final?.['search.contextLines']
+    // const context = useMemo(() => {
+    //     if (location?.pathname === '/search') {
+    //         // Check if search.contextLines is configured in settings.
+    //         const contextLinesSetting =
+    //             isSettingsValid(settingsCascade) && settingsCascade.final?.['search.contextLines']
+    //
+    //         if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
+    //             return contextLinesSetting
+    //         }
+    //     }
+    //     return DEFAULT_CONTEXT
+    // }, [location, settingsCascade])
+    //
+    // TODO: useMemo
+    const groups: MatchGroup[] = result.chunkMatches?.map(chunk => {
+        const matches = chunk.ranges.map(range => ({
+            startLine: range.start.line,
+            startCharacter: range.start.column,
+            endLine: range.end.line,
+            endCharacter: range.end.column,
+        }))
 
-            if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
-                return contextLinesSetting
+        const blobLines = chunk.content
+            .split(/\r?\n/)
+            .map(
+                (rawLine, i) =>
+                    `<tr><td class="line" data-line="${chunk.contentStart.line + i + 1
+                    }"></td><td class="code"><span>${escapeMarkup(rawLine)}</span></td></tr>`
+            )
+
+        let minPosition = { line: Number.MAX_VALUE, character: Number.MAX_VALUE }
+        for (const match of matches) {
+            const position = { line: match.startLine + 1, character: match.startCharacter + 1 }
+            if (position.line <= minPosition.line && position.character < minPosition.character) {
+                minPosition = position
             }
         }
-        return DEFAULT_CONTEXT
-    }, [location, settingsCascade])
 
-    const items: MatchItem[] = useMemo(
-        () =>
-            result.type === 'content'
-                ? result.chunkMatches?.map(match => ({
-                      highlightRanges: match.ranges.map(range => ({
-                          startLine: range.start.line,
-                          startCharacter: range.start.column,
-                          endLine: range.end.line,
-                          endCharacter: range.end.column,
-                      })),
-                      content: match.content,
-                      startLine: match.contentStart.line,
-                      endLine: match.ranges.at(-1)!.end.line,
-                      aggregableBadges: match.aggregableBadges,
-                  })) ||
-                  result.lineMatches?.map(match => ({
-                      highlightRanges: match.offsetAndLengths.map(offsetAndLength => ({
-                          startLine: match.lineNumber,
-                          startCharacter: offsetAndLength[0],
-                          endLine: match.lineNumber,
-                          endCharacter: offsetAndLength[0] + offsetAndLength[1],
-                      })),
-                      content: match.line,
-                      startLine: match.lineNumber,
-                      endLine: match.lineNumber,
-                      aggregableBadges: match.aggregableBadges,
-                  })) ||
-                  []
-                : [],
-        [result]
-    )
+        return {
+            blobLines,
+            matches,
+            position: minPosition,
+            startLine: chunk.contentStart.line,
+            endLine: chunk.contentStart.line + blobLines.length,
+        }
+    }) ?? []
 
-    const expandedMatchGroups = useMemo(() => ranking.expandedResults(items, context), [items, context, ranking])
-    const collapsedMatchGroups = useMemo(() => ranking.collapsedResults(items, context), [items, context, ranking])
+    const expandedMatchGroups = useMemo(() => ranking.expandedResults(groups, context), [groups, context, ranking])
+    const collapsedMatchGroups = useMemo(() => ranking.collapsedResults(groups, context), [groups, context, ranking])
     const collapsedMatchCount = collapsedMatchGroups.matches.length
 
-    const highlightRangesCount = useMemo(() => items.reduce(sumHighlightRanges, 0), [items])
-    const collapsedHighlightRangesCount = useMemo(
-        () => collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0),
-        [collapsedMatchGroups]
-    )
+    // const highlightRangesCount = useMemo(() => items.reduce(sumHighlightRanges, 0), [items])
+    // const collapsedHighlightRangesCount = useMemo(
+    //     () => collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0),
+    //     [collapsedMatchGroups]
+    // )
 
-    const hiddenMatchesCount = highlightRangesCount - collapsedHighlightRangesCount
-    const collapsible = !showAllMatches && items.length > collapsedMatchCount
+    // const hiddenMatchesCount = highlightRangesCount - collapsedHighlightRangesCount
+    // const collapsible = !showAllMatches && items.length > collapsedMatchCount
 
-    const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
-    useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
-
+    // const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
+    // useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
+    //
     const rootRef = useRef<HTMLDivElement>(null)
     const toggle = useCallback((): void => {
         if (collapsible) {
@@ -191,23 +193,24 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         }
     }, [collapsible, expanded])
 
-    const description =
-        items.length > 0 ? (
-            <>
-                {aggregateBadges(items).map(badge => (
-                    <Badge
-                        key={badge.text}
-                        href={badge.linkURL}
-                        tooltip={badge.hoverMessage}
-                        variant="secondary"
-                        small={true}
-                        className="text-muted text-uppercase file-match__badge"
-                    >
-                        {badge.text}
-                    </Badge>
-                ))}
-            </>
-        ) : undefined
+    const description = undefined
+    // const description =
+    //     items.length > 0 ? (
+    //         <>
+    //             {aggregateBadges(items).map(badge => (
+    //                 <Badge
+    //                     key={badge.text}
+    //                     href={badge.linkURL}
+    //                     tooltip={badge.hoverMessage}
+    //                     variant="secondary"
+    //                     small={true}
+    //                     className="text-muted text-uppercase file-match__badge"
+    //                 >
+    //                     {badge.text}
+    //                 </Badge>
+    //             ))}
+    //         </>
+    //     ) : undefined
 
     const title = (
         <>
@@ -272,15 +275,18 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             repoLastFetched={result.repoLastFetched}
             actions={newSearchUIEnabled && <SearchResultPreviewButton result={result} />}
         >
-            <div data-testid="file-search-result" data-expanded={expanded}>
+            {/* <div data-testid="file-search-result" data-expanded={expanded}> */}
+            <div data-testid="file-search-result">
                 <FileMatchChildren
                     result={result}
-                    grouped={expanded ? expandedMatchGroups.grouped : collapsedMatchGroups.grouped}
+                    // grouped={expanded ? expandedMatchGroups.grouped : collapsedMatchGroups.grouped}
+                    grouped={groups}
                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     settingsCascade={settingsCascade}
                     telemetryService={telemetryService}
                     openInNewTab={openInNewTab}
                 />
+                {/*
                 {collapsible && (
                     <button
                         type="button"
@@ -296,16 +302,40 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                             {expanded
                                 ? 'Show less'
                                 : `Show ${hiddenMatchesCount} more ${pluralize(
-                                      'match',
-                                      hiddenMatchesCount,
-                                      'matches'
-                                  )}`}
+                                    'match',
+                                    hiddenMatchesCount,
+                                    'matches'
+                                )}`}
                         </span>
                     </button>
                 )}
+                */}
             </div>
         </ResultContainer>
     )
+}
+
+function escapeMarkup(dangerousInput) {
+    const dangerousString = String(dangerousInput)
+    const matchHtmlRegExp = /["'&<>]/
+    const match = matchHtmlRegExp.exec(dangerousString)
+    if (!match) {
+        return dangerousInput
+    }
+
+    const encodedSymbolMap = {
+        '"': '&quot;',
+        "'": '&#39;',
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+    }
+    const dangerousCharacters = dangerousString.split('')
+    const safeCharacters = dangerousCharacters.map(function(character) {
+        return encodedSymbolMap[character] || character
+    })
+    const safeString = safeCharacters.join('')
+    return safeString
 }
 
 function aggregateBadges(items: MatchItem[]): AggregableBadge[] {

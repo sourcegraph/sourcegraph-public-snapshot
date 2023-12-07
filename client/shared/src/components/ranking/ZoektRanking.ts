@@ -10,14 +10,14 @@ import type {
  * ZoektRanking preserves the original relevance that's computed by Zoekt.
  */
 export class ZoektRanking implements PerFileResultRanking {
-    constructor(private maxResults: number) {}
+    constructor(private maxResults: number) { }
 
-    public collapsedResults(matches: MatchItem[], context: number): RankingResult {
-        return results(matches, this.maxResults, context)
+    public collapsedResults(groups: MatchGroup[], context: number): RankingResult {
+        return results(groups, this.maxResults, context)
     }
 
-    public expandedResults(matches: MatchItem[], context: number): RankingResult {
-        return results(matches, Number.MAX_VALUE, context)
+    public expandedResults(groups: MatchGroup[], context: number): RankingResult {
+        return results(groups, Number.MAX_VALUE, context)
     }
 }
 

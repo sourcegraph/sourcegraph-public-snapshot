@@ -1123,7 +1123,7 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
+      # - symbols
       - syntax-highlighter
     commands:
       - web
@@ -1150,8 +1150,8 @@ commandsets:
       - gitserver-1
       - searcher
       - caddy
-      - symbols
-      - docsite
+      # - symbols
+      # - docsite # we're hitting port issues with this, see https://github.com/sourcegraph/devx-support/issues/245
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1187,7 +1187,7 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
+      # - symbols
       - caddy
       - docsite
       - syntax-highlighter
