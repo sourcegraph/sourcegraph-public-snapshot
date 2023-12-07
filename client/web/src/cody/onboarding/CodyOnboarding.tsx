@@ -38,20 +38,6 @@ export const editorGroups: IEditor[][] = [
             instructions: JetBrainsInstructions,
         },
         {
-            icon: 'NeoVim',
-            name: 'Neovim',
-            publisher: 'Neovim Team',
-            releaseStage: 'Experimental',
-        },
-        {
-            icon: 'AndroidStudio',
-            name: 'Android Studio',
-            publisher: 'Google',
-            releaseStage: 'Beta',
-        },
-    ],
-    [
-        {
             icon: 'PhpStorm',
             name: 'PhpStorm ',
             publisher: 'JetBrains',
@@ -63,6 +49,8 @@ export const editorGroups: IEditor[][] = [
             publisher: 'Jetbrains',
             releaseStage: 'Beta',
         },
+    ],
+    [
         {
             icon: 'WebStorm',
             name: 'WebStorm',
@@ -75,13 +63,25 @@ export const editorGroups: IEditor[][] = [
             publisher: 'JetBrains',
             releaseStage: 'Beta',
         },
-    ],
-    [
         {
             icon: 'GoLand',
             name: 'GoLand',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+        },
+        {
+            icon: 'AndroidStudio',
+            name: 'Android Studio',
+            publisher: 'Google',
+            releaseStage: 'Beta',
+        },
+    ],
+    [
+        {
+            icon: 'NeoVim',
+            name: 'Neovim',
+            publisher: 'Neovim Team',
+            releaseStage: 'Experimental',
         },
         {
             icon: 'Emacs',
@@ -93,6 +93,7 @@ export const editorGroups: IEditor[][] = [
 ]
 
 export function CodyOnboarding(): JSX.Element | null {
+    const [showEditorStep, setShowEditorStep] = useState(false)
     const [completed = true, setOnboardingCompleted] = useTemporarySetting('cody.onboarding.completed', false)
     // steps start from 0
     const [step = -1, setOnboardingStep] = useTemporarySetting('cody.onboarding.step', 0)
@@ -102,16 +103,30 @@ export function CodyOnboarding(): JSX.Element | null {
     const parameters = useSearchParameters()
     const enrollPro = parameters.get('pro') === 'true'
 
-    if (completed || step === -1 || step > 2) {
+    if (!showEditorStep && (completed || step === -1 || step > 1)) {
         return null
     }
 
     return (
         <Modal isOpen={true} aria-label="Cody Onboarding" className={styles.modal} position="center">
             {step === 0 && <WelcomeStep onNext={onNext} pro={enrollPro} />}
-            {step === 1 && <PurposeStep onNext={onNext} pro={enrollPro} />}
-            {step === 2 && (
-                <EditorStep onNext={onNext} onCompleted={() => setOnboardingCompleted(true)} pro={enrollPro} />
+            {step === 1 && (
+                <PurposeStep
+                    onNext={() => {
+                        onNext()
+                        setOnboardingCompleted(true)
+                        setShowEditorStep(true)
+                    }}
+                    pro={enrollPro}
+                />
+            )}
+            {showEditorStep && (
+                <EditorStep
+                    onCompleted={() => {
+                        setShowEditorStep(false)
+                    }}
+                    pro={enrollPro}
+                />
             )}
         </Modal>
     )
@@ -160,12 +175,14 @@ function PurposeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
                 <div
                     role="button"
                     tabIndex={0}
-                    onKeyDown={() => {
+                    onKeyDown={event => {
+                        event.preventDefault()
                         eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase: 'work' })
                         onNext()
                     }}
                     className="border-right flex-1 d-flex flex-column justify-content-center cursor-pointer align-items-center py-3 px-2"
-                    onClick={() => {
+                    onClick={event => {
+                        event.preventDefault()
                         eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase: 'work' })
                         onNext()
                     }}
@@ -177,11 +194,13 @@ function PurposeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
                     role="button"
                     tabIndex={0}
                     className="flex-1 d-flex flex-column justify-content-center cursor-pointer align-items-center py-3 px-2"
-                    onKeyDown={() => {
+                    onKeyDown={event => {
+                        event.preventDefault()
                         eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase: 'personal' })
                         onNext()
                     }}
-                    onClick={() => {
+                    onClick={event => {
+                        event.preventDefault()
                         eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase: 'personal' })
                         onNext()
                     }}
@@ -197,15 +216,7 @@ function PurposeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
     )
 }
 
-function EditorStep({
-    onNext,
-    onCompleted,
-    pro,
-}: {
-    onNext: () => void
-    onCompleted: () => void
-    pro: boolean
-}): JSX.Element {
+function EditorStep({ onCompleted, pro }: { onCompleted: () => void; pro: boolean }): JSX.Element {
     useEffect(() => {
         eventLogger.log(EventName.CODY_ONBOARDING_CHOOSE_EDITOR_VIEWED, { tier: pro ? 'pro' : 'free' })
     }, [pro])
@@ -281,13 +292,13 @@ function EditorStep({
                         ))}
                         {group.length < 4
                             ? [...new Array(4 - group.length)].map((_, index) => (
-                                  <div key={index} className="flex-1 p-3" />
-                              ))
+                                <div key={index} className="flex-1 p-3" />
+                            ))
                             : null}
                     </div>
                 ))}
             </div>
-            <div className="d-flex justify-content-between align-items-center">
+            <div className="d-flex justify-content-end align-items-center">
                 <Text
                     className="mb-0 text-muted cursor-pointer"
                     size="small"
@@ -296,10 +307,7 @@ function EditorStep({
                         eventLogger.log(EventName.CODY_ONBOARDING_CHOOSE_EDITOR_SKIPPED, { tier: pro ? 'pro' : 'free' })
                     }}
                 >
-                    Skip
-                </Text>
-                <Text className="mb-0 text-muted" size="small">
-                    Pick one to move forward
+                    Skip for now
                 </Text>
             </div>
         </>

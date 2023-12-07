@@ -47,6 +47,7 @@ export function JetBrainsInstructions({
                                 <ButtonLink
                                     variant="primary"
                                     to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai"
+                                    target="_blank"
                                 >
                                     Open Marketplace
                                 </ButtonLink>
