@@ -1,7 +1,9 @@
+"Third party dev tooling dependencies"
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 
 DOCSITE_VERSION = "1.9.4"
-SRC_CLI_VERSION = "5.2.0"
+SRC_CLI_VERSION = "5.2.1"
 CTAGS_VERSION = "6.0.0.2783f009"
 
 SRC_CLI_BUILDFILE = """
@@ -12,7 +14,18 @@ filegroup(
 )
 """
 
+GCLOUD_VERSION = "415.0.0"
+GCLOUD_BUILDFILE = """package(default_visibility = ["//visibility:public"])\nexports_files(["gcloud", "gsutil", "bq", "git-credential-gcloud"])"""
+GCLOUD_PATCH_CMDS = [
+    "ln -s google-cloud-sdk/bin/gcloud gcloud",
+    "ln -s google-cloud-sdk/bin/gsutil gsutil",
+    "ln -s google-cloud-sdk/bin/bq bq",
+    "ln -s google-cloud-sdk/bin/git-credential-gcloud.sh git-credential-gcloud",
+]
+
 def tool_deps():
+    "Repository rules to fetch third party tooling used for dev purposes"
+
     # Docsite #
     http_file(
         name = "docsite_darwin_amd64",
@@ -39,21 +52,21 @@ def tool_deps():
     http_archive(
         name = "src-cli-linux-amd64",
         build_file_content = SRC_CLI_BUILDFILE.format("linux-amd64"),
-        sha256 = "40fdb8179c4d6e4d150811dd66610f212b5f4fe6aee4c22ece53665c070b0ac3",
+        sha256 = "19671ea6ee8a518fedaa45e6f6fb44767e7057c1c37dad34e36d829d5001a2f6",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_linux_amd64.tar.gz".format(SRC_CLI_VERSION),
     )
 
     http_archive(
         name = "src-cli-darwin-amd64",
         build_file_content = SRC_CLI_BUILDFILE.format("darwin-amd64"),
-        sha256 = "d65914b94af09400dfa41aa2a83f956f8a11ec2957fdf09fe845b6e3cdb777f8",
+        sha256 = "a05d95a05c4266e766a7ebb85078dc16c8dd1971bddf7d966cb334638ed55375",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_darwin_amd64.tar.gz".format(SRC_CLI_VERSION),
     )
 
     http_archive(
         name = "src-cli-darwin-arm64",
         build_file_content = SRC_CLI_BUILDFILE.format("darwin-arm64"),
-        sha256 = "866758720a1bb077d21b96fe48841d32d9bf11511cd79d9b1e84ccab3dcdde64",
+        sha256 = "af34afa269d29cb24b40c17bb2045e353ac6fa1c1aa1164187c8582b1538fee4",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_darwin_arm64.tar.gz".format(SRC_CLI_VERSION),
     )
 
@@ -81,4 +94,28 @@ def tool_deps():
         sha256 = "e99b942754ce9d55c9445513236c010753d26decbb38ed932780bec098ac0809",
         url = "https://storage.googleapis.com/universal_ctags/x86_64-linux/dist/universal-ctags-{0}".format(CTAGS_VERSION),
         executable = True,
+    )
+
+    http_archive(
+        name = "gcloud-darwin-arm64",
+        build_file_content = GCLOUD_BUILDFILE,
+        patch_cmds = GCLOUD_PATCH_CMDS,
+        sha256 = "974ed4f37f8bde2f7a9731eba90b033f7c97d24d835ecc62b58eee87c8f29776",
+        url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-darwin-arm.tar.gz".format(GCLOUD_VERSION),
+    )
+
+    http_archive(
+        name = "gcloud-darwin-amd64",
+        build_file_content = GCLOUD_BUILDFILE,
+        patch_cmds = GCLOUD_PATCH_CMDS,
+        sha256 = "f05cc45ffc6c1f3ff73854989f3ea3d6bee40287d23047917e4c845aeb027f98",
+        url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-darwin-x86_64.tar.gz".format(GCLOUD_VERSION),
+    )
+
+    http_archive(
+        name = "gcloud-linux-amd64",
+        build_file_content = GCLOUD_BUILDFILE,
+        patch_cmds = GCLOUD_PATCH_CMDS,
+        sha256 = "5f9ed1862a82f393be3b16634309e9e8edb6da13a8704952be9c4c59963f9cd4",
+        url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-linux-x86_64.tar.gz".format(GCLOUD_VERSION),
     )

@@ -102,7 +102,7 @@ Use the following filters to restrict how users can create accounts and sign in 
     }
   ```
 
-  > NOTE: If Sourcegraph is running on a free license all users will be created as site admins. Learn more about license settings on our [pricing page](https://about.sourcegraph.com/pricing).
+  > NOTE: If Sourcegraph is running on a free license all users will be created as site admins. Learn more about license settings on our [pricing page](https://sourcegraph.com/pricing).
 
 **allowGroups**
 

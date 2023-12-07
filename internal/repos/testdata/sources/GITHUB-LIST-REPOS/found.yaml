@@ -14,7 +14,7 @@ interactions:
     method: POST
   response:
     body: '{"data":{"repo0":{"id":"MDEwOlJlcG9zaXRvcnkxNDk1MTg3ODM=","databaseId":149518783,"nameWithOwner":"sourcegraph/about","description":"Sourcegraph
-      blog, feature announcements, and website (about.sourcegraph.com)","url":"https://github.com/sourcegraph/about","isPrivate":false,"isFork":false,"isArchived":false,"viewerPermission":"ADMIN"},"repo1":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","databaseId":41288708,"nameWithOwner":"sourcegraph/sourcegraph","description":"Code
+      blog, feature announcements, and website (sourcegraph.com)","url":"https://github.com/sourcegraph/about","isPrivate":false,"isFork":false,"isArchived":false,"viewerPermission":"ADMIN"},"repo1":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","databaseId":41288708,"nameWithOwner":"sourcegraph/sourcegraph","description":"Code
       search and navigation tool (self-hosted)","url":"https://github.com/sourcegraph/sourcegraph","isPrivate":false,"isFork":false,"isArchived":false,"viewerPermission":"ADMIN"}}}'
     headers:
       Access-Control-Allow-Origin:

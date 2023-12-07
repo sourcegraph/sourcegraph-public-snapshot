@@ -318,7 +318,7 @@ sg ci build docker-images-patch-notest prometheus
 # Publish all images without testing
 sg ci build docker-images-candidates-notest
 `,
-	BashComplete: completions.CompleteOptions(getAllowedBuildTypeArgs),
+	BashComplete: completions.CompleteArgs(getAllowedBuildTypeArgs),
 	Flags: []cli.Flag{
 		&ciPipelineFlag,
 		&cli.StringFlag{

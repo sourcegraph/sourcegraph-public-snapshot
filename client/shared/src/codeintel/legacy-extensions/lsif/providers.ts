@@ -1,11 +1,8 @@
-import { once } from 'lodash'
-
 import * as scip from '../../scip'
 import type * as sourcegraph from '../api'
 import type { Logger } from '../logging'
 import type { CombinedProviders, DefinitionAndHover } from '../providers'
 import { cache } from '../util'
-import { API } from '../util/api'
 import { queryGraphQL as sgQueryGraphQL, type QueryGraphQLFn } from '../util/graphql'
 import { asyncGeneratorFromPromise } from '../util/ix'
 import { raceWithDelayOffset } from '../util/promise'
@@ -26,10 +23,7 @@ import { makeStencilFn, type StencilFn } from './stencil'
 export function createProviders(hasImplementationsField: boolean, logger: Logger): CombinedProviders {
     const providers = createGraphQLProviders(
         sgQueryGraphQL,
-        makeStencilFn(
-            sgQueryGraphQL,
-            once(() => new API().hasStencils())
-        ),
+        makeStencilFn(sgQueryGraphQL),
         makeRangeWindowFactory(hasImplementationsField, sgQueryGraphQL)
     )
 

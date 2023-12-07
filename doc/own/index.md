@@ -5,7 +5,7 @@
 <span class="badge badge-beta">Beta</span> This feature is currently in beta.
 </p>
 
-<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
+<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
 Code ownership is aimed at helping find the right person and team to contact, for any question, at any time. We are starting out with code ownership, ownership inference and assignments and are exploring ways to help you find someone to answer _every_ question.

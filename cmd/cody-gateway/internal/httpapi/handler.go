@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -25,18 +26,19 @@ import (
 )
 
 type Config struct {
-	RateLimitNotifier               notify.RateLimitNotifier
-	AnthropicAccessToken            string
-	AnthropicAllowedModels          []string
-	AnthropicAllowedPromptPatterns  []string
-	AnthropicRequestBlockingEnabled bool
-	AnthropicMaxTokensToSample      int
-	OpenAIAccessToken               string
-	OpenAIOrgID                     string
-	OpenAIAllowedModels             []string
-	FireworksAccessToken            string
-	FireworksAllowedModels          []string
-	EmbeddingsAllowedModels         []string
+	RateLimitNotifier                           notify.RateLimitNotifier
+	AnthropicAccessToken                        string
+	AnthropicAllowedModels                      []string
+	AnthropicAllowedPromptPatterns              []string
+	AnthropicRequestBlockingEnabled             bool
+	AnthropicMaxTokensToSample                  int
+	OpenAIAccessToken                           string
+	OpenAIOrgID                                 string
+	OpenAIAllowedModels                         []string
+	FireworksAccessToken                        string
+	FireworksAllowedModels                      []string
+	FireworksLogSelfServeCodeCompletionRequests bool
+	EmbeddingsAllowedModels                     []string
 }
 
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
@@ -56,6 +58,7 @@ func NewHandler(
 	authr *auth.Authenticator,
 	promptRecorder completions.PromptRecorder,
 	config *Config,
+	sources *actor.Sources,
 ) (http.Handler, error) {
 	// Initialize metrics
 	counter, err := meter.Int64UpDownCounter("cody-gateway.concurrent_upstream_requests",
@@ -189,6 +192,7 @@ func NewHandler(
 								httpClient,
 								config.FireworksAccessToken,
 								config.FireworksAllowedModels,
+								config.FireworksLogSelfServeCodeCompletionRequests,
 							),
 						),
 					),
@@ -204,13 +208,24 @@ func NewHandler(
 			authr.Middleware(
 				requestlogger.Middleware(
 					logger,
-					featurelimiter.ListLimitsHandler(logger, eventLogger, rs),
+					featurelimiter.ListLimitsHandler(logger, rs),
 				),
 			),
 			otelhttp.WithPublicEndpoint(),
 		),
 	)
-
+	// Register a route where actors can refresh their rate limit state.
+	v1router.Path("/limits/refresh").Methods(http.MethodPost).Handler(
+		instrumentation.HTTPMiddleware("v1.limits",
+			authr.Middleware(
+				requestlogger.Middleware(
+					logger,
+					featurelimiter.RefreshLimitsHandler(logger, sources),
+				),
+			),
+			otelhttp.WithPublicEndpoint(),
+		),
+	)
 	return r, nil
 }
 

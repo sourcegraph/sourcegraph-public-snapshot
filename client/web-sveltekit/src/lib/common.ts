@@ -14,3 +14,17 @@ export { pluralize, numberWithCommas } from '@sourcegraph/common/src/util/string
 export { renderMarkdown } from '@sourcegraph/common/src/util/markdown/markdown'
 export { highlightNodeMultiline, highlightNode } from '@sourcegraph/common/src/util/highlightNode'
 export { logger } from '@sourcegraph/common/src/util/logger'
+export { isSafari } from '@sourcegraph/common/src/util/browserDetection'
+export { isExternalLink, type LineOrPositionOrRange } from '@sourcegraph/common/src/util/url'
+
+let highlightingLoaded = false
+
+export function loadMarkdownSyntaxHighlighting(): void {
+    if (!highlightingLoaded) {
+        highlightingLoaded = true
+
+        import('@sourcegraph/common/src/util/markdown/contributions')
+            .then(({ registerHighlightContributions }) => registerHighlightContributions()) // no way to unregister these
+            .catch(() => {})
+    }
+}

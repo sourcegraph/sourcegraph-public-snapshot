@@ -130,10 +130,3 @@ func isBuildFailed(build buildkite.Build, timeout time.Duration) bool {
 	}
 	return false
 }
-
-func max(x, y int) int {
-	if x < y {
-		return y
-	}
-	return x
-}

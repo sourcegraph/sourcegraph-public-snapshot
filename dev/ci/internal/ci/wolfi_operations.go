@@ -113,7 +113,6 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 			}),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
-			bk.Env("DOCKER_BAZEL", "true"),
 			bk.Key(stepKey),
 			bk.SoftFail(222),
 		}

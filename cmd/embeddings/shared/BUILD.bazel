@@ -38,7 +38,6 @@ go_library(
         "//internal/observation",
         "//internal/service",
         "//internal/trace",
-        "//internal/xcontext",
         "//lib/errors",
         "@com_github_hashicorp_golang_lru_v2//:golang-lru",
         "@com_github_prometheus_client_golang//prometheus",
@@ -49,48 +48,21 @@ go_library(
     ],
 )
 
-# The filename specified by the out field needs to include the sha for the test to find it.
-# See //cmd/embeddings/shared:assets.bzl for the macro fetching those external dependencies.
-copy_file(
-    name = "ln_test_data_embeddings_index",
-    src = "@github_com_sourcegraph_sourcegraph_embeddingindex//file:downloaded",
-    out = "testdata/github_com_sourcegraph_sourcegraph_cf360e12ff91b2fc199e75aef4ff6744.embeddingindex",
-    allow_symlink = True,
-)
-
-# See //cmd/embeddings/shared:assets.bzl for the macro fetching those external dependencies.
-copy_file(
-    name = "ln_test_data_query_embeddings_gob",
-    src = "@query_embeddings_gob//file:downloaded",
-    out = "testdata/query_embeddings.gob",
-    allow_symlink = True,
-)
-
-# gazelle:exclude testdata
 go_test(
     name = "shared_test",
-    size = "medium",
-    timeout = "moderate",
     srcs = [
-        "context_qa_test.go",
         "main_test.go",
         "repo_embedding_index_cache_test.go",
     ],
+    data = glob(["testdata/**"]),
     embed = [":shared"],
-    embedsrcs = [
-        ":ln_test_data_embeddings_index",
-        ":ln_test_data_query_embeddings_gob",
-    ],  # keep
     deps = [
-        "//cmd/embeddings/qa",
         "//internal/api",
         "//internal/database/dbmocks",
         "//internal/embeddings",
         "//internal/embeddings/background/repo",
         "//internal/endpoint",
         "//internal/types",
-        "//internal/uploadstore/mocks",
-        "//lib/errors",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
     ],

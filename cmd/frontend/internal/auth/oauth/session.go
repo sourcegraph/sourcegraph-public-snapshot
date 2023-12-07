@@ -32,7 +32,7 @@ type SessionData struct {
 
 type SessionIssuerHelper interface {
 	GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error)
-	DeleteStateCookie(w http.ResponseWriter)
+	DeleteStateCookie(w http.ResponseWriter, r *http.Request)
 	SessionData(token *oauth2.Token) SessionData
 	AuthSucceededEventName() database.SecurityEventName
 	AuthFailedEventName() database.SecurityEventName
@@ -90,7 +90,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 		)
 
 		// Delete state cookie (no longer needed, will be stale if user logs out and logs back in within 120s)
-		defer s.DeleteStateCookie(w)
+		defer s.DeleteStateCookie(w, r)
 
 		getCookie := func(name string) string {
 			c, err := r.Cookie(name)
@@ -123,7 +123,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			return
 		}
 
-		// Since we obtained a valid user from the OAuth token, we consider the GitHub login successful at this point
+		// Since we obtained a valid user from the OAuth token, we consider the login successful at this point
 		ctx, err = session.SetActorFromUser(ctx, w, r, user, expiryDuration)
 		if err != nil {
 			span.SetError(err)

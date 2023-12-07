@@ -129,7 +129,11 @@ func awsCodeCloneURL(logger log.Logger, repo *awscodecommit.Repository, cfg *sch
 }
 
 func azureDevOpsCloneURL(logger log.Logger, repo *azuredevops.Repository, cfg *schema.AzureDevOpsConnection) string {
-	u, err := url.Parse(repo.CloneURL)
+	if cfg.GitURLType == "ssh" {
+		return repo.SSHURL
+	}
+
+	u, err := url.Parse(repo.RemoteURL)
 	if err != nil {
 		logger.Warn("Error adding authentication to Azure DevOps repo remote URL.", log.String("url", cfg.Url), log.Error(err))
 		return cfg.Url

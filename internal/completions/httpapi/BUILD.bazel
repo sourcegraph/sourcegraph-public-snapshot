@@ -13,8 +13,10 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
+        "//internal/accesstoken",
         "//internal/actor",
         "//internal/auth",
+        "//internal/authz",
         "//internal/cody",
         "//internal/completions/client",
         "//internal/completions/types",
@@ -22,6 +24,7 @@ go_library(
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/featureflag",
+        "//internal/hashutil",
         "//internal/honey",
         "//internal/redispool",
         "//internal/requestclient",

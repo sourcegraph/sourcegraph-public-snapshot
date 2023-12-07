@@ -2623,6 +2623,8 @@ CREATE TABLE external_services (
     has_webhooks boolean,
     token_expires_at timestamp with time zone,
     code_host_id integer,
+    creator_id integer,
+    last_updater_id integer,
     CONSTRAINT check_non_empty_config CHECK ((btrim(config) <> ''::text)),
     CONSTRAINT external_services_max_1_namespace CHECK ((((namespace_user_id IS NULL) AND (namespace_org_id IS NULL)) OR ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))))
 );
@@ -6245,6 +6247,8 @@ CREATE INDEX repo_description_trgm_idx ON repo USING gin (lower(description) gin
 
 CREATE INDEX repo_dotcom_indexable_repos_idx ON repo USING btree (stars DESC NULLS LAST) INCLUDE (id, name) WHERE ((deleted_at IS NULL) AND (blocked IS NULL) AND (((stars >= 5) AND (NOT COALESCE(fork, false)) AND (NOT archived)) OR (lower((name)::text) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'::text)));
 
+CREATE INDEX repo_embedding_jobs_repo ON repo_embedding_jobs USING btree (repo_id, revision);
+
 CREATE UNIQUE INDEX repo_external_unique_idx ON repo USING btree (external_service_type, external_service_id, external_id);
 
 CREATE INDEX repo_fork ON repo USING btree (fork);
@@ -6683,8 +6687,14 @@ ALTER TABLE ONLY external_service_repos
 ALTER TABLE ONLY external_services
     ADD CONSTRAINT external_services_code_host_id_fkey FOREIGN KEY (code_host_id) REFERENCES code_hosts(id) ON UPDATE CASCADE ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED;
 
+ALTER TABLE ONLY external_services
+    ADD CONSTRAINT external_services_creator_id_fkey FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
+
 ALTER TABLE ONLY external_service_sync_jobs
     ADD CONSTRAINT external_services_id_fk FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY external_services
+    ADD CONSTRAINT external_services_last_updater_id_fkey FOREIGN KEY (last_updater_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY external_services
     ADD CONSTRAINT external_services_namepspace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;

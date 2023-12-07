@@ -38,6 +38,8 @@ export enum PageRoutes {
     SearchNotebook = '/search/notebook',
     CodySearch = '/search/cody',
     Cody = '/cody/chat',
+    CodyManagement = '/cody/manage',
+    CodySubscription = '/cody/subscription',
     Own = '/own',
     AppAuthCallback = '/app/auth/callback',
     AppSetup = '/app-setup',
