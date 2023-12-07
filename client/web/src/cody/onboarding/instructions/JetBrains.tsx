@@ -1,9 +1,8 @@
 import { useState } from 'react'
 
 import classNames from 'classnames'
-import { Link } from 'react-router-dom'
 
-import { H2, Text, Button, ButtonLink } from '@sourcegraph/wildcard'
+import { H2, Text, Button, ButtonLink, Link } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
 
@@ -67,7 +66,7 @@ export function JetBrainsInstructions({
                                     </Text>
                                 </div>
                             </div>
-                            <div className="d-flex flex-column justify-content-center align-items-center mt-4"></div>
+                            <div className="d-flex flex-column justify-content-center align-items-center mt-4" />
                             <div className="mt-3 border-bottom">
                                 <div className="d-flex align-items-center">
                                     <div className="mr-1">
@@ -84,7 +83,7 @@ export function JetBrainsInstructions({
                                         </Text>
                                     </div>
                                 </div>
-                                <div className="d-flex flex-column justify-content-center align-items-center mt-4"></div>
+                                <div className="d-flex flex-column justify-content-center align-items-center mt-4" />
                             </div>
                         </div>
                     </div>
