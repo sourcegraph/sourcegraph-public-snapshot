@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { Modal, H5, H2, H3, Text, Button, useSearchParameters } from '@sourcegraph/wildcard'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { Modal, H5, H2, Text, Button, useSearchParameters } from '@sourcegraph/wildcard'
 
+import type { AuthenticatedUser } from '../../auth'
+import { HubSpotForm } from '../../marketing/components/HubSpotForm'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 
@@ -92,7 +95,11 @@ export const editorGroups: IEditor[][] = [
     ],
 ]
 
-export function CodyOnboarding(): JSX.Element | null {
+export function CodyOnboarding({
+    authenticatedUser,
+}: {
+    authenticatedUser: AuthenticatedUser | null
+}): JSX.Element | null {
     const [showEditorStep, setShowEditorStep] = useState(false)
     const [completed = true, setOnboardingCompleted] = useTemporarySetting('cody.onboarding.completed', false)
     // steps start from 0
@@ -107,11 +114,16 @@ export function CodyOnboarding(): JSX.Element | null {
         return null
     }
 
+    if (!authenticatedUser) {
+        return null
+    }
+
     return (
         <Modal isOpen={true} aria-label="Cody Onboarding" className={styles.modal} position="center">
             {step === 0 && <WelcomeStep onNext={onNext} pro={enrollPro} />}
             {step === 1 && (
                 <PurposeStep
+                    authenticatedUser={authenticatedUser}
                     onNext={() => {
                         onNext()
                         setOnboardingCompleted(true)
@@ -133,35 +145,98 @@ export function CodyOnboarding(): JSX.Element | null {
 }
 
 function WelcomeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX.Element {
+    const [show, setShow] = useState(false)
+    const isLightTheme = useIsLightTheme()
     useEffect(() => {
         eventLogger.log(EventName.CODY_ONBOARDING_WELCOME_VIEWED, { tier: pro ? 'pro' : 'free' })
     }, [pro])
 
+    useEffect(() => {
+        // theme is not ready on first render, it defaults to system theme.
+        // so we need to wait a bit before showing the welcome video.
+        setTimeout(() => {
+            setShow(true)
+        }, 500)
+    }, [])
+
     return (
         <div className={classNames('d-flex flex-column align-items-center p-5')}>
-            <video width="180" className={classNames('mb-5', styles.welcomeVideo)} autoPlay={true} muted={true}>
-                <source src="https://storage.googleapis.com/sourcegraph-assets/codyWelcomeAnim.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-            </video>
-            <Text className={classNames('mb-4 pb-4', styles.fadeIn, styles.fadeSecond, styles.welcomeSubtitle)}>
-                Ready to breeze through the basics and get comfortable with Cody{pro ? ' to Cody Pro Trial' : ''}?
-            </Text>
-            <Button
-                onClick={onNext}
-                variant="primary"
-                size="lg"
-                className={classNames(styles.fadeIn, styles.fadeThird)}
-            >
-                Sure, let's dive in!
-            </Button>
+            {show ? (
+                <>
+                    <video width="180" className={classNames('mb-5', styles.welcomeVideo)} autoPlay={true} muted={true}>
+                        <source
+                            src={
+                                isLightTheme
+                                    ? 'https://storage.googleapis.com/sourcegraph-assets/codyWelcomeAnim.mp4'
+                                    : 'https://storage.googleapis.com/sourcegraph-assets/codyWelcomeAnim_dark.mp4'
+                            }
+                            type="video/mp4"
+                        />
+                        Your browser does not support the video tag.
+                    </video>
+                    <Text className={classNames('mb-4 pb-4', styles.fadeIn, styles.fadeSecond, styles.welcomeSubtitle)}>
+                        Ready to breeze through the basics and get comfortable with Cody
+                        {pro ? ' to Cody Pro Trial' : ''}?
+                    </Text>
+                    <Button
+                        onClick={onNext}
+                        variant="primary"
+                        size="lg"
+                        className={classNames(styles.fadeIn, styles.fadeThird)}
+                    >
+                        Sure, let's dive in!
+                    </Button>
+                </>
+            ) : (
+                <div className={styles.blankPlaceholder} />
+            )}
         </div>
     )
 }
 
-function PurposeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX.Element {
+function PurposeStep({
+    onNext,
+    pro,
+    authenticatedUser,
+}: {
+    onNext: () => void
+    pro: boolean
+    authenticatedUser: AuthenticatedUser
+}): JSX.Element {
+    const [useCase, setUseCase] = useState<'work' | 'personal' | null>(null)
+
     useEffect(() => {
         eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_VIEWED, { tier: pro ? 'pro' : 'free' })
     }, [pro])
+
+    const primaryEmail = authenticatedUser.emails.find(email => email.isPrimary)?.email
+
+    const handleFormReady = useCallback((form: HTMLFormElement) => {
+        const workInput = form.querySelector('input[name="using_cody_for_work"]')
+        const personalInput = form.querySelector('input[name="using_cody_for_personal"]')
+
+        const handleChange = (e: Event): void => {
+            const target = e.target as HTMLInputElement
+            const isChecked = target.checked
+            const name = target.name
+
+            if (name === 'using_cody_for_work' && isChecked) {
+                setUseCase('work')
+            } else if (name === 'using_cody_for_personal' && isChecked) {
+                setUseCase('personal')
+            } else {
+                setUseCase(null)
+            }
+        }
+
+        workInput?.addEventListener('change', handleChange)
+        personalInput?.addEventListener('change', handleChange)
+
+        return () => {
+            workInput?.removeEventListener('change', handleChange)
+            personalInput?.removeEventListener('change', handleChange)
+        }
+    }, [])
 
     return (
         <>
@@ -171,7 +246,21 @@ function PurposeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
                     This will allow us to understand our audience better and guide your journey
                 </Text>
             </div>
-            <div className="d-flex align-items-center border-bottom mb-3 pb-3">
+            <div className="d-flex align-items-center border-bottom mb-3 pb-3 justify-content-center">
+                <HubSpotForm
+                    formId="85548efc-a879-4553-9ef0-a8da8fdcf541"
+                    onFormSubmitted={() => {
+                        if (useCase) {
+                            eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase })
+                        }
+                        onNext()
+                    }}
+                    userId={authenticatedUser.id}
+                    userEmail={primaryEmail}
+                    masterFormName="qualificationSurvey"
+                    onFormReady={handleFormReady}
+                />
+                {/* TODO(naman): remove after PR feedback
                 <div
                     role="button"
                     tabIndex={0}
@@ -208,6 +297,7 @@ function PurposeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
                     <PersonalIcon />
                     <H3 className="mb-0 mt-2">Personal projects</H3>
                 </div>
+                */}
             </div>
             <Text size="small" className="text-muted text-center mb-0">
                 Pick one to move forward
@@ -292,8 +382,8 @@ function EditorStep({ onCompleted, pro }: { onCompleted: () => void; pro: boolea
                         ))}
                         {group.length < 4
                             ? [...new Array(4 - group.length)].map((_, index) => (
-                                <div key={index} className="flex-1 p-3" />
-                            ))
+                                  <div key={index} className="flex-1 p-3" />
+                              ))
                             : null}
                     </div>
                 ))}
@@ -313,6 +403,8 @@ function EditorStep({ onCompleted, pro }: { onCompleted: () => void; pro: boolea
         </>
     )
 }
+
+/* TODO(naman): remove after PR feedback
 
 const WorkIcon = (): JSX.Element => (
     <svg width="60" height="60" viewBox="0 0 75 75" fill="none">
@@ -371,3 +463,4 @@ const PersonalIcon = (): JSX.Element => (
         </defs>
     </svg>
 )
+*/

@@ -20,6 +20,7 @@ import {
     LoadingSpinner,
 } from '@sourcegraph/wildcard'
 
+import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
@@ -43,9 +44,13 @@ import styles from './CodyManagementPage.module.scss'
 
 interface CodyManagementPageProps {
     isSourcegraphDotCom: boolean
+    authenticatedUser: AuthenticatedUser | null
 }
 
-export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps> = ({ isSourcegraphDotCom }) => {
+export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps> = ({
+    isSourcegraphDotCom,
+    authenticatedUser,
+}) => {
     const parameters = useSearchParameters()
 
     const utm_source = parameters.get('utm_source')
@@ -307,14 +312,14 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             ))}
                             {group.length < 4
                                 ? [...new Array(4 - group.length)].map((_, index) => (
-                                    <div key={index} className="flex-1 p-3" />
-                                ))
+                                      <div key={index} className="flex-1 p-3" />
+                                  ))
                                 : null}
                         </div>
                     ))}
                 </div>
             </Page>
-            <CodyOnboarding />
+            <CodyOnboarding authenticatedUser={authenticatedUser} />
         </>
     )
 }
