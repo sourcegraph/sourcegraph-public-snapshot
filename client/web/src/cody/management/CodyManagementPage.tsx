@@ -232,7 +232,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                         <div>
                                             <img
                                                 alt={editor.name}
-                                                src={`https://storage.googleapis.com/sourcegraph-assets/cody-ide-icons/${editor.icon}.png`}
+                                                src={`https://storage.googleapis.com/sourcegraph-assets/ideIcons/ideIcon${editor.icon}.svg`}
                                                 width={34}
                                                 className="mr-2"
                                             />
