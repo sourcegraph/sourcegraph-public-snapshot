@@ -54,6 +54,81 @@ func TestToBuildNotification(t *testing.T) {
 			t.Errorf("got %s, wanted %s for Build Status in Notification", notification.BuildStatus, build.BuildFailed)
 		}
 	})
+	t.Run("2 passed, 1 failed then passed should result in failed build", func(t *testing.T) {
+		b := &build.Build{
+			Build: buildkite.Build{
+				Message: &msg,
+				WebURL:  &url,
+				Creator: &buildkite.Creator{
+					AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
+				},
+				Pipeline: &buildkite.Pipeline{
+					ID:   &pipelineID,
+					Name: &pipelineID,
+				},
+				Author: &buildkite.Author{
+					Name:  "William Bezuidenhout",
+					Email: "william.bezuidenhout@sourcegraph.com",
+				},
+				Number: &num,
+				URL:    &url,
+				Commit: &commit,
+			},
+			Pipeline: &build.Pipeline{buildkite.Pipeline{
+				Name: &pipelineID,
+			}},
+			Steps: map[string]*build.Step{
+				":one: fake step": build.NewStepFromJob(newJob(t, ":one: fake step", 0)),
+				":two: fake step": build.NewStepFromJob(newJob(t, ":two: fake step", 0)),
+			},
+		}
+
+		notification := determineBuildStatusNotification(b)
+		if len(notification.Failed) != 0 {
+			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 0)
+		}
+		if notification.BuildStatus != string(build.BuildPassed) {
+			t.Errorf("got %s, wanted %s for Build Status in Notification", notification.BuildStatus, build.BuildPassed)
+		}
+
+		err := b.AddJob(newJob(t, ":three: fake step", 1))
+		if err != nil {
+			t.Fatalf("failed to add job to build: %v", err)
+		}
+
+		notification = determineBuildStatusNotification(b)
+		if len(notification.Failed) != 1 {
+			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 1)
+		}
+		if notification.BuildStatus != string(build.BuildFailed) {
+			t.Errorf("got %s, wanted %s for Build Status in Notification", notification.BuildStatus, build.BuildFailed)
+		}
+
+		err = b.AddJob(newJob(t, ":four: fake step", 0))
+		if err != nil {
+			t.Fatalf("failed to add job to build: %v", err)
+		}
+
+		notification = determineBuildStatusNotification(b)
+		if len(notification.Failed) != 1 {
+			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 1)
+		}
+		if notification.BuildStatus != string(build.BuildFailed) {
+			t.Errorf("got %s, wanted %s for Build Status in Notification", notification.BuildStatus, build.BuildFailed)
+		}
+
+		err = b.AddJob(newJob(t, ":four: fake step", 0))
+		if err != nil {
+			t.Fatalf("failed to add job to build: %v", err)
+		}
+		notification = determineBuildStatusNotification(b)
+		if len(notification.Failed) != 1 {
+			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 1)
+		}
+		if notification.BuildStatus != string(build.BuildFailed) {
+			t.Errorf("got %s, wanted %s for Build Status in Notification", notification.BuildStatus, build.BuildFailed)
+		}
+	})
 	t.Run("2 failed jobs initially and a late job should be 3 total jobs", func(t *testing.T) {
 		b := &build.Build{
 			Build: buildkite.Build{

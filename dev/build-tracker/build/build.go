@@ -254,6 +254,9 @@ func (s *Store) Add(event *Event) {
 	// will be more up to date, and tack on some finalized data
 	if event.IsBuildFinished() {
 		build.updateFromEvent(event)
+		s.logger.Debug("build finished", log.Int("buildNumber", event.GetBuildNumber()),
+			log.Int("totalSteps", len(build.Steps)),
+			log.String("status", build.GetState()))
 
 		// Track consecutive failures by pipeline + branch
 		// We update the global count of consecutiveFailures then we set the count on the individual build
@@ -266,6 +269,8 @@ func (s *Store) Add(event *Event) {
 			// We got a pass, reset the global count
 			s.consecutiveFailures[failuresKey] = 0
 		}
+		// Build is finished so
+		return
 	}
 
 	// Keep track of the job, if there is one

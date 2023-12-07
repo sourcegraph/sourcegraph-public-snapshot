@@ -174,6 +174,13 @@ func (s *Server) notifyIfFailed(b *build.Build) error {
 	if info.BuildStatus == string(build.BuildInProgress) {
 		return errors.Newf("build %d is finished, but final status is still in progress with %d jobs", info.BuildNumber, len(info.InProgress))
 	}
+	s.logger.Debug("build status notification",
+		log.Int("buildNumber", info.BuildNumber),
+		log.Int("Passed", len(info.Passed)),
+		log.Int("Failed", len(info.Failed)),
+		log.Int("Fixed", len(info.Fixed)),
+		log.Int("InProgress", len(info.InProgress)),
+	)
 
 	if info.BuildStatus == string(build.BuildFailed) || info.BuildStatus == string(build.BuildFixed) {
 		s.logger.Info("sending notification for build", log.Int("buildNumber", b.GetNumber()), log.String("status", string(info.BuildStatus)))
@@ -250,6 +257,8 @@ func determineBuildStatusNotification(b *build.Build) *notify.BuildNotification 
 		Fixed:              []notify.JobLine{},
 		Failed:             []notify.JobLine{},
 		InProgress:         []notify.JobLine{},
+		Passed:             []notify.JobLine{},
+		TotalSteps:         len(b.Steps),
 	}
 
 	// You may notice we do not check if the build is Failed and exit early, this is because of the following scenario
@@ -266,6 +275,9 @@ func determineBuildStatusNotification(b *build.Build) *notify.BuildNotification 
 	}
 	for _, j := range groups[build.JobInProgress] {
 		info.InProgress = append(info.InProgress, j)
+	}
+	for _, j := range groups[build.JobPassed] {
+		info.Passed = append(info.Passed, j)
 	}
 
 	if len(info.Failed) > 0 {
