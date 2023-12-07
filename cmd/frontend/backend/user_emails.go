@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"net/url"
 	"time"
 
@@ -228,7 +229,7 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 	}
 	event := &database.SecurityEvent{
 		Name:      database.SecurityEventNameEmailVerified,
-		URL:       "someURIhere",
+		URL:       fmt.Sprintf("/users/%d/settings/emails", userID),
 		UserID:    uint32(userID),
 		Argument:  nil,
 		Source:    "BACKEND",

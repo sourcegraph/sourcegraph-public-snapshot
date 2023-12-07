@@ -41,6 +41,8 @@ const (
 
 	SecurityEventNameEmailVerified SecurityEventName = "EmailVerified"
 
+	SecurityEventNameSiteConfigUpdated SecurityEventName = "SiteConfigUpdated"
+
 	SecurityEventNameRoleChangeDenied  SecurityEventName = "RoleChangeDenied"
 	SecurityEventNameRoleChangeGranted SecurityEventName = "RoleChangeGranted"
 
