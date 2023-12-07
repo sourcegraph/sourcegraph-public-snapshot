@@ -476,7 +476,13 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                     path={repoNameAndRevision + repoSettingsAreaPath}
                                     errorElement={<RouteError />}
                                     // Always render the `RepoSettingsArea` even for empty repo to allow side-admins access it.
-                                    element={<RepoSettingsArea {...repoRevisionContainerContext} repoName={repoName} />}
+                                    element={
+                                        <RepoSettingsArea
+                                            {...repoRevisionContainerContext}
+                                            repoName={repoName}
+                                            telemetryRecorder={props.platformContext.telemetryRecorder}
+                                        />
+                                    }
                                 />
                             )}
                             <Route

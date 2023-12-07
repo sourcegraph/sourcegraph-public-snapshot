@@ -79,6 +79,20 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 			},
 			err: "<nil>",
 		},
+		{
+			name: "with access token",
+			assert: assertAllReposListed([]string{
+				"/sourcegraph-source/src-cli",
+				"/sourcegraph-source/source-test",
+			}),
+			conf: &schema.BitbucketCloudConnection{
+				AccessToken: os.Getenv("BITBUCKET_CLOUD_ACCESS_TOKEN"),
+				Teams: []string{
+					"sourcegraph-source",
+				},
+			},
+			err: "<nil>",
+		},
 	}
 
 	for _, tc := range testCases {

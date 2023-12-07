@@ -1708,8 +1708,9 @@ dependencies = [
 
 [[package]]
 name = "scip"
-version = "0.1.1"
-source = "git+https://github.com/sourcegraph/scip?rev=1bf111e1cf175569970e95566b379fb2a548d70a#1bf111e1cf175569970e95566b379fb2a548d70a"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e84d21062a3ba08d58870c8c36b0c005b2b2261c6ad1bf7042585427c781883"
 dependencies = [
  "protobuf",
 ]
@@ -2316,9 +2317,9 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter-go"
-version = "0.19.1"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71967701c8214be4aa77e0260e98361e6fd71ceec1d9d03abb37a22c9f60d0ff"
+checksum = "1ad6d11f19441b961af2fda7f12f5d0dac325f6d6de83836a1d3750018cc5114"
 dependencies = [
  "cc",
  "tree-sitter",

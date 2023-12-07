@@ -15,6 +15,7 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
@@ -31,6 +32,7 @@ func mustParseGraphQLSchemaWithClient(t *testing.T, db database.DB, gitserverCli
 		gitserverClient,
 		[]OptionalResolver{},
 		graphql.PanicHandler(printStackTrace{&gqlerrors.DefaultPanicHandler{}}),
+		graphql.MaxDepth(conf.RateLimits().GraphQLMaxDepth),
 	)
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
@@ -128,6 +130,13 @@ func checkErrors(t *testing.T, want, got []*gqlerrors.QueryError) {
 
 	// Compare without caring about the concrete type of the error returned
 	if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(gqlerrors.QueryError{}, "ResolverError", "Err")); diff != "" {
+		// diff truncates the error messages, so dump the full error messages
+		// in t.Log for inspection with 'go test -v'.
+		t.Log("Full errors:\n")
+		for _, e := range got {
+			t.Logf("- %+v\n", e)
+		}
+		// Fail the test with the diff as a summary
 		t.Fatal(diff)
 	}
 }

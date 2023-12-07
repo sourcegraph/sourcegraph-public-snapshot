@@ -29,6 +29,10 @@ export function stripURLParameters(url: string, parametersToRemove: string[] = [
  * @param url the original, full URL
  */
 export function redactSensitiveInfoFromAppURL(url: string): string {
+    if (!url) {
+        return url // nothing to redact
+    }
+
     const sourceURL = new URL(url)
 
     if (sourceURL.hostname !== 'sourcegraph.com') {

@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	"github.com/sourcegraph/sourcegraph/internal/trace/tracetest"
 )
 
 var (
@@ -35,9 +36,12 @@ var (
 		Timestamp: timestamppb.New(must(time.Parse(time.RFC3339, "2023-02-24T14:48:30Z"))),
 		Interaction: &telemetrygatewayv1.EventInteraction{
 			TraceId: func() *string {
-				tid, _ := (staticTraceIDGenerator{}).NewIDs(context.Background())
+				tid, _ := (tracetest.StaticTraceIDGenerator{}).NewIDs(context.Background())
 				return pointers.Ptr(tid.String())
 			}(),
+			Geolocation: &telemetrygatewayv1.EventInteraction_Geolocation{
+				CountryCode: "US",
+			},
 		},
 		Source: &telemetrygatewayv1.EventSource{
 			Server: &telemetrygatewayv1.EventSource_Server{
@@ -49,8 +53,11 @@ var (
 			},
 		},
 		Parameters: &telemetrygatewayv1.EventParameters{
-			Version:         1,
-			Metadata:        map[string]int64{"metadata": 1},
+			Version: 1,
+			Metadata: map[string]float64{
+				"metadata": 1,
+				"float":    1.3,
+			},
 			PrivateMetadata: must(structpb.NewStruct(map[string]any{"private": "data"})),
 			BillingMetadata: &telemetrygatewayv1.EventBillingMetadata{
 				Product:  "Product",

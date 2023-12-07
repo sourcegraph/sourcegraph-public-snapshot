@@ -194,7 +194,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 
 	apiURL := url.URL{
 		Scheme: "https",
-		Host:   fmt.Sprintf("bedrock.%s.amazonaws.com", defaultConfig.Region),
+		Host:   fmt.Sprintf("bedrock-runtime.%s.amazonaws.com", defaultConfig.Region),
 	}
 
 	if stream {

@@ -1,5 +1,5 @@
 {
-  "checksum": "edfef804723dc794cca785f7de2dc8def338c0fa9829ef5b2afab75ca692c755",
+  "checksum": "9d730cdc37d6a005b78babdf0cbe8fa947cac02458b3f6faef35d0d5cc2aa41a",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -9437,16 +9437,13 @@
       },
       "license": "Unlicense/MIT"
     },
-    "scip 0.1.1": {
+    "scip 0.3.1": {
       "name": "scip",
-      "version": "0.1.1",
+      "version": "0.3.1",
       "repository": {
-        "Git": {
-          "remote": "https://github.com/sourcegraph/scip",
-          "commitish": {
-            "Rev": "1bf111e1cf175569970e95566b379fb2a548d70a"
-          },
-          "strip_prefix": "bindings/rust"
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/scip/0.3.1/download",
+          "sha256": "3e84d21062a3ba08d58870c8c36b0c005b2b2261c6ad1bf7042585427c781883"
         }
       },
       "targets": [
@@ -9475,7 +9472,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.1.1"
+        "version": "0.3.1"
       },
       "license": "Apache-2.0"
     },
@@ -9576,7 +9573,7 @@
               "target": "rustc_hash"
             },
             {
-              "id": "scip 0.1.1",
+              "id": "scip 0.3.1",
               "target": "scip"
             },
             {
@@ -9634,7 +9631,7 @@
               "target": "protobuf"
             },
             {
-              "id": "scip 0.1.1",
+              "id": "scip 0.3.1",
               "target": "scip"
             },
             {
@@ -9676,7 +9673,7 @@
               "target": "lazy_static"
             },
             {
-              "id": "scip 0.1.1",
+              "id": "scip 0.3.1",
               "target": "scip"
             },
             {
@@ -9696,7 +9693,7 @@
               "target": "tree_sitter_cpp"
             },
             {
-              "id": "tree-sitter-go 0.19.1",
+              "id": "tree-sitter-go 0.20.0",
               "target": "tree_sitter_go"
             },
             {
@@ -10150,7 +10147,7 @@
               "target": "rocket"
             },
             {
-              "id": "scip 0.1.1",
+              "id": "scip 0.3.1",
               "target": "scip"
             },
             {
@@ -11017,7 +11014,7 @@
               "target": "rustyline"
             },
             {
-              "id": "scip 0.1.1",
+              "id": "scip 0.3.1",
               "target": "scip"
             },
             {
@@ -12545,13 +12542,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-go 0.19.1": {
+    "tree-sitter-go 0.20.0": {
       "name": "tree-sitter-go",
-      "version": "0.19.1",
+      "version": "0.20.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/tree-sitter-go/0.19.1/download",
-          "sha256": "71967701c8214be4aa77e0260e98361e6fd71ceec1d9d03abb37a22c9f60d0ff"
+          "url": "https://crates.io/api/v1/crates/tree-sitter-go/0.20.0/download",
+          "sha256": "1ad6d11f19441b961af2fda7f12f5d0dac325f6d6de83836a1d3750018cc5114"
         }
       },
       "targets": [
@@ -12586,14 +12583,14 @@
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-go 0.19.1",
+              "id": "tree-sitter-go 0.20.0",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.19.1"
+        "version": "0.20.0"
       },
       "build_script_attrs": {
         "data_glob": [

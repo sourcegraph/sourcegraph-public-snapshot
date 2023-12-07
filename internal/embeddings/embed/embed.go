@@ -29,7 +29,7 @@ func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsC
 	case conftypes.EmbeddingsProviderNameOpenAI:
 		return openai.NewClient(httpcli.ExternalClient, config), nil
 	case conftypes.EmbeddingsProviderNameAzureOpenAI:
-		return azureopenai.NewClient(httpcli.ExternalClient, config), nil
+		return azureopenai.NewClient(azureopenai.GetAPIClient, config)
 	default:
 		return nil, errors.Newf("invalid provider %q", config.Provider)
 	}

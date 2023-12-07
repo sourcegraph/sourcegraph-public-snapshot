@@ -4,6 +4,7 @@ import { mdiInformationOutline } from '@mdi/js'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
@@ -39,7 +40,7 @@ import { scheduleUserPermissionsSync, UserPermissionsInfoQuery } from './backend
 
 import styles from './UserSettingsPermissionsPage.module.scss'
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     user: { id: string; username: string }
 }
 
@@ -49,6 +50,7 @@ interface Props extends TelemetryProps {
 export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     user,
     telemetryService,
+    telemetryRecorder,
 }) => {
     useEffect(() => eventLogger.logViewEvent('UserSettingsPermissions'), [])
 
@@ -142,7 +144,12 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                 className="my-3 pt-3"
             />
             <Container className="mb-3">
-                <PermissionsSyncJobsTable telemetryService={telemetryService} minimal={true} userID={user.id} />
+                <PermissionsSyncJobsTable
+                    telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
+                    minimal={true}
+                    userID={user.id}
+                />
             </Container>
             <PageHeader
                 headingElement="h2"

@@ -9,14 +9,12 @@ import (
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
-
-	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
-	oteltrace "go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/tracetest"
 
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
@@ -39,8 +37,7 @@ func TestNewEventWithDefaults(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), actor.FromMockUser(userID))
 
 		// Attach a trace
-		otel.SetTracerProvider(oteltracesdk.NewTracerProvider(
-			oteltracesdk.WithIDGenerator(staticTraceIDGenerator{})))
+		tracetest.ConfigureStaticTracerProvider(t)
 		_, ctx = trace.New(ctx, t.Name())
 
 		// NOTE: We can't test the feature flag part easily because
@@ -72,19 +69,39 @@ func TestNewEventWithDefaults(t *testing.T) {
   }
 }`).Equal(t, string(jsondata))
 	})
-}
 
-// staticTraceIDGenerator generates a stable trace and span ID for golden testing.
-type staticTraceIDGenerator struct{}
+	t.Run("extract geolocation", func(t *testing.T) {
+		// Atach a request client
+		ctx := requestclient.WithClient(context.Background(), &requestclient.Client{
+			IP: "93.184.216.34", // ping -c1 example.net
+		})
 
-// NewIDs returns a new trace and span ID.
-func (s staticTraceIDGenerator) NewIDs(ctx context.Context) (oteltrace.TraceID, oteltrace.SpanID) {
-	tid, _ := oteltrace.TraceIDFromHex("01020304050607080102040810203040")
-	return tid, s.NewSpanID(ctx, tid)
-}
+		// NOTE: We can't test the feature flag part easily because
+		// featureflag.GetEvaluatedFlagSet depends on Redis, and the package
+		// is not designed for it to easily be stubbed out for testing.
+		// Since it's used for existing telemetry, we trust it works.
 
-// NewSpanID returns a ID for a new span in the trace with traceID.
-func (staticTraceIDGenerator) NewSpanID(ctx context.Context, traceID oteltrace.TraceID) oteltrace.SpanID {
-	sid, _ := oteltrace.SpanIDFromHex("0102040810203040")
-	return sid
+		got := telemetrygatewayv1.NewEventWithDefaults(ctx, staticTime, func() string { return "id" })
+		assert.NotNil(t, got.Interaction)
+
+		protodata, err := protojson.Marshal(got)
+		require.NoError(t, err)
+
+		// Protojson output isn't stable by injecting randomized whitespace,
+		// so we re-marshal it to stabilize the output for golden tests.
+		// https://github.com/golang/protobuf/issues/1082
+		var gotJSON map[string]any
+		require.NoError(t, json.Unmarshal(protodata, &gotJSON))
+		jsondata, err := json.MarshalIndent(gotJSON, "", "  ")
+		require.NoError(t, err)
+		autogold.Expect(`{
+  "id": "id",
+  "interaction": {
+    "geolocation": {
+      "countryCode": "GB"
+    }
+  },
+  "timestamp": "2023-02-24T14:48:30Z"
+}`).Equal(t, string(jsondata))
+	})
 }

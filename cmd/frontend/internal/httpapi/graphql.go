@@ -24,6 +24,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func writeViolationError(w http.ResponseWriter, message string) error {
+	w.WriteHeader(http.StatusBadRequest) // 400 because retrying won't help
+	return writeJSON(w, graphql.Response{
+		Errors: []*gqlerrors.QueryError{
+			{
+				Message: message,
+			},
+		},
+	})
+}
+
 func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
 	return func(w http.ResponseWriter, r *http.Request) (err error) {
 		if r.Method != "POST" {
@@ -87,27 +98,38 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 			if costErr != nil {
 				logger.Debug("failed to estimate GraphQL cost",
 					log.Error(costErr))
-			}
-			traceData.costError = costErr
-			traceData.cost = cost
+				traceData.costError = costErr
+			} else if cost != nil {
+				traceData.cost = cost
 
-			if rl, enabled := rlw.Get(); enabled && cost != nil {
-				limited, result, err := rl.RateLimit(r.Context(), uid, cost.FieldCount, graphqlbackend.LimiterArgs{
-					IsIP:          isIP,
-					Anonymous:     anonymous,
-					RequestName:   requestName,
-					RequestSource: requestSource,
-				})
-				if err != nil {
-					logger.Error("checking GraphQL rate limit", log.Error(err))
-					traceData.limitError = err
-				} else {
-					traceData.limited = limited
-					traceData.limitResult = result
-					if limited {
-						w.Header().Set("Retry-After", strconv.Itoa(int(result.RetryAfter.Seconds())))
-						w.WriteHeader(http.StatusTooManyRequests)
-						return nil
+				rl := conf.RateLimits()
+
+				if !isInternal && (cost.AliasCount > rl.GraphQLMaxAliases) {
+					return writeViolationError(w, "query exceeds maximum query cost")
+				}
+
+				if !isInternal && (cost.FieldCount > rl.GraphQLMaxFieldCount) {
+					return writeViolationError(w, "query exceeds maximum query cost")
+				}
+
+				if rl, enabled := rlw.Get(); enabled {
+					limited, result, err := rl.RateLimit(r.Context(), uid, cost.FieldCount, graphqlbackend.LimiterArgs{
+						IsIP:          isIP,
+						Anonymous:     anonymous,
+						RequestName:   requestName,
+						RequestSource: requestSource,
+					})
+					if err != nil {
+						logger.Error("checking GraphQL rate limit", log.Error(err))
+						traceData.limitError = err
+					} else {
+						traceData.limited = limited
+						traceData.limitResult = result
+						if limited {
+							w.Header().Set("Retry-After", strconv.Itoa(int(result.RetryAfter.Seconds())))
+							w.WriteHeader(http.StatusTooManyRequests)
+							return nil
+						}
 					}
 				}
 			}

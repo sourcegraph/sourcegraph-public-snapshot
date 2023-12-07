@@ -91,7 +91,7 @@ func (h *handler) sendWebhook(
 		return errors.Wrap(err, "decrypting webhook URL")
 	}
 
-	err = outbound.CheckAddress(url)
+	err = outbound.CheckURL(url)
 	if err != nil {
 		logger.Error("webhook URL is not allowed", log.Error(err))
 		return errors.Wrap(err, "checking webhook URL")
