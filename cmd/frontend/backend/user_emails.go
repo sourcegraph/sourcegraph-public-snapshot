@@ -226,6 +226,15 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 	if err != nil {
 		return err
 	}
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameEmailVerified,
+		URL:       "someURIhere",
+		UserID:    uint32(userID),
+		Argument:  nil,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	e.db.SecurityEventLogs().LogEvent(ctx, event)
 
 	// Eagerly attempt to sync permissions again. This needs to happen _after_ the
 	// transaction has committed so that it takes into account any changes triggered
