@@ -55,7 +55,7 @@ type Variables struct {
 	ProjectID  string
 	Service    spec.ServiceSpec
 	Monitoring spec.MonitoringSpec
-	MaxCount   int
+	MaxCount   *int
 }
 
 const StackName = "monitoring"
@@ -151,8 +151,8 @@ func commonAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) 
 }
 
 func serviceAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
-	// Only provision if we have a limit above 5 set
-	if vars.MaxCount > 5 {
+	// Only provision if MaxCount is specified above 5
+	if pointers.Deref(vars.MaxCount, 0) > 5 {
 		_, err := monitoringalertpolicy.New(stack, id, &monitoringalertpolicy.Config{
 			ID:          "instance_count",
 			Name:        "Container Instance Count",

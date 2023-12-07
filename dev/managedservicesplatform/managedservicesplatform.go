@@ -121,16 +121,16 @@ func (r *Renderer) RenderEnvironment(
 		return nil, errors.Wrap(err, "failed to create cloudrun stack")
 	}
 
-	// We only create the instance_count alert when MaxCount > 5 so default to 0 if unspecified
-	maxCount := 0
-	if env.Instances.Scaling != nil {
-		maxCount = pointers.Deref(env.Instances.Scaling.MaxCount, 0)
-	}
 	if _, err := monitoring.NewStack(stacks, monitoring.Variables{
 		ProjectID:  *projectOutput.Project.ProjectId(),
 		Service:    svc,
 		Monitoring: monitoringSpec,
-		MaxCount:   maxCount,
+		MaxCount: func() *int {
+			if env.Instances.Scaling != nil {
+				return env.Instances.Scaling.MaxCount
+			}
+			return nil
+		}(),
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create monitoring stack")
 	}
