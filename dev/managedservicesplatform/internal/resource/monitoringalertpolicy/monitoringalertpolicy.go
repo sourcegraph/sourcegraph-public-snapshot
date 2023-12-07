@@ -189,7 +189,7 @@ func thresholdAggregation(scope constructs.Construct, id resourceid.ID, config *
 						},
 						Comparison:     pointers.Ptr(string(config.ThresholdAggregation.Comparison)),
 						Duration:       pointers.Ptr(config.ThresholdAggregation.Duration),
-						Filter:         pointers.Ptr(filter(config)),
+						Filter:         pointers.Ptr(buildFilter(config)),
 						ThresholdValue: pointers.Float64(config.ThresholdAggregation.Threshold),
 						Trigger: &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThresholdTrigger{
 							Count: pointers.Float64(1),
@@ -204,8 +204,8 @@ func thresholdAggregation(scope constructs.Construct, id resourceid.ID, config *
 	return &Output{}, nil
 }
 
-// filter creates the Filter string for a ThresholdAggregation monitoring alert policy
-func filter(config *Config) string {
+// buildFilter creates the Filter string for a ThresholdAggregation monitoring alert policy
+func buildFilter(config *Config) string {
 	filters := make([]string, 0)
 	for key, val := range config.ThresholdAggregation.Filters {
 		filters = append(filters, fmt.Sprintf(`%s = "%s"`, key, val))

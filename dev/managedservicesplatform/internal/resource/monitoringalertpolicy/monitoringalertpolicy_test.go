@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-func TestFilter(t *testing.T) {
+func TestBuildFilter(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
 		config Config
@@ -43,7 +43,7 @@ func TestFilter(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			got := filter(&tc.config)
+			got := buildFilter(&tc.config)
 			tc.want.Equal(t, got)
 		})
 	}
