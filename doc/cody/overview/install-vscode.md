@@ -215,14 +215,20 @@ Here's a demo that shows how Code Actions work to fix an error:
 
 A similar process applies to explain and edit Code Actions.
 
-<!-- ## Cody Natural Language Search
+## Cody Natural Language Search
 
 <aside class="beta">
 <p>
 <span class="badge badge-beta">Beta</span>
-Cody Natural Language Search is currently available in beta for all users.
+Cody Natural Language Search is currently available in Beta for all users on VS Code extension.
 </p>
-</aside> -->
+</aside>
+
+The **Natural Language Search** is an AI-powered code search that allows users to input a natural language search query and look for it within their project. For example, "password hashing" or "connection retries".
+
+In the left-hand panel, type your queries in the **Search** field, and the search results are displayed. You can select one of the search results and verify that the correct file opens in a new tab.
+
+While this feature will be available to Community and Pro users, the ability to search across your entire codebase from within the IDE is limited to Enterprise users who have purchased both our Cody and Search products.
 
 ## Enable code graph context for context-aware answers (Optional)
 
