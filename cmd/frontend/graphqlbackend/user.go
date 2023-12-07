@@ -2,6 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -514,7 +520,40 @@ func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPla
 		return nil, err
 	}
 
+	if err := r.refreshGatewayRateLimits(ctx); err != nil {
+		return nil, err
+	}
+
 	return UserByIDInt32(ctx, r.db, userID)
+}
+
+// refreshGatewayRateLimits refreshes the rate limits for the user on Cody Gateway.
+func (r *schemaResolver) refreshGatewayRateLimits(ctx context.Context) error {
+	completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+	if completionsConfig.Provider != conftypes.CompletionsProviderNameSourcegraph {
+		return errors.New("this feature only supports Cody Gateway")
+	}
+
+	a := actor.FromContext(ctx)
+	apiTokenSha256, err := r.db.AccessTokens().GetOrCreateInternalToken(ctx, a.UID, []string{"user:all"})
+	if err != nil {
+		return errors.New("getting internal access token")
+	}
+	gatewayToken := "sgd_" + hex.EncodeToString(hashutil.ToSHA256Bytes(apiTokenSha256))
+
+	req, err := http.NewRequestWithContext(ctx, "POST", completionsConfig.Endpoint+"/v1/limits/refresh", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", gatewayToken))
+
+	resp, err := httpcli.UncachedExternalDoer.Do(req)
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("errored refreshing rate limits from Cody Gateway")
+	}
+
+	return nil
 }
 
 // CurrentUser returns the authenticated user if any. If there is no authenticated user, it returns
