@@ -329,7 +329,7 @@ func AuthCallback(db database.DB, r *http.Request, usernamePrefix string, getPro
 		return c.Value
 	}
 	anonymousId, _ := cookie.AnonymousUID(r)
-	newUserCreated, actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, p, idToken, userInfo, &claims, usernamePrefix, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
+	newUserCreated, actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, p, oauth2Token, idToken, userInfo, &claims, usernamePrefix, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
 	if err != nil {
 		return nil,
 			safeErrMsg,

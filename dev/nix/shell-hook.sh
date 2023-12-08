@@ -18,6 +18,9 @@ export SRC_DEV_EXCEPT="${SRC_DEV_EXCEPT:-postgres_exporter}"
 
 popd >/dev/null || exit
 
+# Empty out .bazelrc-nix
+echo -n > .bazelrc-nix
+
 # Use a hermetic and non-host CC compiler on NixOS.
 if [ -f /etc/NIXOS ]; then
   cat <<EOF > .bazelrc-nix

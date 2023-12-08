@@ -168,6 +168,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			FireworksAccessToken:                        config.Fireworks.AccessToken,
 			FireworksAllowedModels:                      config.Fireworks.AllowedModels,
 			FireworksLogSelfServeCodeCompletionRequests: config.Fireworks.LogSelfServeCodeCompletionRequests,
+			FireworksDisableSingleTenant:                config.Fireworks.DisableSingleTenant,
 			EmbeddingsAllowedModels:                     config.AllowedEmbeddingsModels,
 		}, sources)
 	if err != nil {
@@ -179,8 +180,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up
 	// Cloudflare in from of Cody Gateway. This comes first.
-	hasCloudflare := !config.InsecureDev
-	handler = requestclient.ExternalHTTPMiddleware(handler, hasCloudflare)
+	handler = requestclient.ExternalHTTPMiddleware(handler)
 	handler = requestinteraction.HTTPMiddleware(handler)
 
 	// Initialize our server

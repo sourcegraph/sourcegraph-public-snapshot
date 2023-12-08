@@ -37,10 +37,16 @@ export const enum EventName {
     DOWNLOAD_IDE = 'DownloadIDE',
     DOWNLOAD_APP = 'DownloadApp',
 
-    CODY_MANAGEMENT_PAGE_VIEWED = 'web:codyManagement:pageViewed',
-    CODY_SUBSCRIPTION_PAGE_VIEWED = 'web:codySubscription:pageViewed',
-    CODY_ONBOARDING_PURPOSE_WORK = 'web:codyOnboarding:purpose:work',
-    CODY_ONBOARDING_PURPOSE_PERSONAL = 'web:codyOnboarding:purpose:personal',
+    CODY_MANAGEMENT_PAGE_VIEWED = 'CodyManageViewed',
+    CODY_SUBSCRIPTION_PAGE_VIEWED = 'CodyPlanSelectionViewed',
+    CODY_SUBSCRIPTION_PLAN_CLICKED = 'CodyPlanSelectionClicked',
+    CODY_SUBSCRIPTION_PLAN_CONFIRMED = 'CodyPlanSelectionConfirmed',
+    CODY_ONBOARDING_WELCOME_VIEWED = 'CodyWelcomeViewed',
+    CODY_ONBOARDING_PURPOSE_VIEWED = 'CodyUseCaseViewed',
+    CODY_ONBOARDING_PURPOSE_SELECTED = 'CodyUseCaseSelected',
+    CODY_ONBOARDING_CHOOSE_EDITOR_VIEWED = 'CodyEditorViewed',
+    CODY_ONBOARDING_CHOOSE_EDITOR_SKIPPED = 'CodyEditorSkipped',
+    CODY_ONBOARDING_CHOOSE_EDITOR_SELECTED = 'CodyEditorSelected',
 }
 
 export const enum EventLocation {

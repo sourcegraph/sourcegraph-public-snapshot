@@ -43,6 +43,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>Contributors - {data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
+
 <section>
     <div class="root">
         <form method="GET">

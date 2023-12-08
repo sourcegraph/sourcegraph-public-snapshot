@@ -3,6 +3,7 @@ import type { ReactElement } from 'react'
 
 import { mdiTrendingUp } from '@mdi/js'
 import classNames from 'classnames'
+import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Icon, PageHeader, Button, H1, H2, H3, Text, ButtonLink, useSearchParameters, H4 } from '@sourcegraph/wildcard'
@@ -45,6 +46,14 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     const [isEnabled] = useFeatureFlag('cody-pro', false)
     const [showUpgradeToPro, setShowUpgradeToPro] = useState<boolean>(false)
     const [showCancelPro, setShowCancelPro] = useState<boolean>(false)
+
+    const navigate = useNavigate()
+
+    useEffect(() => {
+        if (!!data && !data?.currentUser) {
+            navigate('/sign-in?returnTo=/cody/subscription')
+        }
+    }, [data, navigate])
 
     if (!isCodyEnabled() || !isSourcegraphDotCom || !isEnabled || !data?.currentUser || !authenticatedUser) {
         return null
@@ -150,7 +159,12 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Text
                                             className="mb-0 text-muted d-inline cursor-pointer"
                                             size="small"
-                                            onClick={() => setShowCancelPro(true)}
+                                            onClick={() => {
+                                                eventLogger.log(EventName.CODY_SUBSCRIPTION_PLAN_CLICKED, {
+                                                    tier: 'free',
+                                                })
+                                                setShowCancelPro(true)
+                                            }}
                                         >
                                             Cancel
                                         </Text>
@@ -159,7 +173,10 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     <Button
                                         className="flex-1"
                                         variant="primary"
-                                        onClick={() => setShowUpgradeToPro(true)}
+                                        onClick={() => {
+                                            eventLogger.log(EventName.CODY_SUBSCRIPTION_PLAN_CLICKED, { tier: 'pro' })
+                                            setShowUpgradeToPro(true)
+                                        }}
                                     >
                                         <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
                                         Get Pro Trial
@@ -213,7 +230,16 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             <H3 className={classNames('text-muted', codyProEnabled ? 'mb-2' : 'mb-4')}>
                                 Custom pricing
                             </H3>
-                            <ButtonLink className="flex-1 mt-3" variant="secondary" outline={true}>
+                            <ButtonLink
+                                className="flex-1 mt-3"
+                                variant="secondary"
+                                outline={true}
+                                to="https://sourcegraph.com/contact/request-info?utm_source=cody_subscription_page"
+                                target="_blank"
+                                onClick={() => {
+                                    eventLogger.log(EventName.CODY_SUBSCRIPTION_PLAN_CLICKED, { tier: 'enterprise' })
+                                }}
+                            >
                                 Contact Sales
                             </ButtonLink>
                         </div>

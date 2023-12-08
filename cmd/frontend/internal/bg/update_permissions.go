@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"

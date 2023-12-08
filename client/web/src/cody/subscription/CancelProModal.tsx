@@ -3,6 +3,8 @@ import { Modal, Button, H2, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import type { ChangeCodyPlanResult, ChangeCodyPlanVariables } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
+import { EventName } from '../../util/constants'
 
 import { CHANGE_CODY_PLAN } from './queries'
 
@@ -49,7 +51,13 @@ export function CancelProModal({
                         </Button>
                         <Button
                             variant="secondary"
-                            onClick={() => changeCodyPlan({ variables: { pro: false, id: authenticatedUser.id } })}
+                            onClick={() => {
+                                eventLogger.log(EventName.CODY_SUBSCRIPTION_PLAN_CONFIRMED, {
+                                    tier: 'free',
+                                })
+
+                                changeCodyPlan({ variables: { pro: false, id: authenticatedUser.id } })
+                            }}
                         >
                             Switch to Free
                         </Button>
