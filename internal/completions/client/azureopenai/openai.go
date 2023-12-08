@@ -65,6 +65,7 @@ func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
 		if credErr != nil {
 			return nil, credErr
 		}
+		apiClient.endpoint = endpoint
 		apiClient.client, err = azopenai.NewClient(endpoint, credential, nil)
 	}
 	return apiClient.client, err
