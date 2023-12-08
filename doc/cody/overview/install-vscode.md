@@ -145,7 +145,9 @@ All previous and existing chats are stored under the chats panel on the left. Yo
 
 ### Enhanced Context Selector
 
-Cody's Enhanced Context enables Cody to leverage search and embeddings-based context. It's enabled by default, though embeddings for Enterprise users are controlled by administrators and community users will need to generate embeddings for their projects by clicking the icon next to the chat input. The icon is also where you can disable Enhanced Context if you'd like more granular control of Cody's context by tagging `@-file` or `@#-symbol` in the chat input.
+Cody's Enhanced Context enables Cody to leverage search and embeddings-based context. Community users can generate local embeddings for their projects by clicking the icon next to the chat input. Users can also disable Enhanced Context to have more granular control of Cody's context by including `@-files` or `@#-symbols` in the chat input.
+
+**Note: Embeddings for Enterprise users are controlled by their administrators.**
 
 ![](https://storage.googleapis.com/sourcegraph-assets/Docs/enhanced-context.png)
 
