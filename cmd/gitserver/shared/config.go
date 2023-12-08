@@ -36,8 +36,9 @@ type Config struct {
 	SyncRepoStateUpdatePerSecond   int
 	BatchLogGlobalConcurrencyLimit int
 
-	JanitorReposDesiredPercentFree int
-	JanitorInterval                time.Duration
+	JanitorReposDesiredPercentFree        int
+	JanitorInterval                       time.Duration
+	JanitorDisableDeleteReposOnWrongShard bool
 }
 
 func (c *Config) Load() {
@@ -84,4 +85,5 @@ func (c *Config) Load() {
 	}
 
 	c.JanitorInterval = c.GetInterval("SRC_REPOS_JANITOR_INTERVAL", "1m", "Interval between cleanup runs")
+	c.JanitorDisableDeleteReposOnWrongShard = c.GetBool("SRC_REPOS_JANITOR_DISABLE_DELETE_REPOS_ON_WRONG_SHARD", "false", "Disable deleting repos on wrong shard")
 }
