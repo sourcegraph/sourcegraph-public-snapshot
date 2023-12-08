@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -97,7 +98,7 @@ type serviceStatus struct {
 
 var _ runtime.ServiceState = (*serviceStatus)(nil)
 
-func (s *serviceStatus) Healthy(ctx context.Context) error {
+func (s *serviceStatus) Healthy(ctx context.Context, _ url.Values) error {
 	if err := s.eventsTopic.Ping(ctx); err != nil {
 		return errors.Wrap(err, "eventsPubSubClient.Ping")
 	}
