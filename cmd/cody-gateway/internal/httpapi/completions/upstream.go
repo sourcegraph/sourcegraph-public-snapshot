@@ -377,7 +377,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
-			fmt.Println("Response written after()", time.Since(start))
+
 			if upstreamStatusCode >= 200 && upstreamStatusCode < 300 {
 				// Pass reader to response transformer to capture token counts.
 				promptUsage, completionUsage = methods.parseResponseAndUsage(logger, body, &responseBuf)
