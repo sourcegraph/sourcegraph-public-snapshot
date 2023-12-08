@@ -86,20 +86,29 @@ function generateGraphQLTypes(): Plugin {
         return false
     }
 
+    async function codegen(): Promise<void> {
+        try {
+            await generate(codgegenConfig, true)
+        } catch {
+            // generate already logs errors to the console
+            // but we still need to catch it otherwise vite will terminate
+        }
+    }
+
     return {
         name: 'graphql-codegen',
-        async buildStart() {
-            await generate(codgegenConfig, true)
+        buildStart() {
+            return codegen()
         },
         configureServer(server) {
             server.watcher.on('add', path => {
                 if (shouldRunCodegen(path)) {
-                    generate(codgegenConfig, true)
+                    codegen()
                 }
             })
             server.watcher.on('change', path => {
                 if (shouldRunCodegen(path)) {
-                    generate(codgegenConfig, true)
+                    codegen()
                 }
             })
         },
