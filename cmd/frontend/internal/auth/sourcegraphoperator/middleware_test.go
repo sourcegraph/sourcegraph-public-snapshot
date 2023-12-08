@@ -184,7 +184,10 @@ func TestMiddleware(t *testing.T) {
 	defer oidcIDServer.Close()
 	providerConfig.Issuer = oidcIDServer.URL
 
-	mockProvider := NewProvider(providerConfig, httpcli.TestExternalClient).(*provider)
+	cli, err := httpcli.NewFactory(nil).Client()
+	require.NoError(t, err)
+
+	mockProvider := NewProvider(providerConfig, cli).(*provider)
 	providers.MockProviders = []providers.Provider{mockProvider}
 	defer func() { providers.MockProviders = nil }()
 

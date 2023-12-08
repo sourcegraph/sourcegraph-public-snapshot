@@ -37,7 +37,6 @@ func getBasic(endpoint string, provider conftypes.CompletionsProviderName, acces
 	case conftypes.CompletionsProviderNameOpenAI:
 		return openai.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
 	case conftypes.CompletionsProviderNameAzureOpenAI:
-		// TODO: Pass in CLI.
 		return azureopenai.NewClient(azureopenai.GetAPIClient, endpoint, accessToken)
 	case conftypes.CompletionsProviderNameSourcegraph:
 		return codygateway.NewClient(httpcli.ExternalDoer, endpoint, accessToken)

@@ -23,6 +23,11 @@ import (
 )
 
 func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsClient, error) {
+	// Fast path, we don't need to generate an external doer for AzureOpenAI.
+	if config.Provider == conftypes.EmbeddingsProviderNameAzureOpenAI {
+		return azureopenai.NewClient(azureopenai.GetAPIClient, config)
+	}
+
 	cli, err := httpcli.NewExternalClientFactory().Doer()
 	if err != nil {
 		return nil, err
@@ -33,9 +38,6 @@ func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsC
 		return sourcegraph.NewClient(cli, config), nil
 	case conftypes.EmbeddingsProviderNameOpenAI:
 		return openai.NewClient(cli, config), nil
-	case conftypes.EmbeddingsProviderNameAzureOpenAI:
-		// TODO: Pass in CLI.
-		return azureopenai.NewClient(azureopenai.GetAPIClient, config)
 	default:
 		return nil, errors.Newf("invalid provider %q", config.Provider)
 	}

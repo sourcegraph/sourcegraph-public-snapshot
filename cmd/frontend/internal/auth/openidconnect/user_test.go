@@ -18,6 +18,11 @@ import (
 )
 
 func TestAllowSignup(t *testing.T) {
+	cli, err := httpcli.NewExternalClientFactory().Client()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	allow := true
 	disallow := false
 	tests := map[string]struct {
@@ -62,7 +67,7 @@ func TestAllowSignup(t *testing.T) {
 					AllowSignup:        test.allowSignup,
 				},
 				oidc:       &oidcProvider{},
-				httpClient: httpcli.ExternalClient,
+				httpClient: cli,
 			}
 			_, _, _, err := getOrCreateUser(
 				context.Background(),

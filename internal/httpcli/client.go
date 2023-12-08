@@ -110,7 +110,7 @@ func NewExternalClientFactory(middleware ...Middleware) *Factory {
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
 		// not a generic http.RoundTripper.
 		// TODO
-		externalTransportOpt,
+		ExternalTransportOpt,
 		NewErrorResilientTransportOpt(
 			newRetryPolicy(maxRetries(externalRetryMaxAttempts), externalRetryAfterMaxDuration),
 			expJitterDelayOrRetryAfterDelay(externalRetryDelayBase, externalRetryDelayMax),
