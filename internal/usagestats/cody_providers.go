@@ -11,7 +11,6 @@ func GetCodyProviders() (*types.CodyProviders, error) {
 		Completions: &types.CodyCompletionProvider{
 			ChatModel:       c.Completions.ChatModel,
 			CompletionModel: c.Completions.CompletionModel,
-			FastChatModel:   c.Completions.FastChatModel,
 			Provider:        c.Completions.Provider,
 		},
 		Embeddings: &types.CodyEmbeddingsProvider{

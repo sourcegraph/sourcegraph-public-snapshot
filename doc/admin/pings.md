@@ -200,7 +200,7 @@ Sourcegraph aggregates usage and performance metrics for some product features i
 - Histogram of cloned repository sizes
 - Aggregate daily, weekly, monthly repository metadata usage statistics
 - Cody providers data
-  - Completions provider, chat, completions, and fast chat models
+  - Completions provider, chat and completion models
   - Embeddings provider and model
 </details>
 

@@ -416,8 +416,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                                 <ul>
                                     <li>Provider</li>
                                     <li>Chat model</li>
-                                    <li>Completions model</li>
-                                    <li>Fast chat model</li>
+                                    <li>Completion model</li>
                                 </ul>
                             </li>
                             <li>
