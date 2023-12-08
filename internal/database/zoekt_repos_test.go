@@ -28,9 +28,9 @@ func TestZoektRepos_GetZoektRepo(t *testing.T) {
 	ctx := context.Background()
 	s := &zoektReposStore{Store: basestore.NewWithHandle(db.Handle())}
 
-	repo1, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: "repo1"})
-	repo2, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: "repo2"})
-	repo3, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: "repo3"})
+	repo1, _ := createTestRepo(ctx, t, db, "repo1")
+	repo2, _ := createTestRepo(ctx, t, db, "repo2")
+	repo3, _ := createTestRepo(ctx, t, db, "repo3")
 
 	assertZoektRepos(t, ctx, s, map[api.RepoID]*ZoektRepo{
 		repo1.ID: {RepoID: repo1.ID, IndexStatus: "not_indexed", Branches: []zoekt.RepositoryBranch{}},
@@ -56,7 +56,7 @@ func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
 		"repo2",
 		"repo3",
 	} {
-		r, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: name})
+		r, _ := createTestRepo(ctx, t, db, name)
 		repos = append(repos, types.MinimalRepo{ID: r.ID, Name: r.Name})
 	}
 
