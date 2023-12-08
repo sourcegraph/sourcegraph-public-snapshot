@@ -3,11 +3,11 @@ import { useState } from 'react'
 import classNames from 'classnames'
 import { Link } from 'react-router-dom'
 
-import { H2, Text, Button, ButtonLink } from '@sourcegraph/wildcard'
+import {H2, Text, Button, ButtonLink} from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
 
-export function JetBrainsInstructions({
+export function NeoVimInstructions({
                                           onBack,
                                           onClose,
                                           showStep,
@@ -23,7 +23,7 @@ export function JetBrainsInstructions({
             {step === 0 && (
                 <>
                     <div className="pb-3 border-bottom">
-                        <H2>Setup instructions for JetBrains</H2>
+                        <H2>Setup instructions for NeoVim</H2>
                     </div>
 
                     <div className={classNames('pt-3 px-3', styles.instructionsContainer)}>
@@ -34,78 +34,43 @@ export function JetBrainsInstructions({
                                 </div>
                                 <div>
                                     <Text className="mb-1" weight="bold">
-                                        Open the Plugins Page (or via the  <Link
-                                        to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai"
-                                    >
-                                        JetBrains Marketplace
-                                    </Link>)
+                                        Open the plugin repo on GitHub
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
-                                        Click the cog [⚙️] icon in the top right corner of your IDE and select{' '}
-                                        <strong>Plugins</strong>
-                                        <br />
-                                        Alternatively, go to the settings option (<strong> [⌘] + [,] on macOS, or File →
-                                        Settings on Windows </strong>), then select "Plugins" from the menu on the left.
+                                        Download the latest version of the plugin from the repo.
                                     </Text>
                                 </div>
                             </div>
-                            <img
-                                alt="jetBrains Menu"
-                                className="mt-2 m-auto"
-                                width="70%"
-                                src="https://storage.googleapis.com/sourcegraph-assets/jetBrainsInstructions/jetBrainsMenu.png"
-                            />
+                            <div className="d-flex flex-column justify-content-center align-items-center mt-4">
+                                <ButtonLink
+                                    variant="primary"
+                                    to="https://github.com/sourcegraph/sg.nvim#setup"
+                                    target="_blank"
+                                >
+                                   Navigate to GitHub Repo
+                                </ButtonLink>
+                                <img
+                                    alt="NeoVim Repo"
+                                    className="mt-2 m-auto"
+                                    width="70%"
+                                    src="https://storage.googleapis.com/sourcegraph-assets/NeoVimInstructions/NeovimStep1.png"
+                                />
+                            </div>
                         </div>
 
-
-                        <div className="mt-3 d-flex flex-column border-bottom">
+                        <div className="mt-3 pb-5 d-flex flex-column border-bottom">
                             <div className="d-flex align-items-center">
                                 <div className="mr-1">
                                     <div className={classNames('mr-2', styles.step)}>2</div>
                                 </div>
                                 <div>
                                     <Text className="mb-1" weight="bold">
-                                        Install the Cody Plugin
+                                        Follow the instructions detailed in the <strong>Readme.md</strong> file to install the plugin.
                                     </Text>
-                                    <Text className="text-muted mb-0" size="small">
-                                        Type "Cody" in the search bar and <strong>install</strong> the plugin.
-                                    </Text>
+
                                 </div>
                             </div>
-                            <img
-                                alt="jetBrains Menu"
-                                className="mt-2 m-auto"
-                                width="70%"
-                                src="https://storage.googleapis.com/sourcegraph-assets/jetBrainsInstructions/jetBrainsPluginList.png"
-                            />
                         </div>
-
-
-                        <div className="mt-3 d-flex flex-column border-bottom">
-                            <div className="d-flex align-items-center">
-                                <div className="mr-1">
-                                    <div className={classNames('mr-2', styles.step)}>3</div>
-                                </div>
-                                <div>
-                                    <Text className="mb-1" weight="bold">
-                                        Open the Plugin and Login
-                                    </Text>
-                                    <Text className="text-muted mb-0" size="small">
-                                        Cody will be available on the right side of your IDE. Click the Cody icon to
-                                        open the sidebar and login.
-                                        <br />
-                                        Login with the same method you use to create this account.
-                                    </Text>
-                                </div>
-                            </div>
-                            <img
-                                alt="jetBrains Menu"
-                                className="mt-2 m-auto"
-                                width="70%"
-                                src="https://storage.googleapis.com/sourcegraph-assets/jetBrainsInstructions/jetBrainsOnboarding.png"
-                            />
-                        </div>
-
                     </div>
 
                     {showStep === undefined ? (
