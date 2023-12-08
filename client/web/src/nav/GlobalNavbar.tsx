@@ -48,6 +48,7 @@ import { isSearchJobsEnabled } from '../search-jobs/utility'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useDeveloperSettings, useNavbarQueryState } from '../stores'
+import { SvelteKitNavItem } from '../sveltekit/SvelteKitNavItem'
 import { eventLogger } from '../tracking/eventLogger'
 import { EventName, EventLocation } from '../util/constants'
 
@@ -208,6 +209,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             <DeveloperSettingsGlobalNavItem />
                         </NavAction>
                     )}
+                    <SvelteKitNavItem />
                     {isCodyApp && <UpdateGlobalNav />}
                     {props.authenticatedUser?.siteAdmin && (
                         <AccessRequestsGlobalNavItem className="d-flex align-items-center py-1" />
