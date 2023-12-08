@@ -12,6 +12,7 @@ import (
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -76,6 +77,9 @@ func TestTriggerTestWebhookAction(t *testing.T) {
 	}))
 	defer s.Close()
 
-	err := SendTestWebhook(context.Background(), nil, "My test monitor", s.URL)
+	cli, err := httpcli.NewFactory(nil).Doer()
+	require.NoError(t, err)
+
+	err = SendTestWebhook(context.Background(), cli, "My test monitor", s.URL)
 	require.NoError(t, err)
 }

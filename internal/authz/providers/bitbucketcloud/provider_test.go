@@ -144,7 +144,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			ApiURL: server.URL,
 			Url:    server.URL,
 		}
-		client, err := bitbucketcloud.NewClient(server.URL, conn, httpcli.NewExternalClientFactory())
+		client, err := bitbucketcloud.NewClient(server.URL, conn, httpcli.NewFactory(nil))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -190,7 +190,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		ApiURL: server.URL,
 		Url:    server.URL,
 	}
-	client, err := bitbucketcloud.NewClient(server.URL, conn, httpcli.NewExternalClientFactory())
+	client, err := bitbucketcloud.NewClient(server.URL, conn, httpcli.NewFactory(nil))
 	if err != nil {
 		t.Fatal(err)
 	}

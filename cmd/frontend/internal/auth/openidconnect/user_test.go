@@ -13,16 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestAllowSignup(t *testing.T) {
-	cli, err := httpcli.NewExternalClientFactory().Client()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	allow := true
 	disallow := false
 	tests := map[string]struct {
@@ -66,8 +60,7 @@ func TestAllowSignup(t *testing.T) {
 					RequireEmailDomain: "example.com",
 					AllowSignup:        test.allowSignup,
 				},
-				oidc:       &oidcProvider{},
-				httpClient: cli,
+				oidc: &oidcProvider{},
 			}
 			_, _, _, err := getOrCreateUser(
 				context.Background(),

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -21,7 +22,7 @@ var (
 	githubURL = &url.URL{Scheme: "https", Host: "api.github.com"}
 )
 
-func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string) (statusCode int, err error) {
+func enforceAuthViaGitHub(ctx context.Context, doer httpcli.Doer, query url.Values, repoName string) (statusCode int, err error) {
 	githubToken := query.Get("github_token")
 	if githubToken == "" {
 		return http.StatusUnauthorized, ErrGitHubMissingToken
@@ -50,12 +51,12 @@ func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string
 		}
 	}()
 
-	return uncachedEnforceAuthViaGitHub(ctx, githubToken, repoName)
+	return uncachedEnforceAuthViaGitHub(ctx, doer, githubToken, repoName)
 }
 
 var _ AuthValidator = enforceAuthViaGitHub
 
-func uncachedEnforceAuthViaGitHub(ctx context.Context, githubToken, repoName string) (int, error) {
+func uncachedEnforceAuthViaGitHub(ctx context.Context, doer httpcli.Doer, githubToken, repoName string) (int, error) {
 	logger := log.Scoped("uncachedEnforceAuthViaGitHub")
 
 	ghClient, err := github.NewV3Client(logger,

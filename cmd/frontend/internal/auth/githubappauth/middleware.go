@@ -504,7 +504,7 @@ func generateRedirectURL(domain *string, installationID, appID *int, appName *st
 
 var MockCreateGitHubApp func(conversionURL string, domain types.GitHubAppDomain) (*ghtypes.GitHubApp, error)
 
-func createGitHubApp(conversionURL string, domain types.GitHubAppDomain, httpClient *http.Client) (*ghtypes.GitHubApp, error) {
+func createGitHubApp(conversionURL string, domain types.GitHubAppDomain, httpClient httpcli.Doer) (*ghtypes.GitHubApp, error) {
 	if MockCreateGitHubApp != nil {
 		return MockCreateGitHubApp(conversionURL, domain)
 	}
@@ -513,13 +513,7 @@ func createGitHubApp(conversionURL string, domain types.GitHubAppDomain, httpCli
 		return nil, err
 	}
 
-	cf := httpcli.NewExternalClientFactory()
-	client, err := cf.Doer()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create GitHub client")
-	}
-
-	resp, err := client.Do(r)
+	resp, err := httpClient.Do(r)
 	if err != nil {
 		return nil, err
 	}

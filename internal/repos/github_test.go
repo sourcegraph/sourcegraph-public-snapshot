@@ -603,7 +603,7 @@ func TestGitHubSource_doRecursively(t *testing.T) {
 
 			apiURL, err := url.Parse(srv.URL)
 			require.NoError(t, err)
-			ghCli, err := github.NewV4Client("", apiURL, nil, nil)
+			ghCli, err := github.NewV4Client("", apiURL, nil, httpcli.NewFactory(nil))
 			require.NoError(t, err)
 			q := newRepositoryQuery("stars:>=5", ghCli, logtest.NoOp(t))
 			q.Limit = 5

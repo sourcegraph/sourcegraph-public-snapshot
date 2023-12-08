@@ -159,7 +159,7 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 		ID:     1,
 		Kind:   extsvc.KindOther,
 		Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{"url": %q, "repos": ["%s"]}`, s.URL, "src-expose")),
-	}, nil, nil)
+	}, httpcli.NewFactory(nil), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +188,7 @@ func TestOther_DotComConfig(t *testing.T) {
 			ID:     1,
 			Kind:   extsvc.KindOther,
 			Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{"url": "somegit.com/repo", "repos": ["%s"], "makeReposPublicOnDotCom": true}`, "src-expose")),
-		}, nil, nil)
+		}, httpcli.NewFactory(nil), nil)
 		require.NoError(t, err)
 		return source
 	}
@@ -334,7 +334,7 @@ func TestSrcExpose_SrcServeLocalServer(t *testing.T) {
 		ID:     1,
 		Kind:   extsvc.KindOther,
 		Config: extsvc.NewUnencryptedConfig(string(config)),
-	}, nil, nil)
+	}, httpcli.NewFactory(nil), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -482,7 +482,7 @@ func TestOther_ListRepos(t *testing.T) {
 				ID:     1,
 				Kind:   extsvc.KindOther,
 				Config: extsvc.NewUnencryptedConfig(string(config)),
-			}, httpcli.NewFactory(httpcli.NewMiddleware()), logtest.Scoped(t))
+			}, httpcli.NewFactory(nil), logtest.Scoped(t))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -578,7 +578,7 @@ func TestOther_SrcExposeRequest(t *testing.T) {
 				ID:     1,
 				Kind:   extsvc.KindOther,
 				Config: extsvc.NewUnencryptedConfig(string(config)),
-			}, httpcli.NewFactory(httpcli.NewMiddleware()), logtest.Scoped(t))
+			}, httpcli.NewFactory(nil), logtest.Scoped(t))
 			if err != nil {
 				t.Fatal(err)
 			}

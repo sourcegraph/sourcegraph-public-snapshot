@@ -27,7 +27,7 @@ type Provider struct {
 	config      schema.OpenIDConnectAuthProvider
 	authPrefix  string
 	callbackUrl string
-	httpClient  *http.Client
+	httpClient  httpcli.Doer
 
 	mu         sync.Mutex
 	oidc       *oidcProvider
@@ -36,7 +36,7 @@ type Provider struct {
 
 // NewProvider creates and returns a new OpenID Connect authentication provider
 // using the given config.
-func NewProvider(config schema.OpenIDConnectAuthProvider, authPrefix string, callbackUrl string, httpClient *http.Client) providers.Provider {
+func NewProvider(config schema.OpenIDConnectAuthProvider, authPrefix string, callbackUrl string, httpClient httpcli.Doer) providers.Provider {
 	return &Provider{
 		config:      config,
 		authPrefix:  authPrefix,
@@ -160,7 +160,7 @@ type providerExtraClaims struct {
 
 var mockNewProvider func(issuerURL string) (*oidcProvider, error)
 
-func newOIDCProvider(issuerURL string, httpClient *http.Client) (*oidcProvider, error) {
+func newOIDCProvider(issuerURL string, httpClient httpcli.Doer) (*oidcProvider, error) {
 	if mockNewProvider != nil {
 		return mockNewProvider(issuerURL)
 	}

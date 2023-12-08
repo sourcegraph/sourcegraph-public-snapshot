@@ -22,7 +22,7 @@ var (
 	gitlabURL = &url.URL{Scheme: "https", Host: "gitlab.com", Path: "/api/v4/projects"}
 )
 
-func enforceAuthViaGitLab(ctx context.Context, query url.Values, repoName string) (statusCode int, err error) {
+func enforceAuthViaGitLab(ctx context.Context, doer httpcli.Doer, query url.Values, repoName string) (statusCode int, err error) {
 	gitlabToken := query.Get("gitlab_token")
 	if gitlabToken == "" {
 		return http.StatusUnauthorized, ErrGitLabMissingToken
@@ -53,7 +53,7 @@ func enforceAuthViaGitLab(ctx context.Context, query url.Values, repoName string
 		// query.
 
 		var projects []string
-		projects, nextURL, err = requestGitlabProjects(ctx, nextURL, gitlabToken)
+		projects, nextURL, err = requestGitlabProjects(ctx, doer, nextURL, gitlabToken)
 		if err != nil {
 			return http.StatusInternalServerError, err
 		}
@@ -71,7 +71,7 @@ func enforceAuthViaGitLab(ctx context.Context, query url.Values, repoName string
 
 var _ AuthValidator = enforceAuthViaGitLab
 
-func requestGitlabProjects(ctx context.Context, url, token string) (_ []string, nextPage string, _ error) {
+func requestGitlabProjects(ctx context.Context, doer httpcli.Doer, url, token string) (_ []string, nextPage string, _ error) {
 	// Construct request
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -79,13 +79,8 @@ func requestGitlabProjects(ctx context.Context, url, token string) (_ []string, 
 	}
 	req.Header.Add("PRIVATE-TOKEN", token)
 
-	cli, err := httpcli.NewExternalClientFactory().Doer()
-	if err != nil {
-		return nil, "", err
-	}
-
 	// Perform request
-	resp, err := cli.Do(req)
+	resp, err := doer.Do(req)
 	if err != nil {
 		return nil, "", err
 	}

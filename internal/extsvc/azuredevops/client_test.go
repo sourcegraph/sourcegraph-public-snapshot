@@ -134,7 +134,7 @@ func TestRateLimitRetry(t *testing.T) {
 				MockVisualStudioAppURL = ""
 			})
 			a := &auth.BasicAuth{Username: "test", Password: "test"}
-			c, err := NewClient("test", srv.URL, a, httpcli.TestExternalDoer)
+			c, err := NewClient("test", srv.URL, a, httpcli.NewFactory(nil))
 			c.(*client).internalRateLimiter = ratelimit.NewInstrumentedLimiter("azuredevops", rate.NewLimiter(100, 10))
 			require.NoError(t, err)
 			c.SetWaitForRateLimit(tt.waitForRateLimit)

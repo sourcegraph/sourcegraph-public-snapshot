@@ -197,7 +197,7 @@ func TestRateLimitRetry(t *testing.T) {
 			srvURL, err := url.Parse(srv.URL)
 			require.NoError(t, err)
 
-			provider, err := NewClientProvider("Test", srvURL, nil)
+			provider, err := NewClientProvider("Test", srvURL, httpcli.NewFactory(nil))
 			require.NoError(t, err)
 			client := provider.getClient(nil)
 			client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("gitlab", rate.NewLimiter(100, 10))
