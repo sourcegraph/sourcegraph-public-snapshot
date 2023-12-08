@@ -51,7 +51,6 @@ export const ProductCertificate: React.FunctionComponent<React.PropsWithChildren
                 {detail && <Text className="text-muted mb-0">{detail}</Text>}
             </div>
         </CardBody>
-        <div className={styles.bg} />
         {footer && <div className={styles.footer}>{footer}</div>}
     </Card>
 )

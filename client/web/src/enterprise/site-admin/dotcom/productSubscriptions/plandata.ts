@@ -44,6 +44,51 @@ export const TAG_TRUEUP: Tag = {
     description: 'Allows the instance to go over the user hard cap and be billed based on actual usage',
 }
 
+export const DEPRECATED_TAGS: Tag[] = [
+    {
+        name: 'AllowAnonymousUsage',
+        tagValue: 'allow-anonymous-usage',
+        description: 'Denotes licenses that allow anonymous usage, a.k.a public access to the instance',
+    },
+    {
+        name: 'PrivateExtensionRegistry',
+        tagValue: 'private-extension-registry',
+        description:
+            'Whether publishing extensions to this Sourcegraph instance has been purchased. If not, then extensions must be published to Sourcegraph.com. All instances may use extensions published to Sourcegraph.com',
+    },
+    {
+        name: 'RemoteExtensionsAllowDisallow',
+        tagValue: 'remote-extensions-allow-disallow',
+        description:
+            'Whether explicitly specify a list of allowed remote extensions and prevent any other remote extensions from being used has been purchased. It does not apply to locally published extensions',
+    },
+    {
+        name: 'Branding',
+        tagValue: 'branding',
+        description: 'Whether custom branding of this Sourcegraph instance has been purchased',
+    },
+    {
+        name: 'Campaigns',
+        tagValue: 'campaigns',
+        description: 'Whether campaigns (now: batch changes) on this Sourcegraph instance has been purchased',
+    },
+    {
+        name: 'Monitoring',
+        tagValue: 'monitoring',
+        description: 'Whether monitoring on this Sourcegraph instance has been purchased',
+    },
+    {
+        name: 'BackupAndRestore',
+        tagValue: 'backup-and-restore',
+        description: 'Whether builtin backup and restore on this Sourcegraph instance has been purchased',
+    },
+    {
+        name: 'MAU',
+        tagValue: 'mau',
+        description: 'The customer is on a MAU pricing model',
+    },
+]
+
 export const ALL_PLANS: Plan[] = [
     {
         name: 'Code Search Pro',

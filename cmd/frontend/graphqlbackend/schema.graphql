@@ -8591,9 +8591,10 @@ type ProductSubscriptionStatus {
     """
     noLicenseWarningUserCount: Int
     """
-    The product license associated with this subscription, if any.
+    The product license associated with this subscription.
+    If no license key is applied, a free plan is assumed.
     """
-    license: ProductLicenseInfo
+    license: ProductLicenseInfo!
 }
 
 """
@@ -8606,6 +8607,10 @@ type ProductLicenseInfo {
     no license).
     """
     productNameWithBrand: String!
+    """
+    True if the license is for a free plan.
+    """
+    isFreePlan: Boolean!
     """
     Tags indicating the product plan and features activated by this license.
     """

@@ -33,6 +33,10 @@ func (r ProductLicenseInfo) ProductNameWithBrand() string {
 	return GetProductNameWithBrand(!IsFreePlan(&r), r.TagsValue)
 }
 
+func (r ProductLicenseInfo) IsFreePlan() bool {
+	return IsFreePlan(&r)
+}
+
 func (r ProductLicenseInfo) Tags() []string { return r.TagsValue }
 
 func (r ProductLicenseInfo) UserCount() int32 {

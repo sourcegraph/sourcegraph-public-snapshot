@@ -1,15 +1,20 @@
 import React from 'react'
 
+import classNames from 'classnames'
+
 import { Alert, Badge, type BadgeVariantType, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     ALL_PLANS,
+    DEPRECATED_TAGS,
     TAG_AIR_GAPPED,
     TAG_BATCH_CHANGES,
     TAG_CODE_INSIGHTS,
     TAG_TRIAL,
     TAG_TRUEUP,
 } from '../site-admin/dotcom/productSubscriptions/plandata'
+
+import styles from './ProductLicenseTags.module.scss'
 
 const getBadgeVariant = (tag: string): BadgeVariantType => {
     if (isUnknownTag(tag)) {
@@ -34,6 +39,10 @@ const getTagDescription = (tag: string): string => {
     if (tag.startsWith('customer:')) {
         return 'Customer name'
     }
+    if (DEPRECATED_TAGS.some(deprecatedTag => deprecatedTag.tagValue === tag)) {
+        return 'Deprecated plan feature, no longer enforced in Sourcegraph 6.0'
+    }
+
     return 'Plan features'
 }
 
@@ -44,6 +53,7 @@ const knownLicenseTags = [
     TAG_CODE_INSIGHTS.tagValue,
     TAG_TRIAL.tagValue,
     TAG_TRUEUP.tagValue,
+    ...DEPRECATED_TAGS.map(tag => tag.tagValue),
 ]
 
 // TODO: Maybe a field for a custom comment on what instance the key is for?
@@ -80,13 +90,19 @@ export const ProductLicenseTags: React.FunctionComponent<
         small?: boolean
     }>
 > = ({ tags, small }) => (
-    <>
+    <div className={styles.tagsWrapper}>
         {tags.map(tag => (
             <Tooltip key={tag} content={getTagDescription(tag)}>
-                <Badge variant={getBadgeVariant(tag)} className="mr-1" small={small}>
+                <Badge
+                    variant={getBadgeVariant(tag)}
+                    small={small}
+                    className={classNames(
+                        DEPRECATED_TAGS.some(deprecatedTag => deprecatedTag.tagValue === tag) && styles.deprecatedTag
+                    )}
+                >
                     {tag}
                 </Badge>
             </Tooltip>
         ))}
-    </>
+    </div>
 )

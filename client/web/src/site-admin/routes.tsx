@@ -380,17 +380,17 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/dotcom/product/subscriptions/:subscriptionUUID',
-        render: () => <DotComSiteAdminProductSubscriptionPage />,
+        render: props => <DotComSiteAdminProductSubscriptionPage {...props} />,
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
         path: '/dotcom/product/subscriptions',
-        render: () => <SiteAdminProductSubscriptionsPage />,
+        render: props => <SiteAdminProductSubscriptionsPage {...props} />,
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
         path: '/dotcom/product/licenses',
-        render: () => <SiteAdminLicenseKeyLookupPage />,
+        render: props => <SiteAdminLicenseKeyLookupPage {...props} />,
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {

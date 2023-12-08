@@ -123,7 +123,7 @@ func Init(
 	// if any.
 	graphqlbackend.GetConfiguredProductLicenseInfo = func() (*graphqlbackend.ProductLicenseInfo, error) {
 		info, err := licensing.GetConfiguredProductLicenseInfo()
-		if info == nil || err != nil {
+		if err != nil {
 			return nil, err
 		}
 		hashedKeyValue := confLib.HashedCurrentLicenseKeyForAnalytics()

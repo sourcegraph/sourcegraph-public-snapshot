@@ -120,7 +120,12 @@ const getTagsFromFormData = (formData: FormData): string[] =>
         new Set([
             `customer:${formData.customer}`,
             ...(formData.plan ? [`plan:${formData.plan}`] : []),
-            ...(formData.trueUp ? [TAG_TRUEUP.tagValue] : []),
+            ...(formData.trueUp &&
+            ALL_PLANS.find(other => other.label === formData.plan)?.additionalTags?.some(
+                tag => tag.tagValue === TAG_TRUEUP.tagValue
+            )
+                ? [TAG_TRUEUP.tagValue]
+                : []),
             ...(formData.trial ? [TAG_TRIAL.tagValue] : []),
             ...(formData.airGapped ? [TAG_AIR_GAPPED.tagValue] : []),
             ...(formData.batchChanges ? [TAG_BATCH_CHANGES.tagValue] : []),
@@ -346,7 +351,7 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                                         <Checkbox
                                             id="productSubscription__trial"
                                             aria-label="Is trial"
-                                            label="Is trial"
+                                            label="This license is for a trial"
                                             disabled={loading}
                                             checked={formData.trial}
                                             onChange={onIsTrialChange}
@@ -377,7 +382,7 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                                     <Input
                                         id="site-admin-create-product-subscription-page__salesforce_op_id_input"
                                         label="Salesforce Opportunity ID"
-                                        description="Opportunity ID from Salesforce."
+                                        description="Enter the corresponding Opportunity ID from Salesforce."
                                         type="text"
                                         disabled={loading}
                                         value={formData.salesforceOpportunityID}
@@ -413,6 +418,7 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                                             </>
                                         }
                                     />
+
                                     <Label>Additional Options</Label>
                                     {/* TODO: Render none instead */}
                                     {selectedPlan.additionalTags?.find(tag => tag.tagValue === TAG_TRUEUP.tagValue) && (

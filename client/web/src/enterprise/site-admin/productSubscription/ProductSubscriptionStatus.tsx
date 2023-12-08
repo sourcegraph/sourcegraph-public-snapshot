@@ -1,10 +1,12 @@
 import React, { useMemo, type FC } from 'react'
 
+import { mdiCheckCircle } from '@mdi/js'
+import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import type { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
-import { asError, type ErrorLike, isErrorLike, numberWithCommas } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import {
     LoadingSpinner,
@@ -16,6 +18,10 @@ import {
     Tooltip,
     ErrorAlert,
     Text,
+    H3,
+    Container,
+    H4,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
@@ -24,6 +30,7 @@ import { formatUserCount } from '../../../productSubscription/helpers'
 import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 import { ProductCertificate } from '../../productSubscription/ProductCertificate'
 import { TrueUpStatusSummary } from '../../productSubscription/TrueUpStatusSummary'
+import { TAG_TRUEUP } from '../dotcom/productSubscriptions/plandata'
 
 const queryProductLicenseInfo = (): Observable<{
     productSubscription: ProductLicenseInfoResult['site']['productSubscription']
@@ -47,6 +54,7 @@ const queryProductLicenseInfo = (): Observable<{
             }
         }
         fragment ProductLicenseInfoLicenseFields on ProductLicenseInfo {
+            isFreePlan
             tags
             userCount
             expiresAt
@@ -63,23 +71,12 @@ const queryProductLicenseInfo = (): Observable<{
 
 interface Props {
     className?: string
-
-    /**
-     * If true, always show the license true-up status.
-     * If undefined or false, never show the full license true-up status, and instead only show an alert
-     * if the user count is over the license limit.
-     *
-     */
-    showTrueUpStatus?: boolean
 }
 
 /**
  * A component displaying information about and the status of the product subscription.
  */
-export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    className,
-    showTrueUpStatus,
-}) => {
+export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ className }) => {
     /** The product subscription status, or an error, or undefined while loading. */
     const statusOrError = useObservable(
         useMemo(() => queryProductLicenseInfo().pipe(catchError((error): [ErrorLike] => [asError(error)])), [])
@@ -106,6 +103,10 @@ export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithC
         currentUserCount,
     } = statusOrError
 
+    const hasTrueUp = license?.tags.some(tag => tag === TAG_TRUEUP.tagValue)
+
+    const numberFormatter = Intl.NumberFormat(navigator.language)
+
     // No license means Sourcegraph Free. For that, show the user that they can use this for free
     // forever, and show them how to upgrade.
 
@@ -116,12 +117,12 @@ export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithC
                 detail={<LicenseDetails license={license} />}
                 footer={
                     <CardFooter className="d-flex align-items-center justify-content-between">
-                        {license?.isValid ? (
+                        {!license.isFreePlan ? (
                             <>
                                 <div>
-                                    <strong>User licenses:</strong> {numberWithCommas(currentUserCount)} currently used
-                                    / {numberWithCommas(license.userCount - currentUserCount)} remaining (
-                                    {numberWithCommas(actualUserCount)} maximum ever used)
+                                    <strong>User licenses:</strong> {numberFormatter.format(currentUserCount)} currently
+                                    used / {numberFormatter.format(license.userCount - currentUserCount)} remaining (
+                                    {numberFormatter.format(actualUserCount)} maximum ever used)
                                 </div>
                                 <ButtonLink
                                     to="https://sourcegraph.com/pricing"
@@ -158,27 +159,50 @@ export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithC
                         )}
                     </CardFooter>
                 }
-                className={className}
+                className={classNames('mb-3', className)}
             />
-            {license &&
-                (showTrueUpStatus ? (
-                    <TrueUpStatusSummary
-                        actualUserCount={actualUserCount}
-                        actualUserCountDate={actualUserCountDate}
-                        license={license}
-                    />
-                ) : (
-                    license.userCount - actualUserCount < 0 && (
-                        <Alert variant="warning">
-                            You have exceeded your licensed users.{' '}
-                            <Link to="/site-admin/license">View your license details</Link> or{' '}
-                            <Link to="https://sourcegraph.com/pricing" target="_blank" rel="noopener">
-                                upgrade your license
-                            </Link>{' '}
-                            to true up and prevent a retroactive charge.
-                        </Alert>
-                    )
-                ))}
+
+            {hasTrueUp && (
+                <TrueUpStatusSummary
+                    actualUserCount={actualUserCount}
+                    actualUserCountDate={actualUserCountDate}
+                    license={license}
+                />
+            )}
+
+            {!hasTrueUp && license.userCount - actualUserCount < 0 && (
+                <Alert variant="warning">
+                    You have exceeded your licensed users.{' '}
+                    <Link to="https://sourcegraph.com/pricing" target="_blank" rel="noopener">
+                        Upgrade your license
+                    </Link>{' '}
+                    to true up and prevent a retroactive charge.
+                </Alert>
+            )}
+
+            <H3>Your Subscription</H3>
+            <Container className="mb-3">
+                <H4>Code Search</H4>
+                <Text className="text-success">
+                    <Icon aria-label="yes" svgPath={mdiCheckCircle} />
+                </Text>
+                <H4>Code Monitoring</H4>
+                <Text className="text-success">
+                    <Icon aria-label="yes" svgPath={mdiCheckCircle} />
+                </Text>
+                <H4>Notebooks</H4>
+                <Text className="text-success">
+                    <Icon aria-label="yes" svgPath={mdiCheckCircle} />
+                </Text>
+                <H4>Batch Changes</H4>
+                <Text className="text-muted">Up to 10 changesets</Text>
+                <H4>
+                    Air Gapped Instance <small>Add On</small>
+                </H4>
+                <Text className="text-success">
+                    <Icon aria-label="yes" svgPath={mdiCheckCircle} />
+                </Text>
+            </Container>
         </div>
     )
 }
@@ -188,10 +212,6 @@ interface LicenseDetailsProps {
 }
 
 const LicenseDetails: FC<LicenseDetailsProps> = ({ license }) => {
-    if (!license) {
-        return null
-    }
-
     if (license.isValid) {
         return (
             <>
