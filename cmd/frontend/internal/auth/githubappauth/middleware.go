@@ -284,7 +284,13 @@ func newServeMux(db database.DB, prefix string, cache *rcache.Cache) http.Handle
 			return
 		}
 
-		app, err := createGitHubApp(u, *domain, httpcli.UncachedExternalClient)
+		cli, err := httpcli.NewExternalClientFactory().Client()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Unable to create external client: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		app, err := createGitHubApp(u, *domain, cli)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error while converting github app: %s", err.Error()), http.StatusInternalServerError)
 			return

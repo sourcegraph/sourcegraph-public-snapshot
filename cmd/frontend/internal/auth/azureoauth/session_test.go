@@ -13,7 +13,6 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
@@ -102,7 +101,7 @@ func Test_verifyAllowOrgs(t *testing.T) {
 			s := &sessionIssuerHelper{allowOrgs: tc.allowOrgs}
 
 			ctx := context.Background()
-			allow, err := s.verifyAllowOrgs(ctx, &profile, &oauth2.Token{AccessToken: "foo"}, httpcli.TestExternalDoer)
+			allow, err := s.verifyAllowOrgs(ctx, &profile, &oauth2.Token{AccessToken: "foo"}, nil)
 			require.NoError(t, err, "unexpected error")
 			if allow != tc.expectedAllow {
 				t.Fatalf("expected allow to be %v, but got %v", tc.expectedAllow, allow)

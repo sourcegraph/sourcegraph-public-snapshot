@@ -159,7 +159,7 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 		ID:     1,
 		Kind:   extsvc.KindOther,
 		Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{"url": %q, "repos": ["%s"]}`, s.URL, "src-expose")),
-	}, httpcli.TestExternalClientFactory, nil)
+	}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -334,7 +334,7 @@ func TestSrcExpose_SrcServeLocalServer(t *testing.T) {
 		ID:     1,
 		Kind:   extsvc.KindOther,
 		Config: extsvc.NewUnencryptedConfig(string(config)),
-	}, httpcli.TestExternalClientFactory, nil)
+	}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

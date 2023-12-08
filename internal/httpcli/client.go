@@ -109,6 +109,7 @@ func NewExternalClientFactory(middleware ...Middleware) *Factory {
 		// externalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
 		// not a generic http.RoundTripper.
+		// TODO
 		externalTransportOpt,
 		NewErrorResilientTransportOpt(
 			newRetryPolicy(maxRetries(externalRetryMaxAttempts), externalRetryAfterMaxDuration),

@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -513,7 +512,7 @@ func TestCreateGitHubApp(t *testing.T) {
 			srv := httptest.NewServer(test.handlerAssert(t))
 			defer srv.Close()
 
-			app, err := createGitHubApp(srv.URL, test.domain, httpcli.TestExternalClient)
+			app, err := createGitHubApp(srv.URL, test.domain, nil)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())
