@@ -93,10 +93,6 @@ var (
 		Name: "src_gitserver_repo_wrong_shard",
 		Help: "The number of repos that are on disk on the wrong shard",
 	})
-	wrongShardReposSizeTotalBytes = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_repo_wrong_shard_bytes",
-		Help: "Size (in bytes) of repos that are on disk on the wrong shard",
-	})
 	wrongShardReposDeletedCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repo_wrong_shard_deleted",
 		Help: "The number of repos on the wrong shard that we deleted",
@@ -275,11 +271,9 @@ func cleanupRepos(
 
 	repoToSize := make(map[api.RepoName]int64)
 	var wrongShardRepoCount int64
-	var wrongShardRepoSize int64
 	defer func() {
 		// We want to set the gauge only at the end when we know the total
 		wrongShardReposTotal.Set(float64(wrongShardRepoCount))
-		wrongShardReposSizeTotalBytes.Set(float64(wrongShardRepoSize))
 	}()
 
 	var wrongShardReposDeleted int64
@@ -290,33 +284,57 @@ func cleanupRepos(
 		}
 	}()
 
-	collectSizeAndMaybeDeleteWrongShardRepos := func(dir common.GitDir) (done bool, err error) {
+	maybeDeleteWrongShardRepos := func(dir common.GitDir) (done bool, err error) {
+		// Record the number of repos that should not belong on this instance and
+		// remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
+		name := gitserverfs.RepoNameFromDir(reposDir, dir)
+		addr := addrForRepo(ctx, name, gitServerAddrs)
+
+		if hostnameMatch(shardID, addr) {
+			return false, nil
+		}
+
+		wrongShardRepoCount++
+
+		// If we're on a shard not currently known, basically every repo would
+		// be considered on the wrong shard. This is probably a configuration
+		// error and we don't want to completely empty our disk in that case,
+		// so skip.
+		if !knownGitServerShard {
+			return false, nil
+		}
+
+		// Check that wrong shard deletion has not been deleted.
+		if wrongShardReposDeleteLimit < 0 {
+			return false, nil
+		}
+
+		// If we have reached the limit of repos to be deleted in each janitor
+		// run, don't do anything and skip over this repo.
+		if wrongShardReposDeleted >= int64(wrongShardReposDeleteLimit) {
+			return false, nil
+		}
+
+		logger.Info(
+			"removing repo cloned on the wrong shard",
+			log.String("dir", string(dir)),
+			log.String("target-shard", addr),
+			log.String("current-shard", shardID),
+		)
+		if err := gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, dir, false); err != nil {
+			return true, err
+		}
+		wrongShardReposDeleted++
+
+		// Note: We just deleted the repo. So we're done with any further janitor tasks!
+		return true, nil
+	}
+
+	collectSize := func(dir common.GitDir) (done bool, err error) {
 		size := gitserverfs.DirSize(dir.Path("."))
 		name := gitserverfs.RepoNameFromDir(reposDir, dir)
 		repoToSize[name] = size
 
-		// Record the number and disk usage used of repos that should
-		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
-		addr := addrForRepo(ctx, name, gitServerAddrs)
-
-		if !hostnameMatch(shardID, addr) {
-			wrongShardRepoCount++
-			wrongShardRepoSize += size
-
-			if knownGitServerShard && wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
-				logger.Info(
-					"removing repo cloned on the wrong shard",
-					log.String("dir", string(dir)),
-					log.String("target-shard", addr),
-					log.String("current-shard", shardID),
-					log.Int64("size-bytes", size),
-				)
-				if err := gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, dir, false); err != nil {
-					return false, err
-				}
-				wrongShardReposDeleted++
-			}
-		}
 		return false, nil
 	}
 
@@ -519,8 +537,12 @@ func cleanupRepos(
 		Do   func(common.GitDir) (bool, error)
 	}
 	cleanups := []cleanupFn{
+		// First, check if we should even be having this repo on disk anymore,
+		// maybe there's been a resharding event and we can actually remove it
+		// and not spend further CPU cycles fixing it.
+		{"delete wrong shard repos", maybeDeleteWrongShardRepos},
 		// Compute the amount of space used by the repo
-		{"compute stats and delete wrong shard repos", collectSizeAndMaybeDeleteWrongShardRepos},
+		{"compute stats", collectSize},
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
 		// Remove repo if DB does not contain it anymore
