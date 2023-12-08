@@ -541,7 +541,7 @@ func (r *schemaResolver) refreshGatewayRateLimits(ctx context.Context) error {
 	a := actor.FromContext(ctx)
 	apiTokenSha256, err := r.db.AccessTokens().GetOrCreateInternalToken(ctx, a.UID, []string{"user:all"})
 	if err != nil {
-		return errors.Wrap(err,"getting internal access token")
+		return errors.Wrap(err, "getting internal access token")
 	}
 	gatewayToken := accesstoken.DotcomUserGatewayAccessTokenPrefix + hex.EncodeToString(hashutil.ToSHA256Bytes(apiTokenSha256))
 
