@@ -558,7 +558,7 @@ func (r *schemaResolver) refreshGatewayRateLimits(ctx context.Context) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.New("errored refreshing rate limits from Cody Gateway")
+		return errors.Errorf("non-200 response refreshing Gateway limits: %d", resp.StatusCode)
 	}
 
 	return nil
