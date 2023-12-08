@@ -101,7 +101,7 @@ Follow these steps to install the Cody AI extension for VS Code:
 - Type **Cody AI** in the search bar and click the **Install** button
 - After installing, you may be prompted to reload VS Code to activate the extension
 
-![install-vscode-extension](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-new-ui.png)
+![install-vscode-extension](https://storage.googleapis.com/sourcegraph-assets/Docs/install-cody-vscode.png)
 
 Alternatively, you can also [download and install the extension from the VS Code Marketplace][cody-vscode-marketplace] directly.
 
@@ -109,7 +109,7 @@ Alternatively, you can also [download and install the extension from the VS Code
 
 After a successful installation, the Cody icon appears in the [Activity sidebar](https://code.visualstudio.com/api/ux-guidelines/activity-bar). Users on free Cody tier can sign in to their Sourcegraph.com accounts through GitHub, GitLab, or Google.
 
-![cody-sign-flow](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-signin-vscode.png)
+![cody-sign-flow](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-new-ui.png)
 
 You can use Sourcegraph Enterprise with the Cody VS Code extension. Click the **Sign In to Your Enterprise Instance**, and it connects to your enterprise environment. For Enterprise users, please sign in with your custom Sourcegraph instance URL and access token. Enterprise accounts are not compatible with community accounts.
 
@@ -117,7 +117,7 @@ You can use Sourcegraph Enterprise with the Cody VS Code extension. Click the **
 
 Once connected, click the Cody icon from the sidebar again. The Cody extension will open in a configurable side panel.
 
-![code-panel](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-nw-panel-.png)
+![code-panel](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-new-panel.png)
 
 Let's create an autocomplete suggestion to verify that the Cody extension has been successfully installed and is working as expected.
 
@@ -149,14 +149,14 @@ Cody's Enhanced Context enables Cody to leverage search and embeddings-based con
 
 **Note: Embeddings for Enterprise users are controlled by their administrators.**
 
-![](https://storage.googleapis.com/sourcegraph-assets/Docs/enhanced-context.png)
+![](https://storage.googleapis.com/sourcegraph-assets/Docs/CleanShot%202023-12-07%20at%2018.58.40%402x.png)
 
 The following tables shows what happens when Enhanced Context Selection is enabled or disabled.
 
-|                          | Opened Files                 | Highlighted Code            | Embeddings (If available)  | Search (as backup)            | 
+|                          | Opened Files                 | Highlighted Code            | Embeddings (If available)  | Search (as backup)            |
 |--------------------------|------------------------------|-----------------------------|-----------------------------|-----------------------------|-----------------------------|
-| Enhanced Context Enabled  | ✅                           | ✅                          | ✅                          | ✅                          |                   
-| Enhanced Context Disabled | ❌                           | ❌                          | ❌                          | ❌                          |                     
+| Enhanced Context Enabled  | ✅                           | ✅                          | ✅                          | ✅                          |
+| Enhanced Context Disabled | ❌                           | ❌                          | ❌                          | ❌                          |
 
 
 ### LLM Selection
