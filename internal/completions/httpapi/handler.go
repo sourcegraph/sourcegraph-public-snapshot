@@ -109,7 +109,10 @@ func newCompletionsHandler(
 					return
 				}
 				// Convert the user's sha256-encoded access token to an "sgd_" token for Cody Gateway.
-				accessToken = "sgd_" + hex.EncodeToString(hashutil.ToSHA256Bytes(apiTokenSha256))
+				// Note: we can't use accesstoken.GenerateDotcomUserGatewayAccessToken here because
+				// we only need to hash this once, not twice, as this is already an SHA256-encoding
+				// of the original token.
+				accessToken = accesstoken.DotcomUserGatewayAccessTokenPrefix + hex.EncodeToString(hashutil.ToSHA256Bytes(apiTokenSha256))
 			} else {
 				accessToken, err = accesstoken.GenerateDotcomUserGatewayAccessToken(apiToken)
 				if err != nil {
