@@ -10,7 +10,7 @@
     export let commit: Commit
     export let alwaysExpanded: boolean = false
 
-    function getCommitter({committer}: Commit): Commit['committer']['person']|null {
+    function getCommitter({ committer }: Commit): NonNullable<Commit['committer']>['person'] | null {
         if (!committer) {
             return null
         }

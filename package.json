@@ -421,9 +421,6 @@
   },
   "packageManager": "pnpm@8.9.2",
   "pnpm": {
-    "overrides": {
-      "@graphql-tools/utils": "^10.0.6"
-    },
     "packageExtensions": {
       "hnswlib-node": {
         "dependencies": {
@@ -443,6 +440,13 @@
       "@percy/sdk-utils": {
         "dependencies": {
           "ws": "*"
+        }
+      },
+      "@graphql-codegen/cli@5": {
+        "peerDependencies": {
+          "@graphql-codegen/typescript": "*",
+          "@graphql-codegen/typescript-operations": "*",
+          "@graphql-codegen/near-operation-file-preset": "*"
         }
       }
     }

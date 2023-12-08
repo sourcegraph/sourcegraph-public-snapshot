@@ -3,7 +3,7 @@
     import { createPromiseStore } from '$lib/utils'
 
     import type { PageData } from './$types'
-    import type {Commits} from './page.gql'
+    import type { Commits } from './page.gql'
     import Paginator from '$lib/Paginator.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
 
@@ -40,9 +40,9 @@
             <Paginator
                 disabled={$pending}
                 pageInfo={{
-                ...$commits.pageInfo,
-                hasPreviousPage,
-                previousEndCursor,
+                    ...$commits.pageInfo,
+                    hasPreviousPage,
+                    previousEndCursor,
                 }}
                 showLastpageButton={false}
             />
@@ -91,7 +91,6 @@
             }
         }
     }
-
 
     li {
         border-bottom: 1px solid var(--border-color);

@@ -1,99 +1,119 @@
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
+import { generate, type CodegenConfig } from '@graphql-codegen/cli'
+import graphql from '@rollup/plugin-graphql'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { defineConfig, mergeConfig, type Plugin, type UserConfig } from 'vite'
 import inspect from 'vite-plugin-inspect'
-import graphql from '@rollup/plugin-graphql'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-async function generateGraphQLOperations(): Promise<Plugin> {
-    const documents = ['src/lib/**/*.{ts,graphql,gql}', 'src/routes/**/*.{ts,graphql,gql}', '!src/lib/graphql-{types,operations}.ts' ]
-
-    // We have to dynamically import this module to not make it a dependency when using
-    // Bazel
-    const codegen = (await import('vite-plugin-graphql-codegen')).default
-
-    return codegen({
-        // Keep in sync with client/shared/dev/generateGraphQlOperations.ts
-        config: {
-            generates: {
-                // "legacy" graphql operations file
-                './src/lib/graphql-operations.ts' : {
-                    config: {
-                        onlyOperationTypes: true,
-                        enumValues: '@sourcegraph/shared/src/graphql-operations',
-                        interfaceNameForOperations: 'SvelteKitGraphQlOperations',
-                    },
-                    plugins: [
-                        '../shared/dev/extractGraphQlOperationCodegenPlugin.js',
-                        'typescript',
-                        'typescript-operations',
-                    ],
+// Generates typescript types for gql-tags and .graphql files
+// We don't use vite-plugin-graphql-codegen because it doesn't support watch mode
+// when documents are defined separately for every generated file.
+// Defining a single set of documents at the top level doesn't work either because
+// it would generated unnecessary files (e.g. .qql.d.ts files for .ts file) and also
+// caused duplicate code generation issues.
+function generateGraphQLTypes(): Plugin {
+    const codgegenConfig: CodegenConfig = {
+        generates: {
+            './src/lib/graphql-operations.ts': {
+                documents: ['src/{lib,routes}/**/*.ts', '!src/lib/graphql-{operations,types}.ts'],
+                config: {
+                    onlyOperationTypes: true,
+                    enumValues: '$lib/graphql-types.ts',
+                    //interfaceNameForOperations: 'SvelteKitGraphQlOperations',
                 },
-                // All graphql types
-                "src/lib/graphql-types.ts": {
-                    plugins: ['typescript'],
-                },
-                // GraphQL operations colocated with their source files.
-                // Generates typed documents and operation types.
-                "src/": {
-                    preset: 'near-operation-file',
-                    presetConfig: {
-                        extension: '.gql.ts',
-                        baseTypesPath: 'lib/graphql-types.ts',
-                    },
-                    plugins: ['typescript-operations', 'typed-document-node'],
-                },
+                plugins: ['typescript', 'typescript-operations'],
             },
-            schema: '../../cmd/frontend/graphqlbackend/*.graphql',
-            errorsOnly: true,
-            silent: true,
-            config: {
-                // https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-operations#config-api-reference
-                useTypeImports: true,
-                arrayInputCoercion: false,
-                preResolveTypes: true,
-                operationResultSuffix: 'Result',
-                omitOperationSuffix: true,
-                namingConvention: {
-                    typeNames: 'keep',
-                    enumValues: 'keep',
-                    transformUnderscore: true,
-                },
-                declarationKind: 'interface',
-                avoidOptionals: {
-                    field: true,
-                    inputValue: false,
-                    object: true,
-                },
-                scalars: {
-                    DateTime: 'string',
-                    JSON: 'object',
-                    JSONValue: 'unknown',
-                    GitObjectID: 'string',
-                    JSONCString: 'string',
-                    PublishedValue: "boolean | 'draft'",
-                    BigInt: 'string',
-                },
+            'src/lib/graphql-types.ts': {
+                plugins: ['typescript'],
             },
-            // Top-level documents needs to be expliclity configured, otherwise vite-plugin-graphql-codgen
-            // won't regenerate on change.
-            documents,
+            'src/': {
+                documents: ['src/**/*.gql', '!src/**/*.gql.d.ts'],
+                preset: 'near-operation-file',
+                presetConfig: {
+                    baseTypesPath: 'lib/graphql-types.ts',
+                    extension: '.gql.d.ts',
+                },
+                config: {
+                    useTypeImports: true,
+                },
+                plugins: ['typescript-operations', `${__dirname}/dev/typed-document-node.cjs`],
+            },
         },
-    })
+        schema: '../../cmd/frontend/graphqlbackend/*.graphql',
+        errorsOnly: true,
+        config: {
+            // https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-operations#config-api-reference
+            arrayInputCoercion: false,
+            preResolveTypes: true,
+            operationResultSuffix: 'Result',
+            omitOperationSuffix: true,
+            namingConvention: {
+                typeNames: 'keep',
+                enumValues: 'keep',
+                transformUnderscore: true,
+            },
+            declarationKind: 'interface',
+            avoidOptionals: {
+                field: true,
+                inputValue: false,
+                object: true,
+            },
+            scalars: {
+                DateTime: 'string',
+                JSON: 'object',
+                JSONValue: 'unknown',
+                GitObjectID: 'string',
+                JSONCString: 'string',
+                PublishedValue: "boolean | 'draft'",
+                BigInt: 'string',
+            },
+        },
+    }
+
+    // Cheap custom function to check whether we should run codegen for the provided path
+    function shouldRunCodegen(path: string): boolean {
+        // Do not run codegen for generated files
+        if (/(graphql-(operations|types)|\.gql\.d)\.ts$/.test(path)) {
+            return false
+        }
+        if (/\.(ts|gql)$/.test(path)) {
+            return true
+        }
+        return false
+    }
+
+    return {
+        name: 'graphql-codegen',
+        async buildStart() {
+            await generate(codgegenConfig, true)
+        },
+        configureServer(server) {
+            server.watcher.on('add', path => {
+                if (shouldRunCodegen(path)) {
+                    generate(codgegenConfig, true)
+                }
+            })
+            server.watcher.on('change', path => {
+                if (shouldRunCodegen(path)) {
+                    generate(codgegenConfig, true)
+                }
+            })
+        },
+    }
 }
 
 export default defineConfig(({ mode }) => {
     let config: UserConfig = {
         plugins: [
             sveltekit(),
-            // When using bazel the graphql operations fiel is generated
-            // by bazel targets
-            process.env.BAZEL ? null : generateGraphQLOperations(),
+            // Generates typescript types for gql-tags and .graphql files
+            generateGraphQLTypes(),
             inspect(),
-            // Necessary to enable fragment imports in graphql files
+            // Parses .graphql files and imports them as AST
             graphql(),
         ],
         define:

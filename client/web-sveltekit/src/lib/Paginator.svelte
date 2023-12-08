@@ -9,9 +9,15 @@
 
     type PageInfo =
         // Bidirection pagination
-        | {hasPreviousPage: boolean, hasNextPage: boolean, startCursor: string | null, endCursor: string | null}
+        | { hasPreviousPage: boolean; hasNextPage: boolean; startCursor: string | null; endCursor: string | null }
         // Unidirection pagination
-        | {hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string |null, startCursor?: undefined, previousEndCursor: string | null}
+        | {
+              hasNextPage: boolean
+              hasPreviousPage: boolean
+              endCursor: string | null
+              startCursor?: undefined
+              previousEndCursor: string | null
+          }
 
     export let pageInfo: PageInfo
     export let disabled: boolean = false
@@ -37,9 +43,10 @@
 
     let firstPageURL = urlWithParameter('', null)
     let lastPageURL = urlWithParameter(Param.last, '')
-    $: previousPageURL = pageInfo.startCursor !== undefined ?
-        urlWithParameter(Param.before, pageInfo.startCursor) :
-        urlWithParameter(Param.after, pageInfo.previousEndCursor)
+    $: previousPageURL =
+        pageInfo.startCursor !== undefined
+            ? urlWithParameter(Param.before, pageInfo.startCursor)
+            : urlWithParameter(Param.after, pageInfo.previousEndCursor)
     $: nextPageURL = urlWithParameter(Param.after, pageInfo.endCursor)
     $: firstAndPreviousDisabled = disabled || !pageInfo.hasPreviousPage
     $: nextAndLastDisabled = disabled || !pageInfo.hasNextPage

@@ -9,6 +9,6 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # Generated TypeScript type definitions and GraphQL documents
-*.gql.ts
+*.gql.d.ts
 src/lib/graphql-types.ts
 src/lib/graphql-operations.ts

@@ -8,8 +8,8 @@ export function getPaginationParams(
     searchParams: URLSearchParams,
     pageSize: number
 ):
-| { first: number; last: null; before: null; after: string | null }
-| { first: null; last: number; before: string | null; after: null } {
+    | { first: number; last: null; before: null; after: string | null }
+    | { first: null; last: number; before: string | null; after: null } {
     if (searchParams.has('$before')) {
         return { first: null, last: pageSize, before: searchParams.get(Param.before), after: null }
     }
