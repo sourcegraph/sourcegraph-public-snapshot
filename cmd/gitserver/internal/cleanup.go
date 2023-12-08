@@ -45,7 +45,8 @@ type JanitorConfig struct {
 	ShardID         string
 	ReposDir        string
 
-	DesiredPercentFree int
+	DesiredPercentFree             int
+	DisableDeleteReposOnWrongShard bool
 }
 
 func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wrexec.RecordingCommandFactory, cloneRepo cloneRepoFunc, logger log.Logger) goroutine.BackgroundRoutine {
@@ -78,7 +79,7 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 
 			gitserverAddrs := gitserver.NewGitserverAddresses(conf.Get())
 			// TODO: Should this return an error?
-			cleanupRepos(ctx, logger, db, rcf, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs)
+			cleanupRepos(ctx, logger, db, rcf, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs, cfg.DisableDeleteReposOnWrongShard)
 
 			return nil
 		}),
@@ -175,9 +176,6 @@ var sgmLogExpire = env.MustGetDuration("SRC_GIT_LOG_FILE_EXPIRY", 24*time.Hour, 
 // sure that changes here are reflected in sgmLogHeader, too.
 var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "3", "the maximum number of times we retry sg maintenance before triggering a reclone."))
 
-// The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
-var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the maximum number of repos not assigned to this shard we delete in one run"))
-
 // Controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB. Defaults to false.
 var removeNonExistingRepos, _ = strconv.ParseBool(env.Get("SRC_REMOVE_NON_EXISTING_REPOS", "false", "controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB"))
 
@@ -245,6 +243,7 @@ func cleanupRepos(
 	reposDir string,
 	cloneRepo cloneRepoFunc,
 	gitServerAddrs gitserver.GitserverAddresses,
+	disableDeleteReposOnWrongShard bool,
 ) {
 	logger = logger.Scoped("cleanup")
 
@@ -279,7 +278,7 @@ func cleanupRepos(
 	var wrongShardReposDeleted int64
 	defer func() {
 		// We want to set the gauge only when wrong shard clean-up is enabled
-		if wrongShardReposDeleteLimit > 0 {
+		if disableDeleteReposOnWrongShard {
 			wrongShardReposDeletedCounter.Add(float64(wrongShardReposDeleted))
 		}
 	}()
@@ -304,14 +303,8 @@ func cleanupRepos(
 			return false, nil
 		}
 
-		// Check that wrong shard deletion has not been deleted.
-		if wrongShardReposDeleteLimit < 0 {
-			return false, nil
-		}
-
-		// If we have reached the limit of repos to be deleted in each janitor
-		// run, don't do anything and skip over this repo.
-		if wrongShardReposDeleted >= int64(wrongShardReposDeleteLimit) {
+		// Check that wrong shard deletion has not been disabled.
+		if disableDeleteReposOnWrongShard {
 			return false, nil
 		}
 
@@ -324,6 +317,7 @@ func cleanupRepos(
 		if err := gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, dir, false); err != nil {
 			return true, err
 		}
+
 		wrongShardReposDeleted++
 
 		// Note: We just deleted the repo. So we're done with any further janitor tasks!
