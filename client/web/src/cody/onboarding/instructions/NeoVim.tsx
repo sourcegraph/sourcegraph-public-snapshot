@@ -27,7 +27,7 @@ export function NeoVimInstructions({
                     </div>
 
                     <div className={classNames('pt-3 px-3', styles.instructionsContainer)}>
-                        <div className={classNames('d-flex flex-column border-bottom', styles.highlightStep)}>
+                        <div className={classNames('d-flex flex-column border-bottom')}>
                             <div className="d-flex align-items-center">
                                 <div className="mr-1">
                                     <div className={classNames('mr-2', styles.step)}>1</div>
