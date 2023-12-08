@@ -376,9 +376,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		CodyEnabledForCurrentUser: cody.IsCodyEnabled(ctx),
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
-		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
-		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
-		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
+		ExecutorsEnabled:                               conf.ExecutorsEnabled(),
+		CodeIntelAutoIndexingEnabled:                   conf.CodeIntelAutoIndexingEnabled(),
+		CodeIntelAutoIndexingAllowGlobalPolicies:       conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 		CodeIntelRankingDocumentReferenceCountsEnabled: conf.CodeIntelRankingDocumentReferenceCountsEnabled(),
 
 		CodeInsightsEnabled: insights.IsEnabled(),
