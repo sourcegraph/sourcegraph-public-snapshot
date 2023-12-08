@@ -30,9 +30,6 @@ type Variables struct {
 	PrivateNetwork *privatenetwork.Output
 	// ResourceLimits is a map of resource limits for the Cloud Run resource.
 	ResourceLimits map[string]*string
-	// DependsOn ensures that particular Terraform resources are provisioned
-	// before the Cloud Run resource is created.
-	DependsOn []cdktf.ITerraformDependable
 }
 
 type SecretRef struct {
@@ -48,6 +45,9 @@ type Resource interface {
 
 // Builder configures and creates Cloud Run Services or Jobs.
 type Builder interface {
+	// Kind indicates what this Builder implementation creates.
+	Kind() spec.ServiceKind
+
 	// AddEnv adds an environment variable to the resource, and should only be
 	// used before Build.
 	AddEnv(key, value string)
@@ -60,6 +60,9 @@ type Builder interface {
 	// AddVolumeMount adds a volume mount sourced from a secret to the resource,
 	// and should only be used before Build.
 	AddSecretVolume(name, mountPath string, secret SecretRef, mode int)
+	// AddDependency adds an explicit resource dependency that must be available
+	// before the Cloud Run resource is created.
+	AddDependency(cdktf.ITerraformDependable)
 
 	// Build finalizes the resource.
 	Build(cdktf.TerraformStack, Variables) (Resource, error)

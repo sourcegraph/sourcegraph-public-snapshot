@@ -21,6 +21,8 @@ import {
     type ViewUpdate,
 } from '@codemirror/view'
 
+import { isFirefox } from '@sourcegraph/common'
+
 import { isValidLineRange, MOUSE_MAIN_BUTTON } from './utils'
 
 const selectedLinesTheme = EditorView.theme({
@@ -30,24 +32,26 @@ const selectedLinesTheme = EditorView.theme({
      * are visible) more in its `top` value breaking alignment wih the line.
      * We compensate this spacing by setting negative margin-top.
      *
+     * Line highlighting breaks (highlights two lines instead of 1) in firefox if minHeight is set, so we
+     * add a conditional to check for the current browser, and set the css accordingly.
+     *
      * todo(fkling): Revisit this, styling is not correct for empty lines
      */
-    '.selected-lines-layer .selected-line': {
-        marginTop: '-1px',
+    '.selected-lines-layer .selected-line': isFirefox()
+        ? {
+              marginTop: '-1px',
+          }
+        : {
+              marginTop: '-1px',
+              // Ensure selection marker height matches line height.
+              minHeight: '1.0rem',
+          },
 
-        // Ensure selection marker height matches line height.
-        minHeight: '1rem',
-    },
     '.selected-lines-layer .selected-line.blame-visible': {
         marginTop: '-5px',
 
         // Ensure selection marker height matches the increased line height.
         minHeight: 'calc(1.5rem + 1px)',
-    },
-
-    // Selected line background is set by adding 'selected-line' class to the layer markers.
-    '.cm-line.selected-line': {
-        background: 'transparent',
     },
 
     /**
@@ -261,6 +265,7 @@ const selectedLineNumberTheme = EditorView.theme({
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-end',
+            justifyContent: 'flex-end',
         },
 
         '& .cm-gutterElement:hover': {
@@ -326,11 +331,8 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                     }
 
                     const line = view.state.doc.lineAt(block.from).number
-                    const range = view.state.field(selectedLines)
                     view.dispatch({
-                        effects: mouseEvent.shiftKey
-                            ? setEndLine.of(line)
-                            : setSelectedLines.of(isSingleLine(range) && range?.line === line ? null : { line }),
+                        effects: mouseEvent.shiftKey ? setEndLine.of(line) : setSelectedLines.of({ line }),
                         annotations: lineSelectionSource.of('gutter'),
                         // Collapse/reset text selection
                         selection: { anchor: view.state.selection.main.anchor },
@@ -425,8 +427,4 @@ export function shouldScrollIntoView(view: EditorView, range: SelectedLineRange)
         from.top + from.height >= view.scrollDOM.scrollTop + view.scrollDOM.clientHeight ||
         to.top <= view.scrollDOM.scrollTop
     )
-}
-
-function isSingleLine(range: SelectedLineRange): boolean {
-    return !!range && (!range.endLine || range.line === range.endLine)
 }

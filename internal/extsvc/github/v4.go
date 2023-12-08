@@ -620,6 +620,7 @@ fragment RepositoryFields on Repository {
 	viewerPermission
 	stargazerCount
 	forkCount
+	diskUsage
 	repositoryTopics(first:100) {
 		nodes {
 			topic {
@@ -657,6 +658,7 @@ fragment RepositoryFields on Repository {
 	isLocked
 	isDisabled
 	forkCount
+	diskUsage
 	repositoryTopics(first:100) {
 		nodes {
 			topic {

@@ -52,7 +52,7 @@ const (
 
 	routeAboutSubdomain = "about-subdomain"
 	aboutRedirectScheme = "https"
-	aboutRedirectHost   = "about.sourcegraph.com"
+	aboutRedirectHost   = "sourcegraph.com"
 
 	// Legacy redirects
 	routeLegacyLogin      = "login"
@@ -61,7 +61,7 @@ const (
 )
 
 // aboutRedirects contains map entries, each of which indicates that
-// sourcegraph.com/$KEY should redirect to about.sourcegraph.com/$VALUE.
+// sourcegraph.com/$KEY should redirect to sourcegraph.com/$VALUE.
 var aboutRedirects = map[string]string{
 	"about":      "about",
 	"blog":       "blog",
@@ -141,6 +141,8 @@ func InitRouter(db database.DB) {
 		{path: "/search/cody", name: "cody-search", title: "Search (Cody)", index: false},
 		{path: "/app/coming-soon", name: "app-coming-soon", title: "Coming soon", index: false},
 		{path: "/app/auth/callback", name: "app-auth-callback", title: "Auth callback", index: false},
+		{path: "/cody/manage", name: "cody", title: "Cody Manage", index: false},
+		{path: "/cody/subscription", name: "cody", title: "Cody Pricing", index: false},
 		{path: "/cody/chat", name: "cody", title: "Cody", index: false},
 		{path: "/cody/chat/{chatID}", name: "cody-chat", title: "Cody", index: false},
 		// TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
@@ -199,7 +201,7 @@ func InitRouter(db database.DB) {
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge).Handler(searchBadgeHandler())
 
 	if envvar.SourcegraphDotComMode() {
-		// about.sourcegraph.com subdomain
+		// sourcegraph.com subdomain
 		r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").
 			Name(routeAboutSubdomain).
 			Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -220,7 +222,7 @@ func InitRouter(db database.DB) {
 
 		// legacy routes
 		r.Path("/login").Methods("GET").Name(routeLegacyLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
-		r.Path("/careers").Methods("GET").Name(routeLegacyCareers).Handler(staticRedirectHandler("https://about.sourcegraph.com/jobs", http.StatusMovedPermanently))
+		r.Path("/careers").Methods("GET").Name(routeLegacyCareers).Handler(staticRedirectHandler("https://sourcegraph.com/jobs", http.StatusMovedPermanently))
 
 		r.PathPrefix("/extensions").Methods("GET").Name("extensions").
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -428,15 +430,25 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 		tr.SetAttributes(attribute.String("error-id", errorID))
 		traceURL = trace.URL(trace.ID(r.Context()), conf.DefaultClient())
 	}
-	logger.Error(
-		"ui HTTP handler error response",
+	logFields := []log.Field{
 		log.String("method", r.Method),
 		log.String("request_uri", r.URL.RequestURI()),
 		log.Int("status_code", statusCode),
 		log.Error(err),
 		log.String("error_id", errorID),
 		log.String("trace", traceURL),
-	)
+	}
+	if statusCode >= 400 && statusCode < 500 {
+		logger.Warn(
+			"ui HTTP handler error response",
+			logFields...,
+		)
+	} else {
+		logger.Error(
+			"ui HTTP handler error response",
+			logFields...,
+		)
+	}
 
 	// In the case of recovering from a panic, we nicely include the stack
 	// trace in the error that is shown on the page. Additionally, we log it

@@ -1,3 +1,16 @@
+.root {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.input {
+    display: flex;
+    align-items: center;
+    padding-right: 0.25rem;
+}
+
 .bgroup-left {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
@@ -7,4 +20,30 @@
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
     border-left: none;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    gap: 0.5rem;
+
+    &-label {
+        display: flex;
+        align-items: center;
+        margin: 0;
+    }
+}
+
+.close-button {
+    border-radius: 100%;
+    padding: 0.2rem;
+}
+
+.close-button:hover {
+    background-color: var(--subtle-bg);
+}
+
+.x {
+    color: var(--text-muted);
 }

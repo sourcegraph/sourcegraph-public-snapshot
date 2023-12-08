@@ -8,13 +8,8 @@ import { type GenericLSIFResponse, queryLSIF } from './api'
 
 export const stencil = async (
     uri: string,
-    hasStencilSupport: () => Promise<boolean>,
     queryGraphQL: QueryGraphQLFn<GenericLSIFResponse<{ stencil: sourcegraph.Range[] }>> = sgQueryGraphQL
 ): Promise<sourcegraph.Range[] | undefined> => {
-    if (!(await hasStencilSupport())) {
-        return undefined
-    }
-
     const response = await queryLSIF({ query: stencilQuery, uri }, queryGraphQL)
     return response?.stencil
 }
@@ -22,8 +17,11 @@ export const stencil = async (
 const stencilQuery = gql`
     query LegacyStencil($repository: String!, $commit: String!, $path: String!) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
+                id
                 blob(path: $path) {
+                    canonicalURL
                     lsif {
                         stencil {
                             start {
@@ -45,6 +43,5 @@ const stencilQuery = gql`
 export type StencilFn = (uri: string) => Promise<sourcegraph.Range[] | undefined>
 
 export const makeStencilFn = (
-    queryGraphQL: QueryGraphQLFn<GenericLSIFResponse<{ stencil: sourcegraph.Range[] }>>,
-    hasStencilSupport: () => Promise<boolean> = () => Promise.resolve(true)
-): StencilFn => cache(uri => stencil(uri, hasStencilSupport, queryGraphQL), { max: 10 })
+    queryGraphQL: QueryGraphQLFn<GenericLSIFResponse<{ stencil: sourcegraph.Range[] }>>
+): StencilFn => cache(uri => stencil(uri, queryGraphQL), { max: 10 })

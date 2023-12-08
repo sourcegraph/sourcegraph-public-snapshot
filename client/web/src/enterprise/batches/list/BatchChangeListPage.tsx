@@ -160,7 +160,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     isSourcegraphDotCom ? (
                         <Button
                             as={Link}
-                            to="https://about.sourcegraph.com"
+                            to="https://sourcegraph.com"
                             variant="primary"
                             onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryBatchChanges' })}
                         >
@@ -171,7 +171,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     )
                 }
                 headingElement={headingElement}
-                description="Run custom code over hundreds of repositories and manage the resulting changesets."
+                description="Run and manage large-scale changes across many repositories."
             >
                 <PageHeader.Heading as="h2" styleAs="h1">
                     <PageHeader.Breadcrumb icon={BatchChangesIcon}>Batch Changes</PageHeader.Breadcrumb>

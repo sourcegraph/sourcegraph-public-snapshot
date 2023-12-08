@@ -108,7 +108,7 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	})
 }
 
-func TestIteratePurgeableRepos(t *testing.T) {
+func TestListPurgeableRepos(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
@@ -145,12 +145,12 @@ func TestIteratePurgeableRepos(t *testing.T) {
 
 	for _, tt := range []struct {
 		name      string
-		options   IteratePurgableReposOptions
+		options   ListPurgableReposOptions
 		wantRepos []api.RepoName
 	}{
 		{
 			name: "zero deletedBefore",
-			options: IteratePurgableReposOptions{
+			options: ListPurgableReposOptions{
 				DeletedBefore: time.Time{},
 				Limit:         0,
 			},
@@ -158,7 +158,7 @@ func TestIteratePurgeableRepos(t *testing.T) {
 		},
 		{
 			name: "deletedBefore now",
-			options: IteratePurgableReposOptions{
+			options: ListPurgableReposOptions{
 				DeletedBefore: time.Now(),
 				Limit:         0,
 			},
@@ -167,7 +167,7 @@ func TestIteratePurgeableRepos(t *testing.T) {
 		},
 		{
 			name: "deletedBefore 5 minutes ago",
-			options: IteratePurgableReposOptions{
+			options: ListPurgableReposOptions{
 				DeletedBefore: time.Now().Add(-5 * time.Minute),
 				Limit:         0,
 			},
@@ -175,7 +175,7 @@ func TestIteratePurgeableRepos(t *testing.T) {
 		},
 		{
 			name: "test limit",
-			options: IteratePurgableReposOptions{
+			options: ListPurgableReposOptions{
 				DeletedBefore: time.Time{},
 				Limit:         1,
 			},
@@ -183,13 +183,8 @@ func TestIteratePurgeableRepos(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			var have []api.RepoName
-			if err := db.GitserverRepos().IteratePurgeableRepos(ctx, tt.options, func(repo api.RepoName) error {
-				have = append(have, repo)
-				return nil
-			}); err != nil {
-				t.Fatal(err)
-			}
+			have, err := db.GitserverRepos().ListPurgeableRepos(ctx, tt.options)
+			require.NoError(t, err)
 
 			sort.Slice(have, func(i, j int) bool { return have[i] < have[j] })
 
@@ -208,6 +203,7 @@ func TestListReposWithLastError(t *testing.T) {
 		name         string
 		cloudDefault bool
 		hasLastError bool
+		blocked      bool
 	}
 	type testCase struct {
 		name               string
@@ -262,6 +258,23 @@ func TestListReposWithLastError(t *testing.T) {
 			},
 			expectedReposFound: nil,
 		},
+		{
+			name: "filter out blocked repos",
+			testRepos: []testRepo{
+				{
+					name:         "github.com/sourcegraph/repo1",
+					cloudDefault: true,
+					hasLastError: true,
+					blocked:      true,
+				},
+				{
+					name:         "github.com/sourcegraph/repo2",
+					cloudDefault: true,
+					hasLastError: true,
+				},
+			},
+			expectedReposFound: []api.RepoName{"github.com/sourcegraph/repo2"},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -275,9 +288,8 @@ func TestListReposWithLastError(t *testing.T) {
 			nonCloudDefaultService := createTestExternalService(ctx, t, now, db, false)
 			for i, tr := range tc.testRepos {
 				testRepo := &types.Repo{
-					Name:        api.RepoName(tr.name),
-					URI:         tr.name,
-					Description: "",
+					Name: api.RepoName(tr.name),
+					URI:  tr.name,
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          fmt.Sprintf("repo%d-external", i),
 						ServiceType: extsvc.TypeGitHub,
@@ -297,6 +309,13 @@ func TestListReposWithLastError(t *testing.T) {
 
 				if tr.hasLastError {
 					if err := db.GitserverRepos().SetLastError(ctx, testRepo.Name, "an error", "test"); err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				if tr.blocked {
+					q := sqlf.Sprintf(`UPDATE repo SET blocked = %s WHERE name = %s`, []byte(`{"reason": "test"}`), testRepo.Name)
+					if _, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 						t.Fatal(err)
 					}
 				}
@@ -418,10 +437,7 @@ func TestGitserverReposGetByID(t *testing.T) {
 	ctx := context.Background()
 
 	// Create one test repo
-	_, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
-		RepoSizeBytes: 100,
-	})
+	_, gitserverRepo := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo")
 
 	// GetByID should now work
 	fromDB, err := db.GitserverRepos().GetByID(ctx, gitserverRepo.RepoID)
@@ -444,10 +460,7 @@ func TestGitserverReposGetByName(t *testing.T) {
 	ctx := context.Background()
 
 	// Create one test repo
-	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
-		RepoSizeBytes: 100,
-	})
+	repo, gitserverRepo := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo")
 
 	// GetByName should now work
 	fromDB, err := db.GitserverRepos().GetByName(ctx, repo.Name)
@@ -476,9 +489,7 @@ func TestGitserverReposGetByNames(t *testing.T) {
 	gitserverRepos := make([]*types.GitserverRepo, 5)
 	for i := 0; i < len(repoNames); i++ {
 		repoName := fmt.Sprintf("github.com/sourcegraph/repo%d", i)
-		repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name: api.RepoName(repoName),
-		})
+		repo, gitserverRepo := createTestRepo(ctx, t, db, api.RepoName(repoName))
 		repoNames[i] = repo.Name
 		gitserverRepos[i] = gitserverRepo
 	}
@@ -511,11 +522,7 @@ func TestSetCloneStatus(t *testing.T) {
 	ctx := context.Background()
 
 	// Create one test repo
-	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
-		RepoSizeBytes: 100,
-		CloneStatus:   types.CloneStatusNotCloned,
-	})
+	repo, gitserverRepo := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo")
 
 	// Set cloned
 	setGitserverRepoCloneStatus(t, db, repo.Name, types.CloneStatusCloned)
@@ -579,11 +586,7 @@ func TestCloningProgress(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Default", func(t *testing.T) {
-		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/defaultcloningprogress",
-			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
-		})
+		repo, _ := createTestRepo(ctx, t, db, "github.com/sourcegraph/defaultcloningprogress")
 		gotRepo, err := db.GitserverRepos().GetByName(ctx, repo.Name)
 		if err != nil {
 			t.Fatalf("GetByName: %s", err)
@@ -594,11 +597,7 @@ func TestCloningProgress(t *testing.T) {
 	})
 
 	t.Run("Set", func(t *testing.T) {
-		repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/updatedcloningprogress",
-			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
-		})
+		repo, gitserverRepo := createTestRepo(ctx, t, db, "github.com/sourcegraph/updatedcloningprogress")
 
 		gitserverRepo.CloningProgress = "Receiving objects: 97% (97/100)"
 		if err := db.GitserverRepos().SetCloningProgress(ctx, repo.Name, gitserverRepo.CloningProgress); err != nil {
@@ -624,11 +623,7 @@ func TestLogCorruption(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("log repo corruption sets corrupted_at time", func(t *testing.T) {
-		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/repo1",
-			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
-		})
+		repo, _ := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo1")
 		logRepoCorruption(t, db, repo.Name, "test")
 
 		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
@@ -651,11 +646,7 @@ func TestLogCorruption(t *testing.T) {
 		}
 	})
 	t.Run("setting clone status clears corruptedAt time", func(t *testing.T) {
-		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/repo2",
-			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
-		})
+		repo, _ := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo2")
 		logRepoCorruption(t, db, repo.Name, "test 2")
 
 		setGitserverRepoCloneStatus(t, db, repo.Name, types.CloneStatusCloned)
@@ -669,11 +660,7 @@ func TestLogCorruption(t *testing.T) {
 		}
 	})
 	t.Run("setting last error does not clear corruptedAt time", func(t *testing.T) {
-		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/repo3",
-			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
-		})
+		repo, _ := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo3")
 		logRepoCorruption(t, db, repo.Name, "test 3")
 
 		setGitserverRepoLastChanged(t, db, repo.Name, time.Now())
@@ -687,11 +674,7 @@ func TestLogCorruption(t *testing.T) {
 		}
 	})
 	t.Run("setting clone status clears corruptedAt time", func(t *testing.T) {
-		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/repo4",
-			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
-		})
+		repo, _ := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo4")
 		logRepoCorruption(t, db, repo.Name, "test 3")
 
 		setGitserverRepoLastError(t, db, repo.Name, "This is a TEST ERAWR")
@@ -705,11 +688,7 @@ func TestLogCorruption(t *testing.T) {
 		}
 	})
 	t.Run("consecutive corruption logs appends", func(t *testing.T) {
-		repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/repo5",
-			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
-		})
+		repo, gitserverRepo := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo5")
 		for i := 0; i < 12; i++ {
 			logRepoCorruption(t, db, repo.Name, fmt.Sprintf("test %d", i))
 			// We set the Clone status so that the 'corrupted_at' time gets cleared
@@ -744,11 +723,7 @@ func TestLogCorruption(t *testing.T) {
 
 	})
 	t.Run("large reason gets truncated", func(t *testing.T) {
-		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/repo6",
-			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
-		})
+		repo, _ := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo6")
 
 		largeReason := make([]byte, MaxReasonSizeInMB*2)
 		for i := 0; i < len(largeReason); i++ {
@@ -766,6 +741,27 @@ func TestLogCorruption(t *testing.T) {
 			t.Errorf("expected reason to be truncated - got length=%d, wanted=%d", len(fromDB.CorruptionLogs[0].Reason), MaxReasonSizeInMB)
 		}
 	})
+	t.Run("logging corruption from wrong shard does not log corruption", func(t *testing.T) {
+		// Create repo
+		repo, _ := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo7")
+
+		// Mark it as cloned on shard-1
+		err := db.GitserverRepos().SetCloneStatus(ctx, repo.Name, types.CloneStatusCloned, "shard-1")
+		require.NoError(t, err)
+
+		// Log corruption on shard-2
+		err = db.GitserverRepos().LogCorruption(ctx, repo.Name, "corrupt lol", "shard-2")
+		if err == nil || err.Error() != "repo not found or already corrupt" {
+			t.Fatalf("expected not-found error but got: %s", err)
+		}
+
+		// This should not result in corruption being logged
+		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
+		if err != nil {
+			t.Fatalf("failed to get repo by id: %s", err)
+		}
+		require.True(t, fromDB.CorruptedAt.IsZero(), "corrupted_at should not be set, but it was")
+	})
 }
 
 func TestSetLastError(t *testing.T) {
@@ -778,11 +774,7 @@ func TestSetLastError(t *testing.T) {
 	ctx := context.Background()
 
 	// Create one test repo
-	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
-		CloneStatus:   types.CloneStatusNotCloned,
-		RepoSizeBytes: 100,
-	})
+	repo, gitserverRepo := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo")
 
 	// Set error.
 	//
@@ -857,10 +849,7 @@ func TestSetRepoSize(t *testing.T) {
 	ctx := context.Background()
 
 	// Create one test repo
-	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
-		RepoSizeBytes: 100,
-	})
+	repo, gitserverRepo := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo")
 
 	// Set repo size
 	err := db.GitserverRepos().SetRepoSize(ctx, repo.Name, 200, "")
@@ -934,11 +923,7 @@ func TestGitserverRepo_Update(t *testing.T) {
 	ctx := context.Background()
 
 	// Create one test repo
-	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
-		CloneStatus:   types.CloneStatusNotCloned,
-		RepoSizeBytes: 100,
-	})
+	repo, gitserverRepo := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo")
 
 	// Change clone status
 	gitserverRepo.CloneStatus = types.CloneStatusCloned
@@ -998,16 +983,8 @@ func TestGitserverRepoUpdateMany(t *testing.T) {
 	ctx := context.Background()
 
 	// Create two test repos
-	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo1",
-		CloneStatus:   types.CloneStatusNotCloned,
-		RepoSizeBytes: 100,
-	})
-	repo2, gitserverRepo2 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo2",
-		CloneStatus:   types.CloneStatusNotCloned,
-		RepoSizeBytes: 100,
-	})
+	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo1")
+	repo2, gitserverRepo2 := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo2")
 
 	// Change their clone statuses
 	gitserverRepo1.CloneStatus = types.CloneStatusCloned
@@ -1061,17 +1038,9 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
-	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name: "github.com/sourcegraph/repo1",
-	})
-
-	repo2, gitserverRepo2 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name: "github.com/sourcegraph/repo2",
-	})
-
-	repo3, gitserverRepo3 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name: "github.com/sourcegraph/repo3",
-	})
+	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo1")
+	repo2, gitserverRepo2 := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo2")
+	repo3, gitserverRepo3 := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo3")
 
 	// Setting repo sizes in DB
 	sizes := map[api.RepoName]int64{
@@ -1152,10 +1121,10 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	}
 }
 
-func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTestRepoPayload) (*types.Repo, *types.GitserverRepo) {
+func createTestRepo(ctx context.Context, t *testing.T, db DB, name api.RepoName) (*types.Repo, *types.GitserverRepo) {
 	t.Helper()
 
-	repo := &types.Repo{Name: payload.Name, URI: payload.URI, Fork: payload.Fork}
+	repo := &types.Repo{Name: name}
 
 	// Create Repo
 	err := db.Repos().Create(ctx, repo)
@@ -1179,25 +1148,6 @@ func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTes
 	}
 
 	return repo, gitserverRepo
-}
-
-type createTestRepoPayload struct {
-	// Repo related properties
-
-	// Name is the name for this repository (e.g., "github.com/user/repo"). It
-	// is the same as URI, unless the user configures a non-default
-	// repositoryPathPattern.
-	//
-	// Previously, this was called RepoURI.
-	Name api.RepoName
-	URI  string
-	Fork bool
-
-	// Gitserver related properties
-
-	// Size of the repository in bytes.
-	RepoSizeBytes int64
-	CloneStatus   types.CloneStatus
 }
 
 func createTestRepos(ctx context.Context, t *testing.T, db DB, repos types.Repos) {
@@ -1246,9 +1196,7 @@ func TestGitserverRepos_GetGitserverGitDirSize(t *testing.T) {
 	assertSize(0)
 
 	// Create one test repo.
-	repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name: "github.com/sourcegraph/repo",
-	})
+	repo, _ := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo")
 
 	// Now, we should see an uncloned test repo that takes no space.
 	assertSize(0)
@@ -1260,9 +1208,7 @@ func TestGitserverRepos_GetGitserverGitDirSize(t *testing.T) {
 	assertSize(200)
 
 	// Now add a second repo to make sure it aggregates properly.
-	repo2, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name: "github.com/sourcegraph/repo2",
-	})
+	repo2, _ := createTestRepo(ctx, t, db, "github.com/sourcegraph/repo2")
 	require.NoError(t, db.GitserverRepos().SetRepoSize(ctx, repo2.Name, 500, "test-gitserver"))
 
 	// 200 from the first repo and another 500 from the newly created repo.

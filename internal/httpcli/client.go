@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"code.gitea.io/gitea/modules/hostmatcher"
 	"github.com/gregjones/httpcache"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -104,14 +106,15 @@ func NewExternalClientFactory(middleware ...Middleware) *Factory {
 	return NewFactory(
 		NewMiddleware(mw...),
 		NewTimeoutOpt(externalTimeout),
-		// ExternalTransportOpt needs to be before TracedTransportOpt and
+		// externalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
 		// not a generic http.RoundTripper.
-		ExternalTransportOpt,
+		externalTransportOpt,
 		NewErrorResilientTransportOpt(
 			newRetryPolicy(maxRetries(externalRetryMaxAttempts), externalRetryAfterMaxDuration),
 			expJitterDelayOrRetryAfterDelay(externalRetryDelayBase, externalRetryDelayMax),
 		),
+		RequestInteractionTransportOpt,
 		TracedTransportOpt,
 	)
 }
@@ -148,6 +151,7 @@ func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Facto
 		MeteredTransportOpt(subsystem),
 		ActorTransportOpt,
 		RequestClientTransportOpt,
+		RequestInteractionTransportOpt,
 		TracedTransportOpt,
 	)
 }
@@ -307,19 +311,62 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 	}
 }
 
-//
 // Common Opts
-//
+var externalDenyList = env.Get("EXTERNAL_DENY_LIST", "", "Deny list for outgoing requests")
+
+type denyRule struct {
+	pattern string
+	builtin string
+}
+
+var defaultDenylist = []denyRule{
+	{builtin: "loopback"},
+	{pattern: "169.254.169.254"},
+}
+
+var localDevDenylist = []denyRule{
+	{pattern: "169.254.169.254"},
+}
+
+// TestTransportOpt creates a transport for tests that does not apply any denylisting
+func TestExternalTransportOpt(cli *http.Client) error {
+	tr, err := getTransportForMutation(cli)
+	if err != nil {
+		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
+	}
+
+	cli.Transport = &externalTransport{base: tr}
+	return nil
+}
 
 // ExternalTransportOpt returns an Opt that ensures the http.Client.Transport
 // can contact non-Sourcegraph services. For example Admins can configure
-// TLS/SSL settings.
+// TLS/SSL settings. This adds filtering for external requests based on
+// predefined deny lists. Can be extended using the EXTERNAL_DENY_LIST
+// environment variable.
 func ExternalTransportOpt(cli *http.Client) error {
 	tr, err := getTransportForMutation(cli)
 	if err != nil {
 		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
 
+	var denyMatchList = hostmatcher.ParseHostMatchList("EXTERNAL_DENY_LIST", externalDenyList)
+
+	denyList := defaultDenylist
+	if env.InsecureDev {
+		denyList = localDevDenylist
+	}
+
+	for _, rule := range denyList {
+		if rule.builtin != "" {
+			denyMatchList.AppendBuiltin(rule.builtin)
+		} else if rule.pattern != "" {
+			denyMatchList.AppendPattern(rule.pattern)
+		}
+	}
+
+	// this dialer will match resolved domain names against the deny list
+	tr.DialContext = hostmatcher.NewDialContext("", nil, denyMatchList)
 	cli.Transport = WrapTransport(&externalTransport{base: tr}, tr)
 	return nil
 }
@@ -545,6 +592,19 @@ func RequestClientTransportOpt(cli *http.Client) error {
 		&requestclient.HTTPTransport{RoundTripper: cli.Transport},
 		cli.Transport,
 	)
+
+	return nil
+}
+
+func RequestInteractionTransportOpt(cli *http.Client) error {
+	if cli.Transport == nil {
+		cli.Transport = http.DefaultTransport
+	}
+
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &requestinteraction.HTTPTransport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
 
 	return nil
 }

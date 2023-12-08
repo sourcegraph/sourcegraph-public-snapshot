@@ -1,0 +1,224 @@
+.container {
+    :global(.hs-button) {
+        margin: 0;
+        cursor: pointer;
+        display: inline-block;
+        font-weight: 700;
+        line-height: 0.75rem;
+        position: relative;
+        text-align: center;
+        transition: all 0.15s linear;
+        background-color: #0b70db !important;
+        border-color: #0b70db !important;
+        color: var(--white);
+        border-radius: 0.3125rem;
+        border-style: solid;
+        border-width: 1px;
+        font-size: 0.875rem;
+        padding: 0.75rem 1.5rem;
+
+        &:hover,
+        &:focus {
+            background-color: #0864c6 !important;
+            border-color: #0864c6 !important;
+        }
+
+        &:active {
+            background-color: #0864c6 !important;
+            border-color: #0864c6 !important;
+        }
+    }
+
+    p {
+        margin-bottom: 0.625rem !important;
+    }
+
+    label {
+        font-size: 0.875rem;
+        color: #33475b;
+        display: block;
+        float: none;
+        width: auto;
+        font-weight: 500 !important;
+        line-height: 1.25rem;
+        padding-top: 0;
+        margin-bottom: 0.25rem;
+        margin-top: 0.25rem;
+    }
+
+    input:global(.hs-input):global(.error),
+    div:global(.field):global(.error) input,
+    div:global(.field):global(.error) textarea,
+    div:global(.field):global(.error) :global(.chzn-choices),
+    textarea:global(.hs-input):global(.error),
+    select:global(.hs-input):global(.error) {
+        border-color: var(--danger-text) !important;
+    }
+
+    input:global(.hs-input):global(.error):focus,
+    div:global(.field):global(.error) input:focus,
+    div:global(.field):global(.error) textarea:focus,
+    div:global(.field):global(.error) :global(.chzn-choices):focus,
+    textarea:global(.hs-input):global(.error):focus,
+    select:global(.hs-input):global(.error):focus {
+        border-color: var(--danger-text) !important;
+    }
+    :global(.hs-error-msgs) label {
+        color: var(--danger-text) !important;
+    }
+
+    :global(.hs-input) {
+        display: inline-block;
+        width: 100%;
+        height: 2.5rem;
+        padding: 0.563rem 0.625rem;
+        font-size: 1rem;
+        font-weight: normal;
+        line-height: 1.375rem;
+        color: #313131;
+        border: 1px solid var(--gray-04);
+        box-sizing: border-box;
+        -webkit-border-radius: 0.188rem;
+        -moz-border-radius: 0.188rem;
+        -ms-border-radius: 0.188rem;
+        border-radius: 0.188rem;
+        transition: border 0.2s linear;
+
+        &:not([type='file']) {
+            background-color: #f5f8fa;
+        }
+
+        &:-moz-placeholder {
+            color: #bfbfbf;
+        }
+
+        &:-webkit-input-placeholder {
+            color: #bfbfbf;
+        }
+
+        &:focus {
+            outline: none;
+            border-color: #0b70db;
+        }
+    }
+
+    :global(.hs-input)[type='checkbox'],
+    :global(.hs-input)[type='radio'] {
+        cursor: pointer;
+        width: auto;
+        height: auto;
+        padding: 0;
+        margin: 0.188rem 0.313rem 0.188rem 0;
+        line-height: normal;
+        border: none;
+    }
+
+    :global(.hs-input)[type='checkbox']:checked,
+    :global(.hs-input)[type='radio']:checked {
+        accent-color: #0b70db;
+    }
+
+    :global(.actions) {
+        margin-top: 1.125rem;
+        margin-bottom: 0;
+        padding-top: 1.063rem;
+    }
+
+    :global(.inputs-list) {
+        margin: 0 0 0.313rem;
+        width: 100%;
+        padding-left: 0.313rem;
+    }
+    :global(.inputs-list) :global(.hs-error-msgs) {
+        padding-left: 0;
+    }
+
+    :global(.inputs-list) > li {
+        display: block;
+        padding: 0;
+        width: 100%;
+        padding-top: 0;
+    }
+
+    :global(.inputs-list) label {
+        float: none;
+        width: auto;
+        padding: 0;
+        line-height: 1.125rem;
+        white-space: normal;
+        font-weight: normal;
+    }
+
+    :global(.inputs-list):first-child {
+        padding-top: 0.375rem;
+    }
+
+    :global(.inputs-list) > li + li {
+        padding-top: 0.125rem;
+    }
+
+    ul:global(.no-list) {
+        list-style: none;
+    }
+
+    :global(.field) {
+        margin-bottom: 1.125rem;
+    }
+
+    :global(.hs-field-desc) {
+        color: #7c98b6;
+        margin: 0 0 0.375rem;
+        font-size: 0.688rem;
+    }
+
+    :global(.hs-form-required) {
+        color: var(--danger-text);
+        margin-left: 0.188rem;
+    }
+
+    :global(.hs-custom-style)
+        :global(.hs-dependent-field)
+        > div
+        input:global(.hs-input):not([type='checkbox']):not([type='radio']) {
+        width: 90%;
+    }
+
+    :global(.hs-button),
+    :global(.hs-form-field) input[type='text'],
+    :global(.hs-form-field) input[type='email'],
+    :global(.hs-form-field) input[type='phone'],
+    :global(.hs-form-field) input[type='number'],
+    :global(.hs-form-field) input[type='tel'],
+    :global(.hs-form-field) input[type='date'],
+    :global(.hs-form-field) textarea {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+    }
+
+    :global(.hs-fieldtype-intl-phone):global(.hs-input) {
+        padding: 0;
+        background: none;
+        border: none;
+        height: auto;
+
+        &::after {
+            clear: both;
+            content: ' ';
+            display: table;
+        }
+
+        &:global(.hs-input) {
+            margin-bottom: 0;
+        }
+    }
+
+    :global(.hs-default-font-element),
+    :global(.hs-main-font-element) {
+        line-height: normal;
+    }
+
+    // stylelint-disable-next-line selector-id-pattern
+    :global(#hsForm_85548efc-a879-4553-9ef0-a8da8fdcf541) :global(.hs-email) {
+        display: none;
+    }
+}

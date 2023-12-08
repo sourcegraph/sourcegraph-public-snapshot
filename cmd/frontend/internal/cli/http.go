@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/session"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -68,7 +69,8 @@ func newExternalHTTPHandler(
 	// origins, to avoid CSRF attacks. See session.CookieMiddlewareWithCSRFSafety for details.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(logger, db, apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = httpapi.AccessTokenAuthMiddleware(db, logger, apiHandler)                                        // API accepts access tokens
-	apiHandler = requestclient.ExternalHTTPMiddleware(apiHandler, envvar.SourcegraphDotComMode())
+	apiHandler = requestclient.ExternalHTTPMiddleware(apiHandler)
+	apiHandler = requestinteraction.HTTPMiddleware(apiHandler)
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 	if envvar.SourcegraphDotComMode() {
 		apiHandler = deviceid.Middleware(apiHandler)
@@ -91,7 +93,8 @@ func newExternalHTTPHandler(
 	appHandler = middleware.OpenGraphMetadataMiddleware(db.FeatureFlags(), appHandler)
 	appHandler = session.CookieMiddleware(logger, db, appHandler)          // app accepts cookies
 	appHandler = httpapi.AccessTokenAuthMiddleware(db, logger, appHandler) // app accepts access tokens
-	appHandler = requestclient.ExternalHTTPMiddleware(appHandler, envvar.SourcegraphDotComMode())
+	appHandler = requestclient.ExternalHTTPMiddleware(appHandler)
+	appHandler = requestinteraction.HTTPMiddleware(appHandler)
 	if envvar.SourcegraphDotComMode() {
 		appHandler = deviceid.Middleware(appHandler)
 	}

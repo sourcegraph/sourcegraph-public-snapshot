@@ -1,4 +1,3 @@
-import { once } from 'lodash'
 import gql from 'tagged-template-noop'
 
 import { isErrorLike } from '@sourcegraph/common'
@@ -86,21 +85,13 @@ export class API {
         }
 
         const metaRequest = (async (name: string): Promise<RepoMeta> => {
-            const queryWithFork = gql`
+            const query = gql`
                 query LegacyResolveRepo($name: String!) {
                     repository(name: $name) {
                         id
                         name
                         isFork
                         isArchived
-                    }
-                }
-            `
-
-            const queryWithoutFork = gql`
-                query LegacyResolveRepo2($name: String!) {
-                    repository(name: $name) {
-                        name
                     }
                 }
             `
@@ -114,7 +105,7 @@ export class API {
                 }
             }
 
-            const data = await queryGraphQL<Response>((await this.hasForkField()) ? queryWithFork : queryWithoutFork, {
+            const data = await queryGraphQL<Response>(query, {
                 name,
             })
 
@@ -130,107 +121,6 @@ export class API {
 
         return metaRequest
     }
-
-    /**
-     * Determines via introspection if the GraphQL API has isFork field on the Repository type.
-     *
-     * TODO(efritz) - Remove this when we no longer need to support pre-3.15 instances.
-     */
-    private async hasForkField(): Promise<boolean> {
-        const introspectionQuery = gql`
-            query LegacyRepositoryIntrospection {
-                __type(name: "Repository") {
-                    fields {
-                        name
-                    }
-                }
-            }
-        `
-
-        interface IntrospectionResponse {
-            __type: { fields: { name: string }[] }
-        }
-
-        return (await queryGraphQL<IntrospectionResponse>(introspectionQuery)).__type.fields.some(
-            field => field.name === 'isFork'
-        )
-    }
-
-    /**
-     * Determines via introspection if the GraphQL API has local code intelligence available
-     *
-     * TODO(chrismwendt) - Remove this when we no longer need to support versions without local code
-     * intelligence
-     */
-    public hasLocalCodeIntelField = once(async () => {
-        const introspectionQuery = gql`
-            query LegacyLocalCodeIntelIntrospectionQuery {
-                __type(name: "GitBlob") {
-                    fields {
-                        name
-                    }
-                }
-            }
-        `
-
-        interface IntrospectionResponse {
-            __type: { fields: { name: string }[] }
-        }
-
-        return (await queryGraphQL<IntrospectionResponse>(introspectionQuery)).__type.fields.some(
-            field => field.name === 'localCodeIntel'
-        )
-    })
-
-    /**
-     * Determines via introspection if the GraphQL API has symbol info available
-     *
-     * TODO(chrismwendt) - Remove this when we no longer need to support versions without symbol info
-     */
-    public hasSymbolInfo = once(async () => {
-        const introspectionQuery = gql`
-            query LegacySymbolInfoIntrospectionQuery {
-                __type(name: "GitBlob") {
-                    fields {
-                        name
-                    }
-                }
-            }
-        `
-
-        interface IntrospectionResponse {
-            __type: { fields: { name: string }[] }
-        }
-
-        return (await queryGraphQL<IntrospectionResponse>(introspectionQuery)).__type.fields.some(
-            field => field.name === 'symbolInfo'
-        )
-    })
-
-    /**
-     * Determines via introspection if the GraphQL API has symbolInfo.range available
-     *
-     * TODO(chrismwendt) - Remove this when we no longer need to support versions without symbolInfo.range
-     */
-    public hasSymbolLocationRange = once(async () => {
-        const introspectionQuery = gql`
-            query LegacySymbolLocationRangeIntrospectionQuery {
-                __type(name: "SymbolLocation") {
-                    fields {
-                        name
-                    }
-                }
-            }
-        `
-
-        interface IntrospectionResponse {
-            __type: { fields: { name: string }[] }
-        }
-
-        return (await queryGraphQL<IntrospectionResponse>(introspectionQuery)).__type.fields.some(
-            field => field.name === 'range'
-        )
-    })
 
     public fetchLocalCodeIntelPayload = cache(
         async ({ repo, commit, path }: RepoCommitPath): Promise<LocalCodeIntelPayload | undefined> => {
@@ -260,11 +150,7 @@ export class API {
         document: sourcegraph.TextDocument,
         position: sourcegraph.Position
     ): Promise<LocalSymbol | undefined> => {
-        if (!(await this.hasLocalCodeIntelField())) {
-            return
-        }
-
-        const { repo, commit, path } = parseGitURI(new URL(document.uri))
+        const { repo, commit, path } = parseGitURI(document.uri)
 
         const payload = await this.fetchLocalCodeIntelPayload({ repo, commit, path })
         if (!payload) {
@@ -291,20 +177,12 @@ export class API {
         document: sourcegraph.TextDocument,
         position: sourcegraph.Position
     ): Promise<SymbolInfoCanonical | undefined> => {
-        if (!(await this.hasSymbolInfo())) {
-            return
-        }
-
-        const query = (await this.hasSymbolLocationRange())
-            ? symbolInfoDefinitionQueryWithRange
-            : symbolInfoDefinitionQueryWithoutRange
-
-        const { repo, commit, path } = parseGitURI(new URL(document.uri))
+        const { repo, commit, path } = parseGitURI(document.uri)
 
         const vars = { repository: repo, commit, path, line: position.line, character: position.character }
         const response = await (async (): Promise<SymbolInfoResponse> => {
             try {
-                return await queryGraphQL<SymbolInfoResponse>(query, vars)
+                return await queryGraphQL<SymbolInfoResponse>(symbolInfoDefinitionQuery, vars)
             } catch (error) {
                 if (isKnownSquirrelErrorLike(error)) {
                     return { repository: null }
@@ -332,8 +210,11 @@ export class API {
         const query = gql`
             query LegacyFileContent($repo: String!, $rev: String!, $path: String!) {
                 repository(name: $repo) {
+                    id
                     commit(rev: $rev) {
+                        id
                         file(path: $path) {
+                            canonicalURL
                             content
                         }
                     }
@@ -373,34 +254,6 @@ export class API {
         })
         return data.search.results.results.filter(isDefined)
     }
-
-    /**
-     * Determines via introspection if the GraphQL API supports stencils
-     *
-     * TODO(chrismwendt) - Remove this when we no longer need to support Sourcegraph versions that don't
-     * have stencil support
-     */
-    public async hasStencils(): Promise<boolean> {
-        const introspectionQuery = gql`
-            query LegacyStencilIntrospectionQuery {
-                __type(name: "GitBlobLSIFData") {
-                    fields {
-                        name
-                    }
-                }
-            }
-        `
-
-        interface IntrospectionResponse {
-            __type: { fields: { name: string }[] }
-        }
-
-        return Boolean(
-            (await queryGraphQL<IntrospectionResponse>(introspectionQuery)).__type?.fields.some(
-                field => field.name === 'stencil'
-            )
-        )
-    }
 }
 
 function buildSearchQuery(fileLocal: boolean): string {
@@ -412,15 +265,18 @@ function buildSearchQuery(fileLocal: boolean): string {
                     ... on FileMatch {
                         __typename
                         file {
+                            canonicalURL
                             path
                             commit {
                                 oid
                             }
                         }
                         repository {
+                            id
                             name
                         }
                         symbols {
+                            canonicalURL
                             name
                             kind
                             location {
@@ -534,7 +390,9 @@ const localCodeIntelQuery = gql`
         repository(name: $repository) {
             id
             commit(rev: $commit) {
+                id
                 blob(path: $path) {
+                    canonicalURL
                     localCodeIntel
                 }
             }
@@ -577,33 +435,14 @@ const symbolInfoFlexibleToCanonical = (flexible: SymbolInfoFlexible): SymbolInfo
     hover: flexible.hover,
 })
 
-const symbolInfoDefinitionQueryWithoutRange = gql`
-    query LegacySymbolInfo($repository: String!, $commit: String!, $path: String!, $line: Int!, $character: Int!) {
-        repository(name: $repository) {
-            commit(rev: $commit) {
-                blob(path: $path) {
-                    symbolInfo(line: $line, character: $character) {
-                        definition {
-                            repo
-                            commit
-                            path
-                            line
-                            character
-                            length
-                        }
-                        hover
-                    }
-                }
-            }
-        }
-    }
-`
-
-const symbolInfoDefinitionQueryWithRange = gql`
+const symbolInfoDefinitionQuery = gql`
     query LegacySymbolInfo2($repository: String!, $commit: String!, $path: String!, $line: Int!, $character: Int!) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
+                id
                 blob(path: $path) {
+                    canonicalURL
                     symbolInfo(line: $line, character: $character) {
                         definition {
                             repo

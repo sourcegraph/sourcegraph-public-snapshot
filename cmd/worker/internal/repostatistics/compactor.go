@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // compactor is a worker responsible for compacting rows in the repo_statistics table.
@@ -38,7 +39,7 @@ func (j *compactor) Routines(_ context.Context, observationCtx *observation.Cont
 	return []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(
 			context.Background(),
-			&handler{
+			&compactorHandler{
 				store:  db.RepoStatistics(),
 				logger: observationCtx.Logger,
 			},
@@ -49,20 +50,21 @@ func (j *compactor) Routines(_ context.Context, observationCtx *observation.Cont
 	}, nil
 }
 
-type handler struct {
+type compactorHandler struct {
 	store  database.RepoStatisticsStore
 	logger log.Logger
 }
 
-var (
-	_ goroutine.Handler      = &handler{}
-	_ goroutine.ErrorHandler = &handler{}
-)
+var _ goroutine.Handler = &compactorHandler{}
 
-func (h *handler) Handle(ctx context.Context) error {
-	return h.store.CompactRepoStatistics(ctx)
-}
+func (h *compactorHandler) Handle(ctx context.Context) error {
+	var errs error
+	if err := h.store.CompactRepoStatistics(ctx); err != nil {
+		errs = errors.Append(errs, errors.Wrap(err, "error compacting repo statistics"))
+	}
 
-func (h *handler) HandleError(err error) {
-	h.logger.Error("error compacting repo statistics rows", log.Error(err))
+	if err := h.store.CompactGitserverReposStatistics(ctx); err != nil {
+		errs = errors.Append(errs, errors.Wrap(err, "error compacting gitserver repos statistics"))
+	}
+	return errs
 }

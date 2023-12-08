@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/conc/pool"
@@ -85,6 +86,10 @@ sg start -describe single-program
 				Name:  "describe",
 				Usage: "Print details about the selected commandset",
 			},
+			&cli.BoolFlag{
+				Name:  "sgtail",
+				Usage: "Connects to running sgtail instance",
+			},
 
 			&cli.StringSliceFlag{
 				Name:        "debug",
@@ -127,7 +132,7 @@ sg start -describe single-program
 				Destination: &onlyServices,
 			},
 		},
-		BashComplete: completions.CompleteOptions(func() (options []string) {
+		BashComplete: completions.CompleteArgs(func() (options []string) {
 			config, _ := getConfig()
 			if config == nil {
 				return
@@ -154,7 +159,7 @@ func constructStartCmdLongHelp() string {
 	}
 
 	fmt.Fprintf(&out, "\n\n")
-	fmt.Fprintf(&out, "Available comamndsets in `%s`:\n", configFile)
+	fmt.Fprintf(&out, "Available commandsets in `%s`:\n", configFile)
 
 	var names []string
 	for name := range config.Commandsets {
@@ -172,6 +177,8 @@ func constructStartCmdLongHelp() string {
 
 	return out.String()
 }
+
+var sgOnce sync.Once
 
 func startExec(ctx *cli.Context) error {
 	config, err := getConfig()
@@ -202,6 +209,12 @@ func startExec(ctx *cli.Context) error {
 	if exists {
 		std.Out.WriteAlertf("Found 'sg %s' already running with the same arguments. Process: %d", strings.Join(os.Args[1:], " "), pid)
 		return errors.New("no concurrent sg start with same arguments allowed")
+	}
+
+	if ctx.Bool("sgtail") {
+		if err := run.OpenUnixSocket(); err != nil {
+			return errors.Wrapf(err, "Did you forget to run sgtail first?")
+		}
 	}
 
 	commandset := args[0]

@@ -7,11 +7,13 @@ import (
 
 	"github.com/coreos/go-oidc"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -59,12 +61,14 @@ func TestAllowSignup(t *testing.T) {
 					RequireEmailDomain: "example.com",
 					AllowSignup:        test.allowSignup,
 				},
-				oidc: &oidcProvider{},
+				oidc:       &oidcProvider{},
+				httpClient: httpcli.ExternalClient,
 			}
 			_, _, _, err := getOrCreateUser(
 				context.Background(),
 				dbmocks.NewStrictMockDB(),
 				p,
+				&oauth2.Token{},
 				&oidc.IDToken{},
 				&oidc.UserInfo{
 					Email:         "foo@bar.com",

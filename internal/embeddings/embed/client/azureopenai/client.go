@@ -1,34 +1,82 @@
 package azureopenai
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
 	"strings"
+	"sync"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/modeltransformations"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewClient(httpClient httpcli.Doer, config *conftypes.EmbeddingsConfig) *azureOpenaiEmbeddingsClient {
+// We want to reuse the client because when using the DefaultAzureCredential
+// it will acquire a short lived token and reusing the client
+// prevents acquiring a new token on every request.
+// The client will refresh the token as needed.
+var apiClient embeddingsClient
+
+type embeddingsClient struct {
+	mu          sync.RWMutex
+	accessToken string
+	endpoint    string
+	client      *azopenai.Client
+}
+
+type EmbeddingsClient interface {
+	GetEmbeddings(ctx context.Context, body azopenai.EmbeddingsOptions, options *azopenai.GetEmbeddingsOptions) (azopenai.GetEmbeddingsResponse, error)
+}
+
+type GetEmbeddingsAPIClientFunc func(endpoint, accessToken string) (EmbeddingsClient, error)
+
+func GetAPIClient(endpoint, accessToken string) (EmbeddingsClient, error) {
+	apiClient.mu.RLock()
+	if apiClient.client != nil && apiClient.endpoint == endpoint && apiClient.accessToken == accessToken {
+		apiClient.mu.RUnlock()
+		return apiClient.client, nil
+	}
+	apiClient.mu.RUnlock()
+	apiClient.mu.Lock()
+	defer apiClient.mu.Unlock()
+	var err error
+	if accessToken != "" {
+		credential, credErr := azopenai.NewKeyCredential(accessToken)
+		if credErr != nil {
+			return nil, credErr
+		}
+		apiClient.client, err = azopenai.NewClientWithKeyCredential(endpoint, credential, nil)
+	} else {
+		credential, credErr := azidentity.NewDefaultAzureCredential(nil)
+		if credErr != nil {
+			return nil, credErr
+		}
+		apiClient.client, err = azopenai.NewClient(endpoint, credential, nil)
+	}
+	return apiClient.client, err
+
+}
+
+func NewClient(getClient GetEmbeddingsAPIClientFunc, config *conftypes.EmbeddingsConfig) (*azureOpenaiEmbeddingsClient, error) {
+	client, err := getClient(config.Endpoint, config.AccessToken)
+	if err != nil {
+		return nil, err
+	}
 	return &azureOpenaiEmbeddingsClient{
-		httpClient:  httpClient,
+		client:      client,
 		dimensions:  config.Dimensions,
 		accessToken: config.AccessToken,
 		model:       config.Model,
 		endpoint:    config.Endpoint,
-	}
+	}, nil
 }
 
 type azureOpenaiEmbeddingsClient struct {
-	httpClient  httpcli.Doer
+	client      EmbeddingsClient
 	model       string
 	dimensions  int
 	endpoint    string
@@ -91,69 +139,20 @@ func (c *azureOpenaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts [
 	return &client.EmbeddingsResults{Embeddings: embeddings, Failed: failed, Dimensions: c.dimensions}, nil
 }
 
-func (c *azureOpenaiEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, input string, retries int) (*openaiEmbeddingAPIResponse, error) {
+func (c *azureOpenaiEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, input string, retries int) (*azopenai.GetEmbeddingsResponse, error) {
 	for i := 0; i < retries; i++ {
-		response, err := c.do(ctx, c.model, openaiEmbeddingAPIRequest{Input: input})
+		response, err := c.client.GetEmbeddings(ctx, azopenai.EmbeddingsOptions{
+			Input:      []string{input},
+			Deployment: c.model,
+		}, nil)
+
 		if err != nil {
 			return nil, err
 		}
 		if len(response.Data) != 1 || len(response.Data[0].Embedding) == 0 {
 			continue
 		}
-		return response, nil
+		return &response, nil
 	}
 	return nil, errors.Newf("null response for embedding after %d retries", retries)
-}
-
-func (c *azureOpenaiEmbeddingsClient) do(ctx context.Context, model string, request openaiEmbeddingAPIRequest) (*openaiEmbeddingAPIResponse, error) {
-	bodyBytes, err := json.Marshal(request)
-	if err != nil {
-		return nil, err
-	}
-
-	url, err := url.Parse(c.endpoint)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse configured endpoint")
-	}
-	q := url.Query()
-	q.Add("api-version", "2023-05-15")
-	url.RawQuery = q.Encode()
-	url.Path = fmt.Sprintf("/openai/deployments/%s/embeddings", model)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url.String(), bytes.NewReader(bodyBytes))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("api-key", c.accessToken)
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return nil, errors.Errorf("embeddings: %s %q: failed with status %d: %s", req.Method, req.URL.String(), resp.StatusCode, string(respBody))
-	}
-
-	var response openaiEmbeddingAPIResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, err
-	}
-	return &response, nil
-}
-
-type openaiEmbeddingAPIRequest struct {
-	Input string `json:"input"`
-}
-
-type openaiEmbeddingAPIResponse struct {
-	Data []openaiEmbeddingAPIResponseData `json:"data"`
-}
-
-type openaiEmbeddingAPIResponseData struct {
-	Index     int       `json:"index"`
-	Embedding []float32 `json:"embedding"`
 }

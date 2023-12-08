@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -85,6 +84,13 @@ type AccessTokenStore interface {
 	// specified user (i.e., that the actor is either the user or a site admin).
 	CreateInternal(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error)
 
+	// GetOrCreateInternalToken returns the SHA256 hash of a random internal access token for the
+	// given user. If no internal token exists, it creates one.
+	//
+	// 🚨 SECURITY: The caller must ensure that the actor is permitted to view access tokens and
+	// create tokens for the specified user (i.e., that the actor is either the user or a site admin).
+	GetOrCreateInternalToken(ctx context.Context, subjectUserID int32, scopes []string) ([]byte, error)
+
 	// DeleteByID deletes an access token given its ID.
 	//
 	// 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the token.
@@ -124,7 +130,7 @@ type AccessTokenStore interface {
 	//
 	// 🚨 SECURITY: This returns a user ID if and only if the token corresponds to a valid,
 	// non-deleted access token.
-	Lookup(ctx context.Context, token, requiredScope string) (subjectUserID int32, err error)
+	Lookup(ctx context.Context, token string, opts TokenLookupOpts) (subjectUserID int32, err error)
 
 	WithTransact(context.Context, func(AccessTokenStore) error) error
 	With(basestore.ShareableStore) AccessTokenStore
@@ -168,11 +174,6 @@ func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32,
 		return 0, "", errors.New("access tokens without scopes are not supported")
 	}
 
-	// Feature flag new token format
-	// Disable by default until all Cody extensions support the new format
-	flags := featureflag.FromContext(ctx)
-	includeInstanceIdentifier := flags.GetBoolOr("access-tokens-include-instance-identifier", false)
-
 	config := conf.Get().SiteConfig()
 
 	var isDevInstance bool
@@ -183,7 +184,7 @@ func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32,
 		isDevInstance = licensing.IsLicensePublicKeyOverridden()
 	}
 
-	token, b, err := accesstoken.GeneratePersonalAccessToken(includeInstanceIdentifier, config.LicenseKey, isDevInstance)
+	token, b, err := accesstoken.GeneratePersonalAccessToken(config.LicenseKey, isDevInstance)
 	if err != nil {
 		return 0, "", err
 	}
@@ -239,8 +240,74 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 	return id, token, nil
 }
 
-func (s *accessTokenStore) Lookup(ctx context.Context, token, requiredScope string) (subjectUserID int32, err error) {
-	if requiredScope == "" {
+func (s *accessTokenStore) GetOrCreateInternalToken(ctx context.Context, subjectUserID int32, scopes []string) ([]byte, error) {
+	sha256, err := s.getInternalToken(ctx, subjectUserID)
+	if err != nil {
+		_, _, err = s.CreateInternal(ctx, subjectUserID, scopes, "Created by GetOrCreateInternalToken", subjectUserID)
+		if err != nil {
+			return nil, err
+		}
+		return s.getInternalToken(ctx, subjectUserID)
+	}
+	return sha256, nil
+}
+
+// getInternalToken returns the SHA256 hash of a random internal access token for the given user.
+func (s *accessTokenStore) getInternalToken(ctx context.Context, subjectUserID int32) ([]byte, error) {
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("subject_user_id=%d", subjectUserID),
+		sqlf.Sprintf("deleted_at IS NULL"),
+		sqlf.Sprintf("internal IS TRUE"),
+	}
+	q := sqlf.Sprintf(`SELECT value_sha256 FROM access_tokens WHERE (%s) LIMIT 1`,
+		sqlf.Join(conds, ") AND ("),
+	)
+
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	var sha256 []byte
+	rows.Next()
+	err = rows.Scan(&sha256)
+	if err != nil {
+		return nil, err
+	}
+	return sha256, nil
+}
+
+type TokenLookupOpts struct {
+	OnlyAdmin     bool
+	RequiredScope string
+}
+
+func (o TokenLookupOpts) ToQuery() string {
+	query := `
+UPDATE access_tokens t SET last_used_at=now()
+WHERE t.id IN (
+	SELECT t2.id FROM access_tokens t2
+	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
+	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
+	WHERE t2.value_sha256=$1 AND t2.deleted_at IS NULL AND
+	$2 = ANY (t2.scopes)
+	`
+
+	if o.OnlyAdmin {
+		query += "AND subject_user.site_admin"
+	}
+
+	query += `
+	)
+RETURNING t.subject_user_id
+`
+
+	return query
+}
+
+func (s *accessTokenStore) Lookup(ctx context.Context, token string, opts TokenLookupOpts) (subjectUserID int32, err error) {
+	if opts.RequiredScope == "" {
 		return 0, errors.New("no scope provided in access token lookup")
 	}
 
@@ -251,18 +318,8 @@ func (s *accessTokenStore) Lookup(ctx context.Context, token, requiredScope stri
 
 	if err := s.Handle().QueryRowContext(ctx,
 		// Ensure that subject and creator users still exist.
-		`
-UPDATE access_tokens t SET last_used_at=now()
-WHERE t.id IN (
-	SELECT t2.id FROM access_tokens t2
-	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
-	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
-	WHERE t2.value_sha256=$1 AND t2.deleted_at IS NULL AND
-	$2 = ANY (t2.scopes)
-)
-RETURNING t.subject_user_id
-`,
-		tokenHash, requiredScope,
+		opts.ToQuery(),
+		tokenHash, opts.RequiredScope,
 	).Scan(&subjectUserID); err != nil {
 		if err == sql.ErrNoRows {
 			return 0, ErrAccessTokenNotFound

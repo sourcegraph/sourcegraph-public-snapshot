@@ -99,3 +99,31 @@ export const highlightRanges: Action<HTMLElement, { ranges: [number, number][] }
         update: highlight,
     }
 }
+
+/**
+ * This action ensures that the element does not extend outside the visible viewport,
+ * by settings its max height. Only works for elements whose position doesn't change
+ * relative to the viewport.
+ */
+export const restrictToViewport: Action<HTMLElement, { offset?: number }> = (node, parameters) => {
+    let offset = parameters.offset ?? 0
+
+    function setMaxHeight(): void {
+        node.style.maxHeight = window.innerHeight - node.getBoundingClientRect().top + offset + 'px'
+    }
+
+    window.addEventListener('resize', setMaxHeight)
+
+    setMaxHeight()
+
+    return {
+        update(parameter) {
+            offset = parameter.offset ?? 0
+            setMaxHeight()
+        },
+
+        destroy() {
+            window.removeEventListener('resize', setMaxHeight)
+        },
+    }
+}

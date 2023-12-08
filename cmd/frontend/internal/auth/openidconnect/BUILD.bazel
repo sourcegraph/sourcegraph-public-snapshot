@@ -58,6 +58,7 @@ go_test(
         "//internal/database/dbmocks",
         "//internal/encryption",
         "//internal/extsvc",
+        "//internal/httpcli",
         "//internal/licensing",
         "//internal/types",
         "//lib/errors",
@@ -65,5 +66,6 @@ go_test(
         "@com_github_coreos_go_oidc//:go-oidc",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
+        "@org_golang_x_oauth2//:oauth2",
     ],
 )

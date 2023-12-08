@@ -36,7 +36,7 @@ import (
 type GitHubSource struct {
 	svc          *types.ExternalService
 	config       *schema.GitHubConnection
-	exclude      excludeFunc
+	excluder     repoExcluder
 	githubDotCom bool
 	baseURL      *url.URL
 	v3Client     *github.V3Client
@@ -110,7 +110,7 @@ func newGitHubSource(
 		cf = cf.WithOpts(httpcli.NewCertPoolOpt(c.Certificate))
 	}
 
-	var eb excludeBuilder
+	var ex repoExcluder
 	excludeArchived := func(repo any) bool {
 		if githubRepo, ok := repo.(github.Repository); ok {
 			return githubRepo.IsArchived
@@ -123,22 +123,39 @@ func newGitHubSource(
 		}
 		return false
 	}
+
 	for _, r := range c.Exclude {
+		rule := ex.AddRule().
+			Exact(r.Name).
+			Exact(r.Id).
+			Pattern(r.Pattern)
+
+		if r.Size != "" {
+			fn, err := buildSizeConstraintsExcludeFn(r.Size)
+			if err != nil {
+				return nil, err
+			}
+			rule.Generic(fn)
+		}
+		if r.Stars != "" {
+			fn, err := buildStarsConstraintsExcludeFn(r.Stars)
+			if err != nil {
+				return nil, err
+			}
+			rule.Generic(fn)
+		}
+
 		if r.Archived {
-			eb.Generic(excludeArchived)
+			rule.Generic(excludeArchived)
 		}
 		if r.Forks {
-			eb.Generic(excludeFork)
+			rule.Generic(excludeFork)
 		}
-		eb.Exact(r.Name)
-		eb.Exact(r.Id)
-		eb.Pattern(r.Pattern)
 	}
-
-	exclude, err := eb.Build()
-	if err != nil {
+	if err := ex.RuleErrors(); err != nil {
 		return nil, err
 	}
+
 	auther, err := ghauth.FromConnection(ctx, c, db.GitHubApps(), keyring.Default().GitHubAppKey)
 	if err != nil {
 		return nil, err
@@ -184,7 +201,7 @@ func newGitHubSource(
 	return &GitHubSource{
 		svc:                       svc,
 		config:                    c,
-		exclude:                   exclude,
+		excluder:                  ex,
 		baseURL:                   baseURL,
 		githubDotCom:              githubDotCom,
 		v3Client:                  v3Client,
@@ -310,16 +327,11 @@ func (s *GitHubSource) fetchReposAffiliated(ctx context.Context, first int, excl
 		close(unfiltered)
 	}()
 
-	var eb excludeBuilder
-	// Only exclude on exact nameWithOwner match
+	set := make(map[string]struct{})
 	for _, r := range excludedRepos {
-		eb.Exact(r)
+		set[r] = struct{}{}
 	}
-	exclude, err := eb.Build()
-	if err != nil {
-		results <- SourceResult{Source: s, Err: err}
-		return
-	}
+	excluded := func(name string) bool { _, ok := set[name]; return ok }
 
 	s.logger.Debug("fetch github repos by affiliation", log.Int("excluded repos count", len(excludedRepos)))
 	for res := range unfiltered {
@@ -331,7 +343,7 @@ func (s *GitHubSource) fetchReposAffiliated(ctx context.Context, first int, excl
 			continue
 		}
 		s.logger.Debug("unfiltered", log.String("repo", res.repo.NameWithOwner))
-		if !exclude(res.repo.NameWithOwner) {
+		if !excluded(res.repo.NameWithOwner) {
 			results <- SourceResult{Source: s, Repo: s.makeRepo(res.repo)}
 			s.logger.Debug("sent to result", log.String("repo", res.repo.NameWithOwner))
 			first--
@@ -440,7 +452,9 @@ func (s *GitHubSource) excludes(r *github.Repository) bool {
 		return true
 	}
 
-	if s.exclude(r.NameWithOwner) || s.exclude(r.ID) || s.exclude(*r) {
+	if s.excluder.ShouldExclude(r.NameWithOwner) ||
+		s.excluder.ShouldExclude(r.ID) ||
+		s.excluder.ShouldExclude(*r) {
 		return true
 	}
 

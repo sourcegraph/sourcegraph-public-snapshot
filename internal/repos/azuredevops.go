@@ -27,7 +27,7 @@ type AzureDevOpsSource struct {
 	serviceID string
 	config    schema.AzureDevOpsConnection
 	logger    log.Logger
-	exclude   excludeFunc
+	excluder  repoExcluder
 }
 
 // NewAzureDevOpsSource returns a new AzureDevOpsSource from the given external service.
@@ -50,14 +50,13 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 		return nil, err
 	}
 
-	var eb excludeBuilder
+	var ex repoExcluder
 	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Pattern(r.Pattern)
+		ex.AddRule().
+			Exact(r.Name).
+			Pattern(r.Pattern)
 	}
-
-	exclude, err := eb.Build()
-	if err != nil {
+	if err := ex.RuleErrors(); err != nil {
 		return nil, err
 	}
 
@@ -67,7 +66,7 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 		serviceID: extsvc.NormalizeBaseURL(cli.GetURL()).String(),
 		config:    c,
 		logger:    logger,
-		exclude:   exclude,
+		excluder:  ex,
 	}, nil
 }
 
@@ -111,7 +110,8 @@ func (s *AzureDevOpsSource) processReposFromProjectOrOrg(ctx context.Context, na
 			results <- SourceResult{Source: s, Err: err}
 			continue
 		}
-		if s.exclude(fmt.Sprintf("%s/%s/%s", org, repo.Project.Name, repo.Name)) {
+		fullName := fmt.Sprintf("%s/%s/%s", org, repo.Project.Name, repo.Name)
+		if s.excluder.ShouldExclude(fullName) {
 			continue
 		}
 		repo, err := s.makeRepo(repo)
@@ -153,6 +153,11 @@ func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, err
 		return nil, err
 	}
 
+	cloneURL := p.RemoteURL
+	if s.config.GitURLType == "ssh" {
+		cloneURL = p.SSHURL
+	}
+
 	name := path.Join(fullURL.Host, fullURL.Path)
 	return &types.Repo{
 		Name: api.RepoName(name),
@@ -166,7 +171,7 @@ func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, err
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: p.CloneURL,
+				CloneURL: cloneURL,
 			},
 		},
 		Metadata: p,

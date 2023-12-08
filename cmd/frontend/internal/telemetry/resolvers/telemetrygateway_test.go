@@ -104,7 +104,7 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 					Metadata: &[]graphqlbackend.TelemetryEventMetadataInput{
 						{
 							Key:   "metadata",
-							Value: 123,
+							Value: graphqlbackend.JSONValue{Value: 123},
 						},
 					},
 					PrivateMetadata: &graphqlbackend.JSONValue{
@@ -126,7 +126,7 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
       "product": "Product"
     },
     "metadata": {
-      "metadata": "123"
+      "metadata": 123
     },
     "privateMetadata": {
       "private": "super-sensitive"

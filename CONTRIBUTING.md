@@ -8,7 +8,7 @@ In short, we are open to nearly all contributions! We love feedback in all forms
 
 Unless you feel confident your change will be accepted (trivial bug fixes, code cleanup, etc) you should first create an issue or a [Sourcegraph RFC](https://handbook.sourcegraph.com/communication/rfcs#external-contributors) (preferred for bigger changes) to discuss your change with us. This lets us all discuss the design and proposed implementation of your change, which helps ensure your time is well spent and that your contribution will be accepted.
 
-> Exception: If you contribute functionality that already exists as a [paid Sourcegraph feature](https://about.sourcegraph.com/pricing/), we are unlikely to accept it. Consult us beforehand for a definitive answer. (We'll add more details about the process here, and they'll be similar to [GitLab's stewardship principles](https://about.gitlab.com/stewardship/#contributing-an-existing-ee-feature-to-ce).)
+> Exception: If you contribute functionality that already exists as a [paid Sourcegraph feature](https://sourcegraph.com/pricing/), we are unlikely to accept it. Consult us beforehand for a definitive answer. (We'll add more details about the process here, and they'll be similar to [GitLab's stewardship principles](https://about.gitlab.com/stewardship/#contributing-an-existing-ee-feature-to-ce).)
 
 ## Code of Conduct
 
@@ -26,6 +26,7 @@ All interactions with the Sourcegraph open source project are governed by the
 6. Once you've chosen an issue, **comment on it to announce that you will be working on it**, making it visible for others that this issue is being tackled. If you end up not creating a pull request for this issue, please delete your comment.
 7. If you have any questions, please [refer to the docs first](https://docs.sourcegraph.com/). If you don’t find any relevant information, mention the issue author.
 8. The issue author will try to provide guidance. Sourcegraph always works in async mode. We will try to answer as soon as possible, but please keep time zones differences in mind.
+9. Join the [Sourcegraph Community Space](https://srcgr.ph/join-community-space) on Discord where the Sourcegraph team can help you!
 
 ## Can I pick up this issue?
 
@@ -47,7 +48,6 @@ All open issues are not yet solved. If the task is interesting to you, take it a
 ### Pull Requests
 
 - [How to structure](https://docs.sourcegraph.com/dev/background-information/pull_request_reviews#what-makes-an-effective-pull-request-pr)
-- [PR guidelines](https://handbook.sourcegraph.com/departments/engineering/dev/onboarding/pr-checklist/)
 - Git branch name convention: `[developer-initials]/short-feature-description`
 - [Examples on Github](https://github.com/sourcegraph/sourcegraph/pulls?q=is%3Apr+label%3Ateam%2Ffrontend-platform)
 - (For Sourcegraph team) [How to accept contributions](https://docs.sourcegraph.com/dev/contributing/accepting_contribution)

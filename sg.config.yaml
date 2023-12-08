@@ -235,6 +235,12 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
 
+      # Ensure scip-ctags-dev is installed to avoid prompting the user to
+      # install it manually.
+      if [ ! -f $(./dev/scip-ctags-install.sh which) ]; then
+        ./dev/scip-ctags-install.sh
+      fi
+
       go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/symbols
     env:
@@ -245,7 +251,6 @@ commands:
     watch:
       - lib
       - internal
-      - cmd/symbols
       - cmd/symbols
       - internal/rockskip
 
@@ -363,6 +368,23 @@ commands:
       - internal
       - cmd/pings
 
+  msp-example:
+    cmd: .bin/msp-example
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/msp-example github.com/sourcegraph/sourcegraph/cmd/msp-example
+    checkBinary: .bin/msp-example
+    env:
+      PORT: '9080'
+      DIAGNOSTICS_SECRET: sekret
+      SRC_LOG_LEVEL: debug
+      STATELESS_MODE: 'true'
+    watch:
+      - cmd/msp-example
+      - lib/managedservicesplatform
+
   searcher:
     cmd: .bin/searcher
     install: |
@@ -441,7 +463,20 @@ commands:
 
   docsite:
     description: Docsite instance serving the docs
-    cmd: bazel run --noshow_progress --noshow_loading_progress //doc:serve
+    env:
+      RUN_SCRIPT_NAME: .bin/bazel_run_docsite.sh
+    cmd: |
+      # We tell bazel to write out a script to run docsite and run that script via sg otherwise
+      # when we get a SIGINT ... bazel gets killed but docsite doesn't get killed properly. So we use --script_path
+      # which tells bazel to write out a script to run docsite, and let sg run that script rather, which means
+      # any signal gets propagated and docsite gets properly terminated.
+      #
+      # We also specifically put this in .bin, since that directory is gitignored, otherwise the run script is left
+      # around and currently there is no clean way to remove it - even using a bash trap doesn't work, since the trap
+      # never gets executed due to sg running the script.
+      bazel run --script_path=${RUN_SCRIPT_NAME} --noshow_progress --noshow_loading_progress //doc:serve
+
+      ./${RUN_SCRIPT_NAME}
 
   syntax-highlighter:
     ignoreStdout: true
@@ -1094,7 +1129,7 @@ commandsets:
       - syntax-highlighter
     commands:
       - web
-      # - docsite # we're hitting port issues with this, see https://github.com/sourcegraph/devx-support/issues/245
+      - docsite
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1118,7 +1153,7 @@ commandsets:
       - searcher
       - caddy
       - symbols
-      # - docsite # we're hitting port issues with this, see https://github.com/sourcegraph/devx-support/issues/245
+      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1

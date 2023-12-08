@@ -5,6 +5,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log/logtest"
@@ -274,7 +275,7 @@ func TestParseConfig(t *testing.T) {
 			if diff := cmp.Diff(tt.wantProblems, gotProblems.Messages()); diff != "" {
 				t.Errorf("problems: %s", diff)
 			}
-			if diff := cmp.Diff(wantConfigs, gotConfigs); diff != "" {
+			if diff := cmp.Diff(wantConfigs, gotConfigs, cmpopts.IgnoreUnexported(oauth2.Config{})); diff != "" {
 				t.Errorf("problems: %s", diff)
 			}
 		})
@@ -285,7 +286,6 @@ func provider(serviceID string, oauth2Config oauth2.Config) *oauth.Provider {
 	op := oauth.ProviderOp{
 		AuthPrefix:   authPrefix,
 		OAuth2Config: func() oauth2.Config { return oauth2Config },
-		StateConfig:  getStateConfig(),
 		ServiceID:    serviceID,
 		ServiceType:  extsvc.TypeGitHub,
 	}

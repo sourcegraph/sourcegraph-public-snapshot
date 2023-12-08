@@ -42,8 +42,10 @@ type Config struct {
 	}
 
 	Fireworks struct {
-		AllowedModels []string
-		AccessToken   string
+		AllowedModels                      []string
+		AccessToken                        string
+		LogSelfServeCodeCompletionRequests bool
+		DisableSingleTenant                bool
 	}
 
 	AllowedEmbeddingsModels []string
@@ -99,6 +101,8 @@ func (c *Config) Load() {
 			"claude-v1.3",
 			"claude-v1.3-100k",
 			"claude-2",
+			"claude-2.0",
+			"claude-2.1",
 			"claude-2-100k",
 			"claude-instant-v1",
 			"claude-instant-1",
@@ -144,6 +148,8 @@ func (c *Config) Load() {
 			"accounts/fireworks/models/wizardcoder-15b",
 		}, ","),
 		"Fireworks models that can be used."))
+	c.Fireworks.LogSelfServeCodeCompletionRequests = c.GetBool("CODY_GATEWAY_FIREWORKS_LOG_SELF_SERVE_COMPLETION_REQUESTS", "false", "Whether we should log self-serve code completion requests.")
+	c.Fireworks.DisableSingleTenant = c.GetBool("CODY_GATEWAY_FIREWORKS_DISABLE_SINGLE_TENANT", "false", "Whether we should disable single tenant models for Fireworks.")
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for Fireworks"))
 	}

@@ -137,7 +137,7 @@ pub fn index_command(
 
             for entry in walkdir::WalkDir::new(location)
                 .into_iter()
-                .filter_entry(|e| is_valid(e))
+                .filter_entry(is_valid)
             {
                 let entry = entry.unwrap();
                 if !entry.file_type().is_dir() {

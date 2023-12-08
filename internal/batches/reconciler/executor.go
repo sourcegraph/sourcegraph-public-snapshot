@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/batches/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -647,6 +648,8 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 }
 
 func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSource, resp *protocol.CreateCommitFromPatchResponse, remoteRepo *types.Repo, opts protocol.CreateCommitFromPatchRequest) (err error) {
+	rejectUnverifiedCommit := conf.RejectUnverifiedCommit()
+
 	// If we're pushing to a GitHub code host, we should check if a GitHub App is
 	// configured for Batch Changes to sign commits on this code host with.
 	if _, ok := css.(*sources.GitHubSource); ok {
@@ -655,11 +658,15 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 		if err != nil {
 			switch err {
 			case sources.ErrNoGitHubAppConfigured:
+				if rejectUnverifiedCommit {
+					return errors.New("no GitHub App configured to sign commit, rejecting unverified commit")
+				}
 				// If we didn't find any GitHub Apps configured for this code host, it's a
 				// noop; commit signing is not set up for this code host.
-				break
 			default:
-				// We shouldn't block on this error, but we should still log it.
+				if rejectUnverifiedCommit {
+					return errors.Wrap(err, "failed to get GitHub App for commit verification")
+				}
 				log15.Error("Failed to get GitHub App authenticated ChangesetSource", "err", err)
 			}
 		} else {
@@ -687,6 +694,9 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 					return errors.Wrap(err, "failed to update changeset with commit verification")
 				}
 			} else {
+				if rejectUnverifiedCommit {
+					return errors.Wrap(err, "commit created with GitHub App was not signed, rejecting unverified commit")
+				}
 				log15.Warn("Commit created with GitHub App was not signed", "changeset", e.ch.ID, "commit", newCommit.SHA)
 			}
 		}

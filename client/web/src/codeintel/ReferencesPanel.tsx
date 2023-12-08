@@ -12,7 +12,6 @@ import { CodeExcerpt } from '@sourcegraph/branded'
 import type { HoveredToken } from '@sourcegraph/codeintellify'
 import { type ErrorLike, logger, pluralize } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
-import { useQuery } from '@sourcegraph/http-client'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import type { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { findLanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/languages'
@@ -43,26 +42,20 @@ import {
     Collapse,
     CollapseHeader,
     CollapsePanel,
-    Code,
     H4,
     Text,
     Tooltip,
     useSessionStorage,
 } from '@sourcegraph/wildcard'
 
-import type {
-    ReferencesPanelHighlightedBlobResult,
-    ReferencesPanelHighlightedBlobVariables,
-} from '../graphql-operations'
-import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import * as BlobAPI from '../repo/blob/use-blob-store'
 import type { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
 import type { CodeIntelligenceProps } from '.'
 import { type Location, LocationsGroup, type LocationsGroupedByRepo, type LocationsGroupedByFile } from './location'
-import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
+import { SideBlob, type SideBlobProps } from './SideBlob'
 import { findSearchToken } from './token'
 import { useRepoAndBlob } from './useRepoAndBlob'
 import { isDefined } from './util/helpers'
@@ -263,12 +256,8 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
             // change. This way we avoid showing stale results.
             key={shouldMixPreciseAndSearchBasedReferences.toString()}
             {...props}
-            token={props.token}
             searchToken={tokenResult?.searchToken}
             spec={spec}
-            fileContent={props.fileContent}
-            isFork={props.isFork}
-            isArchived={props.isArchived}
         />
     )
 }
@@ -670,15 +659,6 @@ const CollapsibleLocationList: React.FunctionComponent<
     )
 }
 
-interface SideBlobProps extends ReferencesPanelProps {
-    activeURL: string
-    repository: string
-    commitID: string
-    file: string
-    position?: Position
-    blobNav: (url: string) => void
-}
-
 function parseSideBlobProps(
     activeURL: string | undefined
 ): Pick<SideBlobProps, 'activeURL' | 'repository' | 'commitID' | 'file' | 'position'> | undefined {
@@ -699,78 +679,6 @@ function parseSideBlobProps(
         logger.error(`failed to parse activeURL ${activeURL}`, error)
         return undefined
     }
-}
-
-const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> = props => {
-    const { data, error, loading } = useQuery<
-        ReferencesPanelHighlightedBlobResult,
-        ReferencesPanelHighlightedBlobVariables
-    >(FETCH_HIGHLIGHTED_BLOB, {
-        variables: {
-            repository: props.repository,
-            commit: props.commitID,
-            path: props.file,
-            format: HighlightResponseFormat.JSON_SCIP,
-        },
-        // Cache this data but always re-request it in the background when we revisit
-        // this page to pick up newer changes.
-        fetchPolicy: 'cache-and-network',
-        nextFetchPolicy: 'network-only',
-    })
-
-    // If we're loading and haven't received any data yet
-    if (loading && !data) {
-        return (
-            <>
-                <LoadingSpinner inline={false} className="mx-auto my-4" />
-                <Text alignment="center" className="text-muted">
-                    <i>
-                        Loading <Code>{props.file}</Code>...
-                    </i>
-                </Text>
-            </>
-        )
-    }
-
-    // If we received an error before we had received any data
-    if (error && !data) {
-        return (
-            <div>
-                <Text className="text-danger">
-                    Loading <Code>{props.file}</Code> failed:
-                </Text>
-                <pre>{error.message}</pre>
-            </div>
-        )
-    }
-
-    // If there weren't any errors and we just didn't receive any data
-    if (!data?.repository?.commit?.blob?.highlight) {
-        return <>Nothing found</>
-    }
-
-    const { lsif } = data?.repository?.commit?.blob?.highlight
-
-    // TODO: display a helpful message if syntax highlighting aborted, see https://github.com/sourcegraph/sourcegraph/issues/40841
-
-    return (
-        <CodeMirrorBlob
-            {...props}
-            nav={props.blobNav}
-            wrapCode={true}
-            className={styles.sideBlobCode}
-            navigateToLineOnAnyClick={true}
-            blobInfo={{
-                lsif: lsif ?? '',
-                content: data?.repository?.commit?.blob?.content ?? '',
-                filePath: props.file,
-                repoName: props.repository,
-                commitID: props.commitID,
-                revision: props.commitID,
-                mode: 'lspmode',
-            }}
-        />
-    )
 }
 
 /** Component to display the Locations for a single repo */

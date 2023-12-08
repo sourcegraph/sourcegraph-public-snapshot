@@ -120,6 +120,11 @@ generate_schema(
     out = "src/schema/batch_spec.schema.d.ts",
 )
 
+generate_schema(
+    name = "opencodegraph",
+    out = "src/schema/opencodegraph.schema.d.ts",
+)
+
 ts_project(
     name = "shared_lib",
     srcs = [
@@ -353,6 +358,7 @@ ts_project(
         "//:node_modules/@types/minimatch",
         "//:node_modules/@types/node",
         "//:node_modules/@types/react",
+        "//:node_modules/@types/whatwg-url",
         "//:node_modules/classnames",
         "//:node_modules/comlink",
         "//:node_modules/core-js",
@@ -372,6 +378,7 @@ ts_project(
         "//:node_modules/use-deep-compare-effect",
         "//:node_modules/util",
         "//:node_modules/utility-types",
+        "//:node_modules/whatwg-url",
         "//:node_modules/zustand",
         "//schema:settings",  #keep
     ],

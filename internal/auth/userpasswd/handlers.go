@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/security"
@@ -109,7 +108,8 @@ func checkEmailAbuse(ctx context.Context, db database.DB, addr string) (abused b
 // 🚨 SECURITY: Any change to this function could introduce security exploits
 // and/or break sign up / initial admin account creation. Be careful.
 func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.EventRecorder,
-	w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
+	w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool,
+) {
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 		return
@@ -125,10 +125,8 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 		return
 	}
 
-	// Write the session cookie
-	a := &sgactor.Actor{UID: usr.ID}
-	if err := session.SetActor(w, r, a, 0, usr.CreatedAt); err != nil {
-		httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
+	if _, err := session.SetActorFromUser(r.Context(), w, r, usr, 0); err != nil {
+		httpLogError(logger.Error, w, fmt.Sprintf("Could not create new user session: %s", err.Error()), http.StatusInternalServerError, log.Error(err))
 	}
 
 	// Track user data
@@ -144,7 +142,7 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 			"failIfNewUserIsNotInitialSiteAdmin": telemetry.MetadataBool(failIfNewUserIsNotInitialSiteAdmin),
 		},
 	})
-	// Legacy event
+	//lint:ignore SA1019 existing usage of deprecated functionality. TODO: Use only the new V2 event instead.
 	if err = usagestats.LogBackendEvent(db, usr.ID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 		logger.Warn("Failed to log event SignUpSucceeded", log.Error(err))
 	}
@@ -245,6 +243,8 @@ func unsafeSignUp(
 			return nil, http.StatusOK, nil
 		}
 		logger.Error("Error in user signup.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
+		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
+		//lint:ignore SA1019 existing usage of deprecated functionality.
 		if err = usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil); err != nil {
 			logger.Warn("Failed to log event SignUpFailed", log.Error(err))
 		}
@@ -373,17 +373,10 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore, recorde
 			return
 		}
 
-		// We are now an authenticated actor
-		act := sgactor.Actor{
-			UID: user.ID,
-		}
-
-		// Make sure we're in the context of our newly signed in user
-		ctx = actor.WithActor(ctx, &act)
-
 		// Write the session cookie
-		if err := session.SetActor(w, r, &act, 0, user.CreatedAt); err != nil {
-			httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
+		ctx, err = session.SetActorFromUser(ctx, w, r, &user, 0)
+		if err != nil {
+			httpLogError(logger.Error, w, fmt.Sprintf("Could not create new user session: %s", err.Error()), http.StatusInternalServerError, log.Error(err))
 			return
 		}
 
@@ -489,6 +482,7 @@ func recordSignInSecurityEvent(r *http.Request, db database.DB, user *types.User
 
 	// Legacy event - TODO: Remove in 5.3, alongside the teestore.WithoutV1
 	// context.
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	_ = usagestats.LogBackendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil)
 }
 

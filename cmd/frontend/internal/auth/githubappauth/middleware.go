@@ -284,7 +284,7 @@ func newServeMux(db database.DB, prefix string, cache *rcache.Cache) http.Handle
 			return
 		}
 
-		app, err := createGitHubApp(u, *domain)
+		app, err := createGitHubApp(u, *domain, httpcli.UncachedExternalClient)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error while converting github app: %s", err.Error()), http.StatusInternalServerError)
 			return
@@ -498,7 +498,7 @@ func generateRedirectURL(domain *string, installationID, appID *int, appName *st
 
 var MockCreateGitHubApp func(conversionURL string, domain types.GitHubAppDomain) (*ghtypes.GitHubApp, error)
 
-func createGitHubApp(conversionURL string, domain types.GitHubAppDomain) (*ghtypes.GitHubApp, error) {
+func createGitHubApp(conversionURL string, domain types.GitHubAppDomain, httpClient *http.Client) (*ghtypes.GitHubApp, error) {
 	if MockCreateGitHubApp != nil {
 		return MockCreateGitHubApp(conversionURL, domain)
 	}

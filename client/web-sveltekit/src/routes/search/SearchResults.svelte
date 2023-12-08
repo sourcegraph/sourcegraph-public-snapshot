@@ -33,7 +33,7 @@
     import { preserveScrollPosition } from '$lib/app'
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import SearchBox from '$lib/search/SearchBox.svelte'
+    import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { searchTypes } from '$lib/search/sidebar'
     import { submitSearch, type QueryStateStore } from '$lib/search/state'
     import type { SidebarFilter } from '$lib/search/utils'
@@ -48,7 +48,7 @@
     export let queryState: QueryStateStore
 
     let resultContainer: HTMLElement | null = null
-    let searchInput: SearchBox
+    let searchInput: SearchInput
 
     $: progress = $stream?.progress
     // NOTE: done is present but apparently not officially exposed. However
@@ -125,9 +125,13 @@
     }
 </script>
 
+<svelte:head>
+    <title>{queryFromURL} - Sourcegraph</title>
+</svelte:head>
+
 <section>
     <div class="search">
-        <SearchBox bind:this={searchInput} {queryState} />
+        <SearchInput bind:this={searchInput} {queryState} showSmartSearchButton />
     </div>
 
     <div class="results" bind:this={resultContainer}>
@@ -177,7 +181,7 @@
     .search {
         border-bottom: 1px solid var(--border-color);
         align-self: stretch;
-        padding: 0.5rem 1rem;
+        padding: 0.25rem;
     }
 
     section {

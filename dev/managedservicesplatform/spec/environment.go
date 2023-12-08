@@ -1,10 +1,14 @@
 package spec
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/imageupdater"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type EnvironmentSpec struct {
@@ -45,6 +49,7 @@ type EnvironmentSpec struct {
 func (s EnvironmentSpec) Validate() []error {
 	var errs []error
 	errs = append(errs, s.Deploy.Validate()...)
+	errs = append(errs, s.Resources.Validate()...)
 	return errs
 }
 
@@ -256,40 +261,41 @@ type EnvironmentJobScheduleSpec struct {
 }
 
 type EnvironmentResourcesSpec struct {
-	// Redis, if provided, provisions a Redis instance. Details for using this
-	// Redis instance is automatically provided in environment variables:
+	// Redis, if provided, provisions a Redis instance backed by Cloud Memorystore.
+	// Details for using this Redis instance is automatically provided in
+	// environment variables:
 	//
 	//  - REDIS_ENDPOINT
 	//
 	// Sourcegraph Redis libraries (i.e. internal/redispool) will automatically
 	// use the given configuration.
 	Redis *EnvironmentResourceRedisSpec `json:"redis,omitempty"`
-	// BigQueryTable, if provided, provisions a table for the service to write
-	// to. Details for writing to the table are automatically provided in
+	// PostgreSQL, if provided, provisions a PostgreSQL database instance backed
+	// by Cloud SQL.
+	//
+	// To connect to the database, use
+	// (lib/managedservicesplatform/service.Contract).GetPostgreSQLDB().
+	PostgreSQL *EnvironmentResourcePostgreSQLSpec `json:"postgreSQL,omitempty"`
+	// BigQueryDataset, if provided, provisions a dataset for the service to write
+	// to. Details for writing to the dataset are automatically provided in
 	// environment variables:
 	//
-	//  - ${serviceEnvVarPrefix}_BIGQUERY_PROJECT
-	//  - ${serviceEnvVarPrefix}_BIGQUERY_DATASET
-	//  - ${serviceEnvVarPrefix}_BIGQUERY_TABLE
+	//  - BIGQUERY_PROJECT
+	//  - BIGQUERY_DATASET
 	//
-	// Where ${serviceEnvVarPrefix} is an all-upper-case, underscore-delimited
-	// version of the service ID. The dataset is always named after the service
-	// ID.
-	//
-	// Only one table is allowed per MSP service.
-	BigQueryTable *EnvironmentResourceBigQueryTableSpec `json:"bigQueryTable,omitempty"`
+	// Only one dataset can be provisioned using MSP per MSP service, but the
+	// dataset may contain more than one table.
+	BigQueryDataset *EnvironmentResourceBigQueryDatasetSpec `json:"bigQueryDataset,omitempty"`
 }
 
-// NeedsCloudRunConnector indicates if there are any resources that require a
-// connector network for Cloud Run to talk to provisioned resources.
-func (s *EnvironmentResourcesSpec) NeedsCloudRunConnector() bool {
+func (s *EnvironmentResourcesSpec) Validate() []error {
 	if s == nil {
-		return false
+		return nil
 	}
-	if s.Redis != nil {
-		return true
-	}
-	return false
+	var errs []error
+	errs = append(errs, s.PostgreSQL.Validate()...)
+	errs = append(errs, s.BigQueryDataset.Validate()...)
+	return errs
 }
 
 type EnvironmentResourceRedisSpec struct {
@@ -299,22 +305,114 @@ type EnvironmentResourceRedisSpec struct {
 	MemoryGB *int `json:"memoryGB,omitempty"`
 }
 
-type EnvironmentResourceBigQueryTableSpec struct {
-	Region string `json:"region"`
-	// TableID is the ID of table to create within the service's BigQuery
-	// dataset.
-	TableID string `json:"tableID"`
-	// Schema defines the schema of the table.
-	Schema []EnvironmentResourceBigQuerySchemaColumn `json:"schema"`
+type EnvironmentResourcePostgreSQLSpec struct {
+	// Databases to provision - required.
+	Databases []string `json:"databases"`
+	// Defaults to 1. Must be 1, or an even number between 2 and 96.
+	CPU *int `json:"cpu,omitempty"`
+	// Defaults to 4 (to meet CloudSQL minimum). You must request 0.9 to 6.5 GB
+	// per vCPU.
+	MemoryGB *int `json:"memoryGB,omitempty"`
+}
+
+func (s *EnvironmentResourcePostgreSQLSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+	var errs []error
+	if s.CPU != nil {
+		if *s.CPU < 1 {
+			errs = append(errs, errors.New("postgreSQL.cpu must be >= 1"))
+		}
+		if *s.CPU > 1 && *s.CPU%2 != 0 {
+			errs = append(errs, errors.New("postgreSQL.cpu must be 1 or a multiple of 2"))
+		}
+		if *s.CPU > 96 {
+			errs = append(errs, errors.New("postgreSQL.cpu must be <= 96"))
+		}
+	}
+	if s.MemoryGB != nil {
+		cpu := pointers.Deref(s.CPU, 1)
+		if *s.MemoryGB < 4 {
+			errs = append(errs, errors.New("postgreSQL.memoryGB must be >= 4"))
+		}
+		if *s.MemoryGB < cpu {
+			errs = append(errs, errors.New("postgreSQL.memoryGB must be >= postgreSQL.cpu"))
+		}
+		if *s.MemoryGB > 6*cpu {
+			errs = append(errs, errors.New("postgreSQL.memoryGB must be <= 6*postgreSQL.cpu"))
+		}
+	}
+	return errs
+}
+
+type EnvironmentResourceBigQueryDatasetSpec struct {
+	// Tables are the IDs of tables to create within the service's BigQuery
+	// dataset. Required.
+	//
+	// For EACH table, a BigQuery JSON schema MUST be provided alongside the
+	// service specification file, in `${tableID}.bigquerytable.json`. Learn
+	// more about BigQuery table schemas here:
+	// https://cloud.google.com/bigquery/docs/schemas#specifying_a_json_schema_file
+	Tables []string `json:"tables"`
+	// rawSchemaFiles are the `${tableID}.bigquerytable.json` files adjacent
+	// to the service specification.
+	// Loaded by (EnvironmentResourceBigQueryTableSpec).LoadSchemas().
+	rawSchemaFiles map[string][]byte
+
+	// DatasetID, if provided, configures a custom dataset ID to place all tables
+	// into. By default, we use the service ID as the dataset ID.
+	DatasetID *string `json:"datasetID,omitempty"`
 	// ProjectID can be used to specify a separate project ID from the service's
 	// project for BigQuery resources. If not provided, resources are created
 	// within the service's project.
-	ProjectID string `json:"projectID"`
+	ProjectID *string `json:"projectID,omitempty"`
+	// Location defaults to "US". Do not configure unless you know what you are
+	// doing, as BigQuery locations are not the same as standard GCP regions.
+	Location *string `json:"region,omitempty"`
 }
 
-type EnvironmentResourceBigQuerySchemaColumn struct {
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	Mode        string `json:"mode"`
-	Description string `json:"description"`
+func (s *EnvironmentResourceBigQueryDatasetSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+	var errs []error
+	if len(s.Tables) == 0 {
+		errs = append(errs, errors.New("bigQueryDataset.tables must be non-empty"))
+	}
+	return errs
+}
+
+// LoadSchemas populates rawSchemaFiles by convention, looking for
+// `bigquery.${tableID}.schema.json` files in dir.
+func (s *EnvironmentResourceBigQueryDatasetSpec) LoadSchemas(dir string) error {
+	s.rawSchemaFiles = make(map[string][]byte, len(s.Tables))
+
+	// Make sure all tables have a schema file
+	for _, table := range s.Tables {
+		// Open by convention
+		schema, err := os.ReadFile(filepath.Join(dir, fmt.Sprintf("%s.bigquerytable.json", table)))
+		if err != nil {
+			return errors.Wrapf(err, "read schema for BigQuery table %s", table)
+		}
+
+		// Parse and marshal for consistent formatting. Note that the table
+		// must be a JSON array.
+		var schemaData []any
+		if err := json.Unmarshal(schema, &schemaData); err != nil {
+			return errors.Wrapf(err, "parse schema for BigQuery table %s", table)
+		}
+		s.rawSchemaFiles[table], err = json.MarshalIndent(schemaData, "", "  ")
+		if err != nil {
+			return errors.Wrapf(err, "marshal schema for BigQuery table %s", table)
+		}
+	}
+
+	return nil
+}
+
+// GetSchema returns the schema for the given tableID as loaded by LoadSchemas().
+// LoadSchemas will ensure that each table has a corresponding schema file.
+func (s *EnvironmentResourceBigQueryDatasetSpec) GetSchema(tableID string) []byte {
+	return s.rawSchemaFiles[tableID]
 }

@@ -84,13 +84,6 @@ func addDebugHandlers(r *mux.Router, db database.DB) {
 	rph.AddToRouter(r, db) // todo
 }
 
-// PreMountGrafanaHook (if set) is invoked as a hook prior to mounting a
-// the Grafana endpoint to the debug router.
-var PreMountGrafanaHook func() error
-
-// This error is returned if the current license does not support monitoring.
-const errMonitoringNotLicensed = `The feature "monitoring" is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.`
-
 func addNoGrafanaHandler(r *mux.Router, db database.DB) {
 	noGrafana := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Grafana endpoint proxying: Please set env var GRAFANA_SERVER_URL`)
@@ -98,21 +91,8 @@ func addNoGrafanaHandler(r *mux.Router, db database.DB) {
 	r.Handle("/grafana", debugproxies.AdminOnly(db, noGrafana))
 }
 
-func addGrafanaNotLicensedHandler(r *mux.Router, db database.DB) {
-	notLicensed := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, errMonitoringNotLicensed, http.StatusUnauthorized)
-	})
-	r.Handle("/grafana", debugproxies.AdminOnly(db, notLicensed))
-}
-
 // addReverseProxyForService registers a reverse proxy for the specified service.
 func addGrafana(r *mux.Router, db database.DB) {
-	if PreMountGrafanaHook != nil {
-		if err := PreMountGrafanaHook(); err != nil {
-			addGrafanaNotLicensedHandler(r, db)
-			return
-		}
-	}
 	if len(grafanaURLFromEnv) > 0 {
 		grafanaURL, err := url.Parse(grafanaURLFromEnv)
 		if err != nil {

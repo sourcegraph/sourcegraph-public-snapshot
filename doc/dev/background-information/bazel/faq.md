@@ -2,6 +2,18 @@
 
 ## General
 
+### `bazel configure` prints out a warning about TSConfig 
+
+Everytime you run `bazel configure`, you'll see a warning: 
+
+```
+$ bazel configure
+Updating BUILD files for protobuf, go, javascript
+2023/11/16 12:32:52 Failed to load base tsconfig file @sourcegraph/tsconfig: open /Users/thorstenball/work/sourcegraph/@sourcegraph/tsconfig: no such file or directory
+```
+
+The warning can be ignored, and [is a known bug](https://github.com/aspect-build/aspect-cli/issues/524).
+
 ### The analysis cache is being busted because of `--action_env`
 
 Typically you'll see this (in CI or locally):
@@ -112,6 +124,21 @@ __Tested on Darwin 22.3.0 Darwin Kernel Version 22.3.0__
 Bazel uses `xcrun` to locate the SDK and toolchain for iOS/Mac compilation and xcrun is fails to produce a version or it cannot find the correct directory. This might happen even if `xcrun --show-sdk-path` shows a valid path and `xcrun --show-sdk-version` shows a valid version. At the time of this entry we haven't found the exact cause of this issue and various other bazel projects have encountered the same issue.
 
 Nonetheless, there is a workaround! Pass the following CLI flag when you try to build a target `--macos_sdk_version=13.3`. With the flag bazel should be able to find the MacOS SDK and you should not get the error anymore. It's recommended to add `build --macos_sdk_version=13.3` to your `.bazelrc` file so that you don't have to add the CLI flag every time you invoke a build.
+
+### I see `error: unable to open mailmap at .mailmap: Too many levels of symbolic links` when running my `bazel run` target (both locally and in CI) 
+
+If you see this, it most probably means that you have a `bazel run //something` that calls `git log`. Git will look for a `.mailmap` at the root of the repository, which we do have in the monorepo. Because 
+`bazel run` runs commands with a working directory which is in the runfiles, symbolic links are getting in the way. 
+
+While it says "error", it's to be noted that it doesn't prevent the Git command to continue.
+
+The fix is pretty simple, assuming that you do have a `git log` command in the script that `bazel run //something` calls. Adding the `--no-mailmap` flag will prevent the error to show up:
+
+```
+git log --no-mailmap (...)
+```
+
+Please keep in mind that it will prevent `git` to properly map the email addresses for a few individuals, though in most cases that shouldn't be a problem as that's not what we're looking for when using `git log` in scripts.
 
 ## Queries
 
