@@ -153,7 +153,7 @@ Cody's Enhanced Context enables Cody to leverage search and embeddings-based con
 
 The following tables shows what happens when Enhanced Context Selection is enabled or disabled.
 
-|                          | Opened Files                 | Highlighted Code            | Embeddings (If available)  | Symf (as backup)            | Graph Context (BFG)         |
+|                          | Opened Files                 | Highlighted Code            | Embeddings (If available)  | Search (as backup)            | 
 |--------------------------|------------------------------|-----------------------------|-----------------------------|-----------------------------|-----------------------------|
 | Enhanced Context Enabled  | ✅                           | ✅                          | ✅                          | ✅                          | ❌                          |
 | Enhanced Context Disabled | ❌                           | ❌                          | ❌                          | ❌                          | ❌                          |
