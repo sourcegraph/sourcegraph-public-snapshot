@@ -542,7 +542,7 @@ func (r *schemaResolver) refreshGatewayRateLimits(ctx context.Context) error {
 	}
 	gatewayToken := "sgd_" + hex.EncodeToString(hashutil.ToSHA256Bytes(apiTokenSha256))
 
-	req, err := http.NewRequestWithContext(ctx, "POST", completionsConfig.Endpoint+"/v1/limits/refresh", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, completionsConfig.Endpoint+"/v1/limits/refresh", nil)
 	if err != nil {
 		return err
 	}
