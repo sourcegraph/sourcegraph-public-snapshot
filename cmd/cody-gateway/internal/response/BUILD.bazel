@@ -13,5 +13,8 @@ go_test(
     name = "response_test",
     srcs = ["response_test.go"],
     embed = [":response"],
-    deps = ["@com_github_stretchr_testify//assert"],
+    deps = [
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+    ],
 )

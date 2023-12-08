@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -82,17 +83,13 @@ func (e dotcomUserNotFoundError) NotFound() bool {
 	return true
 }
 
-// dotcomUserGatewayAccessTokenPrefix is the prefix used for identifying tokens
-// generated for dotcom users to access the cody-gateway.
-const dotcomUserGatewayAccessTokenPrefix = "sgd_"
-
 // LookupDotcomUserIDByAccessToken returns the userID
 // corresponding to a token, trimming token prefixes if there are any.
 func (t dbTokens) LookupDotcomUserIDByAccessToken(ctx context.Context, token string) (int, error) {
-	if !strings.HasPrefix(token, dotcomUserGatewayAccessTokenPrefix) {
+	if !strings.HasPrefix(token, accesstoken.DotcomUserGatewayAccessTokenPrefix) {
 		return 0, dotcomUserNotFoundError{reason: "invalid token with unknown prefix"}
 	}
-	decoded, err := hex.DecodeString(strings.TrimPrefix(token, dotcomUserGatewayAccessTokenPrefix))
+	decoded, err := hex.DecodeString(strings.TrimPrefix(token, accesstoken.DotcomUserGatewayAccessTokenPrefix))
 	if err != nil {
 		return 0, dotcomUserNotFoundError{reason: "invalid token encoding"}
 	}

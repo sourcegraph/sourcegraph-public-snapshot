@@ -173,7 +173,7 @@ type fireworksRequest struct {
 	Model       string   `json:"model"`
 	MaxTokens   int32    `json:"max_tokens,omitempty"`
 	Temperature float32  `json:"temperature,omitempty"`
-	TopP        int32    `json:"top_p,omitempty"`
+	TopP        float32  `json:"top_p,omitempty"`
 	N           int32    `json:"n,omitempty"`
 	Stream      bool     `json:"stream,omitempty"`
 	Echo        bool     `json:"echo,omitempty"`

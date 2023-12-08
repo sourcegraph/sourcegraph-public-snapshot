@@ -1605,6 +1605,29 @@ tests:
     cmd: go test
     defaultArgs: ./...
 
+  bazel-backend-integration:
+    cmd: |
+      export GHE_GITHUB_TOKEN=$(gcloud secrets versions access latest --secret=GHE_GITHUB_TOKEN --quiet --project=sourcegraph-ci)
+      export GH_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN --quiet --project=sourcegraph-ci)
+
+      export BITBUCKET_SERVER_USERNAME=$(gcloud secrets versions access latest --secret=BITBUCKET_SERVER_USERNAME --quiet --project=sourcegraph-ci)
+      export BITBUCKET_SERVER_TOKEN=$(gcloud secrets versions access latest --secret=BITBUCKET_SERVER_TOKEN --quiet --project=sourcegraph-ci)
+      export BITBUCKET_SERVER_URL=$(gcloud secrets versions access latest --secret=BITBUCKET_SERVER_URL --quiet --project=sourcegraph-ci)
+
+      export PERFORCE_PASSWORD=$(gcloud secrets versions access latest --secret=PERFORCE_PASSWORD --quiet --project=sourcegraph-ci)
+      export PERFORCE_USER=$(gcloud secrets versions access latest --secret=PERFORCE_USER --quiet --project=sourcegraph-ci)
+      export PERFORCE_PORT=$(gcloud secrets versions access latest --secret=PERFORCE_PORT --quiet --project=sourcegraph-ci)
+
+      export SOURCEGRAPH_LICENSE_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_KEY --quiet --project=sourcegraph-ci)
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_GENERATION_KEY --quiet --project=sourcegraph-ci)
+
+      if [[ $(uname) == "Darwin" ]]; then
+        BAZEL_FLAGS=("--config darwin-docker")
+      else
+        BAZEL_FLAGS=()
+      fi
+      bazel test //testing:backend_integration_test ${BAZEL_FLAGS[*]} --verbose_failures --sandbox_debug
+
   bazel-e2e:
     cmd: |
       export GHE_GITHUB_TOKEN=$(gcloud secrets versions access latest --secret=GHE_GITHUB_TOKEN --quiet --project=sourcegraph-ci)
