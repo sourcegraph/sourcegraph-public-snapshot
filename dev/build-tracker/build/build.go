@@ -62,7 +62,7 @@ const (
 	EventJobFinished   = "job.finished"
 	EventBuildFinished = "build.finished"
 
-	// The following are states tje job received from buildkite can be in. These are terminal states
+	// The following are states the job received from buildkite can be in. These are terminal states
 	JobFinishedState = "finished"
 	JobPassedState   = "passed"
 	JobFailedState   = "failed"
