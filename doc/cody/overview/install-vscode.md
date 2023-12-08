@@ -155,7 +155,7 @@ The following tables shows what happens when Enhanced Context Selection is enabl
 
 |                          | Opened Files                 | Highlighted Code            | Embeddings (If available)  | Search (as backup)            | 
 |--------------------------|------------------------------|-----------------------------|-----------------------------|-----------------------------|-----------------------------|
-| Enhanced Context Enabled  | ✅                           | ✅                          | ✅                          | ✅                          | ❌                          |
+| Enhanced Context Enabled  | ✅                           | ✅                          | ✅                          | ✅                          |                   
 | Enhanced Context Disabled | ❌                           | ❌                          | ❌                          | ❌                          | ❌                          |
 
 
