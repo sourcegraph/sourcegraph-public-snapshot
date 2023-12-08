@@ -32,13 +32,21 @@ Commands are also available in the JetBrains extension. To access it, navigate t
 
 ## Custom commands
 
-<aside class="beta">
+<aside class="experimental">
+<p>
+<span style="margin-right:0.25rem;" class="badge badge-beta">Experimental</span> Custom Commands are in the Experimental stage.
+<br />
+For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">create a post on X</a>.
+</p>
+</aside>
+
+<!-- <aside class="beta">
 <p>
 <span style="margin-right:0.25rem;" class="badge badge-beta">Beta</span> Custom Commands are in the Beta stage.
 <br />
 For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">create a post on X</a>.
 </p>
-</aside>
+</aside> -->
 
 **Custom Commands** allow you to create and define reusable prompts for Cody tailored to your development workflows. They are defined in `JSON` format and will enable you to call CLI tools, write custom prompts, and select context to be sent to Cody. This provides a flexible way to configure Cody to handle use cases like:
 
