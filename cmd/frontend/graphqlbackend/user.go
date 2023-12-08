@@ -521,8 +521,9 @@ func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPla
 	}
 
 	if err := r.refreshGatewayRateLimits(ctx); err != nil {
+		// We intentionally don't fail the upgrade flow here, Gateway will pickup
+		// the new limits automatically. (Just later than we'd like.)
 		r.logger.Warn("refresh gateway limits", log.Error(err))
-		// But we intentionally don't fail the upgrade flow here
 	}
 
 	return UserByIDInt32(ctx, r.db, userID)
