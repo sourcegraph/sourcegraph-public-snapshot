@@ -8,7 +8,9 @@ Cody provides three subscription plans: **Free**, **Pro**, and **Enterprise**. E
 
 The free plan is designed for individuals to get started with Cody. It comes with a set of features to enhance your coding experience. It includes **500 autocompletion suggestions** per month, covering both whole and multi-line suggestions. You also get **20 chats/commands** per month with access to creating Custom Commands.
 
-The free plan provides access to local context with keyword search and embeddings on open-source code via Sourcegraph.com. You get 200 MB of embeddings with the ability to manage these from the user settings. The free plan ensures local context utilization and allows you to seamlessly integrate Cody into your preferred client, whether it's VSCode, JetBrains, or Neovim. Finally, you'll have default support with Anthropic and StarCoder as the officially supported LLMs.
+The free plan provides access to local context with keyword search and embeddings on open-source code via Sourcegraph.com. You get **200 MB** of embeddings over your lifetime and can manage these from the user settings in VS Code, with JetBrains IDE support coming soon. If you embed 150 MB of code, you can only embed another 50 MB of code. If you delete that 150 MB of code embedding, the original 200 MB of code embeddings will be available again.
+
+The free plan ensures local context utilization and allows you to seamlessly integrate Cody into your preferred client, whether it's VSCode, JetBrains, or Neovim. Finally, you'll have default support with Anthropic and StarCoder as the officially supported LLMs.
 
 ### Billing cylce
 
@@ -26,11 +28,20 @@ Until February 2024, you can upgrade to Cody Pro for free. If you want to contin
 
 Cody Pro, designed for individuals or small teams at **$9 per user per month**, offers an enhanced coding experience beyond the free plan. It provides unlimited autocompletion suggestions, allowing users to streamline their coding process without restrictions. Chat and commands executions are also unlimited, allowing users to create custom workflows.
 
-The plan includes the ability to create an unlimited number of Custom Commands for personalized workflows. In addition to using the local context of your code to improve responses, you can embed up to **1 GB** of your private code for even better Cody responses that reflect a deep understanding of your own code.
+The plan includes the ability to create an unlimited number of Custom Commands for personalized workflows. In addition to using the local context of your code to improve responses, you can embed up to **1 GB** of your private code for even better Cody responses that reflect a deep understanding of your code in VS Code, with JetBrains IDE support coming soon.
 
-Support for Cody Pro is available through Discord, ensuring prompt assistance and guidance. However, it's essential to note that the Cody Pro plan is limited to **50 developers** per month. Finally, you'll have default support with Anthropic and StarCoder as the officially supported LLMs. Moreover, Pro users will get an LLM selection for chat only. These LLMs are Claude Instant 1.2, Claude 2, ChatGPT 3.5 Turbo, and ChatGPT 4 Turbo Preview.
+Support for Cody Pro is available through Discord, ensuring prompt assistance and guidance. However, it's essential to note that the Cody Pro plan is limited to **50 developers** per month. Finally, you'll have default support with Anthropic and StarCoder as the officially supported LLMs. Moreover, Pro accounts using VS Code IDE will get an LLM selection for chat only. These LLMs are Claude Instant 1.2, Claude 2, ChatGPT 3.5 Turbo, and ChatGPT 4 Turbo Preview.
 
 > NOTE: There will be high daily limits to catch bad actors and prevent abuse, but under most normal usage, Pro users won't experience these limits.
+
+### Downgrading from Pro to Free
+
+To revert back to Cody Free from Pro:
+
+- Go to your Sourcegraph dashboard **Cody > Manage**
+- Next, **Manage subscription** that takes you to **Cody > Subscription**
+- Clicks **Cancel** on the Pro tier to cancel your Pro subscription
+- This automatically downgrades you to Cody Free
 
 ### Upgrading from Pro to Enterprise
 
