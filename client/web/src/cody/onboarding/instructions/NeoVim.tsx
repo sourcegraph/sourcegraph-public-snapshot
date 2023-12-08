@@ -72,7 +72,6 @@ export function NeoVimInstructions({
                             </div>
                         </div>
                     </div>
-
                     {showStep === undefined ? (
                         <div className="mt-3 d-flex justify-content-between">
                             <Button variant="secondary" onClick={onBack} outline={true} size="sm">

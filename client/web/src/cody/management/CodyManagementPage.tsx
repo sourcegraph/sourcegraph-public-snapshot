@@ -99,12 +99,12 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                 <PageHeader className="mb-4">
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <div className="d-inline-flex align-items-center">
-                            <CodyColorIcon width={40} height={40} className="mr-2" /> Dashboard
+                            <DashboardIcon /> Dashboard
                         </div>
                     </PageHeader.Heading>
                 </PageHeader>
 
-                <div className="p-3 border bg-1 mt-4">
+                <div className={classNames('p-4 border bg-1 mt-4', styles.container)} >
                     <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                         <div>
                             <H2>My Subscription</H2>
@@ -216,7 +216,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </div>
                 </div>
 
-                <div className="p-3 border bg-1 mt-4">
+                <div className={classNames('p-4 border bg-1 mt-4 mb-5', styles.container)}>
                     <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                         <div>
                             <H2>Extensions & Plugins</H2>
@@ -244,7 +244,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             {group.map((editor, index) => (
                                 <div
                                     key={index}
-                                    className={classNames('d-flex flex-column flex-1 p-3', {
+                                    className={classNames('d-flex flex-column flex-1 pt-3 px-3', {
                                         'border-left': index !== 0,
                                     })}
                                 >
@@ -254,7 +254,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                                 alt={editor.name}
                                                 src={`https://storage.googleapis.com/sourcegraph-assets/ideIcons/ideIcon${editor.icon}.svg`}
                                                 width={34}
-                                                className="mr-2"
+                                                className="mr-3"
                                             />
                                         </div>
                                         <div>
@@ -273,7 +273,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                             setSelectedEditorStep(0)
                                         }}
                                     >
-                                        <Text size="small" className="mb-2">
+                                        <Text size="small" className="mb-2 text-muted">
                                             <Icon svgPath={mdiDownload} aria-hidden={true} /> How to install
                                         </Text>
                                     </Link>
@@ -285,7 +285,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                             setSelectedEditorStep(1)
                                         }}
                                     >
-                                        <Text size="small">
+                                        <Text size="small" className="text-muted">
                                             <Icon svgPath={mdiInformation} aria-hidden={true} /> How to use
                                         </Text>
                                     </Link>
@@ -388,3 +388,8 @@ const TrialPeriodIcon = (): ReactElement => (
         </defs>
     </svg>
 )
+
+const DashboardIcon = (): ReactElement => (
+   <p>k</p>
+)
+
