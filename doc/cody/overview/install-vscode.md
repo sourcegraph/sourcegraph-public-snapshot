@@ -111,7 +111,7 @@ After a successful installation, the Cody icon appears in the [Activity sidebar]
 
 ![cody-sign-flow](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-signin-vscode.png)
 
-You can use Sourcegraph Enterprise with the Cody VS Code extension. Click the **Sign In to Your Enterprise Instance**, and it connects to your enterprise environment.
+You can use Sourcegraph Enterprise with the Cody VS Code extension. Click the **Sign In to Your Enterprise Instance**, and it connects to your enterprise environment. For Enterprise users, please sign in with your custom Sourcegraph instance URL and access token. Enterprise accounts are not compatible with community accounts.
 
 ## Verifying the installation
 
