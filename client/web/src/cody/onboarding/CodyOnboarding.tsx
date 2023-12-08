@@ -114,9 +114,11 @@ export function CodyOnboarding({
 
     const navigate = useNavigate()
 
-    if (completed && !showEditorStep && returnToURL) {
-        navigate(returnToURL)
-    }
+    useEffect(() => {
+        if (completed && !showEditorStep && returnToURL) {
+            navigate(returnToURL)
+        }
+    }, [completed, returnToURL, navigate, showEditorStep])
 
     if (!showEditorStep && (completed || step === -1 || step > 1)) {
         return null
