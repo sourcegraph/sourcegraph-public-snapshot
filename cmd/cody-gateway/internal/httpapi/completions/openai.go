@@ -69,6 +69,7 @@ func NewOpenAIHandler(
 					r.Header.Set("OpenAI-Organization", orgID)
 				}
 			},
+			forwardResponse: defaultForwardResponse[openaiRequest],
 			parseResponseAndUsage: func(logger log.Logger, body openaiRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 				// First, extract prompt usage details from the request.
 				for _, m := range body.Messages {

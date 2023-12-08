@@ -65,6 +65,9 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
 	// which for some providers we can only know after the fact based on what
 	// upstream tells us.
 	getRequestMetadata func(context.Context, log.Logger, *actor.Actor, ReqT) (model string, additionalMetadata map[string]any)
+	// forwardResponse is used to forward the response from upstream to the Cody Gateway client.
+	// Default implementation uses an io.Copy, but Fireworks client uses a streaming API to improve time-to-first-response byte (and client latency).
+	forwardResponse func(context.Context, http.ResponseWriter, io.Reader, log.Logger, ReqT) error
 	// parseResponseAndUsage should extract details from the response we get back from
 	// upstream as well as overall usage for tracking purposes.
 	//
@@ -303,7 +306,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 					logger.Error("failed to log event", log.Error(err))
 				}
 			}()
-
 			resp, err := httpClient.Do(req)
 			if err != nil {
 				// Ignore reporting errors where client disconnected
@@ -328,7 +330,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				return
 			}
 			defer func() { _ = resp.Body.Close() }()
-
 			// Forward upstream http headers.
 			for k, vv := range resp.Header {
 				for _, v := range vv {
@@ -372,9 +373,11 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			// Set up a buffer to capture the response as it's streamed and sent to the client.
 			var responseBuf bytes.Buffer
 			respBody := io.TeeReader(resp.Body, &responseBuf)
-			// Forward response to client.
-			_, _ = io.Copy(w, respBody)
-
+			err = methods.forwardResponse(r.Context(), w, respBody, logger, body)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			fmt.Println("Response written after()", time.Since(start))
 			if upstreamStatusCode >= 200 && upstreamStatusCode < 300 {
 				// Pass reader to response transformer to capture token counts.
 				promptUsage, completionUsage = methods.parseResponseAndUsage(logger, body, &responseBuf)
@@ -438,4 +441,9 @@ type flaggingResult struct {
 
 func (f *flaggingResult) IsFlagged() bool {
 	return f != nil
+}
+
+func defaultForwardResponse[ReqT UpstreamRequest](_ context.Context, w http.ResponseWriter, body io.Reader, _ log.Logger, _ ReqT) error {
+	_, err := io.Copy(w, body)
+	return err
 }

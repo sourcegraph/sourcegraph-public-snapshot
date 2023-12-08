@@ -6,9 +6,6 @@ import (
 	"encoding/json"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"io"
-	"net/http"
-
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
@@ -16,7 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"io"
+	"net/http"
 )
 
 const fireworksAPIURL = "https://api.fireworks.ai/inference/v1/completions"
@@ -101,6 +101,35 @@ func NewFireworksHandler(
 			transformRequest: func(r *http.Request) {
 				r.Header.Set("Content-Type", "application/json")
 				r.Header.Set("Authorization", "Bearer "+accessToken)
+			},
+			forwardResponse: func(ctx context.Context, w http.ResponseWriter, body io.Reader, logger log.Logger, request fireworksRequest) error {
+				if !request.Stream {
+					return defaultForwardResponse[fireworksRequest](ctx, w, body, logger, request)
+				}
+				eventWriter, err := streamhttp.NewWriter(w)
+				if err != nil {
+					return err
+				}
+
+				dec := fireworks.NewDecoder(body)
+
+				for dec.Scan() {
+					if ctx.Err() != nil && errors.Is(ctx.Err(), context.Canceled) {
+						return err
+					}
+
+					data := dec.Data()
+
+					err := eventWriter.EventBytes("", data)
+
+					if err != nil {
+						logger.Error("failed to write event", log.Error(err))
+					}
+				}
+				defer func() {
+					_ = eventWriter.EventBytes("", []byte("[DONE]"))
+				}()
+				return nil
 			},
 			parseResponseAndUsage: func(logger log.Logger, reqBody fireworksRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 				// First, extract prompt usage details from the request.

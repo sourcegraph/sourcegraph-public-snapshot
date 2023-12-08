@@ -174,6 +174,7 @@ func NewAnthropicHandler(
 				r.Header.Set("X-API-Key", accessToken)
 				r.Header.Set("anthropic-version", "2023-01-01")
 			},
+			forwardResponse: defaultForwardResponse[anthropicRequest],
 			parseResponseAndUsage: func(logger log.Logger, reqBody anthropicRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 				// First, extract prompt usage details from the request.
 				promptUsage.characters = len(reqBody.Prompt)
