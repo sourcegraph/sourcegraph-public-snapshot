@@ -10,6 +10,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
@@ -542,7 +543,7 @@ func (r *schemaResolver) refreshGatewayRateLimits(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err,"getting internal access token")
 	}
-	gatewayToken := "sgd_" + hex.EncodeToString(hashutil.ToSHA256Bytes(apiTokenSha256))
+	gatewayToken := accesstoken.DotcomUserGatewayAccessTokenPrefix + hex.EncodeToString(hashutil.ToSHA256Bytes(apiTokenSha256))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, completionsConfig.Endpoint+"/v1/limits/refresh", nil)
 	if err != nil {
