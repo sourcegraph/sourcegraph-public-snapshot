@@ -532,8 +532,9 @@ func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPla
 // refreshGatewayRateLimits refreshes the rate limits for the user on Cody Gateway.
 func (r *schemaResolver) refreshGatewayRateLimits(ctx context.Context) error {
 	completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+	// We don't need to do anything if the target is not Cody Gateway, but it's not an error either.
 	if completionsConfig.Provider != conftypes.CompletionsProviderNameSourcegraph {
-		return errors.New("this feature only supports Cody Gateway")
+		return nil
 	}
 
 	a := actor.FromContext(ctx)
