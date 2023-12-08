@@ -773,6 +773,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"ide_extensions_usage": null,
 		"migrated_extensions_usage": null,
 		"own_usage": null,
+		"cody_providers": null,
 		"dependency_versions": null,
 		"extensions_usage": null,
 		"code_insights_usage": null,
