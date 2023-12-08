@@ -31,11 +31,13 @@
             <LoadingSpinner />
         </div>
     {:else if $commits}
-        <ul>
-            {#each $commits.nodes as commit (commit.canonicalURL)}
-                <li><Commit {commit} /></li>
-            {/each}
-        </ul>
+        <div class="commits">
+            <ul>
+                {#each $commits.nodes as commit (commit.canonicalURL)}
+                    <li><Commit {commit} /></li>
+                {/each}
+            </ul>
+        </div>
         <div class="paginator">
             <Paginator
                 disabled={$pending}
@@ -66,13 +68,16 @@
         }
     }
 
+    .commits {
+        overflow-y: auto;
+        flex: 1;
+    }
+
     ul {
         list-style: none;
         padding: 1rem;
-        margin: 0;
-        width: 100%;
-        overflow-y: auto;
-
+        max-width: var(--viewport-xl);
+        margin: 0 auto;
         --avatar-size: 2.5rem;
     }
 
