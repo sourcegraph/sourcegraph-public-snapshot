@@ -62,7 +62,6 @@ go_test(
         "//internal/github_apps/store",
         "//internal/github_apps/types",
         "//internal/gitserver",
-        "//internal/httpcli",
         "//internal/rcache",
         "//internal/types",
         "//lib/errors",

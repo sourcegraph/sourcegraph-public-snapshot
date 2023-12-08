@@ -67,7 +67,6 @@ go_test(
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",
-        "//internal/httpcli",
         "//internal/search/result",
         "//internal/txemail",
         "//schema",

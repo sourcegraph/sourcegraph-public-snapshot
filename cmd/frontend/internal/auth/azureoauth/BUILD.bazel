@@ -54,7 +54,6 @@ go_test(
         "//internal/database/dbtest",
         "//internal/extsvc",
         "//internal/extsvc/azuredevops",
-        "//internal/httpcli",
         "//internal/ratelimit",
         "//internal/rcache",
         "//schema",
