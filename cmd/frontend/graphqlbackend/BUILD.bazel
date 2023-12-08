@@ -242,6 +242,7 @@ go_library(
         "//cmd/frontend/hubspot/hubspotutil",
         "//cmd/frontend/internal/processrestart",
         "//cmd/frontend/internal/search/logs",
+        "//internal/accesstoken",
         "//internal/actor",
         "//internal/adminanalytics",
         "//internal/api",
