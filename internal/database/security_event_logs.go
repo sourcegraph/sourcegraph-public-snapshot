@@ -40,6 +40,8 @@ const (
 	SecurityEventNamePasswordChanged       SecurityEventName = "PasswordChanged"
 
 	SecurityEventNameEmailVerified SecurityEventName = "EmailVerified"
+	SecurityEventNameEmailAdded    SecurityEventName = "EmailAdded"
+	SecurityEventNameEmailRemoved  SecurityEventName = "EmailRemoved"
 
 	SecurityEventNameRoleChangeDenied  SecurityEventName = "RoleChangeDenied"
 	SecurityEventNameRoleChangeGranted SecurityEventName = "RoleChangeGranted"

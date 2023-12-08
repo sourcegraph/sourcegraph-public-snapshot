@@ -2,6 +2,7 @@ package productsubscription
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -286,17 +287,17 @@ ORDER BY created_at DESC
 		results = append(results, &v)
 	}
 
-	// argsJSON, _ := json.Marshal(q.Args())
-	// event := &database.SecurityEvent{
-	// 	Name:      database.SecurityEventNameDotComLicenseViewed,
-	// 	URL:       "",
-	// 	UserID:    uint32(actor.FromContext(ctx).UID),
-	// 	Argument:  argsJSON,
-	// 	Source:    "BACKEND",
-	// 	Timestamp: time.Now(),
-	// }
+	argsJSON, _ := json.Marshal(q.Args())
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameDotComLicenseViewed,
+		URL:       "",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
 
-	// s.db.SecurityEventLogs().LogEvent(ctx, event)
+	s.db.SecurityEventLogs().LogEvent(ctx, event)
 
 	return results, nil
 }

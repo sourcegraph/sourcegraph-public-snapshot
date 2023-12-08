@@ -92,6 +92,15 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 	if err := e.db.UserEmails().Add(ctx, userID, email, code); err != nil {
 		return err
 	}
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameEmailAdded,
+		URL:       fmt.Sprintf("/users/%d/settings/emails", userID),
+		UserID:    uint32(userID),
+		Argument:  nil,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	e.db.SecurityEventLogs().LogEvent(ctx, event)
 
 	if conf.EmailVerificationRequired() {
 		usr, err := e.db.Users().GetByID(ctx, userID)
@@ -133,6 +142,15 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) err
 		if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
 			return errors.Wrap(err, "removing user e-mail")
 		}
+		event := &database.SecurityEvent{
+			Name:      database.SecurityEventNameEmailRemoved,
+			URL:       fmt.Sprintf("/users/%d/settings/emails", userID),
+			UserID:    uint32(userID),
+			Argument:  nil,
+			Source:    "BACKEND",
+			Timestamp: time.Now(),
+		}
+		e.db.SecurityEventLogs().LogEvent(ctx, event)
 
 		// 🚨 SECURITY: If an email is removed, invalidate any existing password reset
 		// tokens that may have been sent to that email.
