@@ -9,7 +9,6 @@ const MAX_FILE_TREE_ENTRIES = 1000
 const treeEntriesQuery = gql`
     query TreeEntries($repoID: ID!, $commitID: String!, $filePath: String!, $first: Int) {
         node(id: $repoID) {
-            __typename
             id
             ... on Repository {
                 commit(rev: $commitID) {
@@ -21,44 +20,19 @@ const treeEntriesQuery = gql`
 
     fragment GitCommitFieldsWithTree on GitCommit {
         id
-        oid
-        abbreviatedOID
-        author {
-            ...UserFields
-        }
-        committer {
-            ...UserFields
-        }
-        subject
-
         tree(path: $filePath) {
             canonicalURL
             isRoot
             name
             path
             isDirectory
-            submodule {
-                commit
-            }
             entries(first: $first) {
                 canonicalURL
                 name
                 path
                 isDirectory
-                submodule {
-                    commit
-                }
             }
         }
-    }
-
-    fragment UserFields on Signature {
-        person {
-            name
-            displayName
-            avatarURL
-        }
-        date
     }
 `
 
@@ -129,15 +103,15 @@ interface FileTreeProviderArgs {
 export class FileTreeProvider implements TreeProvider<FileTreeNodeValue> {
     constructor(private args: FileTreeProviderArgs) {}
 
-    getRoot(): FileTreeNodeValue {
+    public getRoot(): FileTreeNodeValue {
         return this.args.root
     }
 
-    getRepoID(): Scalars['ID']['input'] {
+    public getRepoID(): Scalars['ID']['input'] {
         return this.args.repoID
     }
 
-    getEntries(): FileTreeNodeValue[] {
+    public getEntries(): FileTreeNodeValue[] {
         if (this.args.parent || this.args.root.isRoot) {
             return this.args.values
         }
@@ -145,7 +119,7 @@ export class FileTreeProvider implements TreeProvider<FileTreeNodeValue> {
         return [this.args.root, ...this.args.values]
     }
 
-    async fetchChildren(entry: FileTreeNodeValue): Promise<FileTreeProvider> {
+    public async fetchChildren(entry: FileTreeNodeValue): Promise<FileTreeProvider> {
         if (!this.isExpandable(entry)) {
             // This should never happen because the caller should only call fetchChildren
             // for entries where isExpandable returns true
@@ -160,7 +134,7 @@ export class FileTreeProvider implements TreeProvider<FileTreeNodeValue> {
         })
     }
 
-    async fetchParent(): Promise<FileTreeProvider> {
+    public async fetchParent(): Promise<FileTreeProvider> {
         const parentPath = dirname(this.args.root.path)
         return this.args.loader({
             repoID: this.args.repoID,
@@ -169,15 +143,15 @@ export class FileTreeProvider implements TreeProvider<FileTreeNodeValue> {
         })
     }
 
-    getNodeID(entry: FileTreeNodeValue): string {
+    public getNodeID(entry: FileTreeNodeValue): string {
         return entry === NODE_LIMIT ? 'node-limit' : entry.path
     }
 
-    isExpandable(entry: FileTreeNodeValue): entry is ExpandableFileTreeNodeValues {
+    public isExpandable(entry: FileTreeNodeValue): entry is ExpandableFileTreeNodeValues {
         return entry !== NODE_LIMIT && entry !== this.args.root && entry.isDirectory
     }
 
-    isSelectable(entry: FileTreeNodeValue): boolean {
+    public isSelectable(entry: FileTreeNodeValue): boolean {
         return entry !== NODE_LIMIT
     }
 }
