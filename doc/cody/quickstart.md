@@ -24,6 +24,8 @@ Cody supports **Commands** with VS Code. These are quick, ready-to-use prompt ac
 2. Right click > Cody > Select a command
 3. Press the command hotkey (`⌥` + `c` / `alt` + `c`)
 
+![slash-command](https://storage.googleapis.com/sourcegraph-assets/Docs/slash-command-trigger.png)
+
 ## Working with the Cody extension
 
 Let's create a JavaScript function that converts a `given date` into a human-readable description of the time elapsed between the `given date` and the `current date`. This example uses a starter boilerplate code that helps you set up and run three tasks with the Cody VS Code extension.
