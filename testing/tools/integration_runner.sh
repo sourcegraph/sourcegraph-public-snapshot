@@ -59,7 +59,18 @@ function generate_unique_container_name() {
   local prefix="$1"
   prefix="$1"
   local ident
-  ident="$(openssl rand -hex 12)"
+
+  # try generate a unique identifier with openssl otherwise fallback to dd and hexdump
+  if command -v openssl &> /dev/null; then
+    ident="$(openssl rand -hex 12)"
+  elif command -v hexdump &> /dev/null; then
+    ident="$(dd if=/dev/urandom bs=12 count=1 2>/dev/null | hexdump -e '24/1 "%02x"')"
+  else
+    echo "⚠️ Missing openssl or hexdump. Unable to generate unique id"
+    echo "👉 Aborting."
+    exit 1
+  fi
+
   echo "$prefix-$ident"
 }
 
