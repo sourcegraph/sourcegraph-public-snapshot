@@ -1,9 +1,10 @@
 import type { FC } from 'react'
 
 import { useLocation } from 'react-router-dom'
-import { useFeatureFlag } from 'src/featureFlags/useFeatureFlag'
 
 import { Button, Tooltip } from '@sourcegraph/wildcard'
+
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 import { isSvelteKitSupportedURL, reload } from './util'
 
