@@ -34,7 +34,6 @@ import type {
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
-import { CodyColorIcon } from '../chat/CodyPageIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, editorGroups, type IEditor } from '../onboarding/CodyOnboarding'
 import { ProTierIcon } from '../subscription/CodySubscriptionPage'
@@ -104,7 +103,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </PageHeader.Heading>
                 </PageHeader>
 
-                <div className={classNames('p-4 border bg-1 mt-4', styles.container)} >
+                <div className={classNames('p-4 border bg-1 mt-4', styles.container)}>
                     <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                         <div>
                             <H2>My Subscription</H2>
@@ -152,7 +151,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                                 usageData?.currentUser?.codyCurrentPeriodCodeUsage || 0,
                                                 usageData?.currentUser?.codyCurrentPeriodCodeLimit || 0
                                             )}{' '}
-
                                         </Text>{' '}
                                         <Text className="text-muted d-inline b-0" size="small">
                                             / {usageData?.currentUser?.codyCurrentPeriodCodeLimit || 0}
@@ -178,12 +176,11 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     </Text>
                                 ) : usageData?.currentUser ? (
                                     <>
-                                        <Text  className={classNames('d-inline mb-0', styles.counter)}>
+                                        <Text className={classNames('d-inline mb-0', styles.counter)}>
                                             {Math.min(
                                                 usageData?.currentUser?.codyCurrentPeriodChatUsage || 0,
                                                 usageData?.currentUser?.codyCurrentPeriodChatLimit || 0
                                             )}{' '}
-
                                         </Text>{' '}
                                         <Text className="text-muted d-inline b-0" size="small">
                                             / {usageData?.currentUser?.codyCurrentPeriodChatLimit || 0}
@@ -389,7 +386,7 @@ const TrialPeriodIcon = (): ReactElement => (
     </svg>
 )
 
-const DashboardIcon = ({ className }: { className?: string }): ReactElement =>  (
+const DashboardIcon = ({ className }: { className?: string }): ReactElement => (
     <svg
         xmlns="http://www.w3.org/2000/svg"
         width="60"
@@ -438,16 +435,9 @@ const DashboardIcon = ({ className }: { className?: string }): ReactElement =>  
                 gradientUnits="userSpaceOnUse"
             >
                 <stop stopColor="color(display-p3 0.0000 0.7961 0.9255)"></stop>
-                <stop
-                    offset="0.547"
-                    stopColor="color(display-p3 0.6314 0.0706 1.0000)"
-                ></stop>
-                <stop
-                    offset="1"
-                    stopColor="color(display-p3 1.0000 0.3333 0.2627)"
-                ></stop>
+                <stop offset="0.547" stopColor="color(display-p3 0.6314 0.0706 1.0000)"></stop>
+                <stop offset="1" stopColor="color(display-p3 1.0000 0.3333 0.2627)"></stop>
             </linearGradient>
         </defs>
     </svg>
 )
-
