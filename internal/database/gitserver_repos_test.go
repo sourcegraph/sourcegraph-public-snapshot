@@ -785,6 +785,29 @@ func TestLogCorruption(t *testing.T) {
 			t.Errorf("expected reason to be truncated - got length=%d, wanted=%d", len(fromDB.CorruptionLogs[0].Reason), MaxReasonSizeInMB)
 		}
 	})
+	t.Run("logging corruption from wrong shard does not log corruption", func(t *testing.T) {
+		// Create repo
+		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+			Name: "github.com/sourcegraph/repo7",
+		})
+
+		// Mark it as cloned on shard-1
+		err := db.GitserverRepos().SetCloneStatus(ctx, repo.Name, types.CloneStatusCloned, "shard-1")
+		require.NoError(t, err)
+
+		// Log corruption on shard-2
+		err = db.GitserverRepos().LogCorruption(ctx, repo.Name, "corrupt lol", "shard-2")
+		if err == nil || err.Error() != "repo not found or already corrupt" {
+			t.Fatalf("expected not-found error but got: %s", err)
+		}
+
+		// This should not result in corruption being logged
+		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
+		if err != nil {
+			t.Fatalf("failed to get repo by id: %s", err)
+		}
+		require.True(t, fromDB.CorruptedAt.IsZero(), "corrupted_at should not be set, but it was")
+	})
 }
 
 func TestSetLastError(t *testing.T) {

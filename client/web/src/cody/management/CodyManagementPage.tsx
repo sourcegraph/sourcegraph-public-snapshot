@@ -3,6 +3,7 @@ import type { ReactElement } from 'react'
 
 import { mdiHelpCircleOutline, mdiTrendingUp, mdiDownload, mdiInformation } from '@mdi/js'
 import classNames from 'classnames'
+import { useNavigate } from 'react-router-dom'
 
 import { useQuery, useMutation } from '@sourcegraph/http-client'
 import {
@@ -10,6 +11,7 @@ import {
     PageHeader,
     Link,
     H4,
+    H5,
     H2,
     Text,
     ButtonLink,
@@ -18,6 +20,7 @@ import {
     LoadingSpinner,
 } from '@sourcegraph/wildcard'
 
+import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
@@ -41,9 +44,13 @@ import styles from './CodyManagementPage.module.scss'
 
 interface CodyManagementPageProps {
     isSourcegraphDotCom: boolean
+    authenticatedUser: AuthenticatedUser | null
 }
 
-export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps> = ({ isSourcegraphDotCom }) => {
+export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps> = ({
+    isSourcegraphDotCom,
+    authenticatedUser,
+}) => {
     const parameters = useSearchParameters()
 
     const utm_source = parameters.get('utm_source')
@@ -70,6 +77,14 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
             changeCodyPlan({ variables: { pro: true, id: data?.currentUser?.id } })
         }
     }, [data?.currentUser, changeCodyPlan, enrollPro])
+
+    const navigate = useNavigate()
+
+    useEffect(() => {
+        if (!!data && !data?.currentUser) {
+            navigate('/sign-in?returnTo=/cody/manage')
+        }
+    }, [data, navigate])
 
     if (!isCodyEnabled() || !isSourcegraphDotCom || !isEnabled || !data?.currentUser) {
         return null
@@ -147,7 +162,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     <LoadingSpinner />
                                 )}
                             </div>
-                            <H4 className="mb-0">Autocompletes</H4>
+                            <H4 className="mb-0">Autocomplete suggestions</H4>
                             {!codyProEnabled && (
                                 <Text className="text-muted mb-0" size="small">
                                     this month
@@ -178,7 +193,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     <LoadingSpinner />
                                 )}
                             </div>
-                            <H4 className="mb-0">Chat Messages</H4>
+                            <H4 className="mb-0">Chat messages and commands</H4>
                             {!codyProEnabled && (
                                 <Text className="text-muted mb-0" size="small">
                                     this month
@@ -194,7 +209,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     </Text>
                                 </div>
                                 <Text className="text-muted mb-0" size="small">
-                                    Until 14th of February 2023
+                                    Until 14th of February 2024
                                 </Text>
                             </div>
                         )}
@@ -208,10 +223,15 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             <Text className="text-muted mb-0">Cody integrates with your workflow.</Text>
                         </div>
                         <div>
-                            <ButtonLink to="/cody/pricing" variant="secondary" outline={true} size="sm">
+                            <Link
+                                to="https://sourcegraph.com/community"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-muted text-sm"
+                            >
                                 <Icon svgPath={mdiHelpCircleOutline} className="mr-1" aria-hidden={true} />
-                                Missing an editor?
-                            </ButtonLink>
+                                Have feedback? Join our community Discord to let us know!
+                            </Link>
                         </div>
                     </div>
                     {editorGroups.map((group, index) => (
@@ -228,7 +248,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                         'border-left': index !== 0,
                                     })}
                                 >
-                                    <div className="d-flex mb-3">
+                                    <div className="d-flex mb-3 align-items-center">
                                         <div>
                                             <img
                                                 alt={editor.name}
@@ -242,6 +262,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                                 {editor.publisher}
                                             </Text>
                                             <Text className={classNames('mb-0', styles.ideName)}>{editor.name}</Text>
+                                            <H5 className={styles.releaseStage}>{editor.releaseStage}</H5>
                                         </div>
                                     </div>
                                     <Link
@@ -298,7 +319,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     ))}
                 </div>
             </Page>
-            <CodyOnboarding />
+            <CodyOnboarding authenticatedUser={authenticatedUser} />
         </>
     )
 }
