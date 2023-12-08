@@ -10,6 +10,7 @@ import (
 	"github.com/Khan/genqlient/graphql"
 	graphqltypes "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
@@ -26,7 +27,7 @@ import (
 // actor source implementation is changed. This effectively expires all entries.
 const SourceVersion = "v2"
 
-// dotcom user gateway tokens are always a prefix of 4 characters (sgd_)
+// dotcom user gateway tokens are always a prefix of 4 characters ("sgd_")
 // followed by a 64-character hex-encoded SHA256 hash
 const tokenLength = 4 + 64
 
@@ -112,8 +113,7 @@ func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.Ch
 }
 
 func (s *Source) get(ctx context.Context, token string, bypassCache bool) (*actor.Actor, error) {
-	// "sgd_" is dotcomUserGatewayAccessTokenPrefix
-	if token == "" || !strings.HasPrefix(token, "sgd_") {
+	if token == "" || !strings.HasPrefix(token, accesstoken.DotcomUserGatewayAccessTokenPrefix) {
 		return nil, actor.ErrNotFromSource{}
 	}
 
