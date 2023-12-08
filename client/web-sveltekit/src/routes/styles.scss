@@ -4,6 +4,7 @@
     background-color: var(--mark-bg);
 }
 
+// Temporarily mark external links with a React logo
 a[data-sveltekit-reload='true'] {
     display: flex !important;
     align-items: center;
@@ -14,6 +15,6 @@ a[data-sveltekit-reload='true'] {
         height: 1rem;
         display: inline-block;
         content: '';
-        background-image: url(/react-logo.svg);
+        background-image: url('/react-logo.svg');
     }
 }
