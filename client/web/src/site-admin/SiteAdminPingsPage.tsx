@@ -415,8 +415,8 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                                 Completions
                                 <ul>
                                     <li>Provider</li>
-                                    <li>Chat model</li>
-                                    <li>Completion model</li>
+                                    <li>Chat model (included only for "sourcegraph" provider)</li>
+                                    <li>Completion model (included only for "sourcegraph" provider)</li>
                                 </ul>
                             </li>
                             <li>

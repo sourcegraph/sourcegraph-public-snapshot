@@ -200,8 +200,12 @@ Sourcegraph aggregates usage and performance metrics for some product features i
 - Histogram of cloned repository sizes
 - Aggregate daily, weekly, monthly repository metadata usage statistics
 - Cody providers data
-  - Completions provider, chat and completion models
-  - Embeddings provider and model
+  - Completions
+    - Provider name
+    - Chat and completion model names (only for "sourcegraph" provider)
+  - Embeddings
+    - Provider name
+    - Model name (only for "sourcegraph" provider)
 </details>
 
 ## Allowlist IPs / CIDR Ranges for Sourcegraph
