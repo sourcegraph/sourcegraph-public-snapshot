@@ -408,6 +408,27 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                     </li>
                     <li>Histogram of cloned repository sizes</li>
                     <li>Aggregate daily, weekly, monthly repository metadata usage statistics</li>
+                    <li>
+                        Cody providers data
+                        <ul>
+                            <li>
+                                Completions
+                                <ul>
+                                    <li>Provider</li>
+                                    <li>Chat model</li>
+                                    <li>Completions model</li>
+                                    <li>Fast chat model</li>
+                                </ul>
+                            </li>
+                            <li>
+                                Embeddings
+                                <ul>
+                                    <li>Provider</li>
+                                    <li>Model</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
                 </ul>
                 {updatesDisabled && <Text>All telemetry is disabled.</Text>}
             </Container>

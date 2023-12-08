@@ -14,6 +14,7 @@ go_library(
         "code_insights_critical.go",
         "code_monitoring.go",
         "codehost_integration.go",
+        "cody_providers.go",
         "defaults.go",
         "event_handlers.go",
         "extensions.go",

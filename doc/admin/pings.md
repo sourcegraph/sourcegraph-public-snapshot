@@ -199,6 +199,9 @@ Sourcegraph aggregates usage and performance metrics for some product features i
     - Displaying ownership panel in file view.
 - Histogram of cloned repository sizes
 - Aggregate daily, weekly, monthly repository metadata usage statistics
+- Cody providers data
+  - Completions provider, chat, completions, and fast chat models
+  - Embeddings provider and model
 </details>
 
 ## Allowlist IPs / CIDR Ranges for Sourcegraph

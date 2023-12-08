@@ -263,6 +263,7 @@ type pingRequest struct {
 	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Cody App
 	HasCodyEnabled                bool            `json:"hasCodyEnabled,omitempty"`
 	CodyUsage                     json.RawMessage `json:"codyUsage,omitempty"`
+	CodyProviders                 json.RawMessage `json:"codyProviders,omitempty"`
 	RepoMetadataUsage             json.RawMessage `json:"repoMetadataUsage,omitempty"`
 }
 

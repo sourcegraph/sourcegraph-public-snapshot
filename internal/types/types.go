@@ -1043,6 +1043,26 @@ type CodyAggregatedEvent struct {
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodyProviders struct {
+	Completions *CodyCompletionProvider
+	Embeddings  *CodyEmbeddingsProvider
+}
+
+type CodyCompletionProvider struct {
+	ChatModel       string
+	CompletionModel string
+	FastChatModel   string
+	Provider        string
+}
+
+type CodyEmbeddingsProvider struct {
+	Model    string
+	Provider string
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler.
 // RepoMetadataAggregatedStats represents the total number of repo metadata,
 // number of repositories with any metadata, total and unique number of
