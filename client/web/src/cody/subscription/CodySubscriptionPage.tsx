@@ -316,6 +316,7 @@ export const ProTierIcon = ({ className }: { className?: string }): ReactElement
         height="31"
         fill="none"
         viewBox="0 0 56 31"
+        className={className}
     >
         <g filter="url(#filter0_d_2692_3595)">
             <path

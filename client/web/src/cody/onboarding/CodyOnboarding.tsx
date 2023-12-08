@@ -12,8 +12,8 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 
 import { JetBrainsInstructions } from './instructions/JetBrains'
-import { VSCodeInstructions } from './instructions/VsCode'
 import { NeoVimInstructions } from './instructions/NeoVim'
+import { VSCodeInstructions } from './instructions/VsCode'
 
 import styles from './CodyOnboarding.module.scss'
 

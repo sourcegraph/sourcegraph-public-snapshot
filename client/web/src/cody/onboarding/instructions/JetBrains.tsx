@@ -8,10 +8,10 @@ import { H2, Text, Button, ButtonLink } from '@sourcegraph/wildcard'
 import styles from '../CodyOnboarding.module.scss'
 
 export function JetBrainsInstructions({
-                                          onBack,
-                                          onClose,
-                                          showStep,
-                                      }: {
+    onBack,
+    onClose,
+    showStep,
+}: {
     onBack?: () => void
     onClose: () => void
     showStep?: number
@@ -34,18 +34,19 @@ export function JetBrainsInstructions({
                                 </div>
                                 <div>
                                     <Text className="mb-1" weight="bold">
-                                        Open the Plugins Page (or via the  <Link
-                                        to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai"
-                                    >
-                                        JetBrains Marketplace
-                                    </Link>)
+                                        Open the Plugins Page (or via the{' '}
+                                        <Link to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">
+                                            JetBrains Marketplace
+                                        </Link>
+                                        )
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
                                         Click the cog [⚙️] icon in the top right corner of your IDE and select{' '}
                                         <strong>Plugins</strong>
                                         <br />
-                                        Alternatively, go to the settings option (<strong> [⌘] + [,] on macOS, or File →
-                                        Settings on Windows </strong>), then select "Plugins" from the menu on the left.
+                                        Alternatively, go to the settings option (
+                                        <strong> [⌘] + [,] on macOS, or File → Settings on Windows </strong>), then
+                                        select "Plugins" from the menu on the left.
                                     </Text>
                                 </div>
                             </div>
@@ -56,7 +57,6 @@ export function JetBrainsInstructions({
                                 src="https://storage.googleapis.com/sourcegraph-assets/jetBrainsInstructions/jetBrainsMenu.png"
                             />
                         </div>
-
 
                         <div className="mt-3 d-flex flex-column border-bottom">
                             <div className="d-flex align-items-center">
@@ -79,7 +79,6 @@ export function JetBrainsInstructions({
                                 src="https://storage.googleapis.com/sourcegraph-assets/jetBrainsInstructions/jetBrainsPluginList.png"
                             />
                         </div>
-
 
                         <div className="mt-3 d-flex flex-column border-bottom">
                             <div className="d-flex align-items-center">
@@ -105,7 +104,6 @@ export function JetBrainsInstructions({
                                 src="https://storage.googleapis.com/sourcegraph-assets/jetBrainsInstructions/jetBrainsOnboarding.png"
                             />
                         </div>
-
                     </div>
 
                     {showStep === undefined ? (
@@ -225,4 +223,3 @@ export function JetBrainsInstructions({
         </>
     )
 }
-

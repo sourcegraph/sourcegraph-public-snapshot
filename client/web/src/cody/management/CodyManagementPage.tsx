@@ -96,10 +96,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         <>
             <Page className={classNames('d-flex flex-column')}>
                 <PageTitle title="Dashboard" />
-                <PageHeader className="mb-4">
+                <PageHeader className="mb-4 mt-4">
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <div className="d-inline-flex align-items-center">
-                            <DashboardIcon /> Dashboard
+                            <DashboardIcon className="mr-2" /> Dashboard
                         </div>
                     </PageHeader.Heading>
                 </PageHeader>
@@ -140,7 +140,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         </div>
                         <div className="d-flex flex-column align-items-center flex-grow-1 p-3 border-left border-right">
                             <AutocompletesIcon />
-                            <div className="mb-3 mt-2">
+                            <div className="mb-2 mt-3">
                                 {codyProEnabled ? (
                                     <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
                                         Unlimited
@@ -152,10 +152,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                                 usageData?.currentUser?.codyCurrentPeriodCodeUsage || 0,
                                                 usageData?.currentUser?.codyCurrentPeriodCodeLimit || 0
                                             )}{' '}
-                                            /
+
                                         </Text>{' '}
                                         <Text className="text-muted d-inline b-0" size="small">
-                                            {usageData?.currentUser?.codyCurrentPeriodCodeLimit || 0}
+                                            / {usageData?.currentUser?.codyCurrentPeriodCodeLimit || 0}
                                         </Text>
                                     </>
                                 ) : (
@@ -171,22 +171,22 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         </div>
                         <div className="d-flex flex-column align-items-center flex-grow-1 p-3">
                             <ChatMessagesIcon />
-                            <div className="mb-3 mt-2">
+                            <div className="mb-2 mt-3">
                                 {codyProEnabled ? (
                                     <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
                                         Unlimited
                                     </Text>
                                 ) : usageData?.currentUser ? (
                                     <>
-                                        <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
+                                        <Text  className={classNames('d-inline mb-0', styles.counter)}>
                                             {Math.min(
                                                 usageData?.currentUser?.codyCurrentPeriodChatUsage || 0,
                                                 usageData?.currentUser?.codyCurrentPeriodChatLimit || 0
                                             )}{' '}
-                                            /
+
                                         </Text>{' '}
                                         <Text className="text-muted d-inline b-0" size="small">
-                                            {usageData?.currentUser?.codyCurrentPeriodChatLimit || 0}
+                                            / {usageData?.currentUser?.codyCurrentPeriodChatLimit || 0}
                                         </Text>
                                     </>
                                 ) : (
@@ -203,7 +203,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         {codyProEnabled && (
                             <div className="d-flex flex-column align-items-center flex-grow-1 p-3 border-left">
                                 <TrialPeriodIcon />
-                                <div className="mb-3 mt-2">
+                                <div className="mb-2 mt-4">
                                     <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
                                         Free trial
                                     </Text>
@@ -389,7 +389,65 @@ const TrialPeriodIcon = (): ReactElement => (
     </svg>
 )
 
-const DashboardIcon = (): ReactElement => (
-   <p>k</p>
+const DashboardIcon = ({ className }: { className?: string }): ReactElement =>  (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="60"
+        height="60"
+        fill="none"
+        viewBox="0 0 60 60"
+        className={className}
+    >
+        <path
+            fill="#fff"
+            d="M.5 29.6c0-9.698 0-14.547 1.711-18.324a19.2 19.2 0 019.565-9.565C15.553 0 20.402 0 30.1 0c9.698 0 14.547 0 18.324 1.711a19.2 19.2 0 019.565 9.565C59.7 15.053 59.7 19.902 59.7 29.6c0 9.698 0 14.547-1.711 18.324a19.2 19.2 0 01-9.565 9.565C44.647 59.2 39.798 59.2 30.1 59.2c-9.698 0-14.547 0-18.324-1.711a19.2 19.2 0 01-9.565-9.565C.5 44.147.5 39.298.5 29.6z"
+        ></path>
+        <path
+            fill="url(#paint0_radial_3290_3096)"
+            fillOpacity="0.2"
+            d="M.5 29.6c0-9.698 0-14.547 1.711-18.324a19.2 19.2 0 019.565-9.565C15.553 0 20.402 0 30.1 0c9.698 0 14.547 0 18.324 1.711a19.2 19.2 0 019.565 9.565C59.7 15.053 59.7 19.902 59.7 29.6c0 9.698 0 14.547-1.711 18.324a19.2 19.2 0 01-9.565 9.565C44.647 59.2 39.798 59.2 30.1 59.2c-9.698 0-14.547 0-18.324-1.711a19.2 19.2 0 01-9.565-9.565C.5 44.147.5 39.298.5 29.6z"
+        ></path>
+        <path
+            stroke="#000"
+            strokeOpacity="0.05"
+            strokeWidth="1.6"
+            d="M1.3 29.6c0-4.86 0-8.463.212-11.323.21-2.853.627-4.904 1.428-6.67a18.4 18.4 0 019.166-9.167c1.767-.8 3.818-1.218 6.67-1.428C21.638.8 25.24.8 30.1.8c4.86 0 8.463 0 11.323.212 2.853.21 4.904.627 6.67 1.428a18.4 18.4 0 019.167 9.166c.8 1.767 1.218 3.818 1.428 6.67.212 2.861.212 6.463.212 11.324 0 4.86 0 8.463-.212 11.323-.21 2.853-.627 4.904-1.428 6.67a18.4 18.4 0 01-9.166 9.167c-1.767.8-3.818 1.218-6.67 1.428-2.861.212-6.463.212-11.324.212-4.86 0-8.463 0-11.323-.212-2.853-.21-4.904-.627-6.67-1.428a18.4 18.4 0 01-9.167-9.166c-.8-1.767-1.218-3.818-1.428-6.67C1.3 38.062 1.3 34.46 1.3 29.6z"
+        ></path>
+        <path
+            fill="url(#paint1_linear_3290_3096)"
+            d="M15.487 14.986h13.152v10.23H15.487v-10.23zm2.923 2.923v4.384h7.306V17.91H18.41zm13.152-2.923h13.152v16.075H31.562V14.986zm2.922 2.923v10.23h7.307v-10.23h-7.307zm-18.997 10.23h13.152v16.074H15.487V28.138zm2.923 2.922v10.23h7.306V31.06H18.41zm13.152 2.923h13.152v10.23H31.562v-10.23zm2.922 2.923v4.384h7.307v-4.384h-7.307z"
+        ></path>
+        <defs>
+            <radialGradient
+                id="paint0_radial_3290_3096"
+                cx="0"
+                cy="0"
+                r="1"
+                gradientTransform="rotate(77.074 39.36 -7.125) scale(57.4399)"
+                gradientUnits="userSpaceOnUse"
+            >
+                <stop stopColor="color(display-p3 0.0000 0.8602 1.0000)"></stop>
+                <stop offset="1" stopColor="none" stopOpacity="0"></stop>
+            </radialGradient>
+            <linearGradient
+                id="paint1_linear_3290_3096"
+                x1="15.044"
+                x2="38.46"
+                y1="15.359"
+                y2="47.984"
+                gradientUnits="userSpaceOnUse"
+            >
+                <stop stopColor="color(display-p3 0.0000 0.7961 0.9255)"></stop>
+                <stop
+                    offset="0.547"
+                    stopColor="color(display-p3 0.6314 0.0706 1.0000)"
+                ></stop>
+                <stop
+                    offset="1"
+                    stopColor="color(display-p3 1.0000 0.3333 0.2627)"
+                ></stop>
+            </linearGradient>
+        </defs>
+    </svg>
 )
 

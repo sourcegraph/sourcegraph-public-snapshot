@@ -3,15 +3,15 @@ import { useState } from 'react'
 import classNames from 'classnames'
 import { Link } from 'react-router-dom'
 
-import {H2, Text, Button, ButtonLink} from '@sourcegraph/wildcard'
+import { H2, Text, Button, ButtonLink } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
 
 export function NeoVimInstructions({
-                                          onBack,
-                                          onClose,
-                                          showStep,
-                                      }: {
+    onBack,
+    onClose,
+    showStep,
+}: {
     onBack?: () => void
     onClose: () => void
     showStep?: number
@@ -47,7 +47,7 @@ export function NeoVimInstructions({
                                     to="https://github.com/sourcegraph/sg.nvim#setup"
                                     target="_blank"
                                 >
-                                   Navigate to GitHub Repo
+                                    Navigate to GitHub Repo
                                 </ButtonLink>
                                 <img
                                     alt="NeoVim Repo"
@@ -65,9 +65,9 @@ export function NeoVimInstructions({
                                 </div>
                                 <div>
                                     <Text className="mb-1" weight="bold">
-                                        Follow the instructions detailed in the <strong>Readme.md</strong> file to install the plugin.
+                                        Follow the instructions detailed in the <strong>Readme.md</strong> file to
+                                        install the plugin.
                                     </Text>
-
                                 </div>
                             </div>
                         </div>
@@ -189,4 +189,3 @@ export function NeoVimInstructions({
         </>
     )
 }
-
