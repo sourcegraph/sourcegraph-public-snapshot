@@ -15,7 +15,7 @@ filegroup(
 )
 """
 
-GCLOUD_VERSION = "415.0.0"
+GCLOUD_VERSION = "456.0.0"
 GCLOUD_BUILDFILE = """package(default_visibility = ["//visibility:public"])\nexports_files(["gcloud", "gsutil", "bq", "git-credential-gcloud"])"""
 GCLOUD_PATCH_CMDS = [
     "ln -s google-cloud-sdk/bin/gcloud gcloud",
@@ -109,7 +109,7 @@ def tool_deps():
         name = "gcloud-darwin-arm64",
         build_file_content = GCLOUD_BUILDFILE,
         patch_cmds = GCLOUD_PATCH_CMDS,
-        sha256 = "974ed4f37f8bde2f7a9731eba90b033f7c97d24d835ecc62b58eee87c8f29776",
+        sha256 = "80c31937d3a3dce98d730844ff028715a46cd9fd5d5d44096b16e85fa54e6df1",
         url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-darwin-arm.tar.gz".format(GCLOUD_VERSION),
     )
 
@@ -133,12 +133,12 @@ def tool_deps():
         name = "packer-linux-amd64",
         build_file_content = PACKER_BUILDFILE.format("linux-amd64"),
         sha256 = "0587f7815ed79589cd9c2b754c82115731c8d0b8fd3b746fe40055d969facba5",
-        url = "https://releases.hashicorp.com/packer/{0}/packer_{0}_linux_amd64.zip".format(PACKER_VERSION)
+        url = "https://releases.hashicorp.com/packer/{0}/packer_{0}_linux_amd64.zip".format(PACKER_VERSION),
     )
 
     http_archive(
         name = "packer-darwin-arm64",
         build_file_content = PACKER_BUILDFILE.format("darwin-arm64"),
         sha256 = "5cc53abbc345fc5f714c8ebe46fd79d5f503f29375981bee6c77f89e5ced92d3",
-        url = "https://releases.hashicorp.com/packer/{0}/packer_{0}_darwin_arm64.zip".format(PACKER_VERSION)
+        url = "https://releases.hashicorp.com/packer/{0}/packer_{0}_darwin_arm64.zip".format(PACKER_VERSION),
     )
