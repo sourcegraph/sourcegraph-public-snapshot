@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
+import { useNavigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Modal, H5, H2, Text, Button, useSearchParameters } from '@sourcegraph/wildcard'
+import { Button, H2, H5, Modal, Text, useSearchParameters } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { HubSpotForm } from '../../marketing/components/HubSpotForm'
@@ -101,7 +102,7 @@ export function CodyOnboarding({
     authenticatedUser: AuthenticatedUser | null
 }): JSX.Element | null {
     const [showEditorStep, setShowEditorStep] = useState(false)
-    const [completed = true, setOnboardingCompleted] = useTemporarySetting('cody.onboarding.completed', false)
+    const [completed = false, setOnboardingCompleted] = useTemporarySetting('cody.onboarding.completed', false)
     // steps start from 0
     const [step = -1, setOnboardingStep] = useTemporarySetting('cody.onboarding.step', 0)
 
@@ -109,6 +110,13 @@ export function CodyOnboarding({
 
     const parameters = useSearchParameters()
     const enrollPro = parameters.get('pro') === 'true'
+    const returnToURL = parameters.get('returnTo')
+
+    const navigate = useNavigate()
+
+    if (completed && !showEditorStep && returnToURL) {
+        navigate(returnToURL)
+    }
 
     if (!showEditorStep && (completed || step === -1 || step > 1)) {
         return null
