@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -83,6 +85,18 @@ INSERT INTO product_subscriptions(id, user_id, account_number) VALUES($1, $2, $3
 	).Scan(&id); err != nil {
 		return "", errors.Wrap(err, "insert")
 	}
+	argsJSON, _ := json.Marshal(newUUID)
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameDotComSubscriptionCreated,
+		URL:       "",
+		UserID:    uint32(userID),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+
+	s.db.SecurityEventLogs().LogEvent(ctx, event)
+
 	return id, nil
 }
 
@@ -130,6 +144,16 @@ func (s dbSubscriptions) List(ctx context.Context, opt dbSubscriptionsListOption
 	if mocks.subscriptions.List != nil {
 		return mocks.subscriptions.List(ctx, opt)
 	}
+	argsJSON, _ := json.Marshal(opt)
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameDotComSubscriptionsListed,
+		URL:       "",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	s.db.SecurityEventLogs().LogEvent(ctx, event)
 
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
@@ -277,6 +301,17 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 	if nrows == 0 {
 		return errSubscriptionNotFound
 	}
+	argsJSON, _ := json.Marshal(update)
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameDotComSubscriptionUpdated,
+		URL:       "",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	s.db.SecurityEventLogs().LogEvent(ctx, event)
+
 	return nil
 }
 
@@ -299,6 +334,17 @@ func (s dbSubscriptions) Archive(ctx context.Context, id string) error {
 	if nrows == 0 {
 		return errSubscriptionNotFound
 	}
+	argsJSON, _ := json.Marshal(id)
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameDotComSubscriptionCreated,
+		URL:       "",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+
+	s.db.SecurityEventLogs().LogEvent(ctx, event)
 	return nil
 }
 

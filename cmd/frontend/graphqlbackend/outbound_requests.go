@@ -2,13 +2,18 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"math"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -59,6 +64,17 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 		after = ""
 	}
 
+	argsJSON, _ := json.Marshal(args)
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameOutboundReqViewed,
+		URL:       "",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	r.db.SecurityEventLogs().LogEvent(ctx, event)
+
 	return &outboundRequestConnectionResolver{
 		first: args.First,
 		after: after,
@@ -76,6 +92,16 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 	if err != nil {
 		return nil, err
 	}
+	argsJSON, _ := json.Marshal(graphql.ID(key))
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameOutboundReqViewed,
+		URL:       "",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	r.db.SecurityEventLogs().LogEvent(ctx, event)
 	item, _ := httpcli.GetOutboundRequestLogItem(key)
 	return &OutboundRequestResolver{req: item}, nil
 }

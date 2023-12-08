@@ -79,6 +79,17 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
+	argsJSON, _ := json.Marshal(args)
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameCodeHostConnectionAdded,
+		URL:       "",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	r.db.SecurityEventLogs().LogEvent(ctx, event)
+
 	// Now, schedule the external service for syncing immediately.
 	s := repos.NewStore(r.logger, r.db)
 	err = s.EnqueueSingleSyncJob(ctx, externalService.ID)
@@ -154,6 +165,17 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	if err = r.db.ExternalServices().Update(ctx, ps, id, update); err != nil {
 		return nil, err
 	}
+
+	argsJSON, _ := json.Marshal(args)
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameCodeHostConnectionUpdated,
+		URL:       "",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	r.db.SecurityEventLogs().LogEvent(ctx, event)
 
 	// Fetch from database again to get all fields with updated values.
 	es, err = r.db.ExternalServices().GetByID(ctx, id)
@@ -270,6 +292,17 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		}
 	}
 
+	argsJSON, _ := json.Marshal(args)
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameCodeHostConnectionDeleted,
+		URL:       "",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	r.db.SecurityEventLogs().LogEvent(ctx, event)
+
 	return &EmptyResponse{}, nil
 }
 
@@ -307,6 +340,17 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		}
 		opt.RepoID = repoID
 	}
+
+	argsJSON, _ := json.Marshal(args)
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameCodeHostConnectionsViewed,
+		URL:       "",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	r.db.SecurityEventLogs().LogEvent(ctx, event)
 	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
 }
 

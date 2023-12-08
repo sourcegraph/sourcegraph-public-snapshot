@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"net/url"
 	"time"
 
@@ -479,6 +480,18 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	if err := r.db.Users().Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
+	//logAccountModifiedEvent(ctx, r.db, userID, "USER_SETTINGS")
+
+	argsJSON, _ := json.Marshal(args)
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameAccountModified,
+		URL:       "",
+		UserID:    uint32(userID),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	r.db.SecurityEventLogs().LogEvent(ctx, event)
 	return UserByIDInt32(ctx, r.db, userID)
 }
 
@@ -870,6 +883,16 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 	if err := r.db.Users().SetChatCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
+	argsJSON, _ := json.Marshal(args)
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameUserCompletionQuotaUpdated,
+		URL:       "",
+		UserID:    uint32(id),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	r.db.SecurityEventLogs().LogEvent(ctx, event)
 
 	return UserByIDInt32(ctx, r.db, user.ID)
 }
@@ -908,6 +931,15 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 	if err := r.db.Users().SetCodeCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
-
+	argsJSON, _ := json.Marshal(args)
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameUserCodeCompletionQuotaUpdated,
+		URL:       "",
+		UserID:    uint32(id),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	r.db.SecurityEventLogs().LogEvent(ctx, event)
 	return UserByIDInt32(ctx, r.db, user.ID)
 }

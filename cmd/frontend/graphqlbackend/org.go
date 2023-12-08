@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -48,12 +50,30 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 		if err := hasAccess(); err != nil {
 			// site admin can access org ID
 			if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
+				event := &database.SecurityEvent{
+					Name:      database.SecurityEventNameDotComOrgViewed,
+					URL:       "",
+					UserID:    uint32(actor.FromContext(ctx).UID),
+					Argument:  nil,
+					Source:    "BACKEND",
+					Timestamp: time.Now(),
+				}
+				r.db.SecurityEventLogs().LogEvent(ctx, event)
 				onlyOrgID := &types.Org{ID: org.ID}
 				return &OrgResolver{db: r.db, org: onlyOrgID}, nil
 			}
 			return nil, err
 		}
 	}
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameOrgViewed,
+		URL:       "1",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  nil,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	r.db.SecurityEventLogs().LogEvent(ctx, event)
 	return &OrgResolver{db: r.db, org: org}, nil
 }
 

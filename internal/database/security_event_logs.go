@@ -41,13 +41,6 @@ const (
 
 	SecurityEventNameEmailVerified SecurityEventName = "EmailVerified"
 
-	SecurityEventNameSiteConfigUpdated        SecurityEventName = "SiteConfigUpdated"
-	SecurityEventNameSiteConfigRedactedViewed SecurityEventName = "SiteConfigRedactedViewed"
-	SecurityEventNameSiteConfigViewed         SecurityEventName = "SiteConfigViewed"
-
-	SecurityEventNameDotComLicenseCreated SecurityEventName = "LicenseCreated"
-	SecurityEventNameDotComLicenseViewed  SecurityEventName = "LicenseViewed"
-
 	SecurityEventNameRoleChangeDenied  SecurityEventName = "RoleChangeDenied"
 	SecurityEventNameRoleChangeGranted SecurityEventName = "RoleChangeGranted"
 
@@ -74,6 +67,31 @@ const (
 
 	SecurityEventOIDCLoginSucceeded SecurityEventName = "SecurityEventOIDCLoginSucceeded"
 	SecurityEventOIDCLoginFailed    SecurityEventName = "SecurityEventOIDCLoginFailed"
+
+	SecurityEventNameSiteConfigUpdated        SecurityEventName = "SiteConfigUpdated"
+	SecurityEventNameSiteConfigRedactedViewed SecurityEventName = "SiteConfigRedactedViewed"
+	SecurityEventNameSiteConfigViewed         SecurityEventName = "SiteConfigViewed"
+
+	SecurityEventNameDotComLicenseCreated      SecurityEventName = "DotComLicenseCreated"
+	SecurityEventNameDotComLicenseViewed       SecurityEventName = "DotComLicenseViewed"
+	SecurityEventNameDotComSubscriptionViewed  SecurityEventName = "DotComSubscriptionViewed"
+	SecurityEventNameDotComSubscriptionCreated SecurityEventName = "DotComSubscriptionCreated"
+	SecurityEventNameDotComSubscriptionsListed SecurityEventName = "DotComSubscriptionsListed"
+	SecurityEventNameDotComSubscriptionUpdated SecurityEventName = "DotComSubscriptionUpdated"
+
+	SecurityEventNameOrgViewed       SecurityEventName = "OrganizationViewed"
+	SecurityEventNameOrgCreated      SecurityEventName = "OrganizationCreated"
+	SecurityEventNameDotComOrgViewed SecurityEventName = "DotComOrganizationViewed"
+
+	SecurityEventNameOutboundReqViewed SecurityEventName = "OutboundRequestViewed"
+
+	SecurityEventNameUserCompletionQuotaUpdated     SecurityEventName = "UserCompletionQuotaUpdated"
+	SecurityEventNameUserCodeCompletionQuotaUpdated SecurityEventName = "UserCodeCompletionQuotaUpdated"
+
+	SecurityEventNameCodeHostConnectionsViewed SecurityEventName = "CodeHostConnectionsViewed"
+	SecurityEventNameCodeHostConnectionDeleted SecurityEventName = "CodeHostConnectionDeleted"
+	SecurityEventNameCodeHostConnectionAdded   SecurityEventName = "CodeHostConnectionAdded"
+	SecurityEventNameCodeHostConnectionUpdated SecurityEventName = "CodeHostConnectionUpdated"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.
