@@ -19,7 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var authProxyURL = os.Getenv("CODY_AZURE_AUTH_PROXY")
+// HTTP proxy value to be used for id token requests to Azure
+// This value will only used when using an access token is not provided
+// and it will only apply to requests made to the Azure authentication endpoint
+// not other requests such as to the OpenAI API
+var authProxyURL = os.Getenv("CODY_AZURE_OPENAI_IDENTITY_HTTP_PROXY")
 
 // We want to reuse the client because when using the DefaultAzureCredential
 // it will acquire a short lived token and reusing the client
