@@ -65,7 +65,7 @@ export type SymbolWithChildren = (SymbolNodeFields | SymbolPlaceholder) & { chil
 
 /** Organize symbols hierarchically and sort them by line number. */
 export const hierarchyOf = (symbols: SymbolNodeFields[]): SymbolWithChildren[] => {
-    // Group all symbols by their parent symbol. Symbols with no chilren will not be included here.
+    // Group all symbols by their parent symbol. Symbols with no children will not be included here.
     const containerGroups = groupBy(symbols, sym => sym.containerName)
 
     // Sort inner-most symbols first to fold this structure bottom-up.
