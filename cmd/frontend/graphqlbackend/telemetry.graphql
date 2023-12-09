@@ -119,8 +119,12 @@ input TelemetryEventMetadataInput {
     """
     Numeric value associated with the key. Enforcing numeric values eliminates
     risks of accidentally shipping sensitive or private data.
+
+    The value type in the schema is JSONValue for flexibility, but we ONLY
+    accept numeric values (integers and floats) - any other value will be
+    rejected.
     """
-    value: Int!
+    value: JSONValue!
 }
 
 """

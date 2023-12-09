@@ -8,7 +8,7 @@ Sourcegraph is a code intelligence platform that helps devs answer questions in 
 
 ## Who should use Sourcegraph?
 
-In addition to the [companies listed on about.sourcegraph.com](https://about.sourcegraph.com), companies with a few hundred developers all the way up to those with more than 40,000 use Sourcegraph daily.
+In addition to the [companies listed on sourcegraph.com](https://sourcegraph.com), companies with a few hundred developers all the way up to those with more than 40,000 use Sourcegraph daily.
 
 More specifically, Sourcegraph is great for all developers, except:
 

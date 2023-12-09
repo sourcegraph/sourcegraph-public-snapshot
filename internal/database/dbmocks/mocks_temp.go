@@ -1193,6 +1193,9 @@ type MockAccessTokenStore struct {
 	// GetByTokenFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByToken.
 	GetByTokenFunc *AccessTokenStoreGetByTokenFunc
+	// GetOrCreateInternalTokenFunc is an instance of a mock function object
+	// controlling the behavior of the method GetOrCreateInternalToken.
+	GetOrCreateInternalTokenFunc *AccessTokenStoreGetOrCreateInternalTokenFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *AccessTokenStoreHandleFunc
@@ -1250,6 +1253,11 @@ func NewMockAccessTokenStore() *MockAccessTokenStore {
 		},
 		GetByTokenFunc: &AccessTokenStoreGetByTokenFunc{
 			defaultHook: func(context.Context, string) (r0 *database.AccessToken, r1 error) {
+				return
+			},
+		},
+		GetOrCreateInternalTokenFunc: &AccessTokenStoreGetOrCreateInternalTokenFunc{
+			defaultHook: func(context.Context, int32, []string) (r0 []byte, r1 error) {
 				return
 			},
 		},
@@ -1325,6 +1333,11 @@ func NewStrictMockAccessTokenStore() *MockAccessTokenStore {
 				panic("unexpected invocation of MockAccessTokenStore.GetByToken")
 			},
 		},
+		GetOrCreateInternalTokenFunc: &AccessTokenStoreGetOrCreateInternalTokenFunc{
+			defaultHook: func(context.Context, int32, []string) ([]byte, error) {
+				panic("unexpected invocation of MockAccessTokenStore.GetOrCreateInternalToken")
+			},
+		},
 		HandleFunc: &AccessTokenStoreHandleFunc{
 			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockAccessTokenStore.Handle")
@@ -1383,6 +1396,9 @@ func NewMockAccessTokenStoreFrom(i database.AccessTokenStore) *MockAccessTokenSt
 		},
 		GetByTokenFunc: &AccessTokenStoreGetByTokenFunc{
 			defaultHook: i.GetByToken,
+		},
+		GetOrCreateInternalTokenFunc: &AccessTokenStoreGetOrCreateInternalTokenFunc{
+			defaultHook: i.GetOrCreateInternalToken,
 		},
 		HandleFunc: &AccessTokenStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -2180,6 +2196,121 @@ func (c AccessTokenStoreGetByTokenFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c AccessTokenStoreGetByTokenFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AccessTokenStoreGetOrCreateInternalTokenFunc describes the behavior when
+// the GetOrCreateInternalToken method of the parent MockAccessTokenStore
+// instance is invoked.
+type AccessTokenStoreGetOrCreateInternalTokenFunc struct {
+	defaultHook func(context.Context, int32, []string) ([]byte, error)
+	hooks       []func(context.Context, int32, []string) ([]byte, error)
+	history     []AccessTokenStoreGetOrCreateInternalTokenFuncCall
+	mutex       sync.Mutex
+}
+
+// GetOrCreateInternalToken delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockAccessTokenStore) GetOrCreateInternalToken(v0 context.Context, v1 int32, v2 []string) ([]byte, error) {
+	r0, r1 := m.GetOrCreateInternalTokenFunc.nextHook()(v0, v1, v2)
+	m.GetOrCreateInternalTokenFunc.appendCall(AccessTokenStoreGetOrCreateInternalTokenFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetOrCreateInternalToken method of the parent MockAccessTokenStore
+// instance is invoked and the hook queue is empty.
+func (f *AccessTokenStoreGetOrCreateInternalTokenFunc) SetDefaultHook(hook func(context.Context, int32, []string) ([]byte, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetOrCreateInternalToken method of the parent MockAccessTokenStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *AccessTokenStoreGetOrCreateInternalTokenFunc) PushHook(hook func(context.Context, int32, []string) ([]byte, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AccessTokenStoreGetOrCreateInternalTokenFunc) SetDefaultReturn(r0 []byte, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, []string) ([]byte, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AccessTokenStoreGetOrCreateInternalTokenFunc) PushReturn(r0 []byte, r1 error) {
+	f.PushHook(func(context.Context, int32, []string) ([]byte, error) {
+		return r0, r1
+	})
+}
+
+func (f *AccessTokenStoreGetOrCreateInternalTokenFunc) nextHook() func(context.Context, int32, []string) ([]byte, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AccessTokenStoreGetOrCreateInternalTokenFunc) appendCall(r0 AccessTokenStoreGetOrCreateInternalTokenFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AccessTokenStoreGetOrCreateInternalTokenFuncCall objects describing the
+// invocations of this function.
+func (f *AccessTokenStoreGetOrCreateInternalTokenFunc) History() []AccessTokenStoreGetOrCreateInternalTokenFuncCall {
+	f.mutex.Lock()
+	history := make([]AccessTokenStoreGetOrCreateInternalTokenFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AccessTokenStoreGetOrCreateInternalTokenFuncCall is an object that
+// describes an invocation of method GetOrCreateInternalToken on an instance
+// of MockAccessTokenStore.
+type AccessTokenStoreGetOrCreateInternalTokenFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []byte
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AccessTokenStoreGetOrCreateInternalTokenFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AccessTokenStoreGetOrCreateInternalTokenFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -59657,6 +59788,10 @@ type MockRepoStatisticsStore struct {
 	// CompactRepoStatisticsFunc is an instance of a mock function object
 	// controlling the behavior of the method CompactRepoStatistics.
 	CompactRepoStatisticsFunc *RepoStatisticsStoreCompactRepoStatisticsFunc
+	// DeleteAndRecreateStatisticsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteAndRecreateStatistics.
+	DeleteAndRecreateStatisticsFunc *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc
 	// GetGitserverReposStatisticsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetGitserverReposStatistics.
@@ -59686,6 +59821,11 @@ func NewMockRepoStatisticsStore() *MockRepoStatisticsStore {
 			},
 		},
 		CompactRepoStatisticsFunc: &RepoStatisticsStoreCompactRepoStatisticsFunc{
+			defaultHook: func(context.Context) (r0 error) {
+				return
+			},
+		},
+		DeleteAndRecreateStatisticsFunc: &RepoStatisticsStoreDeleteAndRecreateStatisticsFunc{
 			defaultHook: func(context.Context) (r0 error) {
 				return
 			},
@@ -59733,6 +59873,11 @@ func NewStrictMockRepoStatisticsStore() *MockRepoStatisticsStore {
 				panic("unexpected invocation of MockRepoStatisticsStore.CompactRepoStatistics")
 			},
 		},
+		DeleteAndRecreateStatisticsFunc: &RepoStatisticsStoreDeleteAndRecreateStatisticsFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockRepoStatisticsStore.DeleteAndRecreateStatistics")
+			},
+		},
 		GetGitserverReposStatisticsFunc: &RepoStatisticsStoreGetGitserverReposStatisticsFunc{
 			defaultHook: func(context.Context) ([]database.GitserverReposStatistic, error) {
 				panic("unexpected invocation of MockRepoStatisticsStore.GetGitserverReposStatistics")
@@ -59771,6 +59916,9 @@ func NewMockRepoStatisticsStoreFrom(i database.RepoStatisticsStore) *MockRepoSta
 		},
 		CompactRepoStatisticsFunc: &RepoStatisticsStoreCompactRepoStatisticsFunc{
 			defaultHook: i.CompactRepoStatistics,
+		},
+		DeleteAndRecreateStatisticsFunc: &RepoStatisticsStoreDeleteAndRecreateStatisticsFunc{
+			defaultHook: i.DeleteAndRecreateStatistics,
 		},
 		GetGitserverReposStatisticsFunc: &RepoStatisticsStoreGetGitserverReposStatisticsFunc{
 			defaultHook: i.GetGitserverReposStatistics,
@@ -59999,6 +60147,112 @@ func (c RepoStatisticsStoreCompactRepoStatisticsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoStatisticsStoreCompactRepoStatisticsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RepoStatisticsStoreDeleteAndRecreateStatisticsFunc describes the behavior
+// when the DeleteAndRecreateStatistics method of the parent
+// MockRepoStatisticsStore instance is invoked.
+type RepoStatisticsStoreDeleteAndRecreateStatisticsFunc struct {
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
+	history     []RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteAndRecreateStatistics delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockRepoStatisticsStore) DeleteAndRecreateStatistics(v0 context.Context) error {
+	r0 := m.DeleteAndRecreateStatisticsFunc.nextHook()(v0)
+	m.DeleteAndRecreateStatisticsFunc.appendCall(RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteAndRecreateStatistics method of the parent MockRepoStatisticsStore
+// instance is invoked and the hook queue is empty.
+func (f *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc) SetDefaultHook(hook func(context.Context) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteAndRecreateStatistics method of the parent MockRepoStatisticsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc) PushHook(hook func(context.Context) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context) error {
+		return r0
+	})
+}
+
+func (f *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc) nextHook() func(context.Context) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc) appendCall(r0 RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall objects describing
+// the invocations of this function.
+func (f *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc) History() []RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall is an object that
+// describes an invocation of method DeleteAndRecreateStatistics on an
+// instance of MockRepoStatisticsStore.
+type RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

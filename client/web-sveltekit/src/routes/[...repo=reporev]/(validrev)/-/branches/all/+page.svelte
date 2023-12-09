@@ -13,6 +13,10 @@
     $: total = $branches?.totalCount
 </script>
 
+<svelte:head>
+    <title>All branches - {data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
+
 {#if $pending}
     <LoadingSpinner />
 {:else if nodes}

@@ -51,7 +51,14 @@ export interface FileInfo {
     isTest: boolean
 }
 
-export const getFileInfo = (file: string): FileInfo => {
+export const getFileInfo = (file: string, isDirectory: boolean): FileInfo => {
+    if (isDirectory) {
+        return {
+            extension: 'default' as FileExtension,
+            isTest: false,
+        }
+    }
+
     const extension = file.split('.').at(-1)
     const isValidExtension = Object.values(FileExtension).includes(extension as FileExtension)
 

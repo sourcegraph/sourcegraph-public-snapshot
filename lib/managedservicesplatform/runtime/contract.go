@@ -1,16 +1,12 @@
 package runtime
 
 import (
-	"bytes"
 	"context"
-	"database/sql"
-	"fmt"
-	"net"
-	"text/template"
+	"net/http"
+	"strings"
 
-	"cloud.google.com/go/cloudsqlconn"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/internal/opentelemetry"
@@ -20,31 +16,41 @@ import (
 // Contract loads standardized MSP-provisioned (Managed Services Platform)
 // configuration.
 type Contract struct {
-	// Indicate if we are running in a MSP environment.
+	// MSP indicates if we are running in a live Managed Services Platform
+	// environment. In local development, this should generally be false.
 	MSP bool
 	// Port is the port the service must listen on.
 	Port int
 	// ExternalDNSName is the DNS name the service uses, if one is configured.
 	ExternalDNSName *string
-	// RedisEndpoint is the full Redis address, including any prerequisite
-	// authentication.
+
+	// RedisEndpoint is the full connection string of a MSP Redis instance if
+	// provisioned, including any prerequisite authentication.
 	RedisEndpoint *string
 
-	postgreSQLContract
+	// PostgreSQL has helpers and configuration for MSP PostgreSQL instances.
+	PostgreSQL postgreSQLContract
 
-	opentelemetryContract opentelemetry.Config
+	// BigQuery has embedded helpers and configuration for MSP-provisioned
+	// BigQuery datasets and tables.
+	BigQuery bigQueryContract
 
-	sentryDSN *string
+	// internal configuration for MSP internals that are not exposed to service
+	// developers.
+	internal internalContract
 }
 
-type postgreSQLContract struct {
-	customDSNTemplate *string
+type internalContract struct {
+	logger log.Logger
+	// service is a reference to the service that is being configured.
+	service ServiceMetadata
 
-	instanceConnectionName *string
-	user                   *string
+	diagnosticsSecret *string
+	opentelemetry     opentelemetry.Config
+	sentryDSN         *string
 }
 
-func newContract(env *Env) Contract {
+func newContract(logger log.Logger, env *Env, service ServiceMetadata) Contract {
 	defaultGCPProjectID := pointers.Deref(env.GetOptional("GOOGLE_CLOUD_PROJECT", "GCP project ID"), "")
 
 	return Contract{
@@ -52,71 +58,122 @@ func newContract(env *Env) Contract {
 		Port:            env.GetInt("PORT", "", "service port"),
 		ExternalDNSName: env.GetOptional("EXTERNAL_DNS_NAME", "external DNS name provisioned for the service"),
 		RedisEndpoint:   env.GetOptional("REDIS_ENDPOINT", "full Redis address, including any prerequisite authentication"),
-		postgreSQLContract: postgreSQLContract{
-			customDSNTemplate: env.GetOptional("PGDSN",
-				"custom PostgreSQL DSN with templatized database, e.g. 'user=foo database={{ .Database }}'"),
 
-			instanceConnectionName: env.GetOptional("PGINSTANCE", "Cloud SQL instance connection name"),
-			user:                   env.GetOptional("PGUSER", "Cloud SQL user"),
+		PostgreSQL: loadPostgreSQLContract(env),
+		BigQuery:   loadBigQueryContract(env),
+
+		internal: internalContract{
+			logger:            logger,
+			service:           service,
+			diagnosticsSecret: env.GetOptional("DIAGNOSTICS_SECRET", "secret used to authenticate diagnostics requests"),
+			opentelemetry: opentelemetry.Config{
+				GCPProjectID: pointers.Deref(
+					env.GetOptional("OTEL_GCP_PROJECT_ID", "GCP project ID for OpenTelemetry export"),
+					defaultGCPProjectID),
+			},
+			sentryDSN: env.GetOptional("SENTRY_DSN", "Sentry error reporting DSN"),
 		},
-		opentelemetryContract: opentelemetry.Config{
-			GCPProjectID: pointers.Deref(
-				env.GetOptional("OTEL_GCP_PROJECT_ID", "GCP project ID for OpenTelemetry export"),
-				defaultGCPProjectID),
-		},
-		sentryDSN: env.GetOptional("SENTRY_DSN", "Sentry error reporting DSN"),
 	}
 }
 
-// GetPostgreSQLDB returns a standard library DB pointing to the configured
-// PostgreSQL database. In MSP, we connect to a Cloud SQL instance over IAM auth.
+type HandlerRegisterer interface {
+	Handle(pattern string, handler http.Handler)
+}
+
+type ServiceState interface {
+	// Healthy should return nil if the service is healthy, or an error with
+	// detailed diagnostics if the service is not healthy.
+	//
+	// Healthy is only called if the correct service secret is provided.
+	Healthy(context.Context) error
+}
+
+// RegisterDiagnosticsHandlers registers MSP-standard debug handlers on '/-/...',
+// and should be called during service initialization with the service's primary
+// endpoint.
 //
-// In development, the connection can be overridden with the PGDSN environment
-// variable.
-func (c postgreSQLContract) GetPostgreSQLDB(ctx context.Context, database string) (*sql.DB, error) {
-	if c.customDSNTemplate != nil {
-		tmpl, err := template.New("PGDSN").Parse(*c.customDSNTemplate)
-		if err != nil {
-			return nil, errors.Wrap(err, "PGDSN is not a valid template")
-		}
-		var dsn bytes.Buffer
-		if err := tmpl.Execute(&dsn, struct{ Database string }{Database: database}); err != nil {
-			return nil, errors.Wrap(err, "PGDSN template is invalid")
-		}
-		return sql.Open("pgx", dsn.String())
+// ServiceState is a standardized reporter for the state of the service.
+func (c Contract) RegisterDiagnosticsHandlers(r HandlerRegisterer, state ServiceState) {
+	// Only enable Prometheus metrics endpoint if we are not in a MSP environment,
+	// i.e. in local dev.
+	if !c.MSP {
+		// Prometheus standard endpoint is '/metrics', we use the same for
+		// convenience.
+		r.Handle("/metrics", promhttp.Handler())
+		// Warn because this should only be enabled in dev
+		c.internal.logger.Warn("enabled Prometheus metrics endpoint at '/metrics'")
 	}
 
-	config, err := c.getCloudSQLConnConfig(ctx, database)
-	if err != nil {
-		return nil, errors.Wrap(err, "get CloudSQL connection config")
-	}
-	return sql.Open("pgx", stdlib.RegisterConnConfig(config))
+	// Simple auth-less version reporter
+	r.Handle("/-/version", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(c.internal.service.Version()))
+	}))
+
+	// Authenticated healthcheck
+	r.Handle("/-/healthz", c.DiagnosticsAuthMiddleware(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			logger := opentelemetry.TracedLogger(r.Context(), c.internal.logger)
+
+			if err := state.Healthy(r.Context()); err != nil {
+				logger.Error("service not healthy", log.Error(err))
+
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte("healthz: " + err.Error()))
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("healthz: ok"))
+		})))
 }
 
-// getCloudSQLConnConfig generates a pgx connection configuration for using
-// a Cloud SQL instance using IAM auth.
-func (c postgreSQLContract) getCloudSQLConnConfig(ctx context.Context, database string) (*pgx.ConnConfig, error) {
-	if c.instanceConnectionName == nil || c.user == nil {
-		return nil, errors.New("missing required PostgreSQL configuration")
+// DiagnosticsAuthMiddleware uses DIAGNOSTICS_SECRET to authenticate requests to
+// next. It is used for debug endpoints that require some degree of simple
+// authentication as a safeguard.
+func (c Contract) DiagnosticsAuthMiddleware(next http.Handler) http.Handler {
+	hasDiagnosticsSecret := func(w http.ResponseWriter, r *http.Request) (yes bool) {
+		if c.internal.diagnosticsSecret == nil {
+			return true
+		}
+
+		token, err := extractBearer(r.Header)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(err.Error()))
+			return false
+		}
+
+		if token != *c.internal.diagnosticsSecret {
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte("unauthorized"))
+			return false
+		}
+		return true
 	}
 
-	// https://github.com/GoogleCloudPlatform/cloud-sql-go-connector?tab=readme-ov-file#automatic-iam-database-authentication
-	dsn := fmt.Sprintf("user=%s dbname=%s", *c.user, database)
-	config, err := pgx.ParseConfig(dsn)
-	if err != nil {
-		return nil, errors.Wrap(err, "pgx.ParseConfig")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !hasDiagnosticsSecret(w, r) {
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func extractBearer(h http.Header) (string, error) {
+	var token string
+
+	if authHeader := h.Get("Authorization"); authHeader != "" {
+		typ := strings.SplitN(authHeader, " ", 2)
+		if len(typ) != 2 {
+			return "", errors.New("token type missing in Authorization header")
+		}
+		if strings.ToLower(typ[0]) != "bearer" {
+			return "", errors.Newf("invalid token type %s", typ[0])
+		}
+
+		token = typ[1]
 	}
-	d, err := cloudsqlconn.NewDialer(ctx,
-		cloudsqlconn.WithIAMAuthN(),
-		// MSP uses private IP
-		cloudsqlconn.WithDefaultDialOptions(cloudsqlconn.WithPrivateIP()))
-	if err != nil {
-		return nil, errors.Wrap(err, "cloudsqlconn.NewDialer")
-	}
-	// Use the Cloud SQL connector to handle connecting to the instance.
-	// This approach does *NOT* require the Cloud SQL proxy.
-	config.DialFunc = func(ctx context.Context, _, _ string) (net.Conn, error) {
-		return d.Dial(ctx, *c.instanceConnectionName)
-	}
-	return config, nil
+
+	return token, nil
 }

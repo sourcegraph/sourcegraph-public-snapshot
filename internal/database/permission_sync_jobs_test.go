@@ -754,12 +754,12 @@ func TestPermissionSyncJobs_Pagination(t *testing.T) {
 	}{
 		{
 			name:           "After",
-			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, After: pointers.Ptr("1")},
+			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, After: []any{int32(1)}},
 			wantJobs:       []*PermissionSyncJob{},
 		},
 		{
 			name:           "Before",
-			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, Before: pointers.Ptr("2")},
+			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, Before: []any{int32(2)}},
 			wantJobs:       jobs,
 		},
 		{

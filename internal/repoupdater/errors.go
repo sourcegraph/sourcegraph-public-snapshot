@@ -2,6 +2,7 @@ package repoupdater
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
@@ -52,3 +53,13 @@ func (e *ErrTemporary) Temporary() bool {
 func (e *ErrTemporary) Error() string {
 	return fmt.Sprintf("repository temporarily unavailable (name=%s istemporary=%v)", e.Repo, e.IsTemporary)
 }
+
+// ErrRepoDenied happens when the repository cannot be added on-demand
+type ErrRepoDenied struct {
+	Repo   api.RepoName
+	Reason string
+}
+
+func (e *ErrRepoDenied) IsRepoDenied() bool  { return true }
+func (e *ErrRepoDenied) HTTPStatusCode() int { return http.StatusNotFound }
+func (e *ErrRepoDenied) Error() string       { return e.Reason }

@@ -18,7 +18,7 @@ func Middleware(logger log.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		response := response.NewStatusHeaderRecorder(w)
+		response := response.NewStatusHeaderRecorder(w, logger)
 		next.ServeHTTP(response, r)
 
 		ctx := r.Context()

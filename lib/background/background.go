@@ -104,12 +104,25 @@ func (r CombinedRoutine) Stop() {
 	wg.Wait()
 }
 
-type noopRoutine struct{}
-
-func (r noopRoutine) Start() {}
-func (r noopRoutine) Stop()  {}
-
 // NoopRoutine does nothing for start or stop.
 func NoopRoutine() Routine {
-	return noopRoutine{}
+	return CallbackRoutine{}
+}
+
+// CallbackRoutine calls the StartFunc and StopFunc callbacks to implement a
+// Routine. Each callback may be nil.
+type CallbackRoutine struct {
+	StartFunc func()
+	StopFunc  func()
+}
+
+func (r CallbackRoutine) Start() {
+	if r.StartFunc != nil {
+		r.StartFunc()
+	}
+}
+func (r CallbackRoutine) Stop() {
+	if r.StopFunc != nil {
+		r.StopFunc()
+	}
 }

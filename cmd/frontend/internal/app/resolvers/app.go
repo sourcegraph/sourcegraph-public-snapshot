@@ -110,7 +110,7 @@ func (r *appResolver) SetupNewAppRepositoriesForEmbedding(ctx context.Context, a
 					r.logger.Debug("Checking repo")
 					branch, _, err := r.gitClient.GetDefaultBranch(ctx, repoName, true)
 					if err == nil && branch != "" {
-						if err := embeddings.ScheduleRepositoriesForEmbedding(
+						if err := embeddings.ScheduleRepositories(
 							ctx,
 							[]api.RepoName{repoName},
 							false,

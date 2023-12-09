@@ -90,7 +90,7 @@ type Mutation {
     """
     updateUser(user: ID!, username: String, displayName: String, avatarURL: String): User!
     """
-    Updates the user's Cody plan to Pro or Community.
+    Updates the user's Self-serve Cody plan to Free or Pro.
 
     Only the user may perform this mutation.
     """
@@ -430,7 +430,8 @@ type Mutation {
     """
     Logs a user event. No longer used, only here for backwards compatibility with IDE and browser extensions.
     """
-    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse @deprecated(reason: "use logEvent instead")
+    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse
+        @deprecated(reason: "use telemetry { recordEvent } instead")
     """
     Logs an event.
     """
@@ -530,11 +531,11 @@ type Mutation {
         The connected site's license key, hashed using sha256. Used for uniquely identifying the site.
         """
         hashedLicenseKey: String
-    ): EmptyResponse
+    ): EmptyResponse @deprecated(reason: "use telemetry { recordEvent } instead")
     """
     Logs a batch of events.
     """
-    logEvents(events: [Event!]): EmptyResponse
+    logEvents(events: [Event!]): EmptyResponse @deprecated(reason: "use telemetry { recordEvent } instead")
     """
     All mutations that update settings (global, organization, and user settings) are under this field.
 

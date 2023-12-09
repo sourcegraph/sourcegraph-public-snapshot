@@ -9,4 +9,6 @@ if [[ $status -ne 0 && "$response" == *"No artifacts found for downloading"* ]];
   exit 0
 fi
 
-git apply bazel-configure.diff
+if [ -f bazel-configure.diff ]; then
+  git apply bazel-configure.diff
+fi

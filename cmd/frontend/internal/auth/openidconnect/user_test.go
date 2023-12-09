@@ -7,6 +7,7 @@ import (
 
 	"github.com/coreos/go-oidc"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -67,6 +68,7 @@ func TestAllowSignup(t *testing.T) {
 				context.Background(),
 				dbmocks.NewStrictMockDB(),
 				p,
+				&oauth2.Token{},
 				&oidc.IDToken{},
 				&oidc.UserInfo{
 					Email:         "foo@bar.com",

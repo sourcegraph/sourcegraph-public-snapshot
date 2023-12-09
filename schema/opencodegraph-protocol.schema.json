@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "opencodegraph-protocol.schema.json#",
+  "title": "OpenCodeGraphProtocol",
+  "description": "OpenCodeGraph client/provider protocol",
+  "allowComments": true,
+  "oneOf": [
+    { "$ref": "#/definitions/RequestMessage" },
+    { "$ref": "#/definitions/ResponseMessage" },
+    { "$ref": "#/definitions/ResponseError" },
+    { "$ref": "#/definitions/ProviderSettings" },
+    { "$ref": "#/definitions/CapabilitiesParams" },
+    { "$ref": "#/definitions/CapabilitiesResult" },
+    { "$ref": "#/definitions/AnnotationsParams" },
+    { "$ref": "#/definitions/AnnotationsResult" }
+  ],
+  "definitions": {
+    "RequestMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method"],
+      "properties": {
+        "method": { "type": "string" },
+        "params": { "type": ["object", "array"], "tsType": "unknown" },
+        "settings": { "$ref": "#/definitions/ProviderSettings" }
+      }
+    },
+    "ProviderSettings": {
+      "description": "User settings sent by the client to the provider.",
+      "type": "object",
+      "additionalProperties": true
+    },
+    "ResponseMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "result": { "type": ["object", "array"], "tsType": "unknown" },
+        "error": { "$ref": "#/definitions/ResponseError" }
+      }
+    },
+    "ResponseError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "integer" },
+        "message": { "type": "string" },
+        "data": { "type": ["object", "array"], "tsType": "unknown" }
+      }
+    },
+    "CapabilitiesParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "$comment": "(empty for now)",
+      "properties": {}
+    },
+    "CapabilitiesResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "selector": {
+          "description": "Selects the scope (repositories, files, and languages) in which this provider should be called.\n\nAt least 1 must be satisfied for the provider to be called. If empty, the provider is never called. If undefined, the provider is called on all files.",
+          "type": "array",
+          "items": {
+            "title": "Selector",
+            "description": "Defines a scope in which a provider is called, as a subset of languages, repositories, and/or files.\n\nTo satisfy a selector, all of the selector's conditions must be met. For example, if both `path` and `content` are specified, the file must satisfy both conditions.",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "description": "A glob that must match the file path. If the file's location is represented as a URI, the URI's scheme is stripped before being matched against this glob.\n\nUse `**/` before the glob to match in any parent directory. Use `/**` after the glob to match any files under a directory. Leading slashes are stripped from the path before being matched against the glob.",
+                "type": "string"
+              },
+              "contentContains": {
+                "description": "A literal string that must be present in the file's content.",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "AnnotationsParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "content"],
+      "properties": {
+        "file": {
+          "description": "The file's URI.",
+          "type": "string"
+        },
+        "content": {
+          "description": "The file's content.",
+          "type": "string"
+        }
+      }
+    },
+    "AnnotationsResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items", "annotations"],
+      "properties": {
+        "items": {
+          "description": "Items that contain information relevant to the file.",
+          "type": "array",
+          "items": {
+            "$ref": "opencodegraph.schema.json#/definitions/OpenCodeGraphItem"
+          },
+          "tsType": "OpenCodeGraphItem[]"
+        },
+        "annotations": {
+          "description": "Annotations that attach items to specific ranges in the file.",
+          "type": "array",
+          "items": {
+            "$ref": "opencodegraph.schema.json#/definitions/OpenCodeGraphAnnotation"
+          },
+          "tsType": "OpenCodeGraphAnnotation[]"
+        }
+      }
+    }
+  }
+}

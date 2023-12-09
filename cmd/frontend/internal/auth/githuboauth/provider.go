@@ -9,8 +9,9 @@ import (
 	"github.com/dghubble/gologin/v2/github"
 	goauth2 "github.com/dghubble/gologin/v2/oauth2"
 	"github.com/inconshreveable/log15"
-	gh "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"golang.org/x/oauth2"
+
+	gh "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 
 	"github.com/sourcegraph/log"
 
@@ -59,7 +60,6 @@ func parseProvider(logger log.Logger, p *schema.GitHubAuthProvider, db database.
 			}
 		},
 		SourceConfig: sourceCfg,
-		StateConfig:  getStateConfig(),
 		ServiceID:    codeHost.ServiceID,
 		ServiceType:  codeHost.ServiceType,
 		Login: func(oauth2Cfg oauth2.Config) http.Handler {

@@ -1,8 +1,9 @@
 import { ComponentType } from 'react'
 
 import { CiSettings, CiTextAlignLeft, CiWarning } from 'react-icons/ci'
-import { FaCss3Alt, FaJava, FaSass } from 'react-icons/fa'
+import { FaCss3Alt, FaRust, FaSass, FaVuejs } from 'react-icons/fa'
 import { GoDatabase, GoTerminal } from 'react-icons/go'
+import { GrJava } from 'react-icons/gr'
 import { PiFilePngLight } from 'react-icons/pi'
 import {
     SiApachegroovy,
@@ -134,6 +135,8 @@ export enum FileExtension {
     TYPESCRIPT = 'ts',
     TSX = 'tsx',
     TEXT = 'txt',
+    TOML = 'toml',
+    VUE = 'vue',
     YAML = 'yaml',
     YML = 'yml',
     ZIG = 'zig',
@@ -182,7 +185,7 @@ export const FILE_ICONS: Map<FileExtension, IconInfo> = new Map([
     [FileExtension.GRAPHQL, { icon: SiGraphql, iconClass: styles.pink }],
     [FileExtension.HASKELL, { icon: SiHaskell, iconClass: styles.blue }],
     [FileExtension.HTML, { icon: SiHtml5, iconClass: styles.blue }],
-    [FileExtension.JAVA, { icon: FaJava, iconClass: styles.defaultIcon }],
+    [FileExtension.JAVA, { icon: GrJava, iconClass: styles.defaultIcon }],
     [FileExtension.JAVASCRIPT, { icon: SiJavascript, iconClass: styles.yellow }],
     [FileExtension.JPG, { icon: SiJpeg, iconClass: styles.yellow }],
     [FileExtension.JPEG, { icon: SiJpeg, iconClass: styles.yellow }],
@@ -217,6 +220,8 @@ export const FILE_ICONS: Map<FileExtension, IconInfo> = new Map([
     [FileExtension.TYPESCRIPT, { icon: SiTypescript, iconClass: styles.blue }],
     [FileExtension.TSX, { icon: SiReact, iconClass: styles.blue }],
     [FileExtension.TEXT, { icon: CiTextAlignLeft, iconClass: styles.defaultIcon }],
+    [FileExtension.TOML, { icon: FaRust, iconClass: styles.defaultIcon }],
+    [FileExtension.VUE, { icon: FaVuejs, iconClass: styles.green }],
     [FileExtension.YAML, { icon: CiSettings, iconClass: styles.defaultIcon }],
     [FileExtension.YML, { icon: CiSettings, iconClass: styles.defaultIcon }],
     [FileExtension.ZIG, { icon: SiZig, iconClass: styles.yellow }],

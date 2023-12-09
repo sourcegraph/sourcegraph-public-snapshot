@@ -10,6 +10,10 @@
     $: set(data.deferred.commits)
 </script>
 
+<svelte:head>
+    <title>Commits - {data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
+
 <section>
     <div>
         <h2>View commits from this repsitory</h2>
