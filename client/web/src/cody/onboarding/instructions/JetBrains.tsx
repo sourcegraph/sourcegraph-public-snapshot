@@ -50,7 +50,7 @@ export function JetBrainsInstructions({
                                 </div>
                             </div>
                             <img
-                                alt="jetBrains Menu"
+                                alt="JetBrains Menu"
                                 className="mt-2 m-auto"
                                 width="70%"
                                 src="https://storage.googleapis.com/sourcegraph-assets/jetBrainsInstructions/jetBrainsMenu.png"
