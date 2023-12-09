@@ -36,6 +36,7 @@ func TestAccessTokens(t *testing.T) {
 		t.Run("testAccessTokens_Lookup", testAccessTokens_Lookup)
 		t.Run("testAccessToken_Lookup_deletedUser", testAccessTokens_Lookup_deletedUser)
 		t.Run("testAccessTokens_tokenSHA256Hash", testAccessTokens_tokenSHA256Hash)
+		t.Run("testAccessTokens_GetOrCreateInternalToken", testAccessTokens_GetOrCreateInternalToken)
 	})
 
 	// Don't run parallel as it's mocking an expired license
@@ -551,4 +552,40 @@ func testAccessTokens_tokenSHA256Hash(t *testing.T) {
 			}
 		})
 	}
+}
+
+func testAccessTokens_GetOrCreateInternalToken(t *testing.T) {
+	db := NewDB(logtest.Scoped(t), dbtest.NewDB(t))
+	ctx := context.Background()
+
+	t.Run("can create and retrieve tokens", func(t *testing.T) {
+		u, err := db.Users().Create(ctx, NewUser{Email: "a@test.com", Username: "a", EmailIsVerified: true})
+		assert.NoError(t, err)
+
+		// Create token automatically
+		sha256, err := db.AccessTokens().GetOrCreateInternalToken(ctx, u.ID, []string{"a"})
+		assert.NoError(t, err)
+		assert.NotEmpty(t, sha256)
+
+		// Retrieve same token again
+		sha256Again, err := db.AccessTokens().GetOrCreateInternalToken(ctx, u.ID, []string{"a"})
+		assert.NoError(t, err)
+		assert.Equal(t, sha256, sha256Again)
+	})
+
+	t.Run("can create and retrieve tokens", func(t *testing.T) {
+		u, err := db.Users().Create(ctx, NewUser{Email: "b@test.com", Username: "b", EmailIsVerified: true})
+		assert.NoError(t, err)
+
+		// Create token manually
+		_, token, err := db.AccessTokens().CreateInternal(ctx, u.ID, []string{"a"}, "n0", u.ID)
+		assert.NoError(t, err)
+		hashedToken, err := tokenSHA256Hash(token)
+		assert.NoError(t, err)
+
+		// Get token and compare it
+		sha256, err := db.AccessTokens().GetOrCreateInternalToken(ctx, u.ID, []string{"a"})
+		assert.NoError(t, err)
+		assert.Equal(t, hashedToken, sha256)
+	})
 }

@@ -32,8 +32,11 @@ const referencesQuery = gql`
         $after: String
     ) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
+                id
                 blob(path: $path) {
+                    canonicalURL
                     lsif {
                         references(line: $line, character: $character, after: $after) {
                             nodes {

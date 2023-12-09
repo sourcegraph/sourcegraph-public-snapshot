@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -40,20 +38,38 @@ func (s Service) Initialize(
 	logger.Info("starting service")
 
 	if !config.StatelessMode {
-		if err := initDB(ctx, contract); err != nil {
-			return nil, errors.Wrap(err, "initDB")
+		if err := initPostgreSQL(ctx, contract); err != nil {
+			return nil, errors.Wrap(err, "initPostgreSQL")
 		}
-		logger.Info("database configured")
+		logger.Info("postgresql database configured")
+
+		if err := writeBigQueryEvent(ctx, contract, "service.initialized"); err != nil {
+			return nil, errors.Wrap(err, "writeBigQueryEvent")
+		}
+		logger.Info("bigquery connection checked")
 	}
+
+	requestCounter, err := getRequestCounter()
+	if err != nil {
+		return nil, err
+	}
+
+	h := http.NewServeMux()
+	h.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestCounter.Add(r.Context(), 1)
+		_, _ = w.Write([]byte(fmt.Sprintf("Variable: %s", config.Variable)))
+	}))
+	contract.RegisterDiagnosticsHandlers(h, serviceState{
+		statelessMode: config.StatelessMode,
+		contract:      contract,
+	})
 
 	return background.CombinedRoutine{
 		&httpRoutine{
 			log: logger,
 			Server: &http.Server{
-				Addr: fmt.Sprintf(":%d", contract.Port),
-				Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.Write([]byte(fmt.Sprintf("Variable: %s", config.Variable)))
-				}),
+				Addr:    fmt.Sprintf(":%d", contract.Port),
+				Handler: h,
 			},
 		},
 	}, nil
@@ -78,61 +94,4 @@ func (s *httpRoutine) Stop() {
 	} else {
 		s.log.Info("server stopped")
 	}
-}
-
-// initDB connects to a database 'primary' based on a DSN provided by contract.
-// It then sets up a few example databases using Gorm, in a manner similar to
-// https://github.com/sourcegraph/accounts.sourcegraph.com
-func initDB(ctx context.Context, contract runtime.Contract) error {
-	sqlDB, err := contract.GetPostgreSQLDB(ctx, "primary")
-	if err != nil {
-		return errors.Wrap(err, "GetPostgreSQLDB")
-	}
-	db, err := gorm.Open(
-		postgres.New(postgres.Config{Conn: sqlDB}),
-		&gorm.Config{
-			SkipDefaultTransaction: true,
-			NowFunc: func() time.Time {
-				return time.Now().UTC().Truncate(time.Microsecond)
-			},
-		},
-	)
-	if err != nil {
-		return errors.Wrap(err, "gorm.Open")
-	}
-
-	for _, table := range []any{
-		&User{},
-		&Email{},
-	} {
-		if err = db.AutoMigrate(table); err != nil {
-			return errors.Wrapf(err, "auto migrating table for %T", table)
-		}
-	}
-
-	return nil
-}
-
-type User struct {
-	ID        int64          `gorm:"primaryKey"`
-	CreatedAt time.Time      `gorm:"not null"`
-	UpdatedAt time.Time      `gorm:"not null"`
-	DeletedAt gorm.DeletedAt `gorm:"index"`
-
-	ExternalID string `gorm:"size:36;not null;uniqueIndex,where:deleted_at IS NULL"`
-	Name       string `gorm:"size:256;not null"`
-	AvatarURL  string `gorm:"size:256;not null"`
-}
-
-type Email struct {
-	CreatedAt time.Time      `gorm:"not null"`
-	UpdatedAt time.Time      `gorm:"not null"`
-	DeletedAt gorm.DeletedAt `gorm:"index"`
-
-	UserID     int64  `gorm:"not null;uniqueIndex:,where:deleted_at IS NULL AND verified_at IS NOT NULL"`
-	Email      string `gorm:"size:256;not null;uniqueIndex:,where:deleted_at IS NULL AND verified_at IS NOT NULL"`
-	VerifiedAt *time.Time
-
-	// ⚠️ DO NOT USE: This field is only used for creating foreign key constraint.
-	User *User `gorm:"foreignKey:UserID"`
 }

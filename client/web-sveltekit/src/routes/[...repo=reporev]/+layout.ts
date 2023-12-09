@@ -1,8 +1,8 @@
 import { redirect, error, type Redirect } from '@sveltejs/kit'
 
-import { asError, type ErrorLike } from '$lib/common'
+import { asError, loadMarkdownSyntaxHighlighting, type ErrorLike } from '$lib/common'
 import { resolveRepoRevision, type ResolvedRevision } from '$lib/repo/api/repo'
-import { isRepoSeeOtherErrorLike, isRevisionNotFoundErrorLike, parseRepoRevision } from '$lib/shared'
+import { displayRepoName, isRepoSeeOtherErrorLike, isRevisionNotFoundErrorLike, parseRepoRevision } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
 
@@ -10,6 +10,10 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
     // This allows other places to reload all repo related data by calling
     // invalidate('repo:root')
     depends('repo:root')
+
+    // Repo pages render markdown, so we ensure that syntax highlighting for code blocks
+    // inside markdown is loaded.
+    loadMarkdownSyntaxHighlighting()
 
     const { repoName, revision } = parseRepoRevision(params.repo)
 
@@ -37,6 +41,7 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
     return {
         repoURL: '/' + params.repo,
         repoName,
+        displayRepoName: displayRepoName(repoName),
         revision,
         resolvedRevisionOrError,
     }

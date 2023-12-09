@@ -10,6 +10,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
@@ -49,12 +50,16 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	dc := conf.Get().Dotcom
-
 	if dc != nil && dc.MinimumExternalAccountAge > 0 {
-
+		exempted := false
+		for _, exemptedEmail := range dc.MinimumExternalAccountAgeExemptList {
+			if exemptedEmail == gUser.Email {
+				exempted = true
+				break
+			}
+		}
 		earliestValidCreationDate := time.Now().Add(time.Duration(-dc.MinimumExternalAccountAge) * 24 * time.Hour)
-
-		if gUser.CreatedAt.After(earliestValidCreationDate) {
+		if !exempted && gUser.CreatedAt.After(earliestValidCreationDate) {
 			return false, nil, fmt.Sprintf("User account was created less than %d days ago", dc.MinimumExternalAccountAge), errors.New("user account too new")
 		}
 	}
@@ -123,10 +128,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	return newUserCreated, actor.FromUser(userID), "", nil
 }
 
-func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {
-	stateConfig := getStateConfig()
-	stateConfig.MaxAge = -1
-	http.SetCookie(w, oauth.NewCookie(stateConfig, ""))
+func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter, r *http.Request) {
+	session.SetData(w, r, "oauthState", "")
 }
 
 func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData {

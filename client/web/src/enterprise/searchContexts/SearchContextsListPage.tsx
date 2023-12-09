@@ -59,7 +59,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                 <CallToActionBanner variant="filled" className="mb-0">
                                     To search across your team's private repositories,{' '}
                                     <Link
-                                        to="https://about.sourcegraph.com"
+                                        to="https://sourcegraph.com"
                                         onClick={() =>
                                             eventLogger.log('ClickedOnEnterpriseCTA', { location: 'ContextsSettings' })
                                         }

@@ -215,12 +215,6 @@ func TestCreateBatchSpec(t *testing.T) {
 			wantErr:        false,
 			userID:         userID,
 		},
-		"campaigns license, no limit": {
-			changesetSpecs: changesetSpecs,
-			licenseInfo:    licensingInfo("starter", "campaigns"),
-			wantErr:        false,
-			userID:         userID,
-		},
 		"no license": {
 			changesetSpecs: changesetSpecs[0:1],
 			wantErr:        true,

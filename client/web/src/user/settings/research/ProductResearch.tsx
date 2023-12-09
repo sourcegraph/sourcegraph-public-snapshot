@@ -46,7 +46,7 @@ export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildre
                         },
                         {
                             content: 'Join our Discord',
-                            path: 'https://about.sourcegraph.com/community',
+                            path: 'https://sourcegraph.com/community',
                         },
                     ].map(({ content, path, variant }) => (
                         <ButtonLink

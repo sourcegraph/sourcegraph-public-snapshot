@@ -46,7 +46,7 @@ export interface CodeIntelAPI {
     getDocumentHighlights(textParameters: TextDocumentPositionParameters): Promise<DocumentHighlight[]>
 }
 
-function createCodeIntelAPI(context: sourcegraph.CodeIntelContext): CodeIntelAPI {
+export function createCodeIntelAPI(context: sourcegraph.CodeIntelContext): CodeIntelAPI {
     sourcegraph.updateCodeIntelContext(context)
     return new DefaultCodeIntelAPI()
 }

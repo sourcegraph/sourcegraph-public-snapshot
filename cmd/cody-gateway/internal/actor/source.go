@@ -60,6 +60,12 @@ type SourceSyncer interface {
 	Sync(ctx context.Context) (int, error)
 }
 
+type SourceSingleSyncer interface {
+	Source
+	// SyncOne retrieves a single actor from this source and updates its cache.
+	SyncOne(ctx context.Context, token string) error
+}
+
 type Sources struct{ sources []Source }
 
 func NewSources(sources ...Source) *Sources {
@@ -144,6 +150,23 @@ func (s *Sources) SyncAll(ctx context.Context, logger log.Logger) error {
 
 	logger.Info("All sources synced")
 	return nil
+}
+
+// SyncOne immediately runs a sync on the source implementing SourceSingleSyncer that can sync for a given token.
+// Syncing is done sequentially, first error is returned - this mirrors the behaviour of Source.Get()
+//
+// By default, this is only used by "/v1/limits/refresh" endpoint.
+func (s *Sources) SyncOne(ctx context.Context, token string) error {
+	for _, src := range s.sources {
+		if src, ok := src.(SourceSingleSyncer); ok {
+			err := src.SyncOne(ctx, token)
+			if err != nil {
+				return errors.Wrapf(err, "failed to sync %s", src.Name())
+			}
+			return nil
+		}
+	}
+	return errors.Newf("no source found for token %v", token[:4])
 }
 
 // Worker is a goroutine.BackgroundRoutine that runs any SourceSyncer implementations

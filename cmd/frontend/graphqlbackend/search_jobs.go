@@ -17,6 +17,7 @@ type SearchJobsResolver interface {
 
 	// Queries
 	SearchJobs(ctx context.Context, args *SearchJobsArgs) (*graphqlutil.ConnectionResolver[SearchJobResolver], error)
+	ValidateSearchJob(ctx context.Context, args *CreateSearchJobArgs) (*EmptyResponse, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }

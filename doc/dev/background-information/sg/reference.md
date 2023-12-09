@@ -28,7 +28,7 @@ Global flags:
 
 Use this to start your Sourcegraph environment!
 
-Available comamndsets in `sg.config.yaml`:
+Available commandsets in `sg.config.yaml`:
 
 * api-only
 * app

@@ -216,6 +216,11 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB) (licensing.Cody
 		}
 	}
 
+	// Apply override for testing if set
+	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
+		limit = 1
+	}
+
 	return licensing.CodyGatewayRateLimit{
 		AllowedModels:   []string{"openai/text-embedding-ada-002"},
 		Limit:           limit,
@@ -226,6 +231,17 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB) (licensing.Cody
 func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, scope types.CompletionsFeature) (licensing.CodyGatewayRateLimit, graphqlbackend.CodyGatewayRateLimitSource, error) {
 	var limit *int
 	var err error
+
+	models := allowedModels(scope)
+
+	// Apply override for testing if set
+	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
+		return licensing.CodyGatewayRateLimit{
+			AllowedModels:   models,
+			Limit:           1,
+			IntervalSeconds: math.MaxInt32,
+		}, graphqlbackend.CodyGatewayRateLimitSourceOverride, nil
+	}
 
 	// Apply overrides first.
 	source := graphqlbackend.CodyGatewayRateLimitSourceOverride
@@ -278,7 +294,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 		limit = pointers.Ptr(0)
 	}
 	return licensing.CodyGatewayRateLimit{
-		AllowedModels:   allowedModels(scope),
+		AllowedModels:   models,
 		Limit:           int64(*limit),
 		IntervalSeconds: intervalSeconds, // Daily limit TODO(davejrt)
 	}, source, nil
@@ -306,8 +322,10 @@ func getSelfServeUsageLimits(scope types.CompletionsFeature, isProUser bool, cfg
 				return oneMonthInSeconds, pointers.Ptr(cfg.PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit), nil
 			}
 		}
+	default:
+		return 0, nil, errors.Newf("unknown scope (self-serve limiting): %s", scope)
 	}
-	return 0, nil, errors.Newf("unknown scope (self-serve limiting): %s", scope)
+	return oneDayInSeconds, nil, nil
 }
 
 func allowedModels(scope types.CompletionsFeature) []string {

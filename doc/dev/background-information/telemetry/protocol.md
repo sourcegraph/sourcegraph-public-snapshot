@@ -21,6 +21,7 @@ This page contains generated documentation for telemetry event data that gets ex
     - [EventInteraction.Geolocation](#telemetrygateway-v1-EventInteraction-Geolocation)
     - [EventMarketingTracking](#telemetrygateway-v1-EventMarketingTracking)
     - [EventParameters](#telemetrygateway-v1-EventParameters)
+    - [EventParameters.LegacyMetadataEntry](#telemetrygateway-v1-EventParameters-LegacyMetadataEntry)
     - [EventParameters.MetadataEntry](#telemetrygateway-v1-EventParameters-MetadataEntry)
     - [EventSource](#telemetrygateway-v1-EventSource)
     - [EventSource.Client](#telemetrygateway-v1-EventSource-Client)
@@ -185,9 +186,26 @@ Sourcegraph.com instance.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | version | [int32](#int32) |  | <p>Version of the event parameters, used for indicating the "shape" of this</p><p>event's metadata, beginning at 0. Useful for denoting if the shape of</p><p>metadata has changed in any way.</p> |
+| legacy_metadata | [EventParameters.LegacyMetadataEntry](#telemetrygateway-v1-EventParameters-LegacyMetadataEntry) | repeated | <p>Legacy metadata format that only accepted int64 - use the new metadata</p><p>field instead, which accepts float values. Values sent through this proto</p><p>field will be merged into the new metadata attributes.</p><p>We don't use a [deprecated = true] tag because we use this field to handle</p><p>accepting exporters sending metadata in this format.</p> |
 | metadata | [EventParameters.MetadataEntry](#telemetrygateway-v1-EventParameters-MetadataEntry) | repeated | <p>Strictly typed metadata, restricted to integer values to avoid accidentally</p><p>exporting sensitive or private data.</p> |
 | private_metadata | [google.protobuf.Struct](#google-protobuf-Struct) | optional | <p>Additional potentially sensitive metadata - i.e. not restricted to integer</p><p>values.</p><p>🚨 SECURITY: This metadata is NOT exported from instances by default, as it</p><p>can contain arbitrarily-shaped data that may accidentally contain sensitive</p><p>or private contents.</p><p>This metadata is only exported on an allowlist basis based on terms of</p><p>use agreements and combinations of event feature and action, alongside</p><p>careful audit of callsites.</p> |
 | billing_metadata | [EventBillingMetadata](#telemetrygateway-v1-EventBillingMetadata) | optional | <p>Optional billing-related metadata.</p> |
+
+
+
+
+
+
+<a name="telemetrygateway-v1-EventParameters-LegacyMetadataEntry"></a>
+
+### EventParameters.LegacyMetadataEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  | <p></p> |
+| value | [int64](#int64) |  | <p></p> |
 
 
 
@@ -203,7 +221,7 @@ Sourcegraph.com instance.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  | <p></p> |
-| value | [int64](#int64) |  | <p></p> |
+| value | [double](#double) |  | <p></p> |
 
 
 
