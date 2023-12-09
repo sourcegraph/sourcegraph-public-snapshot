@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"net/http"
 	"strconv"
 	"time"
@@ -32,6 +34,13 @@ import (
 // maxRequestDuration is the maximum amount of time a request can take before
 // being cancelled.
 const maxRequestDuration = time.Minute
+
+var timeToFirstEventMetrics = metrics.NewREDMetrics(
+	prometheus.DefaultRegisterer,
+	"completions_stream_first_event",
+	metrics.WithLabels("model"),
+	metrics.WithDurationBuckets([]float64{0.25, 0.5, 0.75, 1.0, 2.0, 3.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 25.0, 30.0}),
+)
 
 func newCompletionsHandler(
 	logger log.Logger,
@@ -203,9 +212,14 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 		defer func() {
 			_ = eventWriter.Event("done", map[string]any{})
 		}()
-
+		start := time.Now()
+		firstEventObserved := false
 		err = cc.Stream(ctx, feature, requestParams,
 			func(event types.CompletionResponse) error {
+				if !firstEventObserved {
+					firstEventObserved = true
+					timeToFirstEventMetrics.Observe(float64(time.Since(start).Milliseconds())/1000, 1, &err, requestParams.Model)
+				}
 				return eventWriter.Event("completion", event)
 			})
 		if err != nil {
