@@ -218,7 +218,7 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 			func(event types.CompletionResponse) error {
 				if !firstEventObserved {
 					firstEventObserved = true
-					timeToFirstEventMetrics.Observe(float64(time.Since(start).Milliseconds())/1000, 1, &err, requestParams.Model)
+					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, &err, requestParams.Model)
 				}
 				return eventWriter.Event("completion", event)
 			})
