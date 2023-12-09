@@ -1,4 +1,5 @@
 // Run with bazel run //testing/tools/upgradetest:sh_upgradetest --config=darwin-docker
+// Run in CI: sg ci bazel run //testing/tools/upgradetest:sh_upgradetest
 //
 // TODO
 // - Test things in CI
@@ -560,7 +561,16 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 	// Return a cleanup function that will remove the containers and network.
 	cleanup = func() {
 		test.LogLines = append(test.LogLines, "🧹 removing database containers")
-		out, err := run.Cmd(ctx, "docker", "kill",
+		out, err := run.Cmd(ctx, "docker", "container", "stop",
+			dbs[0].ContainerName,
+			dbs[1].ContainerName,
+			dbs[2].ContainerName).
+			Run().String()
+		if err != nil {
+			test.AddError(fmt.Errorf("🚨 failed to stop database containers after testing: %w", err))
+		}
+		test.AddLog(out)
+		out, err = run.Cmd(ctx, "docker", "container", "rm",
 			dbs[0].ContainerName,
 			dbs[1].ContainerName,
 			dbs[2].ContainerName).
@@ -673,7 +683,14 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	test.AddLog(fmt.Sprintf("🐋 creating wg_frontend_%x", hash))
 	cleanup = func() {
 		test.AddLog("🧹 removing frontend container")
-		out, err := run.Cmd(ctx, "docker", "kill",
+		out, err := run.Cmd(ctx, "docker", "container", "stop",
+			fmt.Sprintf("wg_frontend_%x", hash),
+		).Run().String()
+		if err != nil {
+			fmt.Println("🚨 failed to stop frontend after testing: ", err)
+		}
+		test.AddLog(out)
+		out, err = run.Cmd(ctx, "docker", "container", "rm",
 			fmt.Sprintf("wg_frontend_%x", hash),
 		).Run().String()
 		if err != nil {
