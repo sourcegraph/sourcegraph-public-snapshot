@@ -221,8 +221,8 @@ A similar process applies to explain and edit Code Actions.
 
 <aside class="beta">
 <p>
-<span class="badge badge-beta">Beta</span>
-Cody Natural Language Search is currently available in Beta for all users on VS Code extension.
+<span class="badge badge-beta">Experimental</span>
+Cody Natural Language Search is currently available in Experimental for all users on VS Code extension.
 </p>
 </aside>
 
