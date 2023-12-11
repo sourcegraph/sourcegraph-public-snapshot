@@ -109,7 +109,7 @@ func bazelPublishExecutorBinary(c Config) operations.Operation {
 			// bazel run doesn't always build everything it needs for that run command.
 			// This doesn't happen on aspect workflows CI agents.
 			bk.Cmd(bazelCmd(`build //cmd/executor:executor`)),
-			bk.Cmd(bazelStampedCmd(`run //cmd/executor:publish_binary`)),
+			bk.Cmd(bazelStampedCmd(`run //cmd/executor:binary.push`)),
 		}
 		pipeline.AddStep(":bazel::arrow_heading_up: Publish executor binary", stepOpts...)
 	}
