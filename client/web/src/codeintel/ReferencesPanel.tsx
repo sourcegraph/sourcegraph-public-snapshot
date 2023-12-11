@@ -264,6 +264,19 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
 
 const SHOW_SPINNER_DELAY_MS = 100
 
+const useSpinner = (loading: boolean): boolean => {
+    // We only show the inline loading message if loading takes longer than
+    // SHOW_SPINNER_DELAY_MS milliseconds.
+    const [canShowSpinner, setCanShowSpinner] = useState(false)
+    useEffect(() => {
+        const handle = setTimeout(() => setCanShowSpinner(loading), SHOW_SPINNER_DELAY_MS)
+        // In case the component un-mounts before
+        return () => clearTimeout(handle)
+        // Make sure this effect only runs once
+    }, [loading])
+    return canShowSpinner
+}
+
 const ReferencesList: React.FunctionComponent<
     React.PropsWithChildren<
         ReferencesPanelPropsWithToken & {
@@ -323,15 +336,7 @@ const ReferencesList: React.FunctionComponent<
         getSetting,
     })
 
-    // We only show the inline loading message if loading takes longer than
-    // SHOW_SPINNER_DELAY_MS milliseconds.
-    const [canShowSpinner, setCanShowSpinner] = useState(false)
-    useEffect(() => {
-        const handle = setTimeout(() => setCanShowSpinner(loading), SHOW_SPINNER_DELAY_MS)
-        // In case the component un-mounts before
-        return () => clearTimeout(handle)
-        // Make sure this effect only runs once
-    }, [loading])
+    const showSpinner = useSpinner(loading)
 
     // The "active URL" is the URL of the highlighted line number in SideBlob,
     // which also influences which item gets highlighted inside
@@ -425,8 +430,8 @@ const ReferencesList: React.FunctionComponent<
                     <small>
                         <Icon
                             aria-hidden={true}
-                            as={canShowSpinner ? LoadingSpinner : undefined}
-                            svgPath={!canShowSpinner ? mdiFilterOutline : undefined}
+                            as={showSpinner ? LoadingSpinner : undefined}
+                            svgPath={!showSpinner ? mdiFilterOutline : undefined}
                             size="md"
                             className={styles.filterIcon}
                         />
