@@ -9,7 +9,6 @@ sh_binary(
     data = [
         # Files to populate the AMI with
         "aws_regions.json",
-        "build.sh",
         "executor.pkr.hcl",
         "install.sh",
         # Deps
