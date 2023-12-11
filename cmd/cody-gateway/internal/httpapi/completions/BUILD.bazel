@@ -26,7 +26,6 @@ go_library(
         "//internal/conf/conftypes",
         "//internal/httpcli",
         "//internal/requestclient",
-        "//internal/search/streaming/http",
         "//internal/trace",
         "//lib/errors",
         "@com_github_grafana_regexp//:regexp",
