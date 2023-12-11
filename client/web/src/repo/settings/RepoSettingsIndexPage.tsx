@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiCheckCircle } from '@mdi/js'
+import { mdiAlert, mdiCheckCircle, mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
 import prettyBytes from 'pretty-bytes'
 import { type Observable, Subject, Subscription } from 'rxjs'
@@ -17,6 +17,7 @@ import {
     Link,
     Alert,
     Icon,
+    Tooltip,
     Code,
     H3,
     ErrorAlert,
@@ -172,49 +173,66 @@ const Reindex: React.FunctionComponent<React.PropsWithChildren<{ id: Scalars['ID
     )
 }
 
+// If there's an indexing delay of more than 8 hours, we warn about it
+const largeIndexingDelayMs = 8 * 60 * 60 * 1000
+
 const TextSearchIndexedReference: React.FunctionComponent<
     React.PropsWithChildren<{
         repo: SettingsAreaRepositoryFields
         indexedRef: NonNullable<RepositoryTextSearchIndex>['refs'][number]
+        lastIndexed: string | undefined
     }>
-> = ({ repo, indexedRef }) => {
+> = ({ repo, indexedRef, lastIndexed }) => {
     const isCurrent = indexedRef.indexed && indexedRef.current
+
+    const lastIndexTime = !indexedRef.current && lastIndexed && new Date(lastIndexed).getTime()
+    const indexingDelayed = lastIndexTime && Date.now() - lastIndexTime > largeIndexingDelayMs
 
     return (
         <li className={styles.ref}>
-            <Icon
-                className={classNames(styles.refIcon, isCurrent && styles.refIconCurrent)}
-                svgPath={isCurrent ? mdiCheckCircle : undefined}
-                as={!isCurrent ? LoadingSpinner : undefined}
-                aria-hidden={true}
-            />
+            {indexingDelayed ? (
+                <Tooltip content="Indexing hasn't completed for over 8 hours, which usually indicates an error. Please check the Zoekt indexserver logs.">
+                    <Icon className={classNames(styles.refIcon)} svgPath={mdiAlert} aria-hidden={true} />
+                </Tooltip>
+            ) : (
+                <Icon
+                    className={classNames(styles.refIcon, isCurrent && styles.refIconCurrent)}
+                    svgPath={isCurrent ? mdiCheckCircle : mdiClockOutline}
+                    aria-hidden={true}
+                />
+            )}
             <LinkOrSpan to={indexedRef.ref.url}>
                 <Code weight="bold">{indexedRef.ref.displayName}</Code>
-            </LinkOrSpan>{' '}
+            </LinkOrSpan>
+            &nbsp;&mdash;&nbsp;
             {indexedRef.indexed ? (
                 <span>
-                    &nbsp;&mdash; indexed at{' '}
+                    {indexedRef.current
+                        ? 'up to date.'
+                        : indexingDelayed
+                        ? 'indexing is delayed.'
+                        : 'queued for indexing.'}
+                    {' Last indexing job ran at '}
                     <Code>
                         <LinkOrSpan
                             to={indexedRef.indexedCommit?.commit ? indexedRef.indexedCommit.commit.url : repo.url}
                         >
                             {indexedRef.indexedCommit!.abbreviatedOID}
                         </LinkOrSpan>
-                    </Code>{' '}
-                    {indexedRef.current ? '(up to date)' : '(index update in progress)'}
+                    </Code>
                     {indexedRef.skippedIndexed && Number(indexedRef.skippedIndexed.count) > 0 ? (
                         <span>
-                            .&nbsp;
+                            {', with '}
                             <Link to={'/search?q=' + encodeURIComponent(indexedRef.skippedIndexed.query)}>
-                                {indexedRef.skippedIndexed.count}{' '}
-                                {pluralize('file', Number(indexedRef.skippedIndexed.count))} skipped during indexing
+                                {indexedRef.skippedIndexed.count} skipped{' '}
+                                {pluralize('file', Number(indexedRef.skippedIndexed.count))}
                             </Link>
                             .
                         </span>
                     ) : null}
                 </span>
             ) : (
-                <span>&nbsp;&mdash; initial indexing in progress</span>
+                <span>queued for initial indexing.</span>
             )}
         </li>
     )
@@ -291,6 +309,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                                 key={index}
                                                 repo={this.props.repo}
                                                 indexedRef={reference}
+                                                lastIndexed={this.state.textSearchIndex?.status?.updatedAt}
                                             />
                                         ))}
                                     </ul>
