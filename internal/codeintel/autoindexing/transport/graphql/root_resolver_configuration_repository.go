@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/graph-gophers/graphql-go"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -102,25 +104,25 @@ func (r *indexConfigurationResolver) Configuration(ctx context.Context) (_ *stri
 func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) (_ resolverstubs.InferredConfigurationResolver, err error) {
 	defer r.errTracer.Collect(&err, attribute.String("indexConfigResolver.field", "inferredConfiguration"))
 
-	var limitErr error
 	result, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", "", true)
+	resolver := &inferredConfigurationResolver{siteAdminChecker: r.siteAdminChecker}
 	if err != nil {
-		return nil, err
+		if errors.As(err, &inference.LimitError{}) {
+			resolver.limitErr = err
+		}
+		return resolver, err
 	}
 
 	marshaled, err := config.MarshalJSON(config.IndexConfiguration{IndexJobs: result.IndexJobs})
 	if err != nil {
-		return nil, err
+		return resolver, err
 	}
 
 	var indented bytes.Buffer
 	_ = json.Indent(&indented, marshaled, "", "\t")
+	resolver.configuration = indented.String()
 
-	return &inferredConfigurationResolver{
-		siteAdminChecker: r.siteAdminChecker,
-		configuration:    indented.String(),
-		limitErr:         limitErr,
-	}, nil
+	return resolver, nil
 }
 
 func (r *indexConfigurationResolver) ParsedConfiguration(ctx context.Context) (*[]resolverstubs.AutoIndexJobDescriptionResolver, error) {
