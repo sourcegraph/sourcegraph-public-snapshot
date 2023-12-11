@@ -20,12 +20,6 @@ import {
 
 import { eventLogger } from '../../../tracking/eventLogger'
 
-const sanitizeString = (str: string): string =>
-    `"${str
-        .replaceAll('"', '""') // escape quotes
-        .replaceAll(/ +(?= )/g, '') // remove extra spaces
-        .replaceAll('\n', '')}"` // remove extra newlines
-
 export const searchResultsToFileContent = (
     searchResults: SearchMatch[],
     sourcegraphURL: string,
@@ -165,7 +159,7 @@ export const searchResultsToFileContent = (
                             repoURL,
                             result.authorDate,
                             result.authorName,
-                            sanitizeString(result.message),
+                            result.message,
                             result.oid,
                             commitURL,
                         ]
@@ -209,8 +203,18 @@ export const searchResultsToFileContent = (
 
     return content
         .filter(cells => cells.length > 0)
-        .map(cells => cells.join(','))
+        .map(cells => cells.map(escapeCell).join(','))
         .join('\n')
+}
+
+const escapeCell = (cell: string | undefined): string | undefined => {
+    if (cell == undefined) {
+        return cell
+    }
+    if (/[,\"\r\n]/.test(cell)) {
+        return `"${cell.replaceAll('"', '""')}"`
+    }
+    return cell
 }
 
 export const buildFileName = (query?: string): string => {
