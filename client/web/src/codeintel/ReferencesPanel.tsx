@@ -359,6 +359,19 @@ const ReferencesList: React.FunctionComponent<
         [setActiveURL]
     )
 
+    const definitions = data?.definitions.nodes
+    // If props.jumpToFirst is true and we finished loading (and have
+    // definitions) we select the first definition. We set it as activeLocation
+    // and push it to the blobMemoryHistory so the code blob is open.
+    useEffect(() => {
+        if (props.jumpToFirst) {
+            const firstDef = definitions?.first
+            if (firstDef) {
+                setActiveLocation(firstDef)
+            }
+        }
+    }, [setActiveLocation, props.jumpToFirst, definitions?.first])
+
     const sideblob = useMemo(() => parseSideBlobProps(activeURL), [activeURL])
 
     const isActiveLocation = (location: Location): boolean => {
@@ -405,20 +418,6 @@ const ReferencesList: React.FunctionComponent<
         return <>Nothing found</>
     }
 
-    const definitions = data.definitions.nodes
-
-    // If props.jumpToFirst is true and we finished loading (and have
-    // definitions) we select the first definition. We set it as activeLocation
-    // and push it to the blobMemoryHistory so the code blob is open.
-    useEffect(() => {
-        if (props.jumpToFirst) {
-            const firstDef = definitions.first
-            if (firstDef) {
-                setActiveLocation(firstDef)
-            }
-        }
-    }, [setActiveLocation, props.jumpToFirst, definitions.first])
-
     return (
         <div className={classNames('align-items-stretch', styles.panel)}>
             <div className={classNames('px-0', styles.leftSubPanel)}>
@@ -444,7 +443,7 @@ const ReferencesList: React.FunctionComponent<
                     <CollapsibleLocationList
                         {...props}
                         name="definitions"
-                        locationsGroup={definitions}
+                        locationsGroup={data.definitions.nodes}
                         hasMore={false}
                         loadingMore={false}
                         filter={debouncedFilter}
