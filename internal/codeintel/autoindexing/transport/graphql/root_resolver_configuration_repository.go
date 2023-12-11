@@ -8,12 +8,10 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -107,27 +105,12 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 	var limitErr error
 	result, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", "", true)
 	if err != nil {
-		if errors.As(err, &inference.LimitError{}) {
-			limitErr = err
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
-	var marshaled []byte
+	marshaled, err := config.MarshalJSON(config.IndexConfiguration{IndexJobs: result.IndexJobs})
 	if err != nil {
-		emptyJobs := []config.IndexJob{}
-		json, err := config.MarshalJSON(config.IndexConfiguration{IndexJobs: emptyJobs})
-		if err != nil {
-			return nil, err
-		}
-		marshaled = json
-	} else {
-		json, err := config.MarshalJSON(config.IndexConfiguration{IndexJobs: result.IndexJobs})
-		if err != nil {
-			return nil, err
-		}
-		marshaled = json
+		return nil, err
 	}
 
 	var indented bytes.Buffer
