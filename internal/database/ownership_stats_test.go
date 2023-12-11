@@ -114,7 +114,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 1},
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
 		}
-		assert.DeepEqual(t, want, got)
+		assert.Equal(t, want, got)
 	})
 	t.Run("query single repo", func(t *testing.T) {
 		opts := TreeLocationOpts{
@@ -127,7 +127,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 2},
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
 		}
-		assert.DeepEqual(t, want, got)
+		assert.Equal(t, want, got)
 	})
 	t.Run("query whole instance", func(t *testing.T) {
 		opts := TreeLocationOpts{}
@@ -139,7 +139,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 			{CodeownersReference: "ownerC", CodeownedFileCount: 10}, // only repo2
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},  // only repo1
 		}
-		assert.DeepEqual(t, want, got)
+		assert.Equal(t, want, got)
 	})
 }
 
@@ -218,7 +218,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
 		want := PathAggregateCounts{CodeownedFileCount: 0}
-		assert.DeepEqual(t, want, got)
+		assert.Equal(t, want, got)
 	})
 
 	t.Run("no data - query all", func(t *testing.T) {
@@ -226,7 +226,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
 		want := PathAggregateCounts{CodeownedFileCount: 0}
-		assert.DeepEqual(t, want, got)
+		assert.Equal(t, want, got)
 	})
 
 	// 2. Insert aggregate counts:
@@ -275,7 +275,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 			TotalOwnedFileCount: 1,
 			UpdatedAt:           timestamp,
 		}
-		assert.DeepEqual(t, want, got)
+		assert.Equal(t, want, got)
 	})
 
 	t.Run("query single dir", func(t *testing.T) {
@@ -291,7 +291,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 			TotalOwnedFileCount:        2,
 			UpdatedAt:                  timestamp,
 		}
-		assert.DeepEqual(t, want, got)
+		assert.Equal(t, want, got)
 	})
 
 	t.Run("query repo root", func(t *testing.T) {
@@ -306,7 +306,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 			TotalOwnedFileCount:        2,
 			UpdatedAt:                  timestamp,
 		}
-		assert.DeepEqual(t, want, got)
+		assert.Equal(t, want, got)
 	})
 
 	t.Run("query whole instance", func(t *testing.T) {
@@ -319,7 +319,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 			TotalOwnedFileCount:        12,
 			UpdatedAt:                  timestamp,
 		}
-		assert.DeepEqual(t, want, got)
+		assert.Equal(t, want, got)
 	})
 
 	t.Run("query whole instance with excluded repo in signal config", func(t *testing.T) {
@@ -334,6 +334,6 @@ func TestQueryAggregateCounts(t *testing.T) {
 			TotalOwnedFileCount:        2,
 			UpdatedAt:                  timestamp,
 		}
-		assert.DeepEqual(t, want, got)
+		assert.Equal(t, want, got)
 	})
 }

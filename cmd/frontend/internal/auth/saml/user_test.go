@@ -127,7 +127,7 @@ func TestGetPublicExternalAccountData(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			assert.DeepEqual(t, tc.expected, publicData)
+			assert.Equal(t, tc.expected, publicData)
 		})
 	}
 }
