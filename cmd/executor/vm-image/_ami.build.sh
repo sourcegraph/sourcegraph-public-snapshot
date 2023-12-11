@@ -1,17 +1,13 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1090
 
 # --- begin runfiles.bash initialization v3 ---
 # Copy-pasted from the Bazel Bash runfiles library v3.
 set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
-# shellcheck disable SC1090
 source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
-  # shellcheck disable SC1090
   source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2- -d' ')" 2>/dev/null || \
-  # shellcheck disable SC1090
   source "$0.runfiles/$f" 2>/dev/null || \
-  # shellcheck disable SC1090
   source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
-  # shellcheck disable SC1090
   source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
   { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
 # --- end runfiles.bash initialization v3 ---
@@ -24,7 +20,7 @@ base="cmd/executor/vm-image/"
 ## Setting up the folder we're going to use with packer
 mkdir workdir
 workdir_abs="$(pwd)/workdir"
-trap "rm -Rf $workdir_abs" EXIT
+trap 'rm -Rf "$workdir_abs"' EXIT
 
 cp $base/executor.pkr.hcl workdir/
 cp $base/aws_regions.json workdir/
@@ -32,7 +28,7 @@ cp $base/install.sh workdir/
 cp "cmd/executor/executor_/executor" workdir
 
 # Copy src-cli, see //dev/tools:src-cli
-cp $(rlocation src-cli-linux-amd64/src) workdir/
+cp "$(rlocation src-cli-linux-amd64/src)" workdir/
 
 # Load the docker image, whose tag is going to be candidate,
 # but we need to retag this with the version.
