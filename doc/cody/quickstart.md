@@ -16,7 +16,7 @@
 
 After installing the extension, the side activity bar will display an icon for **Cody**. Click this icon, and Cody's panel will open. This interface is used to start a **New Chat**, run Cody **commands** or get access to releavnt resources.
 
-![Cody icon in side activity bar ](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-quickstart/cody-icon-vscode.png)
+![Cody icon in side activity bar ](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-quickstart/cody-icon-vs-code.png)
 
 Cody supports **Commands** with VS Code. These are quick, ready-to-use prompt actions that you can apply to any code or text-based snippet you've highlighted. You can run a command in 3 ways:
 
