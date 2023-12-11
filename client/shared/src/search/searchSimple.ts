@@ -9,33 +9,56 @@
 // remains hidden from all reacts stores/etc. This is to avoid a frontend noob
 // debugging react reacting.
 
+import { SearchPatternType } from '../graphql-operations'
+
+import { stringHuman } from './query/printer'
+import { scanSearchQuery } from './query/scanner'
+
 // hacky way to update all filters into our supported query language. We should use an
 // actual parser since this stomps all over whitespace.
 export function hacksGobQueriesToRegex(query: string): string {
-    return query.replaceAll(/\b(\w+):(\S+)/g, (match, _filter, _value) => {
-        const filter = _filter as string
-        const value = _value as string
-        switch (filter) {
-            case 'repo':
-            case 'r': {
-                // special case how we search all repos. We just do r:
-                if (value === '*') {
-                    return `${filter}:`
+    const tokens = scanSearchQuery(query, undefined, SearchPatternType.newStandardRC1)
+    if (tokens.type === 'error') {
+        return query
+    }
+
+    return stringHuman(
+        tokens.term.map(token => {
+            if (token.type !== 'filter' || !token.value) {
+                return token
+            }
+
+            const value = (() => {
+                switch (token.field.value) {
+                    case 'repo':
+                    case 'r': {
+                        // special case how we search all repos. We just do r:
+                        if (token.value.value === '*') {
+                            return ''
+                        }
+                        return gobToRegex(token.value.value)
+                    }
+
+                    case 'file':
+                    case 'f': {
+                        return gobToRegex(token.value.value)
+                    }
+
+                    default: {
+                        return token.value.value
+                    }
                 }
+            })()
 
-                return `${filter}:${gobToRegex(value)}`
+            return {
+                ...token,
+                value: {
+                    ...token.value,
+                    value,
+                },
             }
-
-            case 'file':
-            case 'f': {
-                return `${filter}:${gobToRegex(value)}`
-            }
-
-            default: {
-                return match
-            }
-        }
-    })
+        })
+    )
 }
 
 function gobToRegex(gob: string): string {

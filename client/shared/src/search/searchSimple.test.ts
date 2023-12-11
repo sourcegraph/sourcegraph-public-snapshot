@@ -9,8 +9,12 @@ describe('hacksGobQueriesToRegex', () => {
         // TODO should this match nothing? Right the filter is a noop
         expect(hacksGobQueriesToRegex('f:')).toEqual('f:')
 
-        // TODO use a real parser
-        // expect(hacksGobQueriesToRegex('f:"foo "')).toEqual('f:"foo "')
+        // Quotes on regex filters just allow us to put spaces in
+        expect(hacksGobQueriesToRegex('f:" "')).toEqual('f:"^ $"')
+        expect(hacksGobQueriesToRegex('f:"* "')).toEqual('f:" $"')
+        expect(hacksGobQueriesToRegex('f:" *"')).toEqual('f:"^ "')
+        expect(hacksGobQueriesToRegex('f:"* *"')).toEqual('f:" "')
+        expect(hacksGobQueriesToRegex('f:"foo bar"')).toEqual('f:"^foo bar$"')
 
         // Match every repo and match every file act differently in our UX
         expect(hacksGobQueriesToRegex('r:*')).toEqual('r:')
