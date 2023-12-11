@@ -100,14 +100,25 @@ func runDoctorDiagnostics(cmd *cli.Context) error {
 	markdown := buildMarkdownReport(report)
 
 	if cmd.Path("outputFile") != "" {
-		diagOut.WriteLine(output.Emoji("📋", "Diagnostic report written to "+cmd.Path("outputFile")))
-	} else if cmd.Bool("render") {
-		diagOut.WriteMarkdown(markdown)
-	} else {
-		// This is will print to stdOut allowing one to do sg doctor > report.txt
-		fmt.Println(markdown)
-	}
+		fd, err := os.Create(cmd.Path("outputFile"))
+		if err != nil {
+			return err
+		}
+		defer fd.Close()
 
+		fd.WriteString(markdown)
+		diagOut.WriteLine(output.Emoji("📋", "Diagnostic report written to "+cmd.Path("outputFile")))
+	} else {
+		// check if we're rendering to the terminal or to another program
+		o, _ := os.Stdout.Stat()
+		if o.Mode()&os.ModeCharDevice != os.ModeCharDevice {
+			// Our output has been redirected to another program, so lets just render it raw
+			fmt.Println(markdown)
+		} else {
+			// rendering to a terminal! so lets make it nice
+			diagOut.WriteMarkdown(markdown)
+		}
+	}
 	return nil
 }
 
