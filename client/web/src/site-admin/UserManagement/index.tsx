@@ -6,7 +6,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { H1, Card, Text, Icon, Button, Link, Alert, LoadingSpinner, AnchorLink } from '@sourcegraph/wildcard'
 
 import type { UsersManagementSummaryResult, UsersManagementSummaryVariables } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
+import { eventLogger, telemetryRecorder } from '../../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../../util/checkRequestAccessAllowed'
 import { ValueLegendList, type ValueLegendListProps } from '../analytics/components/ValueLegendList'
 
@@ -30,6 +30,7 @@ export const UsersManagement: React.FunctionComponent<UsersManagementProps> = ({
 }) => {
     useEffect(() => {
         eventLogger.logPageView('UsersManagement')
+        telemetryRecorder.recordEvent('UserManagement', 'viewed')
     }, [])
 
     const { data, error, loading, refetch } = useQuery<UsersManagementSummaryResult, UsersManagementSummaryVariables>(
