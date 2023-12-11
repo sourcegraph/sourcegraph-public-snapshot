@@ -262,13 +262,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		executorVMImage := "executor-vm"
 		ops = operations.NewSet(
 			// TODO(burmudar): This should use the bazel target
-			legacyBuildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), c.RunType),
-			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
-			bazelBuildExecutorVM(c, true),
+			// legacyBuildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), c.RunType),
+			// trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
+			bazelBuildExecutorVM(c, false),
 			bazelBuildExecutorDockerMirror(c),
 			wait,
 			publishFinalDockerImage(c, executorVMImage),
-			bazelPublishExecutorVM(c, true),
+			bazelPublishExecutorVM(c, false),
 			bazelPublishExecutorDockerMirror(c),
 			bazelPublishExecutorBinary(c),
 		)
