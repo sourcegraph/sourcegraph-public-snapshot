@@ -1,10 +1,11 @@
 package response
 
 import (
-	"github.com/sourcegraph/log/logtest"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/stretchr/testify/assert"
 )

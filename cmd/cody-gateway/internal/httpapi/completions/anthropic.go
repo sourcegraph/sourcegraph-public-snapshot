@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"io"
 	"net/http"
+
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 
 	"github.com/grafana/regexp"
 

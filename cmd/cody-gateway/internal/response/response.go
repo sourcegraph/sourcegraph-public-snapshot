@@ -2,9 +2,10 @@ package response
 
 import (
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"io"
 	"net/http"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log"
 )
