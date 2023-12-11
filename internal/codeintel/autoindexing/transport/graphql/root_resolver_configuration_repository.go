@@ -114,9 +114,20 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 		}
 	}
 
-	marshaled, err := config.MarshalJSON(config.IndexConfiguration{IndexJobs: result.IndexJobs})
+	var marshaled []byte
 	if err != nil {
-		return nil, err
+		emptyJobs := []config.IndexJob{}
+		json, err := config.MarshalJSON(config.IndexConfiguration{IndexJobs: emptyJobs})
+		if err != nil {
+			return nil, err
+		}
+		marshaled = json
+	} else {
+		json, err := config.MarshalJSON(config.IndexConfiguration{IndexJobs: result.IndexJobs})
+		if err != nil {
+			return nil, err
+		}
+		marshaled = json
 	}
 
 	var indented bytes.Buffer
