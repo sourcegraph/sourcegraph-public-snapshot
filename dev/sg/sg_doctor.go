@@ -23,7 +23,7 @@ import (
 
 var doctorCommand = &cli.Command{
 	Name:  "doctor",
-	Usage: "performs various diagnostics and generates a report",
+	Usage: "performs diagnostics of the local environment and prints out a report",
 	Description: `Runs a series of commands defined in sg-doctor.yaml.
 
 	The output of the commands are stored in a report, which can then be given to a dev-infra team memeber for
