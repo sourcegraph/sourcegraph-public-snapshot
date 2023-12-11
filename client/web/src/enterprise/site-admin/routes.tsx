@@ -157,6 +157,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
                     headerParentBreadcrumb={{ to: '/site-admin/batch-changes', text: 'Batch Changes settings' }}
                     headerAnnotation={<FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.telemetryRecorder}
                 />
             ),
             condition: ({ batchChangesEnabled }) => batchChangesEnabled,

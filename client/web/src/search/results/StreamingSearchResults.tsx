@@ -37,6 +37,7 @@ import { isSearchJobsEnabled } from '../../search-jobs/utility'
 import { buildSearchURLQueryFromQueryState, setSearchMode, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { useShowOnboardingTour } from '../../tour/hooks'
+import { telemetryRecorder } from '../../tracking/eventLogger'
 import { submitSearch } from '../helpers'
 import { useRecentSearches } from '../input/useRecentSearches'
 import { DidYouMean } from '../suggestion/DidYouMean'
@@ -396,6 +397,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 aggregationUIMode={aggregationUIMode}
                 settingsCascade={props.settingsCascade}
                 telemetryService={props.telemetryService}
+                telemetryRecorder={props.telemetryRecorder}
                 caseSensitive={caseSensitive}
                 className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
                 onNavbarQueryChange={setQueryState}
@@ -406,6 +408,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                     <GettingStartedTour
                         className="mb-1"
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                         authenticatedUser={authenticatedUser}
                     />
                 )}
@@ -420,6 +423,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                     className={styles.contents}
                     onQuerySubmit={handleSearchAggregationBarClick}
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.telemetryRecorder}
                 />
             )}
 
@@ -450,6 +454,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                                 showTrace={!!trace}
                                 isSearchJobsEnabled={isSearchJobsEnabled()}
                                 telemetryService={props.telemetryService}
+                                telemetryRecorder={props.telemetryRecorder}
                             />
                         }
                     />
@@ -457,6 +462,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                     <div className={styles.contents}>
                         <DidYouMean
                             telemetryService={props.telemetryService}
+                            telemetryRecorder={props.telemetryRecorder}
                             query={submittedURLQuery}
                             patternType={patternType}
                             caseSensitive={caseSensitive}
@@ -489,6 +495,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                                 results={results}
                                 sourcegraphURL={platformContext.sourcegraphURL}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 onClose={() => setShowCsvExportModal(false)}
                             />
                         )}

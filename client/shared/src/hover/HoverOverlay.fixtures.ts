@@ -7,6 +7,7 @@ import type { ActionItemAction } from '../actions/ActionItem'
 import type { MarkupContent, Badged, AggregableBadge } from '../codeintel/legacy-extensions/api'
 import type { PlatformContext } from '../platform/context'
 import { EMPTY_SETTINGS_CASCADE, type SettingsCascadeProps } from '../settings/settings'
+import { noOpTelemetryRecorder } from '../telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
 import type { HoverOverlayProps } from './HoverOverlay'
@@ -20,6 +21,7 @@ const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'settings'> = {
 export const commonProps = (): HoverOverlayProps & SettingsCascadeProps => ({
     location: history.location,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    telemetryRecorder: noOpTelemetryRecorder,
     extensionsController: NOOP_EXTENSIONS_CONTROLLER,
     platformContext: NOOP_PLATFORM_CONTEXT,
     overlayPosition: { top: 16, left: 16 },

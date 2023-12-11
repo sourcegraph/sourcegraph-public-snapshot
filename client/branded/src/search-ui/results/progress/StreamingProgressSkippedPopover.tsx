@@ -108,7 +108,7 @@ interface StreamingProgressSkippedPopoverProps extends TelemetryProps {
 }
 
 export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopoverProps> = props => {
-    const { query, progress, isSearchJobsEnabled, onSearchAgain, telemetryService } = props
+    const { query, progress, isSearchJobsEnabled, onSearchAgain, telemetryService, telemetryRecorder } = props
 
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
 
@@ -169,7 +169,11 @@ export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopover
             {isSearchJobsEnabled && (
                 <>
                     <hr className="mx-3 mt-3" />
-                    <ExhaustiveSearchMessage query={query} telemetryService={telemetryService} />
+                    <ExhaustiveSearchMessage
+                        query={query}
+                        telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
+                    />
                 </>
             )}
         </>
@@ -333,7 +337,7 @@ interface ExhaustiveSearchMessageProps extends TelemetryProps {
 }
 
 export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props => {
-    const { query, telemetryService } = props
+    const { query, telemetryService, telemetryRecorder } = props
     const navigate = useNavigate()
     const [createSearchJob, { loading, error }] = useMutation(CREATE_SEARCH_JOB)
 
@@ -343,18 +347,25 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
         const validState = validationErrors.length > 0 ? 'invalid' : 'valid'
 
         telemetryService.log('SearchJobsSearchFormShown', { validState }, { validState })
+        telemetryRecorder.recordEvent('searchJobsSearchForm', 'shown', {
+            metadata: { validState: validationErrors.length },
+        })
 
         if (validationErrors.length > 0) {
             const errorTypes = validationErrors.map(error => error.type)
 
             telemetryService.log('SearchJobsValidationErrors', { errors: errorTypes }, { errors: errorTypes })
+            telemetryRecorder.recordEvent('searchJobsValidationErrors', 'error', {
+                privateMetadata: { errors: errorTypes },
+            })
         }
-    }, [telemetryService, validationErrors])
+    }, [telemetryService, telemetryRecorder, validationErrors])
 
     const handleCreateSearchJobClick = async (): Promise<void> => {
         await createSearchJob({ variables: { query } })
 
         telemetryService.log('SearchJobsCreateClick', {}, {})
+        telemetryRecorder.recordEvent('searchJobsCreate', 'clicked')
         navigate('/search-jobs')
     }
 

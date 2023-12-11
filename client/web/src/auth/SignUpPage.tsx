@@ -39,6 +39,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
     authenticatedUser,
     context,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const location = useLocation()
     const query = new URLSearchParams(location.search)
@@ -97,6 +98,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 showEmailForm={query.has(ShowEmailFormQueryParameter)}
                 context={context}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
             />
         )
     }
@@ -110,6 +112,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 showEmailForm={query.has(ShowEmailFormQueryParameter)}
                 context={context}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 isSourcegraphDotCom={context.sourcegraphDotComMode}
             />
         )

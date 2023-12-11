@@ -136,6 +136,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         site: { __typename: 'Site' as const, id: window.context.siteGQLID },
         overviewComponents: props.overviewComponents,
         telemetryService: props.telemetryService,
+        telemetryRecorder: props.telemetryRecorder,
         codeInsightsEnabled: props.codeInsightsEnabled,
         endUserOnboardingEnabled,
     }

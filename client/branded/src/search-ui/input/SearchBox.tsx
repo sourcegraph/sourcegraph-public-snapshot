@@ -151,6 +151,7 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                             recentSearches={props.recentSearches ?? []}
                             onSelect={onSearchHistorySelect}
                             telemetryService={props.telemetryService}
+                            telemetryRecorder={props.telemetryRecorder}
                         />
                         <div className={styles.searchBoxSeparator} />
                     </>
@@ -221,6 +222,7 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                     <SearchHelpDropdownButton
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                     />
                 )}
             </div>

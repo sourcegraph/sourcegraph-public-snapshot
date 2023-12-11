@@ -200,10 +200,11 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
                         filePath={filePath}
                         isDir={true}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                     />
                 ),
             }
-        }, [filePath, repo, props.revision, props.telemetryService])
+        }, [filePath, repo, props.revision, props.telemetryService, props.telemetryRecorder])
     )
     // We need to resolve the Commits breadcrumb at the same time as the
     // filePath, so that the order is correct (otherwise Commits will show

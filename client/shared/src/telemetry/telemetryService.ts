@@ -1,3 +1,5 @@
+import { TelemetryRecorder, TelemetryV2Props } from '.'
+
 /**
  * Props interface that can be extended by React components depending on the TelemetryService.
  * These properties are part of {@link PlatformContext}.
@@ -5,7 +7,7 @@
  * @deprecated Use TelemetryV2Props for a '@sourcegraph/telemetry' implementation
  * instead.
  */
-export interface TelemetryProps {
+export interface TelemetryProps extends TelemetryV2Props {
     /**
      * A telemetry service implementation to log events.
      *
@@ -13,6 +15,7 @@ export interface TelemetryProps {
      * non-null (i.e. if the new SDK is available for the platform).
      */
     telemetryService: TelemetryService
+    telemetryRecorder: TelemetryRecorder
 }
 
 /**

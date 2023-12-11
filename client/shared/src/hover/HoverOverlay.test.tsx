@@ -5,6 +5,7 @@ import { NEVER } from 'rxjs'
 import { subtypeOf } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
+import { noOpTelemetryRecorder } from '../telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
 import { HoverOverlay, type HoverOverlayProps } from './HoverOverlay'
@@ -16,6 +17,7 @@ describe('HoverOverlay', () => {
     const commonProps = subtypeOf<HoverOverlayProps>()({
         location: history.location,
         telemetryService: NOOP_TELEMETRY_SERVICE,
+        telemetryRecorder: noOpTelemetryRecorder,
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
         platformContext: NOOP_PLATFORM_CONTEXT,
         hoveredToken: { repoName: 'r', commitID: 'c', revision: 'v', filePath: 'f', line: 1, character: 2 },

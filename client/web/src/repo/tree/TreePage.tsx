@@ -123,8 +123,10 @@ export const TreePage: FC<Props> = ({
     useEffect(() => {
         if (isRoot) {
             props.telemetryService.logViewEvent('Repository')
+            props.telemetryRecorder.recordEvent('repository', 'viewed')
         } else {
             props.telemetryService.logViewEvent('Tree')
+            props.telemetryRecorder.recordEvent('tree', 'viewed')
         }
     }, [isRoot, props.telemetryService])
 
@@ -145,10 +147,11 @@ export const TreePage: FC<Props> = ({
                         filePath={filePath}
                         isDir={true}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                     />
                 ),
             }
-        }, [isRoot, filePath, repoName, revision, props.telemetryService])
+        }, [isRoot, filePath, repoName, revision, props.telemetryService, props.telemetryRecorder])
     )
 
     const treeOrError = useObservable(
@@ -331,7 +334,10 @@ export const TreePage: FC<Props> = ({
                                 variant="secondary"
                                 outline={true}
                                 as={Link}
-                                onClick={() => props.telemetryService.log('repoPage:ownershipPage:clicked')}
+                                onClick={() => {
+                                    props.telemetryService.log('repoPage:ownershipPage:clicked')
+                                    props.telemetryRecorder.recordEvent('repoPage.ownershipPage', 'clicked')
+                                }}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiAccount} />{' '}
                                 <span className={styles.text}>Ownership</span>
@@ -364,6 +370,7 @@ export const TreePage: FC<Props> = ({
                 <TryCodyWidget
                     className="mb-2"
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.telemetryRecorder}
                     type="repo"
                     authenticatedUser={authenticatedUser}
                     context={context}

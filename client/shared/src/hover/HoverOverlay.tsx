@@ -95,6 +95,7 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
         actionsOrError,
         platformContext,
         telemetryService,
+        telemetryRecorder,
         extensionsController,
         pinOptions,
         location,
@@ -192,6 +193,7 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                                         showLoadingSpinnerDuringExecution={true}
                                         platformContext={platformContext}
                                         telemetryService={telemetryService}
+                                        telemetryRecorder={telemetryRecorder}
                                         extensionsController={extensionsController}
                                         location={location}
                                         actionItemStyleProps={actionItemStyleProps}

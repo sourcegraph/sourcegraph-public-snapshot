@@ -29,6 +29,7 @@ export const StreamingProgress: React.FunctionComponent<React.PropsWithChildren<
     onSearchAgain,
     isSearchJobsEnabled,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const isLoading = state === 'loading'
 
@@ -42,6 +43,7 @@ export const StreamingProgress: React.FunctionComponent<React.PropsWithChildren<
                     isSearchJobsEnabled={isSearchJobsEnabled}
                     onSearchAgain={onSearchAgain}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
             <TraceLink showTrace={showTrace} trace={progress.trace} />

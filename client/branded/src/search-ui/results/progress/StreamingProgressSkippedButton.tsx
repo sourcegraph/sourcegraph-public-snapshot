@@ -19,7 +19,7 @@ interface StreamingProgressSkippedButtonProps extends TelemetryProps {
 }
 
 export const StreamingProgressSkippedButton: FC<StreamingProgressSkippedButtonProps> = props => {
-    const { query, progress, isSearchJobsEnabled, onSearchAgain, telemetryService } = props
+    const { query, progress, isSearchJobsEnabled, onSearchAgain, telemetryService, telemetryRecorder } = props
     const [isOpen, setIsOpen] = useState(false)
 
     const skippedWithWarningOrError = useMemo(
@@ -68,6 +68,7 @@ export const StreamingProgressSkippedButton: FC<StreamingProgressSkippedButtonPr
                     isSearchJobsEnabled={isSearchJobsEnabled}
                     onSearchAgain={onSearchAgainWithPopupClose}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             </PopoverContent>
         </Popover>

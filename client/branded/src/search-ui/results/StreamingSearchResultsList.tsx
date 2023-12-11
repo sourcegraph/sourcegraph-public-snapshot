@@ -105,6 +105,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     fetchHighlightedFileLineRanges,
     settingsCascade,
     telemetryService,
+    telemetryRecorder,
     isSourcegraphDotCom,
     searchContextsEnabled,
     platformContext,
@@ -156,6 +157,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                         index={index}
                                         location={location}
                                         telemetryService={telemetryService}
+                                        telemetryRecorder={telemetryRecorder}
                                         result={result}
                                         onSelect={() => logSearchResultClicked?.(index, 'fileMatch')}
                                         defaultExpanded={false}
@@ -172,6 +174,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                     <SymbolSearchResult
                                         index={index}
                                         telemetryService={telemetryService}
+                                        telemetryRecorder={telemetryRecorder}
                                         result={result}
                                         onSelect={() => logSearchResultClicked?.(index, 'symbolMatch')}
                                         fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
@@ -189,6 +192,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                         repoDisplayName={displayRepoName(result.repository)}
                                         containerClassName={resultClassName}
                                         telemetryService={telemetryService}
+                                        telemetryRecorder={telemetryRecorder}
                                     />
                                 )}
                             </PrefetchableFile>
@@ -228,6 +232,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 onSelect={() => logSearchResultClicked?.(index, 'person')}
                                 containerClassName={resultClassName}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 queryState={queryState}
                                 buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
                             />
@@ -252,6 +257,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             prefetchFile,
             location,
             telemetryService,
+            telemetryRecorder,
             allExpanded,
             fetchHighlightedFileLineRanges,
             settingsCascade,
@@ -300,6 +306,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 showSearchContext={searchContextsEnabled}
                                 showQueryExamples={showQueryExamplesOnNoResultsPage}
                                 setQueryState={setQueryState}

@@ -40,6 +40,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
     containerClassName,
     index,
     telemetryService,
+    telemetryRecorder,
     settingsCascade,
     fetchHighlightedFileLineRanges,
 }) => {
@@ -68,6 +69,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                 filePath={result.path}
                 className={searchResultStyles.copyButton}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
             />
         </span>
     )
@@ -81,7 +83,8 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
 
     const logEventOnCopy = useCallback(() => {
         telemetryService.log(...codeCopiedEvent('file-match'))
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('CodeCopied', 'executed')
+    }, [telemetryService, telemetryRecorder])
 
     const fetchSymbolMatchLineRanges = useCallback(
         (startLine: number, endLine: number, format: HighlightResponseFormat) => {
@@ -106,13 +109,16 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         { durationMs: endTime - startTime },
                         { durationMs: endTime - startTime }
                     )
+                    telemetryRecorder.recordEvent('search.latencies.frontend.code-load', 'loaded', {
+                        metadata: { durationMs: endTime - startTime },
+                    })
                     return lines[
                         result.symbols.findIndex(symbol => symbol.line - 1 === startLine && symbol.line === endLine)
                     ]
                 })
             )
         },
-        [result, fetchHighlightedFileLineRanges, telemetryService]
+        [result, fetchHighlightedFileLineRanges, telemetryService, telemetryRecorder]
     )
 
     const fetchHighlightedSymbolMatchLineRanges = useCallback(

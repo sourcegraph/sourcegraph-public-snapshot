@@ -45,6 +45,11 @@ const mockTelemetryService = {
     logPageView: sinon.spy(),
 }
 
+const mockTelemetryRecorder = {
+    log: sinon.spy(),
+    recordEvent: sinon.spy(),
+}
+
 const Wrapper: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => {
     const apolloClient = useApolloClient()
     const api = new CodeInsightsGqlBackend(apolloClient)
@@ -168,7 +173,11 @@ const renderDashboardsContent = (
     ...renderWithBrandedContext(
         <MockedTestProvider mocks={mocks}>
             <Wrapper>
-                <DashboardsView dashboardId={dashboardID} telemetryService={mockTelemetryService} />
+                <DashboardsView
+                    dashboardId={dashboardID}
+                    telemetryService={mockTelemetryService}
+                    telemetryRecorder={mockTelemetryRecorder}
+                />
             </Wrapper>
         </MockedTestProvider>
     ),

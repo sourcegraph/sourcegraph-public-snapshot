@@ -190,6 +190,7 @@ interface TryCodyWidgetProps extends TelemetryProps {
 export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
     className,
     telemetryService,
+    telemetryRecorder,
     authenticatedUser,
     context,
     type,
@@ -203,7 +204,10 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
         }
         const eventPage = type === 'blob' ? 'BlobPage' : 'RepoPage'
         telemetryService.log(EventName.TRY_CODY_WEB_ONBOARDING_DISPLAYED, { type: eventPage }, { type: eventPage })
-    }, [isDismissed, telemetryService, type])
+        telemetryRecorder.recordEvent(EventName.TRY_CODY_WEB_ONBOARDING_DISPLAYED, 'displayed', {
+            privateMetadata: { type: eventPage },
+        })
+    }, [isDismissed, telemetryService, telemetryRecorder, type])
 
     if (isDismissed) {
         return null
@@ -228,11 +232,13 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
                     type={type}
                     theme={isLightTheme ? 'light' : 'dark'}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     isSourcegraphDotCom={isSourcegraphDotCom}
                 />
             ) : (
                 <NoAuthWidgetContent
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     type={type}
                     context={context}
                     isSourcegraphDotCom={isSourcegraphDotCom}

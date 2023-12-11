@@ -55,6 +55,7 @@ export const queryToTip = (id: string | undefined): Tip | null => {
 export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
     selectedSearchContextSpec,
     telemetryService,
+    telemetryRecorder,
     queryState = { query: '' },
     setQueryState,
     isSourcegraphDotCom = false,
@@ -75,12 +76,18 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
             // Run search for dotcom longer query examples
             if (isSourcegraphDotCom && queryExampleTabActive) {
                 telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
+                telemetryRecorder.recordEvent('QueryExample', 'clicked', {
+                    privateMetadata: { queryExample: query },
+                })
                 navigate(slug!)
             }
 
             setQueryState({ query: `${queryState.query} ${query}`.trimStart(), hint: EditorHint.Focus })
 
             telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
+            telemetryRecorder.recordEvent('QueryExample', 'clicked', {
+                privateMetadata: { queryExample: query },
+            })
 
             // Clear any previously set timeout.
             if (selectTipTimeout) {
@@ -104,6 +111,7 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
         },
         [
             telemetryService,
+            telemetryRecorder,
             queryState.query,
             setQueryState,
             selectedTip,

@@ -190,6 +190,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
             index={index}
             location={this.props.location}
             telemetryService={this.props.telemetryService}
+            telemetryRecorder={this.props.telemetryRecorder}
             defaultExpanded={true}
             result={referencesToContentMatch(uri, locationsByURI.get(uri)!)}
             onSelect={this.onSelect}

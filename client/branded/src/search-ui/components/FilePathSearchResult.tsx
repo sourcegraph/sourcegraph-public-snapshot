@@ -26,6 +26,7 @@ export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult 
     containerClassName,
     index,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
@@ -46,7 +47,12 @@ export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult 
                 className={styles.titleInner}
                 isKeyboardSelectable={true}
             />
-            <CopyPathAction filePath={result.path} className={styles.copyButton} telemetryService={telemetryService} />
+            <CopyPathAction
+                filePath={result.path}
+                className={styles.copyButton}
+                telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
+            />
         </span>
     )
 

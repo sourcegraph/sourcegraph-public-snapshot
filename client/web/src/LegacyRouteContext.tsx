@@ -25,7 +25,7 @@ import { NotFoundPage } from './components/HeroPage'
 import type { SearchStreamingProps } from './search'
 import type { StaticSourcegraphWebAppContext, DynamicSourcegraphWebAppContext } from './SourcegraphWebApp'
 import type { StaticAppConfig } from './staticAppConfig'
-import { eventLogger } from './tracking/eventLogger'
+import { eventLogger, telemetryRecorder } from './tracking/eventLogger'
 
 export interface StaticLegacyRouteContext extends LegacyRouteComputedContext, LegacyRouteStaticInjections {}
 
@@ -54,6 +54,7 @@ export interface LegacyRouteComputedContext {
  */
 export interface LegacyRouteStaticInjections
     extends Pick<TelemetryProps, 'telemetryService'>,
+        Pick<TelemetryProps, 'telemetryRecorder'>,
         Pick<
             SearchContextProps,
             | 'getUserSearchContextNamespaces'
@@ -144,6 +145,7 @@ export const LegacyRouteContextProvider: FC<PropsWithChildren<LegacyRouteContext
         streamSearch: aggregateStreamingSearch,
         fetchHighlightedFileLineRanges: _fetchHighlightedFileLineRanges,
         telemetryService: eventLogger,
+        telemetryRecorder: telemetryRecorder,
 
         /**
          * Breadcrumb props

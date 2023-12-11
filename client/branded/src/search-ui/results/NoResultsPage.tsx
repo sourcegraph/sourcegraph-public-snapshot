@@ -65,6 +65,7 @@ interface NoResultsPageProps extends TelemetryProps, Pick<SearchContextProps, 's
 export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoResultsPageProps>> = ({
     searchContextsEnabled,
     telemetryService,
+    telemetryRecorder,
     isSourcegraphDotCom,
     showSearchContext,
     showQueryExamples,
@@ -81,16 +82,22 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     const onClose = useCallback(
         (sectionID: SectionID) => {
             telemetryService.log('NoResultsPanel', { panelID: sectionID, action: 'closed' })
+            telemetryRecorder.recordEvent('noResultsPanel', 'closed', {
+                privateMetadata: {
+                    panelID: sectionID,
+                },
+            })
             setHiddenSectionIds((hiddenSectionIDs = []) =>
                 !hiddenSectionIDs.includes(sectionID) ? [...hiddenSectionIDs, sectionID] : hiddenSectionIDs
             )
         },
-        [setHiddenSectionIds, telemetryService]
+        [setHiddenSectionIds, telemetryService, telemetryRecorder]
     )
 
     useEffect(() => {
         telemetryService.logViewEvent('NoResultsPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('noResultsPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <div className={styles.root}>
@@ -114,6 +121,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                         <QueryExamples
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                             setQueryState={setQueryState}
                             isSourcegraphDotCom={isSourcegraphDotCom}
                         />
@@ -134,7 +142,10 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                         <Text>Check out the docs for more tips on getting the most from Sourcegraph.</Text>
                         <Text>
                             <Link
-                                onClick={() => telemetryService.log('NoResultsMore', { link: 'Docs' })}
+                                onClick={() => {
+                                    telemetryService.log('NoResultsMore', { link: 'Docs' })
+                                    telemetryRecorder.recordEvent('noResultsMore.docs', 'clicked')
+                                }}
                                 target="blank"
                                 to="https://docs.sourcegraph.com/"
                             >
@@ -150,6 +161,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 className="p-0 border-0 align-baseline"
                                 onClick={() => {
                                     telemetryService.log('NoResultsPanel', { action: 'showAll' })
+                                    telemetryRecorder.recordEvent('noResultsPanel', 'showAll')
                                     setHiddenSectionIds([])
                                 }}
                                 variant="link"

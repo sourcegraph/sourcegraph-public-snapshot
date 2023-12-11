@@ -54,6 +54,7 @@ function useBlobPanelViews({
     platformContext,
     useCodeIntel,
     telemetryService,
+    telemetryRecorder,
     fetchHighlightedFileLineRanges,
     ownEnabled,
 }: Props): void {
@@ -90,6 +91,7 @@ function useBlobPanelViews({
                                   platformContext={platformContext}
                                   extensionsController={extensionsController}
                                   telemetryService={telemetryService}
+                                  telemetryRecorder={telemetryRecorder}
                                   key="references"
                                   fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                   useCodeIntel={useCodeIntel}
@@ -138,6 +140,7 @@ function useBlobPanelViews({
                                       revision={revision}
                                       filePath={filePath}
                                       telemetryService={telemetryService}
+                                      telemetryRecorder={telemetryRecorder}
                                   />
                               </PanelContent>
                           ),

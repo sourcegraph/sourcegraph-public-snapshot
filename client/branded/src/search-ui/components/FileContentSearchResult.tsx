@@ -91,6 +91,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
     showAllMatches,
     openInNewTab,
     telemetryService,
+    telemetryRecorder,
     fetchHighlightedFileLineRanges,
     onSelect,
 }) => {
@@ -222,6 +223,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                     className={styles.copyButton}
                     filePath={result.path}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             </span>
             {description && <span className={classNames('ml-2', styles.headerDescription)}>{description}</span>}
@@ -271,6 +273,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     settingsCascade={settingsCascade}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     openInNewTab={openInNewTab}
                 />
                 {collapsible && (

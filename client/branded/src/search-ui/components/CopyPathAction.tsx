@@ -17,12 +17,13 @@ export const CopyPathAction: React.FunctionComponent<
         filePath: string
         className?: string
     } & TelemetryProps
-> = ({ filePath, className, telemetryService }) => {
+> = ({ filePath, className, telemetryService, telemetryRecorder }) => {
     const [copied, setCopied] = useState(false)
 
     const onClick = (event: React.MouseEvent<HTMLButtonElement>): void => {
         event.preventDefault()
         telemetryService.log('CopyFilePath')
+        telemetryRecorder.recordEvent('CopyFilePath', 'clicked')
         copy(filePath)
         setCopied(true)
         screenReaderAnnounce('Path copied to clipboard')
