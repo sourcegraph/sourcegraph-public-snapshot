@@ -9,16 +9,11 @@ export interface PerFileResultRanking {
     /**
      * Returns the hunks that should be displayed by default before the user expands them
      */
-    collapsedResults(matches: MatchItem[], context: number): RankingResult
+    collapsedResults(groups: MatchGroup[]): MatchGroup[]
     /**
      * Returns the hunks that should be displayed after the user has explicitly requested to see all results.
      */
-    expandedResults(matches: MatchItem[], context: number): RankingResult
-}
-
-export interface RankingResult {
-    matches: MatchItem[]
-    grouped: MatchGroup[]
+    expandedResults(groups: MatchGroup[]): MatchGroup[]
 }
 
 export interface MatchItem extends ExtensionBadgeType {
@@ -47,7 +42,7 @@ export interface MatchItem extends ExtensionBadgeType {
  * Describes a single group of matches.
  */
 export interface MatchGroup {
-    blobLines?: string[]
+    blobLines: string[]
 
     // The matches in this group to display.
     matches: MatchGroupMatch[]

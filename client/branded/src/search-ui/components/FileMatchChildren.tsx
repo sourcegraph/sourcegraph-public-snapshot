@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { appendLineRangeQueryParameter, isErrorLike, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
+import { appendLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import type { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { type HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
@@ -28,15 +28,6 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
 }
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
-    /**
-     * If LazyFileResultSyntaxHighlighting is enabled, we fetch plaintext
-     * line ranges _alongside_ the typical highlighted line ranges.
-     */
-    const enableLazyFileResultSyntaxHighlighting =
-        props.settingsCascade.final &&
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final.experimentalFeatures?.enableLazyFileResultSyntaxHighlighting
-
     const { result, grouped, fetchHighlightedFileLineRanges, telemetryService } = props
 
     const fetchFileRangeMatches = useCallback(
@@ -79,25 +70,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             )
         },
         [fetchFileRangeMatches, grouped, telemetryService]
-    )
-
-    const fetchPlainTextFileMatchLineRanges = React.useCallback(
-        (startLine: number, endLine: number) =>
-            fetchFileRangeMatches({
-                format: HighlightResponseFormat.HTML_PLAINTEXT,
-                ranges: grouped.map(
-                    (group): HighlightLineRange => ({
-                        startLine: group.startLine,
-                        endLine: group.endLine,
-                    })
-                ),
-            }).pipe(
-                map(
-                    lines =>
-                        lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
-                )
-            ),
-        [fetchFileRangeMatches, grouped]
     )
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
@@ -155,11 +127,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                     endLine={group.endLine}
                                     highlightRanges={group.matches}
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileMatchLineRanges}
-                                    fetchPlainTextFileRangeLines={
-                                        enableLazyFileResultSyntaxHighlighting
-                                            ? fetchPlainTextFileMatchLineRanges
-                                            : undefined
-                                    }
                                     blobLines={group.blobLines}
                                     onCopy={logEventOnCopy}
                                 />

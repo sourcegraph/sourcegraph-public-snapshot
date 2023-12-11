@@ -565,19 +565,23 @@ export const HIGHLIGHTED_FILE_LINES = [
     ],
 ]
 
+export const FILE_LINES_SIMPLE = [
+    'first line of code',
+    'second line of code',
+    'third line of code',
+    'fourth',
+    'fifth',
+    'sixth',
+    'seventh',
+    'eighth',
+    'ninth',
+    'tenth',
+]
+
 export const HIGHLIGHTED_FILE_LINES_SIMPLE = [
-    [
-        '<tr><td class="line" data-line="1"></td><td class="code">first line of code</td></tr>',
-        '<tr><td class="line" data-line="2"></td><td class="code">second line of code</td></tr>',
-        '<tr><td class="line" data-line="3"></td><td class="code">third line of code</td></tr>',
-        '<tr><td class="line" data-line="4"></td><td class="code">fourth</td></tr>',
-        '<tr><td class="line" data-line="5"></td><td class="code">fifth</td></tr>',
-        '<tr><td class="line" data-line="6"></td><td class="code">sixth</td></tr>',
-        '<tr><td class="line" data-line="7"></td><td class="code">seventh</td></tr>',
-        '<tr><td class="line" data-line="8"></td><td class="code">eighth</td></tr>',
-        '<tr><td class="line" data-line="9"></td><td class="code">ninth</td></tr>',
-        '<tr><td class="line" data-line="10"></td><td class="code">tenth</td></tr>',
-    ],
+    FILE_LINES_SIMPLE.map(
+        (line, i) => `<tr><td class="line" data-line="${i + 1}"></td><td class="code">${line}</td></tr>`
+    ),
 ]
 
 export const HIGHLIGHTED_FILE_LINES_LONG = [

@@ -7,6 +7,7 @@ import {
     HIGHLIGHTED_FILE_LINES,
     HIGHLIGHTED_FILE_LINES_LONG,
     HIGHLIGHTED_FILE_LINES_SIMPLE,
+    FILE_LINES_SIMPLE,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
@@ -19,6 +20,7 @@ describe('CodeExcerpt', () => {
     const startLine = 0
     const endLine = 3
     const defaultProps = {
+        blobLines: FILE_LINES_SIMPLE,
         repoName: 'github.com/golang/oauth2',
         commitID: 'e64efc72b421e893cbf63f17ba2221e7d6d0b0f3',
         filePath: '.travis.yml',

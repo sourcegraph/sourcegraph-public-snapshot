@@ -100,7 +100,6 @@ interface ChunkMatch {
     content: string
     contentStart: Location
     ranges: Range[]
-    aggregableBadges?: AggregableBadge[]
 }
 
 export interface SymbolMatch {
