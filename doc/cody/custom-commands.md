@@ -17,7 +17,7 @@ Custom Commands allow you to define reusable prompts tailored for your own needs
 
 ## Creating a Command
 
-You can can create a custom command by editing the [configuration JSON file](#file-paths), or by using command builder within VS Code.
+You can create a custom command by editing the [configuration JSON file](#file-paths), or by using command builder within VS Code.
 
 To access the command builder within VS Code, open the Cody commands menu (⌥C on Mac or Alt-C on Windows/Linux) → "Configure Custom Commands..." → "New Custom Command..."
 
