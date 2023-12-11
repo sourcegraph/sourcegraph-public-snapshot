@@ -1,24 +1,24 @@
 sh_binary(
-    name = "ami",
+    name = "ami.build",
     srcs = [
-        "build-bazel.sh",
+        "_ami.build.sh",
     ],
     args = [],
     data = [
         "aws_regions.json",
-        "build.sh",
         "docker-mirror.pkr.hcl",
         "install.sh",
         "//dev/tools:gcloud",
         "//dev/tools:packer",
     ],
-    env = {
-        "IMAGE_FAMILY": "testrfc795",
-        "EXECUTOR_IS_TAGGED_RELEASE": "false",
-    },
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )
 
-# TODO(@jhchabran:before_merge)
-# - remove the normal build.sh
-# - handle tagging, number, image_family from Bazel instead of pipeline generator.
+sh_binary(
+    name = "ami.push",
+    srcs = [
+        "_ami.push.sh",
+    ],
+    args = [],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)

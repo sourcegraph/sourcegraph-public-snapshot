@@ -116,8 +116,8 @@ oci_push(
 )
 
 sh_binary(
-    name = "publish_binary",
-    srcs = ["publish_binary.sh"],
+    name = "binary.push",
+    srcs = ["_binary.push.sh"],
     args = ["$(location :executor)"],
     data = [
         ":executor",

@@ -1,9 +1,9 @@
 load("//dev:tool_deps.bzl", "SRC_CLI_VERSION")
 
 sh_binary(
-    name = "ami",
+    name = "ami.build",
     srcs = [
-        "build-bazel.sh",
+        "_ami.build.sh",
     ],
     args = [],
     data = [
@@ -21,9 +21,19 @@ sh_binary(
         "//dev/tools:packer",
     ],
     env = {
-        "IMAGE_FAMILY": "testrfc795",
-        "EXECUTOR_IS_TAGGED_RELEASE": "false",
         "SRC_CLI_VERSION": SRC_CLI_VERSION,
     },
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+sh_binary(
+    name = "ami.push",
+    srcs = [
+        "_ami.push.sh",
+    ],
+    data = [
+        "//dev/tools:gcloud",
+    ],
+    tags = ["releasable"],
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )
