@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/urfave/cli/v2"
@@ -33,8 +34,13 @@ var doctorCommand = &cli.Command{
 		&cli.PathFlag{
 			Name:    "outputFile",
 			Aliases: []string{"o"},
-			Value:   fmt.Sprintf("sg-doctor-report-%s.md", time.Now().Format("2006-01-02-150405")),
 			Usage:   "write the report to a file with this name",
+		},
+		&cli.BoolFlag{
+			Name:    "render",
+			Aliases: []string{"r"},
+			Value:   false,
+			Usage:   "nicely render the report markdown in the terminal",
 		},
 	},
 	Action: runDoctorDiagnostics,
@@ -80,17 +86,27 @@ func runDoctorDiagnostics(cmd *cli.Context) error {
 		return errors.Newf("failed to load diagnostics from %q: %v", diagnosticsPath, err)
 	}
 
+	// We do not want our progress messages to land on std out so we set output to os.Stderr
+	diagOut := std.NewOutput(os.Stderr, false)
+
 	runner := &diagnosticRunner{
 		diagnostics,
-		std.Out,
-	}
-	report := runner.Run(cmd.Context)
-	err = writeDiagnosticReport(report, cmd.Path("outputFile"))
-	if err != nil {
-		return errors.Wrap(err, "failed to write diagnostic report")
+		diagOut,
 	}
 
-	std.Out.WriteLine(output.Emoji("📋", "Diagnostic report written to "+cmd.Path("outputFile")))
+	diagOut.WriteLine(output.Emoji("🥼", "Gathering diagnostics"))
+	report := runner.Run(cmd.Context)
+	diagOut.WriteLine(output.Emoji("💉", "Gathering of diagnostics complete!"))
+	markdown := buildMarkdownReport(report)
+
+	if cmd.Path("outputFile") != "" {
+		diagOut.WriteLine(output.Emoji("📋", "Diagnostic report written to "+cmd.Path("outputFile")))
+	} else if cmd.Bool("render") {
+		diagOut.WriteMarkdown(markdown)
+	} else {
+		// This is will print to stdOut allowing one to do sg doctor > report.txt
+		fmt.Println(markdown)
+	}
 
 	return nil
 }
@@ -99,11 +115,9 @@ func (d *diagnosticRunner) Run(ctx context.Context) DiagnosticReport {
 	env := os.Environ()
 	report := make(DiagnosticReport)
 
-	d.reporter.WriteLine(output.Emoji("🥼", "Gathering diagnostics"))
 	for group, diagnostics := range d.diagnostics.Diagnostic {
-		blk := d.reporter.Block(output.Emojif("💊", "Running %s diagnostics", group))
+		d.reporter.WriteLine(output.Emojif("💊", "Running %s diagnostics", group))
 		for _, diagnostic := range diagnostics {
-			pending := blk.Pending(output.Styledf(output.StylePending, "Running %q", diagnostic.Name))
 			out, err := run.BashInRoot(ctx, diagnostic.Cmd, env)
 			diag := diagnostic
 			report.Add(group, &DiagnosticResult{
@@ -111,40 +125,32 @@ func (d *diagnosticRunner) Run(ctx context.Context) DiagnosticReport {
 				out,
 				err,
 			})
-			pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Diagnostic %q complete", diagnostic.Name))
 		}
-		blk.Close()
 	}
-
-	d.reporter.WriteLine(output.Emoji("💉", "Gathering of diagnostics complete!"))
 
 	return report
 }
 
-func writeDiagnosticReport(report DiagnosticReport, dst string) error {
-	fd, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer fd.Close()
+func buildMarkdownReport(report DiagnosticReport) string {
+	var sb strings.Builder
 
-	fmt.Fprintf(fd, "# Diagnostic Report\n\n")
+	fmt.Fprintf(&sb, "# Diagnostic Report\n\n")
 	// General information
-	fmt.Fprintf(fd, "sg commit: %s\n", BuildCommit)
-	fmt.Fprintf(fd, "generated on: %s\n\n", time.Now())
+	fmt.Fprintf(&sb, "sg commit: `%s`\n\n", BuildCommit)
+	fmt.Fprintf(&sb, "generated on: `%s`\n\n", time.Now())
 	// Write out the report
 	titleCaser := cases.Title(language.English)
 	for group, result := range report {
-		fmt.Fprintf(fd, "## %s diagnostics\n\n", titleCaser.String(group))
+		fmt.Fprintf(&sb, "## %s diagnostics\n\n", titleCaser.String(group))
 		for _, item := range result {
 			cmdLine := fmt.Sprintf("Command: `%s`", item.Diagnostic.Cmd)
 			outputSection := fmt.Sprintf("Output: \n```\n%s\n```\n", item.Output)
 			errSection := fmt.Sprintf("Error: \n```\n%v\n```\n", item.Err)
-			fmt.Fprintf(fd, "### %s\n\n%s\n\n%s\n%s", titleCaser.String(item.Diagnostic.Name), cmdLine, outputSection, errSection)
+			fmt.Fprintf(&sb, "### %s\n\n%s\n\n%s\n%s", titleCaser.String(item.Diagnostic.Name), cmdLine, outputSection, errSection)
 		}
 	}
 
-	return nil
+	return sb.String()
 }
 
 func loadDiagnostics(path string) (*Diagnostics, error) {
