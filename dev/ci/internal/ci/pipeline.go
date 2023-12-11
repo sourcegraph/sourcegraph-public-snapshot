@@ -166,9 +166,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			))
 		}
 
-		// TODO QA
-		ops.Append(bazelPublishExecutorBinary(c))
-
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 
