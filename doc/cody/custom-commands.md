@@ -27,7 +27,7 @@ To access the command builder within VS Code, open the Cody commands menu (⌥C 
 
 Custom Commands can be defined in the following two file paths:
 
-* User Settings (`~/.vscode/code.json`) — Stored locally. Use this for personal commands to use across all your projects.
+* User Settings (`~/.vscode/cody.json`) — Stored locally. Use this for personal commands to use across all your projects.
 * Workspace Settings (`.vscode/cody.json`) — Stored in project’s repository. Use this to share commands with others working on the same codebase, and for project-specific commands.
 
 See the [examples](#examples) and [configuration properties](#configuration-properties) below for more details on how to configure custom commands.
