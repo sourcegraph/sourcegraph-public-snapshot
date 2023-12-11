@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"reflect"
 	"sort"
 	"strings"
@@ -1053,12 +1054,12 @@ type CodyProviders struct {
 type CodyCompletionProvider struct {
 	ChatModel       string
 	CompletionModel string
-	Provider        string
+	Provider        conftypes.CompletionsProviderName
 }
 
 type CodyEmbeddingsProvider struct {
 	Model    string
-	Provider string
+	Provider conftypes.EmbeddingsProviderName
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
