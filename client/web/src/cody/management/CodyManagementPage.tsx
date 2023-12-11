@@ -305,7 +305,8 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     <Link
                                         to={editor.docs}
                                         target="_blank"
-                                        className={!editor.instructions ? 'text-muted' : ''} rel="noopener"
+                                        className={!editor.instructions ? 'text-muted' : ''}
+                                        rel="noopener"
                                     >
                                         <Text size="small" className="text-muted">
                                             <Icon svgPath={mdiOpenInNew} aria-hidden={true} /> Documentation
