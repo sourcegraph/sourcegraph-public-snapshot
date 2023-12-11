@@ -574,26 +574,33 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 	email := r.URL.Query().Get("email")
 	tosAccepted := r.URL.Query().Get("tos_accepted")
 
-	firstSourceURLCookie, err := r.Cookie("sourcegraphSourceUrl")
-	var firstSourceURL string
-	if err == nil && firstSourceURLCookie != nil {
-		firstSourceURL = firstSourceURLCookie.Value
-	}
-
-	lastSourceURLCookie, err := r.Cookie("sourcegraphRecentSourceUrl")
-	var lastSourceURL string
-	if err == nil && lastSourceURLCookie != nil {
-		lastSourceURL = lastSourceURLCookie.Value
+	getCookie := func(name string) string {
+		c, err := r.Cookie(name)
+		if err != nil || c == nil {
+			return ""
+		}
+		return c.Value
 	}
 
 	anonymousUserId, _ := cookie.AnonymousUID(r)
 
 	hubspotutil.SyncUser(email, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContactProperties{
-		IsServerAdmin:   true,
-		AnonymousUserID: anonymousUserId,
-		FirstSourceURL:  firstSourceURL,
-		LastSourceURL:   lastSourceURL,
-		HasAgreedToToS:  tosAccepted == "true",
+		IsServerAdmin:          true,
+		AnonymousUserID:        anonymousUserId,
+		FirstSourceURL:         getCookie("sourcegraphSourceUrl"),
+		LastSourceURL:          getCookie("sourcegraphRecentSourceUrl"),
+		OriginalReferrer:       getCookie("originalReferrer"),
+		LastReferrer:           getCookie("Sg_referrer"),
+		SignupSessionSourceURL: getCookie("sourcegraphSignupSourceUrl"),
+		SignupSessionReferrer:  getCookie("sourcegraphSignupReferrer"),
+		SessionUTMCampaign:     getCookie("Sg_utm_campaign"),
+		SessionUTMSource:       getCookie("Sg_utm_source"),
+		SessionUTMMedium:       getCookie("Sg_utm_medium"),
+		SessionUTMContent:      getCookie("Sg_utm_content"),
+		SessionUTMTerm:         getCookie("Sg_utm_term"),
+		GoogleClickID:          getCookie("gclid"),
+		MicrosoftClickID:       getCookie("msclkid"),
+		HasAgreedToToS:         tosAccepted == "true",
 	})
 	return nil
 }
