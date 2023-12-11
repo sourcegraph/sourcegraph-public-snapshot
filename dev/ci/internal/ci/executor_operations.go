@@ -126,7 +126,7 @@ func bazelBuildExecutorDockerMirror(c Config) operations.Operation {
 // This defaults to `-nightly`, and will be `-$MAJOR-$MINOR` for a tagged release
 // build.
 func executorImageFamilyForConfig(c Config) string {
-	imageFamily := "sourcegraph-executors-TEST-nightly"
+	imageFamily := "sourcegraph-executors-test-nightly"
 	if c.RunType.Is(runtype.TaggedRelease) {
 		ver, err := semver.NewVersion(c.Version)
 		if err != nil {
