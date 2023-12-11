@@ -6,7 +6,7 @@ describe('hacksGobQueriesToRegex', () => {
     test('gob corner cases', () => {
         expect(hacksGobQueriesToRegex('')).toEqual('')
 
-        // TODO should this match nothing? Right the filter is a noop
+        // TODO should this match nothing? Right now the filter is a noop
         expect(hacksGobQueriesToRegex('f:')).toEqual('f:')
 
         // Quotes on regex filters just allow us to put spaces in
