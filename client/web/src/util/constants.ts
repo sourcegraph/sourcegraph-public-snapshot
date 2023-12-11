@@ -19,7 +19,7 @@ export const enum EventName {
 
     CODY_EDITOR_WIDGET_VIEWED = 'web:codyEditorWidget:viewed',
     CODY_SIDEBAR_CHAT_OPENED = 'web:codySidebar:chatOpened',
-    CODY_SIGNUP = 'CodySignup',
+    CODY_SIGNUP_CTA_CLICK = 'CodySignUpCTAClick',
     CODY_CHAT_DOWNLOAD_VSCODE = 'web:codyChat:downloadVSCodeCTA',
     CODY_CHAT_GET_EDITOR_EXTENSION = 'web:codyChat:getEditorExtensionCTA',
     CODY_CHAT_TRY_ON_PUBLIC_CODE = 'web:codyChat:tryOnPublicCodeCTA',
@@ -31,7 +31,7 @@ export const enum EventName {
     TRY_CODY_WEB_ONBOARDING_DISPLAYED = 'TryCodyWebOnboardingDisplayed',
     TRY_CODY_SIGNUP_INITIATED = 'CodySignUpInitiated',
     SPEAK_TO_AN_ENGINEER_CTA = 'SpeakToACodyEngineerCTA',
-    SIGNUP_INITIATED = 'SignupInitiated',
+    SIGNUP_INITIATED = 'SignUpInitiated',
 
     JOIN_IDE_WAITLIST = 'JoinIDEWaitlist',
     DOWNLOAD_IDE = 'DownloadIDE',
