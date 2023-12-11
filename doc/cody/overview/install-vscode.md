@@ -191,7 +191,6 @@ The file paths are relative to your workspace, and you can start with the root f
 
 In addition, to support customization and advanced use cases, you can create **Custom Commands** tailored to your requirements. Custom Commands are currently supported by Cody for the VS Code extension version 0.8 and above.
 
-[Learn more about Custom Commands here →](./../custom-commands.md)
 
 ## Cody VS Code Actions
 
