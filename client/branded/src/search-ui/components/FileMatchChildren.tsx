@@ -99,9 +99,8 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 <div>
                     {grouped.map(group => (
                         <div
-                            key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${
-                                group.position.character
-                            }`}
+                            key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${group.position.character
+                                }`}
                             className={classNames('test-file-match-children-item-wrapper', styles.itemCodeWrapper)}
                         >
                             <div

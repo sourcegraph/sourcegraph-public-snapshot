@@ -145,16 +145,12 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
 
     const expandedMatchGroups = useMemo(() => ranking.expandedResults(groups), [groups, ranking])
     const collapsedMatchGroups = useMemo(() => ranking.collapsedResults(groups), [groups, ranking])
-    const collapsedMatchCount = collapsedMatchGroups.length
 
-    const highlightRangesCount = useMemo(() => groups.reduce(sumHighlightRanges, 0), [groups])
-    const collapsedHighlightRangesCount = useMemo(
-        () => collapsedMatchGroups.reduce(sumHighlightRanges, 0),
-        [collapsedMatchGroups]
-    )
+    const highlightRangesCount = useMemo(() => expandedMatchGroups.reduce(sumHighlightRanges, 0), [expandedMatchGroups])
+    const collapsedHighlightRangesCount = useMemo(() => collapsedMatchGroups.reduce(sumHighlightRanges, 0), [collapsedMatchGroups])
 
     const hiddenMatchesCount = highlightRangesCount - collapsedHighlightRangesCount
-    const collapsible = !showAllMatches && highlightRangesCount > collapsedMatchCount
+    const collapsible = !showAllMatches && highlightRangesCount > collapsedHighlightRangesCount
 
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
@@ -261,10 +257,10 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                             {expanded
                                 ? 'Show less'
                                 : `Show ${hiddenMatchesCount} more ${pluralize(
-                                      'match',
-                                      hiddenMatchesCount,
-                                      'matches'
-                                  )}`}
+                                    'match',
+                                    hiddenMatchesCount,
+                                    'matches'
+                                )}`}
                         </span>
                     </button>
                 )}

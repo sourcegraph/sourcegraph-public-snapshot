@@ -81,8 +81,9 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
         <table>
             <tbody>
                 {blobLines.map((line, i) => (
-                    <tr key={startLine + i}>
-                        <td className="line" data-line={startLine + i + 1}>
+                    <tr key={line}>
+                        <td className="line" data-line={startLine + i + 1} />
+                        <td className="code">
                             <span>{line}</span>
                         </td>
                     </tr>
@@ -153,7 +154,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     return (
         <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilityOffset}>
             <Code data-testid="code-excerpt" onCopy={onCopy} className={classNames(styles.codeExcerpt, className)}>
-                <div ref={updateTableContainerElementReference}>codeTable</div>
+                <div ref={updateTableContainerElementReference}>{codeTable}</div>
             </Code>
         </VisibilitySensor>
     )
