@@ -23,7 +23,7 @@ Building and releasing is handled automatically by the CI pipeline.
 
 The executor binary is simply built with `bazel build //cmd/executor:executor`.
 
-For publishing it, see `//cmd/executor:publish_binary`:
+For publishing it, see `bazel run //cmd/executor:binary.push`:
 
 - In every scenario, the binary will be uploaded in `gcs://sourcegraph-artifacts/executors/$GIT_COMMIT/`.
 - If the current branch is `main` when this target is run, it will also be copied over `gcs://sourcegraph-artifacts/executors/latest`.
@@ -31,8 +31,22 @@ For publishing it, see `//cmd/executor:publish_binary`:
 
 ### VM image
 
-TODO
+The VM Image is built with `packer`, but it also uses an OCI image as a base for Firecracker, `//docker-images/executor-vm:image_tarball` which it depends on. That OCI image is a _legacy_ image, see `docker-images/executor-vm/README.md`.
+
+Because we're producing an AMI for both AWS and GCP, there are two steps involved:
+
+- `bazel run //cmd/executor/vm-image:ami.build` creates the AMI and names it according to the CI runtype.
+- `bazel run //cmd/executor/vm-image:ami.push` takes the AMIs from above and publish them (adjust perms, naming).
+
+While `gcloud` is provided by Bazel, AWS Cli is expected to be available on the host running Bazel.
+
+Building AMIs on GCP is rather quick, but it's notoriously slow on AWS (about 20m) so we use [target-determinator](https://github.com/bazel-contrib/target-determinator) to detect when to rebuild the image. See [ci-should-rebuild.sh](./ci-should-rebuild.sh), which is used by the pipeline generator to skip building it if we detect that nothing changed since the parent commit.
 
 ### Docker Mirror
 
-TODO
+Because we're producing an AMI for both AWS and GCP, there are two steps involved:
+
+- `bazel run //cmd/executor/docker-mirror:ami.build` creates the AMI and names it according to the CI runtype.
+- `bazel run //cmd/executor/docker-mirror:ami.push` takes the AMIs from above and publish them (adjust perms, naming).
+
+While `gcloud` is provided by Bazel, AWS Cli is expected to be available on the host running Bazel.

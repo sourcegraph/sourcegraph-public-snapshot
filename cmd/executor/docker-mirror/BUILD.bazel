@@ -21,6 +21,7 @@ sh_binary(
     ],
     args = [],
     data = [
+        # aws-cli is baked in the agents, because it's not that easy to get Bazel to install it.
         "//dev/tools:gcloud",
     ],
     deps = ["@bazel_tools//tools/bash/runfiles"],

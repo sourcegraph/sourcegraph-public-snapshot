@@ -31,6 +31,7 @@ sh_binary(
         "_ami.push.sh",
     ],
     data = [
+        # aws-cli is baked in the agents, because it's not that easy to get Bazel to install it.
         "//dev/tools:gcloud",
     ],
     tags = ["releasable"],
