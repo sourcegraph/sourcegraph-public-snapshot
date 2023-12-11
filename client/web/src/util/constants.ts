@@ -32,6 +32,7 @@ export const enum EventName {
     TRY_CODY_SIGNUP_INITIATED = 'CodySignUpInitiated',
     SPEAK_TO_AN_ENGINEER_CTA = 'SpeakToACodyEngineerCTA',
     SIGNUP_INITIATED = 'SignUpInitiated',
+    SIGNUP_COMPLETED = 'web:auth:signUpCompleted',
 
     JOIN_IDE_WAITLIST = 'JoinIDEWaitlist',
     DOWNLOAD_IDE = 'DownloadIDE',
