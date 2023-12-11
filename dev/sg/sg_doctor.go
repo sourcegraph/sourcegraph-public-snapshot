@@ -30,20 +30,7 @@ var doctorCommand = &cli.Command{
 	further diagnosis.
 	`,
 	Category: category.Util,
-	Flags: []cli.Flag{
-		&cli.PathFlag{
-			Name:    "outputFile",
-			Aliases: []string{"o"},
-			Usage:   "write the report to a file with this name",
-		},
-		&cli.BoolFlag{
-			Name:    "render",
-			Aliases: []string{"r"},
-			Value:   false,
-			Usage:   "nicely render the report markdown in the terminal",
-		},
-	},
-	Action: runDoctorDiagnostics,
+	Action:   runDoctorDiagnostics,
 }
 
 type Diagnostic struct {
@@ -80,7 +67,7 @@ func runDoctorDiagnostics(cmd *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	diagnosticsPath := filepath.Join(repoRoot, "sg-doctor.yaml")
+	diagnosticsPath := filepath.Join(repoRoot, "sg.doctor.yaml")
 	diagnostics, err := loadDiagnostics(diagnosticsPath)
 	if err != nil {
 		return errors.Newf("failed to load diagnostics from %q: %v", diagnosticsPath, err)
@@ -99,25 +86,14 @@ func runDoctorDiagnostics(cmd *cli.Context) error {
 	diagOut.WriteLine(output.Emoji("💉", "Gathering of diagnostics complete!"))
 	markdown := buildMarkdownReport(report)
 
-	if cmd.Path("outputFile") != "" {
-		fd, err := os.Create(cmd.Path("outputFile"))
-		if err != nil {
-			return err
-		}
-		defer fd.Close()
-
-		fd.WriteString(markdown)
-		diagOut.WriteLine(output.Emoji("📋", "Diagnostic report written to "+cmd.Path("outputFile")))
+	// check if we're rendering to the terminal or to another program
+	o, _ := os.Stdout.Stat()
+	if o.Mode()&os.ModeCharDevice != os.ModeCharDevice {
+		// our output has been redirected to another program, so lets just render it raw
+		fmt.Println(markdown)
 	} else {
-		// check if we're rendering to the terminal or to another program
-		o, _ := os.Stdout.Stat()
-		if o.Mode()&os.ModeCharDevice != os.ModeCharDevice {
-			// Our output has been redirected to another program, so lets just render it raw
-			fmt.Println(markdown)
-		} else {
-			// rendering to a terminal! so lets make it nice
-			diagOut.WriteMarkdown(markdown)
-		}
+		// rendering to a terminal! so lets make it nice
+		diagOut.WriteMarkdown(markdown)
 	}
 	return nil
 }
