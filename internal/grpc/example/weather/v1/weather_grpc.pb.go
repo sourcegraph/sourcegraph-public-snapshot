@@ -32,9 +32,9 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WeatherServiceClient interface {
 	// Unary RPC: Get current weather for a location.
-	GetCurrentWeather(ctx context.Context, in *LocationRequest, opts ...grpc.CallOption) (*WeatherResponse, error)
+	GetCurrentWeather(ctx context.Context, in *GetCurrentWeatherRequest, opts ...grpc.CallOption) (*GetCurrentWeatherResponse, error)
 	// Server Streaming RPC: Subscribe to severe weather alerts.
-	SubscribeWeatherAlerts(ctx context.Context, in *AlertRequest, opts ...grpc.CallOption) (WeatherService_SubscribeWeatherAlertsClient, error)
+	SubscribeWeatherAlerts(ctx context.Context, in *SubscribeWeatherAlertsRequest, opts ...grpc.CallOption) (WeatherService_SubscribeWeatherAlertsClient, error)
 	// Client Streaming RPC: Send weather data from sensors.
 	UploadWeatherData(ctx context.Context, opts ...grpc.CallOption) (WeatherService_UploadWeatherDataClient, error)
 	// Bidirectional Streaming RPC: Real-time weather updates.
@@ -43,7 +43,7 @@ type WeatherServiceClient interface {
 	UploadWeatherScreenshot(ctx context.Context, opts ...grpc.CallOption) (WeatherService_UploadWeatherScreenshotClient, error)
 	// Deprecated: Do not use.
 	// Deprecated RPC: Get current weather for a location.
-	GetCurrentWeatherOld(ctx context.Context, in *LocationRequest, opts ...grpc.CallOption) (*WeatherResponse, error)
+	GetCurrentWeatherOld(ctx context.Context, in *GetCurrentWeatherOldRequest, opts ...grpc.CallOption) (*GetCurrentWeatherOldResponse, error)
 }
 
 type weatherServiceClient struct {
@@ -54,8 +54,8 @@ func NewWeatherServiceClient(cc grpc.ClientConnInterface) WeatherServiceClient {
 	return &weatherServiceClient{cc}
 }
 
-func (c *weatherServiceClient) GetCurrentWeather(ctx context.Context, in *LocationRequest, opts ...grpc.CallOption) (*WeatherResponse, error) {
-	out := new(WeatherResponse)
+func (c *weatherServiceClient) GetCurrentWeather(ctx context.Context, in *GetCurrentWeatherRequest, opts ...grpc.CallOption) (*GetCurrentWeatherResponse, error) {
+	out := new(GetCurrentWeatherResponse)
 	err := c.cc.Invoke(ctx, WeatherService_GetCurrentWeather_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (c *weatherServiceClient) GetCurrentWeather(ctx context.Context, in *Locati
 	return out, nil
 }
 
-func (c *weatherServiceClient) SubscribeWeatherAlerts(ctx context.Context, in *AlertRequest, opts ...grpc.CallOption) (WeatherService_SubscribeWeatherAlertsClient, error) {
+func (c *weatherServiceClient) SubscribeWeatherAlerts(ctx context.Context, in *SubscribeWeatherAlertsRequest, opts ...grpc.CallOption) (WeatherService_SubscribeWeatherAlertsClient, error) {
 	stream, err := c.cc.NewStream(ctx, &WeatherService_ServiceDesc.Streams[0], WeatherService_SubscribeWeatherAlerts_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func (c *weatherServiceClient) SubscribeWeatherAlerts(ctx context.Context, in *A
 }
 
 type WeatherService_SubscribeWeatherAlertsClient interface {
-	Recv() (*AlertResponse, error)
+	Recv() (*SubscribeWeatherAlertsResponse, error)
 	grpc.ClientStream
 }
 
@@ -87,8 +87,8 @@ type weatherServiceSubscribeWeatherAlertsClient struct {
 	grpc.ClientStream
 }
 
-func (x *weatherServiceSubscribeWeatherAlertsClient) Recv() (*AlertResponse, error) {
-	m := new(AlertResponse)
+func (x *weatherServiceSubscribeWeatherAlertsClient) Recv() (*SubscribeWeatherAlertsResponse, error) {
+	m := new(SubscribeWeatherAlertsResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -105,8 +105,8 @@ func (c *weatherServiceClient) UploadWeatherData(ctx context.Context, opts ...gr
 }
 
 type WeatherService_UploadWeatherDataClient interface {
-	Send(*SensorData) error
-	CloseAndRecv() (*UploadStatus, error)
+	Send(*UploadWeatherDataRequest) error
+	CloseAndRecv() (*UploadWeatherDataResponse, error)
 	grpc.ClientStream
 }
 
@@ -114,15 +114,15 @@ type weatherServiceUploadWeatherDataClient struct {
 	grpc.ClientStream
 }
 
-func (x *weatherServiceUploadWeatherDataClient) Send(m *SensorData) error {
+func (x *weatherServiceUploadWeatherDataClient) Send(m *UploadWeatherDataRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *weatherServiceUploadWeatherDataClient) CloseAndRecv() (*UploadStatus, error) {
+func (x *weatherServiceUploadWeatherDataClient) CloseAndRecv() (*UploadWeatherDataResponse, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(UploadStatus)
+	m := new(UploadWeatherDataResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -139,8 +139,8 @@ func (c *weatherServiceClient) RealTimeWeather(ctx context.Context, opts ...grpc
 }
 
 type WeatherService_RealTimeWeatherClient interface {
-	Send(*LocationUpdate) error
-	Recv() (*WeatherResponse, error)
+	Send(*RealTimeWeatherRequest) error
+	Recv() (*RealTimeWeatherResponse, error)
 	grpc.ClientStream
 }
 
@@ -148,12 +148,12 @@ type weatherServiceRealTimeWeatherClient struct {
 	grpc.ClientStream
 }
 
-func (x *weatherServiceRealTimeWeatherClient) Send(m *LocationUpdate) error {
+func (x *weatherServiceRealTimeWeatherClient) Send(m *RealTimeWeatherRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *weatherServiceRealTimeWeatherClient) Recv() (*WeatherResponse, error) {
-	m := new(WeatherResponse)
+func (x *weatherServiceRealTimeWeatherClient) Recv() (*RealTimeWeatherResponse, error) {
+	m := new(RealTimeWeatherResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -195,8 +195,8 @@ func (x *weatherServiceUploadWeatherScreenshotClient) CloseAndRecv() (*UploadWea
 }
 
 // Deprecated: Do not use.
-func (c *weatherServiceClient) GetCurrentWeatherOld(ctx context.Context, in *LocationRequest, opts ...grpc.CallOption) (*WeatherResponse, error) {
-	out := new(WeatherResponse)
+func (c *weatherServiceClient) GetCurrentWeatherOld(ctx context.Context, in *GetCurrentWeatherOldRequest, opts ...grpc.CallOption) (*GetCurrentWeatherOldResponse, error) {
+	out := new(GetCurrentWeatherOldResponse)
 	err := c.cc.Invoke(ctx, WeatherService_GetCurrentWeatherOld_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -209,9 +209,9 @@ func (c *weatherServiceClient) GetCurrentWeatherOld(ctx context.Context, in *Loc
 // for forward compatibility
 type WeatherServiceServer interface {
 	// Unary RPC: Get current weather for a location.
-	GetCurrentWeather(context.Context, *LocationRequest) (*WeatherResponse, error)
+	GetCurrentWeather(context.Context, *GetCurrentWeatherRequest) (*GetCurrentWeatherResponse, error)
 	// Server Streaming RPC: Subscribe to severe weather alerts.
-	SubscribeWeatherAlerts(*AlertRequest, WeatherService_SubscribeWeatherAlertsServer) error
+	SubscribeWeatherAlerts(*SubscribeWeatherAlertsRequest, WeatherService_SubscribeWeatherAlertsServer) error
 	// Client Streaming RPC: Send weather data from sensors.
 	UploadWeatherData(WeatherService_UploadWeatherDataServer) error
 	// Bidirectional Streaming RPC: Real-time weather updates.
@@ -220,7 +220,7 @@ type WeatherServiceServer interface {
 	UploadWeatherScreenshot(WeatherService_UploadWeatherScreenshotServer) error
 	// Deprecated: Do not use.
 	// Deprecated RPC: Get current weather for a location.
-	GetCurrentWeatherOld(context.Context, *LocationRequest) (*WeatherResponse, error)
+	GetCurrentWeatherOld(context.Context, *GetCurrentWeatherOldRequest) (*GetCurrentWeatherOldResponse, error)
 	mustEmbedUnimplementedWeatherServiceServer()
 }
 
@@ -228,10 +228,10 @@ type WeatherServiceServer interface {
 type UnimplementedWeatherServiceServer struct {
 }
 
-func (UnimplementedWeatherServiceServer) GetCurrentWeather(context.Context, *LocationRequest) (*WeatherResponse, error) {
+func (UnimplementedWeatherServiceServer) GetCurrentWeather(context.Context, *GetCurrentWeatherRequest) (*GetCurrentWeatherResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentWeather not implemented")
 }
-func (UnimplementedWeatherServiceServer) SubscribeWeatherAlerts(*AlertRequest, WeatherService_SubscribeWeatherAlertsServer) error {
+func (UnimplementedWeatherServiceServer) SubscribeWeatherAlerts(*SubscribeWeatherAlertsRequest, WeatherService_SubscribeWeatherAlertsServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeWeatherAlerts not implemented")
 }
 func (UnimplementedWeatherServiceServer) UploadWeatherData(WeatherService_UploadWeatherDataServer) error {
@@ -243,7 +243,7 @@ func (UnimplementedWeatherServiceServer) RealTimeWeather(WeatherService_RealTime
 func (UnimplementedWeatherServiceServer) UploadWeatherScreenshot(WeatherService_UploadWeatherScreenshotServer) error {
 	return status.Errorf(codes.Unimplemented, "method UploadWeatherScreenshot not implemented")
 }
-func (UnimplementedWeatherServiceServer) GetCurrentWeatherOld(context.Context, *LocationRequest) (*WeatherResponse, error) {
+func (UnimplementedWeatherServiceServer) GetCurrentWeatherOld(context.Context, *GetCurrentWeatherOldRequest) (*GetCurrentWeatherOldResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentWeatherOld not implemented")
 }
 func (UnimplementedWeatherServiceServer) mustEmbedUnimplementedWeatherServiceServer() {}
@@ -260,7 +260,7 @@ func RegisterWeatherServiceServer(s grpc.ServiceRegistrar, srv WeatherServiceSer
 }
 
 func _WeatherService_GetCurrentWeather_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LocationRequest)
+	in := new(GetCurrentWeatherRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -272,13 +272,13 @@ func _WeatherService_GetCurrentWeather_Handler(srv interface{}, ctx context.Cont
 		FullMethod: WeatherService_GetCurrentWeather_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WeatherServiceServer).GetCurrentWeather(ctx, req.(*LocationRequest))
+		return srv.(WeatherServiceServer).GetCurrentWeather(ctx, req.(*GetCurrentWeatherRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _WeatherService_SubscribeWeatherAlerts_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(AlertRequest)
+	m := new(SubscribeWeatherAlertsRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
@@ -286,7 +286,7 @@ func _WeatherService_SubscribeWeatherAlerts_Handler(srv interface{}, stream grpc
 }
 
 type WeatherService_SubscribeWeatherAlertsServer interface {
-	Send(*AlertResponse) error
+	Send(*SubscribeWeatherAlertsResponse) error
 	grpc.ServerStream
 }
 
@@ -294,7 +294,7 @@ type weatherServiceSubscribeWeatherAlertsServer struct {
 	grpc.ServerStream
 }
 
-func (x *weatherServiceSubscribeWeatherAlertsServer) Send(m *AlertResponse) error {
+func (x *weatherServiceSubscribeWeatherAlertsServer) Send(m *SubscribeWeatherAlertsResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -303,8 +303,8 @@ func _WeatherService_UploadWeatherData_Handler(srv interface{}, stream grpc.Serv
 }
 
 type WeatherService_UploadWeatherDataServer interface {
-	SendAndClose(*UploadStatus) error
-	Recv() (*SensorData, error)
+	SendAndClose(*UploadWeatherDataResponse) error
+	Recv() (*UploadWeatherDataRequest, error)
 	grpc.ServerStream
 }
 
@@ -312,12 +312,12 @@ type weatherServiceUploadWeatherDataServer struct {
 	grpc.ServerStream
 }
 
-func (x *weatherServiceUploadWeatherDataServer) SendAndClose(m *UploadStatus) error {
+func (x *weatherServiceUploadWeatherDataServer) SendAndClose(m *UploadWeatherDataResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *weatherServiceUploadWeatherDataServer) Recv() (*SensorData, error) {
-	m := new(SensorData)
+func (x *weatherServiceUploadWeatherDataServer) Recv() (*UploadWeatherDataRequest, error) {
+	m := new(UploadWeatherDataRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -329,8 +329,8 @@ func _WeatherService_RealTimeWeather_Handler(srv interface{}, stream grpc.Server
 }
 
 type WeatherService_RealTimeWeatherServer interface {
-	Send(*WeatherResponse) error
-	Recv() (*LocationUpdate, error)
+	Send(*RealTimeWeatherResponse) error
+	Recv() (*RealTimeWeatherRequest, error)
 	grpc.ServerStream
 }
 
@@ -338,12 +338,12 @@ type weatherServiceRealTimeWeatherServer struct {
 	grpc.ServerStream
 }
 
-func (x *weatherServiceRealTimeWeatherServer) Send(m *WeatherResponse) error {
+func (x *weatherServiceRealTimeWeatherServer) Send(m *RealTimeWeatherResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *weatherServiceRealTimeWeatherServer) Recv() (*LocationUpdate, error) {
-	m := new(LocationUpdate)
+func (x *weatherServiceRealTimeWeatherServer) Recv() (*RealTimeWeatherRequest, error) {
+	m := new(RealTimeWeatherRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -377,7 +377,7 @@ func (x *weatherServiceUploadWeatherScreenshotServer) Recv() (*UploadWeatherScre
 }
 
 func _WeatherService_GetCurrentWeatherOld_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LocationRequest)
+	in := new(GetCurrentWeatherOldRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -389,7 +389,7 @@ func _WeatherService_GetCurrentWeatherOld_Handler(srv interface{}, ctx context.C
 		FullMethod: WeatherService_GetCurrentWeatherOld_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WeatherServiceServer).GetCurrentWeatherOld(ctx, req.(*LocationRequest))
+		return srv.(WeatherServiceServer).GetCurrentWeatherOld(ctx, req.(*GetCurrentWeatherOldRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

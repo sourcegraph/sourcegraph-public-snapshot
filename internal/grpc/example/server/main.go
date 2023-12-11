@@ -28,7 +28,7 @@ type weatherGRPCServer struct {
 }
 
 // GetCurrentWeather is a Unary RPC (single request, single response) that returns the current weather for the requested location.
-func (s *weatherGRPCServer) GetCurrentWeather(ctx context.Context, req *pb.LocationRequest) (*pb.WeatherResponse, error) {
+func (s *weatherGRPCServer) GetCurrentWeather(ctx context.Context, req *pb.GetCurrentWeatherRequest) (*pb.GetCurrentWeatherResponse, error) {
 	// We use the generated getter method to safety access the location since there are no required fields in Protobuf messages:
 	// The getters return the zero value for the type if the field is not set.
 	//
@@ -76,11 +76,11 @@ func (s *weatherGRPCServer) GetCurrentWeather(ctx context.Context, req *pb.Locat
 		return nil, err
 	}
 
-	return WeatherResponseToProto(response), nil
+	return WeatherResponseToGetCurrentWeatherProto(response), nil
 }
 
 // SubscribeWeatherAlerts is a Server Streaming (single request, multiple responses) RPC that returns a stream of relevant weather alerts.
-func (s *weatherGRPCServer) SubscribeWeatherAlerts(req *pb.AlertRequest, stream pb.WeatherService_SubscribeWeatherAlertsServer) error {
+func (s *weatherGRPCServer) SubscribeWeatherAlerts(req *pb.SubscribeWeatherAlertsRequest, stream pb.WeatherService_SubscribeWeatherAlertsServer) error {
 	ctx := stream.Context()
 	callback := func(a *service.WeatherAlert) error {
 		// Send a message to the client
@@ -125,7 +125,7 @@ func (s *weatherGRPCServer) UploadWeatherData(stream pb.WeatherService_UploadWea
 			// io.EOF is a sentinel value that indicates that the client has explicitly closed its end of the stream, which signals the end of the RPC.
 
 			// We can use SendAndClose to send a final message to the client and close our end of the stream.
-			return stream.SendAndClose(&pb.UploadStatus{
+			return stream.SendAndClose(&pb.UploadWeatherDataResponse{
 				Message: "Data received successfully",
 			})
 		}
@@ -174,7 +174,7 @@ func (s *weatherGRPCServer) RealTimeWeather(stream pb.WeatherService_RealTimeWea
 		}
 
 		// Send a message back to the client with the current weather for the requested location.
-		err = stream.Send(WeatherResponseToProto(weather))
+		err = stream.Send(WeatherResponseToRealTimeWeatherProto(weather))
 		if err != nil {
 			return err
 		}
@@ -229,6 +229,9 @@ func (w *weatherGRPCServer) UploadWeatherScreenshot(stream pb.WeatherService_Upl
 }
 
 func main() {
+	logger.Init(logger.Resource{
+		Name: "weather-server",
+	})
 	l := logger.Scoped("weather-server")
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {

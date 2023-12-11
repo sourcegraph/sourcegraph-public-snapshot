@@ -7,18 +7,51 @@ import (
 	pb "github.com/sourcegraph/sourcegraph/internal/grpc/example/weather/v1"
 )
 
-func WeatherResponseToProto(r *service.WeatherResponse) *pb.WeatherResponse {
+func WeatherResponseToGetCurrentWeatherProto(r *service.WeatherResponse) *pb.GetCurrentWeatherResponse {
 	if r == nil {
 		return nil
 	}
 
-	return &pb.WeatherResponse{
+	return &pb.GetCurrentWeatherResponse{
 		Description: r.Description,
 		Temperature: TemperatureToProto(r.Temperature),
 	}
 }
 
-func WeatherResponseFromProto(r *pb.WeatherResponse) *service.WeatherResponse {
+func WeatherResponseFromGetCurrentWeatherProto(r *pb.GetCurrentWeatherResponse) *service.WeatherResponse {
+	if r == nil {
+		return nil
+	}
+
+	return &service.WeatherResponse{
+		Description: r.GetDescription(),
+		Temperature: TemperatureFromProto(r.GetTemperature()),
+	}
+}
+
+func WeatherResponseToRealTimeWeatherProto(r *service.WeatherResponse) *pb.RealTimeWeatherResponse {
+	if r == nil {
+		return nil
+	}
+
+	return &pb.RealTimeWeatherResponse{
+		Description: r.Description,
+		Temperature: TemperatureToProto(r.Temperature),
+	}
+}
+
+func WeatherResponseFromRealTimeWeatherProto(r *pb.RealTimeWeatherResponse) *service.WeatherResponse {
+	if r == nil {
+		return nil
+	}
+
+	return &service.WeatherResponse{
+		Description: r.GetDescription(),
+		Temperature: TemperatureFromProto(r.GetTemperature()),
+	}
+}
+
+func WeatherResponseFromProto(r *pb.GetCurrentWeatherResponse) *service.WeatherResponse {
 	if r == nil {
 		return nil
 	}
@@ -51,17 +84,17 @@ func SensorOfflineErrorFromProto(e *pb.SensorOfflineError) *service.SensorOfflin
 	}
 }
 
-func WeatherAlertToProto(a *service.WeatherAlert) *pb.AlertResponse {
+func WeatherAlertToProto(a *service.WeatherAlert) *pb.SubscribeWeatherAlertsResponse {
 	if a == nil {
 		return nil
 	}
 
-	return &pb.AlertResponse{
+	return &pb.SubscribeWeatherAlertsResponse{
 		Alert: a.Alert,
 	}
 }
 
-func WeatherAlertFromProto(a *pb.AlertResponse) *service.WeatherAlert {
+func WeatherAlertFromProto(a *pb.SubscribeWeatherAlertsResponse) *service.WeatherAlert {
 	if a == nil {
 		return nil
 	}
@@ -71,19 +104,19 @@ func WeatherAlertFromProto(a *pb.AlertResponse) *service.WeatherAlert {
 	}
 }
 
-func SensorDataToProto(a *service.SensorData) *pb.SensorData {
+func UploadWeatherDataRequestToProto(a *service.SensorData) *pb.UploadWeatherDataRequest {
 	if a == nil {
 		return nil
 	}
 
-	return &pb.SensorData{
+	return &pb.UploadWeatherDataRequest{
 		SensorId:    a.SensorId,
 		Humidity:    a.Humidity,
 		Temperature: TemperatureToProto(a.Temperature),
 	}
 }
 
-func SensorDataFromProto(a *pb.SensorData) *service.SensorData {
+func SensorDataFromProto(a *pb.UploadWeatherDataRequest) *service.SensorData {
 	if a == nil {
 		return nil
 	}
@@ -102,6 +135,8 @@ func TemperatureToProto(a *service.Temperature) *pb.Temperature {
 
 	var unit pb.Temperature_Unit
 	switch a.Unit {
+	case service.UNSPECIFIED:
+		unit = pb.Temperature_UNIT_UNSPECIFIED
 	case service.CELSIUS:
 		unit = pb.Temperature_UNIT_CELSIUS
 	case service.FAHRENHEIT:
@@ -125,6 +160,8 @@ func TemperatureFromProto(a *pb.Temperature) *service.Temperature {
 
 	var unit service.TemperatureUnit
 	switch a.GetUnit() {
+	case pb.Temperature_UNIT_UNSPECIFIED:
+		unit = service.UNSPECIFIED
 	case pb.Temperature_UNIT_CELSIUS:
 		unit = service.CELSIUS
 	case pb.Temperature_UNIT_FAHRENHEIT:

@@ -7,44 +7,43 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/grpc/example/we
 // The weather service definition.
 service WeatherService {
   // Unary RPC: Get current weather for a location.
-  rpc GetCurrentWeather(LocationRequest) returns (WeatherResponse) {}
+  rpc GetCurrentWeather(GetCurrentWeatherRequest) returns (GetCurrentWeatherResponse) {}
 
   // Server Streaming RPC: Subscribe to severe weather alerts.
-  rpc SubscribeWeatherAlerts(AlertRequest) returns (stream AlertResponse) {}
+  rpc SubscribeWeatherAlerts(SubscribeWeatherAlertsRequest) returns (stream SubscribeWeatherAlertsResponse) {}
 
   // Client Streaming RPC: Send weather data from sensors.
-  rpc UploadWeatherData(stream SensorData) returns (UploadStatus) {}
+  rpc UploadWeatherData(stream UploadWeatherDataRequest) returns (UploadWeatherDataResponse) {}
 
   // Bidirectional Streaming RPC: Real-time weather updates.
-  rpc RealTimeWeather(stream LocationUpdate) returns (stream WeatherResponse) {}
+  rpc RealTimeWeather(stream RealTimeWeatherRequest) returns (stream RealTimeWeatherResponse) {}
 
   // Client Streaming RPC: Upload a weather screenshot.
   rpc UploadWeatherScreenshot(stream UploadWeatherScreenshotRequest) returns (UploadWeatherScreenshotResponse) {}
 
   // Deprecated RPC: Get current weather for a location.
-  rpc GetCurrentWeatherOld(LocationRequest) returns (WeatherResponse) {
+  rpc GetCurrentWeatherOld(GetCurrentWeatherOldRequest) returns (GetCurrentWeatherOldResponse) {
     option deprecated = true; // Mark the RPC as deprecated. Nobody should use this anymore.
     // When generating go code, the deprecated option will be translated to a deprecated comment. And gopls and various tools
     // will show a warning when using this RPC.
   }
 }
 
-message LocationRequest {
+message GetCurrentWeatherRequest {
   string location = 1;
 }
 
-message WeatherResponse {
+message GetCurrentWeatherResponse {
   string description = 1;
   Temperature temperature = 2;
-
-  // Additional fields can be added here.
 }
 
 message Temperature {
   enum Unit {
-    UNIT_CELSIUS = 0;
-    UNIT_FAHRENHEIT = 1;
-    UNIT_KELVIN = 2;
+    UNIT_UNSPECIFIED = 0;
+    UNIT_CELSIUS = 1;
+    UNIT_FAHRENHEIT = 2;
+    UNIT_KELVIN = 3;
   }
 
   double value = 1;
@@ -55,15 +54,15 @@ message SensorOfflineError {
   // Note: renaming this message would break backwards compatibility, as older clients would not be able to
   // identify this message since it would be passed as an "Any" type when sending the error details.
 
-  string sensorId = 1;
+  string sensor_id = 1;
   string message = 2;
 }
 
 message UploadWeatherScreenshotRequest {
   message Metadata {
     string location = 1;
-    string sensorId = 2;
-    string fileName = 3;
+    string sensor_id = 2;
+    string file_name = 3;
   }
 
   message Payload {
@@ -76,20 +75,20 @@ message UploadWeatherScreenshotRequest {
   }
 }
 
-message UploadStatus {
+message UploadWeatherDataResponse {
   string message = 1;
 }
 
-message AlertRequest {
+message SubscribeWeatherAlertsRequest {
   string region = 1;
 }
 
-message AlertResponse {
+message SubscribeWeatherAlertsResponse {
   string alert = 1;
 }
 
-message SensorData {
-  string sensorId = 1;
+message UploadWeatherDataRequest {
+  string sensor_id = 1;
   Temperature temperature = 2;
   double humidity = 3;
 }
@@ -98,6 +97,20 @@ message UploadWeatherScreenshotResponse {
   string message = 1;
 }
 
-message LocationUpdate {
+message RealTimeWeatherRequest {
   string location = 1;
+}
+
+message RealTimeWeatherResponse {
+  string description = 1;
+  Temperature temperature = 2;
+}
+
+message GetCurrentWeatherOldRequest {
+  string location = 1;
+}
+
+message GetCurrentWeatherOldResponse {
+  string description = 1;
+  Temperature temperature = 2;
 }

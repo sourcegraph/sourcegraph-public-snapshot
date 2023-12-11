@@ -9,26 +9,52 @@ import (
 )
 
 func TestRoundTripWeatherResponse(t *testing.T) {
-	diff := ""
+	t.Run("current weather", func(t *testing.T) {
+		diff := ""
 
-	err := quick.Check(func(original *service.WeatherResponse) bool {
-		if original != nil && original.Temperature != nil {
-			original.Temperature.Unit = original.Temperature.Unit % 3
-			if original.Temperature.Unit < 0 {
-				original.Temperature.Unit = -original.Temperature.Unit
+		err := quick.Check(func(original *service.WeatherResponse) bool {
+			if original != nil && original.Temperature != nil {
+				original.Temperature.Unit = original.Temperature.Unit % 4
+				if original.Temperature.Unit < 0 {
+					original.Temperature.Unit = -original.Temperature.Unit
+				}
 			}
-		}
 
-		converted := WeatherResponseFromProto(WeatherResponseToProto(original))
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
-		}
+			converted := WeatherResponseFromGetCurrentWeatherProto(WeatherResponseToGetCurrentWeatherProto(original))
+			if diff = cmp.Diff(original, converted); diff != "" {
+				return false
+			}
 
-		return true
-	}, nil)
-	if err != nil {
-		t.Fatalf("unexpected diff in weather response (-want +got):\n%s", diff)
-	}
+			return true
+		}, nil)
+		if err != nil {
+			t.Fatalf("unexpected diff in weather response (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("real time weather", func(t *testing.T) {
+		diff := ""
+
+		err := quick.Check(func(original *service.WeatherResponse) bool {
+			if original != nil && original.Temperature != nil {
+				original.Temperature.Unit = original.Temperature.Unit % 4
+				if original.Temperature.Unit < 0 {
+					original.Temperature.Unit = -original.Temperature.Unit
+				}
+			}
+
+			converted := WeatherResponseFromRealTimeWeatherProto(WeatherResponseToRealTimeWeatherProto(original))
+			if diff = cmp.Diff(original, converted); diff != "" {
+				return false
+			}
+
+			return true
+		}, nil)
+		if err != nil {
+			t.Fatalf("unexpected diff in weather response (-want +got):\n%s", diff)
+		}
+	})
+
 }
 
 func TestRoundTripSensorOfflineError(t *testing.T) {
@@ -74,7 +100,7 @@ func TestRoundtripSensorData(t *testing.T) {
 			}
 		}
 
-		converted := SensorDataFromProto(SensorDataToProto(original))
+		converted := SensorDataFromProto(UploadWeatherDataRequestToProto(original))
 		if diff = cmp.Diff(original, converted); diff != "" {
 			return false
 		}

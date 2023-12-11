@@ -105,7 +105,8 @@ func (e *SensorOfflineError) Error() string {
 type TemperatureUnit int
 
 const (
-	CELSIUS TemperatureUnit = iota
+	UNSPECIFIED TemperatureUnit = iota
+	CELSIUS
 	FAHRENHEIT
 	KELVIN
 )
