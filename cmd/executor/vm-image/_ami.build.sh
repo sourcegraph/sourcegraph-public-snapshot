@@ -37,8 +37,8 @@ cp $(rlocation src-cli-linux-amd64/src) workdir/
 # Load the docker image, whose tag is going to be candidate,
 # but we need to retag this with the version.
 docker-images/executor-vm/image_tarball.sh
-docker tag executor-vm:candidate "executor-vm:$VERSION"
-docker save --output workdir/executor-vm.tar "executor-vm:$VERSION"
+docker tag executor-vm:candidate "sourcegraph/executor-vm:$VERSION"
+docker save --output workdir/executor-vm.tar "sourcegraph/executor-vm:$VERSION"
 
 "$gcloud" secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"workdir/builder-sa-key.json"
 
