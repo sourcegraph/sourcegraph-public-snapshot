@@ -19,8 +19,8 @@ To connect Azure DevOps to Sourcegraph, create a personal access token from your
 4. Select the following scopes:
 
    - Code (Read)
-   - Project and Team
-   - User Profile
+   - Project and Team (Read)
+   - User Profile (Read)
 
 Next, configure the code host connection by following the next steps:
 

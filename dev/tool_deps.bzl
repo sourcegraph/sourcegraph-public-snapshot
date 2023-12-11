@@ -5,6 +5,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file"
 DOCSITE_VERSION = "1.9.4"
 SRC_CLI_VERSION = "5.2.1"
 CTAGS_VERSION = "6.0.0.2783f009"
+P4_FUSION_VERSION = "v1.13.2-sg.04a293a"
 
 SRC_CLI_BUILDFILE = """
 filegroup(
@@ -118,4 +119,25 @@ def tool_deps():
         patch_cmds = GCLOUD_PATCH_CMDS,
         sha256 = "5f9ed1862a82f393be3b16634309e9e8edb6da13a8704952be9c4c59963f9cd4",
         url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-linux-x86_64.tar.gz".format(GCLOUD_VERSION),
+    )
+
+    http_file(
+        name = "p4-fusion-linux-amd64",
+        sha256 = "4c32aa00fa220733faea27a1c6ec4acd0998c1a7f870e08de9947685621f0d06",
+        url = "https://storage.googleapis.com/p4-fusion/x86_64-linux/dist/p4-fusion-{0}".format(P4_FUSION_VERSION),
+        executable = True,
+    )
+
+    http_file(
+        name = "p4-fusion-darwin-amd64",
+        sha256 = "bfa525a8a38d2c2ea205865b1a6d5be0b680e3160a64ba9505953be3294d1b9c",
+        url = "https://storage.googleapis.com/p4-fusion/x86_64-darwin/dist/p4-fusion-{0}".format(P4_FUSION_VERSION),
+        executable = True,
+    )
+
+    http_file(
+        name = "p4-fusion-darwin-arm64",
+        sha256 = "f97942e145902e682a5c1bc2608071a24d17bf943f35faaf18f359cbbaacddcd",
+        url = "https://storage.googleapis.com/p4-fusion/aarch64-darwin/dist/p4-fusion-{0}".format(P4_FUSION_VERSION),
+        executable = True,
     )

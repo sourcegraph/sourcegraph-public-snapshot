@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"io"
 	"net/http"
 
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
@@ -31,6 +32,7 @@ func NewFireworksHandler(
 	allowedModels []string,
 	logSelfServeCodeCompletionRequests bool,
 	disableSingleTenant bool,
+	autoFlushStreamingResponses bool,
 ) http.Handler {
 	return makeUpstreamHandler(
 		baseLogger,
@@ -164,6 +166,7 @@ func NewFireworksHandler(
 		// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
 		// do any retries
 		30, // seconds
+		autoFlushStreamingResponses,
 	)
 }
 
@@ -178,6 +181,10 @@ type fireworksRequest struct {
 	Stream      bool     `json:"stream,omitempty"`
 	Echo        bool     `json:"echo,omitempty"`
 	Stop        []string `json:"stop,omitempty"`
+}
+
+func (fr fireworksRequest) ShouldStream() bool {
+	return fr.Stream
 }
 
 func (fr fireworksRequest) GetModel() string {

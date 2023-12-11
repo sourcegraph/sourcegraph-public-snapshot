@@ -13,6 +13,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 
 import { JetBrainsInstructions } from './instructions/JetBrains'
+import { NeoVimInstructions } from './instructions/NeoVim'
 import { VSCodeInstructions } from './instructions/VsCode'
 
 import styles from './CodyOnboarding.module.scss'
@@ -46,12 +47,14 @@ export const editorGroups: IEditor[][] = [
             name: 'PhpStorm ',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            instructions: JetBrainsInstructions,
         },
         {
             icon: 'PyCharm',
             name: 'PyCharm',
             publisher: 'Jetbrains',
             releaseStage: 'Beta',
+            instructions: JetBrainsInstructions,
         },
     ],
     [
@@ -60,24 +63,28 @@ export const editorGroups: IEditor[][] = [
             name: 'WebStorm',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            instructions: JetBrainsInstructions,
         },
         {
             icon: 'RubyMine',
             name: 'RubyMine',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            instructions: JetBrainsInstructions,
         },
         {
             icon: 'GoLand',
             name: 'GoLand',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            instructions: JetBrainsInstructions,
         },
         {
             icon: 'AndroidStudio',
             name: 'Android Studio',
             publisher: 'Google',
             releaseStage: 'Beta',
+            instructions: JetBrainsInstructions,
         },
     ],
     [
@@ -86,6 +93,7 @@ export const editorGroups: IEditor[][] = [
             name: 'Neovim',
             publisher: 'Neovim Team',
             releaseStage: 'Experimental',
+            instructions: NeoVimInstructions,
         },
         {
             icon: 'Emacs',
