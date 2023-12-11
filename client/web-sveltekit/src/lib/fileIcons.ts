@@ -34,6 +34,7 @@ import {
     mdiSvg,
     mdiText,
 } from '@mdi/js'
+
 import { containsTest } from '$lib/web'
 
 const BLUE = 'var(--blue)'
@@ -123,9 +124,7 @@ export enum FileExtension {
     ZIG = 'zig',
 }
 
-export const FILE_ICONS = new Map(
-    Object.values(FileExtension).map(extension => [extension, getIconAttributes(extension)])
-)
+const FILE_ICONS = new Map(Object.values(FileExtension).map(extension => [extension, getIconAttributes(extension)]))
 
 interface IconInfo {
     svgPath: string
@@ -200,6 +199,8 @@ const getIconAttributes = (extension: FileExtension): IconInfo => {
         case FileExtension.FSHARP:
         case FileExtension.FSI:
         case FileExtension.FSX:
+        case FileExtension.GROOVY:
+        case FileExtension.JULIA:
         case FileExtension.OCAML:
         case FileExtension.PERL:
         case FileExtension.PERL_PM:
@@ -245,9 +246,6 @@ const getIconAttributes = (extension: FileExtension): IconInfo => {
         case FileExtension.GRAPHQL: {
             return { svgPath: mdiGraphql, color }
         }
-        case FileExtension.GROOVY:
-        case FileExtension.JULIA:
-
         case FileExtension.HASKELL: {
             return { svgPath: mdiLanguageHaskell, color }
         }
@@ -289,7 +287,6 @@ const getIconAttributes = (extension: FileExtension): IconInfo => {
         case FileExtension.NPM: {
             return { svgPath: mdiNpm, color }
         }
-
         case FileExtension.PHP: {
             return { svgPath: mdiLanguagePhp, color }
         }
@@ -332,7 +329,7 @@ const getIconAttributes = (extension: FileExtension): IconInfo => {
     }
 }
 
-export const getExtension = (file: string): FileExtension => {
+const getExtension = (file: string): FileExtension => {
     return file.split('.').at(-1) as FileExtension
 }
 

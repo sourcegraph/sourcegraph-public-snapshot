@@ -20,7 +20,7 @@
     /**
      * Returns the corresponding icon for `entry`
      */
-    function getIconPath(entry: TreeEntryFields, open: boolean) {
+    function getDirectoryIconPath(entry: TreeEntryFields, open: boolean) {
         if (entry === treeRoot) {
             return mdiFolderArrowUpOutline
         }
@@ -124,10 +124,12 @@
                     data-go-up={isRoot ? true : undefined}
                 >
                     {#if entry.isDirectory}
-                        <Icon svgPath={getIconPath(entry, expanded)} inline />
+                        <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
                     {:else}
-                        {@const fileInfo = getFileInfo(entry.name)}
-                        <Icon svgPath={fileInfo.icon.svgPath} inline --color={fileInfo.icon.color} />
+                        {@const {
+                            icon: { svgPath, color },
+                        } = getFileInfo(entry.name)}
+                        <Icon {svgPath} inline --color={color} />
                     {/if}
                     {isRoot ? '..' : entry.name}
                 </a>
