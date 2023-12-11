@@ -347,15 +347,17 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 	}
 
 	argsJSON, _ := json.Marshal(args)
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameCodeHostConnectionsViewed,
-		URL:       "",
-		UserID:    uint32(actor.FromContext(ctx).UID),
-		Argument:  argsJSON,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	r.db.SecurityEventLogs().LogEvent(ctx, event)
+	// event := &database.SecurityEvent{
+	// 	Name:      database.SecurityEventNameCodeHostConnectionsViewed,
+	// 	URL:       "",
+	// 	UserID:    uint32(actor.FromContext(ctx).UID),
+	// 	Argument:  argsJSON,
+	// 	Source:    "BACKEND",
+	// 	Timestamp: time.Now(),
+	// }
+	// r.db.SecurityEventLogs().LogEvent(ctx, event)
+	database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionsViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
+
 	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
 }
 

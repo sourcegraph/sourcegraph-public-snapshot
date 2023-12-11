@@ -303,7 +303,7 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 	if nrows == 0 {
 		return errSubscriptionNotFound
 	}
-	argsJSON, _ := json.Marshal(update)
+	argsJSON, _ := json.Marshal(id)
 	// event := &database.SecurityEvent{
 	// 	Name:      database.SecurityEventNameDotComSubscriptionUpdated,
 	// 	URL:       "",
