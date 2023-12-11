@@ -6,7 +6,10 @@ go_library(
     srcs = ["response.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response",
     visibility = ["//cmd/cody-gateway:__subpackages__"],
-    deps = ["@com_github_sourcegraph_log//:log"],
+    deps = [
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
 )
 
 go_test(

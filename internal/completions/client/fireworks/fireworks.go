@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"net/http"
-	"strings"
-
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"net/http"
+	"strings"
 )
 
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
