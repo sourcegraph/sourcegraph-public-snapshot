@@ -339,8 +339,11 @@ func queryRFCs(ctx context.Context, query string, driveSpec DriveSpec, pager fun
 	}
 
 	if query == "" {
-		query = "name contains 'RFC'"
+		query = "name contains 'RFC' and trashed = false"
+	} else {
+		query += " and trashed = false"
 	}
+
 	q := driveSpec.Query(query)
 
 	list := srv.Files.List().
