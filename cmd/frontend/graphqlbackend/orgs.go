@@ -52,16 +52,7 @@ func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, erro
 		})
 	}
 
-	// event := &database.SecurityEvent{
-	// 	Name:      database.SecurityEventNameOrgViewed,
-	// 	URL:       "",
-	// 	UserID:    uint32(actor.FromContext(ctx).UID),
-	// 	Argument:  nil,
-	// 	Source:    "BACKEND",
-	// 	Timestamp: time.Now(),
-	// }
-	// r.db.SecurityEventLogs().LogEvent(ctx, event)
-
+	// Log an event when listing organizations.
 	database.LogSecurityEvent(ctx, database.SecurityEventNameOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs())
 
 	return l, nil

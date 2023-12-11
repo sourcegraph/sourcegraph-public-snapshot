@@ -64,15 +64,7 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 	}
 
 	argsJSON, _ := json.Marshal(args)
-	// event := &database.SecurityEvent{
-	// 	Name:      database.SecurityEventNameOutboundReqViewed,
-	// 	URL:       "",
-	// 	UserID:    uint32(actor.FromContext(ctx).UID),
-	// 	Argument:  argsJSON,
-	// 	Source:    "BACKEND",
-	// 	Timestamp: time.Now(),
-	// }
-	// r.db.SecurityEventLogs().LogEvent(ctx, event)
+	// Log an even when Outbound requests are viewed
 	database.LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
 
 	return &outboundRequestConnectionResolver{
@@ -93,16 +85,7 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 		return nil, err
 	}
 	argsJSON, _ := json.Marshal(graphql.ID(key))
-	// event := &database.SecurityEvent{
-	// 	Name:      database.SecurityEventNameOutboundReqViewed,
-	// 	URL:       "",
-	// 	UserID:    uint32(actor.FromContext(ctx).UID),
-	// 	Argument:  argsJSON,
-	// 	Source:    "BACKEND",
-	// 	Timestamp: time.Now(),
-	// }
-	// r.db.SecurityEventLogs().LogEvent(ctx, event)
-
+	// Log an even when Outbound requests are viewed
 	database.LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
 
 	item, _ := httpcli.GetOutboundRequestLogItem(key)

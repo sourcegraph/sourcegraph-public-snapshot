@@ -86,16 +86,7 @@ INSERT INTO product_subscriptions(id, user_id, account_number) VALUES($1, $2, $3
 		return "", errors.Wrap(err, "insert")
 	}
 	argsJSON, _ := json.Marshal(newUUID)
-	// event := &database.SecurityEvent{
-	// 	Name:      database.SecurityEventNameDotComSubscriptionCreated,
-	// 	URL:       "",
-	// 	UserID:    uint32(userID),
-	// 	Argument:  argsJSON,
-	// 	Source:    "BACKEND",
-	// 	Timestamp: time.Now(),
-	// }
-
-	// s.db.SecurityEventLogs().LogEvent(ctx, event)
+	// Log an event when a new subscription is created.
 	database.LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionCreated, "", uint32(userID), "", "BACKEND", argsJSON, s.db.SecurityEventLogs())
 
 	return id, nil
@@ -146,15 +137,7 @@ func (s dbSubscriptions) List(ctx context.Context, opt dbSubscriptionsListOption
 		return mocks.subscriptions.List(ctx, opt)
 	}
 	argsJSON, _ := json.Marshal(opt)
-	// event := &database.SecurityEvent{
-	// 	Name:      database.SecurityEventNameDotComSubscriptionsListed,
-	// 	URL:       "",
-	// 	UserID:    uint32(actor.FromContext(ctx).UID),
-	// 	Argument:  argsJSON,
-	// 	Source:    "BACKEND",
-	// 	Timestamp: time.Now(),
-	// }
-	// s.db.SecurityEventLogs().LogEvent(ctx, event)
+	//Log an event when a list of subscriptions is requested.
 	database.LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionsListed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, s.db.SecurityEventLogs())
 
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
@@ -304,15 +287,7 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 		return errSubscriptionNotFound
 	}
 	argsJSON, _ := json.Marshal(id)
-	// event := &database.SecurityEvent{
-	// 	Name:      database.SecurityEventNameDotComSubscriptionUpdated,
-	// 	URL:       "",
-	// 	UserID:    uint32(actor.FromContext(ctx).UID),
-	// 	Argument:  argsJSON,
-	// 	Source:    "BACKEND",
-	// 	Timestamp: time.Now(),
-	// }
-	// s.db.SecurityEventLogs().LogEvent(ctx, event)
+	// Log an event when a subscription is updated
 	database.LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, s.db.SecurityEventLogs())
 
 	return nil
@@ -338,16 +313,7 @@ func (s dbSubscriptions) Archive(ctx context.Context, id string) error {
 		return errSubscriptionNotFound
 	}
 	argsJSON, _ := json.Marshal(id)
-	// event := &database.SecurityEvent{
-	// 	Name:      database.SecurityEventNameDotComSubscriptionArchived,
-	// 	URL:       "",
-	// 	UserID:    uint32(actor.FromContext(ctx).UID),
-	// 	Argument:  argsJSON,
-	// 	Source:    "BACKEND",
-	// 	Timestamp: time.Now(),
-	// }
-
-	// s.db.SecurityEventLogs().LogEvent(ctx, event)
+	// Log an event when a subscription is archived
 	database.LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionArchived, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, s.db.SecurityEventLogs())
 
 	return nil

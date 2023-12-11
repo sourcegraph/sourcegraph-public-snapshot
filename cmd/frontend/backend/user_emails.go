@@ -92,18 +92,9 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 	if err := e.db.UserEmails().Add(ctx, userID, email, code); err != nil {
 		return err
 	}
+
+	// Log action of new email being added to user profile
 	argsJSON, _ := json.Marshal(email)
-
-	// event := &database.SecurityEvent{
-	// 	Name:      database.SecurityEventNameEmailAdded,
-	// 	URL:       "",
-	// 	UserID:    uint32(userID),
-	// 	Argument:  argsJSON,
-	// 	Source:    "BACKEND",
-	// 	Timestamp: time.Now(),
-	// }
-	// e.db.SecurityEventLogs().LogEvent(ctx, event)
-
 	database.LogSecurityEvent(ctx, database.SecurityEventNameEmailAdded, "", uint32(userID), "", "BACKEND", argsJSON, e.db.SecurityEventLogs())
 
 	if conf.EmailVerificationRequired() {
@@ -147,17 +138,8 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) err
 			return errors.Wrap(err, "removing user e-mail")
 		}
 
+		// Log action of email being removed from user profile
 		argsJSON, _ := json.Marshal(email)
-
-		// event := &database.SecurityEvent{
-		// 	Name:      database.SecurityEventNameEmailRemoved,
-		// 	URL:       "",
-		// 	UserID:    uint32(userID),
-		// 	Argument:  argsJSON,
-		// 	Source:    "BACKEND",
-		// 	Timestamp: time.Now(),
-		// }
-		// e.db.SecurityEventLogs().LogEvent(ctx, event)
 		database.LogSecurityEvent(ctx, database.SecurityEventNameEmailRemoved, "", uint32(userID), "", "BACKEND", argsJSON, e.db.SecurityEventLogs())
 
 		// 🚨 SECURITY: If an email is removed, invalidate any existing password reset
@@ -261,16 +243,7 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 		Verified: verified,
 	})
 
-	// event := &database.SecurityEvent{
-	// 	Name:      database.SecurityEventNameEmailVerifiedToggle,
-	// 	URL:       "",
-	// 	UserID:    uint32(userID),
-	// 	Argument:  argsJSON,
-	// 	Source:    "BACKEND",
-	// 	Timestamp: time.Now(),
-	// }
-	// e.db.SecurityEventLogs().LogEvent(ctx, event)
-
+	// Log action of email being verified/unverified
 	database.LogSecurityEvent(ctx, database.SecurityEventNameEmailVerifiedToggle, "", uint32(userID), "", "BACKEND", argsJSON, e.db.SecurityEventLogs())
 
 	// Eagerly attempt to sync permissions again. This needs to happen _after_ the
