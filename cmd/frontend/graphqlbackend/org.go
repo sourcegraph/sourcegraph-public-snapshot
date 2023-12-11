@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -51,15 +50,16 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 		if err := hasAccess(); err != nil {
 			// site admin can access org ID
 			if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
-				event := &database.SecurityEvent{
-					Name:      database.SecurityEventNameDotComOrgViewed,
-					URL:       "",
-					UserID:    uint32(actor.FromContext(ctx).UID),
-					Argument:  nil,
-					Source:    "BACKEND",
-					Timestamp: time.Now(),
-				}
-				r.db.SecurityEventLogs().LogEvent(ctx, event)
+				// event := &database.SecurityEvent{
+				// 	Name:      database.SecurityEventNameDotComOrgViewed,
+				// 	URL:       "",
+				// 	UserID:    uint32(actor.FromContext(ctx).UID),
+				// 	Argument:  nil,
+				// 	Source:    "BACKEND",
+				// 	Timestamp: time.Now(),
+				// }
+				// r.db.SecurityEventLogs().LogEvent(ctx, event)
+				database.LogSecurityEvent(ctx, database.SecurityEventNameDotComOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs())
 				onlyOrgID := &types.Org{ID: org.ID}
 				return &OrgResolver{db: r.db, org: onlyOrgID}, nil
 			}
@@ -68,15 +68,17 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 	}
 	argsJSON, _ := json.Marshal(args)
 
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameOrgViewed,
-		URL:       "",
-		UserID:    uint32(actor.FromContext(ctx).UID),
-		Argument:  argsJSON,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	r.db.SecurityEventLogs().LogEvent(ctx, event)
+	// event := &database.SecurityEvent{
+	// 	Name:      database.SecurityEventNameOrgViewed,
+	// 	URL:       "",
+	// 	UserID:    uint32(actor.FromContext(ctx).UID),
+	// 	Argument:  argsJSON,
+	// 	Source:    "BACKEND",
+	// 	Timestamp: time.Now(),
+	// }
+	// r.db.SecurityEventLogs().LogEvent(ctx, event)
+	database.LogSecurityEvent(ctx, database.SecurityEventNameOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
+
 	return &OrgResolver{db: r.db, org: org}, nil
 }
 
@@ -343,15 +345,16 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	}
 	argsJSON, _ := json.Marshal(args)
 
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameOrgCreated,
-		URL:       "",
-		UserID:    uint32(actor.FromContext(ctx).UID),
-		Argument:  argsJSON,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	r.db.SecurityEventLogs().LogEvent(ctx, event)
+	// event := &database.SecurityEvent{
+	// 	Name:      database.SecurityEventNameOrgCreated,
+	// 	URL:       "",
+	// 	UserID:    uint32(actor.FromContext(ctx).UID),
+	// 	Argument:  argsJSON,
+	// 	Source:    "BACKEND",
+	// 	Timestamp: time.Now(),
+	// }
+	// r.db.SecurityEventLogs().LogEvent(ctx, event)
+	database.LogSecurityEvent(ctx, database.SecurityEventNameOrgCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
 
 	// Write the org_id into orgs open beta stats table on Cloud
 	if envvar.SourcegraphDotComMode() && args.StatsID != nil {
@@ -393,15 +396,17 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 	}
 	argsJSON, _ := json.Marshal(args)
 
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameOrgUpdated,
-		URL:       "",
-		UserID:    uint32(actor.FromContext(ctx).UID),
-		Argument:  argsJSON,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	r.db.SecurityEventLogs().LogEvent(ctx, event)
+	// event := &database.SecurityEvent{
+	// 	Name:      database.SecurityEventNameOrgUpdated,
+	// 	URL:       "",
+	// 	UserID:    uint32(actor.FromContext(ctx).UID),
+	// 	Argument:  argsJSON,
+	// 	Source:    "BACKEND",
+	// 	Timestamp: time.Now(),
+	// }
+	// r.db.SecurityEventLogs().LogEvent(ctx, event)
+	database.LogSecurityEvent(ctx, database.SecurityEventNameOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
+
 	return &OrgResolver{db: r.db, org: updatedOrg}, nil
 }
 

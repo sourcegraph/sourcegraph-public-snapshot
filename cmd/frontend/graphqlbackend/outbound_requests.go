@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"math"
 	"sync"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -65,15 +64,16 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 	}
 
 	argsJSON, _ := json.Marshal(args)
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameOutboundReqViewed,
-		URL:       "",
-		UserID:    uint32(actor.FromContext(ctx).UID),
-		Argument:  argsJSON,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	r.db.SecurityEventLogs().LogEvent(ctx, event)
+	// event := &database.SecurityEvent{
+	// 	Name:      database.SecurityEventNameOutboundReqViewed,
+	// 	URL:       "",
+	// 	UserID:    uint32(actor.FromContext(ctx).UID),
+	// 	Argument:  argsJSON,
+	// 	Source:    "BACKEND",
+	// 	Timestamp: time.Now(),
+	// }
+	// r.db.SecurityEventLogs().LogEvent(ctx, event)
+	database.LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
 
 	return &outboundRequestConnectionResolver{
 		first: args.First,
@@ -93,15 +93,18 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 		return nil, err
 	}
 	argsJSON, _ := json.Marshal(graphql.ID(key))
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameOutboundReqViewed,
-		URL:       "",
-		UserID:    uint32(actor.FromContext(ctx).UID),
-		Argument:  argsJSON,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	r.db.SecurityEventLogs().LogEvent(ctx, event)
+	// event := &database.SecurityEvent{
+	// 	Name:      database.SecurityEventNameOutboundReqViewed,
+	// 	URL:       "",
+	// 	UserID:    uint32(actor.FromContext(ctx).UID),
+	// 	Argument:  argsJSON,
+	// 	Source:    "BACKEND",
+	// 	Timestamp: time.Now(),
+	// }
+	// r.db.SecurityEventLogs().LogEvent(ctx, event)
+
+	database.LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
+
 	item, _ := httpcli.GetOutboundRequestLogItem(key)
 	return &OutboundRequestResolver{req: item}, nil
 }

@@ -2,8 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 
 	"github.com/keegancsmith/sqlf"
@@ -490,15 +491,17 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	//logAccountModifiedEvent(ctx, r.db, userID, "USER_SETTINGS")
 
 	argsJSON, _ := json.Marshal(args)
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameAccountModified,
-		URL:       "",
-		UserID:    uint32(userID),
-		Argument:  argsJSON,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	r.db.SecurityEventLogs().LogEvent(ctx, event)
+	// event := &database.SecurityEvent{
+	// 	Name:      database.SecurityEventNameAccountModified,
+	// 	URL:       "",
+	// 	UserID:    uint32(userID),
+	// 	Argument:  argsJSON,
+	// 	Source:    "BACKEND",
+	// 	Timestamp: time.Now(),
+	// }
+	// r.db.SecurityEventLogs().LogEvent(ctx, event)
+	database.LogSecurityEvent(ctx, database.SecurityEventNameAccountModified, "", uint32(userID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
+
 	return UserByIDInt32(ctx, r.db, userID)
 }
 
@@ -931,15 +934,16 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 		return nil, err
 	}
 	argsJSON, _ := json.Marshal(args)
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameUserCompletionQuotaUpdated,
-		URL:       "",
-		UserID:    uint32(id),
-		Argument:  argsJSON,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	r.db.SecurityEventLogs().LogEvent(ctx, event)
+	// event := &database.SecurityEvent{
+	// 	Name:      database.SecurityEventNameUserCompletionQuotaUpdated,
+	// 	URL:       "",
+	// 	UserID:    uint32(id),
+	// 	Argument:  argsJSON,
+	// 	Source:    "BACKEND",
+	// 	Timestamp: time.Now(),
+	// }
+	// r.db.SecurityEventLogs().LogEvent(ctx, event)
+	database.LogSecurityEvent(ctx, database.SecurityEventNameUserCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
 
 	return UserByIDInt32(ctx, r.db, user.ID)
 }
@@ -979,14 +983,16 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 		return nil, err
 	}
 	argsJSON, _ := json.Marshal(args)
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameUserCodeCompletionQuotaUpdated,
-		URL:       "",
-		UserID:    uint32(id),
-		Argument:  argsJSON,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	r.db.SecurityEventLogs().LogEvent(ctx, event)
+	// event := &database.SecurityEvent{
+	// 	Name:      database.SecurityEventNameUserCodeCompletionQuotaUpdated,
+	// 	URL:       "",
+	// 	UserID:    uint32(id),
+	// 	Argument:  argsJSON,
+	// 	Source:    "BACKEND",
+	// 	Timestamp: time.Now(),
+	// }
+	// r.db.SecurityEventLogs().LogEvent(ctx, event)
+	database.LogSecurityEvent(ctx, database.SecurityEventNameUserCodeCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
+
 	return UserByIDInt32(ctx, r.db, user.ID)
 }

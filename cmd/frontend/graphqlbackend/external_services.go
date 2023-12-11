@@ -81,15 +81,17 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 
 	//Find a way to add argument without logging the sensitive information
 	//argsJSON, _ := json.Marshal(args)
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameCodeHostConnectionAdded,
-		URL:       "",
-		UserID:    uint32(actor.FromContext(ctx).UID),
-		Argument:  nil,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	r.db.SecurityEventLogs().LogEvent(ctx, event)
+	// event := &database.SecurityEvent{
+	// 	Name:      database.SecurityEventNameCodeHostConnectionAdded,
+	// 	URL:       "",
+	// 	UserID:    uint32(actor.FromContext(ctx).UID),
+	// 	Argument:  nil,
+	// 	Source:    "BACKEND",
+	// 	Timestamp: time.Now(),
+	// }
+	// r.db.SecurityEventLogs().LogEvent(ctx, event)
+
+	database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionAdded, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs())
 
 	// Now, schedule the external service for syncing immediately.
 	s := repos.NewStore(r.logger, r.db)
@@ -168,15 +170,16 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	}
 
 	argsJSON, _ := json.Marshal(args)
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameCodeHostConnectionUpdated,
-		URL:       "",
-		UserID:    uint32(actor.FromContext(ctx).UID),
-		Argument:  argsJSON,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	r.db.SecurityEventLogs().LogEvent(ctx, event)
+	// event := &database.SecurityEvent{
+	// 	Name:      database.SecurityEventNameCodeHostConnectionUpdated,
+	// 	URL:       "",
+	// 	UserID:    uint32(actor.FromContext(ctx).UID),
+	// 	Argument:  argsJSON,
+	// 	Source:    "BACKEND",
+	// 	Timestamp: time.Now(),
+	// }
+	// r.db.SecurityEventLogs().LogEvent(ctx, event)
+	database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
 
 	// Fetch from database again to get all fields with updated values.
 	es, err = r.db.ExternalServices().GetByID(ctx, id)
@@ -294,15 +297,16 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	}
 
 	argsJSON, _ := json.Marshal(args)
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameCodeHostConnectionDeleted,
-		URL:       "",
-		UserID:    uint32(actor.FromContext(ctx).UID),
-		Argument:  argsJSON,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	r.db.SecurityEventLogs().LogEvent(ctx, event)
+	// event := &database.SecurityEvent{
+	// 	Name:      database.SecurityEventNameCodeHostConnectionDeleted,
+	// 	URL:       "",
+	// 	UserID:    uint32(actor.FromContext(ctx).UID),
+	// 	Argument:  argsJSON,
+	// 	Source:    "BACKEND",
+	// 	Timestamp: time.Now(),
+	// }
+	// r.db.SecurityEventLogs().LogEvent(ctx, event)
+	database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
 
 	return &EmptyResponse{}, nil
 }

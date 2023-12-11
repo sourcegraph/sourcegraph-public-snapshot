@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
@@ -114,28 +113,32 @@ func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfiguratio
 		// The only way a non-admin can access this field is when `returnSafeConfigsOnly`
 		// is set to true.
 		if returnSafeConfigsOnly {
-			event := &database.SecurityEvent{
-				Name:      database.SecurityEventNameSiteConfigRedactedViewed,
-				URL:       "",
-				UserID:    uint32(actor.FromContext(ctx).UID),
-				Argument:  nil,
-				Source:    "BACKEND",
-				Timestamp: time.Now(),
-			}
-			r.db.SecurityEventLogs().LogEvent(ctx, event)
+			// event := &database.SecurityEvent{
+			// 	Name:      database.SecurityEventNameSiteConfigRedactedViewed,
+			// 	URL:       "",
+			// 	UserID:    uint32(actor.FromContext(ctx).UID),
+			// 	Argument:  nil,
+			// 	Source:    "BACKEND",
+			// 	Timestamp: time.Now(),
+			// }
+			// r.db.SecurityEventLogs().LogEvent(ctx, event)
+			database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigRedactedViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs())
+
 			return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 		}
 		return nil, err
 	}
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameSiteConfigViewed,
-		URL:       "",
-		UserID:    uint32(actor.FromContext(ctx).UID),
-		Argument:  nil,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	r.db.SecurityEventLogs().LogEvent(ctx, event)
+	// event := &database.SecurityEvent{
+	// 	Name:      database.SecurityEventNameSiteConfigViewed,
+	// 	URL:       "",
+	// 	UserID:    uint32(actor.FromContext(ctx).UID),
+	// 	Argument:  nil,
+	// 	Source:    "BACKEND",
+	// 	Timestamp: time.Now(),
+	// }
+	// r.db.SecurityEventLogs().LogEvent(ctx, event)
+	database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs())
+
 	return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 }
 
@@ -382,15 +385,16 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		return false, err
 	}
 
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameSiteConfigUpdated,
-		URL:       "",
-		UserID:    uint32(actor.FromContext(ctx).UID),
-		Argument:  json.RawMessage(args.Input),
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	r.db.SecurityEventLogs().LogEvent(ctx, event)
+	// event := &database.SecurityEvent{
+	// 	Name:      database.SecurityEventNameSiteConfigUpdated,
+	// 	URL:       "",
+	// 	UserID:    uint32(actor.FromContext(ctx).UID),
+	// 	Argument:  json.RawMessage(args.Input),
+	// 	Source:    "BACKEND",
+	// 	Timestamp: time.Now(),
+	// }
+	// r.db.SecurityEventLogs().LogEvent(ctx, event)
+	database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", json.RawMessage(args.Input), r.db.SecurityEventLogs())
 
 	return server.NeedServerRestart(), nil
 }
