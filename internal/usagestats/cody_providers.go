@@ -18,6 +18,7 @@ func GetCodyProviders() (*types.CodyProviders, error) {
 		if completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph {
 			providers.Completions.ChatModel = completionsConfig.ChatModel
 			providers.Completions.CompletionModel = completionsConfig.CompletionModel
+			providers.Completions.FastChatModel = completionsConfig.FastChatModel
 		}
 	}
 	if embeddingsConfig != nil {

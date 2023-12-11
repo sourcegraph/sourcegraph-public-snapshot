@@ -1054,6 +1054,7 @@ type CodyProviders struct {
 type CodyCompletionProvider struct {
 	ChatModel       string
 	CompletionModel string
+	FastChatModel   string
 	Provider        conftypes.CompletionsProviderName
 }
 

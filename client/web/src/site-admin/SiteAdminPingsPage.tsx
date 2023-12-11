@@ -418,6 +418,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                                 <ul>
                                     <li>Provider</li>
                                     <li>Chat model (included only for "sourcegraph" provider)</li>
+                                    <li>Fast chat model (included only for "sourcegraph" provider)</li>
                                     <li>Completion model (included only for "sourcegraph" provider)</li>
                                 </ul>
                             </li>
