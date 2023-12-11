@@ -116,7 +116,7 @@ var _ io.Writer = autoFlusher{}
 // call. It will return an error if the response writer doesn't implement the Flusher interface.
 func NewAutoFlushingWriter(w http.ResponseWriter) (io.Writer, error) {
 	if flusher, ok := w.(http.Flusher); !ok {
-		return nil, errors.Newf("can't flush response using", w)
+		return nil, errors.Newf("can't flush response using %v as it doesn't implement http.Flusher", w)
 	} else {
 		return autoFlusher{
 			rw: w, flusher: flusher,
