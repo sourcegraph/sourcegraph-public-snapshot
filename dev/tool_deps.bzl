@@ -117,7 +117,7 @@ def tool_deps():
         name = "gcloud-darwin-amd64",
         build_file_content = GCLOUD_BUILDFILE,
         patch_cmds = GCLOUD_PATCH_CMDS,
-        sha256 = "f05cc45ffc6c1f3ff73854989f3ea3d6bee40287d23047917e4c845aeb027f98",
+        sha256 = "2961471b9d81092443456de15509f46fea685dfaf401f1b6c444eab63b45ccb7",
         url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-darwin-x86_64.tar.gz".format(GCLOUD_VERSION),
     )
 
@@ -125,7 +125,7 @@ def tool_deps():
         name = "gcloud-linux-amd64",
         build_file_content = GCLOUD_BUILDFILE,
         patch_cmds = GCLOUD_PATCH_CMDS,
-        sha256 = "5f9ed1862a82f393be3b16634309e9e8edb6da13a8704952be9c4c59963f9cd4",
+        sha256 = "03d87f71e15f2143e5f2b64b3594464ac51e791658848fc33d748f545ef97889",
         url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-linux-x86_64.tar.gz".format(GCLOUD_VERSION),
     )
 
