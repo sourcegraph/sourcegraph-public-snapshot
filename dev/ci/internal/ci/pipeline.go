@@ -267,25 +267,25 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// TODO(burmudar): This should use the bazel target
 			legacyBuildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), c.RunType),
 			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
-			buildExecutorVM(c, true),
-			buildExecutorDockerMirror(c),
+			bazelBuildExecutorVM(c, true),
+			bazelBuildExecutorDockerMirror(c),
 			wait,
 			publishFinalDockerImage(c, executorVMImage),
-			publishExecutorVM(c, true),
-			publishExecutorDockerMirror(c),
+			bazelPublishExecutorVM(c, true),
+			bazelPublishExecutorDockerMirror(c),
 			bazelPublishExecutorBinary(c),
 		)
 
 	default:
 		// Executor VM image
-		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
+		alwaysRebuild := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
 
 		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
-			imageBuildOps.Append(buildExecutorVM(c, skipHashCompare))
+			imageBuildOps.Append(bazelBuildExecutorVM(c, alwaysRebuild))
 			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				imageBuildOps.Append(buildExecutorDockerMirror(c))
+				imageBuildOps.Append(bazelBuildExecutorDockerMirror(c))
 			}
 		}
 		ops.Merge(imageBuildOps)
@@ -334,10 +334,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		publishOps := operations.NewNamedSet("Publish images")
 		// Executor VM image
 		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
-			publishOps.Append(publishExecutorVM(c, skipHashCompare))
+			publishOps.Append(bazelPublishExecutorVM(c, alwaysRebuild))
 			publishOps.Append(bazelPublishExecutorBinary(c))
 			if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				publishOps.Append(publishExecutorDockerMirror(c))
+				publishOps.Append(bazelPublishExecutorDockerMirror(c))
 			}
 		}
 
