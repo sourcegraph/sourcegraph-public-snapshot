@@ -132,8 +132,6 @@ type SecurityEventLogsStore interface {
 	LogEvent(ctx context.Context, e *SecurityEvent)
 	// Bulk "LogEvent" action.
 	LogEventList(ctx context.Context, events []*SecurityEvent)
-
-	LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments []byte)
 }
 
 type securityEventLogsStore struct {
@@ -250,7 +248,7 @@ func (s *securityEventLogsStore) LogEventList(ctx context.Context, events []*Sec
 	}
 }
 
-func (s *securityEventLogsStore) LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments []byte) {
+func LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments []byte, logStore SecurityEventLogsStore) {
 
 	event := SecurityEvent{
 		Name:            eventName,
@@ -262,5 +260,5 @@ func (s *securityEventLogsStore) LogSecurityEvent(ctx context.Context, eventName
 		Timestamp:       time.Now(),
 	}
 
-	s.LogEvent(ctx, &event)
+	logStore.LogEvent(ctx, &event)
 }
