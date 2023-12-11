@@ -140,7 +140,7 @@ func buildMarkdownReport(report DiagnosticReport) string {
 	return sb.String()
 }
 
-func loadDiagnostics(path string) (*Diagnostics, error) {
+func readDiagnosticDefinitions(path string) (*Diagnostics, error) {
 	fd, err := os.Open(path)
 	if err != nil {
 		return nil, err
