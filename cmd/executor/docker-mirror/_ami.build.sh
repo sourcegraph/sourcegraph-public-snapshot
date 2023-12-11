@@ -25,7 +25,7 @@ cp $base/docker-mirror.pkr.hcl workdir/
 cp $base/aws_regions.json workdir/
 cp $base/install.sh workdir/
 
-$gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"workdir/builder-sa-key.json"
+"$gcloud" secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"workdir/builder-sa-key.json"
 
 ## Setting up packer
 export PKR_VAR_name
@@ -48,5 +48,5 @@ else
   PKR_VAR_aws_regions='["us-west-2"]'
 fi
 
-$packer init docker-mirror.pkr.hcl
-$packer build -force docker-mirror.pkr.hcl
+"$packer" init docker-mirror.pkr.hcl
+"$packer" build -force docker-mirror.pkr.hcl

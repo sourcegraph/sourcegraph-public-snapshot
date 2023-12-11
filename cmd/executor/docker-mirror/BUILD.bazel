@@ -20,5 +20,8 @@ sh_binary(
         "_ami.push.sh",
     ],
     args = [],
+    data = [
+        "//dev/tools:gcloud",
+    ],
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )
