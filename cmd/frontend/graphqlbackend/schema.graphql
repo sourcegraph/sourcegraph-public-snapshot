@@ -90,7 +90,7 @@ type Mutation {
     """
     updateUser(user: ID!, username: String, displayName: String, avatarURL: String): User!
     """
-    Updates the user's Cody plan to Pro or Community.
+    Updates the user's Self-serve Cody plan to Free or Pro.
 
     Only the user may perform this mutation.
     """

@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
+import { useNavigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Modal, H5, H2, Text, Button, useSearchParameters } from '@sourcegraph/wildcard'
+import { Button, H2, H5, Modal, Text, useSearchParameters } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { HubSpotForm } from '../../marketing/components/HubSpotForm'
@@ -12,6 +13,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 
 import { JetBrainsInstructions } from './instructions/JetBrains'
+import { NeoVimInstructions } from './instructions/NeoVim'
 import { VSCodeInstructions } from './instructions/VsCode'
 
 import styles from './CodyOnboarding.module.scss'
@@ -45,12 +47,14 @@ export const editorGroups: IEditor[][] = [
             name: 'PhpStorm ',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            instructions: JetBrainsInstructions,
         },
         {
             icon: 'PyCharm',
             name: 'PyCharm',
             publisher: 'Jetbrains',
             releaseStage: 'Beta',
+            instructions: JetBrainsInstructions,
         },
     ],
     [
@@ -59,24 +63,28 @@ export const editorGroups: IEditor[][] = [
             name: 'WebStorm',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            instructions: JetBrainsInstructions,
         },
         {
             icon: 'RubyMine',
             name: 'RubyMine',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            instructions: JetBrainsInstructions,
         },
         {
             icon: 'GoLand',
             name: 'GoLand',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            instructions: JetBrainsInstructions,
         },
         {
             icon: 'AndroidStudio',
             name: 'Android Studio',
             publisher: 'Google',
             releaseStage: 'Beta',
+            instructions: JetBrainsInstructions,
         },
     ],
     [
@@ -85,6 +93,7 @@ export const editorGroups: IEditor[][] = [
             name: 'Neovim',
             publisher: 'Neovim Team',
             releaseStage: 'Experimental',
+            instructions: NeoVimInstructions,
         },
         {
             icon: 'Emacs',
@@ -101,7 +110,7 @@ export function CodyOnboarding({
     authenticatedUser: AuthenticatedUser | null
 }): JSX.Element | null {
     const [showEditorStep, setShowEditorStep] = useState(false)
-    const [completed = true, setOnboardingCompleted] = useTemporarySetting('cody.onboarding.completed', false)
+    const [completed = false, setOnboardingCompleted] = useTemporarySetting('cody.onboarding.completed', false)
     // steps start from 0
     const [step = -1, setOnboardingStep] = useTemporarySetting('cody.onboarding.step', 0)
 
@@ -109,6 +118,19 @@ export function CodyOnboarding({
 
     const parameters = useSearchParameters()
     const enrollPro = parameters.get('pro') === 'true'
+    const returnToURL = parameters.get('returnTo')
+
+    const navigate = useNavigate()
+
+    useEffect(() => {
+        if (completed && returnToURL) {
+            navigate(returnToURL)
+        }
+    }, [completed, returnToURL, navigate])
+
+    if (completed && returnToURL) {
+        return null
+    }
 
     if (!showEditorStep && (completed || step === -1 || step > 1)) {
         return null

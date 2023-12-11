@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { H2, Text, Button, ButtonLink, Link } from '@sourcegraph/wildcard'
+import { H2, Text, Button, Link } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
 
@@ -26,34 +26,38 @@ export function JetBrainsInstructions({
                     </div>
 
                     <div className={classNames('pt-3 px-3', styles.instructionsContainer)}>
-                        <div className={classNames('border-bottom', styles.highlightStep)}>
+                        <div className={classNames('d-flex flex-column border-bottom')}>
                             <div className="d-flex align-items-center">
                                 <div className="mr-1">
                                     <div className={classNames('mr-2', styles.step)}>1</div>
                                 </div>
                                 <div>
                                     <Text className="mb-1" weight="bold">
-                                        Open the Plugins Page
+                                        Open the Plugins Page (or via the{' '}
+                                        <Link to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">
+                                            JetBrains Marketplace
+                                        </Link>
+                                        )
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
-                                        Click the Cog icon in the top right corner of your IDE and select{' '}
+                                        Click the cog [⚙️] icon in the top right corner of your IDE and select{' '}
                                         <strong>Plugins</strong>
-                                        Alternatively you can go to the settings option (use ⌘ + , for macOS, or File →
-                                        Settings for Windows), then select "Plugins" from the menu on the left.
+                                        <br />
+                                        Alternatively, go to the settings option (
+                                        <strong> [⌘] + [,] on macOS, or File → Settings on Windows </strong>), then
+                                        select "Plugins" from the menu on the left.
                                     </Text>
                                 </div>
                             </div>
-                            <div className="d-flex flex-column justify-content-center align-items-center mt-4">
-                                <ButtonLink
-                                    variant="primary"
-                                    to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai"
-                                    target="_blank"
-                                >
-                                    Open Marketplace
-                                </ButtonLink>
-                            </div>
+                            <img
+                                alt="JetBrains Menu"
+                                className="mt-2 m-auto"
+                                width="70%"
+                                src="https://storage.googleapis.com/sourcegraph-assets/jetBrainsInstructions/jetBrainsMenu.png"
+                            />
                         </div>
-                        <div className="mt-3 border-bottom">
+
+                        <div className="mt-3 d-flex flex-column border-bottom">
                             <div className="d-flex align-items-center">
                                 <div className="mr-1">
                                     <div className={classNames('mr-2', styles.step)}>2</div>
@@ -63,29 +67,41 @@ export function JetBrainsInstructions({
                                         Install the Cody Plugin
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
-                                        Type "Cody" in the search bar and install the plugin.
+                                        Type "Cody" in the search bar and <strong>install</strong> the plugin.
                                     </Text>
                                 </div>
                             </div>
-                            <div className="d-flex flex-column justify-content-center align-items-center mt-4" />
-                            <div className="mt-3 border-bottom">
-                                <div className="d-flex align-items-center">
-                                    <div className="mr-1">
-                                        <div className={classNames('mr-2', styles.step)}>3</div>
-                                    </div>
-                                    <div>
-                                        <Text className="mb-1" weight="bold">
-                                            Open the Plugin and Login
-                                        </Text>
-                                        <Text className="text-muted mb-0" size="small">
-                                            Cody will be available on the right side of your IDE. Click the Cody icon to
-                                            open the sidebar and login. Alternatively, you should get a notification
-                                            that you need to login to Cody.
-                                        </Text>
-                                    </div>
+                            <img
+                                alt="jetBrains Menu"
+                                className="mt-2 m-auto"
+                                width="70%"
+                                src="https://storage.googleapis.com/sourcegraph-assets/jetBrainsInstructions/jetBrainsPluginList.png"
+                            />
+                        </div>
+
+                        <div className="mt-3 d-flex flex-column border-bottom">
+                            <div className="d-flex align-items-center">
+                                <div className="mr-1">
+                                    <div className={classNames('mr-2', styles.step)}>3</div>
                                 </div>
-                                <div className="d-flex flex-column justify-content-center align-items-center mt-4" />
+                                <div>
+                                    <Text className="mb-1" weight="bold">
+                                        Open the Plugin and Login
+                                    </Text>
+                                    <Text className="text-muted mb-0" size="small">
+                                        Cody will be available on the right side of your IDE. Click the Cody icon to
+                                        open the sidebar and login.
+                                        <br />
+                                        Login with the same method you use to create this account.
+                                    </Text>
+                                </div>
                             </div>
+                            <img
+                                alt="jetBrains Menu"
+                                className="mt-2 m-auto"
+                                width="70%"
+                                src="https://storage.googleapis.com/sourcegraph-assets/jetBrainsInstructions/jetBrainsOnboarding.png"
+                            />
                         </div>
                     </div>
 
