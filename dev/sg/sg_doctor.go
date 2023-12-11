@@ -68,7 +68,7 @@ func runDoctorDiagnostics(cmd *cli.Context) error {
 		return err
 	}
 	diagnosticsPath := filepath.Join(repoRoot, "sg.doctor.yaml")
-	diagnostics, err := loadDiagnostics(diagnosticsPath)
+	diagnostics, err := readDiagnosticDefinitions(diagnosticsPath)
 	if err != nil {
 		return errors.Newf("failed to load diagnostics from %q: %v", diagnosticsPath, err)
 	}

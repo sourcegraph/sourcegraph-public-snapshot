@@ -1,15 +1,15 @@
 diagnostics:
   general:
-    - name: current env
+    - name: show current env
       cmd: env
-    - name: current path
+    - name: show current path
       cmd: pwd
-    - name: current branch
+    - name: show current branch
       cmd: git rev-parse --abbrev-ref HEAD
-    - cmd: show current commit
-      name: git rev-parse HEAD
-    - name: os kernel
-      cmd: uname -s
+    - name: show current commit
+      cmd: git rev-parse HEAD
+    - name: show os kernel
+      cmd: uname -a
   bazel:
     - name: architecture
       cmd: file -L $(which bazel)
