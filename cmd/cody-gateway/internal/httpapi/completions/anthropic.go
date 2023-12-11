@@ -174,7 +174,6 @@ func NewAnthropicHandler(
 				r.Header.Set("X-API-Key", accessToken)
 				r.Header.Set("anthropic-version", "2023-01-01")
 			},
-			forwardResponse: defaultForwardResponse[anthropicRequest],
 			parseResponseAndUsage: func(logger log.Logger, reqBody anthropicRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 				// First, extract prompt usage details from the request.
 				promptUsage.characters = len(reqBody.Prompt)
@@ -262,6 +261,10 @@ type anthropicRequest struct {
 
 	// Use (*anthropicRequest).GetTokenCount()
 	promptTokens *anthropicTokenCount
+}
+
+func (ar anthropicRequest) ShouldStream() bool {
+	return ar.Stream
 }
 
 func (ar anthropicRequest) GetModel() string {

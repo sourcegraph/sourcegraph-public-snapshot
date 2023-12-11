@@ -69,7 +69,6 @@ func NewOpenAIHandler(
 					r.Header.Set("OpenAI-Organization", orgID)
 				}
 			},
-			forwardResponse: defaultForwardResponse[openaiRequest],
 			parseResponseAndUsage: func(logger log.Logger, body openaiRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 				// First, extract prompt usage details from the request.
 				for _, m := range body.Messages {
@@ -157,6 +156,10 @@ type openaiRequest struct {
 	FrequencyPenalty float32                `json:"frequency_penalty,omitempty"`
 	LogitBias        map[string]float32     `json:"logit_bias,omitempty"`
 	User             string                 `json:"user,omitempty"`
+}
+
+func (r openaiRequest) ShouldStream() bool {
+	return r.Stream
 }
 
 func (r openaiRequest) GetModel() string {
