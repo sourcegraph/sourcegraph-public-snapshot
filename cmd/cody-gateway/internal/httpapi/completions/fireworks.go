@@ -32,6 +32,7 @@ func NewFireworksHandler(
 	allowedModels []string,
 	logSelfServeCodeCompletionRequests bool,
 	disableSingleTenant bool,
+	autoFlushStreamingResponses bool,
 ) http.Handler {
 	return makeUpstreamHandler(
 		baseLogger,
@@ -165,6 +166,7 @@ func NewFireworksHandler(
 		// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
 		// do any retries
 		30, // seconds
+		autoFlushStreamingResponses,
 	)
 }
 

@@ -32,6 +32,7 @@ func NewOpenAIHandler(
 	accessToken string,
 	orgID string,
 	allowedModels []string,
+	autoFlushStreamingResponses bool,
 ) http.Handler {
 	return makeUpstreamHandler(
 		baseLogger,
@@ -135,6 +136,7 @@ func NewOpenAIHandler(
 		// clients from retrying at all since retries are probably not going to
 		// help in a minute-long rate limit window.
 		30, // seconds
+		autoFlushStreamingResponses,
 	)
 }
 

@@ -98,6 +98,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// limit events in case a retry-after is not provided by the upstream
 	// response.
 	defaultRetryAfterSeconds int,
+	autoFlushStreamingResponses bool,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped(upstreamName).
 		With(log.String("upstream.url", upstreamAPIURL))
@@ -374,7 +375,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			// if this is a streaming request, we want to flush ourselves instead of leaving that to the http.Server
 			// (so events are sent to the client as soon as possible)
 			var responseWriter io.Writer = w
-			if body.ShouldStream() {
+			if autoFlushStreamingResponses && body.ShouldStream() {
 				if fw, err := response.NewAutoFlushingWriter(w); err == nil {
 					responseWriter = fw
 				} else {

@@ -111,6 +111,7 @@ func NewAnthropicHandler(
 	promptRecorder PromptRecorder,
 	allowedPromptPatterns []string,
 	requestBlockingEnabled bool,
+	autoFlushStreamingResponses bool,
 ) (http.Handler, error) {
 	// Tokenizer only needs to be initialized once, and can be shared globally.
 	anthropicTokenizer, err := tokenizer.NewAnthropicClaudeTokenizer()
@@ -245,6 +246,7 @@ func NewAnthropicHandler(
 		// able to circumvent concurrents limits without raising an error to the
 		// user.
 		2, // seconds
+		autoFlushStreamingResponses,
 	), nil
 }
 
