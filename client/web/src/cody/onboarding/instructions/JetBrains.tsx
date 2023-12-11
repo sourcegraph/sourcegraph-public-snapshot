@@ -1,9 +1,8 @@
 import { useState } from 'react'
 
 import classNames from 'classnames'
-import { Link } from 'react-router-dom'
 
-import { H2, Text, Button, ButtonLink } from '@sourcegraph/wildcard'
+import { H2, Text, Button, Link } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
 
@@ -51,7 +50,7 @@ export function JetBrainsInstructions({
                                 </div>
                             </div>
                             <img
-                                alt="jetBrains Menu"
+                                alt="JetBrains Menu"
                                 className="mt-2 m-auto"
                                 width="70%"
                                 src="https://storage.googleapis.com/sourcegraph-assets/jetBrainsInstructions/jetBrainsMenu.png"

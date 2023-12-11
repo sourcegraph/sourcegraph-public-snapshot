@@ -348,15 +348,8 @@ export const ProTierIcon = ({ className }: { className?: string }): ReactElement
                 <feGaussianBlur stdDeviation="0.5"></feGaussianBlur>
                 <feComposite in2="hardAlpha" operator="out"></feComposite>
                 <feColorMatrix values="0 0 0 0 0.278089 0 0 0 0 0.267405 0 0 0 0 0.267405 0 0 0 0.25 0"></feColorMatrix>
-                <feBlend
-                    in2="BackgroundImageFix"
-                    result="effect1_dropShadow_2692_3595"
-                ></feBlend>
-                <feBlend
-                    in="SourceGraphic"
-                    in2="effect1_dropShadow_2692_3595"
-                    result="shape"
-                ></feBlend>
+                <feBlend in2="BackgroundImageFix" result="effect1_dropShadow_2692_3595"></feBlend>
+                <feBlend in="SourceGraphic" in2="effect1_dropShadow_2692_3595" result="shape"></feBlend>
             </filter>
             <linearGradient
                 id="paint0_linear_2692_3595"
@@ -367,16 +360,9 @@ export const ProTierIcon = ({ className }: { className?: string }): ReactElement
                 gradientUnits="userSpaceOnUse"
             >
                 <stop stopColor="color(display-p3 0.9266 0.3028 0.2851)"></stop>
-                <stop
-                    offset="0.492"
-                    stopColor="color(display-p3 0.4392 0.2824 0.9098)"
-                ></stop>
-                <stop
-                    offset="1"
-                    stopColor="color(display-p3 0.2902 0.7569 0.9098)"
-                ></stop>
+                <stop offset="0.492" stopColor="color(display-p3 0.4392 0.2824 0.9098)"></stop>
+                <stop offset="1" stopColor="color(display-p3 0.2902 0.7569 0.9098)"></stop>
             </linearGradient>
         </defs>
     </svg>
 )
-
