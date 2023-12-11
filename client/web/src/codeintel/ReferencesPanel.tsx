@@ -381,10 +381,6 @@ const ReferencesList: React.FunctionComponent<
         navigate(url)
     }
 
-    const navigateToUrl = (url: string): void => {
-        navigate(url)
-    }
-
     const [collapsed, setCollapsed] = useSessionStorage<Record<string, boolean>>(
         'sideblob-collapse-state-' + sessionStorageKeyFromToken(props.token),
         props.collapsedState
@@ -453,7 +449,6 @@ const ReferencesList: React.FunctionComponent<
                         loadingMore={false}
                         filter={debouncedFilter}
                         activeURL={activeURL || ''}
-                        navigateToUrl={navigateToUrl}
                         isActiveLocation={isActiveLocation}
                         setActiveLocation={setActiveLocation}
                         handleOpenChange={handleOpenChange}
@@ -468,7 +463,6 @@ const ReferencesList: React.FunctionComponent<
                         loadingMore={fetchMoreReferencesLoading}
                         filter={debouncedFilter}
                         activeURL={activeURL || ''}
-                        navigateToUrl={navigateToUrl}
                         setActiveLocation={setActiveLocation}
                         isActiveLocation={isActiveLocation}
                         handleOpenChange={handleOpenChange}
@@ -485,7 +479,6 @@ const ReferencesList: React.FunctionComponent<
                         filter={debouncedFilter}
                         isActiveLocation={isActiveLocation}
                         activeURL={activeURL || ''}
-                        navigateToUrl={navigateToUrl}
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
                     />
@@ -500,7 +493,6 @@ const ReferencesList: React.FunctionComponent<
                         filter={debouncedFilter}
                         isActiveLocation={isActiveLocation}
                         activeURL={activeURL || ''}
-                        navigateToUrl={navigateToUrl}
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
                     />
@@ -531,7 +523,7 @@ const ReferencesList: React.FunctionComponent<
                                     to={activeURL}
                                     onClick={event => {
                                         event.preventDefault()
-                                        navigateToUrl(activeURL)
+                                        navigate(activeURL)
                                     }}
                                     className={styles.sideBlobFilename}
                                 >
@@ -572,7 +564,6 @@ interface CollapsibleLocationListProps
     hasMore: boolean
     fetchMore?: () => void
     loadingMore: boolean
-    navigateToUrl: (url: string) => void
     activeURL: string
 }
 
@@ -622,7 +613,6 @@ const CollapsibleLocationList: React.FunctionComponent<
                                     isActiveLocation={props.isActiveLocation}
                                     setActiveLocation={props.setActiveLocation}
                                     filter={props.filter}
-                                    navigateToUrl={props.navigateToUrl}
                                     handleOpenChange={(id, isOpen) => props.handleOpenChange(props.name + id, isOpen)}
                                     isOpen={id => props.isOpen(props.name + id)}
                                     fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
@@ -691,7 +681,6 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
             SearchTokenProps &
             HighlightedFileLineRangesProps & {
                 filter: string | undefined
-                navigateToUrl: (url: string) => void
                 locations: LocationsGroupedByRepo
                 openByDefault: boolean
                 activeURL: string
@@ -701,7 +690,6 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
     locations,
     isActiveLocation,
     setActiveLocation,
-    navigateToUrl,
     filter,
     openByDefault,
     isOpen,
@@ -744,7 +732,6 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                             filter={filter}
                             handleOpenChange={(id, isOpen) => handleOpenChange(repoName + id, isOpen)}
                             isOpen={id => isOpen(repoName + id)}
-                            navigateToUrl={navigateToUrl}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                         />
                     ))}
@@ -763,7 +750,6 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                 repoName: string
                 group: LocationsGroupedByFile
                 filter: string | undefined
-                navigateToUrl: (url: string) => void
                 activeURL: string
             }
     >
@@ -776,7 +762,6 @@ const CollapsibleLocationGroup: React.FunctionComponent<
     isOpen,
     handleOpenChange,
     fetchHighlightedFileLineRanges,
-    navigateToUrl,
 }) => {
     // On the first load, update the scroll position towards the active
     // location.  Without this behavior, the scroll position points at the top
@@ -836,6 +821,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
     }
 
     const open = isOpen(group.path) ?? true
+    const navigate = useNavigate()
 
     return (
         <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(group.path, isOpen)}>
@@ -905,14 +891,14 @@ const CollapsibleLocationGroup: React.FunctionComponent<
 
                                     event.preventDefault()
                                     if (isActive) {
-                                        navigateToUrl(locationToUrl(reference))
+                                        navigate(locationToUrl(reference))
                                     } else {
                                         setActiveLocation(reference)
                                     }
                                 }
                                 const doubleClickReference = (event: MouseEvent<HTMLElement>): void => {
                                     event.preventDefault()
-                                    navigateToUrl(locationToUrl(reference))
+                                    navigate(locationToUrl(reference))
                                 }
 
                                 return (
