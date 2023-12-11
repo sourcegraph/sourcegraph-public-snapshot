@@ -2,9 +2,9 @@ package ci
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
+	"github.com/grafana/regexp"
 	bk "github.com/sourcegraph/sourcegraph/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
