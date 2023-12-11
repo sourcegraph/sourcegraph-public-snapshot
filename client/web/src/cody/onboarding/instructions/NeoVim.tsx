@@ -1,9 +1,7 @@
 import { useState } from 'react'
 
 import classNames from 'classnames'
-import { Link } from 'react-router-dom'
-
-import { H2, Text, Button, ButtonLink } from '@sourcegraph/wildcard'
+import { Link , H2, Text, Button, ButtonLink } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
 
