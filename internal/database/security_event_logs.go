@@ -249,6 +249,9 @@ func (s *securityEventLogsStore) LogEventList(ctx context.Context, events []*Sec
 }
 
 func LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments []byte, logStore SecurityEventLogsStore) {
+	if logStore == nil {
+		return
+	}
 
 	event := SecurityEvent{
 		Name:            eventName,

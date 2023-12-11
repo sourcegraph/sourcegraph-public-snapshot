@@ -158,7 +158,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	argsJSON, _ := json.Marshal(args)
+	argsJSON, err := json.Marshal(args)
 	// Log action of Code Host Connection being updated
 	database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
 
@@ -277,9 +277,9 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		}
 	}
 
-	argsJSON, _ := json.Marshal(args)
+	//argsJSON, _ := json.Marshal(args)
 	// Log action of Code Host Connection being deleted
-	database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
+	//database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
 
 	return &EmptyResponse{}, nil
 }
@@ -319,9 +319,9 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		opt.RepoID = repoID
 	}
 
-	argsJSON, _ := json.Marshal(args)
+	//argsJSON, _ := json.Marshal(args)
 	// Log action of Code Host Connections being viewed
-	database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionsViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
+	//database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionsViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
 
 	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
 }
