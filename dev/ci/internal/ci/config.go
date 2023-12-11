@@ -141,7 +141,8 @@ func versionFromTag(runType runtype.RunType, tag string, commit string, buildNum
 
 	// Add additional patch suffix
 	if runType.Is(runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.ExecutorPatchNoTest) {
-		version = version + "_patch"
+		// version = version + "_patch"
+		version = version + "_test"
 	}
 
 	return version
