@@ -138,7 +138,7 @@ func HandleFeature(
 			return
 		}
 
-		responseRecorder := response.NewStatusHeaderRecorder(w)
+		responseRecorder := response.NewStatusHeaderRecorder(w, logger)
 		next.ServeHTTP(responseRecorder, r)
 
 		// If response is healthy, consume the rate limit

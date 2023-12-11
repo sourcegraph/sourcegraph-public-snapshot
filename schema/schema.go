@@ -53,6 +53,18 @@ type AWSKMSEncryptionKey struct {
 	Region          string `json:"region,omitempty"`
 	Type            string `json:"type"`
 }
+type AnnotationsParams struct {
+	// Content description: The file's content.
+	Content string `json:"content"`
+	// File description: The file's URI.
+	File string `json:"file"`
+}
+type AnnotationsResult struct {
+	// Annotations description: Annotations that attach items to specific ranges in the file.
+	Annotations []*OpenCodeGraphAnnotation `json:"annotations"`
+	// Items description: Items that contain information relevant to the file.
+	Items []*OpenCodeGraphItem `json:"items"`
+}
 
 // App description: Configuration options for App only.
 type App struct {
@@ -525,6 +537,14 @@ type BuiltinAuthProvider struct {
 	// SECURITY: If the site has no users (i.e., during initial setup), it will always allow the first user to sign up and become site admin **without any approval** (first user to sign up becomes the admin).
 	AllowSignup bool   `json:"allowSignup,omitempty"`
 	Type        string `json:"type"`
+}
+type CapabilitiesParams struct {
+}
+type CapabilitiesResult struct {
+	// Selector description: Selects the scope (repositories, files, and languages) in which this provider should be called.
+	//
+	// At least 1 must be satisfied for the provider to be called. If empty, the provider is never called. If undefined, the provider is called on all files.
+	Selector []*Selector `json:"selector,omitempty"`
 }
 
 // ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
@@ -1770,6 +1790,45 @@ type OnboardingTourConfiguration struct {
 	DefaultSnippets map[string]any    `json:"defaultSnippets,omitempty"`
 	Tasks           []*OnboardingTask `json:"tasks"`
 }
+type OpenCodeGraphAnnotation struct {
+	Item  OpenCodeGraphItemRef `json:"item"`
+	Range OpenCodeGraphRange   `json:"range"`
+}
+
+// OpenCodeGraphData description: Metadata about code
+type OpenCodeGraphData struct {
+	Annotations []*OpenCodeGraphAnnotation `json:"annotations"`
+	Items       []*OpenCodeGraphItem       `json:"items"`
+}
+type OpenCodeGraphImage struct {
+	Alt    string  `json:"alt,omitempty"`
+	Height float64 `json:"height,omitempty"`
+	Url    string  `json:"url"`
+	Width  float64 `json:"width,omitempty"`
+}
+type OpenCodeGraphItem struct {
+	Detail string              `json:"detail,omitempty"`
+	Id     string              `json:"id"`
+	Image  *OpenCodeGraphImage `json:"image,omitempty"`
+	// Preview description: Show a preview of the link.
+	Preview bool `json:"preview,omitempty"`
+	// PreviewUrl description: If `preview` is set, show this URL as the preview instead of `url`.
+	PreviewUrl string `json:"previewUrl,omitempty"`
+	Title      string `json:"title"`
+	// Url description: An external URL with more information.
+	Url string `json:"url,omitempty"`
+}
+type OpenCodeGraphItemRef struct {
+	Id string `json:"id"`
+}
+type OpenCodeGraphPosition struct {
+	Character int `json:"character"`
+	Line      int `json:"line"`
+}
+type OpenCodeGraphRange struct {
+	End   OpenCodeGraphPosition `json:"end"`
+	Start OpenCodeGraphPosition `json:"start"`
+}
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
 type OpenIDConnectAuthProvider struct {
@@ -2045,11 +2104,25 @@ type Repository struct {
 	// Owner description: The repository namespace.
 	Owner string `json:"owner,omitempty"`
 }
+type RequestMessage struct {
+	Method   string         `json:"method"`
+	Params   any            `json:"params,omitempty"`
+	Settings map[string]any `json:"settings,omitempty"`
+}
 type Responders struct {
 	Id       string `json:"id,omitempty"`
 	Name     string `json:"name,omitempty"`
 	Type     string `json:"type,omitempty"`
 	Username string `json:"username,omitempty"`
+}
+type ResponseError struct {
+	Code    int    `json:"code"`
+	Data    any    `json:"data,omitempty"`
+	Message string `json:"message"`
+}
+type ResponseMessage struct {
+	Error  *ResponseError `json:"error,omitempty"`
+	Result any            `json:"result,omitempty"`
 }
 
 // RestartStep description: Restart step
@@ -2209,6 +2282,18 @@ type SearchStep struct {
 type SecurityEventLog struct {
 	// Location description: Where to output the security event log [none, auditlog, database, all] where auditlog is the default logging to stdout with the specified audit log format
 	Location string `json:"location,omitempty"`
+}
+
+// Selector description: Defines a scope in which a provider is called, as a subset of languages, repositories, and/or files.
+//
+// To satisfy a selector, all of the selector's conditions must be met. For example, if both `path` and `content` are specified, the file must satisfy both conditions.
+type Selector struct {
+	// ContentContains description: A literal string that must be present in the file's content.
+	ContentContains string `json:"contentContains,omitempty"`
+	// Path description: A glob that must match the file path. If the file's location is represented as a URI, the URI's scheme is stripped before being matched against this glob.
+	//
+	// Use `**/` before the glob to match in any parent directory. Use `/**` after the glob to match any files under a directory. Leading slashes are stripped from the path before being matched against the glob.
+	Path string `json:"path,omitempty"`
 }
 
 // Sentry description: Configuration for Sentry

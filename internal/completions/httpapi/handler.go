@@ -2,8 +2,11 @@ package httpapi
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"net/http"
 	"strconv"
 	"time"
@@ -14,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 
 	"github.com/sourcegraph/log"
 
@@ -31,9 +35,17 @@ import (
 // being cancelled.
 const maxRequestDuration = time.Minute
 
+var timeToFirstEventMetrics = metrics.NewREDMetrics(
+	prometheus.DefaultRegisterer,
+	"completions_stream_first_event",
+	metrics.WithLabels("model"),
+	metrics.WithDurationBuckets([]float64{0.25, 0.5, 0.75, 1.0, 2.0, 3.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 25.0, 30.0}),
+)
+
 func newCompletionsHandler(
 	logger log.Logger,
 	userStore database.UserStore,
+	accessTokenStore database.AccessTokenStore,
 	events *telemetry.EventRecorder,
 	feature types.CompletionsFeature,
 	rl RateLimiter,
@@ -87,17 +99,36 @@ func newCompletionsHandler(
 		isDotcom := envvar.SourcegraphDotComMode()
 		isProviderCodyGateway := completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
 		if isCodyProEnabled && isDotcom && isProviderCodyGateway {
+			// Note: if we have no Authorization header, that's fine too, this will return an error
 			apiToken, _, err := authz.ParseAuthorizationHeader(r.Header.Get("Authorization"))
 			if err != nil {
-				trace.Logger(ctx, logger).Info("Error parsing auth header", log.String("Authorization header", r.Header.Get("Authorization")), log.Error(err))
-				http.Error(w, "Error parsing auth header", http.StatusUnauthorized)
-				return
-			}
-			accessToken, err = accesstoken.GenerateDotcomUserGatewayAccessToken(apiToken)
-			if err != nil {
-				trace.Logger(ctx, logger).Info("Access token generation failed", log.String("API token", apiToken), log.Error(err))
-				http.Error(w, "Access token generation failed", http.StatusUnauthorized)
-				return
+				// No actor either, so we fail.
+				if r.Header.Get("Authorization") != "" || sgactor.FromContext(ctx) == nil {
+					trace.Logger(ctx, logger).Info("Error parsing auth header", log.String("Authorization header", r.Header.Get("Authorization")), log.Error(err))
+					http.Error(w, "Error parsing auth header", http.StatusUnauthorized)
+					return
+				}
+
+				// Get or create an internal token to use.
+				actor := sgactor.FromContext(ctx)
+				apiTokenSha256, err := accessTokenStore.GetOrCreateInternalToken(ctx, actor.UID, []string{"user:all"})
+				if err != nil {
+					trace.Logger(ctx, logger).Info("Error creating internal access token", log.Error(err))
+					http.Error(w, "Missing auth header", http.StatusUnauthorized)
+					return
+				}
+				// Convert the user's sha256-encoded access token to an "sgd_" token for Cody Gateway.
+				// Note: we can't use accesstoken.GenerateDotcomUserGatewayAccessToken here because
+				// we only need to hash this once, not twice, as this is already an SHA256-encoding
+				// of the original token.
+				accessToken = accesstoken.DotcomUserGatewayAccessTokenPrefix + hex.EncodeToString(hashutil.ToSHA256Bytes(apiTokenSha256))
+			} else {
+				accessToken, err = accesstoken.GenerateDotcomUserGatewayAccessToken(apiToken)
+				if err != nil {
+					trace.Logger(ctx, logger).Info("Access token generation failed", log.String("API token", apiToken), log.Error(err))
+					http.Error(w, "Access token generation failed", http.StatusUnauthorized)
+					return
+				}
 			}
 		}
 
@@ -181,9 +212,14 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 		defer func() {
 			_ = eventWriter.Event("done", map[string]any{})
 		}()
-
+		start := time.Now()
+		firstEventObserved := false
 		err = cc.Stream(ctx, feature, requestParams,
 			func(event types.CompletionResponse) error {
+				if !firstEventObserved {
+					firstEventObserved = true
+					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, &err, requestParams.Model)
+				}
 				return eventWriter.Event("completion", event)
 			})
 		if err != nil {

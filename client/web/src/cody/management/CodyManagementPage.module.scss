@@ -12,6 +12,12 @@
     }
 }
 
+.container {
+    border-radius: 6px;
+    border: 1px solid (--border-color);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+
 .plan-name {
     font-size: 1.5rem;
     font-weight: 600;
@@ -27,4 +33,8 @@
 
 .modal {
     width: 50rem;
+}
+
+.release-stage {
+    color: var(--gray-07);
 }

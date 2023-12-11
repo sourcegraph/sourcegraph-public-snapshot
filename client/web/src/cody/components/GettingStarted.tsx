@@ -18,6 +18,8 @@ type ConversationScope = 'general' | 'repo'
 
 const DEFAULT_VERTICAL_OFFSET = '1rem'
 
+/* eslint-disable  @sourcegraph/sourcegraph/check-help-links */
+
 export const GettingStarted: React.FC<
     Pick<
         CodyChatStore,

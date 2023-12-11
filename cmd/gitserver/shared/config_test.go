@@ -40,6 +40,9 @@ func TestConfigDefaults(t *testing.T) {
 	if have, want := config.JanitorInterval, time.Minute; have != want {
 		t.Errorf("invalid value for JanitorInterval: have=%s want=%s", have, want)
 	}
+	if have, want := config.JanitorDisableDeleteReposOnWrongShard, false; have != want {
+		t.Errorf("invalid value for JanitorDisableDeleteReposOnWrongShard: have=%t want=%t", have, want)
+	}
 }
 
 func TestConfig_PercentFree(t *testing.T) {
