@@ -45,7 +45,8 @@ type JanitorConfig struct {
 	ShardID         string
 	ReposDir        string
 
-	DesiredPercentFree int
+	DesiredPercentFree             int
+	DisableDeleteReposOnWrongShard bool
 }
 
 func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wrexec.RecordingCommandFactory, cloneRepo cloneRepoFunc, logger log.Logger) goroutine.BackgroundRoutine {
@@ -78,7 +79,7 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 
 			gitserverAddrs := gitserver.NewGitserverAddresses(conf.Get())
 			// TODO: Should this return an error?
-			cleanupRepos(ctx, logger, db, rcf, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs)
+			cleanupRepos(ctx, logger, db, rcf, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs, cfg.DisableDeleteReposOnWrongShard)
 
 			return nil
 		}),
@@ -92,10 +93,6 @@ var (
 	wrongShardReposTotal = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_repo_wrong_shard",
 		Help: "The number of repos that are on disk on the wrong shard",
-	})
-	wrongShardReposSizeTotalBytes = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_repo_wrong_shard_bytes",
-		Help: "Size (in bytes) of repos that are on disk on the wrong shard",
 	})
 	wrongShardReposDeletedCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repo_wrong_shard_deleted",
@@ -179,9 +176,6 @@ var sgmLogExpire = env.MustGetDuration("SRC_GIT_LOG_FILE_EXPIRY", 24*time.Hour, 
 // sure that changes here are reflected in sgmLogHeader, too.
 var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "3", "the maximum number of times we retry sg maintenance before triggering a reclone."))
 
-// The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
-var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the maximum number of repos not assigned to this shard we delete in one run"))
-
 // Controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB. Defaults to false.
 var removeNonExistingRepos, _ = strconv.ParseBool(env.Get("SRC_REMOVE_NON_EXISTING_REPOS", "false", "controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB"))
 
@@ -249,6 +243,7 @@ func cleanupRepos(
 	reposDir string,
 	cloneRepo cloneRepoFunc,
 	gitServerAddrs gitserver.GitserverAddresses,
+	disableDeleteReposOnWrongShard bool,
 ) {
 	logger = logger.Scoped("cleanup")
 
@@ -275,48 +270,65 @@ func cleanupRepos(
 
 	repoToSize := make(map[api.RepoName]int64)
 	var wrongShardRepoCount int64
-	var wrongShardRepoSize int64
 	defer func() {
 		// We want to set the gauge only at the end when we know the total
 		wrongShardReposTotal.Set(float64(wrongShardRepoCount))
-		wrongShardReposSizeTotalBytes.Set(float64(wrongShardRepoSize))
 	}()
 
 	var wrongShardReposDeleted int64
 	defer func() {
 		// We want to set the gauge only when wrong shard clean-up is enabled
-		if wrongShardReposDeleteLimit > 0 {
+		if disableDeleteReposOnWrongShard {
 			wrongShardReposDeletedCounter.Add(float64(wrongShardReposDeleted))
 		}
 	}()
 
-	collectSizeAndMaybeDeleteWrongShardRepos := func(dir common.GitDir) (done bool, err error) {
+	maybeDeleteWrongShardRepos := func(dir common.GitDir) (done bool, err error) {
+		// Record the number of repos that should not belong on this instance and
+		// remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
+		name := gitserverfs.RepoNameFromDir(reposDir, dir)
+		addr := addrForRepo(ctx, name, gitServerAddrs)
+
+		if hostnameMatch(shardID, addr) {
+			return false, nil
+		}
+
+		wrongShardRepoCount++
+
+		// If we're on a shard not currently known, basically every repo would
+		// be considered on the wrong shard. This is probably a configuration
+		// error and we don't want to completely empty our disk in that case,
+		// so skip.
+		if !knownGitServerShard {
+			return false, nil
+		}
+
+		// Check that wrong shard deletion has not been disabled.
+		if disableDeleteReposOnWrongShard {
+			return false, nil
+		}
+
+		logger.Info(
+			"removing repo cloned on the wrong shard",
+			log.String("dir", string(dir)),
+			log.String("target-shard", addr),
+			log.String("current-shard", shardID),
+		)
+		if err := gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, dir, false); err != nil {
+			return true, err
+		}
+
+		wrongShardReposDeleted++
+
+		// Note: We just deleted the repo. So we're done with any further janitor tasks!
+		return true, nil
+	}
+
+	collectSize := func(dir common.GitDir) (done bool, err error) {
 		size := gitserverfs.DirSize(dir.Path("."))
 		name := gitserverfs.RepoNameFromDir(reposDir, dir)
 		repoToSize[name] = size
 
-		// Record the number and disk usage used of repos that should
-		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
-		addr := addrForRepo(ctx, name, gitServerAddrs)
-
-		if !hostnameMatch(shardID, addr) {
-			wrongShardRepoCount++
-			wrongShardRepoSize += size
-
-			if knownGitServerShard && wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
-				logger.Info(
-					"removing repo cloned on the wrong shard",
-					log.String("dir", string(dir)),
-					log.String("target-shard", addr),
-					log.String("current-shard", shardID),
-					log.Int64("size-bytes", size),
-				)
-				if err := gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, dir, false); err != nil {
-					return false, err
-				}
-				wrongShardReposDeleted++
-			}
-		}
 		return false, nil
 	}
 
@@ -519,8 +531,12 @@ func cleanupRepos(
 		Do   func(common.GitDir) (bool, error)
 	}
 	cleanups := []cleanupFn{
+		// First, check if we should even be having this repo on disk anymore,
+		// maybe there's been a resharding event and we can actually remove it
+		// and not spend further CPU cycles fixing it.
+		{"delete wrong shard repos", maybeDeleteWrongShardRepos},
 		// Compute the amount of space used by the repo
-		{"compute stats and delete wrong shard repos", collectSizeAndMaybeDeleteWrongShardRepos},
+		{"compute stats", collectSize},
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
 		// Remove repo if DB does not contain it anymore
@@ -711,7 +727,11 @@ func freeUpSpace(ctx context.Context, logger log.Logger, db database.DB, shardID
 	for _, d := range gitDirs {
 		mt, err := gitDirModTime(d)
 		if err != nil {
-			return errors.Wrap(err, "computing mod time of git dir")
+			// If we get an error here, we move it to the end of the queue,
+			// since it's the janitor's job to clean/fix this.
+			logger.Warn("computing mod time of git dir failed", log.String("dir", string(d)), log.Error(err))
+			dirModTimes[d] = time.Now()
+			continue
 		}
 		dirModTimes[d] = mt
 	}
@@ -741,7 +761,8 @@ func freeUpSpace(ctx context.Context, logger log.Logger, db database.DB, shardID
 
 		delta := gitserverfs.DirSize(d.Path("."))
 		if err := gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, d, true); err != nil {
-			return errors.Wrap(err, "removing repo directory")
+			logger.Warn("failed to remove least recently used repo", log.String("dir", string(d)), log.Error(err))
+			continue
 		}
 		spaceFreed += delta
 		reposRemovedDiskPressure.Inc()

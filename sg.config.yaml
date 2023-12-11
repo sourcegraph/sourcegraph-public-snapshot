@@ -132,7 +132,7 @@ env:
   GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: '1KB'
   GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: '100MB'
 
-  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: 'http://127.0.0.1:10080'
+  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: 'http://127.0.0.1:6080'
   SRC_TELEMETRY_EVENTS_EXPORT_ALL: 'true'
 
   # By default, allow temporary edits to external services.
@@ -332,12 +332,10 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/telemetry-gateway github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway
     checkBinary: .bin/telemetry-gateway
     env:
-      PORT: '10080'
+      PORT: '6080'
       DIAGNOSTICS_SECRET: sekret
       TELEMETRY_GATEWAY_EVENTS_PUBSUB_ENABLED: false
       SRC_LOG_LEVEL: info
-      # Enables metrics in dev via debugserver
-      SRC_PROF_HTTP: '127.0.0.1:6080'
       GRPC_WEB_UI_ENABLED: true
     watch:
       - lib
@@ -463,7 +461,20 @@ commands:
 
   docsite:
     description: Docsite instance serving the docs
-    cmd: bazel run --script_path=docsite_run.sh --noshow_progress --noshow_loading_progress //doc:serve && ./docsite_run.sh
+    env:
+      RUN_SCRIPT_NAME: .bin/bazel_run_docsite.sh
+    cmd: |
+      # We tell bazel to write out a script to run docsite and run that script via sg otherwise
+      # when we get a SIGINT ... bazel gets killed but docsite doesn't get killed properly. So we use --script_path
+      # which tells bazel to write out a script to run docsite, and let sg run that script rather, which means
+      # any signal gets propagated and docsite gets properly terminated.
+      #
+      # We also specifically put this in .bin, since that directory is gitignored, otherwise the run script is left
+      # around and currently there is no clean way to remove it - even using a bash trap doesn't work, since the trap
+      # never gets executed due to sg running the script.
+      bazel run --script_path=${RUN_SCRIPT_NAME} --noshow_progress --noshow_loading_progress //doc:serve
+
+      ./${RUN_SCRIPT_NAME}
 
   syntax-highlighter:
     ignoreStdout: true
@@ -1593,6 +1604,29 @@ tests:
   backend:
     cmd: go test
     defaultArgs: ./...
+
+  bazel-backend-integration:
+    cmd: |
+      export GHE_GITHUB_TOKEN=$(gcloud secrets versions access latest --secret=GHE_GITHUB_TOKEN --quiet --project=sourcegraph-ci)
+      export GH_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN --quiet --project=sourcegraph-ci)
+
+      export BITBUCKET_SERVER_USERNAME=$(gcloud secrets versions access latest --secret=BITBUCKET_SERVER_USERNAME --quiet --project=sourcegraph-ci)
+      export BITBUCKET_SERVER_TOKEN=$(gcloud secrets versions access latest --secret=BITBUCKET_SERVER_TOKEN --quiet --project=sourcegraph-ci)
+      export BITBUCKET_SERVER_URL=$(gcloud secrets versions access latest --secret=BITBUCKET_SERVER_URL --quiet --project=sourcegraph-ci)
+
+      export PERFORCE_PASSWORD=$(gcloud secrets versions access latest --secret=PERFORCE_PASSWORD --quiet --project=sourcegraph-ci)
+      export PERFORCE_USER=$(gcloud secrets versions access latest --secret=PERFORCE_USER --quiet --project=sourcegraph-ci)
+      export PERFORCE_PORT=$(gcloud secrets versions access latest --secret=PERFORCE_PORT --quiet --project=sourcegraph-ci)
+
+      export SOURCEGRAPH_LICENSE_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_KEY --quiet --project=sourcegraph-ci)
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_GENERATION_KEY --quiet --project=sourcegraph-ci)
+
+      if [[ $(uname) == "Darwin" ]]; then
+        BAZEL_FLAGS=("--config darwin-docker")
+      else
+        BAZEL_FLAGS=()
+      fi
+      bazel test //testing:backend_integration_test ${BAZEL_FLAGS[*]} --verbose_failures --sandbox_debug
 
   bazel-e2e:
     cmd: |

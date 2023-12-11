@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -65,11 +66,13 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 			return nil, err
 		}
 	}
+	argsJSON, _ := json.Marshal(args)
+
 	event := &database.SecurityEvent{
 		Name:      database.SecurityEventNameOrgViewed,
-		URL:       "1",
+		URL:       "",
 		UserID:    uint32(actor.FromContext(ctx).UID),
-		Argument:  nil,
+		Argument:  argsJSON,
 		Source:    "BACKEND",
 		Timestamp: time.Now(),
 	}
@@ -251,6 +254,16 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 	if settings == nil {
 		return nil, nil
 	}
+	// event := &database.SecurityEvent{
+	// 	Name:      database.SecurityEventNameOrgSettingsViewed,
+	// 	URL:       "",
+	// 	UserID:    uint32(actor.FromContext(ctx).UID),
+	// 	Argument:  nil,
+	// 	Source:    "BACKEND",
+	// 	Timestamp: time.Now(),
+	// }
+	// o.db.SecurityEventLogs().LogEvent(ctx, event)
+
 	return &settingsResolver{o.db, &settingsSubjectResolver{org: o}, settings, nil}, nil
 }
 
@@ -328,6 +341,17 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
+	argsJSON, _ := json.Marshal(args)
+
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameOrgCreated,
+		URL:       "",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	r.db.SecurityEventLogs().LogEvent(ctx, event)
 
 	// Write the org_id into orgs open beta stats table on Cloud
 	if envvar.SourcegraphDotComMode() && args.StatsID != nil {
@@ -367,7 +391,17 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
+	argsJSON, _ := json.Marshal(args)
 
+	event := &database.SecurityEvent{
+		Name:      database.SecurityEventNameOrgUpdated,
+		URL:       "",
+		UserID:    uint32(actor.FromContext(ctx).UID),
+		Argument:  argsJSON,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	r.db.SecurityEventLogs().LogEvent(ctx, event)
 	return &OrgResolver{db: r.db, org: updatedOrg}, nil
 }
 

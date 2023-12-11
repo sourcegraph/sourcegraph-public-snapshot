@@ -39,9 +39,10 @@ const (
 	SecurityEventNamPasswordRandomized     SecurityEventName = "PasswordRandomized"
 	SecurityEventNamePasswordChanged       SecurityEventName = "PasswordChanged"
 
-	SecurityEventNameEmailVerified SecurityEventName = "EmailVerified"
-	SecurityEventNameEmailAdded    SecurityEventName = "EmailAdded"
-	SecurityEventNameEmailRemoved  SecurityEventName = "EmailRemoved"
+	SecurityEventNameEmailVerified       SecurityEventName = "EmailVerified"
+	SecurityEventNameEmailVerifiedToggle SecurityEventName = "EmailVerificationChanged"
+	SecurityEventNameEmailAdded          SecurityEventName = "EmailAdded"
+	SecurityEventNameEmailRemoved        SecurityEventName = "EmailRemoved"
 
 	SecurityEventNameRoleChangeDenied  SecurityEventName = "RoleChangeDenied"
 	SecurityEventNameRoleChangeGranted SecurityEventName = "RoleChangeGranted"
@@ -74,16 +75,19 @@ const (
 	SecurityEventNameSiteConfigRedactedViewed SecurityEventName = "SiteConfigRedactedViewed"
 	SecurityEventNameSiteConfigViewed         SecurityEventName = "SiteConfigViewed"
 
-	SecurityEventNameDotComLicenseCreated      SecurityEventName = "DotComLicenseCreated"
-	SecurityEventNameDotComLicenseViewed       SecurityEventName = "DotComLicenseViewed"
-	SecurityEventNameDotComSubscriptionViewed  SecurityEventName = "DotComSubscriptionViewed"
-	SecurityEventNameDotComSubscriptionCreated SecurityEventName = "DotComSubscriptionCreated"
-	SecurityEventNameDotComSubscriptionsListed SecurityEventName = "DotComSubscriptionsListed"
-	SecurityEventNameDotComSubscriptionUpdated SecurityEventName = "DotComSubscriptionUpdated"
+	SecurityEventNameDotComLicenseCreated       SecurityEventName = "DotComLicenseCreated"
+	SecurityEventNameDotComLicenseViewed        SecurityEventName = "DotComLicenseViewed"
+	SecurityEventNameDotComSubscriptionViewed   SecurityEventName = "DotComSubscriptionViewed"
+	SecurityEventNameDotComSubscriptionCreated  SecurityEventName = "DotComSubscriptionCreated"
+	SecurityEventNameDotComSubscriptionArchived SecurityEventName = "DotComSubscriptionArchived"
+	SecurityEventNameDotComSubscriptionsListed  SecurityEventName = "DotComSubscriptionsListed"
+	SecurityEventNameDotComSubscriptionUpdated  SecurityEventName = "DotComSubscriptionUpdated"
 
-	SecurityEventNameOrgViewed       SecurityEventName = "OrganizationViewed"
-	SecurityEventNameOrgCreated      SecurityEventName = "OrganizationCreated"
-	SecurityEventNameDotComOrgViewed SecurityEventName = "DotComOrganizationViewed"
+	SecurityEventNameOrgViewed         SecurityEventName = "OrganizationViewed"
+	SecurityEventNameOrgCreated        SecurityEventName = "OrganizationCreated"
+	SecurityEventNameOrgUpdated        SecurityEventName = "OrganizationUpdated"
+	SecurityEventNameOrgSettingsViewed SecurityEventName = "OrganizationSettingsViewed"
+	SecurityEventNameDotComOrgViewed   SecurityEventName = "DotComOrganizationViewed"
 
 	SecurityEventNameOutboundReqViewed SecurityEventName = "OutboundRequestViewed"
 

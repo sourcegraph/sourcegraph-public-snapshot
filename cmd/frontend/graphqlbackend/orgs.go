@@ -54,7 +54,7 @@ func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, erro
 	}
 	event := &database.SecurityEvent{
 		Name:      database.SecurityEventNameOrgViewed,
-		URL:       "",
+		URL:       "2",
 		UserID:    uint32(actor.FromContext(ctx).UID),
 		Argument:  nil,
 		Source:    "BACKEND",

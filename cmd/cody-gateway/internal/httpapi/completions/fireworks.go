@@ -30,6 +30,7 @@ func NewFireworksHandler(
 	accessToken string,
 	allowedModels []string,
 	logSelfServeCodeCompletionRequests bool,
+	disableSingleTenant bool,
 ) http.Handler {
 	return makeUpstreamHandler(
 		baseLogger,
@@ -54,6 +55,17 @@ func NewFireworksHandler(
 				// mess with rate limit counting.
 				if body.N > 1 {
 					body.N = 1
+				}
+				if disableSingleTenant {
+					oldModel := body.Model
+					if body.Model == "accounts/sourcegraph/models/starcoder-16b" {
+						body.Model = "accounts/fireworks/models/starcoder-16b-w8a16"
+					} else if body.Model == "accounts/sourcegraph/models/starcoder-7b" {
+						body.Model = "accounts/fireworks/models/starcoder-7b-w8a16"
+					}
+					if oldModel != body.Model {
+						baseLogger.Debug("rewriting model", log.String("old-model", oldModel), log.String("new-model", body.Model))
+					}
 				}
 			},
 			getRequestMetadata: func(ctx context.Context, logger log.Logger, act *actor.Actor, body fireworksRequest) (model string, additionalMetadata map[string]any) {
@@ -161,7 +173,7 @@ type fireworksRequest struct {
 	Model       string   `json:"model"`
 	MaxTokens   int32    `json:"max_tokens,omitempty"`
 	Temperature float32  `json:"temperature,omitempty"`
-	TopP        int32    `json:"top_p,omitempty"`
+	TopP        float32  `json:"top_p,omitempty"`
 	N           int32    `json:"n,omitempty"`
 	Stream      bool     `json:"stream,omitempty"`
 	Echo        bool     `json:"echo,omitempty"`

@@ -165,6 +165,7 @@ JOIN external_service_repos esr ON gr.repo_id = esr.repo_id
 JOIN external_services es on esr.external_service_id = es.id
 WHERE
 	gr.last_error != ''
+	AND r.blocked IS NULL
 	AND r.deleted_at IS NULL
 	AND es.cloud_default IS TRUE
 `
@@ -183,6 +184,7 @@ JOIN external_service_repos esr ON repo.id = esr.repo_id
 JOIN external_services es on esr.external_service_id = es.id
 WHERE
 	gr.last_error != ''
+	AND repo.blocked IS NULL
 	AND repo.deleted_at IS NULL
 	AND es.cloud_default IS TRUE
 `
@@ -591,7 +593,6 @@ func (s *gitserverRepoStore) LogCorruption(ctx context.Context, name api.RepoNam
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos as gtr
 SET
-	shard_id = %s,
 	corrupted_at = NOW(),
 	-- prepend the json and then ensure we only keep 10 items in the resulting json array
 	corruption_logs = (SELECT jsonb_path_query_array(%s||gtr.corruption_logs, '$[0 to 9]')),
@@ -599,7 +600,9 @@ SET
 WHERE
 	repo_id = (SELECT id FROM repo WHERE name = %s)
 AND
-	corrupted_at IS NULL`, shardID, rawLog, name))
+	(shard_id = %s OR shard_id = '')
+AND
+	corrupted_at IS NULL`, rawLog, name, shardID))
 	if err != nil {
 		return errors.Wrapf(err, "logging repo corruption")
 	}

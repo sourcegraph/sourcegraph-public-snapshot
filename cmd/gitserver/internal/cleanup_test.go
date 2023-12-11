@@ -87,6 +87,7 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 			return "", nil
 		},
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
+		false,
 	)
 
 	for i := 1; i <= 3; i++ {
@@ -142,6 +143,7 @@ func TestCleanupInactive(t *testing.T) {
 			return "", nil
 		},
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
+		false,
 	)
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
@@ -180,6 +182,7 @@ func TestCleanupWrongShard(t *testing.T) {
 				return "", nil
 			},
 			gitserver.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}},
+			false,
 		)
 
 		if _, err := os.Stat(repoA); err != nil {
@@ -216,6 +219,7 @@ func TestCleanupWrongShard(t *testing.T) {
 				return "", nil
 			},
 			gitserver.GitserverAddresses{Addresses: []string{"gitserver-0.cluster.local:3178", "gitserver-1.cluster.local:3178"}},
+			false,
 		)
 
 		if _, err := os.Stat(repoA); err != nil {
@@ -241,8 +245,6 @@ func TestCleanupWrongShard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		wrongShardReposDeleteLimit = -1
-
 		cleanupRepos(
 			context.Background(),
 			logtest.Scoped(t),
@@ -255,6 +257,7 @@ func TestCleanupWrongShard(t *testing.T) {
 				return "", nil
 			},
 			gitserver.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}},
+			true,
 		)
 
 		if _, err := os.Stat(repoA); os.IsNotExist(err) {
@@ -326,6 +329,7 @@ func TestGitGCAuto(t *testing.T) {
 			return "", nil
 		},
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
+		false,
 	)
 
 	// Verify that there are no more GC-able objects in the repository.
@@ -436,6 +440,7 @@ func TestCleanupExpired(t *testing.T) {
 		root,
 		cloneRepo,
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
+		false,
 	)
 
 	// repos that fail to clone need to have recloneTime updated
@@ -501,6 +506,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 				return "", nil
 			},
 			gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
+			false,
 		)
 
 		// nothing should happen if test env not declared to true
@@ -529,6 +535,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 				return "", nil
 			},
 			gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
+			false,
 		)
 
 		if _, err := os.Stat(repoNotExists); err == nil {
@@ -680,6 +687,7 @@ func TestCleanupOldLocks(t *testing.T) {
 			return "", nil
 		},
 		gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}},
+		false,
 	)
 
 	isRemoved := func(path string) bool {

@@ -79,12 +79,13 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
-	argsJSON, _ := json.Marshal(args)
+	//Find a way to add argument without logging the sensitive information
+	//argsJSON, _ := json.Marshal(args)
 	event := &database.SecurityEvent{
 		Name:      database.SecurityEventNameCodeHostConnectionAdded,
 		URL:       "",
 		UserID:    uint32(actor.FromContext(ctx).UID),
-		Argument:  argsJSON,
+		Argument:  nil,
 		Source:    "BACKEND",
 		Timestamp: time.Now(),
 	}

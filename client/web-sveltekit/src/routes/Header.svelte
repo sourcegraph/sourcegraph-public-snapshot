@@ -1,28 +1,62 @@
 <script lang="ts">
     import { mdiBookOutline, mdiChartBar, mdiMagnify } from '@mdi/js'
 
-    import { mark } from '$lib/images'
+    import { mark, svelteLogoEnabled } from '$lib/images'
     import type { AuthenticatedUser } from '$lib/shared'
 
     import HeaderNavLink from './HeaderNavLink.svelte'
     import { Button } from '$lib/wildcard'
     import UserMenu from './UserMenu.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
+    import { page } from '$app/stores'
+    import CodyIcon from '$lib/icons/Cody.svelte'
+    import CodeMonitoringIcon from '$lib/icons/CodeMonitoring.svelte'
+    import BatchChangesIcon from '$lib/icons/BatchChanges.svelte'
 
     export let authenticatedUser: AuthenticatedUser | null | undefined
+
+    $: reactURL = (function (url) {
+        const urlCopy = new URL(url)
+        urlCopy.searchParams.delete('feat')
+        for (let feature of urlCopy.searchParams.getAll('feat')) {
+            if (feature !== 'enable-sveltekit') {
+                urlCopy.searchParams.append('feat', feature)
+            }
+        }
+        urlCopy.searchParams.append('feat', '-enable-sveltekit')
+        return urlCopy.toString()
+    })($page.url)
 </script>
 
 <header>
-    <a href="/search">
+    <a class="logo" href="/search">
         <img src={mark} alt="Sourcegraph" width="25" height="25" />
     </a>
     <nav class="ml-2">
         <ul>
             <HeaderNavLink href="/search" svgIconPath={mdiMagnify}>Code search</HeaderNavLink>
+            <HeaderNavLink external href="/cody/chat">
+                <CodyIcon slot="icon" />
+                Cody
+            </HeaderNavLink>
             <HeaderNavLink external href="/notebooks" svgIconPath={mdiBookOutline}>Notebooks</HeaderNavLink>
+            <HeaderNavLink external href="/code-monitoring">
+                <CodeMonitoringIcon slot="icon" />
+                Monitoring
+            </HeaderNavLink>
+            <HeaderNavLink external href="/batch-changes">
+                <BatchChangesIcon slot="icon" />
+                Batch Changes
+            </HeaderNavLink>
             <HeaderNavLink external href="/insights" svgIconPath={mdiChartBar}>Insights</HeaderNavLink>
         </ul>
     </nav>
-    <div class="user">
+    <Tooltip tooltip="Disable SvelteKit (go to React)">
+        <a class="app-toggle" href={reactURL} data-sveltekit-reload>
+            <img src={svelteLogoEnabled} alt="Svelte logo" width="20" height="20" />
+        </a>
+    </Tooltip>
+    <div>
         {#if authenticatedUser}
             <UserMenu {authenticatedUser} />
         {:else}
@@ -44,7 +78,7 @@
         background-color: var(--color-bg-1);
     }
 
-    img {
+    .logo img {
         &:hover {
             @keyframes spin {
                 50% {
@@ -75,5 +109,9 @@
         justify-content: center;
         list-style: none;
         background-size: contain;
+    }
+
+    .app-toggle {
+        margin-right: 1rem;
     }
 </style>

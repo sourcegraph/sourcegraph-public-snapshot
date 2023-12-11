@@ -336,7 +336,7 @@ func (s dbSubscriptions) Archive(ctx context.Context, id string) error {
 	}
 	argsJSON, _ := json.Marshal(id)
 	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameDotComSubscriptionCreated,
+		Name:      database.SecurityEventNameDotComSubscriptionArchived,
 		URL:       "",
 		UserID:    uint32(actor.FromContext(ctx).UID),
 		Argument:  argsJSON,

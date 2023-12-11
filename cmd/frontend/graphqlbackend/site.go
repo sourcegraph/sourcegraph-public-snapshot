@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"os"
 	"strconv"
 	"strings"
@@ -385,11 +386,12 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		Name:      database.SecurityEventNameSiteConfigUpdated,
 		URL:       "",
 		UserID:    uint32(actor.FromContext(ctx).UID),
-		Argument:  nil,
+		Argument:  json.RawMessage(args.Input),
 		Source:    "BACKEND",
 		Timestamp: time.Now(),
 	}
 	r.db.SecurityEventLogs().LogEvent(ctx, event)
+
 	return server.NeedServerRestart(), nil
 }
 

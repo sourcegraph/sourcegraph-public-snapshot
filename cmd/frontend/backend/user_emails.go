@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"fmt"
+	"encoding/json"
 	"net/url"
 	"time"
 
@@ -92,11 +92,13 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 	if err := e.db.UserEmails().Add(ctx, userID, email, code); err != nil {
 		return err
 	}
+	argsJSON, _ := json.Marshal(email)
+
 	event := &database.SecurityEvent{
 		Name:      database.SecurityEventNameEmailAdded,
-		URL:       fmt.Sprintf("/users/%d/settings/emails", userID),
+		URL:       "",
 		UserID:    uint32(userID),
-		Argument:  nil,
+		Argument:  argsJSON,
 		Source:    "BACKEND",
 		Timestamp: time.Now(),
 	}
@@ -142,11 +144,14 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) err
 		if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
 			return errors.Wrap(err, "removing user e-mail")
 		}
+
+		argsJSON, _ := json.Marshal(email)
+
 		event := &database.SecurityEvent{
 			Name:      database.SecurityEventNameEmailRemoved,
-			URL:       fmt.Sprintf("/users/%d/settings/emails", userID),
+			URL:       "",
 			UserID:    uint32(userID),
-			Argument:  nil,
+			Argument:  argsJSON,
 			Source:    "BACKEND",
 			Timestamp: time.Now(),
 		}
@@ -245,11 +250,18 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 	if err != nil {
 		return err
 	}
+	argsJSON, _ := json.Marshal(struct {
+		Email    string `json:"email"`
+		Verified bool   `json:"verified"`
+	}{
+		Email:    email,
+		Verified: verified,
+	})
 	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameEmailVerified,
-		URL:       fmt.Sprintf("/users/%d/settings/emails", userID),
+		Name:      database.SecurityEventNameEmailVerifiedToggle,
+		URL:       "",
 		UserID:    uint32(userID),
-		Argument:  nil,
+		Argument:  argsJSON,
 		Source:    "BACKEND",
 		Timestamp: time.Now(),
 	}

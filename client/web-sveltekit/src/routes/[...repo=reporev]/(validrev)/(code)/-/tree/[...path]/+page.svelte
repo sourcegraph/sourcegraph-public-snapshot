@@ -22,6 +22,10 @@
     $: entries = $tree?.entries ?? []
 </script>
 
+<svelte:head>
+    <title>{data.filePath} - {data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
+
 <FileHeader>
     <Icon slot="icon" svgPath={mdiFolderOutline} />
     <svelte:fragment slot="actions">
