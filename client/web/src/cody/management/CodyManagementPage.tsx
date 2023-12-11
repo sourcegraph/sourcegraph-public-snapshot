@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import type { ReactElement } from 'react'
 
-import { mdiHelpCircleOutline, mdiTrendingUp, mdiDownload, mdiInformation } from '@mdi/js'
+import { mdiHelpCircleOutline, mdiTrendingUp, mdiInformationOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -299,19 +299,16 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                         }}
                                     >
                                         <Text size="small" className="mb-2 text-muted">
-                                            <Icon svgPath={mdiDownload} aria-hidden={true} /> How to install
+                                            <Icon svgPath={mdiInformationOutline} aria-hidden={true} /> Quickstart Guide
                                         </Text>
                                     </Link>
                                     <Link
-                                        to="#"
-                                        className={!editor.instructions ? 'text-muted' : ''}
-                                        onClick={() => {
-                                            setSelectedEditor(editor)
-                                            setSelectedEditorStep(1)
-                                        }}
+                                        to={editor.docs}
+                                        target="_blank"
+                                        className={!editor.instructions ? 'text-muted' : ''} rel="noopener"
                                     >
                                         <Text size="small" className="text-muted">
-                                            <Icon svgPath={mdiInformation} aria-hidden={true} /> How to use
+                                            <Icon svgPath={mdiOpenInNew} aria-hidden={true} /> Documentation
                                         </Text>
                                     </Link>
                                     {selectedEditor?.name === editor.name &&
