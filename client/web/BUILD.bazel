@@ -8,7 +8,6 @@ load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
 load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver", "webpack_web_app")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
-load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -1826,6 +1825,7 @@ ts_project(
         "//:node_modules/@types/recharts",
         "//:node_modules/@types/semver",
         "//:node_modules/@types/uuid",
+        "//:node_modules/@visx/group",
         "//:node_modules/@visx/responsive",
         "//:node_modules/@visx/scale",
         "//:node_modules/ajv",
