@@ -47,8 +47,8 @@
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.03), 0 1px 1px 0 rgba(0, 0, 0, 0.05);
 }
 
-.ide-header{
-    padding: calc(var(--spacer) *0.5);
+.ide-header {
+    padding: calc(var(--spacer) * 0.5);
     margin: calc(var(--spacer) * -0.5);
     border-radius: var(--border-radius);
 }
@@ -57,4 +57,3 @@
     cursor: pointer;
     background: var(--subtle-bg);
 }
-

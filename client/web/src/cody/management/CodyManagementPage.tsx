@@ -281,7 +281,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                             setSelectedEditor(editor)
                                             setSelectedEditorStep(0)
                                         }}
-                                        aria-role="button"
+                                        role="button"
                                         tabIndex={0}
                                         onKeyDown={e => {
                                             if (e.key === 'Enter') {
@@ -310,7 +310,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     {editor.instructions && (
                                         <Link
                                             to="#"
-                                            size="medium"
                                             className="mb-2 text-muted"
                                             onClick={() => {
                                                 setSelectedEditor(editor)
@@ -322,7 +321,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     )}
                                     {editor.docs && (
                                         <Link to={editor.docs} target="_blank" rel="noopener">
-                                            <Text size="medium" className="text-muted">
+                                            <Text className="text-muted">
                                                 <Icon svgPath={mdiOpenInNew} aria-hidden={true} /> Documentation
                                             </Text>
                                         </Link>
