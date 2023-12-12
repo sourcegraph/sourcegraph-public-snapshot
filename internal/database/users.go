@@ -402,6 +402,23 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		}
 	}
 
+	if info.Email != "" && !info.EmailIsVerified {
+		accessRequestsStore := AccessRequestsWith(u, u.logger)
+
+		ar, err := accessRequestsStore.GetByEmail(ctx, info.Email)
+		if err != nil {
+			return nil, err
+		}
+
+		ar.Status = types.AccessRequestStatusCanceled
+		ar.UpdatedAt = time.Now()
+		_, err = accessRequestsStore.Update(ctx, ar)
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
 	user := &types.User{
 		ID:                    id,
 		Username:              info.Username,

@@ -1373,6 +1373,20 @@ func TestUsers_CreateWithExternalAccount_NilData(t *testing.T) {
 	}
 }
 
+func TestUsers_CreateCancelAccessRequest(t *testing.T){
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
+	db.AccessRequests().Create({Email: "test@example.com"})
+
+	db.AccessRequests().GetByEmail(ctx, )
+}
+
 func normalizeUsers(users []*types.User) []*types.User {
 	for _, u := range users {
 		u.CreatedAt = u.CreatedAt.Local().Round(time.Second)
