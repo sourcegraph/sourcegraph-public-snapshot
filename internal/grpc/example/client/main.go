@@ -20,7 +20,7 @@ import (
 
 // From https://commons.wikimedia.org/w/index.php?title=File:Sun-soleil.svg&oldid=456041378
 //
-//go:embed sun.png
+//go:embed sun.svg
 var sunDrawingImage []byte
 
 func main() {
@@ -204,7 +204,7 @@ subscriptionDone:
 				Metadata: &pb.UploadWeatherPhotoRequest_Metadata{
 					Location: "Philadelphia",
 					SensorId: "sensor-123",
-					FileName: "sun.png",
+					FileName: "sun.svg",
 				},
 			},
 		})
