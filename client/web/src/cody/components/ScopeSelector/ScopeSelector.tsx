@@ -23,7 +23,7 @@ export interface ScopeSelectorProps {
     toggleIncludeInferredFile: () => void
     fetchRepositoryNames: (count: number) => Promise<string[]>
     isCodyApp?: boolean
-    logTranscriptEvent: (eventLabel: string, eventProperties?: { [key: string]: any }) => void
+    logTranscriptEvent: (eventLabel: EventName, eventProperties?: { [key: string]: any }) => void
     transcriptHistory: TranscriptJSON[]
     className?: string
     renderHint?: (repos: IRepo[]) => React.ReactNode

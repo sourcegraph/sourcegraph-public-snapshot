@@ -77,6 +77,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
     queryExternalChangesetWithFileDiffs,
     queryAllChangesetIDs,
     refetchBatchChange,
+    telemetryRecorder,
 }) => {
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
@@ -227,6 +228,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         queryAllChangesetIDs={queryAllChangesetIDs}
                         onlyArchived={false}
                         isExecutionEnabled={isExecutionEnabled}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 </TabPanel>
                 <TabPanel>
@@ -276,6 +278,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         onlyArchived={true}
                         refetchBatchChange={refetchBatchChange}
                         isExecutionEnabled={isExecutionEnabled}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 </TabPanel>
                 <TabPanel>

@@ -33,7 +33,7 @@ export const UsersManagement: React.FunctionComponent<UsersManagementProps> = ({
     useEffect(() => {
         eventLogger.logPageView('UsersManagement')
         telemetryRecorder.recordEvent('UserManagement', 'viewed')
-    }, [])
+    }, [telemetryRecorder])
 
     const { data, error, loading, refetch } = useQuery<UsersManagementSummaryResult, UsersManagementSummaryVariables>(
         USERS_MANAGEMENT_SUMMARY,

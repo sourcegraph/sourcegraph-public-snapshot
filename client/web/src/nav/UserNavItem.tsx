@@ -62,7 +62,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
         menuButtonRef,
         showFeedbackModal,
         showKeyboardShortcutsHelp,
-        // telemetryService,
+        telemetryService,
         telemetryRecorder,
     } = props
 
@@ -95,8 +95,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
             telemetryRecorder.recordEvent('searchInputToggle', `${enabled}? 'enabled' : 'disabled'`)
             setExperimentalQueryInputEnabled(enabled)
         },
-        /* telemetryService, */
-        [telemetryRecorder, setExperimentalQueryInputEnabled]
+        [telemetryService, telemetryRecorder, setExperimentalQueryInputEnabled]
     )
 
     return (

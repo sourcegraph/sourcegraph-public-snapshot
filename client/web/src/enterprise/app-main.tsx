@@ -35,10 +35,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     const root = createRoot(document.querySelector('#root')!)
 
     try {
-        const { graphqlClient, temporarySettingsStorage } = await appShellPromise
+        const { graphqlClient, temporarySettingsStorage, telemetryRecorder } = await appShellPromise
 
         root.render(
-            <EnterpriseWebApp graphqlClient={graphqlClient} temporarySettingsStorage={temporarySettingsStorage} />
+            <EnterpriseWebApp
+                graphqlClient={graphqlClient}
+                temporarySettingsStorage={temporarySettingsStorage}
+                telemetryRecorder={telemetryRecorder}
+            />
         )
     } catch (error) {
         logger.error('Failed to initialize the app shell', error)

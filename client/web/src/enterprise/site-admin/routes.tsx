@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackBadge } from '@sourcegraph/wildcard'
 
@@ -100,6 +101,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
                     renderAssignmentModal={(onCancel, onSuccess, user) => (
                         <RoleAssignmentModal onCancel={onCancel} onSuccess={onSuccess} user={user} />
                     )}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             ),
         },

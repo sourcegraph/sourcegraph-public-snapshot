@@ -1,3 +1,4 @@
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
@@ -264,7 +265,13 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
 
 const siteAdminUserManagementRoute: SiteAdminAreaRoute = {
     path: '/users',
-    render: () => <UsersManagement isEnterprise={false} renderAssignmentModal={() => null} />,
+    render: () => (
+        <UsersManagement
+            isEnterprise={false}
+            renderAssignmentModal={() => null}
+            telemetryRecorder={noOpTelemetryRecorder}
+        />
+    ),
 }
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
