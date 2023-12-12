@@ -29,8 +29,11 @@ type Actor struct {
 	UID int32 `json:",omitempty"`
 
 	// AnonymousUID is the user's semi-stable anonymousID from the request cookie
-	// or the 'X-Sourcegraph-Actor-Anonymous-UID' request header.
-	// Only set if the user is unauthenticated and the request contains an anonymousID.
+	// or the 'X-Sourcegraph-Actor-Anonymous-UID' request header. This may be
+	// set even if the actor is authenticated, to maintain a consistent mapping.
+	//
+	// 🚨 SECURITY:  When deciding how to handle anonymous vs authenticated users,
+	// ALWAYS check the UID field first.
 	AnonymousUID string `json:",omitempty"`
 
 	// Internal is true if the actor represents an internal Sourcegraph service (and is therefore
