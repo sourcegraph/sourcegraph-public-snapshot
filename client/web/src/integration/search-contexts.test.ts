@@ -30,7 +30,7 @@ describe('Search contexts', () => {
     })
     after(() => driver?.close())
     let testContext: WebIntegrationTestContext
-    beforeEach(async function() {
+    beforeEach(async function () {
         testContext = await createWebIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
@@ -149,14 +149,14 @@ describe('Search contexts', () => {
                         nodes: names.map((name, index) => ({ id: `index-${index}`, name })),
                         pageInfo: {
                             endCursor: null,
-                            hasNextPage: true
-                        }
+                            hasNextPage: true,
+                        },
                     },
                     variables: {
                         names,
                         first,
-                        after
-                    }
+                        after,
+                    },
                 }
             },
             CreateSearchContext: ({ searchContext, repositories }) => ({
@@ -302,6 +302,7 @@ describe('Search contexts', () => {
         await driver.page.waitForSelector('[data-testid="search-contexts-list-page"]')
     })
 
+    // TODO: Fix this test
     test('Edit search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
@@ -309,16 +310,16 @@ describe('Search contexts', () => {
                 return {
                     repositories: {
                         nodes: names.map((name, index) => ({ id: `index-${index}`, name })),
-                            pageInfo: {
+                        pageInfo: {
                             endCursor: null,
-                            hasNextPage: true
-                        }
+                            hasNextPage: true,
+                        },
                     },
                     variables: {
                         names,
                         first,
-                        after
-                    }
+                        after,
+                    },
                 }
             },
             UpdateSearchContext: ({ id, searchContext, repositories }) => ({

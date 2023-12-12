@@ -5,17 +5,18 @@ import type { InputMaybe, RepositoriesByNamesResult, RepositoriesByNamesVariable
 const query = gql`
     query RepositoriesByNames($names: [String!]!, $first: Int!, $after: String) {
         repositories(names: $names, first: $first, after: $after) {
-            pageInfo {
-                hasNextPage
-                endCursor
-            }
             nodes {
                 id
                 name
             }
+            pageInfo {
+                endCursor
+                hasNextPage
+            }
         }
     }
 `
+
 export async function fetchRepositoriesByNames(
     names: string[],
     apolloClient: ApolloClient<object>
