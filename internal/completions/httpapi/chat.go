@@ -63,7 +63,8 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 			"anthropic/claude-instant-1.2-cyan",
 			"anthropic/claude-instant-1.2",
 			"openai/gpt-3.5-turbo",
-			"openai/gpt-4-1106-preview":
+			"openai/gpt-4-1106-preview",
+			"fireworks/accounts/fireworks/models/mixtral-8x7b-fw-chat":
 			return true
 		}
 	} else {
