@@ -121,7 +121,9 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         [result, reranker]
     )
 
-    const [groups, setGroups] = useState(unhighlightedGroups)
+    const [expandedGroups, setGroups] = useState(unhighlightedGroups)
+    const collapsedGroups = truncateGroups(expandedGroups, 5)
+
     useEffect(() => {
         // Kick off an async fetch of the highlighted code and update
         // groups with the highlighted code once it comes back.
@@ -153,13 +155,11 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         return () => subscription?.unsubscribe()
     }, [result, unhighlightedGroups, hasBeenVisible, fetchHighlightedFileLineRanges])
 
-    const collapsedMatchGroups = truncateGroups(groups, 5)
+    const expandedHighlightCount = countHighlightRanges(expandedGroups)
+    const collapsedHighlightCount = countHighlightRanges(collapsedGroups)
 
-    const highlightRangesCount = countHighlightRanges(groups)
-    const collapsedHighlightRangesCount = countHighlightRanges(collapsedMatchGroups)
-
-    const hiddenMatchesCount = highlightRangesCount - collapsedHighlightRangesCount
-    const collapsible = !showAllMatches && highlightRangesCount > collapsedHighlightRangesCount
+    const hiddenMatchesCount = expandedHighlightCount - collapsedHighlightCount
+    const collapsible = !showAllMatches && expandedHighlightCount > collapsedHighlightCount
 
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
@@ -249,7 +249,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                 <div data-testid="file-search-result" data-expanded={expanded}>
                     <FileMatchChildren
                         result={result}
-                        grouped={expanded ? groups : collapsedMatchGroups}
+                        grouped={expanded ? expandedGroups : collapsedGroups}
                         settingsCascade={settingsCascade}
                         telemetryService={telemetryService}
                         openInNewTab={openInNewTab}
