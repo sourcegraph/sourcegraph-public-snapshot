@@ -42,6 +42,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Added Cody providers data to pings. [#58848](https://github.com/sourcegraph/sourcegraph/pull/58848)
+
 ### Fixed
 
 - Fixed two issues in Zoekt that could cause out of memory errors during search indexing. [sourcegraph/zoekt#686](https://github.com/sourcegraph/zoekt/pull/686), [sourcegraph/zoekt#689](https://github.com/sourcegraph/zoekt/pull/689)
