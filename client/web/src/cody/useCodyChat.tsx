@@ -52,7 +52,7 @@ export interface CodyChatStore
     clearHistory: () => void
     deleteHistoryItem: (id: string) => void
     loadTranscriptFromHistory: (id: string) => Promise<void>
-    logTranscriptEvent: (eventLabel: EventName, eventProperties?: { [key: string]: any }) => void
+    logTranscriptEvent: (eventLabel: EventName) => void
     initializeNewChat: () => void
 }
 
