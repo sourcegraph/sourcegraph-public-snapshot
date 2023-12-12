@@ -114,13 +114,15 @@ In addition to the Cody extensions for [VS Code](./install-vscode.md), [JetBrain
 
 ## Initial setup
 
-Create a [Sourcegraph.com account](https://sourcegraph.com/sign-up) by logging in through codehosts like GitHub and GitLab or via traditional Google sign-in. This takes you to Sourcegraph's Code Search interface, where you can chat with and get help from Cody in the web.
+Create a [Sourcegraph.com account](https://sourcegraph.com/sign-up) by logging in through codehosts like GitHub and GitLab or via traditional Google sign-in. This takes you to Sourcegraph’s web interface, where you can chat with and get help from Cody by opening **Cody > Web Chat**.
+
+![cody-web](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-web.png)
 
 Enterprise users can also log in to their Sourcegraph.com Enterprise instance and use Cody in the web interface.
 
 ## Using Cody chat
 
-To view how Cody works in the web, let's try running a global Sourcegraph search query on a repository of your choice.
+To view how Cody works in the web, open **Cody Web Chat**. Here, you can ask Cody general coding questions or questions about the repositories you care about.
 
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/run-search-query.mp4" type="video/mp4">
@@ -128,9 +130,9 @@ To view how Cody works in the web, let's try running a global Sourcegraph search
 
 You can view the default **Ask Cody** chat interface on the right sidebar. Once connected, Cody automatically gains context to your connected codebase to help you provide contextually-aware and accurate answers to your questions. There are also example questions that you can use to get started.
 
-When using Cody chat in the web, you can select up to 10 repositories to use as context for your question. If you're logged in to Sourcegraph.com, these can be any **ten** open source repositories that Sourcegraph indexes. If you're an enterprise customer logged in to your company's Sourcegraph instance, these can be any ten repositories indexed by your site admin.
+When using Cody chat in the web, you can select up to **10 repositories** to use as context for your question. If you’re logged in to Sourcegraph.com, these can be any **10 open source repositories** that Sourcegraph indexes. If you are an enterprise customer logged in to your company’s Sourcegraph instance, these can be **any 10 repositories** (both private or public) indexed by your admin.
 
-Let's **Ask Cody** to explain the tech stack of a repository.
+You can also chat with Cody in the sidebar of any project you have open. Use Sourcegraph search to find a repo and click the **Ask Cody** button to start.
 
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/search-cody-chat.mp4" type="video/mp4">
@@ -146,8 +148,6 @@ You can also run predefined, reusable prompts [Cody Commands](./../capabilities.
 - Generate a unit test
 - Improve variable names
 - Transpile code to a programming language of your choice
-
-Let's run a command to generate a unit test for a selected function.
 
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/cody-commands-sg.mp4" type="video/mp4">
