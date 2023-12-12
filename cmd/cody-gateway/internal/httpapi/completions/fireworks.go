@@ -170,8 +170,7 @@ func NewFireworksHandler(
 	)
 }
 
-// fireworksRequest captures all known fields from
-// https://fireworksai.readme.io/reference/createcompletion and
+// fireworksRequest captures fields from https://readme.fireworks.ai/reference/createcompletion and
 // https://readme.fireworks.ai/reference/createchatcompletion.
 type fireworksRequest struct {
 	Prompt      string    `json:"prompt,omitempty"`

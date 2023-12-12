@@ -167,7 +167,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "failed to parse request body"))
 				return
 			}
-			fmt.Println("}}}}}}}}}} %+v	", body)
 			status, flaggingResult, err := methods.validateRequest(r.Context(), logger, feature, body)
 			if err != nil {
 				if status == 0 {
@@ -217,7 +216,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			// Re-marshal the payload for upstream to unset metadata and remove any properties
 			// not known to us.
 			upstreamPayload, err := json.Marshal(body)
-			fmt.Printf("&&&&&&&& %v", string(upstreamPayload))
 			if err != nil {
 				response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to marshal request body"))
 				return
@@ -237,9 +235,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			// Retrieve metadata from the initial request.
 			model, requestMetadata := methods.getRequestMetadata(r.Context(), logger, act, feature, body)
 
-			fmt.Println("___ request: %v", req)
-			fmt.Println("___ URL: %v", url)
-			fmt.Println("#### allowlist: %v", allowedModels)
 			// Match the model against the allowlist of models, which are configured
 			// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
 			// are sent as if they were against the upstream API, so they don't have

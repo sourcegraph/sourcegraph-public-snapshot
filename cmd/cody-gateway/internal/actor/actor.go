@@ -157,7 +157,6 @@ func (a *Actor) Limiter(
 		// Not logged in, no limit applicable.
 		return nil, false
 	}
-	fmt.Sprintf("%v+", a)
 	limit, ok := a.RateLimits[feature]
 	if !ok {
 		return nil, false

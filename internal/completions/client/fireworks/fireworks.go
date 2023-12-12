@@ -50,8 +50,10 @@ func (c *fireworksClient) Complete(
 
 	completion := ""
 	if response.Choices[0].Text != "" {
+		// The /completion endpoint returns a text field ...
 		completion = response.Choices[0].Text
 	} else if response.Choices[0].Delta != nil {
+		// ... whereas the /chat/completion endpoints returns this structure
 		completion = response.Choices[0].Delta.Content
 	}
 
@@ -103,7 +105,9 @@ func (c *fireworksClient) Stream(
 		}
 
 		if len(event.Choices) > 0 {
+			// The /completion endpoint returns a text field ...
 			content += event.Choices[0].Text
+			// ... whereas the /chat/completion endpoints returns this structure
 			if event.Choices[0].Delta != nil {
 				content += event.Choices[0].Delta.Content
 			}
@@ -179,15 +183,16 @@ func (c *fireworksClient) makeRequest(ctx context.Context, feature types.Complet
 				Role:    role,
 				Content: m.Text,
 			})
-			// Hack: Replace the ending part of the endpint from `/completions` to `/chat/completions`
-			endpoint = strings.Replace(c.endpoint, "/completions", "/chat/completions", 1)
-			fmt.Printf(endpoint)
+			// HACK: Replace the ending part of the endpint from `/completions` to `/chat/completions`
+			//
+			// This is _only_ used when running the Fireworks API directly from the SG instance
+			// (without Cody Gateway) and is neccessary because every client can only have one
+			// endpoint configured at the moment. If the request is routed to Cody Gateway, the
+			// endpoint will not have `inference/v1/completions` in the URL
+			endpoint = strings.Replace(c.endpoint, "/inference/v1/completions", "/inference/v1/chat/completions", 1)
 		}
 
 		reqBody, err = json.Marshal(payload)
-
-		// print byte[] request as string
-		fmt.Println("Request: %s", string(reqBody))
 	}
 
 	if err != nil {
@@ -214,7 +219,7 @@ func (c *fireworksClient) makeRequest(ctx context.Context, feature types.Complet
 	return resp, nil
 }
 
-// fireworksRequest captures fields from https://fireworksai.readme.io/reference/createcompletion.
+// fireworksRequest captures fields from https://readme.fireworks.ai/reference/createcompletion
 type fireworksRequest struct {
 	Model       string   `json:"model"`
 	Prompt      string   `json:"prompt"`
@@ -228,7 +233,7 @@ type fireworksRequest struct {
 	Logprobs    *uint8   `json:"logprobs,omitempty"`
 }
 
-// fireworksChatRequest captures fields from https://readme.fireworks.ai/reference/createchatcompletion.
+// fireworksChatRequest captures fields from https://readme.fireworks.ai/reference/createchatcompletion
 type fireworksChatRequest struct {
 	Model       string    `json:"model"`
 	Messages    []message `json:"messages"`
