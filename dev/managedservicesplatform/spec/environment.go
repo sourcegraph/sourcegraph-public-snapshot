@@ -39,7 +39,11 @@ type EnvironmentSpec struct {
 
 	// SecretEnv are key-value pairs of environment variables sourced from
 	// secrets set on the service, where the value is the name of the secret
-	// to populate in the environment.
+	// in the service's project to populate in the environment.
+	//
+	// To point to a secret in another project, use the format
+	// 'projects/{project}/secrets/{secretName}' in the value. Access to the
+	// target project will be automatically granted.
 	SecretEnv map[string]string `json:"secretEnv,omitempty"`
 
 	// Resources configures additional resources that a service may depend on.
