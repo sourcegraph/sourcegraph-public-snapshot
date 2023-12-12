@@ -47,3 +47,13 @@ sh_binary(
     }),
     visibility = ["//visibility:public"],
 )
+
+sh_binary(
+    name = "p4-fusion",
+    srcs = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@p4-fusion-darwin-amd64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@p4-fusion-darwin-arm64//file:downloaded"],
+        "@bazel_tools//src/conditions:linux_x86_64": ["@p4-fusion-linux-amd64//file:downloaded"],
+    }),
+    visibility = ["//visibility:public"],
+)

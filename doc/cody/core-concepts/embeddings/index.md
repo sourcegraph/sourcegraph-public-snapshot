@@ -112,7 +112,7 @@ For the access token, you can either:
 
 - As of 5.2.4 the access token can be left empty and it will rely on Environmental, Workload Identity or Managed Identity credentials configured for the `frontend` service
 - Set it to `<API_KEY>` if directly configuring the credentials using the API key specified in the Azure portal
-
+- If Azure Authentication requests require a proxy the environment variable `CODY_AZURE_OPENAI_IDENTITY_HTTP_PROXY` can be specified to a proxy URL
 
 <br>
 
