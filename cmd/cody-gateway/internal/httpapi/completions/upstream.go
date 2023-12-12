@@ -375,7 +375,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			// if this is a streaming request, we want to flush ourselves instead of leaving that to the http.Server
 			// (so events are sent to the client as soon as possible)
 			var responseWriter io.Writer = w
-			if autoFlushStreamingResponses && body.ShouldStream() {
+			if autoFlushStreamingResponses && body.ShouldStream() && feature == codygateway.FeatureCodeCompletions {
 				if fw, err := response.NewAutoFlushingWriter(w); err == nil {
 					responseWriter = fw
 				} else {
