@@ -200,6 +200,7 @@ export const SearchSidebarView: FC<SearchSidebarViewProps> = React.memo(function
             >
                 {getSearchReferenceFactory({
                     telemetryService: platformContext.telemetryService,
+                    telemetryRecorder: platformContext.telemetryRecorder,
                     setQueryState,
                 })}
             </SearchSidebarSection>

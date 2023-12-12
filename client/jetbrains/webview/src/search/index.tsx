@@ -3,6 +3,7 @@ import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
+import { TelemetryRecorder, noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { getSiteVersionAndAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
@@ -34,6 +35,7 @@ let initialSearch: Search | null = null
 let authenticatedUser: AuthenticatedUser | null = null
 let backendVersion: string | null = null
 let telemetryService: EventLogger
+let telemetryRecorder: TelemetryRecorder
 let errorRetryIndex = 0
 let isServerAccessSuccessful: boolean | null = null
 
@@ -51,6 +53,8 @@ window.initializeSourcegraph = async () => {
         await updateVersionAndAuthDataFromServer()
 
         telemetryService = new EventLogger(anonymousUserId, { editor: 'jetbrains', version: pluginVersion })
+        //TODO(nd): enable telemetry recorder for jetbrains
+        telemetryRecorder = noOpTelemetryRecorder
 
         renderReactApp()
 
@@ -85,6 +89,7 @@ export function renderReactApp(): void {
                     backendVersion={backendVersion}
                     authenticatedUser={authenticatedUser}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             ),
         },
