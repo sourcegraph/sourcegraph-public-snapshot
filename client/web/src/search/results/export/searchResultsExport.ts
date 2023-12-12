@@ -200,10 +200,10 @@ export const searchResultsToFileContent = (
 
 // Escape a cell value based on IETF RFC 4180
 const escapeCell = (cell: string | undefined): string | undefined => {
-    if (cell == undefined) {
+    if (cell === undefined) {
         return cell
     }
-    if (/[,\"\r\n]/.test(cell)) {
+    if (/[\n\r",]/.test(cell)) {
         return `"${cell.replaceAll('"', '""')}"`
     }
     return cell
