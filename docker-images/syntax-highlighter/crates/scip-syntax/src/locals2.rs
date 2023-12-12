@@ -26,8 +26,6 @@ use tree_sitter::Node;
 // 1. Differences to the old implementation (Feature wise)
 // 2. Performance characteristics (do some benchmarks)
 
-type ScopeRef<'a> = Id<Scope<'a>>;
-
 #[derive(Debug, Clone)]
 struct Definition<'a> {
     ty: String,
@@ -47,6 +45,9 @@ impl fmt::Display for Definition<'_> {
         )
     }
 }
+
+/// We use id_arena to allocate our scopes.
+type ScopeRef<'a> = Id<Scope<'a>>;
 
 #[derive(Debug)]
 struct Scope<'a> {
@@ -162,24 +163,29 @@ impl<'a> LocalResolver<'a> {
 
         match hoist {
             Some(hoist_scope) => {
-                let target_scope = self
-                    .ancestors(id)
-                    .into_iter()
-                    .find(|ancestor| self.get_scope(*ancestor).ty == *hoist_scope)
-                    // TODO: The default here should be the root scope
-                    .unwrap_or(id);
-                self.arena
-                    .get_mut(target_scope)
-                    .unwrap()
+                let mut target_scope = id;
+                // If we don't find any matching scope we hoist all
+                // the way to the top_scope
+                for ancestor in self.ancestors(id) {
+                    target_scope = ancestor;
+                    if self.get_scope(ancestor).ty == *hoist_scope {
+                        break;
+                    }
+                }
+                self.get_scope_mut(target_scope)
                     .hoisted_definitions
                     .push(definition)
             }
-            None => self.arena.get_mut(id).unwrap().definitions.push(definition),
+            None => self.get_scope_mut(id).definitions.push(definition),
         };
     }
 
     fn get_scope(&self, id: ScopeRef<'a>) -> &Scope<'a> {
         self.arena.get(id).unwrap()
+    }
+
+    fn get_scope_mut(&mut self, id: ScopeRef<'a>) -> &mut Scope<'a> {
+        self.arena.get_mut(id).unwrap()
     }
 
     // TODO: This should be an Iterator
@@ -280,23 +286,22 @@ impl<'a> LocalResolver<'a> {
     }
 
     fn collect_captures(
-        &self,
         config: &'a LocalConfiguration,
         tree: &'a tree_sitter::Tree,
+        source_bytes: &'a [u8],
     ) -> (
         Vec<(&'a str, Node<'a>)>,
         Vec<CaptureDef<'a>>,
         Vec<(&'a str, Node<'a>)>,
     ) {
         let mut cursor = tree_sitter::QueryCursor::new();
-        let root_node = tree.root_node();
         let capture_names = config.query.capture_names();
 
         let mut scopes: Vec<(&str, Node<'a>)> = vec![];
         let mut definitions: Vec<CaptureDef> = vec![];
         let mut references: Vec<(&str, Node<'a>)> = vec![];
 
-        for match_ in cursor.matches(&config.query, root_node, self.source_bytes) {
+        for match_ in cursor.matches(&config.query, tree.root_node(), source_bytes) {
             let properties = config.query.property_settings(match_.pattern_index);
             for capture in match_.captures {
                 let Some(capture_name) = capture_names.get(capture.index as usize) else {
@@ -326,20 +331,26 @@ impl<'a> LocalResolver<'a> {
             }
         }
 
+        (scopes, definitions, references)
+    }
+
+    /// This function is probably the most complicated bit in here.
+    /// scopes and definitions are sorted to allow us to build a tree
+    /// of scope in pre-traversal order here. We make sure to add all
+    /// definitions to their narrowest enclosing scope, or to hoist
+    /// them to the closest matching scope.
+    fn build_tree(
+        &mut self,
+        top_scope: ScopeRef<'a>,
+        mut scopes: Vec<(&'a str, Node<'a>)>,
+        mut definitions: Vec<CaptureDef<'a>>,
+    ) {
+
         // In order to do a pre-order traversal we need to sort scopes and definitions
         // TODO: (perf) Do a pass to check if they're already sorted first?
         scopes.sort_by(|(_, a), (_, b)| compare_range(a.byte_range(), b.byte_range()));
         definitions.sort_by_key(|a| a.node.start_byte());
 
-        (scopes, definitions, references)
-    }
-
-    fn build_tree(
-        &mut self,
-        top_scope: ScopeRef<'a>,
-        scopes: Vec<(&'a str, Node<'a>)>,
-        definitions: Vec<CaptureDef<'a>>,
-    ) {
         let mut definitions_iter = definitions.iter();
 
         let mut current_scope = top_scope;
@@ -364,8 +375,7 @@ impl<'a> LocalResolver<'a> {
             let new_scope =
                 self.arena
                     .alloc(Scope::new(scope_ty.to_string(), scope, Some(current_scope)));
-            let parent_scope = self.arena.get_mut(current_scope).unwrap();
-            parent_scope.children.push(new_scope);
+            self.get_scope_mut(current_scope).children.push(new_scope);
             current_scope = new_scope
         }
 
@@ -432,7 +442,8 @@ impl<'a> LocalResolver<'a> {
         tree: &'a tree_sitter::Tree,
     ) -> Vec<Occurrence> {
         // First we collect all captures from the tree-sitter locals query
-        let (scopes, definitions, references) = self.collect_captures(config, tree);
+        let (scopes, definitions, references) =
+            Self::collect_captures(config, tree, self.source_bytes);
 
         // Next we build a tree structure of scopes and definitions
         let top_scope = self
