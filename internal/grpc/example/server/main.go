@@ -5,7 +5,7 @@ import (
 	"io"
 	"net"
 
-	logger "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/example/server/service"
 	pb "github.com/sourcegraph/sourcegraph/internal/grpc/example/weather/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
@@ -17,8 +17,9 @@ import (
 )
 
 type weatherGRPCServer struct {
-	logger logger.Logger
+	logger log.Logger
 
+	// The actual business logic is implemented in the service package, which we're wrapping here.
 	service *service.WeatherService
 
 	// All gRPC services should embed the Unimplemented*Server structs to ensure forwards compatibility (if the service is
@@ -134,7 +135,7 @@ func (s *weatherGRPCServer) UploadWeatherData(stream pb.WeatherService_UploadWea
 			return errors.Wrap(err, "Failed to receive data from sensor")
 		}
 
-		s.logger.Info("Received data from sensor", logger.String("sensorID", data.SensorId))
+		s.logger.Info("Received data from sensor", log.String("sensorID", data.SensorId))
 
 		if err := s.service.StoreSensorData(ctx, SensorDataFromProto(data)); err != nil {
 			return status.Errorf(codes.Internal, "failed to store sensor data:%v", err)
@@ -191,9 +192,9 @@ func (w *weatherGRPCServer) UploadWeatherScreenshot(stream pb.WeatherService_Upl
 	switch v := msg.GetContent().(type) {
 	case *pb.UploadWeatherScreenshotRequest_Metadata_:
 		w.logger.Info("Received screenshot metadata",
-			logger.String("sensorID", v.Metadata.GetSensorId()),
-			logger.String("filename", v.Metadata.GetFileName()),
-			logger.String("location", v.Metadata.GetLocation()))
+			log.String("sensorID", v.Metadata.GetSensorId()),
+			log.String("filename", v.Metadata.GetFileName()),
+			log.String("location", v.Metadata.GetLocation()))
 	default:
 		return errors.Errorf("expected first message to be image metadata, instead got unexpected message type %T", v)
 	}
@@ -228,23 +229,29 @@ func (w *weatherGRPCServer) UploadWeatherScreenshot(stream pb.WeatherService_Upl
 	})
 }
 
+// You can run the server implementation via:
+//
+// ```
+// cd internal/grpc/example/server
+// go run main.goSRC_DEVELOPMENT=true SRC_LOG_LEVEL=dbug go run .
 func main() {
-	logger.Init(logger.Resource{
+	log.Init(log.Resource{
 		Name: "weather-server",
 	})
-	l := logger.Scoped("weather-server")
+	logger := log.Scoped("weather-server")
+
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		l.Fatal("Failed to listen", logger.String("error", err.Error()))
+		logger.Fatal("Failed to listen", log.String("error", err.Error()))
 	}
 
 	s := grpc.NewServer()
 	pb.RegisterWeatherServiceServer(s, &weatherGRPCServer{
-		logger: l,
+		logger: logger,
 	})
-	l.Info("Server listening", logger.String("address", lis.Addr().String()))
+	logger.Info("Server listening", log.String("address", lis.Addr().String()))
 
 	if err := s.Serve(lis); err != nil {
-		l.Fatal("Failed to serve", logger.String("error", err.Error()))
+		logger.Fatal("Failed to serve", log.String("error", err.Error()))
 	}
 }
