@@ -14,7 +14,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { eventLogger, telemetryRecorder } from '../../tracking/eventLogger'
+import { eventLogger } from '../../tracking/eventLogger'
 import { fetchNotebook } from '../backend'
 import { convertNotebookTitleToFileName } from '../serialize'
 
@@ -25,14 +25,17 @@ interface EmbeddedNotebookPageProps
             NotebookContentProps,
             'searchContextsEnabled' | 'isSourcegraphDotCom' | 'authenticatedUser' | 'settingsCascade' | 'ownEnabled'
         >,
-        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {}
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'telemetryRecorder'> {}
 
 const LOADING = 'loading' as const
 
 export const EmbeddedNotebookPage: FC<EmbeddedNotebookPageProps> = ({ platformContext, ...props }) => {
     const { notebookId } = useParams()
 
-    useEffect(() => eventLogger.logPageView('EmbeddedNotebookPage'), [])
+    useEffect(() => {
+        eventLogger.logPageView('EmbeddedNotebookPage')
+        platformContext.telemetryRecorder.recordEvent('embeddedNotebookPage', 'viewed')
+    }, [])
 
     const notebookOrError = useObservable(
         useMemo(
@@ -78,7 +81,7 @@ export const EmbeddedNotebookPage: FC<EmbeddedNotebookPageProps> = ({ platformCo
                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     streamSearch={aggregateStreamingSearch}
                     telemetryService={eventLogger}
-                    telemetryRecorder={telemetryRecorder}
+                    telemetryRecorder={platformContext.telemetryRecorder}
                     platformContext={platformContext}
                     exportedFileName={convertNotebookTitleToFileName(notebookOrError.title)}
                     // Copying is not supported in embedded notebooks

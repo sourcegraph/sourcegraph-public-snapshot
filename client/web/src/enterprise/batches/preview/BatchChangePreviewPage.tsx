@@ -11,7 +11,6 @@ import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import type { BatchSpecByIDResult, BatchSpecByIDVariables } from '../../../graphql-operations'
-import { telemetryRecorder } from '../../../tracking/eventLogger'
 import { Description } from '../Description'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 import { MissingCredentialsAlert } from '../MissingCredentialsAlert'
@@ -36,7 +35,7 @@ export interface BatchChangePreviewPageProps extends Omit<BatchChangePreviewProp
 export const BatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props => {
     const { batchSpecID } = useParams()
 
-    const { authenticatedUser, telemetryService, queryApplyPreviewStats } = props
+    const { authenticatedUser, telemetryService, telemetryRecorder, queryApplyPreviewStats } = props
 
     const { data, loading } = useQuery<BatchSpecByIDResult, BatchSpecByIDVariables>(BATCH_SPEC_BY_ID, {
         variables: {

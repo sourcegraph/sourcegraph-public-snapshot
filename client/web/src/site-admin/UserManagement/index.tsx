@@ -3,10 +3,11 @@ import React, { useEffect, useMemo } from 'react'
 import { mdiAccount, mdiPlus, mdiDownload } from '@mdi/js'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { H1, Card, Text, Icon, Button, Link, Alert, LoadingSpinner, AnchorLink } from '@sourcegraph/wildcard'
 
 import type { UsersManagementSummaryResult, UsersManagementSummaryVariables } from '../../graphql-operations'
-import { eventLogger, telemetryRecorder } from '../../tracking/eventLogger'
+import { eventLogger } from '../../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../../util/checkRequestAccessAllowed'
 import { ValueLegendList, type ValueLegendListProps } from '../analytics/components/ValueLegendList'
 
@@ -15,7 +16,7 @@ import { USERS_MANAGEMENT_SUMMARY } from './queries'
 
 import styles from './index.module.scss'
 
-export interface UsersManagementProps {
+export interface UsersManagementProps extends TelemetryV2Props {
     isEnterprise: boolean
     renderAssignmentModal: (
         onCancel: () => void,
@@ -27,6 +28,7 @@ export interface UsersManagementProps {
 export const UsersManagement: React.FunctionComponent<UsersManagementProps> = ({
     isEnterprise,
     renderAssignmentModal,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
         eventLogger.logPageView('UsersManagement')

@@ -3,6 +3,7 @@ import type { MockedProviderProps, MockedResponse } from '@apollo/client/testing
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { Route, Routes } from 'react-router-dom'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
@@ -37,10 +38,18 @@ function renderPage(
         completedPostSignup,
     } as AuthenticatedUser
 
+    const mockTelemetryRecorder = {
+        noOpTelemetryRecorder,
+        recordEvent: () => {}, // Added recordEvent method to fix missing property error
+    }
+
     return renderWithBrandedContext(
         <MockedTestProvider mocks={mocks || []}>
             <Routes>
-                <Route path="/post-sign-up" element={<PostSignUpPage authenticatedUser={mockUser} />} />
+                <Route
+                    path="/post-sign-up"
+                    element={<PostSignUpPage authenticatedUser={mockUser} telemetryRecorder={mockTelemetryRecorder} />}
+                />
                 <Route
                     path="/get-cody"
                     element={<GetCodyPage authenticatedUser={mockUser} context={{ authProviders: [] }} />}

@@ -4,10 +4,11 @@ import { mdiInformationOutline } from '@mdi/js'
 import { of } from 'rxjs'
 
 import { pluralize } from '@sourcegraph/common'
+import { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { type AllChangesetIDsVariables, type Scalars, BulkOperationType } from '../../../../graphql-operations'
-import { eventLogger, telemetryRecorder } from '../../../../tracking/eventLogger'
+import { eventLogger } from '../../../../tracking/eventLogger'
 import { type Action, DropdownButton } from '../../DropdownButton'
 import { MultiSelectContext } from '../../MultiSelectContext'
 import {
@@ -34,7 +35,8 @@ interface ChangesetListAction extends Omit<Action, 'onTrigger'> {
         batchChangeID: Scalars['ID'],
         changesetIDs: Scalars['ID'][],
         onDone: () => void,
-        onCancel: () => void
+        onCancel: () => void,
+        telemetryRecorder: TelemetryRecorder
     ) => void | JSX.Element
 }
 
@@ -86,7 +88,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownDescription:
             "Remove the selected changesets from this batch change. Unlike archive, this can't be undone.",
         // Only show on the archived tab.
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => (
             <DetachChangesetsModal
                 batchChangeID={batchChangeID}
                 changesetIDs={changesetIDs}
@@ -104,7 +106,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownTitle: 'Merge changesets',
         dropdownDescription:
             'Attempt to merge all selected changesets. Some changesets may be unmergeable if there are rules preventing merge, such as CI requirements.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
             eventLogger.log('batch_change_details:bulk_action_merge:clicked')
             telemetryRecorder.recordEvent('batchChangeDetails.bulkActionMerge', 'clicked')
             return (
@@ -122,7 +124,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         buttonLabel: 'Publish changesets',
         dropdownTitle: 'Publish changesets',
         dropdownDescription: 'Attempt to publish all selected changesets to the code hosts.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
             eventLogger.log('batch_change_details:bulk_action_published:clicked')
             telemetryRecorder.recordEvent('batchChangeDetails.bulkActionPublish', 'clicked')
             return (
@@ -140,7 +142,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         buttonLabel: 'Retry changesets',
         dropdownTitle: 'Retry changesets',
         dropdownDescription: 'Re-enqueues the selected changesets for processing, if they failed.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
             eventLogger.log('batch_change_details:bulk_action_retry:clicked')
             telemetryRecorder.recordEvent('batchChangeDetails.bulkActionRetry', 'clicked')
             return (
@@ -155,7 +157,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
     },
 }
 
-export interface ChangesetSelectRowProps {
+export interface ChangesetSelectRowProps extends TelemetryV2Props {
     batchChangeID: Scalars['ID']
     onSubmit: () => void
     queryArguments: Omit<AllChangesetIDsVariables, 'after'>
@@ -175,6 +177,7 @@ export const ChangesetSelectRow: React.FunctionComponent<React.PropsWithChildren
     queryArguments,
     queryAllChangesetIDs = _queryAllChangesetIDs,
     queryAvailableBulkOperations = _queryAvailableBulkOperations,
+    telemetryRecorder,
 }) => {
     const { areAllVisibleSelected, selected, selectAll } = useContext(MultiSelectContext)
 
@@ -219,7 +222,8 @@ export const ChangesetSelectRow: React.FunctionComponent<React.PropsWithChildren
                             onSubmit()
                             onDone()
                         },
-                        onCancel
+                        onCancel,
+                        telemetryRecorder
                     ),
             }
 

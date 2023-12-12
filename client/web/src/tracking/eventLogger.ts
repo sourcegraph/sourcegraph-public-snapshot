@@ -223,8 +223,6 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
  */
 export const eventLogger = new EventLogger()
 
-export const telemetryRecorder = noOpTelemetryRecorder
-
 /**
  * Log events associated with URL query string parameters, and remove those parameters as necessary
  * Note that this is a destructive operation (it changes the page URL and replaces browser state) by

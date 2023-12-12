@@ -17,6 +17,7 @@ import {
     type SearchContextProps,
 } from '@sourcegraph/shared/src/search'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { isBatchChangesExecutionEnabled } from './batches'
@@ -25,7 +26,7 @@ import { NotFoundPage } from './components/HeroPage'
 import type { SearchStreamingProps } from './search'
 import type { StaticSourcegraphWebAppContext, DynamicSourcegraphWebAppContext } from './SourcegraphWebApp'
 import type { StaticAppConfig } from './staticAppConfig'
-import { eventLogger, telemetryRecorder } from './tracking/eventLogger'
+import { eventLogger } from './tracking/eventLogger'
 
 export interface StaticLegacyRouteContext extends LegacyRouteComputedContext, LegacyRouteStaticInjections {}
 
@@ -110,12 +111,12 @@ export const LegacyRoute: FC<LegacyRouteProps> = ({ render, condition }) => {
     return render(context)
 }
 
-export interface LegacyRouteContextProviderProps {
+export interface LegacyRouteContextProviderProps extends TelemetryV2Props {
     context: StaticAppConfig & StaticSourcegraphWebAppContext & DynamicSourcegraphWebAppContext
 }
 
 export const LegacyRouteContextProvider: FC<PropsWithChildren<LegacyRouteContextProviderProps>> = props => {
-    const { children, context } = props
+    const { children, context, telemetryRecorder } = props
     const { settingsCascade, platformContext } = context
 
     const _fetchHighlightedFileLineRanges = useCallback(

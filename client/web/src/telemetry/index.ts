@@ -28,6 +28,9 @@ function getTelemetrySourceClient(): string {
  * Sourcegraph web app.
  */
 export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<BillingCategory, BillingProduct> {
+    public readonly user = userTracker
+    public readonly session = sessionTracker
+
     constructor(
         apolloClient: ApolloClient<object>,
         options: {
@@ -61,8 +64,8 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<Bil
 }
 
 class TrackingMetadataProvider implements MarketingTrackingProvider {
-    private user = userTracker
-    private session = sessionTracker
+    public readonly user = userTracker
+    public readonly session = sessionTracker
 
     public getMarketingTrackingMetadata(): TelemetryEventMarketingTrackingInput | null {
         if (!window.context?.sourcegraphDotComMode) {
