@@ -177,14 +177,14 @@ func chunkRanges(ranges []protocol.Range, interChunkLines int32) []rangeChunk {
 func chunksToMatches(buf []byte, chunks []rangeChunk, contextLines int32) []protocol.ChunkMatch {
 	chunkMatches := make([]protocol.ChunkMatch, 0, len(chunks))
 	for _, chunk := range chunks {
-		// TODO: add a limit to the context size
-		extendedRange := extendRangeToLines(chunk.cover, buf, contextLines)
+		extendedRange := extendRangeToLines(chunk.cover, buf)
+		rangeWithContext := addContextLines(extendedRange, buf, contextLines)
 		chunkMatches = append(chunkMatches, protocol.ChunkMatch{
 			// NOTE: we must copy the content here because the reference
 			// must not outlive the backing mmap, which may be cleaned
 			// up before the match is serialized for the network.
-			Content:      string(bytes.ToValidUTF8(buf[extendedRange.Start.Offset:extendedRange.End.Offset], []byte("�"))),
-			ContentStart: extendedRange.Start,
+			Content:      string(bytes.ToValidUTF8(buf[rangeWithContext.Start.Offset:rangeWithContext.End.Offset], []byte("�"))),
+			ContentStart: rangeWithContext.Start,
 			Ranges:       chunk.ranges,
 		})
 	}
@@ -192,60 +192,83 @@ func chunksToMatches(buf []byte, chunks []rangeChunk, contextLines int32) []prot
 }
 
 // extendRangeWithContext adds contextLines worth of context to the range.
-func extendRangeToLines(inputRange protocol.Range, buf []byte, contextLines int32) protocol.Range {
-	firstLineEnd := inputRange.Start.Offset
-	precedingLinesSkipped := int32(0)
-	for i := int32(0); i < contextLines; i++ {
-		off := bytes.LastIndexByte(buf[:firstLineEnd], '\n')
-		if off < 0 {
-			break
-		}
-		precedingLinesSkipped += 1
-		firstLineEnd = int32(off)
-	}
-	firstLineStart := int32(0)
-	if off := bytes.LastIndexByte(buf[:firstLineEnd], '\n'); off > 0 {
-		// TODO: can this OOB?
-		firstLineStart = int32(off) + 1
-	}
-
-	lastLineStart := inputRange.End.Offset
-	succeedingLinesSkipped := int32(0)
-	for i := int32(0); i < contextLines; i++ {
-		off := bytes.IndexByte(buf[lastLineStart:], '\n')
-		if off < 0 {
-			break
-		}
-		succeedingLinesSkipped += 1
-		lastLineStart = int32(off)
-	}
-
-	lastLineEnd := int32(len(buf))
-	if off := bytes.IndexByte(buf[lastLineStart:], '\n'); off > 0 {
-		lastLineEnd = int32(off)
-	}
-
-	var endColumn int32
-	if succeedingLinesSkipped == 0 {
-		// If we didn't skip any lines, count from the end of the input range
-		endColumn = inputRange.End.Column + int32(utf8.RuneCount(buf[inputRange.End.Offset:lastLineEnd]))
-	} else {
-		// If we did skip lines, count from the beginning of the last line
-		endColumn = int32(utf8.RuneCount(buf[lastLineStart:lastLineEnd]))
-	}
+func extendRangeToLines(inputRange protocol.Range, buf []byte) protocol.Range {
+	firstLineStart := lineStart(buf, inputRange.Start.Offset)
+	lastLineStart := lineStart(buf, inputRange.End.Offset)
+	lastLineEnd := lineEnd(buf, inputRange.End.Offset)
 
 	return protocol.Range{
 		Start: protocol.Location{
 			Offset: firstLineStart,
-			Line:   inputRange.Start.Line - precedingLinesSkipped,
+			Line:   inputRange.Start.Line,
 			Column: 0,
 		},
 		End: protocol.Location{
 			Offset: lastLineEnd,
-			Line:   inputRange.End.Line + succeedingLinesSkipped,
-			Column: endColumn,
+			Line:   inputRange.End.Line,
+			Column: int32(utf8.RuneCount(buf[lastLineStart:lastLineEnd])),
 		},
 	}
+}
+
+func addContextLines(inputRange protocol.Range, buf []byte, contextLines int32) protocol.Range {
+	firstLineStart := inputRange.Start.Offset
+	lastLineEnd := inputRange.End.Offset
+
+	precedingLinesAdded := 0
+	succeedingLinesAdded := 0
+
+	for i := int32(0); i < contextLines; i++ {
+		if firstLineStart > 0 {
+			firstLineStart = lineStart(buf, firstLineStart-1)
+			precedingLinesAdded += 1
+		}
+
+		rest := buf[lastLineEnd:]
+		if bytes.HasPrefix(rest, []byte("\n")) && len(rest) > 1 {
+			lastLineEnd = lineEnd(buf, lastLineEnd+1)
+			succeedingLinesAdded += 1
+		} else if bytes.HasPrefix(rest, []byte("\r\n")) && len(rest) > 2 {
+			lastLineEnd = lineEnd(buf, lastLineEnd+2)
+			succeedingLinesAdded += 1
+		}
+	}
+
+	lastLineStart := lineStart(buf, lastLineEnd)
+
+	return protocol.Range{
+		Start: protocol.Location{
+			Offset: firstLineStart,
+			Line:   inputRange.Start.Line - int32(precedingLinesAdded),
+			Column: 0,
+		},
+		End: protocol.Location{
+			Offset: lastLineEnd,
+			Line:   inputRange.End.Line + int32(succeedingLinesAdded),
+			Column: int32(utf8.RuneCount(buf[lastLineStart:lastLineEnd])),
+		},
+	}
+
+}
+
+func lineStart(buf []byte, offset int32) int32 {
+	start := int32(0)
+	if loc := bytes.LastIndexByte(buf[:offset], '\n'); loc >= 0 {
+		start = int32(loc) + 1
+	}
+	return start
+}
+
+func lineEnd(buf []byte, offset int32) int32 {
+	end := int32(len(buf))
+	if loc := bytes.IndexByte(buf[offset:], '\n'); loc >= 0 {
+		end = int32(loc) + offset
+		if buf[end] == '\r' {
+			end -= 1
+		}
+	}
+
+	return end
 }
 
 var isValidMatcher = lazyregexp.New(`\.(s|sh|bib|c|cs|css|dart|clj|elm|erl|ex|f|fsx|go|html|hs|java|js|json|jl|kt|tex|lisp|nim|md|ml|org|pas|php|py|re|rb|rs|rst|scala|sql|swift|tex|txt|ts)$`)
