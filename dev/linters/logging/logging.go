@@ -37,9 +37,9 @@ func createAnalyzer() *analysis.Analyzer {
 				// // Inits old loggers
 				"!**/internal/logging/main.go",
 				// // Dependencies require direct usage of zap
-				"**/cmd/frontend/internal/app/otlpadapter",
+				"!**/cmd/frontend/internal/app/otlpadapter",
 				// // Legacy and special case handling of panics in background routines
-				"**/lib/background/goroutine.go",
+				"!**/lib/background/goroutine.go",
 			},
 		},
 	}
