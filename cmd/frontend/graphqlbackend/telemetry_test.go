@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
@@ -25,6 +26,10 @@ func (m *mockTelemetryResolver) RecordEvents(_ context.Context, args *RecordEven
 }
 
 func TestTelemetryRecordEvents(t *testing.T) {
+	staticTimeString := "2023-02-24T14:48:30Z"
+	staticTime, err := time.Parse(time.RFC3339, staticTimeString)
+	require.NoError(t, err)
+
 	for _, tc := range []struct {
 		name string
 		// Write a raw GraphQL event because we want to test providing the raw input
@@ -200,6 +205,25 @@ func TestTelemetryRecordEvents(t *testing.T) {
 				assert.Equal(t, int32(1), md[0].Value.Value)
 				assert.Equal(t, int32(0), md[1].Value.Value)
 				assert.Equal(t, 3.14, md[2].Value.Value)
+			},
+		},
+		{
+			name: "custom timestamp",
+			gqlEventsInput: fmt.Sprintf(`
+				{
+					timestamp: "%s"
+					feature: "cody.fixup"
+					action: "applied"
+					source: {
+						client: "VSCode.Cody",
+						clientVersion: "0.14.1"
+					}
+					parameters: { version: 0 }
+				}
+			`, staticTimeString),
+			assert: func(t *testing.T, gotEvents []TelemetryEventInput) {
+				require.Len(t, gotEvents, 1)
+				assert.Equal(t, staticTime.String(), gotEvents[0].Timestamp.String())
 			},
 		},
 	} {
