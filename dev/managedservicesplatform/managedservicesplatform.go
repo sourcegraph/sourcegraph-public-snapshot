@@ -108,7 +108,7 @@ func (r *Renderer) RenderEnvironment(
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create IAM stack")
 	}
-	if _, err := cloudrun.NewStack(stacks, cloudrun.Variables{
+	cloudrunOutput, err := cloudrun.NewStack(stacks, cloudrun.Variables{
 		ProjectID:                      *projectOutput.Project.ProjectId(),
 		CloudRunWorkloadServiceAccount: iamOutput.CloudRunWorkloadServiceAccount,
 
@@ -117,7 +117,8 @@ func (r *Renderer) RenderEnvironment(
 		Environment: env,
 
 		StableGenerate: r.StableGenerate,
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, errors.Wrap(err, "failed to create cloudrun stack")
 	}
 
@@ -131,6 +132,7 @@ func (r *Renderer) RenderEnvironment(
 			}
 			return nil
 		}(),
+		RedisID: cloudrunOutput.RedisID,
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create monitoring stack")
 	}

@@ -203,3 +203,11 @@ func TestDeref(t *testing.T) {
 		runDerefTest(t, tc)
 	}
 }
+
+func TestSlice(t *testing.T) {
+	values := []string{"1", "2", "3"}
+	pointified := Slice(values)
+	for i, p := range pointified {
+		assert.Equal(t, values[i], *p)
+	}
+}

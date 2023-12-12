@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringalertpolicy"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -69,19 +68,20 @@ const (
 // ThresholdAggregation for alerting when a metric exceeds a defined threshold
 //
 // Must specify a `metric.type` filter. Additional filters are optional.
-//
 // All filters are joined with ` AND `
 //
-// `GroupByField` is an optional field for Jobs for specifying the time series aggregation target label
+// GroupByFields is an optional field specifying time series labels to aggregate:
+//   - For services it defaults to `["resource.label.revision_name"]`; additional fields are appended
+//   - For jobs there is no default
 type ThresholdAggregation struct {
-	Filters      map[string]string
-	GroupByField string
-	Comparison   Comparison
-	Aligner      Aligner
-	Reducer      Reducer
-	Period       string
-	Threshold    float64
-	Duration     string
+	Filters       map[string]string
+	GroupByFields []string
+	Comparison    Comparison
+	Aligner       Aligner
+	Reducer       Reducer
+	Period        string
+	Threshold     float64
+	Duration      string
 }
 
 // ResponseCodeMetric for alerting when the number of a certain response code exceeds a threshold
@@ -97,6 +97,14 @@ type ResponseCodeMetric struct {
 	Duration     *string
 }
 
+type CloudService int
+
+const (
+	CloudRunService CloudService = iota
+	CloudRunJob
+	CloudRedis
+)
+
 // Config for a Monitoring Alert Policy
 // Must define either `ThresholdAggregation` or `ResponseCodeMetric`
 type Config struct {
@@ -105,9 +113,10 @@ type Config struct {
 	Name        string
 	Description *string
 	ProjectID   string
-	// Name of the service/job to filter the alert on
+	// Name of the service/job/redis to filter the alert on
 	ServiceName string
-	ServiceKind spec.ServiceKind
+	// Type of the service/job/redis
+	ServiceKind CloudService
 
 	ThresholdAggregation *ThresholdAggregation
 	ResponseCodeMetric   *ResponseCodeMetric
@@ -126,10 +135,6 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 	}
 
 	if config.ThresholdAggregation != nil {
-		if config.ServiceKind == spec.ServiceKindService && config.ThresholdAggregation.GroupByField != "" {
-			return nil, errors.New("Specifying GroupByField is invalid for Cloud Run Services as the default `resource.label.revision_name` is enforced")
-		}
-
 		if len(config.ThresholdAggregation.Filters) == 0 {
 			return nil, errors.New("must specify at least one filter for threshold aggregation")
 		}
@@ -145,12 +150,14 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 // threshholdAggregation defines a monitoring alert policy based on a single metric threshold
 func thresholdAggregation(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
 	// Set some defaults
-	if config.ServiceKind == spec.ServiceKindService {
-		// For Cloud Run Services we need to group by the revision_name
-		config.ThresholdAggregation.GroupByField = "resource.label.revision_name"
-	} else if config.ServiceKind == spec.ServiceKindJob {
-		// No default for this
-	} else {
+	switch config.ServiceKind {
+	case CloudRunService:
+		config.ThresholdAggregation.GroupByFields = append([]string{"resource.label.revision_name"}, config.ThresholdAggregation.GroupByFields...)
+	case CloudRunJob:
+		// No defaults
+	case CloudRedis:
+		// No defaults
+	default:
 		return nil, errors.Newf("invalid service kind %q", config.ServiceKind)
 	}
 
@@ -160,12 +167,6 @@ func thresholdAggregation(scope constructs.Construct, id resourceid.ID, config *
 
 	if config.ThresholdAggregation.Duration == "" {
 		config.ThresholdAggregation.Duration = "0s"
-	}
-
-	// Optional on Jobs
-	var group_by *[]*string
-	if config.ThresholdAggregation.GroupByField != "" {
-		group_by = pointers.Ptr([]*string{pointers.Ptr(config.ThresholdAggregation.GroupByField)})
 	}
 
 	_ = monitoringalertpolicy.NewMonitoringAlertPolicy(scope,
@@ -186,7 +187,7 @@ func thresholdAggregation(scope constructs.Construct, id resourceid.ID, config *
 								AlignmentPeriod:    pointers.Ptr(config.ThresholdAggregation.Period),
 								PerSeriesAligner:   pointers.Ptr(string(config.ThresholdAggregation.Aligner)),
 								CrossSeriesReducer: pointers.Ptr(string(config.ThresholdAggregation.Reducer)),
-								GroupByFields:      group_by,
+								GroupByFields:      pointers.Ptr(pointers.Slice(config.ThresholdAggregation.GroupByFields)),
 							},
 						},
 						Comparison:     pointers.Ptr(string(config.ThresholdAggregation.Comparison)),
@@ -217,15 +218,21 @@ func buildFilter(config *Config) string {
 	// config.ThresholdAggregation.Filters is a map.
 	sort.Strings(filters)
 
-	if config.ServiceKind == spec.ServiceKindService {
+	switch config.ServiceKind {
+	case CloudRunService:
 		filters = append(filters,
 			`resource.type = "cloud_run_revision"`,
 			fmt.Sprintf(`resource.labels.service_name = "%s"`, config.ServiceName),
 		)
-	} else if config.ServiceKind == spec.ServiceKindJob {
+	case CloudRunJob:
 		filters = append(filters,
 			`resource.type = "cloud_run_job"`,
 			fmt.Sprintf(`resource.labels.job_name = "%s"`, config.ServiceName),
+		)
+	case CloudRedis:
+		filters = append(filters,
+			`resource.type = "redis_instance"`,
+			fmt.Sprintf(`resource.labels.redis_instance_id = "%s"`, config.ServiceName),
 		)
 	}
 
