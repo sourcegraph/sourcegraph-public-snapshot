@@ -1,5 +1,5 @@
 // A good practice is to maintain a good separation between the gRPC-specific service implementation
-// (which only handles any gRCP specifics like error handling) and the "internal" service which handles the actual
+// (which only handles any gRPC specifics like error handling) and the "internal" service which handles the actual
 // business logic.
 //
 // This makes it easier to identify dependencies and test the business logic without having to worry about transport-specific
