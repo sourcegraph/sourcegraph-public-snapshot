@@ -229,11 +229,6 @@ func (w *weatherGRPCServer) UploadWeatherPhoto(stream pb.WeatherService_UploadWe
 	})
 }
 
-// You can run the server implementation via:
-//
-// ```
-// cd internal/grpc/example/server
-// go run main.goSRC_DEVELOPMENT=true SRC_LOG_LEVEL=dbug go run .
 func main() {
 	log.Init(log.Resource{
 		Name: "weather-server",
