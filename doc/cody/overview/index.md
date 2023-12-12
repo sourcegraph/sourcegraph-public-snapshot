@@ -115,17 +115,6 @@ img.toggle {
 
 # Cody
 
-<p class="subtitle">Learn how Cody understands your entire codebase and enhances your development process with features like autocomplete and commands.</p>
-
-<aside class="beta">
-<p>
-<span class="badge badge-beta">Beta</span>
-Cody is currently available in beta for all users.
-</p>
-</aside>
-
-## What is Cody?
-
 Cody is a free AI coding assistant that writes, fixes, and maintains your code. Cody understands your entire codebase by leveraging the power of [Code Graph](./../core-concepts/code-graph.md) to gather context, which assists you in writing accurate code.
 
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
@@ -183,9 +172,10 @@ Cody's main features include:
 
 |     Feature     |                                                                                         Description                                                                                         |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Autocomplete](./../capabilities.md#autocomplete)    | Cody makes context-based code autocompletions. Cody can autocomplete single lines or whole functions in any programming language, configuration file, or documentation.
-| [Chat](./../capabilities.md#chat)    | Ask Cody questions in the chat view or inline with code, and it will use Sourcegraph’s code graph to answer using knowledge of your codebase. |
-| [Commands](./../capabilities.md#commands)    | Cody offers quick ready-to-use commands for common actions, such as adding code documentation, generating unit tests, and detecting code smells. |
+| [Autocomplete](./../capabilities/autocomplete.md)    | Cody makes context-based code autocompletions. Cody can autocomplete single lines or whole functions in any programming language, configuration file, or documentation.
+| [Chat](./../capabilities/chat.md)    | Ask Cody questions in the chat view or inline with code, and it will use Sourcegraph’s code graph to answer using knowledge of your codebase. |
+| [Commands](./../capabilities/commands.md)    | Cody offers quick ready-to-use commands for common actions, such as adding code documentation, generating unit tests, and detecting code smells. |
+| [Debug Code](./../capabilities/debug-code.md)    | Cody can debug your code in the editor and also helps you identify code smells. |
 
 ## What data is collected and how it's used?
 
