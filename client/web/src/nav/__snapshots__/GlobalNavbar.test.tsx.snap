@@ -217,6 +217,7 @@ exports[`GlobalNavbar default 1`] = `
       routes=""
       selectedsearchcontextspec=""
       settingscascade="[object Object]"
+      telemetryrecorder="[object Object]"
       telemetryservice="[object Object]"
     />
   </div>

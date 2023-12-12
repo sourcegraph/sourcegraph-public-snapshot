@@ -16,7 +16,7 @@ const LOADING = 'loading' as const
 
 export const CreateNotebookPage: React.FunctionComponent<
     React.PropsWithChildren<TelemetryProps & { authenticatedUser: AuthenticatedUser }>
-> = ({ telemetryService, authenticatedUser }) => {
+> = ({ telemetryService, telemetryRecorder, authenticatedUser }) => {
     const notebookOrError = useObservable(
         useMemo(
             () =>
@@ -32,6 +32,7 @@ export const CreateNotebookPage: React.FunctionComponent<
 
     if (notebookOrError && !isErrorLike(notebookOrError) && notebookOrError !== LOADING) {
         telemetryService.log('SearchNotebookCreated')
+        telemetryRecorder.recordEvent('notebook', 'created')
         return <Navigate to={EnterprisePageRoutes.Notebook.replace(':id', notebookOrError.id)} replace={true} />
     }
 

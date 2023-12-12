@@ -1362,6 +1362,7 @@ export function injectCodeIntelligenceToCodeHost(
     const telemetryService = new ConditionalTelemetryService(innerTelemetryService, isTelemetryEnabled)
     subscriptions.add(telemetryService)
 
+    // TODO(nd): enable telemetry recorder for browser extension
     const telemetryRecorder = noOpTelemetryRecorder
 
     let codeHostSubscription: Subscription

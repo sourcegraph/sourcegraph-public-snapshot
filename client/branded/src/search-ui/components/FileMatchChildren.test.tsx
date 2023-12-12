@@ -13,6 +13,7 @@ import {
 
 import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { FileMatchChildren } from './FileMatchChildren'
@@ -46,6 +47,7 @@ const defaultProps = {
     onSelect,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    telemetryRecorder: noOpTelemetryRecorder,
 }
 
 describe('FileMatchChildren', () => {

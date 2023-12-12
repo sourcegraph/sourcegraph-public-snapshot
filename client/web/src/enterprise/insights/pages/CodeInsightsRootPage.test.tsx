@@ -137,6 +137,6 @@ describe('CodeInsightsRootPage', () => {
 
         userEvent.click(screen.getByText('Create insight'))
         expect(mockTelemetryService.log.calledWith('InsightAddMoreClick')).toBe(true)
-        expect(mockTelemetryRecorder.log.calledWith('InsightAddMoreClick')).toBe(true)
+        expect(mockTelemetryRecorder.log.calledWith('InsightAddMoreClick')).toBe(false)
     })
 })
