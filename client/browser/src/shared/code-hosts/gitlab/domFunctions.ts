@@ -9,7 +9,9 @@ const getSingleFileCodeElementFromLineNumber = (
 ): HTMLElement | null => codeView.querySelector<HTMLElement>(`#LC${line}`)
 
 export const singleFileDOMFunctions: DOMFunctions = {
-    getCodeElementFromTarget: target => target.closest('div.line'),
+    // We have to support div-like line markup and span-like line markup since
+    // different GitLab versions have different code layout markup.
+    getCodeElementFromTarget: target => target.closest('div.line, span.line'),
     getLineNumberFromCodeElement: codeElement => {
         const line = codeElement.id.replace(/^LC/, '')
         return parseInt(line, 10)
