@@ -96,7 +96,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     const onExpandAllResultsToggle = useCallback(() => {
         setAllExpanded(oldValue => !oldValue)
         platformContext.telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
-        platformContext.telemetryRecorder.recordEvent('allResults', `${allExpanded}? 'expanded' : 'collapsed'`)
+        platformContext.telemetryRecorder.recordEvent('allResults', allExpanded ? 'expanded' : 'collapsed')
     }, [allExpanded, platformContext])
 
     // Update local query state on sidebar query state updates.

@@ -357,10 +357,6 @@ const BatchChangeListTabHeader: React.FunctionComponent<
                             onSelectGettingStarted(event)
                             eventLogger.log('batch_change_homepage:getting_started:clicked')
                             telemetryRecorder.recordEvent('batchChangeHomepage.gettingStarted', 'clicked')
-                            // window.context.telemetryRecorder.recordEvent(
-                            //     'batchChangeHomepage.gettingStarted',
-                            //     'clicked'
-                            // )
                         }}
                         className={classNames('nav-link', selectedTab === 'gettingStarted' && 'active')}
                         aria-selected={selectedTab === 'gettingStarted'}

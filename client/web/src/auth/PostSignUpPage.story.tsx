@@ -1,5 +1,7 @@
 import type { Meta, Story } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import type { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 
@@ -20,8 +22,19 @@ const mockUser = {
     completedPostSignup: false,
 } as AuthenticatedUser
 
-export const UnverifiedEmail: Story = () => <WebStory>{() => <PostSignUpPage authenticatedUser={mockUser} />}</WebStory>
+export const UnverifiedEmail: Story = () => (
+    <WebStory>
+        {() => <PostSignUpPage authenticatedUser={mockUser} telemetryRecorder={noOpTelemetryRecorder} />}
+    </WebStory>
+)
 
 export const VerifiedEmail: Story = () => (
-    <WebStory>{() => <PostSignUpPage authenticatedUser={{ ...mockUser, hasVerifiedEmail: true }} />}</WebStory>
+    <WebStory>
+        {() => (
+            <PostSignUpPage
+                authenticatedUser={{ ...mockUser, hasVerifiedEmail: true }}
+                telemetryRecorder={noOpTelemetryRecorder}
+            />
+        )}
+    </WebStory>
 )

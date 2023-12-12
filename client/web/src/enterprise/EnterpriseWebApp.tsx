@@ -81,7 +81,7 @@ const staticAppConfig = {
 
 export const EnterpriseWebApp: FC<AppShellInit> = props => {
     if (window.context.experimentalFeatures.enableStorm) {
-        const { graphqlClient, temporarySettingsStorage } = props
+        const { graphqlClient, temporarySettingsStorage, telemetryRecorder } = props
 
         logger.log('Storm 🌪️ is enabled for this page load.')
 
@@ -91,6 +91,7 @@ export const EnterpriseWebApp: FC<AppShellInit> = props => {
                 routes={routes}
                 graphqlClient={graphqlClient}
                 temporarySettingsStorage={temporarySettingsStorage}
+                telemetryRecorder={telemetryRecorder}
             />
         )
     }

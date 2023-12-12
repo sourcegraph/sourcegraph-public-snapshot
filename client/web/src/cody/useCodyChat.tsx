@@ -52,7 +52,7 @@ export interface CodyChatStore
     clearHistory: () => void
     deleteHistoryItem: (id: string) => void
     loadTranscriptFromHistory: (id: string) => Promise<void>
-    logTranscriptEvent: (eventLabel: string, eventProperties?: { [key: string]: any }) => void
+    logTranscriptEvent: (eventLabel: EventName, eventProperties?: { [key: string]: any }) => void
     initializeNewChat: () => void
 }
 
@@ -176,12 +176,12 @@ export const useCodyChat = ({
 
     /** Event logger for transcript specific events to capture the transcriptId */
     const logTranscriptEvent = useCallback(
-        (eventLabel: string, eventProperties?: { [key: string]: any }) => {
+        (eventLabel: EventName, eventProperties?: { [key: string]: any }) => {
             if (!transcript) {
                 return
             }
             eventLogger.log(eventLabel, { transcriptId: transcript.id, ...eventProperties })
-            telemetryRecorder.recordEvent(EventName[eventLabel as keyof typeof EventName], 'viewed')
+            telemetryRecorder.recordEvent(eventLabel, 'viewed')
         },
         [transcript, telemetryRecorder]
     )

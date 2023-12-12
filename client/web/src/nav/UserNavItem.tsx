@@ -91,7 +91,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
 
     const onExperimentalQueryInputChange = useCallback(
         (enabled: boolean) => {
-            // telemetryService.log(`SearchInputToggle${enabled ? 'On' : 'Off'}`)
+            telemetryService.log(`SearchInputToggle${enabled ? 'On' : 'Off'}`)
             telemetryRecorder.recordEvent('searchInputToggle', `${enabled}? 'enabled' : 'disabled'`)
             setExperimentalQueryInputEnabled(enabled)
         },
