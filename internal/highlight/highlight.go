@@ -318,8 +318,6 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		return Mocks.Code(p)
 	}
 
-	time.Sleep(3 * time.Second)
-
 	logger := log.Scoped("highlight")
 
 	p.Filepath = normalizeFilepath(p.Filepath)
