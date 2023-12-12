@@ -2,15 +2,21 @@
 
 Sourcegraph requires a valid license key to enable many of its more prominent features.
 
-Sourcegraph will periodically perform a license validation check by contacting sourcegraph.com. This check sends no information other than a unique site ID and information about the configured Sourcegraph license. This check is mandatory, and if the check fails Sourcegraph will disable all Enterprise features until a successful license check is completed.
+License keys should not be shared across instances of Sourcegraph. If an additional license key is required for something like a dev environment, please [contact customer support](https://about.sourcegraph.com/contact) for an additional license key.
 
-<span class="badge badge-note">Sourcegraph 5.1+</span>
+## FAQ
 
-If Sourcegraph needs to operate in an air-gapped environment without an external internet connection, contact customer support for a special license key.
+### What happens if our Sourcegraph license expires?
 
-License keys also need to be unique to a single instance of Sourcegraph. If the same license key is used across multiple instances, subsequent license checks will fail. If multiple license keys are required for dev/staging instances, contact customer support for additional license keys for these instances.
+<span class="badge badge-note">Sourcegraph 5.3+</span>
 
-## How to update your license key
+Sourcegraph will continue to function as normal, but regular users will be signed out of Sourcegraph and will be unable to sign in until a site admin signs in and updates the license key.
+
+<span class="badge badge-note">Before Sourcegraph 5.3</span>
+
+Sourcegraph will revert to a free license, and any features that require an enterprise license will stop functioning. This could lead to data loss if some of these features were in use, so be sure to renew your license in advance!
+
+## How can we update our license key?
 
 Any current Site Admin can update your license key by going to Site Admin -> [Site configuration](../config/site_config.md)
 
@@ -22,24 +28,6 @@ Example:
 ```
   "licenseKey": "<your_key_here>",
 ```
-
-## Upgrading to Sourcegraph 5.1
-
-When upgrading to Sourcegraph 5.1 while using the same license key on multiple instances (e.g. dev and prod), the first instance to be upgraded will claim the license key.
-
-When the second instance is upgraded while using the same license key, license verification will fail for that instance. Please make sure to contact customer support and request a new license key, so that different Sourcegraph instances all have unique license keys.
-
-## FAQ
-
-### What happens if our Sourcegraph license expires?
-
-<span class="badge badge-note">Sourcegraph 5.3+</span>
-
-Sourcegraph will continue to function as normal, but users will be signed out of Sourcegraph and will be unable to sign in until a site admin signs in and updates the license key.
-
-<span class="badge badge-note">Before Sourcegraph 5.3</span>
-
-Sourcegraph will revert to a free license, and any features that require an enterprise license will stop functioning. This could lead to data loss if some of these features were in use, so be sure to renew your license in advance!
 
 ### We have set up a new Sourcegraph instance by replicating an existing instance, how can we generate a new site ID to ensure the instances are unique?
 
