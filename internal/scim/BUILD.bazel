@@ -74,6 +74,5 @@ go_test(
         "@com_github_elimity_com_scim//errors",
         "@com_github_scim2_filter_parser_v2//:filter-parser",
         "@com_github_stretchr_testify//assert",
-        "@tools_gotest//assert",
     ],
 )
