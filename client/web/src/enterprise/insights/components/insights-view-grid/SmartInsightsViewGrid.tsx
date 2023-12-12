@@ -73,7 +73,7 @@ export const SmartInsightsViewGrid = memo<SmartInsightsViewGridProps>(function S
         (item: Layout) => {
             trackUICustomization(telemetryService, telemetryRecorder, item, insights)
         },
-        [telemetryService, insights]
+        [telemetryService, telemetryRecorder, insights]
     )
 
     const handleDragStop = useCallback(() => {
@@ -87,7 +87,7 @@ export const SmartInsightsViewGrid = memo<SmartInsightsViewGridProps>(function S
             setResizeView(item)
             trackUICustomization(telemetryService, telemetryRecorder, item, insights)
         },
-        [telemetryService, insights]
+        [telemetryService, telemetryRecorder, insights]
     )
 
     const handleResizeStop = useCallback((): void => {

@@ -183,7 +183,7 @@ export const useCodyChat = ({
             eventLogger.log(eventLabel, { transcriptId: transcript.id, ...eventProperties })
             telemetryRecorder.recordEvent(EventName[eventLabel as keyof typeof EventName], 'viewed')
         },
-        [transcript]
+        [transcript, telemetryRecorder]
     )
 
     const loadTranscriptFromHistory = useCallback(
@@ -268,6 +268,7 @@ export const useCodyChat = ({
         scope,
         setScopeInternal,
         updateTranscriptInHistory,
+        telemetryRecorder,
     ])
 
     const deleteHistoryItem = useCallback(
@@ -419,7 +420,7 @@ export const useCodyChat = ({
 
             return transcript
         },
-        [executeRecipeInternal, updateTranscriptInHistory]
+        [executeRecipeInternal, updateTranscriptInHistory, telemetryRecorder]
     )
 
     const loaded = useMemo(() => loadedTranscriptFromHistory, [loadedTranscriptFromHistory])

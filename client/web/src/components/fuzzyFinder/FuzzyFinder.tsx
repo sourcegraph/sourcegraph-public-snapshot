@@ -6,8 +6,6 @@ import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { telemetryRecorder } from '../../tracking/eventLogger'
-
 import { FuzzyModal } from './FuzzyModal'
 import { useFuzzyShortcuts } from './FuzzyShortcuts'
 import { fuzzyIsActive, type FuzzyTabsProps, type FuzzyState, useFuzzyState, type FuzzyTabKey } from './FuzzyTabs'
@@ -89,7 +87,7 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
                 privateMetadata: { action: 'shortcut open' },
             })
         }
-    }, [props.telemetryService, telemetryRecorder, isVisible])
+    }, [props.telemetryService, props.telemetryRecorder, isVisible])
 
     const handleItemClick = useCallback(
         (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => {

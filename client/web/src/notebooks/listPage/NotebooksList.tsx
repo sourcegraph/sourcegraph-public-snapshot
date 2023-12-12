@@ -40,7 +40,7 @@ export const NotebooksList: FC<NotebooksListProps> = ({
     useEffect(() => {
         telemetryService.logViewEvent(`SearchNotebooksList${logEventName}`)
         telemetryRecorder.recordEvent(`searchNotebooksList${logEventName}`, 'viewed')
-    }, [logEventName, telemetryService])
+    }, [logEventName, telemetryService, telemetryRecorder])
 
     const queryConnection = useCallback(
         (args: Partial<ListNotebooksVariables>) => {
