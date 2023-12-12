@@ -6,6 +6,7 @@ import { EMPTY, NEVER } from 'rxjs'
 import { useDarkMode } from 'storybook-dark-mode'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
@@ -72,6 +73,7 @@ export const JetBrainsSearchBoxStory: Story = () => {
                                     fetchStreamSuggestions={() => NEVER}
                                     settingsCascade={EMPTY_SETTINGS_CASCADE}
                                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                                    telemetryRecorder={noOpTelemetryRecorder}
                                     platformContext={{ requestGraphQL: () => EMPTY }}
                                     className=""
                                     containerClassName=""

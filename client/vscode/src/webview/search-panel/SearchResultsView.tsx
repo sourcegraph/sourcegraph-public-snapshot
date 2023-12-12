@@ -96,6 +96,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     const onExpandAllResultsToggle = useCallback(() => {
         setAllExpanded(oldValue => !oldValue)
         platformContext.telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
+        platformContext.telemetryRecorder.recordEvent('allResults', `${allExpanded}? 'expanded' : 'collapsed'`)
     }, [allExpanded, platformContext])
 
     // Update local query state on sidebar query state updates.
@@ -118,6 +119,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     // Track sidebar + keyboard shortcut search submissions
     useEffect(() => {
         platformContext.telemetryService.log('IDESearchSubmitted')
+        platformContext.telemetryRecorder.recordEvent('IDESearch', 'submitted')
     }, [platformContext, context.submittedSearchQueryState.queryState.query])
 
     const onSubmit = useCallback(
@@ -202,6 +204,27 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                 },
                 `https://${hostname}/search?q=${encodeURIComponent(queryString)}&patternType=${patternType}`
             )
+            platformContext.telemetryRecorder.recordEvent('searchResults', 'queried', {
+                privateMetadata: {
+                    code_search: {
+                        query_data: {
+                            // 🚨 PRIVACY: never provide any private query data in the
+                            // { code_search: query_data: query } property,
+                            // which is also potentially exported in pings data.
+                            query: metrics,
+
+                            // 🚨 PRIVACY: Only collect the full query string for unauthenticated users
+                            // on Sourcegraph.com, and only after sanitizing to remove certain filters.
+                            combined:
+                                !authenticatedUser && isSourcegraphDotCom
+                                    ? sanitizeQueryForTelemetry(queryString)
+                                    : undefined,
+                            empty: !queryString,
+                        },
+                    },
+                    url: `https://${hostname}/search?q=${encodeURIComponent(queryString)}&patternType=${patternType}`,
+                },
+            })
             // Clear repo view
             setRepoToShow(null)
         },
@@ -212,6 +235,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
             extensionCoreAPI,
             instanceURL,
             platformContext.telemetryService,
+            platformContext.telemetryRecorder,
             authenticatedUser,
             isSourcegraphDotCom,
         ]
@@ -269,6 +293,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
             platformContext.telemetryService.log('SearchSkippedResultsAgainClicked')
+            platformContext.telemetryRecorder.recordEvent('searchSkippedResultsAgain', 'clicked')
             onSubmit({
                 newQuery: applyAdditionalFilters(context.submittedSearchQueryState.queryState.query, additionalFilters),
             })
@@ -287,6 +312,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         )}&utm_campaign=vscode-extension&utm_medium=direct_traffic&utm_source=vscode-extension&utm_content=save-search`
         await extensionCoreAPI.copyLink(new URL(path, instanceURL).href)
         platformContext.telemetryService.log('VSCEShareLinkClick')
+        platformContext.telemetryRecorder.recordEvent('VCSEShareLink', 'clicked')
     }, [context, instanceURL, extensionCoreAPI, platformContext])
 
     const fullQuery = useMemo(
@@ -341,6 +367,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     fetchStreamSuggestions={fetchStreamSuggestions}
                     settingsCascade={settingsCascade}
                     telemetryService={platformContext.telemetryService}
+                    telemetryRecorder={platformContext.telemetryRecorder}
                     platformContext={platformContext}
                     className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
                     containerClassName={styles.searchBoxContainer}
@@ -367,6 +394,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                                 onSearchAgain={onSearchAgain}
                                 showTrace={false}
                                 telemetryService={platformContext.telemetryService}
+                                telemetryRecorder={platformContext.telemetryRecorder}
                             />
                         }
                         allExpanded={allExpanded}
@@ -378,6 +406,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                         <StreamingSearchResultsList
                             settingsCascade={settingsCascade}
                             telemetryService={platformContext.telemetryService}
+                            telemetryRecorder={platformContext.telemetryRecorder}
                             allExpanded={allExpanded}
                             // Debt: dotcom prop used only for "run search" link
                             // for search examples. Fix on VSCE.

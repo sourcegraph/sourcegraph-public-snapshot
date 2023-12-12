@@ -3,6 +3,7 @@ import * as H from 'history'
 import FileIcon from 'mdi-react/FileIcon'
 import sinon from 'sinon'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     MULTIPLE_MATCH_RESULT,
@@ -108,6 +109,7 @@ describe('LegacyResultContainer', () => {
         onSelect,
         settingsCascade: NOOP_SETTINGS_CASCADE,
         telemetryService: NOOP_TELEMETRY_SERVICE,
+        telemetryRecorder: noOpTelemetryRecorder,
     }
 
     // Props that represent a FileMatch with multiple results, totaling more than subsetMatch.
@@ -134,6 +136,7 @@ describe('LegacyResultContainer', () => {
         expandLabel: 'Show matches',
         allExpanded: false,
         telemetryService: NOOP_TELEMETRY_SERVICE,
+        telemetryRecorder: noOpTelemetryRecorder,
     }
 
     const findReferencesProps = {
@@ -153,6 +156,7 @@ describe('LegacyResultContainer', () => {
         ),
         expandedChildren: <FileMatchChildren {...fileMatchChildrenProps} {...expandedMatchGroups} />,
         telemetryService: NOOP_TELEMETRY_SERVICE,
+        telemetryRecorder: noOpTelemetryRecorder,
     }
 
     it('displays only one result when collapsed, which is the equivalent of subsetMatches', () => {

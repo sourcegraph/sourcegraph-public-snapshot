@@ -75,6 +75,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         (event?: React.FormEvent): void => {
             event?.preventDefault()
             platformContext.telemetryService.log('VSCECreateCodeMonitorClick')
+            platformContext.telemetryRecorder.recordEvent('VSCECreatedCodeMonitor', 'clicked')
 
             const searchParameters = new URLSearchParams()
             searchParameters.set('q', fullQuery)
@@ -84,7 +85,14 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                 console.error('Error opening create code monitor link')
             })
         },
-        [platformContext.telemetryService, extensionCoreAPI, fullQuery, instanceURL, patternType]
+        [
+            platformContext.telemetryService,
+            platformContext.telemetryRecorder,
+            extensionCoreAPI,
+            fullQuery,
+            instanceURL,
+            patternType,
+        ]
     )
 
     const canCreateMonitorFromQuery = useMemo(() => {
@@ -127,6 +135,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         viewEventName="VSCECodeMonitorCTAShown"
                         returnTo={`/code-monitoring/new?${searchParameters.toString()}`}
                         telemetryService={platformContext.telemetryService}
+                        telemetryRecorder={platformContext.telemetryRecorder}
                         disabled={!canCreateMonitorFromQuery}
                         instanceURL={instanceURL}
                     />
@@ -141,6 +150,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         onCreateCodeMonitorButtonClick,
         canCreateMonitorFromQuery,
         platformContext.telemetryService,
+        platformContext.telemetryRecorder,
         instanceURL,
     ])
 

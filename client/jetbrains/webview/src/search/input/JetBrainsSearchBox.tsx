@@ -95,6 +95,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                             fetchSearchContexts={props.fetchSearchContexts}
                             getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
                             telemetryService={props.telemetryService}
+                            telemetryRecorder={props.telemetryRecorder}
                             platformContext={props.platformContext}
                             query={queryState.query}
                             submitSearch={props.submitSearchOnSearchContextChange}

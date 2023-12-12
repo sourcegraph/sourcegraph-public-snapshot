@@ -6,6 +6,7 @@ import { NEVER } from 'rxjs'
 import { subtypeOf } from '@sourcegraph/common'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
+import { noOpTelemetryRecorder } from '../telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
 import { ActionItem, type ActionItemComponentProps, type ActionItemProps } from './ActionItem'
@@ -33,6 +34,7 @@ const commonProps = subtypeOf<Partial<ActionItemProps>>()({
     extensionsController: EXTENSIONS_CONTROLLER,
     platformContext: PLATFORM_CONTEXT,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    telemetryRecorder: noOpTelemetryRecorder,
     iconClassName: 'icon-inline',
     active: true,
 })
@@ -60,6 +62,7 @@ export const CommandAction: Story = () => (
         {...commonProps}
         action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
         telemetryService={NOOP_TELEMETRY_SERVICE}
+        telemetryRecorder={noOpTelemetryRecorder}
         disabledDuringExecution={true}
         showLoadingSpinnerDuringExecution={true}
         onDidExecute={onDidExecute}

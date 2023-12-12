@@ -72,6 +72,7 @@ import {
 } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import type { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
@@ -321,8 +322,12 @@ function initCodeIntelligence({
     extensionsController,
     render,
     telemetryService,
+    telemetryRecorder,
     repoSyncErrors,
-}: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
+}: Pick<
+    CodeIntelligenceProps,
+    'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService' | 'telemetryRecorder'
+> & {
     render: Renderer
     mutations: Observable<MutationRecordLike[]>
     repoSyncErrors: Observable<boolean>
@@ -470,6 +475,7 @@ function initCodeIntelligence({
                         {...codeHost.hoverOverlayClassProps}
                         className={classNames(styles.hoverOverlay, codeHost.hoverOverlayClassProps?.className)}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         hoverRef={this.nextOverlayElement}
                         extensionsController={extensionsController}
                         platformContext={platformContext}
@@ -710,6 +716,7 @@ export async function handleCodeHost({
     extensionsController,
     platformContext,
     telemetryService,
+    telemetryRecorder,
     render,
     minimalUI,
     hideActions,
@@ -777,6 +784,7 @@ export async function handleCodeHost({
         extensionsController,
         platformContext,
         telemetryService,
+        telemetryRecorder,
         render,
         mutations,
         repoSyncErrors,
@@ -929,6 +937,7 @@ export async function handleCodeHost({
                                     fileInfoOrError={error}
                                     sourcegraphURL={sourcegraphURL}
                                     telemetryService={telemetryService}
+                                    telemetryRecorder={telemetryRecorder}
                                     platformContext={platformContext}
                                     extensionsController={extensionsController}
                                     buttonProps={codeViewEvent.toolbarButtonProps}
@@ -1227,6 +1236,7 @@ export async function handleCodeHost({
                             fileInfoOrError={diffOrBlobInfo}
                             sourcegraphURL={sourcegraphURL}
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                             platformContext={platformContext}
                             extensionsController={extensionsController}
                             buttonProps={toolbarButtonProps}
@@ -1352,6 +1362,8 @@ export function injectCodeIntelligenceToCodeHost(
     const telemetryService = new ConditionalTelemetryService(innerTelemetryService, isTelemetryEnabled)
     subscriptions.add(telemetryService)
 
+    const telemetryRecorder = noOpTelemetryRecorder
+
     let codeHostSubscription: Subscription
     // In the browser extension, observe whether the `disableExtension` storage flag is set.
     // In the native integration, this flag does not exist.
@@ -1390,6 +1402,7 @@ export function injectCodeIntelligenceToCodeHost(
                     extensionsController,
                     platformContext,
                     telemetryService,
+                    telemetryRecorder,
                     render: renderWithThemeProvider as Renderer,
                     minimalUI,
                     hideActions,

@@ -353,6 +353,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
 
         // Record action ID (but not args, which might leak sensitive data).
         this.props.telemetryService.log(action.id)
+        this.props.telemetryRecorder.recordEvent(`${event ? 'altEvent' : 'event'}`, 'executed')
 
         const emitDidExecute = (): void => {
             if (this.props.onDidExecute) {
