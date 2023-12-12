@@ -37,7 +37,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         !isErrorLike(props.settingsCascade.final) &&
         props.settingsCascade.final.experimentalFeatures?.enableLazyFileResultSyntaxHighlighting
 
-    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService } = props
+    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, telemetryRecorder } = props
 
     const fetchFileRangeMatches = useCallback(
         (args: { format?: HighlightResponseFormat; ranges: HighlightLineRange[] }): Observable<string[][]> =>
@@ -74,11 +74,14 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                         { durationMs: endTime - startTime },
                         { durationMs: endTime - startTime }
                     )
+                    telemetryRecorder.recordEvent('search.latencies.frontend.code-load', 'loaded', {
+                        metadata: { durationMs: endTime - startTime },
+                    })
                     return lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
                 })
             )
         },
-        [fetchFileRangeMatches, grouped, telemetryService]
+        [fetchFileRangeMatches, grouped, telemetryService, telemetryRecorder]
     )
 
     const fetchPlainTextFileMatchLineRanges = React.useCallback(
@@ -114,7 +117,8 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
     const logEventOnCopy = useCallback(() => {
         telemetryService.log(...codeCopiedEvent('file-match'))
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('CodeCopied', 'copied')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <div

@@ -1,5 +1,6 @@
 import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { updateJSContextBatchChangesLicense } from '@sourcegraph/shared/src/testing/batches'
 import {
@@ -21,6 +22,7 @@ const defaultProps: GlobalNavbarProps = {
         subjects: null,
     },
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    telemetryRecorder: noOpTelemetryRecorder,
     platformContext: {} as any,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,

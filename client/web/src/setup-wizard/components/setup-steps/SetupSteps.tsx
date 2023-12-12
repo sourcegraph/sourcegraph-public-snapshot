@@ -171,7 +171,15 @@ interface SetupStepsContentProps extends TelemetryProps, HTMLAttributes<HTMLElem
 }
 
 export const SetupStepsContent: FC<SetupStepsContentProps> = props => {
-    const { contentContainerClass, className, telemetryService, isCodyApp, setStepId, ...attributes } = props
+    const {
+        contentContainerClass,
+        className,
+        telemetryService,
+        telemetryRecorder,
+        isCodyApp,
+        setStepId,
+        ...attributes
+    } = props
     const { steps, activeStepIndex } = useContext(SetupStepsContext)
 
     return (
@@ -187,6 +195,7 @@ export const SetupStepsContent: FC<SetupStepsContentProps> = props => {
                                 setStepId={setStepId}
                                 className={classNames(contentContainerClass, styles.content)}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 isCodyApp={isCodyApp}
                             />
                         }

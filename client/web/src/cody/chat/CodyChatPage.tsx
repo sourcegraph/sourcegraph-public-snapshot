@@ -17,6 +17,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Badge,
     Button,
@@ -103,6 +105,8 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         onTranscriptHistoryLoad,
         autoLoadTranscriptFromHistory: false,
         autoLoadScopeWithRepositories: isCodyApp,
+        telemetryService: NOOP_TELEMETRY_SERVICE,
+        telemetryRecorder: noOpTelemetryRecorder,
     })
     const {
         initializeNewChat,

@@ -16,6 +16,8 @@ import {
 } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../tracking/eventLogger'
@@ -27,22 +29,23 @@ export type { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClie
 
 export interface CodyChatStore
     extends Pick<
-        CodyClient,
-        | 'transcript'
-        | 'chatMessages'
-        | 'isMessageInProgress'
-        | 'messageInProgress'
-        | 'submitMessage'
-        | 'editMessage'
-        | 'executeRecipe'
-        | 'scope'
-        | 'setScope'
-        | 'setEditorScope'
-        | 'toggleIncludeInferredRepository'
-        | 'toggleIncludeInferredFile'
-        | 'abortMessageInProgress'
-        | 'fetchRepositoryNames'
-    > {
+            CodyClient,
+            | 'transcript'
+            | 'chatMessages'
+            | 'isMessageInProgress'
+            | 'messageInProgress'
+            | 'submitMessage'
+            | 'editMessage'
+            | 'executeRecipe'
+            | 'scope'
+            | 'setScope'
+            | 'setEditorScope'
+            | 'toggleIncludeInferredRepository'
+            | 'toggleIncludeInferredFile'
+            | 'abortMessageInProgress'
+            | 'fetchRepositoryNames'
+        >,
+        TelemetryProps {
     readonly transcriptHistory: TranscriptJSON[]
     readonly loaded: boolean
     readonly storageQuotaExceeded: boolean
@@ -81,9 +84,11 @@ export const codyChatStoreMock: CodyChatStore = {
     toggleIncludeInferredFile: () => {},
     abortMessageInProgress: () => {},
     fetchRepositoryNames: () => Promise.resolve([]),
+    telemetryService: NOOP_TELEMETRY_SERVICE,
+    telemetryRecorder: noOpTelemetryRecorder,
 }
 
-interface CodyChatProps {
+interface CodyChatProps extends TelemetryProps {
     userID?: Scalars['ID']
     scope?: CodyClientScope
     config?: CodyClientConfig
@@ -108,6 +113,8 @@ export const useCodyChat = ({
     onTranscriptHistoryLoad,
     autoLoadTranscriptFromHistory = true,
     autoLoadScopeWithRepositories = false,
+    telemetryService,
+    telemetryRecorder,
 }: CodyChatProps): CodyChatStore => {
     const [loadedTranscriptFromHistory, setLoadedTranscriptFromHistory] = useState(false)
     // Read old transcript history from local storage, if any exists. We will use this to
@@ -174,6 +181,7 @@ export const useCodyChat = ({
                 return
             }
             eventLogger.log(eventLabel, { transcriptId: transcript.id, ...eventProperties })
+            telemetryRecorder.recordEvent(EventName[eventLabel as keyof typeof EventName], 'viewed')
         },
         [transcript]
     )
@@ -229,6 +237,7 @@ export const useCodyChat = ({
         }
 
         eventLogger.log(EventName.CODY_CHAT_HISTORY_CLEARED)
+        telemetryRecorder.recordEvent(EventName.CODY_CHAT_HISTORY_CLEARED, 'viewed')
 
         const newTranscript = initializeNewChatInternal()
         if (newTranscript) {
@@ -400,6 +409,7 @@ export const useCodyChat = ({
     const executeRecipe = useCallback<typeof executeRecipeInternal>(
         async (recipeId, options): Promise<Transcript | null> => {
             eventLogger.log(`web:codyChat:recipe:${recipeId}:executed`, { recipeId })
+            telemetryRecorder.recordEvent(`web.codyChat.recipe.${recipeId}`, 'executed')
 
             const transcript = await executeRecipeInternal(recipeId, options)
 
@@ -536,6 +546,8 @@ export const useCodyChat = ({
         abortMessageInProgress,
         fetchRepositoryNames,
         storageQuotaExceeded,
+        telemetryService,
+        telemetryRecorder,
     }
 }
 

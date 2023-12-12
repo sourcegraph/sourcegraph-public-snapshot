@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as jsonc from 'jsonc-parser'
 import { useSearchParams } from 'react-router-dom'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, ErrorAlert, Text, Link } from '@sourcegraph/wildcard'
 
 import { tauriInvoke } from '../../app/tauriIcpUtils'
@@ -23,8 +24,11 @@ function safelyRedirectToDestination(destination: string | null): void {
     }
 }
 
-export const AppAuthCallbackPage: React.FC = () => {
-    useEffect(() => eventLogger.logPageView('AppAuthCallbackPage'), [])
+export const AppAuthCallbackPage: React.FC<TelemetryProps> = ({ telemetryRecorder }) => {
+    useEffect(() => {
+        eventLogger.logPageView('AppAuthCallbackPage')
+        telemetryRecorder.recordEvent('appAuthCallbackPage', 'viewed')
+    }, [telemetryRecorder])
 
     const [error, setError] = useState<Error | string | null>(null)
 

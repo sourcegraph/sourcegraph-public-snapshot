@@ -60,7 +60,7 @@ const APP_SETUP_STEPS: StepConfiguration[] = [
  * App related setup wizard component, see {@link SetupWizard} component
  * for any other deploy type setup flows.
  */
-export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
+export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService, telemetryRecorder }) => {
     const { theme } = useTheme()
     const [activeStepId, setStepId, status] = useTemporarySetting('app-setup.activeStepId')
 
@@ -157,6 +157,7 @@ export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
                 >
                     <SetupStepsContent
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         className={styles.content}
                         isCodyApp={true}
                         setStepId={setStepId}

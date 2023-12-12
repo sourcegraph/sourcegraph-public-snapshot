@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
@@ -60,6 +61,7 @@ describe('UserNavItem', () => {
                             isCodyApp={false}
                             showFeedbackModal={() => undefined}
                             telemetryService={NOOP_TELEMETRY_SERVICE}
+                            telemetryRecorder={noOpTelemetryRecorder}
                         />
                     </MockedTestProvider>
                 </MemoryRouter>
@@ -77,6 +79,7 @@ describe('UserNavItem', () => {
                     isCodyApp={false}
                     showFeedbackModal={() => undefined}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </MockedTestProvider>
         )

@@ -186,6 +186,7 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                         fetchStreamSuggestions={fetchStreamSuggestions}
                         settingsCascade={settingsCascade}
                         telemetryService={platformContext.telemetryService}
+                        telemetryRecorder={platformContext.telemetryRecorder}
                         platformContext={platformContext}
                         className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
                         containerClassName={styles.searchBoxContainer}
@@ -193,7 +194,11 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                     />
                 </form>
 
-                <HomeFooter setQuery={setUserQueryState} telemetryService={platformContext.telemetryService} />
+                <HomeFooter
+                    setQuery={setUserQueryState}
+                    telemetryService={platformContext.telemetryService}
+                    telemetryRecorder={platformContext.telemetryRecorder}
+                />
             </div>
         </div>
     )

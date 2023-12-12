@@ -1,5 +1,6 @@
 import { noop } from 'lodash'
 
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 /**
@@ -10,6 +11,7 @@ export interface VsceTelemetryProps {
      * A telemetry service implementation to log events.
      */
     telemetryService: VsceTelemetryService
+    telemetryRecorder: TelemetryRecorder
 }
 
 /**

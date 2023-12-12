@@ -91,8 +91,11 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     const [currentTabLabel, currentTabID] = hash.split('=')
 
     const trackTabClick = useCallback(
-        (title: string) => props.telemetryService.log(`ReferencePanelClicked${title}`),
-        [props.telemetryService]
+        (title: string) => {
+            props.telemetryService.log(`ReferencePanelClicked${title}`)
+            props.telemetryRecorder.recordEvent(`referencePanel.${title}`, 'clicked')
+        },
+        [props.telemetryService, props.telemetryRecorder]
     )
 
     const panels: Panel[] | undefined = useObservable(

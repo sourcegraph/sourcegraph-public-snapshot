@@ -38,6 +38,7 @@ export const OwnerSearchResult: React.FunctionComponent<OwnerSearchResultProps> 
     buildSearchURLQueryFromQueryState,
     selectedSearchContextSpec,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const displayName = useMemo(() => {
         let displayName = ''
@@ -95,12 +96,15 @@ export const OwnerSearchResult: React.FunctionComponent<OwnerSearchResultProps> 
     const logSearchOwnerClicked = (): void => {
         if (url.startsWith('mailto:')) {
             telemetryService.log('searchResults:ownershipMailto:clicked')
+            telemetryRecorder.recordEvent('searchResults.ownershipMailto', 'clicked')
         }
         if (url.startsWith('/users/')) {
             telemetryService.log('searchResults:ownershipUsers:clicked')
+            telemetryRecorder.recordEvent('searchResults.ownershipUsers', 'clicked')
         }
         if (url.startsWith('/teams/')) {
             telemetryService.log('searchResults:ownershipTeams:clicked')
+            telemetryRecorder.recordEvent('searchResults.ownershipTeams', 'clicked')
         }
     }
 

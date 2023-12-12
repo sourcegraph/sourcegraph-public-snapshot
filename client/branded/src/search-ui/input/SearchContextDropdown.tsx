@@ -56,6 +56,7 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
         className,
         menuClassName,
         telemetryService,
+        telemetryRecorder,
         onEscapeMenuClose,
     } = props
 
@@ -90,6 +91,7 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
 
             setIsOpen(false)
             telemetryService.log('SearchContextDropdownToggled')
+            telemetryRecorder.recordEvent('searchContextDropdown', 'toggled')
         },
         [onEscapeMenuClose, telemetryService]
     )

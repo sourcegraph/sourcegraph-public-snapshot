@@ -23,6 +23,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     batchChangesExecutionEnabled: false,
     batchChangesWebhookLogsEnabled: false,
     telemetryService: {} as any,
+    telemetryRecorder: {} as any,
     showSearchBox: true,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
