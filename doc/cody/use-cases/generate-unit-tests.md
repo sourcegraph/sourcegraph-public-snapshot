@@ -13,7 +13,7 @@ Before you begin, make sure you have the following:
 - Access to Sourcegraph and are logged into your account
 - Cody VS Code extension installed and connected to your Sourcegraph instance
 
-> NOTE: Cody also provides extensions for JetBrains and Neovim, which are not covered in this guide.
+> NOTE: Cody also provides extensions for [JetBrains](./../overview/install-jetbrains.md) and [Neovim](./../overview/install-neovim.md), which are not covered in this guide.
 
 ## Generate unit tests with Cody
 
