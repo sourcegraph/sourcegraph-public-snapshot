@@ -114,7 +114,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
                 }
             }
         }
-    }, [highlightRanges, startLine, endLine, tableContainerElement, table])
+    }, [highlightRanges, startLine, endLine, tableContainerElement])
 
     return (
         <Code data-testid="code-excerpt" onCopy={onCopy} className={classNames(styles.codeExcerpt, className)}>

@@ -298,10 +298,10 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                                 {expanded
                                     ? 'Show less'
                                     : `Show ${hiddenMatchesCount} more ${pluralize(
-                                        'match',
-                                        hiddenMatchesCount,
-                                        'matches'
-                                    )}`}
+                                          'match',
+                                          hiddenMatchesCount,
+                                          'matches'
+                                      )}`}
                             </span>
                         </button>
                     )}
