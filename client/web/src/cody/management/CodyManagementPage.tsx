@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import type { ReactElement } from 'react'
 
-import { mdiHelpCircleOutline, mdiTrendingUp, mdiDownload, mdiInformation } from '@mdi/js'
+import { mdiHelpCircleOutline, mdiTrendingUp, mdiInformationOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -62,6 +62,12 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const { data: usageData } = useQuery<UserCodyUsageResult, UserCodyUsageVariables>(USER_CODY_USAGE, {})
 
+    const stats = usageData?.currentUser
+    const codyCurrentPeriodChatLimit = stats?.codyCurrentPeriodChatLimit || 0
+    const codyCurrentPeriodChatUsage = stats?.codyCurrentPeriodChatUsage || 0
+    const codyCurrentPeriodCodeLimit = stats?.codyCurrentPeriodCodeLimit || 0
+    const codyCurrentPeriodCodeUsage = stats?.codyCurrentPeriodCodeUsage || 0
+
     const [changeCodyPlan] = useMutation<ChangeCodyPlanResult, ChangeCodyPlanVariables>(CHANGE_CODY_PLAN)
 
     const [isEnabled] = useFeatureFlag('cody-pro', false)
@@ -91,6 +97,11 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const { codyProEnabled } = data.currentUser
 
+    const showUpgradeBanner =
+        !codyProEnabled &&
+        ((codyCurrentPeriodCodeUsage >= codyCurrentPeriodCodeLimit && codyCurrentPeriodCodeLimit > 0) ||
+            (codyCurrentPeriodChatUsage >= codyCurrentPeriodChatLimit && codyCurrentPeriodChatLimit > 0))
+
     return (
         <>
             <Page className={classNames('d-flex flex-column')}>
@@ -102,6 +113,29 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         </div>
                     </PageHeader.Heading>
                 </PageHeader>
+
+                {showUpgradeBanner && (
+                    <div
+                        className={classNames(
+                            styles.usageBanner,
+                            'p-4 d-flex flex-column justify-content-center align-items-center'
+                        )}
+                    >
+                        <ProTierIcon />
+                        <H2 className="mt-2 mb-2">Lift your coding out of limitations</H2>
+                        <Text className="mb-2">You reached your usage limit for Cody.</Text>
+                        <Text className="mb-4">
+                            Get <strong>Pro</strong> for free until February 2024
+                        </Text>
+                        <ButtonLink to="/cody/subscription" variant="primary" size="sm">
+                            <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
+                            Upgrade for free
+                        </ButtonLink>
+                        <Text className="text-muted mb-0 mt-2" size="small">
+                            No credit card needed
+                        </Text>
+                    </div>
+                )}
 
                 <div className={classNames('p-4 border bg-1 mt-4', styles.container)}>
                     <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
@@ -131,7 +165,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             {codyProEnabled ? (
                                 <ProTierIcon />
                             ) : (
-                                <Text className={classNames(styles.planName, 'mb-0')}>Community</Text>
+                                <Text className={classNames(styles.planName, 'mb-0')}>Free</Text>
                             )}
                             <Text className="text-muted mb-0" size="small">
                                 tier
@@ -147,13 +181,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                 ) : usageData?.currentUser ? (
                                     <>
                                         <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
-                                            {Math.min(
-                                                usageData?.currentUser?.codyCurrentPeriodCodeUsage || 0,
-                                                usageData?.currentUser?.codyCurrentPeriodCodeLimit || 0
-                                            )}{' '}
+                                            {Math.min(codyCurrentPeriodCodeUsage, codyCurrentPeriodCodeLimit)} /
                                         </Text>{' '}
                                         <Text className="text-muted d-inline b-0" size="small">
-                                            / {usageData?.currentUser?.codyCurrentPeriodCodeLimit || 0}
+                                            {codyCurrentPeriodCodeLimit}
                                         </Text>
                                     </>
                                 ) : (
@@ -176,14 +207,11 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     </Text>
                                 ) : usageData?.currentUser ? (
                                     <>
-                                        <Text className={classNames('d-inline mb-0', styles.counter)}>
-                                            {Math.min(
-                                                usageData?.currentUser?.codyCurrentPeriodChatUsage || 0,
-                                                usageData?.currentUser?.codyCurrentPeriodChatLimit || 0
-                                            )}{' '}
+                                        <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
+                                            {Math.min(codyCurrentPeriodChatUsage, codyCurrentPeriodChatLimit)} /
                                         </Text>{' '}
                                         <Text className="text-muted d-inline b-0" size="small">
-                                            / {usageData?.currentUser?.codyCurrentPeriodChatLimit || 0}
+                                            {codyCurrentPeriodChatLimit}
                                         </Text>
                                     </>
                                 ) : (
@@ -216,8 +244,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                 <div className={classNames('p-4 border bg-1 mt-4 mb-5', styles.container)}>
                     <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                         <div>
-                            <H2>Extensions & Plugins</H2>
-                            <Text className="text-muted mb-0">Cody integrates with your workflow.</Text>
+                            <H2>Use Cody directly in your editor</H2>
+                            <Text className="text-muted mb-0">
+                                Download the Cody extension in your editor to start using Cody.
+                            </Text>
                         </div>
                         <div>
                             <Link
@@ -245,7 +275,21 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                         'border-left': index !== 0,
                                     })}
                                 >
-                                    <div className="d-flex mb-3 align-items-center">
+                                    <div
+                                        className={classNames('d-flex mb-3 align-items-center', styles.ideHeader)}
+                                        onClick={() => {
+                                            setSelectedEditor(editor)
+                                            setSelectedEditorStep(0)
+                                        }}
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                setSelectedEditor(editor)
+                                                setSelectedEditorStep(0)
+                                            }
+                                        }}
+                                    >
                                         <div>
                                             <img
                                                 alt={editor.name}
@@ -262,30 +306,26 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                             <H5 className={styles.releaseStage}>{editor.releaseStage}</H5>
                                         </div>
                                     </div>
-                                    <Link
-                                        to="#"
-                                        className={!editor.instructions ? 'text-muted' : ''}
-                                        onClick={() => {
-                                            setSelectedEditor(editor)
-                                            setSelectedEditorStep(0)
-                                        }}
-                                    >
-                                        <Text size="small" className="mb-2 text-muted">
-                                            <Icon svgPath={mdiDownload} aria-hidden={true} /> How to install
-                                        </Text>
-                                    </Link>
-                                    <Link
-                                        to="#"
-                                        className={!editor.instructions ? 'text-muted' : ''}
-                                        onClick={() => {
-                                            setSelectedEditor(editor)
-                                            setSelectedEditorStep(1)
-                                        }}
-                                    >
-                                        <Text size="small" className="text-muted">
-                                            <Icon svgPath={mdiInformation} aria-hidden={true} /> How to use
-                                        </Text>
-                                    </Link>
+
+                                    {editor.instructions && (
+                                        <Link
+                                            to="#"
+                                            className="mb-2 text-muted"
+                                            onClick={() => {
+                                                setSelectedEditor(editor)
+                                                setSelectedEditorStep(0)
+                                            }}
+                                        >
+                                            <Icon svgPath={mdiInformationOutline} aria-hidden={true} /> Quickstart Guide
+                                        </Link>
+                                    )}
+                                    {editor.docs && (
+                                        <Link to={editor.docs} target="_blank" rel="noopener">
+                                            <Text className="text-muted">
+                                                <Icon svgPath={mdiOpenInNew} aria-hidden={true} /> Documentation
+                                            </Text>
+                                        </Link>
+                                    )}
                                     {selectedEditor?.name === editor.name &&
                                         selectedEditorStep !== null &&
                                         editor.instructions && (

@@ -1,12 +1,23 @@
 import React, { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
 
-import { mdiTrendingUp } from '@mdi/js'
+import { mdiInformationOutline, mdiTrendingUp } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Icon, PageHeader, Button, H1, H2, H3, Text, ButtonLink, useSearchParameters, H4 } from '@sourcegraph/wildcard'
+import {
+    Icon,
+    PageHeader,
+    Button,
+    Badge,
+    H1,
+    H2,
+    Text,
+    ButtonLink,
+    useSearchParameters,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
@@ -81,21 +92,16 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                 </PageHeader>
 
                 <div className={classNames('d-flex mt-4', styles.responsiveContainer)}>
-                    <div className="border d-flex flex-column flex-1 bg-1">
-                        {!codyProEnabled && (
-                            <div className="bg-1 border-bottom d-flex justify-content-center align-items-center bg-2">
-                                <H4 className="mb-2 mt-2">Your Plan</H4>
-                            </div>
-                        )}
-                        <div className="p-3">
+                    <div className="border d-flex flex-column flex-1 bg-1 rounded">
+                        <div className="p-4">
                             <div className="border-bottom pb-3">
-                                <H2 className="mb-1 text-muted">Community</H2>
+                                <H1 className="mb-1">Free</H1>
                                 <Text className="mb-0 text-muted" size="small">
-                                    Best for hobbyists
+                                    Best for hobbyists or light usage
                                 </Text>
                             </div>
                             <div className="border-bottom py-4">
-                                <H1 className="mb-1 text-muted">Free</H1>
+                                <H1 className="mb-3 py-4">Free</H1>
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="d-inline">
@@ -110,45 +116,85 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 <Text className="d-inline text-muted">Messages and Commands per month</Text>
                             </div>
                             <div className="border-bottom py-4">
-                                <div className="mb-1">
-                                    <Text weight="bold" className="d-inline mb-0">
-                                        Limited
-                                    </Text>{' '}
-                                    <Text className="d-inline text-muted mb-0">Private Code Embeddings</Text>
-                                </div>
-                                <Text className="mb-1 text-muted">Current project with keyword search</Text>
-                                <Text className="mb-1 text-muted">Embeddings on some public repo</Text>
+                                <Text className="text-muted mb-0">Out-of-the-box and custom commands</Text>
                             </div>
                             <div className="border-bottom py-4">
-                                <Text weight="bold" className="mb-1">
-                                    Code editor support
-                                </Text>{' '}
-                                <Text className="d-inline text-muted">All supported Code Editors</Text>
+                                <Text weight="bold" className="mb-3 d-inline-block">
+                                    Code context and personalization
+                                    <Tooltip content="Advanced code context is used to personalize Cody's responses to a user's own codebase">
+                                        <Icon
+                                            className="ml-1 text-muted"
+                                            svgPath={mdiInformationOutline}
+                                            aria-hidden={true}
+                                        />
+                                    </Tooltip>
+                                </Text>
+                                <Text className="mb-0 text-muted">Advance personalization for small codebases</Text>
                             </div>
                             <div className="border-bottom py-4">
-                                <Text weight="bold" className="mb-1">
+                                <Text weight="bold" className="mb-3 d-inline-block">
+                                    LLM Support
+                                </Text>
+                                <Text className="mb-0 text-muted">
+                                    Default LLMs for Chat, Commands, and Autocomplete
+                                </Text>
+                            </div>
+                            <div className="border-bottom py-4">
+                                <Text weight="bold" className="mb-3">
+                                    Compatibility
+                                </Text>
+                                <Text className="text-muted mb-1">VS Code, JetBrains IDEs, and NeoVim</Text>
+                                <Text className="text-muted mb-1">
+                                    All major coding languages
+                                    <Tooltip content="JavaScript, TypeScript, HTML/CSS, Python, Java, C/C++, C#, PHP, and more">
+                                        <Icon
+                                            className="ml-1 text-muted"
+                                            svgPath={mdiInformationOutline}
+                                            aria-hidden={true}
+                                        />
+                                    </Tooltip>
+                                </Text>
+                                <Text className="text-muted mb-1">
+                                    Many human language support
+                                    <Tooltip content="Spanish, French, German, Italian, Chinese, Japanese, Korean, Latin, and Esperanto">
+                                        <Icon
+                                            className="ml-1 text-muted"
+                                            svgPath={mdiInformationOutline}
+                                            aria-hidden={true}
+                                        />
+                                    </Tooltip>
+                                </Text>
+                                <Text className="text-muted mb-1">
+                                    All major code hosts
+                                    <Tooltip content="GitHub, GitLab, BitBucket, Gerrit, Azure DevOps">
+                                        <Icon
+                                            className="ml-1 text-muted"
+                                            svgPath={mdiInformationOutline}
+                                            aria-hidden={true}
+                                        />
+                                    </Tooltip>
+                                </Text>
+                            </div>
+                            <div className="border-bottom py-4">
+                                <Text weight="bold" className="mb-3">
                                     Support
-                                </Text>{' '}
-                                <Text className="d-inline text-muted">Community support only</Text>
+                                </Text>
+                                <Text className="d-inline text-muted">Community support through Discord</Text>
                             </div>
                         </div>
                     </div>
-                    <div className={classNames('border d-flex flex-column flex-1 bg-1', styles.proContainer)}>
-                        {codyProEnabled && (
-                            <div className="bg-1 border-bottom d-flex justify-content-center align-items-center bg-2">
-                                <H4 className="mb-2 mt-2">Your Plan</H4>
-                            </div>
-                        )}
-                        <div className="p-3">
+                    <div className={classNames('border d-flex flex-column flex-1 bg-1 rounded', styles.proContainer)}>
+                        <div className={styles.proBorderTop} />
+                        <div className="p-4">
                             <div className="border-bottom pb-2">
                                 <H1 className={classNames('mb-1', styles.proTitle)}>Pro</H1>
-                                <Text className={classNames('mb-1 text-primary', styles.proDescription)} size="base">
-                                    Best for professional developers
+                                <Text className={classNames('mb-1', styles.proDescription)} size="base">
+                                    Best for professional developers and small teams
                                 </Text>
                             </div>
                             <div className="d-flex flex-column border-bottom py-4">
                                 <div className="mb-1">
-                                    <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>22$</H2>
+                                    <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>9$</H2>
                                     <Text className="mb-0 text-muted d-inline">/ month</Text>
                                 </div>
                                 <Text className="mb-3 text-muted" size="small">
@@ -184,52 +230,106 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 )}
                             </div>
                             <div className="border-bottom py-4">
-                                <Text weight="bold" className={classNames('d-inline', styles.amazing)}>
+                                <Text weight="bold" className="d-inline">
                                     Unlimited
                                 </Text>{' '}
                                 <Text className="d-inline text-muted">Autocompletions per month</Text>
                             </div>
                             <div className="border-bottom py-4">
-                                <Text weight="bold" className={classNames('d-inline', styles.amazing)}>
+                                <Text weight="bold" className="d-inline">
                                     Unlimited
                                 </Text>{' '}
                                 <Text className="d-inline text-muted">Messages and Commands per month</Text>
                             </div>
                             <div className="border-bottom py-4">
-                                <div className="mb-1">
-                                    <Text weight="bold" className={classNames('d-inline mb-0', styles.amazing)}>
-                                        Unlimited
-                                    </Text>{' '}
-                                    <Text className="d-inline text-muted mb-0">Private Code Embeddings</Text>
-                                </div>
-                                <Text className="mb-1 text-muted">Current project with keyword search</Text>
-                                <Text className="mb-0 text-muted">Embeddings on some public repo</Text>
+                                <Text className="text-muted mb-0">Out-of-the-box and custom commands</Text>
                             </div>
                             <div className="border-bottom py-4">
-                                <Text weight="bold" className="mb-1">
-                                    Code editor support
-                                </Text>{' '}
-                                <Text className="d-inline text-muted">All supported Code Editors</Text>
+                                <Text weight="bold" className="mb-3 d-inline-block">
+                                    Code context and personalization
+                                    <Tooltip content="Advanced code context is used to personalize Cody's responses to a user's own codebase">
+                                        <Icon
+                                            className="ml-1 text-muted"
+                                            svgPath={mdiInformationOutline}
+                                            aria-hidden={true}
+                                        />
+                                    </Tooltip>
+                                </Text>
+                                <Text className="mb-0 text-muted">Personalization for larger codebases</Text>
                             </div>
                             <div className="border-bottom py-4">
-                                <Text weight="bold" className="mb-1">
+                                <Text weight="bold" className="mb-3 d-inline-block">
+                                    LLM Support
+                                </Text>
+                                <Tooltip content="Claude Instant 1.2, Claude 2, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo Preview">
+                                    <Text className="mb-1 text-muted">Multiple LLM choices for chat</Text>
+                                </Tooltip>
+                                <Text className="mb-0 text-muted">Default LLMs for Commands, and Autocomplete</Text>
+                            </div>
+                            <div className="border-bottom py-4">
+                                <Text weight="bold" className="mb-3">
+                                    Compatibility
+                                </Text>
+                                <Text className="text-muted mb-1">VS Code, JetBrains IDEs, and NeoVim</Text>
+                                <Text className="text-muted mb-1">
+                                    All major coding languages
+                                    <Tooltip content="JavaScript, TypeScript, HTML/CSS, Python, Java, C/C++, C#, PHP, and more">
+                                        <Icon
+                                            className="ml-1 text-muted"
+                                            svgPath={mdiInformationOutline}
+                                            aria-hidden={true}
+                                        />
+                                    </Tooltip>
+                                </Text>
+                                <Text className="text-muted mb-1">
+                                    Many human language support
+                                    <Tooltip content="Spanish, French, German, Italian, Chinese, Japanese, Korean, Latin, and Esperanto">
+                                        <Icon
+                                            className="ml-1 text-muted"
+                                            svgPath={mdiInformationOutline}
+                                            aria-hidden={true}
+                                        />
+                                    </Tooltip>
+                                </Text>
+                                <Text className="text-muted mb-1">
+                                    All major code hosts
+                                    <Tooltip content="GitHub, GitLab, BitBucket, Gerrit, Azure DevOps">
+                                        <Icon
+                                            className="ml-1 text-muted"
+                                            svgPath={mdiInformationOutline}
+                                            aria-hidden={true}
+                                        />
+                                    </Tooltip>
+                                </Text>
+                            </div>
+                            <div className="border-bottom py-4">
+                                <Text weight="bold" className="mb-3">
                                     Support
-                                </Text>{' '}
-                                <Text className="d-inline text-muted">Community support only</Text>
+                                </Text>
+                                <Text className="d-inline text-muted">Community support through Discord</Text>
                             </div>
                         </div>
                     </div>
-                    <div className="border d-flex flex-column flex-1 bg-1 border p-3">
-                        <div className="border-bottom pb-3">
-                            <H1 className={classNames('mb-1', styles.enterpriseColor)}>Enterprise</H1>
-                            <Text className={classNames('mb-0', styles.enterpriseColorLight)} size="small">
-                                Best for teams
+                    <div className="border d-flex flex-column flex-1 bg-1 border p-3 rounded">
+                        <div className="border-bottom pb-4">
+                            <H1 className="mb-1 d-flex align-items-center">
+                                Enterprise{' '}
+                                <Badge variant="secondary" className="ml-1">
+                                    coming soon
+                                </Badge>
+                            </H1>
+                            <Text className="mb-0" size="small">
+                                Best for large teams and enterprises
                             </Text>
                         </div>
                         <div className="d-flex flex-column border-bottom py-4">
-                            <H3 className={classNames('text-muted', codyProEnabled ? 'mb-2' : 'mb-4')}>
-                                Custom pricing
-                            </H3>
+                            <div className="mb-1">
+                                <H2 className={classNames('text-muted d-inline mb-0')}>19$</H2>
+                                <Text className="mb-0 text-muted d-inline">/ user / month</Text>
+                            </div>
+                            <Text className="mb-3 text-muted" size="small">
+                                25 users minimum
+                            </Text>
                             <ButtonLink
                                 className="flex-1 mt-3"
                                 variant="secondary"
@@ -244,47 +344,67 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </ButtonLink>
                         </div>
                         <div className="border-bottom py-4">
-                            <Text weight="bold" className={classNames('d-inline', styles.amazing)}>
+                            <Text weight="bold" className="d-inline">
                                 Unlimited
                             </Text>{' '}
                             <Text className="d-inline text-muted">Autocompletions per month</Text>
                         </div>
                         <div className="border-bottom py-4">
-                            <Text weight="bold" className={classNames('d-inline', styles.amazing)}>
+                            <Text weight="bold" className="d-inline">
                                 Unlimited
                             </Text>{' '}
                             <Text className="d-inline text-muted">Messages and Commands per month</Text>
                         </div>
                         <div className="border-bottom py-4">
-                            <div className="mb-1">
-                                <Text weight="bold" className={classNames('d-inline mb-0', styles.amazing)}>
-                                    Unlimited
-                                </Text>{' '}
-                                <Text className="d-inline text-muted mb-0">Private Code Embeddings</Text>
-                            </div>
-                            <Text className="mb-1 text-muted">Current project with keyword search</Text>
-                            <Text className="mb-0 text-muted">Embeddings on some public repo</Text>
+                            <Text className="text-muted mb-0">Out-of-the-box and custom commands</Text>
                         </div>
                         <div className="border-bottom py-4">
-                            <Text weight="bold" className="mb-1">
+                            <Text weight="bold" className="mb-3 d-inline-block">
+                                Code context and personalization
+                                <Tooltip content="Advanced code context is used to personalize Cody's responses to a user's own codebase">
+                                    <Icon
+                                        className="ml-1 text-muted"
+                                        svgPath={mdiInformationOutline}
+                                        aria-hidden={true}
+                                    />
+                                </Tooltip>
+                            </Text>
+                            <Text className="mb-0 text-muted">Personalization for larger codebases</Text>
+                        </div>
+                        <div className="border-bottom py-4">
+                            <Text weight="bold" className="mb-3 d-inline-block">
+                                LLM Support
+                            </Text>
+                            <Text className="mb-1 text-muted">
+                                Flexible LLM choices
+                                <Tooltip content="Claude Instant 1.2, Claude 2, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo Preview">
+                                    <Icon
+                                        className="ml-1 text-muted"
+                                        svgPath={mdiInformationOutline}
+                                        aria-hidden={true}
+                                    />
+                                </Tooltip>
+                            </Text>
+                            <Text className="mb-1 text-muted">
+                                Bring your own LLM Key <Badge variant="secondary">experimental</Badge>
+                            </Text>
+                            <Text className="mb-0 text-muted">
+                                Bring your own LLM <Badge variant="secondary">coming soon</Badge>
+                            </Text>
+                        </div>
+                        <div className="border-bottom py-4">
+                            <Text weight="bold" className="mb-3">
                                 Enterprise Features
                             </Text>
-                            <Text className="mb-1 text-muted">Bring your own LLM</Text>
-                            <Text className="mb-0 text-muted">Single Tenant</Text>
-                            <Text className="mb-0 text-muted">SAML / SSO</Text>
-                            <Text className="mb-0 text-muted">Guardrails</Text>
-                        </div>
-                        <div className="border-bottom py-4">
-                            <Text weight="bold" className="mb-1">
-                                Code editor support
-                            </Text>{' '}
-                            <Text className="d-inline text-muted">All supported Code Editors</Text>
-                        </div>
-                        <div className="py-4">
-                            <Text weight="bold" className="mb-1">
-                                Support
-                            </Text>{' '}
-                            <Text className="d-inline text-muted">Community support only</Text>
+                            <Text className="mb-1 text-muted">Everything in Pro plus...</Text>
+                            <Text className="mb-1 text-muted">Enterprise support</Text>
+                            <Text className="mb-1 text-muted">Flexible deployment options</Text>
+                            <Text className="mb-1 text-muted">
+                                Enterprise admin and security features (SSO, SAML, SCIM, Audit Logs, etc.)
+                            </Text>
+                            <Text className="mb-1 text-muted">
+                                Guardrails <Badge variant="secondary">Coming Soon</Badge>
+                            </Text>
                         </div>
                     </div>
                 </div>
@@ -293,6 +413,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                 <UpgradeToProModal
                     onClose={() => {
                         setShowUpgradeToPro(false)
+                        navigate('/cody/manage')
                     }}
                     authenticatedUser={authenticatedUser}
                 />

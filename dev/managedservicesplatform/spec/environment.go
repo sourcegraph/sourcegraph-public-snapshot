@@ -134,14 +134,30 @@ type EnvironmentServiceSpec struct {
 	// Only supported for services of 'kind: service'.
 	Domain *EnvironmentServiceDomainSpec `json:"domain,omitempty"`
 	// StatupProbe is provisioned by default. It can be disabled with the
-	// 'disabled' field.
+	// 'disabled' field. Probes are made to the MSP-standard '/-/healthz'
+	// endpoint.
 	//
 	// Only supported for services of 'kind: service'.
 	StatupProbe *EnvironmentServiceStartupProbeSpec `json:"startupProbe,omitempty"`
-	// LivenessProbe is only provisioned if this field is set.
+	// LivenessProbe is only provisioned if this field is set. Probes are made
+	// to the MSP-standard '/-/healthz' endpoint.
 	//
 	// Only supported for services of 'kind: service'.
 	LivenessProbe *EnvironmentServiceLivenessProbeSpec `json:"livenessProbe,omitempty"`
+	// Authentication configures access to the service. By default, the service
+	// is publically available, and the service should handle any required
+	// authentication by itself. Set this field to an empty value to not
+	// configure any access to the service at all.
+	//
+	// More complex strategies, such as granting access to specific groups,
+	// should add custom resources in the MSP IAM module defining
+	// 'google_cloud_run_v2_service_iam_member' for 'roles/run.invoker' on
+	// 'local.cloud_run_resource_name' and 'local.cloud_run_location' as 'name'
+	// and 'location' respectively:
+	// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service_iam
+	//
+	// Only supported for services of 'kind: service'.
+	Authentication *EnvironmentServiceAuthenticationSpec `json:"authentication,omitempty"`
 }
 
 type EnvironmentServiceDomainSpec struct {
@@ -223,6 +239,12 @@ type EnvironmentServiceLivenessProbeSpec struct {
 	//
 	// Defaults to 1 second.
 	Interval *int `json:"interval,omitempty"`
+}
+
+type EnvironmentServiceAuthenticationSpec struct {
+	// Sourcegraph enables access to everyone in the sourcegraph.com GSuite
+	// domain.
+	Sourcegraph *bool `json:"sourcegraph,omitempty"`
 }
 
 type EnvironmentServiceStartupProbeSpec struct {

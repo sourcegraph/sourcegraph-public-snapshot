@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/dnaeon/go-vcr/cassette"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
-	"gotest.tools/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
