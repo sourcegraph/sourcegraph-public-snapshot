@@ -3,6 +3,7 @@ import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { CopyPathAction } from '@sourcegraph/branded'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H1, H2, Icon, Link } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
@@ -70,7 +71,13 @@ const onLifecyclePropsChange = (lifecycleProps: RepoHeaderContributionsLifecycle
     lifecycleProps.repoHeaderContributionsLifecycleProps?.onRepoHeaderContributionAdd({
         id: 'copy-path',
         position: 'left',
-        children: () => <CopyPathAction filePath="foobar" telemetryService={NOOP_TELEMETRY_SERVICE} />,
+        children: () => (
+            <CopyPathAction
+                filePath="foobar"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
+            />
+        ),
     })
     lifecycleProps.repoHeaderContributionsLifecycleProps?.onRepoHeaderContributionAdd({
         id: 'go-to-permalink',
@@ -78,6 +85,7 @@ const onLifecyclePropsChange = (lifecycleProps: RepoHeaderContributionsLifecycle
         children: () => (
             <GoToPermalinkAction
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 revision="main"
                 commitID="123"
                 repoName="sourcegraph/sourcegraph"
@@ -132,6 +140,7 @@ const createBreadcrumbs = (path: string) => [
                     filePath={path}
                     isDir={false}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             ),
         },
@@ -149,6 +158,7 @@ const createProps = (path: string, forceWrap: boolean = false): React.ComponentP
     authenticatedUser: mockUser,
     platformContext: {} as any,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    telemetryRecorder: noOpTelemetryRecorder,
     forceWrap,
 })
 

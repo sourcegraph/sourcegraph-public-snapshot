@@ -85,6 +85,7 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
     now,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const migrationsOrError = useObservable(
         useMemo(

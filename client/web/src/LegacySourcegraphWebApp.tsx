@@ -223,6 +223,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
             viewerSubject: this.state.viewerSubject,
             settingsCascade: this.state.settingsCascade,
             extensionsController: this.extensionsController,
+            telemetryRecorder: this.state.platformContext.telemetryRecorder,
         }
 
         const router = createBrowserRouter(
@@ -237,6 +238,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
                             fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
                             telemetryService={eventLogger}
+                            telemetryRecorder={this.state.platformContext.telemetryRecorder}
                             isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                             isCodyApp={window.context.codyAppMode}
                             isSearchContextSpecAvailable={isSearchContextSpecAvailable}

@@ -30,7 +30,8 @@ interface CaptureGroupCreationPageProps extends TelemetryProps {
 }
 
 export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props => {
-    const { backUrl, telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
+    const { backUrl, telemetryService, telemetryRecorder, onInsightCreateRequest, onSuccessfulCreation, onCancel } =
+        props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -39,7 +40,8 @@ export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsCaptureGroupCreationPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('codeInsightsCaptureGroupCreationPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const handleSubmit = async (values: CaptureGroupFormFields): Promise<SubmissionErrors | void> => {
         const insight = getSanitizedCaptureGroupInsight(values)
@@ -48,11 +50,15 @@ export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props
 
         setInitialFormValues(undefined)
         telemetryService.log('CodeInsightsCaptureGroupCreationPageSubmitClick')
+        telemetryRecorder.recordEvent('codeInsightsCaptureGroupCreationPageSubmit', 'clicked')
         telemetryService.log(
             'InsightAddition',
             { insightType: CodeInsightTrackType.CaptureGroupInsight },
             { insightType: CodeInsightTrackType.CaptureGroupInsight }
         )
+        telemetryRecorder.recordEvent('insightAddition', 'added', {
+            privateMetadata: { insightType: CodeInsightTrackType.CaptureGroupInsight },
+        })
 
         onSuccessfulCreation()
     }
@@ -61,6 +67,7 @@ export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props
         // Clear initial values if user successfully created search insight
         setInitialFormValues(undefined)
         telemetryService.log('CodeInsightsCaptureGroupCreationPageCancelClick')
+        telemetryRecorder.recordEvent('codeInsightsCaptureGroupCreationPageCancel', 'clicked')
 
         onCancel()
     }

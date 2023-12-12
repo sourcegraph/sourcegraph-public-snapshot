@@ -26,10 +26,12 @@ interface Props extends TelemetryProps {}
 
 export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminWebhooks')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminWebhooks', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const { loading, hasNextPage, fetchMore, connection, error } = useWebhooksConnection()
     const headerTotals = useWebhookPageHeader()

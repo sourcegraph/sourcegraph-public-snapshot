@@ -78,6 +78,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                 revision={context.revision}
                 settingsCascade={context.settingsCascade}
                 telemetryService={context.telemetryService}
+                telemetryRecorder={context.telemetryRecorder}
                 authenticatedUser={context.authenticatedUser}
                 isSourcegraphDotCom={context.isSourcegraphDotCom}
                 commitID={resolvedRevision?.commitID}

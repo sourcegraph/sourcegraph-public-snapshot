@@ -24,6 +24,7 @@ export const DetachChangesetsModal: React.FunctionComponent<React.PropsWithChild
     batchChangeID,
     changesetIDs,
     telemetryService,
+    telemetryRecorder,
     detachChangesets = _detachChangesets,
 }) => {
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
@@ -33,11 +34,12 @@ export const DetachChangesetsModal: React.FunctionComponent<React.PropsWithChild
         try {
             await detachChangesets(batchChangeID, changesetIDs)
             telemetryService.logViewEvent('BatchChangeDetailsPageDetachArchivedChangesets')
+            telemetryRecorder.recordEvent('batchChageDetailsPageDetachArchivedChangesets', 'viewed')
             afterCreate()
         } catch (error) {
             setIsLoading(asError(error))
         }
-    }, [changesetIDs, detachChangesets, batchChangeID, telemetryService, afterCreate])
+    }, [changesetIDs, detachChangesets, batchChangeID, telemetryService, telemetryRecorder, afterCreate])
 
     const labelId = 'detach-changesets-modal-title'
 

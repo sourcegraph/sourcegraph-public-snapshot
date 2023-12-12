@@ -25,6 +25,7 @@ export const InferenceScriptEditor: FunctionComponent<InferenceScriptEditorProps
     setPreviewScript,
     authenticatedUser,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const { updateInferenceScript, isUpdating, updatingError } = useUpdateInferenceScript()
 
@@ -77,6 +78,7 @@ export const InferenceScriptEditor: FunctionComponent<InferenceScriptEditorProps
                 height={600}
                 isLightTheme={isLightTheme}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 customSaveToolbar={authenticatedUser?.siteAdmin ? customToolbar : undefined}
                 onDirtyChange={setDirty}
             />

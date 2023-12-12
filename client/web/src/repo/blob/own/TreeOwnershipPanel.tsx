@@ -29,11 +29,13 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     revision,
     filePath,
     telemetryService,
+    telemetryRecorder,
     showAddOwnerButton,
 }) => {
     useEffect(() => {
         telemetryService.log('OwnershipPanelOpened')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('ownershipPanel', 'opened')
+    }, [telemetryService, telemetryRecorder])
 
     const { data, loading, error, refetch } = useQuery<FetchTreeOwnershipResult, FetchTreeOwnershipVariables>(
         FETCH_TREE_OWNERS,

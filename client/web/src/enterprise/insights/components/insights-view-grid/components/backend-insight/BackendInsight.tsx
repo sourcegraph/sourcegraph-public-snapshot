@@ -42,7 +42,7 @@ interface BackendInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement
 }
 
 export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((props, ref) => {
-    const { telemetryService, insight, resizing, children, className, ...attributes } = props
+    const { telemetryService, telemetryRecorder, insight, resizing, children, className, ...attributes } = props
 
     const { currentDashboard } = useContext(InsightContext)
     const { updateInsight } = useContext(CodeInsightsBackendContext)
@@ -122,6 +122,11 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
         await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
 
         telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
+        telemetryRecorder.recordEvent('codeInsightsSearchBasedFilter', 'updated', {
+            privateMetadata: {
+                insightType: getTrackingTypeByInsightType(insight.type),
+            },
+        })
         setOriginalInsightFilters(filters)
         setIsFiltersOpen(false)
     }
@@ -143,6 +148,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
 
     const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
+        telemetryRecorder,
         insightType: getTrackingTypeByInsightType(insight.type),
     })
 

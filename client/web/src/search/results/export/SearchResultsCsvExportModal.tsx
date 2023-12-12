@@ -23,6 +23,7 @@ const MODAL_LABEL_ID = 'search-results-export-csv-modal-id'
 
 export const SearchResultsCsvExportModal: React.FunctionComponent<SearchResultsCsvExportModalProps> = ({
     telemetryService,
+    telemetryRecorder,
     sourcegraphURL,
     query = '',
     options,
@@ -53,6 +54,7 @@ export const SearchResultsCsvExportModal: React.FunctionComponent<SearchResultsC
 
         if (query.includes('select:file.owners')) {
             telemetryService.log('searchResults:ownershipCsv:exported')
+            telemetryRecorder.recordEvent('searchResults.ownershipCsv', 'exported')
         }
 
         setLoading(true)
@@ -88,6 +90,7 @@ export const SearchResultsCsvExportModal: React.FunctionComponent<SearchResultsC
         results,
         shouldRerunSearch,
         telemetryService,
+        telemetryRecorder,
         onClose,
     ])
 

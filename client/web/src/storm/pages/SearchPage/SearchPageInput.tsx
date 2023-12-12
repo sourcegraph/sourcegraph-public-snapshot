@@ -60,6 +60,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         authenticatedUser,
         isSourcegraphDotCom,
         telemetryService,
+        telemetryRecorder,
         platformContext,
         searchContextsEnabled,
         settingsCascade,
@@ -136,6 +137,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
     const input = experimentalQueryInput ? (
         <LazyExperimentalSearchInput
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
             patternType={patternType}
             interpretComments={false}
             queryState={queryState}
@@ -173,6 +175,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             selectedSearchContextSpec={selectedSearchContextSpec}
             setSelectedSearchContextSpec={setSelectedSearchContextSpec}
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
             authenticatedUser={authenticatedUser}
             isSourcegraphDotCom={isSourcegraphDotCom}
             settingsCascade={settingsCascade}
@@ -213,6 +216,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                     <hr className="mt-4 mb-4" />
                     <SimpleSearch
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         onSubmit={onSubmit}
                         onSimpleSearchUpdate={onSimpleSearchUpdate}
                     />

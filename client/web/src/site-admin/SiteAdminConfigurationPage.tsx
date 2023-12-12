@@ -437,6 +437,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                                 onSave={this.onSave}
                                 actions={this.props.isCodyApp ? [] : quickConfigureActions}
                                 telemetryService={this.props.telemetryService}
+                                telemetryRecorder={this.props.telemetryRecorder}
                                 explanation={
                                     <Text className="form-text text-muted">
                                         <small>

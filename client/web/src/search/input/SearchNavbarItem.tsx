@@ -90,6 +90,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 <LazyExperimentalSearchInput
                     visualMode="compact"
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.telemetryRecorder}
                     patternType={searchPatternType}
                     interpretComments={false}
                     queryState={queryState}

@@ -63,11 +63,12 @@ const routineTypeToIcon: Record<BackgroundRoutineType, string> = {
 
 export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminBackgroundJobsPageProps>
-> = ({ telemetryService }) => {
+> = ({ telemetryService, telemetryRecorder }) => {
     // Log page view
     useEffect(() => {
         telemetryService.logPageView('SiteAdminBackgroundJobs')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminBackgroundJobs', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     // Data query and polling setting
     const { data, loading, error, stopPolling, startPolling } = useQuery<BackgroundJobsResult, BackgroundJobsVariables>(

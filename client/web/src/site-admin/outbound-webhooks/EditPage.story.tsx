@@ -1,6 +1,7 @@
 import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -24,7 +25,7 @@ export const Page: Story = () => (
             <MockedTestProvider
                 link={new WildcardMockLink([logConnectionLink, buildOutboundWebhookMock(''), eventTypesMock])}
             >
-                <EditPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+                <EditPage telemetryService={NOOP_TELEMETRY_SERVICE} telemetryRecorder={noOpTelemetryRecorder} />
             </MockedTestProvider>
         )}
     </WebStory>

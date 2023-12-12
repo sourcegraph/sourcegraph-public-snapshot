@@ -128,7 +128,7 @@ export const TreePage: FC<Props> = ({
             props.telemetryService.logViewEvent('Tree')
             props.telemetryRecorder.recordEvent('tree', 'viewed')
         }
-    }, [isRoot, props.telemetryService])
+    }, [isRoot, props.telemetryService, props.telemetryRecorder])
 
     useBreadcrumb(
         useMemo(() => {

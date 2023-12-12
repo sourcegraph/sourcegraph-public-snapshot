@@ -18,13 +18,18 @@ interface CreationRoutesProps extends TelemetryProps {}
  * Renders code insights creation routes (insight creation UI pages, creation intro page)
  */
 export const CreationRoutes: FC<CreationRoutesProps> = props => {
-    const { telemetryService } = props
+    const { telemetryService, telemetryRecorder } = props
 
     const codeInsightsCompute = useExperimentalFeatures(settings => settings.codeInsightsCompute)
 
     return (
         <Routes>
-            <Route index={true} element={<IntroCreationLazyPage telemetryService={telemetryService} />} />
+            <Route
+                index={true}
+                element={
+                    <IntroCreationLazyPage telemetryService={telemetryService} telemetryRecorder={telemetryRecorder} />
+                }
+            />
 
             <Route
                 path="search"
@@ -32,6 +37,7 @@ export const CreationRoutes: FC<CreationRoutesProps> = props => {
                     <InsightCreationLazyPage
                         mode={InsightCreationPageType.Search}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 }
             />
@@ -42,6 +48,7 @@ export const CreationRoutes: FC<CreationRoutesProps> = props => {
                     <InsightCreationLazyPage
                         mode={InsightCreationPageType.CaptureGroup}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 }
             />
@@ -52,6 +59,7 @@ export const CreationRoutes: FC<CreationRoutesProps> = props => {
                     <InsightCreationLazyPage
                         mode={InsightCreationPageType.LangStats}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 }
             />
@@ -63,6 +71,7 @@ export const CreationRoutes: FC<CreationRoutesProps> = props => {
                         <InsightCreationLazyPage
                             mode={InsightCreationPageType.Compute}
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                         />
                     }
                 />

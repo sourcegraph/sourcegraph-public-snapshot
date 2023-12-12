@@ -15,10 +15,11 @@ import styles from './SiteAdminGitserversPage.module.scss'
 
 export interface GitserversPageProps extends TelemetryProps {}
 
-export const SiteAdminGitserversPage: FC<GitserversPageProps> = ({ telemetryService }) => {
+export const SiteAdminGitserversPage: FC<GitserversPageProps> = ({ telemetryService, telemetryRecorder }) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminGitserversPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminGitserversPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const { data, loading, error } = useGitserversConnection()
 

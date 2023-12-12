@@ -51,6 +51,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<React.PropsWithChildre
             input,
             output,
             telemetryService,
+            telemetryRecorder,
             isSelected,
             showMenu,
             isReadOnly,
@@ -139,7 +140,8 @@ export const NotebookSymbolBlock: React.FunctionComponent<React.PropsWithChildre
 
             const logEventOnCopy = useCallback(() => {
                 telemetryService.log(...codeCopiedEvent('notebook-symbols'))
-            }, [telemetryService])
+                telemetryRecorder.recordEvent('codeCopied.notebookSymbols', 'copied')
+            }, [telemetryService, telemetryRecorder])
 
             return (
                 <NotebookBlock

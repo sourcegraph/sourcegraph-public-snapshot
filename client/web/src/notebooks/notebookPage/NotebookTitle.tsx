@@ -18,6 +18,7 @@ export const NotebookTitle: React.FunctionComponent<React.PropsWithChildren<Note
     viewerCanManage,
     onUpdateTitle,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const [isEditing, setIsEditing] = useState(false)
     const [title, setTitle] = useState(initialTitle)
@@ -31,6 +32,7 @@ export const NotebookTitle: React.FunctionComponent<React.PropsWithChildren<Note
 
     const updateTitle = (): void => {
         telemetryService.log('SearchNotebookTitleUpdated')
+        telemetryRecorder.recordEvent('searchNotebookTitle', 'updated')
         setIsEditing(false)
         onUpdateTitle(title)
     }

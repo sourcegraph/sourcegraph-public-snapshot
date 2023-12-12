@@ -46,7 +46,9 @@ export const enterpriseRoutes: RouteObject[] = [
         handle: { isFullPage: true },
         element: (
             <LegacyRoute
-                render={props => <AppSetup telemetryService={props.telemetryService} />}
+                render={props => (
+                    <AppSetup telemetryService={props.telemetryService} telemetryRecorder={props.telemetryRecorder} />
+                )}
                 condition={({ isCodyApp }) => isCodyApp}
             />
         ),
@@ -84,6 +86,7 @@ export const enterpriseRoutes: RouteObject[] = [
                     <SearchJob
                         isAdmin={props.authenticatedUser?.siteAdmin ?? false}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                     />
                 )}
                 condition={isSearchJobsEnabled}
@@ -137,7 +140,12 @@ export const enterpriseRoutes: RouteObject[] = [
     },
     {
         path: EnterprisePageRoutes.AppAuthCallback,
-        element: <LegacyRoute render={() => <AppAuthCallbackPage />} condition={({ isCodyApp }) => isCodyApp} />,
+        element: (
+            <LegacyRoute
+                render={props => <AppAuthCallbackPage {...props} />}
+                condition={({ isCodyApp }) => isCodyApp}
+            />
+        ),
     },
     ...routes,
 ]

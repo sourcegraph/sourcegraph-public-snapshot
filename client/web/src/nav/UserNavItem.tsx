@@ -63,6 +63,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
         showFeedbackModal,
         showKeyboardShortcutsHelp,
         telemetryService,
+        telemetryRecorder,
     } = props
 
     const { themeSetting, setThemeSetting } = useTheme()
@@ -91,9 +92,10 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const onExperimentalQueryInputChange = useCallback(
         (enabled: boolean) => {
             telemetryService.log(`SearchInputToggle${enabled ? 'On' : 'Off'}`)
+            telemetryRecorder.recordEvent('searchInputToggle', `${enabled}? 'enabled' : 'disabled'`)
             setExperimentalQueryInputEnabled(enabled)
         },
-        [telemetryService, setExperimentalQueryInputEnabled]
+        [telemetryService, telemetryRecorder, setExperimentalQueryInputEnabled]
     )
 
     return (

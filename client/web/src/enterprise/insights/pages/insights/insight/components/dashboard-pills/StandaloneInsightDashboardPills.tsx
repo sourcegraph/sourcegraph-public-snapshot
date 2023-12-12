@@ -16,10 +16,11 @@ interface StandaloneInsightDashboardPillsProps extends HTMLAttributes<HTMLDivEle
 }
 
 export const StandaloneInsightDashboardPills: FunctionComponent<StandaloneInsightDashboardPillsProps> = props => {
-    const { dashboards, insightId, className, telemetryService, ...attributes } = props
+    const { dashboards, insightId, className, telemetryService, telemetryRecorder, ...attributes } = props
 
     const handleDashboardClick = (): void => {
         telemetryService.log('StandaloneInsightDashboardClick')
+        telemetryRecorder.recordEvent('standaloneInsightDashboard', 'clicked')
     }
 
     return (

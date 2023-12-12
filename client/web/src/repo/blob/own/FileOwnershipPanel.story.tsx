@@ -2,6 +2,7 @@ import type { MockedResponse } from '@apollo/client/testing'
 import type { Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../components/WebStory'
@@ -186,6 +187,7 @@ export const Default: Story = () => (
                 repoID="github.com/sourcegraph/sourcegraph"
                 filePath="README.md"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         )}
     </WebStory>

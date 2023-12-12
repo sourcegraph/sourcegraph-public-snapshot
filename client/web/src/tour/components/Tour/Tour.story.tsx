@@ -3,6 +3,7 @@ import React from 'react'
 import type { Meta, DecoratorFn } from '@storybook/react'
 
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../components/WebStory'
@@ -35,6 +36,7 @@ export default config
 export const AuthenticatedDefault: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <Tour
         telemetryService={NOOP_TELEMETRY_SERVICE}
+        telemetryRecorder={noOpTelemetryRecorder}
         id="TourStorybook"
         tasks={authenticatedTasks}
         variant="horizontal"
@@ -55,6 +57,7 @@ export const AuthenticatedWithCompletedSteps: React.FunctionComponent<React.Prop
     >
         <Tour
             telemetryService={NOOP_TELEMETRY_SERVICE}
+            telemetryRecorder={noOpTelemetryRecorder}
             id="TourStorybook"
             tasks={authenticatedTasks}
             variant="horizontal"
@@ -76,6 +79,7 @@ export const AuthenticatedWithCompletedTask: React.FunctionComponent<React.Props
     >
         <Tour
             telemetryService={NOOP_TELEMETRY_SERVICE}
+            telemetryRecorder={noOpTelemetryRecorder}
             id="TourStorybook"
             tasks={authenticatedTasks}
             variant="horizontal"

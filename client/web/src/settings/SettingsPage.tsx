@@ -34,6 +34,7 @@ export class SettingsPage extends React.PureComponent<Props, State> {
                     onDidDiscard={this.onDidDiscard}
                     isLightTheme={this.props.isLightTheme}
                     telemetryService={this.props.telemetryService}
+                    telemetryRecorder={this.props.telemetryRecorder}
                 />
             </Container>
         )

@@ -55,6 +55,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     onSignUp,
     context,
     telemetryService,
+    telemetryRecorder,
     isSourcegraphDotCom,
 }) => {
     const location = useLocation()
@@ -81,6 +82,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     const logEventAndSetFlags = (type: AuthProvider['serviceType']): void => {
         const eventType = type === 'builtin' ? 'form' : type
         telemetryService.log('SignupInitiated', { type: eventType }, { type: eventType })
+        telemetryRecorder.recordEvent(`${eventType}.signupInitiated`, 'initiated')
     }
 
     const signUpForm = (

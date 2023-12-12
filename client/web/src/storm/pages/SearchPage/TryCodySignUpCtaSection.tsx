@@ -69,9 +69,12 @@ const MeetCodySVG: React.FC = () => (
 export const TryCodySignUpCtaSection: React.FC<TelemetryProps & { className?: string }> = ({
     className,
     telemetryService,
+    telemetryRecorder,
 }) => {
-    const onSignUpClick = (): void =>
+    const onSignUpClick = (): void => {
         telemetryService.log(EventName.CODY_SIGNUP, { type: 'ComHome' }, { type: 'ComHome' })
+        telemetryRecorder.recordEvent(EventName.CODY_SIGNUP, 'clicked')
+    }
 
     return (
         <div className={classNames('d-flex', className, styles.container)}>

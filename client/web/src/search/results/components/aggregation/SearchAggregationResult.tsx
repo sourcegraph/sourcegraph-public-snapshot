@@ -42,7 +42,8 @@ interface SearchAggregationResultProps extends TelemetryProps, HTMLAttributes<HT
 }
 
 export const SearchAggregationResult: FC<SearchAggregationResultProps> = props => {
-    const { query, patternType, caseSensitive, onQuerySubmit, telemetryService, ...attributes } = props
+    const { query, patternType, caseSensitive, onQuerySubmit, telemetryService, telemetryRecorder, ...attributes } =
+        props
 
     const [extendedTimeout, setExtendedTimeoutLocal] = useState(false)
     const [, setAggregationUIMode] = useAggregationUIMode()
@@ -55,11 +56,15 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
         proactive: true,
         extendedTimeout,
         telemetryService,
+        telemetryRecorder,
     })
 
     const handleCollapseClick = (): void => {
         setAggregationUIMode(AggregationUIMode.Sidebar)
         telemetryService.log(GroupResultsPing.CollapseFullViewPanel, { aggregationMode }, { aggregationMode })
+        telemetryRecorder.recordEvent(GroupResultsPing.CollapseFullViewPanel, 'clicked', {
+            privateMetadata: { aggregationMode },
+        })
     }
 
     const handleBarLinkClick = (query: string, index: number): void => {
@@ -74,6 +79,9 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
             { aggregationMode, index, uiMode: 'resultsScreen' },
             { aggregationMode, index, uiMode: 'resultsScreen' }
         )
+        telemetryRecorder.recordEvent(GroupResultsPing.ChartBarClick, 'clicked', {
+            privateMetadata: { aggregationMode, index, uiMode: 'resultsScreen' },
+        })
     }
 
     const handleBarHover = (): void => {
@@ -82,6 +90,9 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
             { aggregationMode, uiMode: 'resultsScreen' },
             { aggregationMode, uiMode: 'resultsScreen' }
         )
+        telemetryRecorder.recordEvent(GroupResultsPing.ChartBarHover, 'hovered', {
+            privateMetadata: { aggregationMode, uiMode: 'resultsScreen' },
+        })
     }
 
     const handleAggregationModeChange = (mode: SearchAggregationMode): void => {
@@ -91,6 +102,9 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
             { aggregationMode: mode, uiMode: 'resultsScreen' },
             { aggregationMode: mode, uiMode: 'resultsScreen' }
         )
+        telemetryRecorder.recordEvent(GroupResultsPing.ModeClick, 'clicked', {
+            privateMetadata: { aggregationMode: mode, uiMode: 'resultsScreen' },
+        })
     }
 
     const handleAggregationModeHover = (aggregationMode: SearchAggregationMode, available: boolean): void => {
@@ -100,6 +114,9 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                 { aggregationMode, uiMode: 'resultsScreen' },
                 { aggregationMode, uiMode: 'resultsScreen' }
             )
+            telemetryRecorder.recordEvent(GroupResultsPing.ModeDisabledHover, 'disabled', {
+                privateMetadata: { aggregationMode, uiMode: 'resultsScreen' },
+            })
         }
     }
 

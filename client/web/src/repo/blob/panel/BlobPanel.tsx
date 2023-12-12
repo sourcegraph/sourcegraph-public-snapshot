@@ -156,6 +156,7 @@ function useBlobPanelViews({
             platformContext,
             extensionsController,
             telemetryService,
+            telemetryRecorder,
             fetchHighlightedFileLineRanges,
             useCodeIntel,
             repoID,

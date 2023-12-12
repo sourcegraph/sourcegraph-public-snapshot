@@ -47,7 +47,7 @@ interface CodeHostEditProps extends TelemetryProps {
  * Also performs edit, delete actions over opened code host connection
  */
 export const CodeHostEdit: FC<CodeHostEditProps> = props => {
-    const { onCodeHostDelete, telemetryService } = props
+    const { onCodeHostDelete, telemetryService, telemetryRecorder } = props
     const { codehostId } = useParams()
 
     const { data, loading, error, refetch } = useQuery<GetExternalServiceByIdResult, GetExternalServiceByIdVariables>(
@@ -94,6 +94,7 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
             displayName={data.node.displayName}
             configuration={data.node.config}
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
         >
             {state => (
                 <footer className={styles.footer}>
@@ -134,7 +135,8 @@ interface CodeHostEditViewProps extends TelemetryProps {
 }
 
 const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
-    const { codeHostId, codeHostKind, displayName, configuration, telemetryService, children } = props
+    const { codeHostId, codeHostKind, displayName, configuration, telemetryService, telemetryRecorder, children } =
+        props
 
     const navigate = useNavigate()
     const [updateRemoteCodeHost] = useMutation<UpdateRemoteCodeHostResult, UpdateRemoteCodeHostVariables>(
@@ -162,6 +164,7 @@ const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
                 initialValues={initialValues}
                 externalServiceId={codeHostId}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 onSubmit={handleSubmit}
             >
                 {children}

@@ -76,12 +76,15 @@ interface TryCodyCtaSectionProps extends TelemetryProps {
 export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
     className,
     telemetryService,
+    telemetryRecorder,
     isSourcegraphDotCom,
 }) => {
     const [isDismissed = true, setIsDismissed] = useTemporarySetting('cody.searchPageCta.dismissed', false)
     const onDismiss = (): void => setIsDismissed(true)
-    const logEvent = (eventName: EventName): void =>
+    const logEvent = (eventName: EventName): void => {
         telemetryService.log(eventName, { type: 'ComHome' }, { type: 'ComHome' })
+        telemetryRecorder.recordEvent(eventName, 'clicked')
+    }
     const onViewEditorExtensionsClick = (): void => logEvent(EventName.VIEW_EDITOR_EXTENSIONS)
     const onTryWebClick = (): void => logEvent(EventName.TRY_CODY_WEB)
 

@@ -7,6 +7,7 @@ import { pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
@@ -75,11 +76,15 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     openTab,
     settingsCascade,
     telemetryService,
+    telemetryRecorder,
     isSourcegraphDotCom,
     authenticatedUser,
 }) => {
     const location = useLocation()
-    useEffect(() => telemetryService.logViewEvent('BatchChangesListPage'), [telemetryService])
+    useEffect(() => {
+        telemetryService.logViewEvent('BatchChangesListPage')
+        telemetryRecorder.recordEvent('batchChangesListPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
     const isBatchChangesLicensed = !!window.context.licenseInfo?.batchChanges?.unrestricted
@@ -162,7 +167,10 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                             as={Link}
                             to="https://about.sourcegraph.com"
                             variant="primary"
-                            onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryBatchChanges' })}
+                            onClick={() => {
+                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryBatchChanges' })
+                                telemetryRecorder.recordEvent('clickedOnEnterpriseCTA.tryBatchChanges', 'clicked')
+                            }}
                         >
                             Get Sourcegraph Enterprise
                         </Button>
@@ -179,7 +187,11 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
             </PageHeader>
             <BatchChangesListIntro isLicensed={isBatchChangesLicensed} viewerIsAdmin={!!authenticatedUser?.siteAdmin} />
             {!isSourcegraphDotCom && canUseBatchChanges && (
-                <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+                <BatchChangeListTabHeader
+                    selectedTab={selectedTab}
+                    setSelectedTab={setSelectedTab}
+                    telemetryRecorder={telemetryRecorder}
+                />
             )}
             {selectedTab === 'gettingStarted' && (
                 <GettingStarted canCreate={canCreate} isSourcegraphDotCom={isSourcegraphDotCom} className="mb-4" />
@@ -305,8 +317,9 @@ const BatchChangeListTabHeader: React.FunctionComponent<
     React.PropsWithChildren<{
         selectedTab: SelectedTab
         setSelectedTab: (selectedTab: SelectedTab) => void
+        telemetryRecorder: TelemetryRecorder
     }>
-> = ({ selectedTab, setSelectedTab }) => {
+> = ({ selectedTab, setSelectedTab, telemetryRecorder }) => {
     const onSelectBatchChanges = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
@@ -343,6 +356,11 @@ const BatchChangeListTabHeader: React.FunctionComponent<
                         onClick={event => {
                             onSelectGettingStarted(event)
                             eventLogger.log('batch_change_homepage:getting_started:clicked')
+                            telemetryRecorder.recordEvent('batchChangeHomepage.gettingStarted', 'clicked')
+                            // window.context.telemetryRecorder.recordEvent(
+                            //     'batchChangeHomepage.gettingStarted',
+                            //     'clicked'
+                            // )
                         }}
                         className={classNames('nav-link', selectedTab === 'gettingStarted' && 'active')}
                         aria-selected={selectedTab === 'gettingStarted'}

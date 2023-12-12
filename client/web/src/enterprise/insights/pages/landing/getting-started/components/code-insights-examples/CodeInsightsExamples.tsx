@@ -33,7 +33,7 @@ const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL
  * code insights landing pages.
  */
 export const CodeInsightsExamples: FunctionComponent<CodeInsightsExamplesProps> = props => {
-    const { telemetryService, ...otherProps } = props
+    const { telemetryService, telemetryRecorder, ...otherProps } = props
     const { pathname, search } = useLocation()
 
     return (
@@ -50,6 +50,7 @@ export const CodeInsightsExamples: FunctionComponent<CodeInsightsExamplesProps> 
                     content={CSS_MODULES_VS_GLOBAL_STYLES_INSIGHT}
                     templateLink={`/insights/create/search?${SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS}`}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     className={styles.card}
                 />
 
@@ -58,6 +59,7 @@ export const CodeInsightsExamples: FunctionComponent<CodeInsightsExamplesProps> 
                     content={ALPINE_VERSIONS_INSIGHT}
                     templateLink={`/insights/create/capture-group?${CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS}`}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     className={styles.card}
                 />
             </div>

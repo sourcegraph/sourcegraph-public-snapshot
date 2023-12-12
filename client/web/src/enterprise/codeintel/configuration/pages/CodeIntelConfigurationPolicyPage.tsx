@@ -76,12 +76,16 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
     domain = 'scip',
     telemetryService,
+    telemetryRecorder,
 }) => {
     const navigate = useNavigate()
     const location = useLocation()
     const { id } = useParams<{ id: string }>()
 
-    useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPolicy'), [telemetryService])
+    useEffect(() => {
+        telemetryService.logViewEvent('CodeIntelConfigurationPolicy')
+        telemetryRecorder.recordEvent('coddeIntelConfigurationPolicy', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     // Handle local policy state
     const [policy, setPolicy] = useState<CodeIntelligenceConfigurationPolicyFields | undefined>()

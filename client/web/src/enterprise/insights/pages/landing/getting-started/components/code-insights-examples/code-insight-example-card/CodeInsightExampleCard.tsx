@@ -45,7 +45,7 @@ interface CodeInsightSearchExampleProps extends TelemetryProps {
 }
 
 const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps> = props => {
-    const { templateLink, className, content, telemetryService } = props
+    const { templateLink, className, content, telemetryService, telemetryRecorder } = props
     const seriesToggleState = useSeriesToggle()
 
     const { mode } = useContext(CodeInsightsLandingPageContext)
@@ -54,6 +54,7 @@ const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps>
 
     const { trackMouseEnter, trackMouseLeave } = useCodeInsightViewPings({
         telemetryService,
+        telemetryRecorder,
         insightType:
             mode === CodeInsightsLandingPageType.Cloud
                 ? CodeInsightTrackType.CloudLandingPageInsight
@@ -62,6 +63,7 @@ const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps>
 
     const handleTemplateLinkClick = (): void => {
         telemetryService.log(bigTemplateClickPingName)
+        telemetryRecorder.recordEvent('insightsGetStartedBigTemplate', 'clicked')
     }
 
     return (
@@ -128,6 +130,7 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
         templateLink,
         className,
         telemetryService,
+        telemetryRecorder,
     } = props
     const seriesToggleState = useSeriesToggle()
 
@@ -136,6 +139,7 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
 
     const { trackMouseEnter, trackMouseLeave } = useCodeInsightViewPings({
         telemetryService,
+        telemetryRecorder,
         insightType:
             mode === CodeInsightsLandingPageType.Cloud
                 ? CodeInsightTrackType.CloudLandingPageInsight
@@ -144,6 +148,7 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
 
     const handleTemplateLinkClick = (): void => {
         telemetryService.log(bigTemplateClickPingName)
+        telemetryRecorder.recordEvent('insightsGetStartedBigTemplate', 'clicked')
     }
 
     return (

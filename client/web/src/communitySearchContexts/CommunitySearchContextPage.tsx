@@ -52,11 +52,13 @@ export const CommunitySearchContextPage: React.FunctionComponent<
         query: '',
     })
 
-    useEffect(
-        () =>
-            props.telemetryService.logViewEvent(`CommunitySearchContext:${props.communitySearchContextMetadata.spec}`),
-        [props.communitySearchContextMetadata.spec, props.telemetryService]
-    )
+    useEffect(() => {
+        props.telemetryService.logViewEvent(`CommunitySearchContext:${props.communitySearchContextMetadata.spec}`)
+        props.telemetryRecorder.recordEvent(
+            `CommunitySearchContext:${props.communitySearchContextMetadata.spec}`,
+            'viewed'
+        )
+    }, [props.communitySearchContextMetadata.spec, props.telemetryService, props.telemetryRecorder])
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
 
     const contextQuery = `context:${props.communitySearchContextMetadata.spec}`

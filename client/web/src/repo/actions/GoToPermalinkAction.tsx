@@ -30,7 +30,7 @@ interface GoToPermalinkActionProps extends RepoHeaderContext, TelemetryProps {
  * Git commit SHA.
  */
 export const GoToPermalinkAction: React.FunctionComponent<GoToPermalinkActionProps> = props => {
-    const { revision, commitID, actionType, repoName, telemetryService } = props
+    const { revision, commitID, actionType, repoName, telemetryService, telemetryRecorder } = props
 
     const navigate = useNavigate()
     const location = useLocation()
@@ -63,6 +63,9 @@ export const GoToPermalinkAction: React.FunctionComponent<GoToPermalinkActionPro
 
     const onClick = (): void => {
         telemetryService.log('PermalinkClicked', { repoName, commitID })
+        telemetryRecorder.recordEvent('permalink', 'clicked', {
+            privateMetadata: { repoName, commitID },
+        })
     }
 
     if (actionType === 'dropdown') {

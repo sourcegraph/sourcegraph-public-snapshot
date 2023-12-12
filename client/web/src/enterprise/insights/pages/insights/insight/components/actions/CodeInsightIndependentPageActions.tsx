@@ -19,7 +19,7 @@ interface Props extends TelemetryProps {
 }
 
 export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props => {
-    const { insight, telemetryService } = props
+    const { insight, telemetryService, telemetryRecorder } = props
 
     const navigate = useNavigate()
 
@@ -44,6 +44,7 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
 
     const handleEditClick = (): void => {
         telemetryService.log('StandaloneInsightPageEditClick')
+        telemetryRecorder.recordEvent('standaloneInsightPageEdit', 'clicked')
     }
 
     return (

@@ -82,7 +82,7 @@ export interface SearchContextRepositoriesFormAreaProps extends TelemetryProps {
 
 export const SearchContextRepositoriesFormArea: React.FunctionComponent<
     React.PropsWithChildren<SearchContextRepositoriesFormAreaProps>
-> = ({ isLightTheme, telemetryService, repositories, onChange, validateRepositories }) => {
+> = ({ isLightTheme, telemetryService, telemetryRecorder, repositories, onChange, validateRepositories }) => {
     const [hasTestedConfig, setHasTestedConfig] = useState(false)
     const [triggerTestConfig, triggerTestConfigErrors] = useEventObservable(
         useCallback(
@@ -139,6 +139,7 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<
                 height={300}
                 isLightTheme={isLightTheme}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 blockNavigationIfDirty={false}
             />
             {triggerTestConfigErrors && triggerTestConfigErrors !== LOADING && triggerTestConfigErrors.length > 0 && (

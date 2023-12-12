@@ -42,7 +42,7 @@ import styles from './SiteAdminWebhookPage.module.scss'
 export interface WebhookPageProps extends TelemetryProps {}
 
 export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
-    const { telemetryService } = props
+    const { telemetryService, telemetryRecorder } = props
 
     const { id = '' } = useParams<{ id: string }>()
     const navigate = useNavigate()
@@ -53,7 +53,8 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminWebhook')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminWebhook', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const [deleteWebhook, { error: deleteError, loading: isDeleting }] = useMutation<
         DeleteWebhookResult,

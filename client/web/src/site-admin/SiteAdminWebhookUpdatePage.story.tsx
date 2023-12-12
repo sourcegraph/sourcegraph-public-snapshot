@@ -4,6 +4,7 @@ import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -88,7 +89,12 @@ export const WebhookUpdatePage: Story = () => (
                 <Routes>
                     <Route
                         path="/site-admin/webhooks/incoming/:id"
-                        element={<SiteAdminWebhookUpdatePage telemetryService={NOOP_TELEMETRY_SERVICE} />}
+                        element={
+                            <SiteAdminWebhookUpdatePage
+                                telemetryService={NOOP_TELEMETRY_SERVICE}
+                                telemetryRecorder={noOpTelemetryRecorder}
+                            />
+                        }
                     />
                 </Routes>
             </MockedTestProvider>

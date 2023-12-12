@@ -55,8 +55,11 @@ const functionalityPanels = [
 
 export const NotebooksGettingStartedTab: React.FunctionComponent<
     React.PropsWithChildren<NotebooksGettingStartedTabProps>
-> = ({ telemetryService, authenticatedUser }) => {
-    useEffect(() => telemetryService.log('NotebooksGettingStartedTabViewed'), [telemetryService])
+> = ({ telemetryService, telemetryRecorder, authenticatedUser }) => {
+    useEffect(() => {
+        telemetryService.log('NotebooksGettingStartedTabViewed')
+        telemetryRecorder.recordEvent('notebooksGettingStartedTab', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const [, setHasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false

@@ -156,7 +156,10 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     </div>
                 }
             >
-                <LazySetupWizard telemetryService={props.telemetryService} />
+                <LazySetupWizard
+                    telemetryService={props.telemetryService}
+                    telemetryRecorder={props.telemetryRecorder}
+                />
             </Suspense>
         )
     }
@@ -281,6 +284,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     settingsCascade={props.settingsCascade}
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.telemetryRecorder}
                     location={location}
                     userHistory={userHistory}
                 />

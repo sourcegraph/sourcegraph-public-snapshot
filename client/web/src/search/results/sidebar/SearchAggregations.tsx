@@ -45,7 +45,7 @@ interface SearchAggregationsProps extends TelemetryProps {
 }
 
 export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
-    const { query, patternType, proactive, caseSensitive, telemetryService, onQuerySubmit } = props
+    const { query, patternType, proactive, caseSensitive, telemetryService, telemetryRecorder, onQuerySubmit } = props
 
     const [extendedTimeout, setExtendedTimeoutLocal] = useState(false)
 
@@ -59,6 +59,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         caseSensitive,
         extendedTimeout,
         telemetryService,
+        telemetryRecorder,
     })
 
     // When query is updated reset extendedTimeout as per business rules
@@ -78,6 +79,9 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
             { aggregationMode, index, uiMode: 'sidebar' },
             { aggregationMode, index, uiMode: 'sidebar' }
         )
+        telemetryRecorder.recordEvent(GroupResultsPing.ChartBarClick, 'clicked', {
+            privateMetadata: { aggregationMode, index, uiMode: 'sidebar' },
+        })
     }
 
     const handleBarHover = (): void => {
@@ -86,11 +90,17 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
             { aggregationMode, uiMode: 'sidebar' },
             { aggregationMode, uiMode: 'sidebar' }
         )
+        telemetryRecorder.recordEvent(GroupResultsPing.ChartBarHover, 'hovered', {
+            privateMetadata: { aggregationMode, uiMode: 'sidebar' },
+        })
     }
 
     const handleExpandClick = (): void => {
         setAggregationUIMode(AggregationUIMode.SearchPage)
         telemetryService.log(GroupResultsPing.ExpandFullViewPanel, { aggregationMode }, { aggregationMode })
+        telemetryRecorder.recordEvent(GroupResultsPing.ExpandFullViewPanel, 'clicked', {
+            privateMetadata: { aggregationMode },
+        })
     }
 
     const handleAggregationModeChange = (mode: SearchAggregationMode): void => {
@@ -100,6 +110,9 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
             { aggregationMode: mode, uiMode: 'sidebar' },
             { aggregationMode: mode, uiMode: 'sidebar' }
         )
+        telemetryRecorder.recordEvent(GroupResultsPing.ModeClick, 'clicked', {
+            privateMetadata: { aggregationMode: mode, uiMode: 'sidebar' },
+        })
     }
 
     const handleAggregationModeHover = (aggregationMode: SearchAggregationMode, available: boolean): void => {
@@ -109,6 +122,9 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
                 { aggregationMode, uiMode: 'sidebar' },
                 { aggregationMode, uiMode: 'sidebar' }
             )
+            telemetryRecorder.recordEvent(GroupResultsPing.ModeDisabledHover, 'disabled', {
+                privateMetadata: { aggregationMode, uiMode: 'sidebar' },
+            })
         }
     }
 

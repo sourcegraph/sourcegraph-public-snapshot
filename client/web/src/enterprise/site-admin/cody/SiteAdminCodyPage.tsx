@@ -72,12 +72,13 @@ const enumToFilterValues = <T extends string>(enumeration: { [key in T]: T }): F
     return values
 }
 
-export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService }) => {
+export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService, telemetryRecorder }) => {
     const isCodyApp = window.context?.codyAppMode
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminCodyPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminCodyPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const location = useLocation()
     const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search])

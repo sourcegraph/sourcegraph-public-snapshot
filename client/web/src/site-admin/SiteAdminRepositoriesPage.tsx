@@ -20,13 +20,15 @@ interface Props extends TelemetryProps {
 /** A page displaying the repositories on this site */
 export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    telemetryRecorder,
     isCodyApp,
 }) => {
     const location = useLocation()
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminRepos')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminRepos', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     // Refresh global alert about enabling repositories when the user visits & navigates away from this page.
     const client = useApolloClient()

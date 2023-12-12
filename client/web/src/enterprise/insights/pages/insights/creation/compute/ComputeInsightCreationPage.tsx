@@ -34,7 +34,8 @@ interface ComputeInsightCreationPageProps extends TelemetryProps {
 }
 
 export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreationPageProps> = props => {
-    const { backUrl, telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
+    const { backUrl, telemetryService, telemetryRecorder, onInsightCreateRequest, onSuccessfulCreation, onCancel } =
+        props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -61,24 +62,29 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
             // Clear initial values if user successfully created search insight
             setInitialFormValues(undefined)
             telemetryService.log('CodeInsightsComputeCreationPageSubmitClick')
+            telemetryRecorder.recordEvent('codeInsightsComputeCreationPageSubmit', 'clicked')
             telemetryService.log(
                 'InsightAddition',
                 { insightType: CodeInsightTrackType.ComputeInsight },
                 { insightType: CodeInsightTrackType.ComputeInsight }
             )
+            telemetryRecorder.recordEvent('insightAddition', 'added', {
+                privateMetadata: { insightType: CodeInsightTrackType.ComputeInsight },
+            })
 
             onSuccessfulCreation()
         },
-        [onInsightCreateRequest, onSuccessfulCreation, setInitialFormValues, telemetryService]
+        [onInsightCreateRequest, onSuccessfulCreation, setInitialFormValues, telemetryService, telemetryRecorder]
     )
 
     const handleCancel = useCallback(() => {
         // Clear initial values if user successfully created search insight
         setInitialFormValues(undefined)
         telemetryService.log('CodeInsightsComputeCreationPageCancelClick')
+        telemetryRecorder.recordEvent('codeInsightsComputeCreationPageCancel', 'clicked')
 
         onCancel()
-    }, [setInitialFormValues, telemetryService, onCancel])
+    }, [setInitialFormValues, telemetryService, telemetryRecorder, onCancel])
 
     return (
         <CodeInsightsPage>

@@ -64,6 +64,7 @@ export const BATCH_COUNT = 10
 export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildren<RepositoriesPopoverProps>> = ({
     currentRepo,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
@@ -71,7 +72,8 @@ export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildre
     useEffect(() => {
         eventLogger.logViewEvent('RepositoriesPopover')
         telemetryService.log('RepositoriesPopover')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('repositoriesPopover', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const { connection, loading, error, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoriesForPopoverResult,

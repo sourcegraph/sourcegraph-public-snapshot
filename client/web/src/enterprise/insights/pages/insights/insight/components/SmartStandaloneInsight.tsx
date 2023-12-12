@@ -13,12 +13,26 @@ interface SmartStandaloneInsightProps extends TelemetryProps {
 }
 
 export const SmartStandaloneInsight: FunctionComponent<SmartStandaloneInsightProps> = props => {
-    const { insight, telemetryService, className } = props
+    const { insight, telemetryService, telemetryRecorder, className } = props
 
     if (isBackendInsight(insight)) {
-        return <StandaloneBackendInsight insight={insight} telemetryService={telemetryService} className={className} />
+        return (
+            <StandaloneBackendInsight
+                insight={insight}
+                telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
+                className={className}
+            />
+        )
     }
 
     // Search based extension and lang stats insight are handled by built-in fetchers
-    return <StandaloneLangStatsInsight insight={insight} telemetryService={telemetryService} className={className} />
+    return (
+        <StandaloneLangStatsInsight
+            insight={insight}
+            telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
+            className={className}
+        />
+    )
 }

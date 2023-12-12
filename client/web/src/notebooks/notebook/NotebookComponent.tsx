@@ -83,6 +83,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         isEmbedded,
         authenticatedUser,
         telemetryService,
+        telemetryRecorder,
         isSourcegraphDotCom,
         platformContext,
         blocks: initialBlocks,
@@ -389,6 +390,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 {...block}
                                 {...blockProps}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                             />
                         )
@@ -403,6 +405,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 ownEnabled={ownEnabled}
                                 settingsCascade={settingsCascade}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 platformContext={platformContext}
                                 authenticatedUser={authenticatedUser}
                             />
@@ -414,6 +417,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 {...blockProps}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 platformContext={platformContext}
                             />
                         )

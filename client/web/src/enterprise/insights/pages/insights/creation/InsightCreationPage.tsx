@@ -30,7 +30,7 @@ interface InsightCreationPageProps extends TelemetryProps {
 }
 
 export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
-    const { mode, telemetryService } = props
+    const { mode, telemetryService, telemetryRecorder } = props
 
     const navigate = useNavigate()
     const { createInsight } = useContext(CodeInsightsBackendContext)
@@ -72,6 +72,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
             <CaptureGroupCreationPage
                 backUrl={backCreateUrl}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
                 onCancel={handleCancel}
@@ -84,6 +85,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
             <SearchInsightCreationPage
                 backUrl={backCreateUrl}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
                 onCancel={handleCancel}
@@ -96,6 +98,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
             <ComputeInsightCreationPage
                 backUrl={backCreateUrl}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
                 onCancel={handleCancel}
@@ -107,6 +110,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
         <LangStatsInsightCreationPage
             backUrl={backCreateUrl}
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
             onInsightCreateRequest={handleInsightCreateRequest}
             onSuccessfulCreation={handleInsightSuccessfulCreation}
             onCancel={handleCancel}

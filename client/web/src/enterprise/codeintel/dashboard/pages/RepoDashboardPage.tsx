@@ -94,6 +94,7 @@ const buildFilterStateFromParams = ({ search }: Location, indexingEnabled: boole
 
 export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> = ({
     telemetryService,
+    telemetryRecorder,
     repo,
     authenticatedUser,
     now,
@@ -101,7 +102,8 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
 }) => {
     useEffect(() => {
         telemetryService.logPageView('CodeIntelRepoDashboard')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('codeIntelRepoDashboard', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const location = useLocation()
     const navigate = useNavigate()

@@ -70,10 +70,11 @@ const filters: FilteredConnectionFilter[] = [
 
 export const SiteAdminSlowRequestsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminSlowRequestsPageProps>
-> = ({ telemetryService }) => {
+> = ({ telemetryService, telemetryRecorder }) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminSlowRequests')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminSlowRequests', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const querySlowRequests = useCallback(
         (args: FilteredConnectionQueryArguments & { failed?: boolean }) =>

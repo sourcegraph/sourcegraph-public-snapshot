@@ -84,11 +84,13 @@ export interface GlobalDashboardPageProps extends TelemetryProps {
 
 export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPageProps> = ({
     telemetryService,
+    telemetryRecorder,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
 }) => {
     useEffect(() => {
         telemetryService.logPageView('CodeIntelGlobalDashboard')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('codeIntelGlobalDashboard', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const { data, error, loading } = useQuery<GlobalCodeIntelStatusResult>(globalCodeIntelStatusQuery, {
         notifyOnNetworkStatusChange: false,

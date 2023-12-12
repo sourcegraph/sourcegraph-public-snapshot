@@ -25,6 +25,7 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
     repoId,
     authenticatedUser,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const isLightTheme = useIsLightTheme()
     const { inferredConfiguration, loadingInferred, inferredError } = useInferredConfig(repoId)
@@ -103,6 +104,7 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
                         height={600}
                         isLightTheme={isLightTheme}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         customSaveToolbar={authenticatedUser?.siteAdmin ? customToolbar : undefined}
                         onDirtyChange={setDirty}
                         onEditor={setEditor}

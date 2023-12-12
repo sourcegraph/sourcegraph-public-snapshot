@@ -24,7 +24,7 @@ interface InsightsDashboardCreationPageProps extends TelemetryProps {}
 export const InsightsDashboardCreationPage: React.FunctionComponent<
     React.PropsWithChildren<InsightsDashboardCreationPageProps>
 > = props => {
-    const { telemetryService } = props
+    const { telemetryService, telemetryRecorder } = props
 
     const navigate = useNavigate()
     const { dashboard } = useUiFeatures()
@@ -43,6 +43,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<
         const createdDashboard = await createDashboard({ name, owners: [owner] }).toPromise()
 
         telemetryService.log('CodeInsightsDashboardCreationPageSubmitClick')
+        telemetryRecorder.recordEvent('codeInsightsDashboardCreationPageSubmit', 'clicked')
 
         // Navigate user to the dashboard page with new created dashboard
         navigate(`/insights/dashboards/${createdDashboard.id}`)

@@ -19,7 +19,7 @@ export type TourProps = TelemetryProps & {
 } & Pick<React.ComponentProps<typeof TourContent>, 'variant' | 'className' | 'height' | 'title' | 'keepCompletedTasks'>
 
 export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> = React.memo(
-    ({ id: tourId, tasks, extraTask, defaultSnippets, telemetryService, userInfo, ...props }) => {
+    ({ id: tourId, tasks, extraTask, defaultSnippets, telemetryService, telemetryRecorder, userInfo, ...props }) => {
         const { completedStepIds = [], status, setStepCompleted, setStatus, restart } = useTour(tourId)
         const onLogEvent = useCallback(
             (eventName: string, eventProperties?: any, publicArgument?: any) => {
@@ -129,7 +129,12 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
         return (
             <TourContext.Provider value={{ onStepClick, onRestart, userInfo, isQuerySuccessful }}>
                 <TourContent {...props} onClose={onClose} tasks={finalTasks} />
-                <TourAgent tasks={finalTasks} telemetryService={telemetryService} onStepComplete={onStepComplete} />
+                <TourAgent
+                    tasks={finalTasks}
+                    telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
+                    onStepComplete={onStepComplete}
+                />
             </TourContext.Provider>
         )
     }

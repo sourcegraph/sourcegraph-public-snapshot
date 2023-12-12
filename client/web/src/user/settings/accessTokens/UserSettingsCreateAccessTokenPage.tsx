@@ -42,6 +42,7 @@ interface Props extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryPro
  */
 export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    telemetryRecorder,
     onDidCreateAccessToken,
     user,
 }) => {
@@ -49,7 +50,8 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
 
     useMemo(() => {
         telemetryService.logViewEvent('NewAccessToken')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('newAccessToken', 'created')
+    }, [telemetryService, telemetryRecorder])
 
     /** The contents of the note input field. */
     const defaultNoteValue = new URLSearchParams(location.search).get('description') || undefined

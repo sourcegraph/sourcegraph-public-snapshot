@@ -40,7 +40,7 @@ interface DynamicInsightPreviewProps extends TelemetryProps {
 }
 
 export const DynamicInsightPreview: FC<DynamicInsightPreviewProps> = props => {
-    const { disabled, repositories, query, className, telemetryService } = props
+    const { disabled, repositories, query, className, telemetryService, telemetryRecorder } = props
 
     // Compare live insight settings with deep check to avoid unnecessary
     // search insight content fetching
@@ -58,6 +58,7 @@ export const DynamicInsightPreview: FC<DynamicInsightPreviewProps> = props => {
 
     const { trackMouseEnter, trackMouseLeave, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
+        telemetryRecorder,
         insightType: CodeInsightTrackType.InProductLandingPageInsight,
     })
 

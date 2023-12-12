@@ -31,6 +31,7 @@ interface Props extends TelemetryProps {
 export const AddExternalServicePage: FC<Props> = ({
     externalService,
     telemetryService,
+    telemetryRecorder,
     autoFocusForm,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
@@ -42,7 +43,8 @@ export const AddExternalServicePage: FC<Props> = ({
 
     useEffect(() => {
         telemetryService.logPageView('AddExternalService')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('addExternalService', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     useEffect(() => {
         setConfig(externalService.defaultConfig)
@@ -79,15 +81,17 @@ export const AddExternalServicePage: FC<Props> = ({
                 },
                 onCompleted: data => {
                     telemetryService.log('AddExternalServiceSucceeded')
+                    telemetryRecorder.recordEvent('addExternalService', 'succeeded')
                     refreshSiteFlags(client).catch((error: Error) => logger.error(error))
                     navigate(`/site-admin/external-services/${data.addExternalService.id}`)
                 },
                 onError: () => {
                     telemetryService.log('AddExternalServiceFailed')
+                    telemetryRecorder.recordEvent('addExternalService', 'failed')
                 },
             })
         },
-        [addExternalService, telemetryService, getExternalServiceInput, client, navigate]
+        [addExternalService, telemetryService, telemetryRecorder, getExternalServiceInput, client, navigate]
     )
     const createdExternalService = addExternalServiceResult?.addExternalService
 
@@ -128,6 +132,7 @@ export const AddExternalServicePage: FC<Props> = ({
                         )}
                         <ExternalServiceForm
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                             error={error}
                             input={getExternalServiceInput()}
                             editorActions={externalService.editorActions}

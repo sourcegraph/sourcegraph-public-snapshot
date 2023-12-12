@@ -73,6 +73,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         streamSearch,
         authenticatedUser,
         telemetryService,
+        telemetryRecorder,
         isSourcegraphDotCom,
         searchAggregationEnabled,
         codeMonitoringEnabled,

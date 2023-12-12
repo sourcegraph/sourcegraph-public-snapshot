@@ -47,7 +47,7 @@ interface StandaloneBackendInsight extends TelemetryProps {
 }
 
 export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackendInsight> = props => {
-    const { telemetryService, insight, className } = props
+    const { telemetryService, telemetryRecorder, insight, className } = props
     const navigate = useNavigate()
     const { updateInsight } = useContext(CodeInsightsBackendContext)
     const [saveAsNewView] = useSaveInsightAsNewView({ dashboard: null })
@@ -109,6 +109,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
 
     const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
+        telemetryRecorder,
         insightType: getTrackingTypeByInsightType(insight.type),
     })
 
@@ -122,6 +123,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         await updateInsight({ insightId: insight.id, nextInsightData: { ...insight, filters } }).toPromise()
         setOriginalInsightFilters(filters)
         telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
+        telemetryRecorder.recordEvent('codeInsightsSearchBasedFilter', 'updated')
     }
 
     const handleInsightFilterCreation = async (values: DrillDownInsightCreationFormValues): Promise<void> => {
@@ -135,6 +137,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         setOriginalInsightFilters(filters)
         navigate('/insights/all')
         telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
+        telemetryRecorder.recordEvent('codeInsightsSearchBasedFilterInsight', 'created')
     }
 
     return (

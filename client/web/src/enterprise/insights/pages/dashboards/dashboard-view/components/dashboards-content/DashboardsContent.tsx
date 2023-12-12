@@ -29,7 +29,7 @@ export interface DashboardsContentProps extends TelemetryProps {
 }
 
 export const DashboardsContent: FC<DashboardsContentProps> = props => {
-    const { currentDashboard, dashboards, telemetryService } = props
+    const { currentDashboard, dashboards, telemetryService, telemetryRecorder } = props
 
     const navigate = useNavigate()
     const [, setLasVisitedDashboard] = useTemporarySetting('insights.lastVisitedDashboardId', null)
@@ -40,7 +40,10 @@ export const DashboardsContent: FC<DashboardsContentProps> = props => {
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
     const [dashboardGridApi, setDashboardGridApi] = useState<GridApi>()
 
-    useEffect(() => telemetryService.logViewEvent('Insights'), [telemetryService])
+    useEffect(() => {
+        telemetryService.logViewEvent('Insights')
+        telemetryRecorder.recordEvent('insights', 'viewed')
+    }, [telemetryService, telemetryRecorder])
     useEffect(() => setLasVisitedDashboard(currentDashboard?.id ?? null), [currentDashboard, setLasVisitedDashboard])
 
     const handleDashboardSelect = (dashboard: CustomInsightDashboard): void =>
@@ -113,6 +116,7 @@ export const DashboardsContent: FC<DashboardsContentProps> = props => {
                 <DashboardInsights
                     currentDashboard={currentDashboard}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     className={styles.insights}
                     onAddInsightRequest={() => setAddInsightsState(true)}
                     onDashboardCreate={setDashboardGridApi}

@@ -62,12 +62,14 @@ interface NotebooksFilter extends Pick<NotebooksListProps, 'creatorUserID' | 'st
 export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<NotebooksListPageProps>> = ({
     authenticatedUser,
     telemetryService,
+    telemetryRecorder,
     fetchNotebooks = _fetchNotebooks,
     createNotebook = _createNotebook,
 }) => {
     useEffect(() => {
         telemetryService.logPageView('SearchNotebooksListPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('searchNotebooksListPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const [importState, setImportState] = useState<typeof LOADING | ErrorLike | undefined>()
     const navigate = useNavigate()
@@ -91,8 +93,11 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
             setSelectedTab(tab)
             setSelectedLocationTab(location, navigate, tab)
             telemetryService.log(logName)
+            telemetryRecorder.recordEvent('notebooksTabLog', 'viewed', {
+                privateMetadata: { logName },
+            })
         },
-        [navigate, location, setSelectedTab, telemetryService]
+        [navigate, location, setSelectedTab, telemetryService, telemetryRecorder]
     )
 
     const orderOptions: FilteredConnectionFilter[] = [
@@ -248,6 +253,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                 importNotebook={importNotebook}
                                 setImportState={setImportState}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                             />
                         )
                     }
@@ -310,6 +316,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                     starredByUserID={selectedFilter.starredByUserID}
                                     namespace={selectedFilter.namespace}
                                     telemetryService={telemetryService}
+                                    telemetryRecorder={telemetryRecorder}
                                 />
                             )}
                         </div>
@@ -319,6 +326,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                 {selectedTab === 'getting-started' && (
                     <NotebooksGettingStartedTab
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         authenticatedUser={authenticatedUser}
                     />
                 )}

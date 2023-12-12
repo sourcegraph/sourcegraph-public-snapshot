@@ -43,6 +43,7 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
         onUpdateBlocks,
         streamSearch,
         telemetryService,
+        telemetryRecorder,
         searchContextsEnabled,
         ownEnabled,
         isSourcegraphDotCom,
@@ -82,6 +83,7 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
             <NotebookComponent
                 streamSearch={streamSearch}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 searchContextsEnabled={searchContextsEnabled}
                 ownEnabled={ownEnabled}
                 isSourcegraphDotCom={isSourcegraphDotCom}

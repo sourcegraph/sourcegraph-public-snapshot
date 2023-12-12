@@ -9,6 +9,7 @@ import { spy, assert } from 'sinon'
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
 import type { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
@@ -34,6 +35,7 @@ describe('StreamingSearchResults', () => {
 
     const defaultProps: StreamingSearchResultsProps = {
         telemetryService: NOOP_TELEMETRY_SERVICE,
+        telemetryRecorder: noOpTelemetryRecorder,
 
         authenticatedUser: null,
 
@@ -172,8 +174,21 @@ describe('StreamingSearchResults', () => {
             log: logSpy,
             logViewEvent: logViewEventSpy,
         }
+        const recordSpy = spy()
+        const recordEventSpy = spy()
+        const telemetryRecorder = {
+            ...noOpTelemetryRecorder,
+            record: recordSpy,
+            recordEvent: recordEventSpy,
+        }
 
-        renderWrapper(<StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />)
+        renderWrapper(
+            <StreamingSearchResults
+                {...defaultProps}
+                telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
+            />
+        )
 
         assert.calledOnceWithExactly(logViewEventSpy, 'SearchResults')
         assert.calledWith(logSpy, 'SearchResultsQueried')
@@ -186,8 +201,19 @@ describe('StreamingSearchResults', () => {
             ...NOOP_TELEMETRY_SERVICE,
             log: logSpy,
         }
+        const recordSpy = spy()
+        const telemetryRecorder = {
+            ...noOpTelemetryRecorder,
+            record: recordSpy,
+        }
 
-        renderWrapper(<StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />)
+        renderWrapper(
+            <StreamingSearchResults
+                {...defaultProps}
+                telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
+            />
+        )
 
         userEvent.click(screen.getAllByTestId('result-container')[0])
         assert.calledWith(logSpy, 'SearchResultClicked')

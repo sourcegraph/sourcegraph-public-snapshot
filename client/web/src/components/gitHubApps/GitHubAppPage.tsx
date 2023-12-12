@@ -46,14 +46,20 @@ interface Props extends TelemetryProps {
     headerAnnotation?: React.ReactNode
 }
 
-export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcrumb, headerAnnotation }) => {
+export const GitHubAppPage: FC<Props> = ({
+    telemetryService,
+    telemetryRecorder,
+    headerParentBreadcrumb,
+    headerAnnotation,
+}) => {
     const { appID } = useParams()
     const navigate = useNavigate()
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminGitHubApp')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminGitHubApp', 'viewed')
+    }, [telemetryService, telemetryRecorder])
     const [fetchError, setError] = useState<ErrorLike>()
 
     const { data, loading, error } = useQuery<GitHubAppByIDResult, GitHubAppByIDVariables>(GITHUB_APP_BY_ID_QUERY, {

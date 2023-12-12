@@ -35,11 +35,17 @@ export const APP_ROUTES: RouteObject[] = [
     {
         path: `${EnterprisePageRoutes.AppSetup}/*`,
         handle: { isFullPage: true },
-        element: <LegacyRoute render={props => <AppSetup telemetryService={props.telemetryService} />} />,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <AppSetup telemetryService={props.telemetryService} telemetryRecorder={props.telemetryRecorder} />
+                )}
+            />
+        ),
     },
     {
         path: EnterprisePageRoutes.AppAuthCallback,
-        element: <LegacyRoute render={() => <AppAuthCallbackPage />} />,
+        element: <LegacyRoute render={props => <AppAuthCallbackPage {...props} />} />,
     },
     {
         path: PageRoutes.User,

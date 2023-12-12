@@ -16,7 +16,7 @@ import styles from './CodeInsightsExamplesPicker.module.scss'
 interface CodeInsightsExamplesPickerProps extends TelemetryProps {}
 
 export const CodeInsightsExamplesPicker: FunctionComponent<CodeInsightsExamplesPickerProps> = props => {
-    const { telemetryService } = props
+    const { telemetryService, telemetryRecorder } = props
     const [activeExampleIndex, setActiveExampleIndex] = useState(0)
     const [windowSize, setWindowSize] = useState(0)
 
@@ -32,6 +32,9 @@ export const CodeInsightsExamplesPicker: FunctionComponent<CodeInsightsExamplesP
     const handleUseCaseButtonClick = (useCaseIndex: number): void => {
         setActiveExampleIndex(useCaseIndex)
         telemetryService.log('CloudCodeInsightsGetStartedUseCase')
+        telemetryRecorder.recordEvent('cloudCodeInsightsGetStartedUseCase', 'clicked', {
+            metadata: { useCaseIndex },
+        })
     }
 
     const isMobileLayout = windowSize <= 900
@@ -78,10 +81,13 @@ export const CodeInsightsExamplesPicker: FunctionComponent<CodeInsightsExamplesP
                     {...EXAMPLES[activeExampleIndex]}
                     className={styles.section}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
 
-            {isMobileLayout && <CodeInsightsExamplesSlider telemetryService={telemetryService} />}
+            {isMobileLayout && (
+                <CodeInsightsExamplesSlider telemetryService={telemetryService} telemetryRecorder={telemetryRecorder} />
+            )}
         </Card>
     )
 }

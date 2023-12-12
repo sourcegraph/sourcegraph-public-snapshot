@@ -76,13 +76,15 @@ interface GithubConnectViewProps extends TelemetryProps {
  * storage
  */
 export const GithubConnectView: FC<GithubConnectViewProps> = props => {
-    const { initialValues, externalServiceId, telemetryService, children, onChange, onSubmit } = props
+    const { initialValues, externalServiceId, telemetryService, telemetryRecorder, children, onChange, onSubmit } =
+        props
 
     return (
         <GithubConnectForm
             initialValues={initialValues}
             externalServiceId={externalServiceId}
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
             onChange={onChange}
             onSubmit={onSubmit}
         >
@@ -109,7 +111,8 @@ interface GithubConnectFormProps extends TelemetryProps {
  * configuration UI.
  */
 export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
-    const { initialValues, externalServiceId, telemetryService, children, onChange, onSubmit } = props
+    const { initialValues, externalServiceId, telemetryService, telemetryRecorder, children, onChange, onSubmit } =
+        props
 
     const [activeTab, setActiveTab] = useState(GithubConnectFormTab.Form)
     const form = useForm<CodeHostConnectFormFields>({
@@ -133,7 +136,8 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
     useEffect(() => {
         const view = getViewKindByIndex(activeTab)
         telemetryService.log('SetupWizardCreationTabView', { view }, { view })
-    }, [activeTab, telemetryService])
+        telemetryRecorder.recordEvent('setupWizardCreationTab', 'viewed', { privateMetadata: { view } })
+    }, [activeTab, telemetryService, telemetryRecorder])
 
     return (
         <Tabs

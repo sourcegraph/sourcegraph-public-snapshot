@@ -25,10 +25,11 @@ import styles from './OutboundWebhooksPage.module.scss'
 
 export interface OutboundWebhooksPageProps extends TelemetryProps {}
 
-export const OutboundWebhooksPage: FC<OutboundWebhooksPageProps> = ({ telemetryService }) => {
+export const OutboundWebhooksPage: FC<OutboundWebhooksPageProps> = ({ telemetryService, telemetryRecorder }) => {
     useEffect(() => {
         telemetryService.logPageView('OutboundWebhooksPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('outboundWebhookPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useOutboundWebhooksConnection()
 

@@ -126,6 +126,7 @@ interface DidYouMeanProps
 
 export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouMeanProps>> = ({
     telemetryService,
+    telemetryRecorder,
     query,
     patternType,
     caseSensitive,
@@ -136,8 +137,9 @@ export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouM
     useEffect(() => {
         if (suggestions.length > 0) {
             telemetryService.log('SearchDidYouMeanDisplayed')
+            telemetryRecorder.recordEvent('searchDidYouMean', 'displayed')
         }
-    }, [suggestions, telemetryService])
+    }, [suggestions, telemetryService, telemetryRecorder])
 
     if (suggestions.length > 0) {
         return (
@@ -153,9 +155,10 @@ export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouM
                         return (
                             <li key={suggestion.query} className={styles.listItem}>
                                 <Link
-                                    onClick={() =>
+                                    onClick={() => {
                                         telemetryService.log('SearchDidYouMeanClicked', { type: suggestion.type })
-                                    }
+                                        telemetryRecorder.recordEvent('searchDidYouMean', 'clicked')
+                                    }}
                                     to={createLinkUrl({ pathname: '/search', search: builtURLQuery })}
                                     className={styles.link}
                                 >

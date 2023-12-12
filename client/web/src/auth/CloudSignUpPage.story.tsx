@@ -1,6 +1,7 @@
 import type { Meta, Story } from '@storybook/react'
 import sinon from 'sinon'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../components/WebStory'
@@ -47,6 +48,7 @@ export const Default: Story = () => (
                 context={context}
                 showEmailForm={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 isSourcegraphDotCom={true}
             />
         )}
@@ -63,6 +65,7 @@ export const EmailForm: Story = () => (
                 context={context}
                 showEmailForm={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 isSourcegraphDotCom={true}
             />
         )}
@@ -79,6 +82,7 @@ export const InvalidSource: Story = () => (
                 context={context}
                 showEmailForm={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 isSourcegraphDotCom={true}
             />
         )}
@@ -95,6 +99,7 @@ export const OptimizationSignup: Story = () => (
                 context={context}
                 showEmailForm={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 isSourcegraphDotCom={true}
             />
         )}

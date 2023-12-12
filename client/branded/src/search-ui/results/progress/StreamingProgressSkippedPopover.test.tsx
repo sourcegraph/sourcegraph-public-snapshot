@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
 import type { Progress } from '@sourcegraph/shared/src/search/stream'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -72,6 +73,7 @@ describe('StreamingProgressSkippedPopover', () => {
                     query=""
                     progress={progress}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                     onSearchAgain={sinon.spy()}
                 />
             ).asFragment()
@@ -98,6 +100,7 @@ describe('StreamingProgressSkippedPopover', () => {
                 query=""
                 progress={progress}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={sinon.spy()}
             />
         )
@@ -128,6 +131,7 @@ describe('StreamingProgressSkippedPopover', () => {
                 query=""
                 progress={progress}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={sinon.spy()}
             />
         )
@@ -181,6 +185,7 @@ describe('StreamingProgressSkippedPopover', () => {
                 query=""
                 progress={progress}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={sinon.spy()}
             />
         )
@@ -239,6 +244,7 @@ describe('StreamingProgressSkippedPopover', () => {
                 query=""
                 progress={progress}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={sinon.spy()}
             />
         )
@@ -301,6 +307,7 @@ describe('StreamingProgressSkippedPopover', () => {
                 query=""
                 progress={progress}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={searchAgain}
             />
         )

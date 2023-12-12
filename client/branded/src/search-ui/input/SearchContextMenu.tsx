@@ -69,6 +69,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
         showSearchContextManagement,
         platformContext,
         telemetryService,
+        telemetryRecorder,
         isSourcegraphDotCom,
         className,
     } = props
@@ -165,8 +166,9 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
             selectSearchContextSpec(context)
             onMenuClose(true)
             telemetryService.log('SearchContextSelected')
+            telemetryRecorder.recordEvent('searchContext', 'selected')
         },
-        [onMenuClose, selectSearchContextSpec, telemetryService]
+        [onMenuClose, selectSearchContextSpec, telemetryService, telemetryRecorder]
     )
 
     const defaultContextExists = useObservable(
@@ -257,11 +259,12 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                                     To search across your team's private repositories,{' '}
                                     <Link
                                         to="https://about.sourcegraph.com"
-                                        onClick={() =>
+                                        onClick={() => {
                                             telemetryService.log('ClickedOnEnterpriseCTA', {
                                                 location: 'ContextDropDown',
                                             })
-                                        }
+                                            telemetryRecorder.recordEvent('clickedOnEterpriseCTA', 'clicked')
+                                        }}
                                     >
                                         get Sourcegraph Enterprise
                                     </Link>

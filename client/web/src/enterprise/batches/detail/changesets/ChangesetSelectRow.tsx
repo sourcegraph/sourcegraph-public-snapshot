@@ -7,7 +7,7 @@ import { pluralize } from '@sourcegraph/common'
 import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { type AllChangesetIDsVariables, type Scalars, BulkOperationType } from '../../../../graphql-operations'
-import { eventLogger } from '../../../../tracking/eventLogger'
+import { eventLogger, telemetryRecorder } from '../../../../tracking/eventLogger'
 import { type Action, DropdownButton } from '../../DropdownButton'
 import { MultiSelectContext } from '../../MultiSelectContext'
 import {
@@ -93,6 +93,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
                 afterCreate={onDone}
                 onCancel={onCancel}
                 telemetryService={eventLogger}
+                telemetryRecorder={telemetryRecorder}
             />
         ),
     },
@@ -105,6 +106,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
             'Attempt to merge all selected changesets. Some changesets may be unmergeable if there are rules preventing merge, such as CI requirements.',
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
             eventLogger.log('batch_change_details:bulk_action_merge:clicked')
+            telemetryRecorder.recordEvent('batchChangeDetails.bulkActionMerge', 'clicked')
             return (
                 <MergeChangesetsModal
                     batchChangeID={batchChangeID}
@@ -122,6 +124,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownDescription: 'Attempt to publish all selected changesets to the code hosts.',
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
             eventLogger.log('batch_change_details:bulk_action_published:clicked')
+            telemetryRecorder.recordEvent('batchChangeDetails.bulkActionPublish', 'clicked')
             return (
                 <PublishChangesetsModal
                     batchChangeID={batchChangeID}
@@ -139,6 +142,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownDescription: 'Re-enqueues the selected changesets for processing, if they failed.',
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
             eventLogger.log('batch_change_details:bulk_action_retry:clicked')
+            telemetryRecorder.recordEvent('batchChangeDetails.bulkActionRetry', 'clicked')
             return (
                 <ReenqueueChangesetsModal
                     batchChangeID={batchChangeID}

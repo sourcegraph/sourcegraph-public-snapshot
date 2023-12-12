@@ -27,12 +27,13 @@ export interface CodeInsightsDotComGetStartedProps extends TelemetryProps {
 export const CodeInsightsDotComGetStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeInsightsDotComGetStartedProps>
 > = props => {
-    const { telemetryService } = props
+    const { telemetryService, telemetryRecorder } = props
     const isSourcegraphDotCom = window.context.sourcegraphDotComMode
 
     useEffect(() => {
         telemetryService.logViewEvent('CloudInsightsGetStartedPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('cloudInsightsGetStartedPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <CodeInsightsLandingPageContext.Provider value={DOT_COM_CONTEXT}>
@@ -92,7 +93,10 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         .
                     </CallToActionBanner>
 
-                    <CodeInsightsExamplesPicker telemetryService={telemetryService} />
+                    <CodeInsightsExamplesPicker
+                        telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
+                    />
                 </main>
             </Page>
         </CodeInsightsLandingPageContext.Provider>

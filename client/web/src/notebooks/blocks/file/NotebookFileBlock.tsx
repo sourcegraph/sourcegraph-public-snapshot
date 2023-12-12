@@ -40,6 +40,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
         input,
         output,
         telemetryService,
+        telemetryRecorder,
         isSelected,
         showMenu,
         isReadOnly,
@@ -154,7 +155,8 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
 
         const logEventOnCopy = useCallback(() => {
             telemetryService.log(...codeCopiedEvent('notebook-file-block'))
-        }, [telemetryService])
+            telemetryRecorder.recordEvent('codeCopied.notebookFileBlock', 'copied')
+        }, [telemetryService, telemetryRecorder])
 
         return (
             <NotebookBlock

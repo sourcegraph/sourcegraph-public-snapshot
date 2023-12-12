@@ -149,7 +149,10 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     </div>
                 }
             >
-                <LazySetupWizard telemetryService={props.telemetryService} />
+                <LazySetupWizard
+                    telemetryService={props.telemetryService}
+                    telemetryRecorder={props.telemetryRecorder}
+                />
             </Suspense>
         )
     }
@@ -199,6 +202,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
             {!isSiteInit && props.isSourcegraphDotCom && props.authenticatedUser && (
                 <CodySurveyToast
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.telemetryRecorder}
                     authenticatedUser={props.authenticatedUser}
                 />
             )}
@@ -258,6 +262,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     settingsCascade={props.settingsCascade}
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.telemetryRecorder}
                     location={location}
                     userHistory={userHistory}
                 />

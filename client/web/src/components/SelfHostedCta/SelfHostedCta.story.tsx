@@ -2,6 +2,7 @@ import React from 'react'
 
 import type { DecoratorFn, Meta } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Text } from '@sourcegraph/wildcard'
 
@@ -21,7 +22,12 @@ export default config
 export const Basic: React.FunctionComponent<React.PropsWithChildren<Partial<SelfHostedCtaProps>>> = (
     props
 ): JSX.Element => (
-    <SelfHostedCta telemetryService={NOOP_TELEMETRY_SERVICE} page="storybook" {...props}>
+    <SelfHostedCta
+        telemetryService={NOOP_TELEMETRY_SERVICE}
+        telemetryRecorder={noOpTelemetryRecorder}
+        page="storybook"
+        {...props}
+    >
         <Text className="mb-2">
             <strong>Run Sourcegraph self-hosted for more enterprise features</strong>
         </Text>

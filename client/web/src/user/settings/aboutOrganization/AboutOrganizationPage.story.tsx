@@ -1,5 +1,6 @@
 import type { DecoratorFn, Meta } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../components/WebStory'
@@ -15,4 +16,6 @@ const config: Meta = {
 
 export default config
 
-export const Basic = (): JSX.Element => <AboutOrganizationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+export const Basic = (): JSX.Element => (
+    <AboutOrganizationPage telemetryService={NOOP_TELEMETRY_SERVICE} telemetryRecorder={noOpTelemetryRecorder} />
+)

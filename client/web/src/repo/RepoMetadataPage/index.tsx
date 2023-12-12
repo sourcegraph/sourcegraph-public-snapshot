@@ -31,15 +31,22 @@ interface RepoMetadataPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'>
 /**
  * The repository metadata page.
  */
-export const RepoMetadataPage: FC<RepoMetadataPageProps> = ({ telemetryService, useBreadcrumb, repo, ...props }) => {
+export const RepoMetadataPage: FC<RepoMetadataPageProps> = ({
+    telemetryService,
+    telemetryRecorder,
+    useBreadcrumb,
+    repo,
+    ...props
+}) => {
     useBreadcrumb(BREADCRUMB)
     const [repoMetadataEnabled, status] = useFeatureFlag('repository-metadata', true)
 
     useEffect(() => {
         if (repoMetadataEnabled) {
             telemetryService.log('repoPage:ownershipPage:viewed')
+            telemetryRecorder.recordEvent('repoPage.ownershipPage', 'viewed')
         }
-    }, [repoMetadataEnabled, telemetryService])
+    }, [repoMetadataEnabled, telemetryService, telemetryRecorder])
 
     const {
         data,

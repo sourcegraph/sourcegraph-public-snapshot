@@ -213,7 +213,8 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                                     label,
                                     id,
                                     run,
-                                    this.props.telemetryService
+                                    this.props.telemetryService,
+                                    this.props.telemetryRecorder
                                 )
                             }
 

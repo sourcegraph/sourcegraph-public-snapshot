@@ -128,6 +128,7 @@ type MemoizedExecuteBatchSpecContentProps = ExecuteBatchSpecPageContentProps &
 const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> = React.memo(
     function MemoizedExecuteBatchSpecContent({
         telemetryService,
+        telemetryRecorder,
         authenticatedUser,
         batchChange,
         batchSpec,
@@ -261,6 +262,7 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                                     <NewBatchChangePreviewPage
                                         authenticatedUser={authenticatedUser}
                                         telemetryService={telemetryService}
+                                        telemetryRecorder={telemetryRecorder}
                                     />
                                 </>
                             ) : (

@@ -15,10 +15,14 @@ import { WebhookCreateUpdatePage } from './WebhookCreateUpdatePage'
 
 export interface SiteAdminWebhookUpdatePageProps extends TelemetryProps {}
 
-export const SiteAdminWebhookUpdatePage: FC<SiteAdminWebhookUpdatePageProps> = ({ telemetryService }) => {
+export const SiteAdminWebhookUpdatePage: FC<SiteAdminWebhookUpdatePageProps> = ({
+    telemetryService,
+    telemetryRecorder,
+}) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminWebhookUpdatePage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminWebhookUpdatePage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const { id = '' } = useParams<{ id: string }>()
 

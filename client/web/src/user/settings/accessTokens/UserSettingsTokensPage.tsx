@@ -44,6 +44,7 @@ interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' |
  */
 export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    telemetryRecorder,
     authenticatedUser,
     user,
     newToken,
@@ -51,7 +52,8 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsTokens')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('userSettingsTokens', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     useEffect(
         () => () => {

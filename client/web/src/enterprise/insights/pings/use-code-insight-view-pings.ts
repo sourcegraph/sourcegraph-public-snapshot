@@ -25,7 +25,7 @@ interface PingHandlers {
  * Shared logic for tracking insight related ping events on the insight card component.
  */
 export function useCodeInsightViewPings(props: UseCodeInsightViewPingsInput): PingHandlers {
-    const { insightType, telemetryService } = props
+    const { insightType, telemetryService, telemetryRecorder } = props
     const timeoutID = useRef<number>()
 
     const trackMouseEnter = useCallback(() => {
@@ -34,8 +34,11 @@ export function useCodeInsightViewPings(props: UseCodeInsightViewPingsInput): Pi
         // the view quickly, clear the timeout for logging the event
         timeoutID.current = window.setTimeout(() => {
             telemetryService.log('InsightHover', { insightType }, { insightType })
+            telemetryRecorder.recordEvent('insightHover', 'hovered', {
+                privateMetadata: { insightType },
+            })
         }, 500)
-    }, [insightType, telemetryService])
+    }, [insightType, telemetryService, telemetryRecorder])
 
     const trackMouseLeave = useCallback(() => {
         window.clearTimeout(timeoutID.current)
@@ -43,10 +46,16 @@ export function useCodeInsightViewPings(props: UseCodeInsightViewPingsInput): Pi
 
     const trackDatumClicks = useCallback(() => {
         telemetryService.log('InsightDataPointClick', { insightType }, { insightType })
-    }, [insightType, telemetryService])
+        telemetryRecorder.recordEvent('insightDataPoint', 'clicked', {
+            privateMetadata: { insightType },
+        })
+    }, [insightType, telemetryService, telemetryRecorder])
 
     const trackFilterChanges = useDebouncedCallback(() => {
         telemetryService.log('InsightFiltersChange', { insightType }, { insightType })
+        telemetryRecorder.recordEvent('insightFilters', 'changed', {
+            privateMetadata: { insightType },
+        })
     }, 1000)
 
     return {

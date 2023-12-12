@@ -24,10 +24,12 @@ interface Props extends TelemetryProps {
 export const SiteAdminTokensPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     telemetryService,
+    telemetryRecorder,
 }) => {
     useMemo(() => {
         telemetryService.logViewEvent('SiteAdminTokens')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminTokens', 'viewed')
+    }, [telemetryService, telemetryRecorder])
     const accessTokenUpdates = useMemo(() => new Subject<void>(), [])
     const onDidUpdateAccessToken = useCallback(() => accessTokenUpdates.next(), [accessTokenUpdates])
     const accessTokensEnabled = window.context.accessTokensAllow !== 'none'

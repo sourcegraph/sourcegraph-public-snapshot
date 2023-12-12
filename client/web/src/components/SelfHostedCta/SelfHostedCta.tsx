@@ -21,6 +21,7 @@ export const SelfHostedCta: React.FunctionComponent<React.PropsWithChildren<Self
     className,
     contentClassName,
     telemetryService,
+    telemetryRecorder,
     page,
     children,
 }) => {
@@ -28,10 +29,16 @@ export const SelfHostedCta: React.FunctionComponent<React.PropsWithChildren<Self
 
     const gettingStartedCTAOnClick = (): void => {
         telemetryService.log('InstallSourcegraphCTAClicked', { page }, { page })
+        telemetryRecorder.recordEvent('installSourcegraphCTA', 'clicked', {
+            privateMetadata: { page },
+        })
     }
 
     const helpGettingStartedCTAOnClick = (): void => {
         telemetryService.log('HelpGettingStartedCTA', { page }, { page })
+        telemetryRecorder.recordEvent('helpGettingStartedCTA', 'clicked', {
+            privateMetadata: { page },
+        })
     }
 
     return (

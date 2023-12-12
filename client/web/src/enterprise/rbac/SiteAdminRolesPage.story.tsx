@@ -2,6 +2,7 @@ import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -59,7 +60,10 @@ export const RolesPage: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={mocks}>
-                <SiteAdminRolesPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+                <SiteAdminRolesPage
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
+                />
             </MockedTestProvider>
         )}
     </WebStory>

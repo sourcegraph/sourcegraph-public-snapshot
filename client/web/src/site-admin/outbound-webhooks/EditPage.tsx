@@ -25,13 +25,14 @@ import { Logs } from './logs/Logs'
 
 export interface EditPageProps extends TelemetryProps {}
 
-export const EditPage: FC<EditPageProps> = ({ telemetryService }) => {
+export const EditPage: FC<EditPageProps> = ({ telemetryService, telemetryRecorder }) => {
     const navigate = useNavigate()
     const { id = '' } = useParams<{ id: string }>()
 
     useEffect(() => {
         telemetryService.logPageView('OutboundWebhooksEditPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('outboundWebhookEditPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const { data, loading, error, refetch } = useQuery<OutboundWebhookByIDResult, OutboundWebhookByIDVariables>(
         OUTBOUND_WEBHOOK_BY_ID,

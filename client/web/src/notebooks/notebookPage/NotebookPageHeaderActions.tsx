@@ -65,6 +65,7 @@ export const NotebookPageHeaderActions: React.FunctionComponent<
     createNotebookStar,
     deleteNotebookStar,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const [showShareModal, setShowShareModal] = useState(false)
     const toggleShareModal = useCallback(() => setShowShareModal(show => !show), [setShowShareModal])
@@ -119,6 +120,7 @@ export const NotebookPageHeaderActions: React.FunctionComponent<
                 createNotebookStar={createNotebookStar}
                 deleteNotebookStar={deleteNotebookStar}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
             />
             {authenticatedUser && viewerCanManage && namespace && selectedShareOption && (
                 <>
@@ -135,6 +137,7 @@ export const NotebookPageHeaderActions: React.FunctionComponent<
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         toggleModal={toggleShareModal}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         authenticatedUser={authenticatedUser}
                         selectedShareOption={selectedShareOption}
                         setSelectedShareOption={setSelectedShareOption}
@@ -147,6 +150,7 @@ export const NotebookPageHeaderActions: React.FunctionComponent<
                     notebookId={notebookId}
                     deleteNotebook={deleteNotebook}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
         </div>
@@ -162,6 +166,7 @@ const NotebookSettingsDropdown: React.FunctionComponent<React.PropsWithChildren<
     notebookId,
     deleteNotebook,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const toggleDeleteModal = useCallback(() => setShowDeleteModal(show => !show), [setShowDeleteModal])
@@ -191,6 +196,7 @@ const NotebookSettingsDropdown: React.FunctionComponent<React.PropsWithChildren<
                 toggleDeleteModal={toggleDeleteModal}
                 deleteNotebook={deleteNotebook}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
             />
         </>
     )
@@ -213,6 +219,7 @@ const NotebookStarsButton: React.FunctionComponent<React.PropsWithChildren<Noteb
     createNotebookStar,
     deleteNotebookStar,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const [starsCount, setStarsCount] = useState(initialStarsCount)
     const [viewerHasStarred, setViewerHasStarred] = useState(initialViewerHasStarred)
@@ -224,6 +231,7 @@ const NotebookStarsButton: React.FunctionComponent<React.PropsWithChildren<Noteb
                     // Immediately update the UI.
                     tap(viewerHasStarred => {
                         telemetryService.log(`SearchNotebook${viewerHasStarred ? 'Remove' : 'Add'}Star`)
+                        telemetryRecorder.recordEvent('searchNotebookStar', `${viewerHasStarred ? 'removed' : 'added'}`)
                         if (viewerHasStarred) {
                             setStarsCount(starsCount => starsCount - 1)
                             setViewerHasStarred(() => false)
@@ -248,6 +256,7 @@ const NotebookStarsButton: React.FunctionComponent<React.PropsWithChildren<Noteb
                 initialStarsCount,
                 initialViewerHasStarred,
                 telemetryService,
+                telemetryRecorder,
             ]
         )
     )

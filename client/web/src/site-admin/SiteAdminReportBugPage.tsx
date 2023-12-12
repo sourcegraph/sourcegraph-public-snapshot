@@ -117,6 +117,7 @@ interface Props extends TelemetryProps {
 
 export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    telemetryRecorder,
     isCodyApp,
 }) => {
     const isLightTheme = useIsLightTheme()
@@ -161,6 +162,7 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
                     isLightTheme={isLightTheme}
                     readOnly={true}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
         </div>

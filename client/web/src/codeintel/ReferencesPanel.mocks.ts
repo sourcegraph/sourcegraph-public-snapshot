@@ -5,6 +5,7 @@ import { of } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { getDocumentNode, dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
@@ -683,6 +684,7 @@ const HIGHLIGHTED_FILE_MOCK = {
 export const defaultProps: ReferencesPanelProps = {
     extensionsController: null,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    telemetryRecorder: noOpTelemetryRecorder,
     settingsCascade: {
         subjects: null,
         final: null,

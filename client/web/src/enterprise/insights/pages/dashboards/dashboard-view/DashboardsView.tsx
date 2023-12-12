@@ -21,7 +21,7 @@ export interface DashboardsViewProps extends TelemetryProps {
 }
 
 export const DashboardsView: FC<DashboardsViewProps> = props => {
-    const { dashboardId, telemetryService } = props
+    const { dashboardId, telemetryService, telemetryRecorder } = props
 
     const { dashboards } = useInsightDashboards()
 
@@ -51,6 +51,7 @@ export const DashboardsView: FC<DashboardsViewProps> = props => {
                 currentDashboard={currentDashboard}
                 dashboards={dashboards}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
             />
         </>
     )

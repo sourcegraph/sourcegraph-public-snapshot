@@ -20,6 +20,7 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     useBreadcrumb,
     repo,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const [searchParams] = useSearchParams()
     const filePath = searchParams.get('path') ?? ''
@@ -40,10 +41,11 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                         filePath={filePath}
                         isDir={true}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 ),
             }
-        }, [filePath, repo, telemetryService])
+        }, [filePath, repo, telemetryService, telemetryRecorder])
     )
 
     useBreadcrumb({ key: 'own', element: 'Ownership' })
@@ -59,7 +61,8 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
 
     useEffect(() => {
         telemetryService.log('repoPage:ownershipPage:viewed')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('repoPage.owershipPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
     return (
         <>
             <Page>
@@ -93,7 +96,12 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                     </H1>
                 </PageHeader>
 
-                <TreeOwnershipPanel repoID={repo.id} filePath={filePath} telemetryService={telemetryService} />
+                <TreeOwnershipPanel
+                    repoID={repo.id}
+                    filePath={filePath}
+                    telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
+                />
             </Page>
             {openAddOwnerModal && <AddOwnerModal repoID={repo.id} path={filePath} onCancel={closeModal} />}
         </>

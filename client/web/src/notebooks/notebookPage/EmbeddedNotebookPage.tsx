@@ -14,7 +14,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../tracking/eventLogger'
+import { eventLogger, telemetryRecorder } from '../../tracking/eventLogger'
 import { fetchNotebook } from '../backend'
 import { convertNotebookTitleToFileName } from '../serialize'
 
@@ -78,6 +78,7 @@ export const EmbeddedNotebookPage: FC<EmbeddedNotebookPageProps> = ({ platformCo
                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     streamSearch={aggregateStreamingSearch}
                     telemetryService={eventLogger}
+                    telemetryRecorder={telemetryRecorder}
                     platformContext={platformContext}
                     exportedFileName={convertNotebookTitleToFileName(notebookOrError.title)}
                     // Copying is not supported in embedded notebooks

@@ -25,7 +25,7 @@ export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
 
 export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
     React.PropsWithChildren<CreateUpdateBatchChangeAlertProps>
-> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, telemetryService }) => {
+> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, telemetryService, telemetryRecorder }) => {
     const navigate = useNavigate()
 
     const batchChangeID = batchChange?.id
@@ -73,10 +73,21 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                 navigate(batchChange.url)
             }
             telemetryService.logViewEvent(`BatchChangeDetailsPageAfter${batchChangeID ? 'Create' : 'Update'}`)
+            telemetryRecorder.recordEvent(`batchChangeDetailsPageAfter${batchChangeID ? 'Create' : 'Update'}`, 'viewed')
         } catch (error) {
             setIsLoading(error)
         }
-    }, [canApply, specID, setIsLoading, navigate, batchChangeID, telemetryService, toBeArchived, publicationStates])
+    }, [
+        canApply,
+        specID,
+        setIsLoading,
+        navigate,
+        batchChangeID,
+        telemetryService,
+        telemetryRecorder,
+        toBeArchived,
+        publicationStates,
+    ])
 
     return (
         <>

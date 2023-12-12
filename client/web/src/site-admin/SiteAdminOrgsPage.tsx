@@ -96,13 +96,17 @@ interface Props extends TelemetryProps {}
 /**
  * A page displaying the orgs on this site.
  */
-export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemetryService }) => {
+export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    telemetryService,
+    telemetryRecorder,
+}) => {
     const orgUpdates = useMemo(() => new Subject<void>(), [])
     const onDidUpdateOrg = useCallback((): void => orgUpdates.next(), [orgUpdates])
 
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminOrgs')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminOrgs', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <div className="site-admin-orgs-page">

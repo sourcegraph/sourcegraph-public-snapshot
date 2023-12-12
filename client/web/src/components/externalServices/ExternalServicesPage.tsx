@@ -33,6 +33,7 @@ interface Props extends TelemetryProps {
  */
 export const ExternalServicesPage: FC<Props> = ({
     telemetryService,
+    telemetryRecorder,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
     isCodyApp,

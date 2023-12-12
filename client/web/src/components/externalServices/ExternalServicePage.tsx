@@ -13,6 +13,7 @@ import { Alert, Button, Container, ErrorAlert, H2, Icon, Link, PageHeader, Toolt
 
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../../site/backend'
+import { telemetryRecorder } from '../../tracking/eventLogger'
 import { CreatedByAndUpdatedByInfoByline } from '../Byline/CreatedByAndUpdatedByInfoByline'
 import { useFetchGithubAppForES } from '../gitHubApps/backend'
 import { HeroPage } from '../HeroPage'
@@ -269,6 +270,7 @@ export const ExternalServicePage: FC<Props> = props => {
                         isLightTheme={isLightTheme}
                         className="test-external-service-editor"
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 )}
                 <ExternalServiceWebhook externalService={externalService} className="mt-3" />

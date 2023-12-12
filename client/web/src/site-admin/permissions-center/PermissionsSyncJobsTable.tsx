@@ -111,7 +111,8 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
 }) => {
     useEffect(() => {
         telemetryService.logPageView('PermissionsSyncJobsTable')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('permissionsSyncJobsTable', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
     const debouncedQuery = useDebounce(filters.query, 300)

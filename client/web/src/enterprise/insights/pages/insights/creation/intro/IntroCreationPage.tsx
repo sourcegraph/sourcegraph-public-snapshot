@@ -23,7 +23,7 @@ interface IntroCreationPageProps extends TelemetryProps {}
 
 /** Displays intro page for insights creation UI. */
 export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<IntroCreationPageProps>> = props => {
-    const { telemetryService } = props
+    const { telemetryService, telemetryRecorder } = props
 
     const navigate = useNavigate()
     const { search } = useLocation()
@@ -31,27 +31,32 @@ export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<
 
     const handleCreateSearchBasedInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateSearchBasedInsightClick')
+        telemetryRecorder.recordEvent('codeInsightsCreateSearchBasedInsight', 'clicked')
         navigate(`/insights/create/search${search}`)
     }
 
     const handleCaptureGroupInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateCaptureGroupInsightClick')
+        telemetryRecorder.recordEvent('codeInsightsCreateCaptureGroupInsight', 'clicked')
         navigate(`/insights/create/capture-group${search}`)
     }
 
     const handleCreateComputeInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateComputeInsightClick')
+        telemetryRecorder.recordEvent('codeInsightsCreateComputeInsight', 'clicked')
         navigate(`/insights/create/group-results${search}`)
     }
 
     const handleCreateCodeStatsInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateCodeStatsInsightClick')
+        telemetryRecorder.recordEvent('codeInsightsCreateCodeStatsInsight', 'clicked')
         navigate(`/insights/create/lang-stats${search}`)
     }
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsCreationPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('CodeInsightsCreationPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <CodeInsightsPage className={styles.container}>

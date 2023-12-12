@@ -36,10 +36,12 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
     queryPolicies = defaultQueryPolicies,
     repo,
     telemetryService,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
         telemetryService.logPageView('CodyConfigurationPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('codyConfigurationPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const navigate = useNavigate()
     const location = useLocation()

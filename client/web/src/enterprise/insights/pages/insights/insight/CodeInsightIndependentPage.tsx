@@ -20,7 +20,7 @@ import styles from './CodeInsightIndependentPage.module.scss'
 interface CodeInsightIndependentPage extends TelemetryProps {}
 
 export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependentPage> = props => {
-    const { telemetryService } = props
+    const { telemetryService, telemetryRecorder } = props
 
     const { insightId } = useParams()
     const { getInsightById } = useContext(CodeInsightsBackendContext)
@@ -44,18 +44,29 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
             <PageTitle title={`${insight.title} - Code Insights`} />
             <PageHeader
                 path={[{ to: '/insights/all', icon: CodeInsightsIcon }, { text: insight.title }]}
-                actions={<CodeInsightIndependentPageActions insight={insight} telemetryService={telemetryService} />}
+                actions={
+                    <CodeInsightIndependentPageActions
+                        insight={insight}
+                        telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
+                    />
+                }
             />
 
             <StandaloneInsightDashboardPills
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 dashboards={insight.dashboards}
                 insightId={insight.id}
                 className={styles.dashboards}
             />
 
             <div className={styles.content}>
-                <SmartStandaloneInsight insight={insight} telemetryService={telemetryService} />
+                <SmartStandaloneInsight
+                    insight={insight}
+                    telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
+                />
             </div>
         </CodeInsightsPage>
     )

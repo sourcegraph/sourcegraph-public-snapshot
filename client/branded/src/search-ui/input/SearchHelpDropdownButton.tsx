@@ -31,11 +31,12 @@ interface SearchHelpDropdownButtonProps extends TelemetryProps {
  * syntax.
  */
 export const SearchHelpDropdownButton: FC<SearchHelpDropdownButtonProps> = props => {
-    const { isSourcegraphDotCom, className, telemetryService } = props
+    const { isSourcegraphDotCom, className, telemetryService, telemetryRecorder } = props
 
     const onQueryDocumentationLinkClicked = useCallback(() => {
         telemetryService.log('SearchHelpDropdownQueryDocsLinkClicked')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('searchHelpDropdownQueryDocsLink', 'clicked')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <Popover>

@@ -48,14 +48,15 @@ interface NotebooksListPageHeaderProps extends TelemetryProps {
 
 export const NotebooksListPageHeader: React.FunctionComponent<
     React.PropsWithChildren<NotebooksListPageHeaderProps>
-> = ({ authenticatedUser, telemetryService, setImportState, importNotebook }) => {
+> = ({ authenticatedUser, telemetryService, telemetryRecorder, setImportState, importNotebook }) => {
     const fileInputReference = useRef<HTMLInputElement>(null)
 
     const onImportMenuItemSelect = useCallback(() => {
         telemetryService.log('SearchNotebookImportMarkdownNotebookButtonClick')
+        telemetryRecorder.recordEvent('searchNotebookImportMarkdownNotebookButton', 'clicked')
         // Open the system file picker.
         fileInputReference.current?.click()
-    }, [fileInputReference, telemetryService])
+    }, [fileInputReference, telemetryService, telemetryRecorder])
 
     const onFileLoad = useCallback(
         (event: ProgressEvent<FileReader>, fileName: string): void => {
@@ -96,7 +97,11 @@ export const NotebooksListPageHeader: React.FunctionComponent<
 
     return (
         <>
-            <ToggleNotepadButton telemetryService={telemetryService} className="mr-2 d-none d-md-inline" />
+            <ToggleNotepadButton
+                telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
+                className="mr-2 d-none d-md-inline"
+            />
             {/* The file upload input has to always be present in the DOM, otherwise the upload process
             does not complete when the menu below closes.  */}
             <Input
@@ -132,7 +137,7 @@ const NOTEPAD_DISABLED_EVENT = 'SearchNotepadDisabled'
 
 const ToggleNotepadButton: React.FunctionComponent<
     React.PropsWithChildren<TelemetryProps & { className?: string }>
-> = ({ telemetryService, className }) => {
+> = ({ telemetryService, telemetryRecorder, className }) => {
     const [notepadEnabled, setNotepadEnabled] = useTemporarySetting('search.notepad.enabled')
     const [ctaSeen, setCTASeen] = useTemporarySetting('search.notepad.ctaSeen')
     const [showCTA, setShowCTA] = useState(false)
@@ -145,6 +150,7 @@ const ToggleNotepadButton: React.FunctionComponent<
                 // `enabled` is the old state so we have to log the "opposite"
                 // event
                 telemetryService.log(enabled ? NOTEPAD_DISABLED_EVENT : NOTEPAD_ENABLED_EVENT)
+                telemetryRecorder.recordEvent(enabled ? NOTEPAD_DISABLED_EVENT : NOTEPAD_ENABLED_EVENT, 'clicked')
                 return !enabled
             })
         }
@@ -152,6 +158,7 @@ const ToggleNotepadButton: React.FunctionComponent<
 
     function onEnableFromCTA(): void {
         telemetryService.log(NOTEPAD_ENABLED_EVENT)
+        telemetryRecorder.recordEvent(NOTEPAD_ENABLED_EVENT, 'clicked')
         setNotepadEnabled(true)
         setShowCTA(false)
         setCTASeen(true)

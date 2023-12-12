@@ -53,6 +53,7 @@ addFormats(ajv)
  */
 export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    telemetryRecorder,
     jsonSchema,
     editorActions,
     input,
@@ -142,6 +143,7 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                     actions={editorActions}
                     className="test-external-service-editor"
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     explanation={
                         <Text className="form-text text-muted">
                             <small>

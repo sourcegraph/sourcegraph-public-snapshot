@@ -15,18 +15,27 @@ interface CodeInsightsGettingStartedPageProps extends TelemetryProps {}
 export const CodeInsightsGettingStartedPage: React.FunctionComponent<
     React.PropsWithChildren<CodeInsightsGettingStartedPageProps>
 > = props => {
-    const { telemetryService } = props
+    const { telemetryService, telemetryRecorder } = props
 
     useEffect(() => {
         telemetryService.logViewEvent('InsightsGetStartedPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('insightsGetStartedPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <main className="pb-5">
             <PageTitle title="Code Insights" />
-            <DynamicCodeInsightExample telemetryService={telemetryService} />
-            <CodeInsightsExamples telemetryService={telemetryService} className={styles.section} />
-            <CodeInsightsTemplates telemetryService={telemetryService} className={styles.section} />
+            <DynamicCodeInsightExample telemetryService={telemetryService} telemetryRecorder={telemetryRecorder} />
+            <CodeInsightsExamples
+                telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
+                className={styles.section}
+            />
+            <CodeInsightsTemplates
+                telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
+                className={styles.section}
+            />
         </main>
     )
 }

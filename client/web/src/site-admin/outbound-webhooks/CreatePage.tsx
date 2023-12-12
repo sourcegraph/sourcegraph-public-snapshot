@@ -18,7 +18,7 @@ import { SubmitButton } from './create-edit/SubmitButton'
 
 export interface CreatePageProps extends TelemetryProps {}
 
-export const CreatePage: FC<CreatePageProps> = ({ telemetryService }) => {
+export const CreatePage: FC<CreatePageProps> = ({ telemetryService, telemetryRecorder }) => {
     const navigate = useNavigate()
     useEffect(() => {
         telemetryService.logPageView('OutboundWebhooksCreatePage')

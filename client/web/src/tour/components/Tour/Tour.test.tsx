@@ -4,6 +4,7 @@ import sinon from 'sinon'
 
 import type { TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { Tour } from './Tour'
@@ -41,12 +42,14 @@ const mockedTasks: TourTaskType[] = [
 ]
 
 const mockedTelemetryService = { ...NOOP_TELEMETRY_SERVICE, log: sinon.spy() }
+const mockedTelemetryRecorder = { ...noOpTelemetryRecorder, record: sinon.spy() }
 const setup = (overrideTasks?: TourTaskType[]): RenderResult =>
     render(
         <MemoryRouter initialEntries={['/']}>
             <MockTemporarySettings settings={{}}>
                 <Tour
                     telemetryService={mockedTelemetryService}
+                    telemetryRecorder={mockedTelemetryRecorder}
                     id={tourId}
                     tasks={overrideTasks ?? mockedTasks}
                     defaultSnippets={{}}

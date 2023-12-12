@@ -107,6 +107,7 @@ export function isAccessTokenCallbackPage(): boolean {
  */
 export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     telemetryService,
+    telemetryRecorder,
     onDidCreateAccessToken,
     user,
     isSourcegraphDotCom,
@@ -117,7 +118,8 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     const location = useLocation()
     useEffect(() => {
         telemetryService.logPageView('NewAccessTokenCallback')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('newAccessToken', 'callback')
+    }, [telemetryService, telemetryRecorder])
 
     /** Get the requester, port, and destination from the url parameters */
     const urlSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search])

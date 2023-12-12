@@ -100,6 +100,7 @@ export interface ExperimentalSearchInputProps
 export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInputProps>> = ({
     children,
     telemetryService,
+    telemetryRecorder,
     platformContext,
     authenticatedUser,
     fetchSearchContexts,
@@ -169,6 +170,9 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
                     type: option.kind,
                     source,
                 })
+                telemetryRecorder.recordEvent(`searchInput${eventNameMap[action.type]}`, 'displayed', {
+                    privateMetadata: { type: option.kind, source },
+                })
             }),
             Prec.low(
                 exampleSuggestions({
@@ -178,7 +182,7 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
                 })
             ),
         ],
-        [telemetryService, addExample]
+        [telemetryService, telemetryRecorder, addExample]
     )
 
     return (

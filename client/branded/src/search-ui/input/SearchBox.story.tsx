@@ -2,6 +2,7 @@ import type { Meta, Story } from '@storybook/react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode } from '@sourcegraph/shared/src/search'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     mockFetchSearchContexts,
@@ -24,6 +25,7 @@ export default config
 
 const defaultProps: SearchBoxProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    telemetryRecorder: noOpTelemetryRecorder,
     settingsCascade: {
         final: null,
         subjects: null,

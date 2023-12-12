@@ -21,7 +21,7 @@ export interface SmartInsightProps extends TelemetryProps, HTMLAttributes<HTMLEl
  * actions.
  */
 export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, reference) => {
-    const { insight, resizing = false, telemetryService, children, ...attributes } = props
+    const { insight, resizing = false, telemetryService, telemetryRecorder, children, ...attributes } = props
 
     const mergedReference = useMergeRefs([reference])
     const search = useSearchParameters()
@@ -42,11 +42,21 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, r
     return (
         <ViewGridItem id={insight.id} ref={mergedReference} {...attributes}>
             {isBackendInsight(insight) ? (
-                <BackendInsightView insight={insight} resizing={resizing} telemetryService={telemetryService}>
+                <BackendInsightView
+                    insight={insight}
+                    resizing={resizing}
+                    telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
+                >
                     {children}
                 </BackendInsightView>
             ) : (
-                <LangStatsInsightCard insight={insight} resizing={resizing} telemetryService={telemetryService}>
+                <LangStatsInsightCard
+                    insight={insight}
+                    resizing={resizing}
+                    telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
+                >
                     {children}
                 </LangStatsInsightCard>
             )}

@@ -18,16 +18,23 @@ export interface CodeInsightsRouterProps extends TelemetryProps {
 }
 
 export const CodeInsightsRouter: FC<CodeInsightsRouterProps> = props => {
-    const { authenticatedUser, telemetryService } = props
+    const { authenticatedUser, telemetryService, telemetryRecorder } = props
 
     if (!window.context?.codeInsightsEnabled) {
         return (
             <CodeInsightsDotComGetStartedLazy
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 authenticatedUser={authenticatedUser}
             />
         )
     }
 
-    return <CodeInsightsAppLazyRouter authenticatedUser={authenticatedUser} telemetryService={telemetryService} />
+    return (
+        <CodeInsightsAppLazyRouter
+            authenticatedUser={authenticatedUser}
+            telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
+        />
+    )
 }

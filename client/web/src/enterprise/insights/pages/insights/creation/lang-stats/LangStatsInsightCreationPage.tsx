@@ -44,7 +44,8 @@ export interface LangStatsInsightCreationPageProps extends TelemetryProps {
 }
 
 export const LangStatsInsightCreationPage: FC<LangStatsInsightCreationPageProps> = props => {
-    const { backUrl, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
+    const { backUrl, telemetryService, telemetryRecorder, onInsightCreateRequest, onCancel, onSuccessfulCreation } =
+        props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -60,7 +61,8 @@ export const LangStatsInsightCreationPage: FC<LangStatsInsightCreationPageProps>
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsCodeStatsCreationPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('codeInsights.codeStatsInsightCreationPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const handleSubmit = useCallback<LangStatsInsightCreationContentProps['onSubmit']>(
         async values => {
@@ -71,24 +73,31 @@ export const LangStatsInsightCreationPage: FC<LangStatsInsightCreationPageProps>
             // Clear initial values if user successfully created search insight
             setInitialFormValues(undefined)
             telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
+            telemetryRecorder.recordEvent('codeInsightsCodeStatsCreationPageSubmit', 'clicked')
             telemetryService.log(
                 'InsightAddition',
                 { insightType: CodeInsightTrackType.LangStatsInsight },
                 { insightType: CodeInsightTrackType.LangStatsInsight }
             )
+            telemetryRecorder.recordEvent('insightAddition', 'added', {
+                privateMetadata: {
+                    insightType: CodeInsightTrackType.LangStatsInsight,
+                },
+            })
 
             onSuccessfulCreation()
         },
-        [onInsightCreateRequest, onSuccessfulCreation, setInitialFormValues, telemetryService]
+        [onInsightCreateRequest, onSuccessfulCreation, setInitialFormValues, telemetryService, telemetryRecorder]
     )
 
     const handleCancel = useCallback(() => {
         // Clear initial values if user successfully created search insight
         setInitialFormValues(undefined)
         telemetryService.log('CodeInsightsCodeStatsCreationPageCancelClick')
+        telemetryRecorder.recordEvent('codeInsightsCodeStatsCreationPageCancel', 'clicked')
 
         onCancel()
-    }, [setInitialFormValues, telemetryService, onCancel])
+    }, [setInitialFormValues, telemetryService, telemetryRecorder, onCancel])
 
     return (
         <CodeInsightsPage>

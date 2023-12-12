@@ -31,6 +31,7 @@ interface RemoteRepositoriesStepProps extends TelemetryProps, HTMLAttributes<HTM
 export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
     className,
     telemetryService,
+    telemetryRecorder,
     baseURL,
     description = true,
     progressBar = true,
@@ -51,13 +52,17 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
 
     useEffect(() => {
         telemetryService.log('SetupWizardLandedAddRemoteCode')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('setupWizardLandedAddRemoteCode', 'completed')
+    }, [telemetryService, telemetryRecorder])
 
     const handleNextButtonClick = (): void => {
         const logEvent = getNextButtonLogEvent(codeHostQueryResult.data)
 
         if (logEvent) {
             telemetryService.log(logEvent)
+            telemetryRecorder.recordEvent('eventButton', 'clicked', {
+                privateMetadata: { logEvent },
+            })
         }
     }
 
@@ -83,13 +88,19 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
                         <Route index={true} element={isCodyApp ? <AppRemoteNotice /> : <CodeHostsPicker />} />
                         <Route
                             path=":codeHostType/create"
-                            element={<CodeHostCreation telemetryService={telemetryService} />}
+                            element={
+                                <CodeHostCreation
+                                    telemetryService={telemetryService}
+                                    telemetryRecorder={telemetryRecorder}
+                                />
+                            }
                         />
                         <Route
                             path=":codehostId/edit"
                             element={
                                 <CodeHostEdit
                                     telemetryService={telemetryService}
+                                    telemetryRecorder={telemetryRecorder}
                                     onCodeHostDelete={setCodeHostToDelete}
                                 />
                             }

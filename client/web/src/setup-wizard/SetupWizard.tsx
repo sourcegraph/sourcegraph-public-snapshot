@@ -58,7 +58,7 @@ const CORE_STEPS: StepConfiguration[] = [
 interface SetupWizardProps extends TelemetryProps {}
 
 export const SetupWizard: FC<SetupWizardProps> = props => {
-    const { telemetryService } = props
+    const { telemetryService, telemetryRecorder } = props
 
     const navigate = useNavigate()
     const [activeStepId, setStepId, status] = useTemporarySetting('setup.activeStepId')
@@ -85,8 +85,9 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
     const handleSkip = useCallback(() => {
         setSkipWizardState(true)
         telemetryService.log('SetupWizardQuits')
+        telemetryRecorder.recordEvent('setupWizard', 'quit')
         navigate('/search')
-    }, [navigate, telemetryService, setSkipWizardState])
+    }, [navigate, telemetryService, telemetryRecorder, setSkipWizardState])
 
     if (status !== 'loaded') {
         return null
@@ -114,6 +115,7 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
                     <SetupStepsContent
                         contentContainerClass={styles.contentContainer}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         isCodyApp={false}
                     />
                 </div>

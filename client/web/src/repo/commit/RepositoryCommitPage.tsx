@@ -126,7 +126,8 @@ const RepositoryRevisionNodes: React.FunctionComponent<RepositoryRevisionNodesPr
 
     useEffect(() => {
         props.telemetryService.logViewEvent('RepositoryCommit')
-    }, [props.telemetryService])
+        props.telemetryRecorder.recordEvent('repositoryCommit', 'submitted')
+    }, [props.telemetryService, props.telemetryRecorder])
 
     useEffect(() => {
         if (commit) {

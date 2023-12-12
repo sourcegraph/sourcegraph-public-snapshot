@@ -39,7 +39,7 @@ const rootPagePathsToTab = {
 }
 
 export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter>(props => {
-    const { telemetryService } = props
+    const { telemetryService, telemetryRecorder } = props
 
     const fetched = useLicense()
     const api = useApi()
@@ -55,20 +55,36 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
             <Routes>
                 <Route index={true} element={<CodeInsightsSmartRoutingRedirect />} />
 
-                <Route path="create/*" element={<CreationRoutes telemetryService={telemetryService} />} />
+                <Route
+                    path="create/*"
+                    element={
+                        <CreationRoutes telemetryService={telemetryService} telemetryRecorder={telemetryRecorder} />
+                    }
+                />
 
                 <Route path="dashboards/:dashboardId/edit" element={<EditDashboardPage />} />
 
                 <Route
                     path="add-dashboard"
-                    element={<InsightsDashboardCreationPage telemetryService={telemetryService} />}
+                    element={
+                        <InsightsDashboardCreationPage
+                            telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
+                        />
+                    }
                 />
 
                 {Object.entries(rootPagePathsToTab).map(([path, activeTab]) => (
                     <Route
                         key="hardcoded-key"
                         path={path}
-                        element={<CodeInsightsRootPage activeTab={activeTab} telemetryService={telemetryService} />}
+                        element={
+                            <CodeInsightsRootPage
+                                activeTab={activeTab}
+                                telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
+                            />
+                        }
                     />
                 ))}
 
@@ -84,7 +100,15 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                     path="insight/:insightId"
                     element={<RedirectRoute getRedirectURL={({ params }) => `/insights/${params.insightId}`} />}
                 />
-                <Route path=":insightId" element={<CodeInsightIndependentPage telemetryService={telemetryService} />} />
+                <Route
+                    path=":insightId"
+                    element={
+                        <CodeInsightIndependentPage
+                            telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
+                        />
+                    }
+                />
 
                 <Route path="*" element={<NotFoundPage pageType="code insights" />} />
             </Routes>

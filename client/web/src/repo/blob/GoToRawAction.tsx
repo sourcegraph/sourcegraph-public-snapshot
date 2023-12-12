@@ -20,6 +20,9 @@ export class GoToRawAction extends React.PureComponent<Props> {
             repoName: this.props.repoName,
             filePath: this.props.filePath,
         })
+        this.props.telemetryRecorder.recordEvent('rawFileDownload', 'clicked', {
+            privateMetadata: { repoName: this.props.repoName, filePath: this.props.filePath },
+        })
     }
 
     public render(): JSX.Element {

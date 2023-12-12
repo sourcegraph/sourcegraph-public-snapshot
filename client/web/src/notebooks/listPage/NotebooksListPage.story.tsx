@@ -2,6 +2,7 @@ import type { DecoratorFn, Story, Meta } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { type Observable, of } from 'rxjs'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../components/WebStory'
@@ -70,6 +71,7 @@ export const Default: Story = () => (
             <NotebooksListPage
                 {...props}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 authenticatedUser={null}
                 fetchNotebooks={fetchNotebooks}
             />

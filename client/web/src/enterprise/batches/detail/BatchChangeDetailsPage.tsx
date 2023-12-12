@@ -49,11 +49,12 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeDetailsPageProps>
 > = props => {
     const { batchChangeName } = useParams()
-    const { namespaceID, telemetryService, authenticatedUser, deleteBatchChange } = props
+    const { namespaceID, telemetryService, telemetryRecorder, authenticatedUser, deleteBatchChange } = props
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeDetailsPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('batchChangeDetailsPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     // Query bulk operations created after this time.
     const createdAfter = useMemo(() => subDays(startOfDay(new Date()), 3).toISOString(), [])

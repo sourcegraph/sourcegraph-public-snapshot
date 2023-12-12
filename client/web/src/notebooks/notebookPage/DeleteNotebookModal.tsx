@@ -26,20 +26,25 @@ export const DeleteNotebookModal: FC<DeleteNotebookModalProps> = ({
     isOpen,
     toggleDeleteModal,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const navigate = useNavigate()
 
     useEffect(() => {
         if (isOpen) {
             telemetryService.log('SearchNotebookDeleteModalOpened')
+            telemetryRecorder.recordEvent('searchNotebookDeleteModal', 'opened')
         }
-    }, [isOpen, telemetryService])
+    }, [isOpen, telemetryService, telemetryRecorder])
 
     const [onDelete, deleteCompletedOrError] = useEventObservable(
         useCallback(
             (click: Observable<React.MouseEvent<HTMLButtonElement>>) =>
                 click.pipe(
-                    tap(() => telemetryService.log('SearchNotebookDeleteButtonClicked')),
+                    tap(() => {
+                        telemetryService.log('SearchNotebookDeleteButtonClicked')
+                        telemetryRecorder.recordEvent('searchNotebookDeleteButton', 'clicked')
+                    }),
                     mergeMap(() =>
                         deleteNotebook(notebookId).pipe(
                             tap(() => {
@@ -50,7 +55,7 @@ export const DeleteNotebookModal: FC<DeleteNotebookModalProps> = ({
                         )
                     )
                 ),
-            [deleteNotebook, navigate, notebookId, telemetryService]
+            [deleteNotebook, navigate, notebookId, telemetryService, telemetryRecorder]
         )
     )
 

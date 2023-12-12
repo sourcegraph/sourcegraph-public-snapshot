@@ -120,6 +120,7 @@ export class HovercardView implements TooltipView {
                         platformContext={props.platformContext}
                         settingsCascade={props.settingsCascade}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                         extensionsController={props.extensionsController}
                         // Hover props
                         actionsOrError={actionsOrError}

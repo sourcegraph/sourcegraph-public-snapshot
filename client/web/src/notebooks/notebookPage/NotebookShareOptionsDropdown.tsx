@@ -66,10 +66,18 @@ const ShareOptionComponent: React.FunctionComponent<
 }
 
 export const NotebookShareOptionsDropdown: FC<NotebookShareOptionsDropdownProps> = props => {
-    const { isSourcegraphDotCom, telemetryService, authenticatedUser, selectedShareOption, onSelectShareOption } = props
+    const {
+        isSourcegraphDotCom,
+        telemetryService,
+        telemetryRecorder,
+        authenticatedUser,
+        selectedShareOption,
+        onSelectShareOption,
+    } = props
 
     const handleTriggerClick = (): void => {
         telemetryService.log('NotebookVisibilitySettingsDropdownToggled')
+        telemetryRecorder.recordEvent('notebookVisibilitySettingsDropdownToggle', 'clicked')
     }
 
     const shareOptions: ShareOption[] = useMemo(

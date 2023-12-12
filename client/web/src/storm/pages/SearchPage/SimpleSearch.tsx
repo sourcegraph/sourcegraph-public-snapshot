@@ -22,6 +22,7 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
     function onSubmitWithTelemetry(event?: React.FormEvent): void {
         const arg = { type: showState }
         props.telemetryService.log(eventName('SubmitSearch'), arg, arg)
+        props.telemetryRecorder.recordEvent('SubmitSearch', 'submitted', { privateMetadata: { arg } })
         props.onSubmit(event)
     }
 
@@ -29,6 +30,8 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
         const changeState = (nextState: string): void => {
             const arg = { next: nextState }
             props.telemetryService.log(eventName('SelectJob'), arg, arg)
+            props.telemetryRecorder.recordEvent('selectJob', 'rendered', { privateMetadata: { arg } })
+
             setShowState(nextState)
         }
 
@@ -56,6 +59,7 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
                         className="mb-2"
                         onClick={() => {
                             props.telemetryService.log(eventName('BackButtonClick'))
+                            props.telemetryRecorder.recordEvent('backButton', 'clicked')
                             setShowState('default')
                         }}
                     >

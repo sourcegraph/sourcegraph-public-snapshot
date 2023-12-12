@@ -42,7 +42,7 @@ const INITIAL_INSIGHT_VALUES: CodeInsightExampleFormValues = {
 interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {}
 
 export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = props => {
-    const { telemetryService, ...otherProps } = props
+    const { telemetryService, telemetryRecorder, ...otherProps } = props
 
     const { repositoryUrl, loading: repositoryValueLoading } = useExampleRepositoryUrl()
 
@@ -81,17 +81,20 @@ export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = pro
     useEffect(() => {
         if (debouncedQuery !== INITIAL_INSIGHT_VALUES.query) {
             telemetryService.log('InsightsGetStartedPageQueryModification')
+            telemetryRecorder.recordEvent('insightsGetStartedPageQueryModification', 'changed')
         }
-    }, [debouncedQuery, telemetryService])
+    }, [debouncedQuery, telemetryService, telemetryRecorder])
 
     useEffect(() => {
         if (debouncedRepositories !== INITIAL_INSIGHT_VALUES.repositories) {
             telemetryService.log('InsightsGetStartedPageRepositoriesModification')
+            telemetryRecorder.recordEvent('insightsGetStartedPageRepositoriesModification', 'changed')
         }
-    }, [debouncedRepositories, telemetryService])
+    }, [debouncedRepositories, telemetryService, telemetryRecorder])
 
     const handleGetStartedClick = (): void => {
         telemetryService.log('InsightsGetStartedPrimaryCTAClick')
+        telemetryRecorder.recordEvent('insightsGetStartedPrimaryCTA', 'clicked')
     }
 
     const hasValidLivePreview =
@@ -105,6 +108,7 @@ export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = pro
             <form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit} className={styles.chartSection}>
                 <DynamicInsightPreview
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     disabled={!hasValidLivePreview}
                     repositories={repositories.input.value}
                     query={query.input.value}

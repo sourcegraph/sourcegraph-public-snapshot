@@ -25,7 +25,7 @@ interface StandaloneLangStatsInsightProps extends TelemetryProps {
 }
 
 export function StandaloneLangStatsInsight(props: StandaloneLangStatsInsightProps): React.ReactElement {
-    const { insight, telemetryService, className } = props
+    const { insight, telemetryService, telemetryRecorder, className } = props
 
     const { state } = useLivePreviewLangStatsInsight(insight)
 
@@ -34,6 +34,7 @@ export function StandaloneLangStatsInsight(props: StandaloneLangStatsInsightProp
 
     const { trackDatumClicks, trackMouseLeave, trackMouseEnter } = useCodeInsightViewPings({
         telemetryService,
+        telemetryRecorder,
         insightType: getTrackingTypeByInsightType(insight.type),
     })
 

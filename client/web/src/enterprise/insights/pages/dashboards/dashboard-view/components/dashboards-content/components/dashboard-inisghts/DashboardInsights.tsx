@@ -16,7 +16,8 @@ interface DashboardInsightsProps extends TelemetryProps {
 }
 
 export const DashboardInsights: FC<DashboardInsightsProps> = props => {
-    const { currentDashboard, telemetryService, className, onAddInsightRequest, onDashboardCreate } = props
+    const { currentDashboard, telemetryService, telemetryRecorder, className, onAddInsightRequest, onDashboardCreate } =
+        props
 
     const { getInsights } = useContext(CodeInsightsBackendContext)
     const codeInsightsCompute = useExperimentalFeatures(settings => settings.codeInsightsCompute ?? false)
@@ -45,6 +46,7 @@ export const DashboardInsights: FC<DashboardInsightsProps> = props => {
                     id={currentDashboard.id}
                     insights={insights}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     className={className}
                     onGridCreate={onDashboardCreate}
                 />

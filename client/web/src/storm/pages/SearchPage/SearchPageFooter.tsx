@@ -9,10 +9,11 @@ import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import styles from './SearchPageFooter.module.scss'
 
 export const SearchPageFooter: FC = () => {
-    const { telemetryService, isSourcegraphDotCom } = useLegacyContext_onlyInStormRoutes()
+    const { telemetryService, telemetryRecorder, isSourcegraphDotCom } = useLegacyContext_onlyInStormRoutes()
 
     const logLinkClicked = (name: string): void => {
         telemetryService.log('HomepageFooterCTASelected', { name }, { name })
+        telemetryRecorder.recordEvent('homepageFooterCTA', 'clicked', { privateMetadata: { name } })
     }
 
     const links = useMemo(

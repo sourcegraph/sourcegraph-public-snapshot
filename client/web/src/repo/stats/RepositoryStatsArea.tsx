@@ -31,7 +31,7 @@ const BREADCRUMB = { key: 'contributors', element: 'Contributors' }
  * Renders pages related to repository stats.
  */
 export const RepositoryStatsArea: FC<Props> = props => {
-    const { useBreadcrumb, repo, telemetryService } = props
+    const { useBreadcrumb, repo, telemetryService, telemetryRecorder } = props
     const [searchParams] = useSearchParams()
     const filePath = searchParams.get('path') ?? ''
 
@@ -51,10 +51,11 @@ export const RepositoryStatsArea: FC<Props> = props => {
                         filePath={filePath}
                         isDir={true}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 ),
             }
-        }, [filePath, repo, telemetryService])
+        }, [filePath, repo, telemetryService, telemetryRecorder])
     )
     setter.useBreadcrumb(BREADCRUMB)
 

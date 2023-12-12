@@ -74,12 +74,13 @@ const filters: FilteredConnectionFilter[] = [
 
 export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminOutboundRequestsPageProps>
-> = ({ telemetryService }) => {
+> = ({ telemetryService, telemetryRecorder }) => {
     const [items, setItems] = useState<OutboundRequest[]>([])
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminOutboundRequests')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminOutboundRequests', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const lastId = items[items.length - 1]?.id ?? null
     const { data, loading, error, stopPolling, refetch, startPolling } = useQuery<

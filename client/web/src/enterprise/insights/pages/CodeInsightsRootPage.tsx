@@ -47,7 +47,7 @@ interface CodeInsightsRootPageProps extends TelemetryProps {
 }
 
 export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = memo(props => {
-    const { activeTab, telemetryService } = props
+    const { activeTab, telemetryService, telemetryRecorder } = props
 
     const navigate = useNavigate()
     const { dashboardId } = useParams()
@@ -79,7 +79,11 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = memo(props =>
             <PageHeader
                 path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
                 actions={
-                    <CodeInsightHeaderActions dashboardId={absoluteDashboardId} telemetryService={telemetryService} />
+                    <CodeInsightHeaderActions
+                        dashboardId={absoluteDashboardId}
+                        telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
+                    />
                 }
                 className={styles.header}
             />
@@ -98,14 +102,21 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = memo(props =>
                 </TabList>
                 <TabPanels className={styles.tabPanels}>
                     <TabPanel tabIndex={-1}>
-                        <DashboardsView dashboardId={dashboardId} telemetryService={telemetryService} />
+                        <DashboardsView
+                            dashboardId={dashboardId}
+                            telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
+                        />
                     </TabPanel>
                     <TabPanel tabIndex={-1}>
-                        <AllInsightsView telemetryService={telemetryService} />
+                        <AllInsightsView telemetryService={telemetryService} telemetryRecorder={telemetryRecorder} />
                     </TabPanel>
                     <TabPanel tabIndex={-1}>
                         <Suspense fallback={<LoadingSpinner aria-label="Loading Code Insights Getting started page" />}>
-                            <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
+                            <LazyCodeInsightsGettingStartedPage
+                                telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
+                            />
                         </Suspense>
                     </TabPanel>
                 </TabPanels>
@@ -119,7 +130,7 @@ interface CodeInsightHeaderActionsProps extends TelemetryProps {
 }
 
 const CodeInsightHeaderActions: FC<CodeInsightHeaderActionsProps> = props => {
-    const { dashboardId, telemetryService } = props
+    const { dashboardId, telemetryService, telemetryRecorder } = props
 
     const { insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -143,7 +154,10 @@ const CodeInsightHeaderActions: FC<CodeInsightHeaderActionsProps> = props => {
                     as={Link}
                     to={encodeDashboardIdQueryParam('/insights/create', dashboardId)}
                     variant="primary"
-                    onClick={() => telemetryService.log('InsightAddMoreClick')}
+                    onClick={() => {
+                        telemetryService.log('InsightAddMoreClick')
+                        telemetryRecorder.recordEvent('insightAddMore', 'clicked')
+                    }}
                     disabled={!available}
                 >
                     <Icon aria-hidden={true} svgPath={mdiPlus} /> Create insight

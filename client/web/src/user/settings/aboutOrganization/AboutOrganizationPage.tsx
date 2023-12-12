@@ -12,10 +12,12 @@ interface AboutOrganizationPageProps extends TelemetryProps {}
 
 export const AboutOrganizationPage: React.FunctionComponent<React.PropsWithChildren<AboutOrganizationPageProps>> = ({
     telemetryService,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('AboutOrg')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('aboutOrg', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <>
@@ -30,6 +32,7 @@ export const AboutOrganizationPage: React.FunctionComponent<React.PropsWithChild
                 contentClassName={styles.selfHostedCtaContent}
                 page="organizations"
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
             >
                 <Text className="mb-2">
                     <strong>Need more enterprise features? Run Sourcegraph self-hosted</strong>

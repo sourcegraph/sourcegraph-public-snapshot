@@ -55,6 +55,7 @@ export const AllInsightsView: FC<AllInsightsViewProps> = props => {
                 insights={insights}
                 persistSizeAndOrder={false}
                 telemetryService={props.telemetryService}
+                telemetryRecorder={props.telemetryRecorder}
             />
 
             <footer className={styles.footer}>

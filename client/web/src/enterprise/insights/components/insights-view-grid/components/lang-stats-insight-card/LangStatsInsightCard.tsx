@@ -29,7 +29,7 @@ interface BuiltInInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement
 }
 
 export const LangStatsInsightCard = forwardRef<HTMLElement, BuiltInInsightProps>((props, ref) => {
-    const { insight, resizing, telemetryService, children, ...attributes } = props
+    const { insight, resizing, telemetryService, telemetryRecorder, children, ...attributes } = props
 
     const { currentDashboard } = useContext(InsightContext)
     const cardRef = useMergeRefs([ref])
@@ -46,6 +46,7 @@ export const LangStatsInsightCard = forwardRef<HTMLElement, BuiltInInsightProps>
 
     const { trackDatumClicks, trackMouseLeave, trackMouseEnter } = useCodeInsightViewPings({
         telemetryService,
+        telemetryRecorder,
         insightType: getTrackingTypeByInsightType(insight.type),
     })
 

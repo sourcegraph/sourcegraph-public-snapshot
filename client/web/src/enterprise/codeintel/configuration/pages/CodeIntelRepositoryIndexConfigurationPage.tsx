@@ -18,8 +18,11 @@ export interface CodeIntelRepositoryIndexConfigurationPageProps extends Telemetr
 
 export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
     CodeIntelRepositoryIndexConfigurationPageProps
-> = ({ repo, authenticatedUser, telemetryService, ...props }) => {
-    useEffect(() => telemetryService.logViewEvent('CodeIntelRepositoryIndexConfiguration'), [telemetryService])
+> = ({ repo, authenticatedUser, telemetryService, telemetryRecorder, ...props }) => {
+    useEffect(() => {
+        telemetryService.logViewEvent('CodeIntelRepositoryIndexConfiguration')
+        telemetryRecorder.recordEvent('codeIntelRepositoryIndexConfiguration', 'viewed')
+    }, [telemetryService, telemetryRecorder])
     const location = useLocation()
 
     const [activeTabIndex, setActiveTabIndex] = useState<number>(0)
@@ -72,6 +75,7 @@ export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
                             repoId={repo.id}
                             authenticatedUser={authenticatedUser}
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                         />
                     </TabPanel>
                     <TabPanel>
@@ -79,6 +83,7 @@ export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
                             repoId={repo.id}
                             authenticatedUser={authenticatedUser}
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                             {...props}
                         />
                     </TabPanel>

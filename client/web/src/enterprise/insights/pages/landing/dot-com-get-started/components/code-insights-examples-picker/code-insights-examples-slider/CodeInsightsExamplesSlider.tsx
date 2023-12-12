@@ -16,7 +16,7 @@ interface CodeInsightsExamplesSliderProps extends TelemetryProps {}
 export const CodeInsightsExamplesSlider: React.FunctionComponent<
     React.PropsWithChildren<CodeInsightsExamplesSliderProps>
 > = props => {
-    const { telemetryService } = props
+    const { telemetryService, telemetryRecorder } = props
     const itemElementReferences = useRef<Map<number, HTMLElement | null>>(new Map())
     const [activeExampleIndex, setActiveExampleIndex] = useState<number>(0)
 
@@ -27,6 +27,7 @@ export const CodeInsightsExamplesSlider: React.FunctionComponent<
         if (nextElementReference) {
             nextElementReference.scrollIntoView({ block: 'nearest', inline: 'start' })
             telemetryService.log('CloudCodeInsightsGetStartedUseCase')
+            telemetryRecorder.recordEvent('cloudCodeInsightsGetStartedUseCase', 'clicked')
         }
     }
 
@@ -37,6 +38,7 @@ export const CodeInsightsExamplesSlider: React.FunctionComponent<
         if (nextElementReference) {
             nextElementReference.scrollIntoView({ block: 'nearest', inline: 'start' })
             telemetryService.log('CloudCodeInsightsGetStartedUseCase')
+            telemetryRecorder.recordEvent('cloudCodeInsightsGetStartedUseCase', 'clicked')
         }
     }
 
@@ -83,6 +85,7 @@ export const CodeInsightsExamplesSlider: React.FunctionComponent<
                             {...example}
                             className={styles.sliderChart}
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                         />
                     </CodeInsightsExamplesSliderItem>
                 ))}

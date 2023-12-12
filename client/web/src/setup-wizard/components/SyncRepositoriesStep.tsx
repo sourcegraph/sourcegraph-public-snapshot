@@ -13,15 +13,18 @@ interface SyncRepositoriesStepProps extends TelemetryProps {
 
 export function SyncRepositoriesStep({
     telemetryService,
+    telemetryRecorder,
     baseURL,
     ...attributes
 }: SyncRepositoriesStepProps): ReactElement {
     useEffect(() => {
         telemetryService.log('SetupWizardLandedSyncRepositories')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('setupWizardLandedSyncRepositories', 'completed')
+    }, [telemetryService, telemetryRecorder])
 
     const handleFinishButtonClick = (): void => {
         telemetryService.log('SetupWizardFinishedSuccessfully')
+        telemetryRecorder.recordEvent('setupWizardFinished', 'succeeded')
     }
 
     return (

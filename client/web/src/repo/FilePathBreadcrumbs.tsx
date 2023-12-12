@@ -19,7 +19,7 @@ interface FilePathBreadcrumbsProps extends RepoRevision, TelemetryProps {
  * links.
  */
 export const FilePathBreadcrumbs: FC<FilePathBreadcrumbsProps> = props => {
-    const { repoName, revision, filePath, isDir, telemetryService } = props
+    const { repoName, revision, filePath, isDir, telemetryService, telemetryRecorder } = props
 
     const partToUrl = (segment: string, index: number, segments: string[]): string => {
         const partPath = segments.slice(0, index + 1).join('/')
@@ -31,7 +31,11 @@ export const FilePathBreadcrumbs: FC<FilePathBreadcrumbsProps> = props => {
 
     return (
         <Breadcrumbs filename={filePath} getSegmentLink={partToUrl} className={styles.filePathBreadcrumbs}>
-            <CopyPathAction filePath={filePath} telemetryService={telemetryService} />
+            <CopyPathAction
+                filePath={filePath}
+                telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
+            />
         </Breadcrumbs>
     )
 }

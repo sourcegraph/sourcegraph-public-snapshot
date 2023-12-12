@@ -18,10 +18,12 @@ export interface SiteAdminRolesPageProps extends TelemetryProps {}
 
 export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren<SiteAdminRolesPageProps>> = ({
     telemetryService,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminRoles')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminRoles', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const [permissions, setPermissions] = useState<PermissionsMap>({} as PermissionsMap)
 

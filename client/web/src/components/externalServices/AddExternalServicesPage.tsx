@@ -46,6 +46,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
     codeHostExternalServices,
     nonCodeHostExternalServices,
     telemetryService,
+    telemetryRecorder,
     autoFocusForm,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
@@ -91,6 +92,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         return (
             <AddExternalServicePage
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 externalService={externalService}
                 autoFocusForm={autoFocusForm}
                 externalServicesFromFile={externalServicesFromFile}

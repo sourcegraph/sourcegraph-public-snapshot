@@ -10,6 +10,7 @@ import {
 } from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
+import { Group } from '@visx/group'
 
 import {
     SearchSidebar,
@@ -65,6 +66,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         onSearchSubmit,
         setSidebarCollapsed,
         telemetryService,
+        telemetryRecorder,
         settingsCascade,
         children,
         ...attributes
@@ -83,17 +85,21 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     const onDynamicFilterClicked = useCallback(
         (value: string, kind?: string) => {
             telemetryService.log('DynamicFilterClicked', { search_filter: { kind } })
+            telemetryRecorder.recordEvent('dynamicFilter', 'clicked', {
+                privateMetadata: { search_filter: { kind } },
+            })
             onSearchSubmit([{ type: 'toggleSubquery', value }])
         },
-        [telemetryService, onSearchSubmit]
+        [telemetryService, telemetryRecorder, onSearchSubmit]
     )
 
     const onSnippetClicked = useCallback(
         (value: string) => {
             telemetryService.log('SearchSnippetClicked')
+            telemetryRecorder.recordEvent('searchSnippet', 'clicked')
             onSearchSubmit([{ type: 'toggleSubquery', value }])
         },
-        [telemetryService, onSearchSubmit]
+        [telemetryService, telemetryRecorder, onSearchSubmit]
     )
 
     const handleAggregationBarLinkClick = useCallback(
@@ -106,8 +112,9 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     const handleGroupedByToggle = useCallback(
         (open: boolean): void => {
             telemetryService.log(open ? GroupResultsPing.ExpandSidebarSection : GroupResultsPing.CollapseSidebarSection)
+            telemetryRecorder.recordEvent('GroupResultsOpenSection', `${open ? 'expanded' : 'collapsed'}`)
         },
-        [telemetryService]
+        [telemetryService, telemetryRecorder]
     )
 
     return (
@@ -118,7 +125,12 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 <SearchSidebarSection
                     sectionId={SectionID.GROUPED_BY}
                     header="Group results by"
-                    postHeader={<CustomAggregationHeading telemetryService={props.telemetryService} />}
+                    postHeader={
+                        <CustomAggregationHeading
+                            telemetryService={props.telemetryService}
+                            telemetryRecorder={props.telemetryRecorder}
+                        />
+                    }
                     // SearchAggregations content contains component that makes a few API network requests
                     // in order to prevent these calls if this section is collapsed we turn off force render
                     // for collapse section component
@@ -131,6 +143,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                         proactive={proactiveSearchAggregations}
                         caseSensitive={caseSensitive}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         onQuerySubmit={handleAggregationBarLinkClick}
                     />
                 </SearchSidebarSection>
@@ -189,7 +202,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                     clearSearchOnChange: false,
                 }}
             >
-                {getSearchReferenceFactory({ telemetryService, setQueryState: onNavbarQueryChange })}
+                {getSearchReferenceFactory({ telemetryService, telemetryRecorder, setQueryState: onNavbarQueryChange })}
             </SearchSidebarSection>
 
             <SearchSidebarSection sectionId={SectionID.SEARCH_SNIPPETS} header="Search snippets">
@@ -208,13 +221,16 @@ const getRepoFilterNoResultText = (repoFilterLinks: ReactElement[]): ReactNode =
     </span>
 )
 
-const CustomAggregationHeading: FC<TelemetryProps> = ({ telemetryService }) => (
+const CustomAggregationHeading: FC<TelemetryProps> = ({ telemetryService, telemetryRecorder }) => (
     <Tooltip content="Aggregation is based on results with no count limitation (count:all).">
         <Icon
             aria-label="(Aggregation is based on results with no count limitation (count:all).)"
             size="md"
             svgPath={mdiInformationOutline}
-            onMouseEnter={() => telemetryService.log(GroupResultsPing.InfoIconHover)}
+            onMouseEnter={() => {
+                telemetryService.log(GroupResultsPing.InfoIconHover)
+                telemetryRecorder.recordEvent(GroupResultsPing.InfoIconHover, 'hovered')
+            }}
         />
     </Tooltip>
 )

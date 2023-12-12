@@ -85,6 +85,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
     copyNotebook = _copyNotebook,
     streamSearch,
     telemetryService,
+    telemetryRecorder,
     searchContextsEnabled,
     ownEnabled,
     isSourcegraphDotCom,
@@ -95,7 +96,10 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
 }) => {
     const { id: notebookId } = useParams()
 
-    useEffect(() => telemetryService.logPageView('SearchNotebookPage'), [telemetryService])
+    useEffect(() => {
+        telemetryService.logPageView('SearchNotebookPage')
+        telemetryRecorder.recordEvent('searchNotebookPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const [notebookTitle, setNotebookTitle] = useState('')
     const [updateQueue, setUpdateQueue] = useState<Partial<NotebookInput>[]>([])
@@ -242,6 +246,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                         createNotebookStar={createNotebookStar}
                                         deleteNotebookStar={deleteNotebookStar}
                                         telemetryService={telemetryService}
+                                        telemetryRecorder={telemetryRecorder}
                                     />
                                 }
                             >
@@ -257,6 +262,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                             viewerCanManage={notebookOrError.viewerCanManage}
                                             onUpdateTitle={onUpdateTitle}
                                             telemetryService={telemetryService}
+                                            telemetryRecorder={telemetryRecorder}
                                         />
                                     </PageHeader.Breadcrumb>
                                 </PageHeader.Heading>
@@ -312,6 +318,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                 exportedFileName={exportedFileName}
                                 streamSearch={streamSearch}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 searchContextsEnabled={searchContextsEnabled}
                                 ownEnabled={ownEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
@@ -329,6 +336,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                         <NotepadCTA
                             onEnable={() => {
                                 telemetryService.log(NOTEPAD_ENABLED_EVENT)
+                                telemetryRecorder.recordEvent(NOTEPAD_ENABLED_EVENT, 'enabled')
                                 setNotepadCTASeen(true)
                                 setNotepadEnabled(true)
                             }}

@@ -124,7 +124,7 @@ interface SearchJobsPageProps extends TelemetryProps {
 }
 
 export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
-    const { isAdmin, telemetryService } = props
+    const { isAdmin, telemetryService, telemetryRecorder } = props
 
     const [searchTerm, setSearchTerm] = useState<string>('')
     const [searchStateTerm, setSearchStateTerm] = useState('')
@@ -273,6 +273,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
                                 job={searchJob}
                                 withCreatorColumn={isAdmin}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 onRerun={setJobToRestart}
                                 onCancel={setJobToCancel}
                                 onDelete={setJobToDelete}
@@ -312,7 +313,7 @@ interface SearchJobProps extends TelemetryProps {
 }
 
 const SearchJob: FC<SearchJobProps> = props => {
-    const { job, withCreatorColumn, telemetryService, onRerun, onCancel, onDelete } = props
+    const { job, withCreatorColumn, telemetryService, telemetryRecorder, onRerun, onCancel, onDelete } = props
     const { repoStats } = job
 
     const startDate = useMemo(() => (job.startedAt ? formatDateSlim(new Date(job.startedAt)) : ''), [job.startedAt])
@@ -353,6 +354,7 @@ const SearchJob: FC<SearchJobProps> = props => {
                     className={styles.jobViewLogs}
                     onClick={() => {
                         telemetryService.log('SearchJobsResultViewLogsClick', {}, {})
+                        telemetryRecorder.recordEvent('searchJobsResultViewLogs', 'clicked')
                     }}
                 >
                     View logs
@@ -407,6 +409,7 @@ const SearchJob: FC<SearchJobProps> = props => {
                     className={styles.jobDownload}
                     onClick={() => {
                         telemetryService.log('SearchJobsResultDownloadClick', {}, {})
+                        telemetryRecorder.recordEvent('searchJobsResultDownload', 'clicked')
                     }}
                 >
                     <Icon svgPath={mdiDownload} aria-hidden={true} />

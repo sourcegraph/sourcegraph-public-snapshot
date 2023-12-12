@@ -34,6 +34,12 @@ const mockTelemetryService = {
     logPageView: sinon.spy(),
 }
 
+const mockTelemetryRecorder = {
+    log: sinon.spy(),
+    recordEvent: sinon.spy(),
+    recordPageView: sinon.spy(),
+}
+
 const fakeApi = new FakeDefaultCodeInsightsBackend()
 
 const Wrapper: React.FunctionComponent<React.PropsWithChildren<{ api: Partial<CodeInsightsBackend> }>> = ({
@@ -105,6 +111,7 @@ describe('CodeInsightsRootPage', () => {
             <CodeInsightsRootPage
                 activeTab={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
+                telemetryRecorder={mockTelemetryRecorder}
             />,
             {
                 route: '/insights/dashboards/foo',
@@ -120,6 +127,7 @@ describe('CodeInsightsRootPage', () => {
             <CodeInsightsRootPage
                 activeTab={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
+                telemetryRecorder={mockTelemetryRecorder}
             />,
             {
                 route: '/insights/dashboards/foo',
@@ -129,5 +137,6 @@ describe('CodeInsightsRootPage', () => {
 
         userEvent.click(screen.getByText('Create insight'))
         expect(mockTelemetryService.log.calledWith('InsightAddMoreClick')).toBe(true)
+        expect(mockTelemetryRecorder.log.calledWith('InsightAddMoreClick')).toBe(true)
     })
 })

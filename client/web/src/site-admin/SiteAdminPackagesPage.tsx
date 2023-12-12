@@ -161,6 +161,7 @@ interface PackagesModalState {
  */
 export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChildren<SiteAdminPackagesPageProps>> = ({
     telemetryService,
+    telemetryRecorder,
 }) => {
     const location = useLocation()
     const navigate = useNavigate()
@@ -168,7 +169,8 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminPackages')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminPackages', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const {
         loading: extSvcLoading,

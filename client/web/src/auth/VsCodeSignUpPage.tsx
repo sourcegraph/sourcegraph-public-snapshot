@@ -43,6 +43,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
     onSignUp,
     context,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const location = useLocation()
 
@@ -62,6 +63,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
             { type: eventType, source: 'vs-code' },
             { type: eventType, source: 'vs-code' }
         )
+        telemetryRecorder.recordEvent(`${eventType}.vs-code.signupInitiated`, 'initiated')
     }
 
     const signUpForm = (

@@ -31,6 +31,7 @@ interface Props extends TelemetryProps {
 
 export const ExternalServiceEditPage: FC<Props> = ({
     telemetryService,
+    telemetryRecorder,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
     autoFocusForm,
@@ -40,7 +41,8 @@ export const ExternalServiceEditPage: FC<Props> = ({
 
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalService')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminExternalService', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const [externalService, setExternalService] = useState<ExternalServiceFieldsWithConfig>()
 
@@ -138,6 +140,7 @@ export const ExternalServiceEditPage: FC<Props> = ({
                         onSubmit={onSubmit}
                         onChange={onChange}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         autoFocus={autoFocusForm}
                         externalServicesFromFile={externalServicesFromFile}
                         allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}

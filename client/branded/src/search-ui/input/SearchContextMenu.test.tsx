@@ -5,6 +5,7 @@ import { of } from 'rxjs'
 import sinon from 'sinon'
 
 import type { ListSearchContextsResult, SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { mockGetUserSearchContextNamespaces } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -97,6 +98,7 @@ describe('SearchContextMenu', () => {
         searchContextsEnabled: true,
         platformContext: NOOP_PLATFORM_CONTEXT,
         telemetryService: NOOP_TELEMETRY_SERVICE,
+        telemetryRecorder: noOpTelemetryRecorder,
     }
 
     const RealIntersectionObserver = window.IntersectionObserver

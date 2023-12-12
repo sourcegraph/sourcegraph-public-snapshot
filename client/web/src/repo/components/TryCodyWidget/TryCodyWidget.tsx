@@ -30,7 +30,10 @@ interface NoAuhWidgetContentProps extends WidgetContentProps {
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
-function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']): {
+function useTryCodyWidget(
+    telemetryService: TelemetryProps['telemetryService'],
+    telemetryRecorder: TelemetryProps['telemetryRecorder']
+): {
     isDismissed: boolean | undefined
     onDismiss: () => void
 } {
@@ -52,12 +55,17 @@ function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']):
                 onDismiss()
             }
         })
-    }, [telemetryService, isDismissed, onDismiss])
+    }, [telemetryService, telemetryRecorder, isDismissed, onDismiss])
 
     return { isDismissed, onDismiss }
 }
 
-const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetryService, context }) => {
+const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({
+    type,
+    telemetryService,
+    telemetryRecorder,
+    context,
+}) => {
     const logEvent = (provider: AuthProvider['serviceType']): void => {
         const eventType = provider === 'builtin' ? 'form' : provider
         const eventPage = type === 'blob' ? 'Blobview' : 'RepositoryPage'
@@ -67,6 +75,9 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
             description: '',
         }
         telemetryService.log(EventName.TRY_CODY_SIGNUP_INITIATED, eventArguments, eventArguments)
+        telemetryRecorder.recordEvent(EventName.TRY_CODY_SIGNUP_INITIATED, 'initiated', {
+            privateMetadata: { eventArguments },
+        })
     }
 
     const title = type === 'blob' ? 'Sign up to get Cody, our AI assistant, free' : 'Meet Cody, your AI assistant'
@@ -197,7 +208,7 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
     isSourcegraphDotCom,
 }) => {
     const isLightTheme = useIsLightTheme()
-    const { isDismissed, onDismiss } = useTryCodyWidget(telemetryService)
+    const { isDismissed, onDismiss } = useTryCodyWidget(telemetryService, telemetryRecorder)
     useEffect(() => {
         if (isDismissed) {
             return

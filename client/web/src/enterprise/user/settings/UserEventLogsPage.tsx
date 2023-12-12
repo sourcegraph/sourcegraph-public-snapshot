@@ -66,6 +66,7 @@ export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<
     isSourcegraphDotCom,
     authenticatedUser,
     telemetryService,
+    telemetryRecorder,
     user,
 }) => {
     if (isSourcegraphDotCom && authenticatedUser && user.id !== authenticatedUser.id) {
@@ -75,15 +76,22 @@ export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<
             </SiteAdminAlert>
         )
     }
-    return <UserEventLogsPageContent telemetryService={telemetryService} user={user} />
+    return (
+        <UserEventLogsPageContent
+            telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
+            user={user}
+        />
+    )
 }
 
 export const UserEventLogsPageContent: React.FunctionComponent<
     React.PropsWithChildren<UserEventLogsPageContentProps>
-> = ({ telemetryService, user }) => {
+> = ({ telemetryService, telemetryRecorder, user }) => {
     useMemo(() => {
         telemetryService.logViewEvent('UserEventLogPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('userEventLogPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const queryUserEventLogs = useCallback(
         (args: { first?: number }): Observable<UserEventLogsConnectionFields> =>

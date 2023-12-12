@@ -76,15 +76,18 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                 action: 'click',
                 label: 'expand / collapse file tree view',
             })
+            props.telemetryRecorder.recordEvent('fileTreeView', 'clicked', {
+                privateMetadata: { action: 'click', label: 'expand / collapse file tree view' },
+            })
             setPersistedIsVisible(value)
             setIsVisible(value)
         },
-        [setPersistedIsVisible, props.telemetryService]
+        [setPersistedIsVisible, props.telemetryService, props.telemetryRecorder]
     )
-    const handleSymbolClick = useCallback(
-        () => props.telemetryService.log('SymbolTreeViewClicked'),
-        [props.telemetryService]
-    )
+    const handleSymbolClick = useCallback(() => {
+        props.telemetryService.log('SymbolTreeViewClicked')
+        props.telemetryRecorder.recordEvent('symbolTreeView', 'clicked')
+    }, [props.telemetryService, props.telemetryRecorder])
 
     const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
     const focusFileTreeShortcut = useKeyboardShortcut('focusFileTree')
@@ -107,6 +110,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             <GettingStartedTour
                                 className="mr-3"
                                 telemetryService={props.telemetryService}
+                                telemetryRecorder={props.telemetryRecorder}
                                 authenticatedUser={props.authenticatedUser}
                             />
                         )}
@@ -164,6 +168,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                                 filePath={props.filePath}
                                                 filePathIsDirectory={props.isDir}
                                                 telemetryService={props.telemetryService}
+                                                telemetryRecorder={props.telemetryRecorder}
                                             />
                                         </TabPanel>
                                         <TabPanel>

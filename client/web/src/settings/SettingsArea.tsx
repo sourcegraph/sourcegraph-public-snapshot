@@ -155,6 +155,7 @@ export class SettingsArea extends React.Component<Props, State> {
             platformContext: this.props.platformContext,
             settingsCascade: this.props.settingsCascade,
             telemetryService: this.props.telemetryService,
+            telemetryRecorder: this.props.telemetryRecorder,
         }
 
         return (

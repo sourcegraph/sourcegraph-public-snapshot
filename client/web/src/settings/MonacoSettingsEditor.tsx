@@ -7,6 +7,7 @@ import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
 
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import jsonSchemaMetaSchema from '../../../../schema/json-schema-draft-07.schema.json'
@@ -212,13 +213,15 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         label: string,
         id: string,
         run: ConfigInsertionFunction,
-        telemetryService: TelemetryService
+        telemetryService: TelemetryService,
+        telemetryRecorder: TelemetryRecorder
     ): void {
         inputEditor.addAction({
             label,
             id,
             run: editor => {
                 telemetryService.log('SiteConfigurationActionExecuted')
+                telemetryRecorder.recordEvent('siteConfigurationAction', 'executed')
                 editor.focus()
                 editor.pushUndoStop()
                 const { edits, selectText, cursorOffset } = run(editor.getValue())

@@ -44,24 +44,26 @@ interface SearchHistoryDropdownProps extends TelemetryProps {
 const popoverPadding = createRectangle(0, 0, 0, 2)
 
 export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdownProps> = React.memo(
-    function SearchHistoryDropdown({ recentSearches = [], onSelect, className, telemetryService }) {
+    function SearchHistoryDropdown({ recentSearches = [], onSelect, className, telemetryService, telemetryRecorder }) {
         const [isOpen, setIsOpen] = useState(false)
 
         const handlePopoverToggle = useCallback(
             (event: PopoverOpenEvent): void => {
                 setIsOpen(event.isOpen)
                 telemetryService.log(event.isOpen ? 'RecentSearchesListOpened' : 'RecentSearchesListDismissed')
+                telemetryRecorder.recordEvent('recentSearchesList', event.isOpen ? 'opened' : 'dismissed')
             },
-            [telemetryService, setIsOpen]
+            [telemetryService, telemetryRecorder, setIsOpen]
         )
 
         const onSelectInternal = useCallback(
             (search: RecentSearch) => {
                 telemetryService.log('RecentSearchSelected')
+                telemetryRecorder.recordEvent('recentSearches', 'selected')
                 onSelect(search)
                 setIsOpen(false)
             },
-            [telemetryService, onSelect, setIsOpen]
+            [telemetryService, telemetryRecorder, onSelect, setIsOpen]
         )
 
         return (

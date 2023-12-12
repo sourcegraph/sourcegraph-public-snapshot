@@ -45,7 +45,8 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
 }
 
 export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = props => {
-    const { backUrl, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
+    const { backUrl, telemetryService, telemetryRecorder, onInsightCreateRequest, onCancel, onSuccessfulCreation } =
+        props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -54,7 +55,8 @@ export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = pro
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsSearchBasedCreationPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('codeInsightsSearchBasedCreationPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const handleSubmit = useCallback<SearchInsightCreationContentProps['onSubmit']>(
         async values => {
@@ -63,18 +65,22 @@ export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = pro
             await onInsightCreateRequest({ insight })
 
             telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
+            telemetryRecorder.recordEvent('codeInsightsSearchBasedCreationPageSubmit', 'clicked')
             telemetryService.log(
                 'InsightAddition',
                 { insightType: CodeInsightTrackType.SearchBasedInsight },
                 { insightType: CodeInsightTrackType.SearchBasedInsight }
             )
+            telemetryRecorder.recordEvent('insightAddition', 'added', {
+                privateMetadata: { insightType: CodeInsightTrackType.SearchBasedInsight },
+            })
 
             // Clear initial values if user successfully created search insight
             setLocalStorageFormValues(undefined)
 
             onSuccessfulCreation()
         },
-        [onInsightCreateRequest, telemetryService, setLocalStorageFormValues, onSuccessfulCreation]
+        [onInsightCreateRequest, telemetryService, telemetryRecorder, setLocalStorageFormValues, onSuccessfulCreation]
     )
 
     const handleChange = (event: FormChangeEvent<CreateInsightFormFields>): void => {

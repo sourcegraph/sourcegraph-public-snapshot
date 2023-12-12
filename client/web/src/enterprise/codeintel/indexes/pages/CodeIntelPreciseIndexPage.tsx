@@ -71,12 +71,16 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     useReindexPreciseIndex = defaultUseReindexPreciseIndex,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const location = useLocation()
 
-    useEffect(() => telemetryService.logViewEvent('CodeIntelPreciseIndexPage'), [telemetryService])
+    useEffect(() => {
+        telemetryService.logViewEvent('CodeIntelPreciseIndexPage')
+        telemetryRecorder.recordEvent('codeIntelPerciseIndexPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const apolloClient = useApolloClient()
     const { handleReindexPreciseIndex, reindexError } = useReindexPreciseIndex()

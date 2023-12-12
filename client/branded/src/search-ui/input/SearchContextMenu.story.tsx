@@ -2,6 +2,7 @@ import type { Meta, Story, DecoratorFn } from '@storybook/react'
 import { type Observable, of } from 'rxjs'
 
 import type { ListSearchContextsResult } from '@sourcegraph/shared/src/graphql-operations'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     mockFetchSearchContexts,
@@ -44,6 +45,7 @@ const defaultProps: SearchContextMenuProps = {
     searchContextsEnabled: true,
     platformContext: NOOP_PLATFORM_CONTEXT,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    telemetryRecorder: noOpTelemetryRecorder,
 }
 
 const emptySearchContexts = {

@@ -1,6 +1,7 @@
 import type { Meta, Story } from '@storybook/react'
 import { spy } from 'sinon'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H2 } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
@@ -35,6 +36,7 @@ const render = () => (
                 }}
                 state="loading"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={onSearchAgain}
             />
         </div>
@@ -51,6 +53,7 @@ const render = () => (
                 }}
                 state="loading"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={onSearchAgain}
                 showTrace={true}
             />
@@ -68,6 +71,7 @@ const render = () => (
                 }}
                 state="loading"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={onSearchAgain}
             />
         </div>
@@ -84,6 +88,7 @@ const render = () => (
                 }}
                 state="complete"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={onSearchAgain}
             />
         </div>
@@ -101,6 +106,7 @@ const render = () => (
                 }}
                 state="complete"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={onSearchAgain}
                 showTrace={true}
             />
@@ -139,6 +145,7 @@ const render = () => (
                 }}
                 state="complete"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={onSearchAgain}
             />
         </div>
@@ -176,6 +183,7 @@ const render = () => (
                 }}
                 state="loading"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={onSearchAgain}
             />
         </div>
@@ -223,6 +231,7 @@ const render = () => (
                 }}
                 state="complete"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={onSearchAgain}
             />
         </div>
@@ -272,6 +281,7 @@ const render = () => (
                 state="complete"
                 onSearchAgain={onSearchAgain}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 showTrace={true}
             />
         </div>
@@ -319,6 +329,7 @@ const render = () => (
                 }}
                 state="loading"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={onSearchAgain}
             />
         </div>

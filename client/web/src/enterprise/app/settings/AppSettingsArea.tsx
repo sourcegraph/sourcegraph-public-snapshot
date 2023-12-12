@@ -21,13 +21,15 @@ enum AppSettingURL {
     About = 'about',
 }
 
-export const AppSettingsArea: FC<TelemetryProps> = ({ telemetryService }) => (
+export const AppSettingsArea: FC<TelemetryProps> = ({ telemetryService, telemetryRecorder }) => (
     <Routes>
         <Route path="*" element={<AppSettingsLayout />}>
             <Route path={AppSettingURL.LocalRepositories} element={<LocalRepositoriesTab />} />
             <Route
                 path={`${AppSettingURL.RemoteRepositories}/*`}
-                element={<RemoteRepositoriesTab telemetryService={telemetryService} />}
+                element={
+                    <RemoteRepositoriesTab telemetryService={telemetryService} telemetryRecorder={telemetryRecorder} />
+                }
             />
             <Route path={AppSettingURL.About} element={<AboutTab />} />
             <Route path={AppSettingURL.RateLimits} element={<RateLimitsTab />} />
@@ -86,7 +88,7 @@ const AppSettingsLayout: FC = () => {
     )
 }
 
-const RemoteRepositoriesTab: FC<TelemetryProps> = ({ telemetryService }) => (
+const RemoteRepositoriesTab: FC<TelemetryProps> = ({ telemetryService, telemetryRecorder }) => (
     <div className={styles.content}>
         <PageHeader headingElement="h2" path={[{ text: 'Remote repositories' }]} className="mb-3" />
 
@@ -95,6 +97,7 @@ const RemoteRepositoriesTab: FC<TelemetryProps> = ({ telemetryService }) => (
             description={false}
             progressBar={false}
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
             isCodyApp={true}
         />
     </div>

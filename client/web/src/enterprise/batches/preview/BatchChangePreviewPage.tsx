@@ -11,6 +11,7 @@ import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import type { BatchSpecByIDResult, BatchSpecByIDVariables } from '../../../graphql-operations'
+import { telemetryRecorder } from '../../../tracking/eventLogger'
 import { Description } from '../Description'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 import { MissingCredentialsAlert } from '../MissingCredentialsAlert'
@@ -96,6 +97,7 @@ export const BatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props => 
                         batchChange={spec.appliesToBatchChange}
                         viewerCanAdminister={spec.viewerCanAdminister}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                     />
                     <Description description={spec.description.description} />
                     <BatchChangePreviewTabs spec={spec} {...props} batchSpecID={spec.id} />
@@ -119,6 +121,7 @@ export const NewBatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props 
         queryChangesetSpecFileDiffs,
         authenticatedUser,
         telemetryService,
+        telemetryRecorder,
         queryApplyPreviewStats,
     } = props
 
@@ -175,6 +178,7 @@ export const NewBatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props 
                             batchChange={spec.appliesToBatchChange}
                             viewerCanAdminister={spec.viewerCanAdminister}
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                         />
                     )}
                     {exceedsLicense(spec.applyPreview.totalCount) && (

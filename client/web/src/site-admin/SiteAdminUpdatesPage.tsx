@@ -391,10 +391,11 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
 /**
  * A page displaying information about available updates for the Sourcegraph instance. As well as the readiness status of the instance for upgrade.
  */
-export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService }) => {
+export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService, telemetryRecorder }) => {
     useMemo(() => {
         telemetryService.logViewEvent('SiteAdminUpdates')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('siteAdminUpdates', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <div>

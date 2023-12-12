@@ -238,6 +238,7 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             settingsCascade: this.props.settingsCascade,
             namespace: this.state.orgOrError,
             telemetryService: this.props.telemetryService,
+            telemetryRecorder: this.props.telemetryRecorder,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
             isCodyApp: this.props.isCodyApp,
             batchChangesEnabled: this.props.batchChangesEnabled,

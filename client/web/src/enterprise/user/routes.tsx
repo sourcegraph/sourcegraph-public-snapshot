@@ -41,7 +41,9 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
     // for more context on user settings page.
     {
         path: 'app-settings/*',
-        render: props => <AppSettingsArea telemetryService={props.telemetryService} />,
+        render: props => (
+            <AppSettingsArea telemetryService={props.telemetryService} telemetryRecorder={props.telemetryRecorder} />
+        ),
         condition: context => context.isCodyApp,
     },
 

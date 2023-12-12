@@ -39,13 +39,15 @@ export const ShareNotebookModal: React.FunctionComponent<React.PropsWithChildren
     toggleModal,
     authenticatedUser,
     telemetryService,
+    telemetryRecorder,
     onUpdateVisibility,
 }) => {
     useEffect(() => {
         if (isOpen) {
             telemetryService.log('SearchNotebookShareModalOpened')
+            telemetryRecorder.recordEvent('searchNotebookShareModal', 'opened')
         }
-    }, [isOpen, telemetryService])
+    }, [isOpen, telemetryService, telemetryRecorder])
 
     const shareLabelId = 'shareNotebookId'
 
@@ -66,6 +68,7 @@ export const ShareNotebookModal: React.FunctionComponent<React.PropsWithChildren
                 <NotebookShareOptionsDropdown
                     isSourcegraphDotCom={isSourcegraphDotCom}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     authenticatedUser={authenticatedUser}
                     selectedShareOption={selectedShareOption}
                     onSelectShareOption={setSelectedShareOption}

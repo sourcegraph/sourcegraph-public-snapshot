@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, act } from '@testing-library/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -25,7 +26,11 @@ describe('RevisionsPopover', () => {
     beforeEach(async () => {
         renderResult = renderWithBrandedContext(
             <MockedTestProvider mocks={MOCK_REQUESTS}>
-                <RepositoriesPopover currentRepo={repo.id} telemetryService={NOOP_TELEMETRY_SERVICE} />
+                <RepositoriesPopover
+                    currentRepo={repo.id}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
+                />
             </MockedTestProvider>,
             { route: repo.name }
         )
