@@ -1,19 +1,3 @@
-/**
- * Interface for different ranking algorithms that determine how to display search results in the client.
- *
- * Determines only ranking of results for a local file.
- */
-export interface PerFileResultRanking {
-    /**
-     * Returns the hunks that should be displayed by default before the user expands them
-     */
-    collapsedResults(groups: MatchGroup[]): MatchGroup[]
-    /**
-     * Returns the hunks that should be displayed after the user has explicitly requested to see all results.
-     */
-    expandedResults(groups: MatchGroup[]): MatchGroup[]
-}
-
 export interface MatchItem {
     highlightRanges: {
         startLine: number
