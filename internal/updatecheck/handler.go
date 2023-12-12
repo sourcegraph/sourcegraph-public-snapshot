@@ -263,6 +263,7 @@ type pingRequest struct {
 	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Cody App
 	HasCodyEnabled                bool            `json:"hasCodyEnabled,omitempty"`
 	CodyUsage                     json.RawMessage `json:"codyUsage,omitempty"`
+	CodyProviders                 json.RawMessage `json:"codyProviders,omitempty"`
 	RepoMetadataUsage             json.RawMessage `json:"repoMetadataUsage,omitempty"`
 }
 
@@ -391,6 +392,7 @@ type pingPayload struct {
 	Timestamp                     string          `json:"timestamp"`
 	HasCodyEnabled                string          `json:"has_cody_enabled"`
 	CodyUsage                     json.RawMessage `json:"cody_usage"`
+	CodyProviders                 json.RawMessage `json:"cody_providers"`
 	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
 }
 
@@ -496,6 +498,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		Timestamp:                     now.UTC().Format(time.RFC3339),
 		HasCodyEnabled:                strconv.FormatBool(pr.HasCodyEnabled),
 		CodyUsage:                     codyUsage,
+		CodyProviders:                 pr.CodyProviders,
 		RepoMetadataUsage:             pr.RepoMetadataUsage,
 	})
 }
