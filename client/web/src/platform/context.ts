@@ -8,6 +8,7 @@ import type { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
 import { gqlToCascade, type SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import { NoOpTelemetryRecorderProvider } from '@sourcegraph/shared/src/telemetry'
 import {
     toPrettyBlobURL,
     type RepoFile,
@@ -31,7 +32,7 @@ export function createPlatformContext(props: {
      * make sure to configure desired buffering and add the teardown of the
      * provider to a subscription or similar.
      */
-    telemetryRecorderProvider: TelemetryRecorderProvider
+    telemetryRecorderProvider: NoOpTelemetryRecorderProvider
 }): PlatformContext {
     const settingsQueryWatcherPromise = watchViewerSettingsQuery()
 

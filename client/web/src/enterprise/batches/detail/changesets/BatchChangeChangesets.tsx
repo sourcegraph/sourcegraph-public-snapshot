@@ -3,6 +3,7 @@ import React, { useState, useCallback, useMemo, useEffect, useContext } from 're
 import { Subject } from 'rxjs'
 
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Container } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../../../../components/FilteredConnection/hooks/useShowMorePagination'
@@ -51,6 +52,8 @@ interface Props {
     onlyArchived?: boolean
     refetchBatchChange: () => void
 
+    telemetryRecorder: TelemetryRecorder
+
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing only. */
@@ -81,6 +84,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
     refetchBatchChange,
     batchChangeState,
     isExecutionEnabled,
+    telemetryRecorder,
 }) => {
     // You might look at this destructuring statement and wonder why this isn't
     // just a single context consumer object. The reason is because making it a
@@ -197,6 +201,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
                     onSubmit={onSubmitBulkAction}
                     queryAllChangesetIDs={queryAllChangesetIDs}
                     queryArguments={queryArguments}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
             <div className="list-group position-relative" ref={nextContainerElement}>

@@ -5,7 +5,6 @@ import * as uuid from 'uuid'
 import { isErrorLike, isFirefox, logger } from '@sourcegraph/common'
 import type { SharedEventLogger } from '@sourcegraph/shared/src/api/sharedEventLogger'
 import { EventClient } from '@sourcegraph/shared/src/graphql-operations'
-import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import type { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 
