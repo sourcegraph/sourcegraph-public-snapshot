@@ -13,6 +13,20 @@ use std::fmt;
 use std::slice::Iter;
 use tree_sitter::Node;
 
+
+// What needs to be documented?
+//
+// 1. How to use the hoisting DSL
+// 2. Missing features at this point
+//   a) Python's definition vs reference
+//   b) Namespacing (Need to figure out what the DSL should be)
+//   c) Marking globals to avoid emitting them into occurrences
+
+// What needs to be documented for a PR
+//
+// 1. Differences to the old implementation (Feature wise)
+// 2. Performance characteristics (do some benchmarks)
+
 type ScopeRef<'a> = Id<Scope<'a>>;
 
 #[derive(Debug, Clone)]
@@ -37,7 +51,6 @@ impl fmt::Display for Definition<'_> {
 
 #[derive(Debug)]
 struct Scope<'a> {
-    _myself: ScopeRef<'a>,
     ty: String,
     node: Node<'a>,
     // TODO: (perf) we could also remember how many definitions
@@ -53,13 +66,11 @@ struct Scope<'a> {
 
 impl<'a> Scope<'a> {
     pub fn new(
-        myself: ScopeRef<'a>,
         ty: String,
         node: Node<'a>,
         parent: Option<ScopeRef<'a>>,
     ) -> Self {
         Scope {
-            _myself: myself,
             ty,
             node,
             parent,
@@ -273,11 +284,16 @@ impl<'a> LocalResolver<'a> {
         current_scope
     }
 
-    fn process(
-        mut self,
-        config: &LocalConfiguration,
-        tree: &'a tree_sitter::Tree,
-    ) -> Vec<Occurrence> {
+    fn collect_captures(
+        &self,
+        config: &'a LocalConfiguration,
+        tree: &'a tree_sitter::Tree
+    ) -> (
+        Vec<(&'a str, Node<'a>)>,
+        Vec<CaptureDef<'a>>,
+        Vec<(&'a str, Node<'a>)>
+    )
+    {
         let mut cursor = tree_sitter::QueryCursor::new();
         let root_node = tree.root_node();
         let capture_names = config.query.capture_names();
@@ -292,7 +308,6 @@ impl<'a> LocalResolver<'a> {
                 let Some(capture_name) = capture_names.get(capture.index as usize) else {
                     continue;
                 };
-
                 if capture_name.starts_with("scope") {
                     let ty = capture_name.strip_prefix("scope.").unwrap_or(capture_name);
                     scopes.push((ty, capture.node))
@@ -318,14 +333,20 @@ impl<'a> LocalResolver<'a> {
         }
 
         // In order to do a pre-order traversal we need to sort scopes and definitions
+        // TODO: (perf) Do a pass to check if they're already sorted first?
         scopes.sort_by(|(_, a), (_, b)| compare_range(a.byte_range(), b.byte_range()));
         definitions.sort_by_key(|a| a.node.start_byte());
 
-        // Building the scope tree:
+        (scopes, definitions, references)
+    }
+
+    fn build_tree(
+        &mut self,
+        top_scope: ScopeRef<'a>,
+        scopes: Vec<(&'a str, Node<'a>)>,
+        definitions: Vec<CaptureDef<'a>>
+    ) {
         let mut definitions_iter = definitions.iter();
-        let top_scope = self
-            .arena
-            .alloc_with_id(|myself| Scope::new(myself, "root".to_string(), root_node, None));
 
         let mut current_scope = top_scope;
         for (scope_ty, scope) in scopes {
@@ -346,9 +367,7 @@ impl<'a> LocalResolver<'a> {
                 def_capture.node.start_byte() < scope.start_byte()
             });
 
-            let new_scope = self.arena.alloc_with_id(|myself| {
-                Scope::new(myself, scope_ty.to_string(), scope, Some(current_scope))
-            });
+            let new_scope = self.arena.alloc(Scope::new(scope_ty.to_string(), scope, Some(current_scope)));
             let parent_scope = self.arena.get_mut(current_scope).unwrap();
             parent_scope.children.push(new_scope);
             current_scope = new_scope
@@ -373,9 +392,13 @@ impl<'a> LocalResolver<'a> {
             definitions_iter.next().is_none(),
             "Should've entered all definitions into the tree"
         );
+    }
 
-        self.print_scope(top_scope, 0);
-
+    fn resolve_references(
+        &mut self,
+        top_scope: ScopeRef<'a>,
+        references: Vec<(&'a str, Node<'a>)>,
+    ) {
         let mut ref_occurrences = vec![];
 
         // TODO: (perf) Add refs in the pre-order traversal
@@ -404,6 +427,24 @@ impl<'a> LocalResolver<'a> {
             }
         }
         self.occurrences.extend(ref_occurrences);
+    }
+
+    // The entry point to locals resolution
+    fn process(
+        mut self,
+        config: &'a LocalConfiguration,
+        tree: &'a tree_sitter::Tree,
+    ) -> Vec<Occurrence> {
+        // First we collect all captures from the tree-sitter locals query
+        let (scopes, definitions, references) = self.collect_captures(config, tree);
+
+        // Next we build a tree structure of scopes and definitions
+        let top_scope = self.arena.alloc(Scope::new("root".to_string(), tree.root_node(), None));
+        self.build_tree(top_scope, scopes, definitions);
+        self.print_scope(top_scope, 0); // Just for debugging
+
+        // Finally we resolve all references against that tree structure
+        self.resolve_references(top_scope, references);
 
         self.occurrences
     }
