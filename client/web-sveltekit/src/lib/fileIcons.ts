@@ -4,6 +4,7 @@ import {
     mdiConsole,
     mdiDocker,
     mdiFileCodeOutline,
+    mdiFileGifBox,
     mdiFileJpgBox,
     mdiFilePngBox,
     mdiGit,
@@ -43,9 +44,9 @@ const YELLOW = 'var(--yellow)'
 const RED = 'var(--red)'
 const GREEN = 'var(--green)'
 const CYAN = 'var(--blue)'
-const DEFAULT_ICON = 'var(--gray-07)'
+const DEFAULT_ICON = 'var(--gray-05)'
 
-export enum FileExtension {
+enum FileExtension {
     ASSEMBLY = 'asm',
     BASH = 'sh',
     BASIC = 'vb',
@@ -124,8 +125,6 @@ export enum FileExtension {
     ZIG = 'zig',
 }
 
-const FILE_ICONS = new Map(Object.values(FileExtension).map(extension => [extension, getIconAttributes(extension)]))
-
 interface IconInfo {
     svgPath: string
     color: string
@@ -138,8 +137,14 @@ interface FileInfo {
 
 const getColor = (extension: FileExtension) => {
     switch (extension) {
+        case FileExtension.DOCKERFILE:
+        case FileExtension.DOCKERIGNORE:
+        case FileExtension.GO:
         case FileExtension.MARKDOWN:
         case FileExtension.MDX:
+        case FileExtension.JSX:
+        case FileExtension.TSX:
+        case FileExtension.TYPESCRIPT:
         case FileExtension.SVG: {
             return BLUE
         }
@@ -159,7 +164,8 @@ const getColor = (extension: FileExtension) => {
         case FileExtension.SASS: {
             return PINK
         }
-        case (FileExtension.JAVASCRIPT, FileExtension.PYTHON): {
+        case FileExtension.JAVASCRIPT:
+        case FileExtension.PYTHON: {
             return YELLOW
         }
         case FileExtension.KOTLIN: {
@@ -236,11 +242,17 @@ const getIconAttributes = (extension: FileExtension): IconInfo => {
         case FileExtension.DOCKERIGNORE: {
             return { svgPath: mdiDocker, color }
         }
+        case FileExtension.GIF:
+        case FileExtension.GIFF: {
+            return { svgPath: mdiFileGifBox, color }
+        }
         case FileExtension.GITIGNORE:
         case FileExtension.GITATTRIBUTES: {
             return { svgPath: mdiGit, color }
         }
-        case FileExtension.GO: {
+        case FileExtension.GO:
+        case FileExtension.GOMOD:
+        case FileExtension.GOSUM: {
             return { svgPath: mdiLanguageGo, color }
         }
         case FileExtension.GRAPHQL: {
@@ -352,3 +364,5 @@ export const getFileInfo = (file: string): FileInfo => {
         isTest: false,
     }
 }
+
+const FILE_ICONS = new Map(Object.values(FileExtension).map(extension => [extension, getIconAttributes(extension)]))
