@@ -100,15 +100,14 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, repoOptions, resultTypes, inputs)
 
 		builder := &jobBuilder{
-			query:          b,
-			patternType:    inputs.PatternType,
-			resultTypes:    resultTypes,
-			repoOptions:    repoOptions,
-			features:       inputs.Features,
-			fileMatchLimit: fileMatchLimit,
-			selector:       selector,
-			// TODO: push this down to searcher
-			numContextLines: inputs.UserSettings.SearchContextLines,
+			query:           b,
+			patternType:     inputs.PatternType,
+			resultTypes:     resultTypes,
+			repoOptions:     repoOptions,
+			features:        inputs.Features,
+			fileMatchLimit:  fileMatchLimit,
+			selector:        selector,
+			numContextLines: pointers.Deref(inputs.UserSettings.SearchContextLines, 1),
 		}
 
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
