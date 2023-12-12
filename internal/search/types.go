@@ -267,6 +267,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoek
 	// Only use document ranks if the jobs to calculate the ranks are enabled. This
 	// is to make sure we don't use outdated ranks for scoring in Zoekt.
 	searchOpts.UseDocumentRanks = conf.CodeIntelRankingDocumentReferenceCountsEnabled()
+	searchOpts.DocumentRanksWeight = conf.SearchDocumentRanksWeight()
 
 	return searchOpts
 }
