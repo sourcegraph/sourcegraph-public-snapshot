@@ -6,13 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 func TestNewTelemetryGatewayEvents(t *testing.T) {
@@ -208,7 +208,7 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 			name: "with custom timestamp",
 			ctx:  context.Background(),
 			event: graphqlbackend.TelemetryEventInput{
-				Timestamp: &graphql.Time{Time: staticTime.Add(48 * time.Hour)},
+				Timestamp: &gqlutil.DateTime{Time: staticTime.Add(48 * time.Hour)},
 				Feature:   "Feature",
 				Action:    "Example",
 			},
