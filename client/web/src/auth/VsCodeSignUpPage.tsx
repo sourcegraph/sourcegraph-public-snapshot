@@ -60,7 +60,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<V
     const logEvent = (type: AuthProvider['serviceType']): void => {
         const eventType = type === 'builtin' ? 'form' : type
         telemetryService.log(
-            EventName.SIGNUP_INITIATED,
+            EventName.AUTH_INITIATED,
             { type: eventType, source: 'vs-code' },
             { type: eventType, source: 'vs-code' }
         )

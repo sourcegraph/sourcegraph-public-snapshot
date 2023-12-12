@@ -126,7 +126,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
         (type: AuthProvider['serviceType']) => () => {
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage
             // https://github.com/sourcegraph/sourcegraph/issues/19174
-            eventLogger.log(EventName.SIGNUP_INITIATED, { type }, { type })
+            eventLogger.log(EventName.AUTH_INITIATED, { type }, { type })
         },
         []
     )

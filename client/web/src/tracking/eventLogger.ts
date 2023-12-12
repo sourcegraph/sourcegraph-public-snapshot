@@ -14,6 +14,7 @@ import { serverAdmin } from './services/serverAdminWrapper'
 import { sessionTracker } from './sessionTracker'
 import { userTracker } from './userTracker'
 import { stripURLParameters } from './util'
+import { EventName } from '../util/constants'
 
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
 export const LAST_SOURCE_URL_KEY = 'sourcegraphRecentSourceUrl'
@@ -241,12 +242,12 @@ function handleQueryEvents(url: string): void {
     const parsedUrl = new URL(url)
     if (parsedUrl.searchParams.has('signup')) {
         const args = { serviceType: parsedUrl.searchParams.get('signup') || '' }
-        eventLogger.log('web:auth:signUpCompleted', args, args)
+        eventLogger.log(EventName.SIGNUP_COMPLETED, args, args)
     }
 
     if (parsedUrl.searchParams.has('signin')) {
         const args = { serviceType: parsedUrl.searchParams.get('signin') || '' }
-        eventLogger.log('web:auth:signInCompleted', args, args)
+        eventLogger.log(EventName.SINGIN_COMPLETED, args, args)
     }
 
     stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'signup', 'signin'])
