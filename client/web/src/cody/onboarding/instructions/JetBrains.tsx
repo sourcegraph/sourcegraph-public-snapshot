@@ -134,7 +134,8 @@ export function JetBrainsInstructions({
                                 Autocomplete
                             </Text>
                             <Text className="mb-0 w-100 text-muted" size="small">
-                                Cody will autocomplete your code as you type
+                                Let Cody automatically write code for you. Start writing a comment or a line of code and
+                                Cody will suggest the next few lines.
                             </Text>
                             <img
                                 alt="Cody Autocomplete"
@@ -148,7 +149,8 @@ export function JetBrainsInstructions({
                                 Chat
                             </Text>
                             <Text className="mb-0 text-muted  w-100" size="small">
-                                Cody will autocomplete your code as you type
+                                Answer questions about programming topics generally or your codebase specifically with
+                                Cody chat.
                             </Text>
                             <img
                                 alt="Cody Chat"
@@ -164,7 +166,8 @@ export function JetBrainsInstructions({
                                 Commands
                             </Text>
                             <Text className="mb-0 text-muted  w-100" size="small">
-                                Cody will autocomplete your code as you type
+                                Streamline your development process by using Cody commands to understand, improve, fix,
+                                document, and generate unit tests for your code.
                             </Text>
                             <img
                                 alt="Cody Commands"
@@ -178,7 +181,7 @@ export function JetBrainsInstructions({
                                 Feedback
                             </Text>
                             <Text className="mb-0 text-muted w-100" size="small">
-                                Cody will autocomplete your code as you type
+                                Feel free to join our Discord to leave feedback or ask questions about Cody.
                             </Text>
                             <Link to="https://discord.gg/rDPqBejz93" className="d-flex w-100 justify-content-center">
                                 <img
