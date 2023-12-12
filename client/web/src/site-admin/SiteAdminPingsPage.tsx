@@ -416,7 +416,10 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                             <li>
                                 Completions
                                 <ul>
-                                    <li>Provider</li>
+                                    <li>
+                                        Provider (e.g., "sourcegraph", "anthropic", "openai", "azure-openai",
+                                        "fireworks", "aws-bedrock", etc.)
+                                    </li>
                                     <li>Chat model (included only for "sourcegraph" provider)</li>
                                     <li>Fast chat model (included only for "sourcegraph" provider)</li>
                                     <li>Completion model (included only for "sourcegraph" provider)</li>
@@ -425,7 +428,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                             <li>
                                 Embeddings
                                 <ul>
-                                    <li>Provider</li>
+                                    <li>Provider (e.g., "sourcegraph", "openai", "azure-openai", etc.)</li>
                                     <li>Model</li>
                                 </ul>
                             </li>
