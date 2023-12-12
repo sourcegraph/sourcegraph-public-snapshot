@@ -153,7 +153,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         return () => subscription?.unsubscribe()
     }, [result, unhighlightedGroups, hasBeenVisible, fetchHighlightedFileLineRanges])
 
-    const collapsedMatchGroups = truncateGroups(groups, 3)
+    const collapsedMatchGroups = truncateGroups(groups, 5)
 
     const highlightRangesCount = countHighlightRanges(groups)
     const collapsedHighlightRangesCount = countHighlightRanges(collapsedMatchGroups)
@@ -300,20 +300,38 @@ const rankByLine = (groups: MatchGroup[]): MatchGroup[] => {
     return groupsCopy
 }
 
-// truncateGroups returns a subset of match groups
 const truncateGroups = (groups: MatchGroup[], maxMatches: number): MatchGroup[] => {
     const visibleGroups = []
-    let visibleMatches = 0
+    let remainingMatches = maxMatches
     for (const group of groups) {
-        // TODO: truncate within a group
-        if (visibleMatches > maxMatches) {
+        if (remainingMatches === 0) {
+            break
+        } else if (group.matches.length > remainingMatches) {
+            visibleGroups.push(truncateGroup(group, remainingMatches))
             break
         }
         visibleGroups.push(group)
-        visibleMatches += 1
+        remainingMatches -= group.matches.length
     }
 
     return visibleGroups
+}
+
+const truncateGroup = (group: MatchGroup, maxMatches: number): MatchGroup => {
+    const keepMatches = group.matches.slice(0, maxMatches)
+    const newStartLine = Math.max(Math.min(...keepMatches.map(match => match.startLine)) - 1, group.startLine)
+    const newEndLine = Math.min(Math.max(...keepMatches.map(match => match.endLine)) + 1, group.endLine)
+    const matchesInKeepContext = group.matches
+        .slice(maxMatches)
+        .filter(match => match.startLine >= newStartLine && match.endLine <= newEndLine)
+    return {
+        ...group,
+        plaintextLines: group.plaintextLines.slice(newStartLine - group.startLine, newEndLine - group.startLine),
+        highlightedLines: group.highlightedLines?.slice(newStartLine - group.startLine, newEndLine - group.startLine),
+        matches: [...keepMatches, ...matchesInKeepContext],
+        startLine: newStartLine,
+        endLine: newEndLine,
+    }
 }
 
 const chunkToMatchGroup = (chunk: ChunkMatch): MatchGroup => {
@@ -335,7 +353,6 @@ const chunkToMatchGroup = (chunk: ChunkMatch): MatchGroup => {
 
     return {
         plaintextLines,
-        // Populated asynchronously in the useEffect below
         highlightedLines: undefined,
         matches,
         position: minPosition,

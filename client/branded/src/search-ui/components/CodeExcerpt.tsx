@@ -64,7 +64,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
                 <table>
                     <tbody>
                         {plaintextLines.map((line, i) => (
-                            <tr key={line}>
+                            <tr key={startLine + i}>
                                 <td className="line" data-line={startLine + i + 1} />
                                 <td className="code">
                                     <span className="hl-text hl-plain">{line}</span>
