@@ -10,7 +10,6 @@ import {
 } from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
-import { Group } from '@visx/group'
 
 import {
     SearchSidebar,

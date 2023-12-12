@@ -20,6 +20,7 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { EMPTY_SETTINGS_CASCADE, type SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
@@ -51,6 +52,7 @@ interface Props {
     backendVersion: string | null
     authenticatedUser: AuthenticatedUser | null
     telemetryService: TelemetryService
+    telemetryRecorder: TelemetryRecorder
 }
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
@@ -97,6 +99,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     backendVersion,
     authenticatedUser,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const authState = authenticatedUser !== null ? 'success' : 'failure'
 
@@ -211,8 +214,17 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             setLastSearch(nextSearch)
             saveLastSearch(nextSearch)
             telemetryService.log('IDESearchSubmitted')
+            telemetryRecorder.recordEvent('IDESearch', 'submitted')
         },
-        [lastSearch, backendVersion, userQueryState.query, telemetryService, instanceURL, onSearchError]
+        [
+            lastSearch,
+            backendVersion,
+            userQueryState.query,
+            telemetryService,
+            telemetryRecorder,
+            instanceURL,
+            onSearchError,
+        ]
     )
 
     const [didInitialSubmit, setDidInitialSubmit] = useState(false)
@@ -293,6 +305,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                                 fetchStreamSuggestions={fetchStreamSuggestionsWithStaticUrl}
                                 settingsCascade={settingsCascade}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 platformContext={platformContext}
                                 className=""
                                 containerClassName=""

@@ -155,7 +155,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => (
-                    <CodySidebarStoreProvider authenticatedUser={props.authenticatedUser}>
+                    <CodySidebarStoreProvider {...props} authenticatedUser={props.authenticatedUser}>
                         <RepoContainer {...props} />
                     </CodySidebarStoreProvider>
                 )}
