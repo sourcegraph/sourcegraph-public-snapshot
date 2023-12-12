@@ -8,12 +8,6 @@ License keys should not be shared across instances of Sourcegraph. If an additio
 
 ### What happens if our Sourcegraph license expires?
 
-<span class="badge badge-note">Sourcegraph 5.3+</span>
-
-Sourcegraph will continue to function as normal, but regular users will be signed out of Sourcegraph and will be unable to sign in until a site admin signs in and updates the license key.
-
-<span class="badge badge-note">Before Sourcegraph 5.3</span>
-
 Sourcegraph will revert to a free license, and any features that require an enterprise license will stop functioning. This could lead to data loss if some of these features were in use, so be sure to renew your license in advance!
 
 ## How can we update our license key?
