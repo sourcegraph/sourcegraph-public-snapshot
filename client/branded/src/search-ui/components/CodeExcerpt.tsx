@@ -56,22 +56,26 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     className,
     onCopy,
 }) => {
-    const table = useMemo(() => highlightedLines ? (
-        <table dangerouslySetInnerHTML={{ __html: highlightedLines.join('') }} />
-    ) : (
-        <table>
-            <tbody>
-                {plaintextLines.map((line, i) => (
-                    <tr key={line}>
-                        <td className="line" data-line={startLine + i + 1} />
-                        <td className="code">
-                            <span className="hl-text hl-plain">{line}</span>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    ), [plaintextLines, highlightedLines, startLine])
+    const table = useMemo(
+        () =>
+            highlightedLines ? (
+                <table dangerouslySetInnerHTML={{ __html: highlightedLines.join('') }} />
+            ) : (
+                <table>
+                    <tbody>
+                        {plaintextLines.map((line, i) => (
+                            <tr key={line}>
+                                <td className="line" data-line={startLine + i + 1} />
+                                <td className="code">
+                                    <span className="hl-text hl-plain">{line}</span>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            ),
+        [plaintextLines, highlightedLines, startLine]
+    )
 
     // Both the behavior subject and the React state are needed here. The behavior subject is
     // used for hoverified events while the React state is used for match highlighting.

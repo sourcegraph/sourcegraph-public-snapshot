@@ -9,12 +9,11 @@ import { catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
 import type { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
-import { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import {
     type ContentMatch,
+    type ChunkMatch,
     getFileMatchUrl,
     getRepositoryUrl,
     getRevision,
@@ -79,8 +78,6 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
     index: number
 }
 
-const sumHighlightRanges = (count: number, group: MatchGroup): number => count + group.matches.length
-
 const BY_LINE_RANKING = 'by-line-number'
 
 export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -101,12 +98,12 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
 
-    const ranking = useMemo(() => {
+    const reranker = useMemo(() => {
         const settings = settingsCascade.final
         if (!isErrorLike(settings) && settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING) {
-            return new LineRanking(5)
+            return rankByLine
         }
-        return new ZoektRanking(3)
+        return rankPassthrough
     }, [settingsCascade])
 
     const newSearchUIEnabled = useMemo(() => {
@@ -120,34 +117,8 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
     const [hasBeenVisible, setHasBeenVisible] = useState(false)
 
     const unhighlightedGroups: MatchGroup[] = useMemo(
-        () =>
-            result.chunkMatches?.map(chunk => {
-                const matches = chunk.ranges.map(range => ({
-                    startLine: range.start.line,
-                    startCharacter: range.start.column,
-                    endLine: range.end.line,
-                    endCharacter: range.end.column,
-                }))
-
-                const plaintextLines = chunk.content.split(/\r?\n/)
-                let minPosition = { line: Number.MAX_VALUE, character: Number.MAX_VALUE }
-                for (const match of matches) {
-                    const position = { line: match.startLine + 1, character: match.startCharacter + 1 }
-                    if (position.line <= minPosition.line && position.character < minPosition.character) {
-                        minPosition = position
-                    }
-                }
-
-                return {
-                    plaintextLines,
-                    highlightedLines: undefined,
-                    matches,
-                    position: minPosition,
-                    startLine: chunk.contentStart.line,
-                    endLine: chunk.contentStart.line + plaintextLines.length,
-                }
-            }) ?? [],
-        [result]
+        () => reranker(result.chunkMatches?.map(chunkToMatchGroup) ?? []),
+        [result, reranker]
     )
 
     const [groups, setGroups] = useState(unhighlightedGroups)
@@ -180,10 +151,9 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         return () => subscription?.unsubscribe()
     }, [result, unhighlightedGroups, hasBeenVisible, fetchHighlightedFileLineRanges])
 
-    const expandedMatchGroups = ranking.expandedResults(groups)
-    const collapsedMatchGroups = ranking.collapsedResults(groups)
+    const collapsedMatchGroups = truncateGroups(groups, 3)
 
-    const highlightRangesCount = expandedMatchGroups.reduce(sumHighlightRanges, 0)
+    const highlightRangesCount = groups.reduce(sumHighlightRanges, 0)
     const collapsedHighlightRangesCount = collapsedMatchGroups.reduce(sumHighlightRanges, 0)
 
     const hiddenMatchesCount = highlightRangesCount - collapsedHighlightRangesCount
@@ -278,7 +248,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                 <div data-testid="file-search-result">
                     <FileMatchChildren
                         result={result}
-                        grouped={expanded ? expandedMatchGroups : collapsedMatchGroups}
+                        grouped={expanded ? groups : collapsedMatchGroups}
                         settingsCascade={settingsCascade}
                         telemetryService={telemetryService}
                         openInNewTab={openInNewTab}
@@ -310,3 +280,65 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         </ResultContainer>
     )
 }
+
+// rankPassthrough is a no-op re-ranker
+const rankPassthrough = (groups: MatchGroup[]): MatchGroup[] => groups
+
+// rankByLine re-ranks a set of groups to order them by starting line number
+const rankByLine = (groups: MatchGroup[]): MatchGroup[] => {
+    const groupsCopy = [...groups]
+    groupsCopy.sort((a, b) => {
+        if (a.startLine < b.startLine) {
+            return -1
+        }
+        if (a.startLine > b.startLine) {
+            return 1
+        }
+        return 0
+    })
+    return groupsCopy
+}
+
+const truncateGroups = (groups: MatchGroup[], maxMatches: number): MatchGroup[] => {
+    const visibleGroups = []
+    let visibleMatches = 0
+    for (const group of groups) {
+        if (visibleMatches > maxMatches) {
+            break
+        }
+        visibleGroups.push(group)
+        visibleMatches += 1
+    }
+
+    return visibleGroups
+}
+
+const chunkToMatchGroup = (chunk: ChunkMatch): MatchGroup => {
+    const matches = chunk.ranges.map(range => ({
+        startLine: range.start.line,
+        startCharacter: range.start.column,
+        endLine: range.end.line,
+        endCharacter: range.end.column,
+    }))
+
+    const plaintextLines = chunk.content.split(/\r?\n/)
+    let minPosition = { line: Number.MAX_VALUE, character: Number.MAX_VALUE }
+    for (const match of matches) {
+        const position = { line: match.startLine + 1, character: match.startCharacter + 1 }
+        if (position.line <= minPosition.line && position.character < minPosition.character) {
+            minPosition = position
+        }
+    }
+
+    return {
+        plaintextLines,
+        // Populated asynchronously in the useEffect below
+        highlightedLines: undefined,
+        matches,
+        position: minPosition,
+        startLine: chunk.contentStart.line,
+        endLine: chunk.contentStart.line + plaintextLines.length,
+    }
+}
+
+const sumHighlightRanges = (count: number, group: MatchGroup): number => count + group.matches.length

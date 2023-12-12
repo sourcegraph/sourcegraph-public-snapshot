@@ -96,7 +96,7 @@ export interface LineMatch {
     aggregableBadges?: AggregableBadge[]
 }
 
-interface ChunkMatch {
+export interface ChunkMatch {
     content: string
     contentStart: Location
     ranges: Range[]
