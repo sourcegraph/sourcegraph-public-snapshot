@@ -165,9 +165,21 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         if (window.context?.userAgentIsBot || !eventLabel) {
             return
         }
+
+        this.logInternal(eventLabel, eventProperties, publicArgument)
+
+        // Use flag to ensure URL query params are only stripped once
+        if (!this.hasStrippedQueryParameters) {
+            handleQueryEvents(window.location.href)
+            this.hasStrippedQueryParameters = true
+        }
+    }
+
+    public logInternal(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
         this.logToConsole(eventLabel, eventProperties, publicArgument)
     }
+
 
     private logToConsole(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (debugEventLoggingEnabled()) {
@@ -241,12 +253,12 @@ function handleQueryEvents(url: string): void {
     const parsedUrl = new URL(url)
     if (parsedUrl.searchParams.has('signup')) {
         const args = { serviceType: parsedUrl.searchParams.get('signup') || '' }
-        eventLogger.log('web:auth:signUpCompleted', args, args)
+        eventLogger.logInternal('web:auth:signUpCompleted', args, args)
     }
 
     if (parsedUrl.searchParams.has('signin')) {
         const args = { serviceType: parsedUrl.searchParams.get('signin') || '' }
-        eventLogger.log('web:auth:signInCompleted', args, args)
+        eventLogger.logInternal('web:auth:signInCompleted', args, args)
     }
 
     stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'signup', 'signin'])
