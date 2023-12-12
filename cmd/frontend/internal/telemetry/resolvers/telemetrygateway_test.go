@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -201,6 +202,28 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
     }
   },
   "timestamp": "2023-02-24T14:48:30Z"
+}`),
+		},
+		{
+			name: "with custom timestamp",
+			ctx:  context.Background(),
+			event: graphqlbackend.TelemetryEventInput{
+				Timestamp: &graphql.Time{Time: staticTime.Add(48 * time.Hour)},
+				Feature:   "Feature",
+				Action:    "Example",
+			},
+			expect: autogold.Expect(`{
+  "action": "Example",
+  "feature": "Feature",
+  "id": "with custom timestamp",
+  "parameters": {},
+  "source": {
+    "client": {},
+    "server": {
+      "version": "0.0.0+dev"
+    }
+  },
+  "timestamp": "2023-02-26T14:48:30Z"
 }`),
 		},
 	} {
