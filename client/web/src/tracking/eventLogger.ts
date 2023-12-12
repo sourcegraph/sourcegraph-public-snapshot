@@ -8,13 +8,13 @@ import { EventClient } from '@sourcegraph/shared/src/graphql-operations'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import type { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 
+import { EventName } from '../util/constants'
 import { observeQuerySelector } from '../util/dom'
 
 import { serverAdmin } from './services/serverAdminWrapper'
 import { sessionTracker } from './sessionTracker'
 import { userTracker } from './userTracker'
 import { stripURLParameters } from './util'
-import { EventName } from '../util/constants'
 
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
 export const LAST_SOURCE_URL_KEY = 'sourcegraphRecentSourceUrl'
