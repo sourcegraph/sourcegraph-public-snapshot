@@ -336,7 +336,6 @@ go_test(
         "@org_golang_x_exp//maps",
         "@org_golang_x_exp//slices",
         "@org_golang_x_sync//errgroup",
-        "@tools_gotest//assert",
     ],
 )
 
