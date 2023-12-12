@@ -199,8 +199,8 @@ function WelcomeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
                         <source
                             src={
                                 isLightTheme
-                                    ? 'https://storage.googleapis.com/sourcegraph-assets/codyWelcomeAnim.mp4'
-                                    : 'https://storage.googleapis.com/sourcegraph-assets/codyWelcomeAnim_dark.mp4'
+                                    ? 'https://storage.googleapis.com/sourcegraph-assets/hiCodyWhite.mp4'
+                                    : 'https://storage.googleapis.com/sourcegraph-assets/hiCodyDark.mp4'
                             }
                             type="video/mp4"
                         />
@@ -208,7 +208,7 @@ function WelcomeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
                     </video>
                     <Text className={classNames('mb-4 pb-4', styles.fadeIn, styles.fadeSecond, styles.welcomeSubtitle)}>
                         Ready to breeze through the basics and get comfortable with Cody
-                        {pro ? ' to Cody Pro Trial' : ''}?
+                        {pro ? ' Pro Trial' : ''}?
                     </Text>
                     <Button
                         onClick={onNext}
