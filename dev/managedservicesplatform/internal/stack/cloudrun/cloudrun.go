@@ -237,7 +237,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 
 	// Finalize output of builder
 	cloudRunBuilder.AddEnv("SSL_CERT_DIR", strings.Join(sslCertDirs, ":"))
-	if _, err := cloudRunBuilder.Build(stack, builder.Variables{
+	cloudRunResource, err := cloudRunBuilder.Build(stack, builder.Variables{
 		Service:           vars.Service,
 		Image:             vars.Image,
 		ResolvedImageTag:  *imageTag.StringValue,
@@ -253,11 +253,16 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			}
 			return nil
 		}(),
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, errors.Wrapf(err, "build Cloud Run resource kind %q", cloudRunBuilder.Kind())
 	}
 
 	// Collect outputs
+	locals.Add("cloud_run_resource_name", *cloudRunResource.Name(),
+		"Cloud Run resource name")
+	locals.Add("cloud_run_location", *cloudRunResource.Location(),
+		"Cloud Run resource location")
 	locals.Add("image_tag", imageTag.StringValue,
 		"Resolved tag of service image to deploy")
 	return &CrossStackOutput{}, nil
