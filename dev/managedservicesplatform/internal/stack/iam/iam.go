@@ -205,7 +205,13 @@ func extractExternalSecrets(secrets map[string]string) ([]externalSecret, error)
 		secretName := secrets[k]
 		// Error on easy-to-make oopsies
 		if strings.HasPrefix(secretName, "project/") {
-			return nil, errors.New("invalid secret name %q: 'project/'-prefixed name provided, did you mean 'projects/'?")
+			return nil, errors.Newf("invalid secret name %q: 'project/'-prefixed name provided, did you mean 'projects/'?",
+				secretName)
+		}
+		// Crude check to tell users that they shouldn't include versions in their secrets
+		if strings.Contains(secretName, "/versions/") {
+			return nil, errors.Newf("invalid secret name %q: secrets should not be versioned with '/version/'",
+				secretName)
 		}
 		// Check for 'projects/{project}/secrets/{secretName}'
 		if strings.HasPrefix(secretName, "projects/") {

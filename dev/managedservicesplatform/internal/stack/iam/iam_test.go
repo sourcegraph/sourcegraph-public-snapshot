@@ -63,12 +63,17 @@ func TestExtractExternalSecrets(t *testing.T) {
 		{
 			name:      "invalid external secret prefix",
 			secretEnv: map[string]string{"SEKRET": "project/foo/secrets/BAR"},
-			wantError: autogold.Expect("invalid secret name %q: 'project/'-prefixed name provided, did you mean 'projects/'?"),
+			wantError: autogold.Expect(`invalid secret name "project/foo/secrets/BAR": 'project/'-prefixed name provided, did you mean 'projects/'?`),
 		},
 		{
 			name:      "invalid external secret segment'",
 			secretEnv: map[string]string{"SEKRET": "projects/foo/secret/BAR"},
 			wantError: autogold.Expect(`invalid secret name "projects/foo/secret/BAR": found '/secret/' segment, did you mean '/secrets/'?`),
+		},
+		{
+			name:      "invalid external secret with version",
+			secretEnv: map[string]string{"SEKRET": "projects/foo/secrets/BAR/versions/2"},
+			wantError: autogold.Expect(`invalid secret name "projects/foo/secrets/BAR/versions/2": secrets should not be versioned with '/version/'`),
 		},
 		{
 			name:      "has external secret",
