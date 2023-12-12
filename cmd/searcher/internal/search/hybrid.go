@@ -179,7 +179,7 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 
 	opts := (&search.ZoektParameters{
 		FileMatchLimit:  int32(p.Limit),
-		NumContextLines: p.NumContextLines,
+		NumContextLines: int(p.NumContextLines),
 	}).ToSearchOptions(ctx)
 	if deadline, ok := ctx.Deadline(); ok {
 		opts.MaxWallTime = time.Until(deadline) - 100*time.Millisecond

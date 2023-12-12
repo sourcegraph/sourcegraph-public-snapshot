@@ -72,7 +72,7 @@ func Search(
 		},
 		Indexed:         indexed,
 		FetchTimeout:    fetchTimeout,
-		NumContextLines: contextLines,
+		NumContextLines: int32(contextLines),
 	}
 
 	body, err := json.Marshal(r)

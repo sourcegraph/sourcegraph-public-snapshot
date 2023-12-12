@@ -53,7 +53,7 @@ type Request struct {
 	// structural search because it will query Zoekt for indexed structural search.
 	Indexed bool
 
-	NumContextLines int
+	NumContextLines int32
 }
 
 // PatternInfo describes a search request on a repo. Most of the fields
@@ -230,7 +230,7 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 		},
 		FetchTimeout:    req.FetchTimeout.AsDuration(),
 		Indexed:         req.Indexed,
-		NumContextLines: int(req.NumContextLines),
+		NumContextLines: req.NumContextLines,
 	}
 }
 

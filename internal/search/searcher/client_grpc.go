@@ -61,7 +61,7 @@ func SearchGRPC(
 		},
 		Indexed:         indexed,
 		FetchTimeout:    fetchTimeout,
-		NumContextLines: contextLines,
+		NumContextLines: int32(contextLines),
 	}).ToProto()
 
 	// Searcher caches the file contents for repo@commit since it is
