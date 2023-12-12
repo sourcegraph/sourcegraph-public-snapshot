@@ -6,6 +6,7 @@ pub mod ctags;
 pub mod globals;
 pub mod languages;
 pub mod locals;
+pub mod locals2;
 pub mod symbols;
 pub mod ts_scip;
 
