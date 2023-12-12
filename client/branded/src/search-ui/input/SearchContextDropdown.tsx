@@ -93,7 +93,7 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
             telemetryService.log('SearchContextDropdownToggled')
             telemetryRecorder.recordEvent('searchContextDropdown', 'toggled')
         },
-        [onEscapeMenuClose, telemetryService]
+        [onEscapeMenuClose, telemetryService, telemetryRecorder]
     )
 
     const handlePopoverToggle = (event: PopoverOpenEvent): void => {
@@ -109,15 +109,18 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
         }
 
         telemetryService.log('SearchContextDropdownToggled')
+        telemetryRecorder.recordEvent('searchContextDropdown', 'toggled')
 
         if (isOpen && authenticatedUser) {
             // Log search context dropdown view event whenever dropdown is opened, if user is authenticated
             telemetryService.log('SearchContextsDropdownViewed')
+            telemetryRecorder.recordEvent('searchContextDropdown', 'viewed')
         }
 
         if (isOpen && !authenticatedUser) {
             // Log CTA view event whenever dropdown is opened, if user is not authenticated
             telemetryService.log('SearchResultContextsCTAShown')
+            telemetryRecorder.recordEvent('searchContextDropdownCTA', 'shown')
         }
     }
 

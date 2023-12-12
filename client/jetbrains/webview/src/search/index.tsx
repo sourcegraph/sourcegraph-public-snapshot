@@ -53,7 +53,7 @@ window.initializeSourcegraph = async () => {
         await updateVersionAndAuthDataFromServer()
 
         telemetryService = new EventLogger(anonymousUserId, { editor: 'jetbrains', version: pluginVersion })
-        //TODO(nd): enable telemetry recorder for jetbrains
+        // TODO(nd): enable telemetry recorder for jetbrains
         telemetryRecorder = noOpTelemetryRecorder
 
         renderReactApp()

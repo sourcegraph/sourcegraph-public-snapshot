@@ -145,7 +145,7 @@ export const LegacyRouteContextProvider: FC<PropsWithChildren<LegacyRouteContext
         streamSearch: aggregateStreamingSearch,
         fetchHighlightedFileLineRanges: _fetchHighlightedFileLineRanges,
         telemetryService: eventLogger,
-        telemetryRecorder: telemetryRecorder,
+        telemetryRecorder,
 
         /**
          * Breadcrumb props
