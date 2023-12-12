@@ -27,6 +27,8 @@ input TelemetryEventInput {
     Timestamp at which the time was recorded. If not provided, a timestamp is
     generated when the server receives the event, but this does not guarantee
     consistent ordering or accuracy.
+
+    This parameter is only available in Sourcegraph 5.2.5 and later.
     """
     timestamp: DateTime
 
