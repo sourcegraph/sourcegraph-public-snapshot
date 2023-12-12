@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"reflect"
 	"sort"
 	"strings"
@@ -1040,6 +1041,26 @@ type CodyAggregatedEvent struct {
 	InvalidMonth        int32
 	InvalidWeek         int32
 	InvalidDay          int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodyProviders struct {
+	Completions *CodyCompletionProvider
+	Embeddings  *CodyEmbeddingsProvider
+}
+
+type CodyCompletionProvider struct {
+	ChatModel       string
+	CompletionModel string
+	FastChatModel   string
+	Provider        conftypes.CompletionsProviderName
+}
+
+type CodyEmbeddingsProvider struct {
+	Model    string
+	Provider conftypes.EmbeddingsProviderName
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change

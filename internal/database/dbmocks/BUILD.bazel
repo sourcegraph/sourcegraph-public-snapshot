@@ -23,6 +23,7 @@ go_library(
         "//schema",
         "@com_github_google_uuid//:uuid",
         "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_zoekt//:zoekt",
     ],
 )

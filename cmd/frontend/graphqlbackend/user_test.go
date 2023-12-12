@@ -294,10 +294,10 @@ func TestUser_CodyCurrentPeriod(t *testing.T) {
 		}{
 			{
 				name:      "before release for community user created before december 14th",
-				createdAt: time.Date(2023, 11, 5, 0, 0, 0, 0, now.Location()),
+				createdAt: time.Date(2023, 10, 5, 0, 0, 0, 0, now.Location()),
 				today:     time.Date(2023, 12, 1, 0, 0, 0, 0, now.Location()),
-				start:     time.Date(2023, 12, 14, 0, 0, 0, 0, now.Location()),
-				end:       time.Date(2024, 1, 13, 23, 59, 59, 59, now.Location()),
+				start:     time.Date(2023, 11, 5, 0, 0, 0, 0, now.Location()),
+				end:       time.Date(2023, 12, 4, 23, 59, 59, 59, now.Location()),
 			},
 			{
 				name:      "after release for community user created before december 14th",
