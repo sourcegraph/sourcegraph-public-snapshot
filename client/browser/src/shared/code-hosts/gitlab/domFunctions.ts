@@ -7,8 +7,9 @@ const getSingleFileCodeElementFromLineNumber = (
     line: number,
     part?: DiffPart
 ): HTMLElement | null => codeView.querySelector<HTMLElement>(`#LC${line}`)
+
 export const singleFileDOMFunctions: DOMFunctions = {
-    getCodeElementFromTarget: target => target.closest('span.line'),
+    getCodeElementFromTarget: target => target.closest('div.line'),
     getLineNumberFromCodeElement: codeElement => {
         const line = codeElement.id.replace(/^LC/, '')
         return parseInt(line, 10)
