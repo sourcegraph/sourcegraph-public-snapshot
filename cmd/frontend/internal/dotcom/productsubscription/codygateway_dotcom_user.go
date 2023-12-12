@@ -273,7 +273,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 		}
 		isProUser := user.CodyProEnabledAt != nil
 		// Update the allowed models based on the user's plan.
-		models = allowedModels(scope,isCodyProEnabled, isProUser)
+		models = allowedModels(scope, isCodyProEnabled, isProUser)
 		intervalSeconds, limit, err = getSelfServeUsageLimits(scope, isProUser, *cfg)
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
