@@ -180,13 +180,9 @@ impl<'a> LocalResolver<'a> {
     fn ancestors(&self, id: ScopeRef<'a>) -> Vec<ScopeRef<'a>> {
         let mut current = id;
         let mut results = vec![];
-        loop {
-            if let Some(next) = self.arena.get(current).unwrap().parent {
-                current = next;
-                results.push(current)
-            } else {
-                break;
-            }
+        while let Some(next) = self.arena.get(current).unwrap().parent {
+            current = next;
+            results.push(current)
         }
         results
     }
@@ -267,15 +263,11 @@ impl<'a> LocalResolver<'a> {
     fn find_enclosing_scope(&self, top_scope: ScopeRef<'a>, node: Node<'a>) -> ScopeRef<'a> {
         let mut current_scope = top_scope;
 
-        loop {
-            if let Some(next) = self.get_scope(current_scope).children.iter().find(|child| {
-                let child_scope = self.get_scope(**child);
-                child_scope.node.byte_range().contains(&node.start_byte())
-            }) {
-                current_scope = *next
-            } else {
-                break;
-            }
+        while let Some(next) = self.get_scope(current_scope).children.iter().find(|child| {
+            let child_scope = self.get_scope(**child);
+            child_scope.node.byte_range().contains(&node.start_byte())
+        }) {
+            current_scope = *next
         }
 
         current_scope
