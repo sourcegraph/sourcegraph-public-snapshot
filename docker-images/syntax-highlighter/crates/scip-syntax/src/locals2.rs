@@ -113,6 +113,13 @@ fn compare_range(a: Range<usize>, b: Range<usize>) -> Ordering {
 }
 
 #[derive(Debug)]
+struct Captures<'a> {
+    scopes: Vec<(&'a str, Node<'a>)>,
+    definitions: Vec<CaptureDef<'a>>,
+    references: Vec<(&'a str, Node<'a>)>,
+}
+
+#[derive(Debug)]
 struct CaptureDef<'a> {
     ty: String,
     hoist: Option<String>,
@@ -289,11 +296,7 @@ impl<'a> LocalResolver<'a> {
         config: &'a LocalConfiguration,
         tree: &'a tree_sitter::Tree,
         source_bytes: &'a [u8],
-    ) -> (
-        Vec<(&'a str, Node<'a>)>,
-        Vec<CaptureDef<'a>>,
-        Vec<(&'a str, Node<'a>)>,
-    ) {
+    ) -> Captures<'a> {
         let mut cursor = tree_sitter::QueryCursor::new();
         let capture_names = config.query.capture_names();
 
@@ -331,7 +334,11 @@ impl<'a> LocalResolver<'a> {
             }
         }
 
-        (scopes, definitions, references)
+        Captures {
+            scopes,
+            definitions,
+            references,
+        }
     }
 
     /// This function is probably the most complicated bit in here.
@@ -345,7 +352,6 @@ impl<'a> LocalResolver<'a> {
         mut scopes: Vec<(&'a str, Node<'a>)>,
         mut definitions: Vec<CaptureDef<'a>>,
     ) {
-
         // In order to do a pre-order traversal we need to sort scopes and definitions
         // TODO: (perf) Do a pass to check if they're already sorted first?
         scopes.sort_by(|(_, a), (_, b)| compare_range(a.byte_range(), b.byte_range()));
@@ -442,18 +448,17 @@ impl<'a> LocalResolver<'a> {
         tree: &'a tree_sitter::Tree,
     ) -> Vec<Occurrence> {
         // First we collect all captures from the tree-sitter locals query
-        let (scopes, definitions, references) =
-            Self::collect_captures(config, tree, self.source_bytes);
+        let captures = Self::collect_captures(config, tree, self.source_bytes);
 
         // Next we build a tree structure of scopes and definitions
         let top_scope = self
             .arena
             .alloc(Scope::new("root".to_string(), tree.root_node(), None));
-        self.build_tree(top_scope, scopes, definitions);
+        self.build_tree(top_scope, captures.scopes, captures.definitions);
         self.print_scope(top_scope, 0); // Just for debugging
 
         // Finally we resolve all references against that tree structure
-        self.resolve_references(top_scope, references);
+        self.resolve_references(top_scope, captures.references);
 
         self.occurrences
     }
@@ -530,7 +535,7 @@ mod test {
     }
 
     #[test]
-    fn test_can_do_functions(){
+    fn test_can_do_functions() {
         let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/funcs.go");
         let doc = parse_file_for_lang(config, source_code);
