@@ -303,7 +303,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                         </Text>
                                     </Link>
                                     <Link
-                                        to={editor.docs}
+                                        to={editor.docs || ''}
                                         target="_blank"
                                         className={!editor.instructions ? 'text-muted' : ''}
                                         rel="noopener"
