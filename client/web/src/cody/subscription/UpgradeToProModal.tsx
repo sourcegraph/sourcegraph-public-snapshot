@@ -55,7 +55,7 @@ export function UpgradeToProModal({
                                     </Text>
                                 </div>
                                 <div className="mb-1">
-                                    <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>$22</H2>
+                                    <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>$9</H2>
                                     <Text className="mb-0 text-muted d-inline">/ month</Text>
                                 </div>
                                 <Text className="mb-4 text-muted" size="small">
