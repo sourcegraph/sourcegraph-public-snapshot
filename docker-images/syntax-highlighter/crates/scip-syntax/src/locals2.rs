@@ -13,7 +13,6 @@ use std::fmt;
 use std::slice::Iter;
 use tree_sitter::Node;
 
-
 // What needs to be documented?
 //
 // 1. How to use the hoisting DSL
@@ -65,11 +64,7 @@ struct Scope<'a> {
 }
 
 impl<'a> Scope<'a> {
-    pub fn new(
-        ty: String,
-        node: Node<'a>,
-        parent: Option<ScopeRef<'a>>,
-    ) -> Self {
+    fn new(ty: String, node: Node<'a>, parent: Option<ScopeRef<'a>>) -> Self {
         Scope {
             ty,
             node,
@@ -81,7 +76,7 @@ impl<'a> Scope<'a> {
     }
 
     // TODO: Namespacing
-    pub fn find_def(&self, name: &str, start_byte: usize) -> Option<&Definition<'a>> {
+    fn find_def(&self, name: &str, start_byte: usize) -> Option<&Definition<'a>> {
         if let Some(def) = self.hoisted_definitions.iter().find(|def| def.text == name) {
             return Some(def);
         };
@@ -287,13 +282,12 @@ impl<'a> LocalResolver<'a> {
     fn collect_captures(
         &self,
         config: &'a LocalConfiguration,
-        tree: &'a tree_sitter::Tree
+        tree: &'a tree_sitter::Tree,
     ) -> (
         Vec<(&'a str, Node<'a>)>,
         Vec<CaptureDef<'a>>,
-        Vec<(&'a str, Node<'a>)>
-    )
-    {
+        Vec<(&'a str, Node<'a>)>,
+    ) {
         let mut cursor = tree_sitter::QueryCursor::new();
         let root_node = tree.root_node();
         let capture_names = config.query.capture_names();
@@ -344,7 +338,7 @@ impl<'a> LocalResolver<'a> {
         &mut self,
         top_scope: ScopeRef<'a>,
         scopes: Vec<(&'a str, Node<'a>)>,
-        definitions: Vec<CaptureDef<'a>>
+        definitions: Vec<CaptureDef<'a>>,
     ) {
         let mut definitions_iter = definitions.iter();
 
@@ -367,7 +361,9 @@ impl<'a> LocalResolver<'a> {
                 def_capture.node.start_byte() < scope.start_byte()
             });
 
-            let new_scope = self.arena.alloc(Scope::new(scope_ty.to_string(), scope, Some(current_scope)));
+            let new_scope =
+                self.arena
+                    .alloc(Scope::new(scope_ty.to_string(), scope, Some(current_scope)));
             let parent_scope = self.arena.get_mut(current_scope).unwrap();
             parent_scope.children.push(new_scope);
             current_scope = new_scope
@@ -439,7 +435,9 @@ impl<'a> LocalResolver<'a> {
         let (scopes, definitions, references) = self.collect_captures(config, tree);
 
         // Next we build a tree structure of scopes and definitions
-        let top_scope = self.arena.alloc(Scope::new("root".to_string(), tree.root_node(), None));
+        let top_scope = self
+            .arena
+            .alloc(Scope::new("root".to_string(), tree.root_node(), None));
         self.build_tree(top_scope, scopes, definitions);
         self.print_scope(top_scope, 0); // Just for debugging
 
