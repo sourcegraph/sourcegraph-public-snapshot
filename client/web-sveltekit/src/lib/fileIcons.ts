@@ -342,7 +342,11 @@ const getIconAttributes = (extension: FileExtension): IconInfo => {
 }
 
 const getExtension = (file: string): FileExtension => {
-    return file.split('.').at(-1) as FileExtension
+    const ext = file.split('.').at(-1) as FileExtension
+    if (Object.values(FileExtension).includes(ext)) {
+        return ext
+    }
+    return 'default' as FileExtension
 }
 
 export const getFileInfo = (file: string): FileInfo => {
