@@ -122,7 +122,7 @@ func (s *weatherGRPCServer) UploadWeatherData(stream pb.WeatherService_UploadWea
 		}
 
 		data, err := stream.Recv()
-		if errors.Is(err, io.EOF) {
+		if err == io.EOF {
 			// io.EOF is a sentinel value that indicates that the client has explicitly closed its end of the stream, which signals the end of the RPC.
 
 			// We can use SendAndClose to send a final message to the client and close our end of the stream.
@@ -155,7 +155,7 @@ func (s *weatherGRPCServer) RealTimeWeather(stream pb.WeatherService_RealTimeWea
 		}
 
 		locUpdate, err := stream.Recv()
-		if errors.Is(err, io.EOF) { // The client has closed its end of the stream, so we can close our end as well.
+		if err == io.EOF { // The client has closed its end of the stream, so we can close our end as well.
 			return nil
 		}
 		if err != nil {

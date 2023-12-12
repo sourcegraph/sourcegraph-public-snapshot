@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	pb "github.com/sourcegraph/sourcegraph/internal/grpc/example/weather/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -134,7 +133,7 @@ func main() {
 
 			default:
 				alert, err := alertStream.Recv()
-				if errors.Is(err, io.EOF) {
+				if err == io.EOF {
 					goto subscriptionDone // The server closed the stream
 				}
 
@@ -272,7 +271,7 @@ subscriptionDone:
 
 			for {
 				weather, err := biStream.Recv()
-				if errors.Is(err, io.EOF) {
+				if err == io.EOF {
 					return
 				}
 				if err != nil {
