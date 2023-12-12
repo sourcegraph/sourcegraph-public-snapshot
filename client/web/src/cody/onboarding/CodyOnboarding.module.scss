@@ -139,6 +139,7 @@
 .fade-first {
     animation-delay: 3.3s;
     opacity: 0;
+    
     /* to keep opacity */
     animation-fill-mode: forwards;
 }
@@ -146,6 +147,7 @@
 .fade-second {
     animation-delay: 3.5s;
     opacity: 0;
+
     /* to keep opacity */
     animation-fill-mode: forwards;
 }
@@ -153,6 +155,7 @@
 .fade-third {
     animation-delay: 3.8s;
     opacity: 0;
+
     /* to keep opacity */
     animation-fill-mode: forwards;
 }
