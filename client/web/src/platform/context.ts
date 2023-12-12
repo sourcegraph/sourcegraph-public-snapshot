@@ -20,7 +20,6 @@ import {
 import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
 
 import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
-import type { TelemetryRecorderProvider } from '../telemetry'
 import { eventLogger } from '../tracking/eventLogger'
 
 /**

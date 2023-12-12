@@ -229,7 +229,7 @@ export const ChangesetSelectRow: React.FunctionComponent<React.PropsWithChildren
 
             return dropdownAction
         })
-    }, [availableBulkOperations, batchChangeID, ids, onSubmit])
+    }, [availableBulkOperations, batchChangeID, ids, onSubmit, telemetryRecorder])
 
     return (
         <>

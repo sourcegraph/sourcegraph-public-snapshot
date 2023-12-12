@@ -35,7 +35,7 @@ export const EmbeddedNotebookPage: FC<EmbeddedNotebookPageProps> = ({ platformCo
     useEffect(() => {
         eventLogger.logPageView('EmbeddedNotebookPage')
         platformContext.telemetryRecorder.recordEvent('embeddedNotebookPage', 'viewed')
-    }, [])
+    }, [platformContext.telemetryRecorder])
 
     const notebookOrError = useObservable(
         useMemo(
