@@ -180,7 +180,6 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         this.logToConsole(eventLabel, eventProperties, publicArgument)
     }
 
-
     private logToConsole(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (debugEventLoggingEnabled()) {
             logger.debug('%cEVENT %s', 'color: #aaa', eventLabel, eventProperties, publicArgument)
