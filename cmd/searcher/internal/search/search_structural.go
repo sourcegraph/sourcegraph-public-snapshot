@@ -504,7 +504,11 @@ func runCombyAgainstTar(
 	logger log.Logger,
 	args comby.Args,
 	tarInput comby.Tar,
-	contextLines int32,
+	// TODO(camdencheek): comby does not expose a way to add context lines to
+	// the returned chunks. When we stream our candidate matches to comby, we
+	// do not retain the original file contents, so we cannot easily add the
+	// context lines.
+	_contextLines int32,
 	sender matchSender,
 ) error {
 	cmd, stdin, stdout, stderr, err := comby.SetupCmdWithPipes(ctx, args)
