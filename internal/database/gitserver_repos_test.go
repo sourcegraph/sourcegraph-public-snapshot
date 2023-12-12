@@ -1121,13 +1121,9 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	}
 }
 
-func TestGitserverUpdateRepoSizes_LargeAmountOfRepos(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
+func BenchmarkGitserverUpdateRepoSizes_LargeAmountOfRepos(b *testing.B) {
+	logger := logtest.Scoped(b)
+	db := NewDB(logger, dbtest.NewDB(b))
 	ctx := context.Background()
 
 	// Large number of repositories.
@@ -1144,19 +1140,21 @@ func TestGitserverUpdateRepoSizes_LargeAmountOfRepos(t *testing.T) {
 
 		reposBatch = append(reposBatch, r)
 		if i%5000 == 0 || i == count-1 {
-			createTestRepos(ctx, t, db, types.Repos(reposBatch))
+			createTestRepos(ctx, b, db, types.Repos(reposBatch))
 			reposBatch = reposBatch[0:0]
-			t.Logf("Creating %d repos. %d to go", i, count-i)
+			b.Logf("Creating %d repos. %d to go", i, count-i)
 		}
 	}
 
-	numUpdated, err := db.GitserverRepos().UpdateRepoSizes(ctx, logger, shardID, namesToSize)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if have, want := numUpdated, len(namesToSize); have != want {
-		t.Fatalf("wrong number of repos updated. have=%d, want=%d", have, want)
-	}
+	b.Run(fmt.Sprintf("count=%d", count), func(b *testing.B) {
+		numUpdated, err := db.GitserverRepos().UpdateRepoSizes(ctx, logger, shardID, namesToSize)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if have, want := numUpdated, len(namesToSize); have != want {
+			b.Fatalf("wrong number of repos updated. have=%d, want=%d", have, want)
+		}
+	})
 }
 
 func createTestRepo(ctx context.Context, t *testing.T, db DB, name api.RepoName) (*types.Repo, *types.GitserverRepo) {
@@ -1188,7 +1186,7 @@ func createTestRepo(ctx context.Context, t *testing.T, db DB, name api.RepoName)
 	return repo, gitserverRepo
 }
 
-func createTestRepos(ctx context.Context, t *testing.T, db DB, repos types.Repos) {
+func createTestRepos(ctx context.Context, t testing.TB, db DB, repos types.Repos) {
 	t.Helper()
 	err := db.Repos().Create(ctx, repos...)
 	if err != nil {

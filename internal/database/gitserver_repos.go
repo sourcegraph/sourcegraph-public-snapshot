@@ -653,6 +653,7 @@ WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
 }
 
 func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, logger log.Logger, shardID string, repos map[api.RepoName]int64) (updated int, err error) {
+	logger = logger.Scoped("gitserverRepoStore.UpdateRepoSizes")
 	// batchSize is 100 because we started with really large batch sizes (32k)
 	// and noticed that it was really slow in production.
 	// While testing locally, we noticed that even batch sizes of 1000 are slow.
@@ -694,7 +695,7 @@ func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, l
 			updatedRows += int(rowsAffected)
 
 			duration := time.Since(start)
-			logger.Info("Done", log.Duration("duration", duration), log.Int("rowsAffected", int(rowsAffected)))
+			logger.Info("Batch updated", log.Duration("duration", duration), log.Int("rowsAffected", int(rowsAffected)))
 
 			left -= currentCount
 			currentCount = 0
