@@ -1,3 +1,11 @@
+/// This module contains logic to understand the binding structure of
+/// a given source file. We then emit information about references and
+/// definition of _local_ bindings. A local binding is a binding that
+/// cannot be accessed from another file.
+///
+/// It is important to never mark a non-local as local, because that
+/// would mean we'd prevent search-based lookup from finding
+/// references to that binding.
 use anyhow::Result;
 use protobuf::Enum;
 use rustc_hash::FxHashMap as HashMap;
@@ -10,6 +18,11 @@ use tree_sitter::Node;
 
 use crate::languages::LocalConfiguration;
 
+/// An approximation of lexical scoping with block scoped hoisting for
+/// most programming languages. Does not make an effort to
+/// differentiate between different namespaces, which means we can
+/// only track locals for _one_ namespace per language right now. This
+/// is not correct in general, and we should fix it.
 #[derive(Debug)]
 pub struct Scope<'a> {
     pub scope: Node<'a>,
@@ -83,6 +96,10 @@ impl<'a> Scope<'a> {
     pub fn insert_reference(&mut self, reference: Reference<'a>) {
         if let Some(lvalue) = self.lvalues.get(&reference.identifier) {
             if lvalue.node.id() == reference.node.id() {
+                // NOTE(Christoph): This is where we filter out
+                // @reference matches for function definitions But
+                // this relies on all definition matches happening
+                // before any reference matches
                 return;
             }
         }
