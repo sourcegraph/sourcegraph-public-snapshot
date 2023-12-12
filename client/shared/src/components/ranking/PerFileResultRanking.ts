@@ -42,7 +42,8 @@ export interface MatchItem extends ExtensionBadgeType {
  * Describes a single group of matches.
  */
 export interface MatchGroup {
-    blobLines: string[]
+    plaintextLines: string[]
+    highlightedLines: string[]
 
     // The matches in this group to display.
     matches: MatchGroupMatch[]

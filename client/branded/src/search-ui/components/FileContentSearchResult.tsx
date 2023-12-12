@@ -3,9 +3,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import type * as H from 'history'
-import type { Observable } from 'rxjs'
+import VisibilitySensor from 'react-visibility-sensor'
+import type { Observable, Subscription } from 'rxjs'
+import { catchError } from 'rxjs/operators'
 
-import { isErrorLike, pluralize } from '@sourcegraph/common'
+import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
 import type { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
@@ -28,6 +30,9 @@ import { SearchResultPreviewButton } from './SearchResultPreviewButton'
 
 import resultContainerStyles from './ResultContainer.module.scss'
 import styles from './SearchResult.module.scss'
+import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
+
+const DEFAULT_VISIBILITY_OFFSET = { bottom: -500 }
 
 interface Props extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
@@ -112,8 +117,10 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         return false
     }, [settingsCascade])
 
-    // TODO: useMemo?
-    const groups: MatchGroup[] = useMemo(
+    const [isVisible, setIsVisible] = useState(false)
+
+
+    const unhighlightedGroups: MatchGroup[] = useMemo(
         () =>
             result.chunkMatches?.map(chunk => {
                 const matches = chunk.ranges.map(range => ({
@@ -143,11 +150,39 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         [result]
     )
 
-    const expandedMatchGroups = useMemo(() => ranking.expandedResults(groups), [groups, ranking])
-    const collapsedMatchGroups = useMemo(() => ranking.collapsedResults(groups), [groups, ranking])
+    const [groups, setGroups] = useState(unhighlightedGroups)
+    useEffect(() => {
+        let subscription: Subscription | undefined
+        if (isVisible) {
+            subscription = fetchHighlightedFileLineRanges(
+                {
+                    repoName: result.repository,
+                    commitID: result.commit || '',
+                    filePath: result.path,
+                    disableTimeout: false,
+                    format: HighlightResponseFormat.HTML_HIGHLIGHT,
+                    ranges: unhighlightedGroups,
+                },
+                false
+            )
+                .pipe(catchError(error => [asError(error)]))
+                .subscribe(res => {
+                    if (!isErrorLike(res)) {
+                        setGroups(unhighlightedGroups.map((group, i) => ({
+                            ...group,
+                            highlightedLines: res[i],
+                        })))
+                    }
+                })
+        }
+        return () => subscription?.unsubscribe()
+    }, [result, unhighlightedGroups, isVisible, fetchHighlightedFileLineRanges])
 
-    const highlightRangesCount = useMemo(() => expandedMatchGroups.reduce(sumHighlightRanges, 0), [expandedMatchGroups])
-    const collapsedHighlightRangesCount = useMemo(() => collapsedMatchGroups.reduce(sumHighlightRanges, 0), [collapsedMatchGroups])
+    const expandedMatchGroups = ranking.expandedResults(groups)
+    const collapsedMatchGroups = ranking.collapsedResults(groups)
+
+    const highlightRangesCount = expandedMatchGroups.reduce(sumHighlightRanges, 0)
+    const collapsedHighlightRangesCount = collapsedMatchGroups.reduce(sumHighlightRanges, 0)
 
     const hiddenMatchesCount = highlightRangesCount - collapsedHighlightRangesCount
     const collapsible = !showAllMatches && highlightRangesCount > collapsedHighlightRangesCount
@@ -233,38 +268,39 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             actions={newSearchUIEnabled && <SearchResultPreviewButton result={result} />}
         >
             {/* <div data-testid="file-search-result" data-expanded={expanded}> */}
-            <div data-testid="file-search-result">
-                <FileMatchChildren
-                    result={result}
-                    grouped={expanded ? expandedMatchGroups : collapsedMatchGroups}
-                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                    settingsCascade={settingsCascade}
-                    telemetryService={telemetryService}
-                    openInNewTab={openInNewTab}
-                />
-                {collapsible && (
-                    <button
-                        type="button"
-                        className={classNames(
-                            styles.toggleMatchesButton,
-                            expanded && styles.toggleMatchesButtonExpanded
-                        )}
-                        onClick={toggle}
-                        data-testid="toggle-matches-container"
-                    >
-                        <Icon aria-hidden={true} svgPath={expanded ? mdiChevronUp : mdiChevronDown} />
-                        <span className={styles.toggleMatchesButtonText}>
-                            {expanded
-                                ? 'Show less'
-                                : `Show ${hiddenMatchesCount} more ${pluralize(
-                                    'match',
-                                    hiddenMatchesCount,
-                                    'matches'
-                                )}`}
-                        </span>
-                    </button>
-                )}
-            </div>
+            <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={DEFAULT_VISIBILITY_OFFSET}>
+                <div data-testid="file-search-result">
+                    <FileMatchChildren
+                        result={result}
+                        grouped={expanded ? expandedMatchGroups : collapsedMatchGroups}
+                        settingsCascade={settingsCascade}
+                        telemetryService={telemetryService}
+                        openInNewTab={openInNewTab}
+                    />
+                    {collapsible && (
+                        <button
+                            type="button"
+                            className={classNames(
+                                styles.toggleMatchesButton,
+                                expanded && styles.toggleMatchesButtonExpanded
+                            )}
+                            onClick={toggle}
+                            data-testid="toggle-matches-container"
+                        >
+                            <Icon aria-hidden={true} svgPath={expanded ? mdiChevronUp : mdiChevronDown} />
+                            <span className={styles.toggleMatchesButtonText}>
+                                {expanded
+                                    ? 'Show less'
+                                    : `Show ${hiddenMatchesCount} more ${pluralize(
+                                        'match',
+                                        hiddenMatchesCount,
+                                        'matches'
+                                    )}`}
+                            </span>
+                        </button>
+                    )}
+                </div>
+            </VisibilitySensor>
         </ResultContainer>
     )
 }

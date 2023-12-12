@@ -43,10 +43,6 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
     settingsCascade,
     fetchHighlightedFileLineRanges,
 }) => {
-    const enableLazyFileResultSyntaxHighlighting =
-        isSettingsValid(settingsCascade) &&
-        settingsCascade.final.experimentalFeatures?.enableLazyFileResultSyntaxHighlighting
-
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
 
@@ -170,12 +166,6 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                                 filePath={result.path}
                                 startLine={symbol.line - 1}
                                 endLine={symbol.line}
-                                fetchHighlightedFileRangeLines={fetchHighlightedSymbolMatchLineRanges}
-                                fetchPlainTextFileRangeLines={
-                                    enableLazyFileResultSyntaxHighlighting
-                                        ? fetchPlainTextSymbolMatchLineRanges
-                                        : undefined
-                                }
                                 onCopy={logEventOnCopy}
                                 highlightRanges={[]}
                             />

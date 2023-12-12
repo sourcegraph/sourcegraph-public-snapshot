@@ -1,22 +1,13 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import VisibilitySensor from 'react-visibility-sensor'
-import { type Observable, type Subscription, BehaviorSubject } from 'rxjs'
-import { catchError } from 'rxjs/operators'
+import { type Observable, BehaviorSubject } from 'rxjs'
 
-import { asError, type ErrorLike, isErrorLike, highlightNodeMultiline } from '@sourcegraph/common'
+import { highlightNodeMultiline } from '@sourcegraph/common'
 import type { Repo } from '@sourcegraph/shared/src/util/url'
 import { Code } from '@sourcegraph/wildcard'
 
 import styles from './CodeExcerpt.module.scss'
-
-export interface Shape {
-    top?: number
-    left?: number
-    bottom?: number
-    right?: number
-}
 
 interface Props extends Repo {
     commitID: string
@@ -27,15 +18,10 @@ interface Props extends Repo {
     /** The 0-based (exclusive) line number that this code excerpt ends at */
     endLine: number
     className?: string
-    /** A function to fetch the range of lines this code excerpt will display. It will be provided
-     * the same start and end lines properties that were provided as component props */
-    fetchHighlightedFileRangeLines: (startLine: number, endLine: number) => Observable<string[]>
-    /** A function to fetch the range of lines this code excerpt will display. It will be provided
-     * the same start and end lines properties that were provided as component props */
-    fetchPlainTextFileRangeLines?: (startLine: number, endLine: number) => Observable<string[]>
-    blobLines: string[]
 
-    visibilityOffset?: Shape
+    plaintextLines: string[]
+    highlightedLines?: string[]
+
     onCopy?: () => void
 }
 
@@ -58,29 +44,22 @@ export interface HighlightRange {
     endCharacter: number
 }
 
-const DEFAULT_VISIBILITY_OFFSET: Shape = { bottom: -500 }
-
 /**
  * A code excerpt that displays syntax highlighting and match range highlighting.
  */
 export const CodeExcerpt: React.FunctionComponent<Props> = ({
-    blobLines,
-    fetchHighlightedFileRangeLines,
+    plaintextLines,
+    highlightedLines,
     startLine,
     endLine,
     highlightRanges,
-    visibilityOffset = DEFAULT_VISIBILITY_OFFSET,
     className,
     onCopy,
 }) => {
-    const [highlightResult, setHighlightResult] = useState<string[] | ErrorLike | undefined>(undefined)
-
-    const [isVisible, setIsVisible] = useState(false)
-
     const plaintextTable = (
         <table>
             <tbody>
-                {blobLines.map((line, i) => (
+                {plaintextLines.map((line, i) => (
                     <tr key={line}>
                         <td className="line" data-line={startLine + i + 1} />
                         <td className="code">
@@ -92,9 +71,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
         </table>
     )
 
-    const highlightedTable = isErrorLike(highlightResult)
-        ? undefined
-        : highlightResult && <table dangerouslySetInnerHTML={{ __html: highlightResult.join('') }} />
+    const highlightedTable = highlightedLines !== undefined ? <table dangerouslySetInnerHTML={{ __html: highlightedLines.join('') }} /> : undefined
 
     const codeTable = highlightedTable ?? plaintextTable
 
@@ -110,16 +87,6 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
         },
         [tableContainerElements]
     )
-
-    // Get the syntax highlighted blob lines
-    useEffect(() => {
-        let subscription: Subscription | undefined
-        if (isVisible) {
-            const observable = fetchHighlightedFileRangeLines(startLine, endLine)
-            subscription = observable.pipe(catchError(error => [asError(error)])).subscribe(setHighlightResult)
-        }
-        return () => subscription?.unsubscribe()
-    }, [startLine, endLine, fetchHighlightedFileRangeLines, isVisible])
 
     // Highlight the search matches
     useLayoutEffect(() => {
@@ -152,10 +119,8 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     }, [highlightRanges, startLine, endLine, tableContainerElement, codeTable])
 
     return (
-        <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilityOffset}>
-            <Code data-testid="code-excerpt" onCopy={onCopy} className={classNames(styles.codeExcerpt, className)}>
-                <div ref={updateTableContainerElementReference}>{codeTable}</div>
-            </Code>
-        </VisibilitySensor>
+        <Code data-testid="code-excerpt" onCopy={onCopy} className={classNames(styles.codeExcerpt, className)}>
+            <div ref={updateTableContainerElementReference}>{codeTable}</div>
+        </Code>
     )
 }
