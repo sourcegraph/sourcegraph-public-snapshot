@@ -290,28 +290,25 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                             <H5 className={styles.releaseStage}>{editor.releaseStage}</H5>
                                         </div>
                                     </div>
-                                    <Link
-                                        to="#"
-                                        className={!editor.instructions ? 'text-muted' : ''}
-                                        onClick={() => {
-                                            setSelectedEditor(editor)
-                                            setSelectedEditorStep(0)
-                                        }}
-                                    >
-                                        <Text size="small" className="mb-2 text-muted">
+                                    {editor.instructions && (
+                                        <Text
+                                            size="small"
+                                            className="mb-2 text-muted"
+                                            onClick={() => {
+                                                setSelectedEditor(editor)
+                                                setSelectedEditorStep(0)
+                                            }}
+                                        >
                                             <Icon svgPath={mdiInformationOutline} aria-hidden={true} /> Quickstart Guide
                                         </Text>
-                                    </Link>
-                                    <Link
-                                        to={editor.docs || ''}
-                                        target="_blank"
-                                        className={!editor.instructions ? 'text-muted' : ''}
-                                        rel="noopener"
-                                    >
-                                        <Text size="small" className="text-muted">
-                                            <Icon svgPath={mdiOpenInNew} aria-hidden={true} /> Documentation
-                                        </Text>
-                                    </Link>
+                                    )}
+                                    {editor.docs && (
+                                        <Link to={editor.docs} target="_blank" rel="noopener">
+                                            <Text size="small" className="text-muted">
+                                                <Icon svgPath={mdiOpenInNew} aria-hidden={true} /> Documentation
+                                            </Text>
+                                        </Link>
+                                    )}
                                     {selectedEditor?.name === editor.name &&
                                         selectedEditorStep !== null &&
                                         editor.instructions && (
