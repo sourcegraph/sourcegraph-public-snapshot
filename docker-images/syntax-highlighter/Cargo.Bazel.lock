@@ -1,5 +1,5 @@
 {
-  "checksum": "f91b0f4ca641c1e530932381b5fe9a9dca4aebd5ea9bc7dc5d4a17931a597a36",
+  "checksum": "294bb055718d67315f253f7843f331b1d108f8dd5939bc1627666eb9b0b42f2f",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -5045,6 +5045,43 @@
         "version": "0.14.27"
       },
       "license": "MIT"
+    },
+    "id-arena 2.2.1": {
+      "name": "id-arena",
+      "version": "2.2.1",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/id-arena/2.2.1/download",
+          "sha256": "25a2bc672d1148e28034f176e01fffebb08b35768468cc954630da77a1449005"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "id_arena",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "id_arena",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "std"
+          ],
+          "selects": {}
+        },
+        "edition": "2015",
+        "version": "2.2.1"
+      },
+      "license": "MIT/Apache-2.0"
     },
     "indexmap 1.9.3": {
       "name": "indexmap",
@@ -10433,6 +10470,10 @@
             {
               "id": "clap 4.3.23",
               "target": "clap"
+            },
+            {
+              "id": "id-arena 2.2.1",
+              "target": "id_arena"
             },
             {
               "id": "insta 1.34.0",
@@ -17759,6 +17800,7 @@
     "futures 0.3.28",
     "futures-task 0.3.28",
     "futures-util 0.3.28",
+    "id-arena 2.2.1",
     "indicatif 0.17.7",
     "insta 1.34.0",
     "itertools 0.10.5",
