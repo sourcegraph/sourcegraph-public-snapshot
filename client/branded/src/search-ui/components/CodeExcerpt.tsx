@@ -56,7 +56,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     className,
     onCopy,
 }) => {
-    const table = highlightedLines ? (
+    const table = useMemo(() => highlightedLines ? (
         <table dangerouslySetInnerHTML={{ __html: highlightedLines.join('') }} />
     ) : (
         <table>
@@ -71,7 +71,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
                 ))}
             </tbody>
         </table>
-    )
+    ), [plaintextLines, highlightedLines, startLine])
 
     // Both the behavior subject and the React state are needed here. The behavior subject is
     // used for hoverified events while the React state is used for match highlighting.
@@ -114,7 +114,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
                 }
             }
         }
-    }, [highlightRanges, startLine, endLine, tableContainerElement])
+    }, [highlightRanges, startLine, endLine, tableContainerElement, table])
 
     return (
         <Code data-testid="code-excerpt" onCopy={onCopy} className={classNames(styles.codeExcerpt, className)}>
