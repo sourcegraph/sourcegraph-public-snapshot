@@ -172,10 +172,10 @@ Cody's main features include:
 
 |     Feature     |                                                                                         Description                                                                                         |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Autocomplete](./../capabilities/autocomplete.md)    | Cody makes context-based code autocompletions. Cody can autocomplete single lines or whole functions in any programming language, configuration file, or documentation.
-| [Chat](./../capabilities/chat.md)    | Ask Cody questions in the chat view or inline with code, and it will use Sourcegraph’s code graph to answer using knowledge of your codebase. |
+| [Autocomplete](./../capabilities/autocomplete.md)    | Cody makes context-based code autocompletions. Cody can autocomplete single lines or whole functions in any programming language, configuration file, or documentation
+| [Chat](./../capabilities/chat.md)    | Ask Cody questions about code in the chat view, and it will use Sourcegraph’s code graph to answer using knowledge of your codebase |
 | [Commands](./../capabilities/commands.md)    | Cody offers quick ready-to-use commands for common actions, such as adding code documentation, generating unit tests, and detecting code smells. |
-| [Debug Code](./../capabilities/debug-code.md)    | Cody can debug your code in the editor and also helps you identify code smells. |
+| [Debug Code](./../capabilities/debug-code.md)    | Cody can debug your code in the editor and also helps you identify code smells |
 
 ## What data is collected and how it's used?
 
@@ -188,9 +188,7 @@ Cody collects and uses data in the following ways:
 
 ## Compatible with Sourcegraph products
 
-Cody is compatible to use with the other Sourcegraph products, like [Code Search](./../../code_search/index.md). You can use Cody's chat to ask questions about your codebase. When you run any search query, you'll find an **Ask Cody** button that takes you to Cody's default chat interface that you can use to ask questions about the codebase.
-
-On a free tier, you can use Cody chat with Code Search on ten public and one private repository. For enterprise users, Cody Chat extends to repositories indexed by your site administrator.
+Cody is compatible to use with the other Sourcegraph products, like [Code Search](./../../code_search/index.md). You can use Cody's chat to ask questions about your codebase. When you run any search query and open a repository or file, you’ll find an **Ask Cody** button that takes you to Cody’s chat interface that you can use to ask questions about the codebase.
 
 [Read more in the Cody FAQs to learn more about such queries →](./../faq.md)
 

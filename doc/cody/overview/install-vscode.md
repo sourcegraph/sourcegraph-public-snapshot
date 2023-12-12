@@ -90,7 +90,7 @@ The Cody extension by Sourcegraph enhances your coding experience in VS Code by 
 ## Prerequisites
 
 - You have the latest version of [VS Code](https://code.visualstudio.com/) installed
-- You have enabled an instance for [Cody from your Sourcegraph.com](cody-with-sourcegraph.md) account
+- You have a Free or Pro account through Sourcegraph.com or a Sourcegraph Enterprise account
 
 ## Install the VS Code extension
 
@@ -107,11 +107,11 @@ Alternatively, you can also [download and install the extension from the VS Code
 
 ## Connect the extension to Sourcegraph
 
-After a successful installation, the Cody icon appears in the [Activity sidebar](https://code.visualstudio.com/api/ux-guidelines/activity-bar). Users on free Cody tier can sign in to their Sourcegraph.com accounts through GitHub, GitLab, or Google.
+After a successful installation, the Cody icon appears in the [Activity sidebar](https://code.visualstudio.com/api/ux-guidelines/activity-bar). Cody Free and Cody Pro users can sign in to their Sourcegraph.com accounts through GitHub, GitLab, or Google.
 
 ![cody-sign-flow](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-new-ui.png)
 
-You can use Sourcegraph Enterprise with the Cody VS Code extension. Click the **Sign In to Your Enterprise Instance**, and it connects to your enterprise environment. For Enterprise users, please sign in with your custom Sourcegraph instance URL and access token. Enterprise accounts are not compatible with community accounts.
+You can use Sourcegraph Enterprise with the Cody VS Code extension. Click the **Sign In to Your Enterprise Instance**, and it connects to your enterprise environment. For Enterprise users, please sign in with your custom Sourcegraph instance URL and access token.
 
 ## Verifying the installation
 
