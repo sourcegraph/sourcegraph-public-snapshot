@@ -1366,6 +1366,7 @@ ts_project(
         "src/repo/components/TryCodyWidget/TryCodyWidget.tsx",
         "src/repo/components/TryCodyWidget/WidgetIcons.tsx",
         "src/repo/constants.ts",
+        "src/repo/fileIcons.ts",
         "src/repo/linkifiy/Linkified.tsx",
         "src/repo/linkifiy/get-links.ts",
         "src/repo/packages/isPackageServiceType.ts",
