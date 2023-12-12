@@ -158,7 +158,6 @@ The following tables shows what happens when Enhanced Context Selection is enabl
 | Enhanced Context Enabled  | ✅                           | ✅                          | ✅                          | ✅                          |
 | Enhanced Context Disabled | ❌                           | ❌                          | ❌                          | ❌                          |
 
-
 ### LLM Selection
 
 Cody Community users can choose the LLM they'd like Cody to use for chats right within the chat panel. The default LLM is set to Claude 2.0 by Anthropic, but the drop-down allows you to experiment with different LLMs and choose the one that's best for you. For Enterprise users, the LLM is determined by the administrator and cannot be changed within the editor.
@@ -189,8 +188,16 @@ The file paths are relative to your workspace, and you can start with the root f
 
 ### Custom Commands
 
+<aside class="beta">
+<p>
+<span class="badge badge-beta">Beta</span>
+Custom Commands are currently available in Beta for all users.
+</p>
+</aside>
+
 In addition, to support customization and advanced use cases, you can create **Custom Commands** tailored to your requirements. Custom Commands are currently supported by Cody for the VS Code extension version 0.8 and above.
 
+Learn more about [Custom Commands here →](./../capabilities/commands.md#custom-commands)
 
 ## Cody VS Code Actions
 
@@ -220,8 +227,8 @@ A similar process applies to explain and edit Code Actions.
 
 <aside class="beta">
 <p>
-<span class="badge badge-beta">Experimental</span>
-Cody Natural Language Search is currently available in Experimental for all users on VS Code extension.
+<span class="badge badge-beta">Beta</span>
+Cody Natural Language Search is currently available in Beta for all users on VS Code extension.
 </p>
 </aside>
 
@@ -261,7 +268,7 @@ For more information on what to do next, we recommend the following resources:
 
 <div class="cards">
   <a class="card text-left" href="./../quickstart"><b>Cody Quickstart</b><p>This guide recommends how to use Cody once you have installed the extension in your VS Code editor.</p></a>
-  <a class="card text-left" href="https://docs.sourcegraph.com/cody/capabilities#commands"><b>Commands in VS Code</b><p>Explore how Cody supports reusable prompts called Commands from within the VS Code extension.</p></a>
+  <a class="card text-left" href="./../capabilities/commands"><b>Commands in VS Code</b><p>Explore how Cody supports reusable prompts called Commands from within the VS Code extension.</p></a>
 </div>
 
 [cody-with-sourcegraph]: cody-with-sourcegraph.md

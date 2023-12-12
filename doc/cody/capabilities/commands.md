@@ -32,9 +32,9 @@ Commands are also available in the JetBrains extension. To access it, navigate t
 
 ## Custom commands
 
-<aside class="experimental">
+<aside class="beta">
 <p>
-<span style="margin-right:0.25rem;" class="badge badge-beta">Experimental</span> Custom Commands are in the Experimental stage.
+<span style="margin-right:0.25rem;" class="badge badge-beta">Beta</span> Custom Commands are in the Beta stage for all users.
 <br />
 For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">create a post on X</a>.
 </p>

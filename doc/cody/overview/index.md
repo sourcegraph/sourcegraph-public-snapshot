@@ -140,14 +140,14 @@ You can start using Cody with one of the following clients:
   </li>
   <li>
     <a class="card text-left" target="_blank" href="https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph">
-      <h3><img alt="JetBrains" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/jb_beam.svg" />Cody for JetBrains (beta)</h3>
-      <p>Install Cody's free and open source extension for JetBrains.</p>
+      <h3><img alt="JetBrains" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/jb_beam.svg" />Cody for JetBrains (Beta)</h3>
+      <p>Install Cody's free extension for JetBrains.</p>
     </a>
   </li>
     <li>
     <a class="card text-left" target="_blank" href="https://github.com/sourcegraph/sg.nvim">
-      <h3><img alt="Neovim" src="https://storage.googleapis.com/sourcegraph-assets/Docs/neovim-logo.png" />Cody for Neovim (experimental)</h3>
-      <p>Install Cody's free and open source extension for Neovim.</p>
+      <h3><img alt="Neovim" src="https://storage.googleapis.com/sourcegraph-assets/Docs/neovim-logo.png" />Cody for Neovim (Experimental)</h3>
+      <p>Install Cody's free extension for Neovim.</p>
     </a>
   </li>
   <li>
@@ -204,7 +204,7 @@ For more information on what to do next, we recommend the following resources:
 
 <div class="cards">
   <a class="card text-left" href="./../quickstart"><b>Cody Quickstart</b><p>This guide recommends first things to try once Cody is up and running.</p></a>
-  <a class="card text-left" href="./../use-cases"><b>Cody Use Cases</b><p>Explore some of the handy use cases with Cody and try them yourself.</p></a>
+  <a class="card text-left" href="./../use-cases/generate-unit-tests"><b>Cody Use Cases</b><p>Explore some of the handy use cases with Cody and try them yourself.</p></a>
 </div>
 <div class="cards">
    <a class="card text-left" href="./../troubleshooting"><b>Cody Troubleshooting Guide</b><p>Having trouble with Cody? Review our troubleshooting guide for help.</p></a>
