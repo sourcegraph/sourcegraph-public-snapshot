@@ -53,9 +53,11 @@ For more information, see [Generate Index to Enable Codebase-Aware Answers](core
 
 If you find yourself being automatically signed out of Cody every time you restart VS Code, and suspect it's due to keychain authentication issues, you can address this by following the steps provided in the official VS Code documentation on [troubleshooting keychain issues](https://code.visualstudio.com/docs/editor/settings-sync#_troubleshooting-keychain-issues). These guidelines should help you troubleshoot and resolve any keychain-related authentication issues, ensuring a seamless experience with Cody on VS Code.
 
-### Autocomplete rate limits
+### Rate limits
 
-On the free plan, Cody provides 500 monthly autocomplete suggestions per user. This limit varies with Pro and Enterprise Sourcegraph instances.
+On the free plan, Cody provides 500 autocomplete suggestions and 20 chat and command invokations per user per month.
+
+On the Pro and Enterprise plans, there are much higher limits that are used to keep our services operational. These limits reset within a day. 
 
 If you reach the rate limit, wait and try again later. For customized rate limits tailored to your specific use case, feel free to reach out to <a href= "https://about.sourcegraph.com/contact" target="_blank">Sourcegraph support</a> for assistance.
 
