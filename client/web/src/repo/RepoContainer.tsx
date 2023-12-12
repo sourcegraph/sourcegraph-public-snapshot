@@ -397,7 +397,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                             !isCodySidebarOpen ? (
                                 <AskCodyButton
                                     onClick={() => {
-                                        logTranscriptEvent(EventName.CODY_SIDEBAR_CHAT_OPENED, { repo, path: filePath })
+                                        logTranscriptEvent(EventName.CODY_SIDEBAR_CHAT_OPENED)
                                         setIsCodySidebarOpen(true)
                                     }}
                                 />
