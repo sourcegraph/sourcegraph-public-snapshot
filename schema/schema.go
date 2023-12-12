@@ -595,6 +595,12 @@ type CodyGateway struct {
 	// BigQueryTable description: The table in the dataset to pull BigQuery Cody Gateway related events from.
 	BigQueryTable string `json:"bigQueryTable,omitempty"`
 }
+type CodyUpload struct {
+	// Bucket description: The GCS bucket that serves as storage root
+	Bucket string `json:"bucket,omitempty"`
+	// CredentialsJSON description: The GCS bucket credentials
+	CredentialsJSON string `json:"credentialsJSON,omitempty"`
+}
 
 // Completions description: Configuration for the completions service.
 type Completions struct {
@@ -668,6 +674,7 @@ type DequeueCacheConfig struct {
 type Dotcom struct {
 	// AppNotifications description: Notifications to display in the Sourcegraph app.
 	AppNotifications []*AppNotifications `json:"app.notifications,omitempty"`
+	CodyUpload       *CodyUpload         `json:"cody.upload,omitempty"`
 	// CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
 	CodyGateway *CodyGateway `json:"codyGateway,omitempty"`
 	// MinimumExternalAccountAge description: The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.

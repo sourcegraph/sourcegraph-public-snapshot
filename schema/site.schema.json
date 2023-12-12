@@ -1988,6 +1988,19 @@
       "description": "Configuration options for Sourcegraph.com only.",
       "type": "object",
       "properties": {
+        "cody.upload": {
+          "type": "object",
+          "properties": {
+            "bucket": {
+              "type": "string",
+              "description": "The GCS bucket that serves as storage root"
+            },
+            "credentialsJSON": {
+              "type": "string",
+              "description": "The GCS bucket credentials"
+            }
+          }
+        },
         "minimumExternalAccountAge": {
           "description": "The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.",
           "type": "integer",

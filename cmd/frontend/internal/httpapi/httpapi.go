@@ -183,6 +183,9 @@ func NewHandler(
 			Handler(trace.Route(updatecheckHandler))
 	}
 
+	// TODO(beyang): move to dotcom mode only
+	m.Path("/cody/save").Methods(http.MethodPost).Handler(trace.Route(jsonHandler(handleCodySaveTranscript)))
+
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
