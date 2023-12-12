@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -87,7 +88,9 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 	}
 
 	// Log an event when a license is created in DotCom
-	database.LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, s.db.SecurityEventLogs())
+	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, s.db.SecurityEventLogs()); err != nil {
+		log.Error(err)
+	}
 
 	return id, nil
 }
@@ -283,7 +286,9 @@ ORDER BY created_at DESC
 
 	argsJSON, _ := json.Marshal(q.Args())
 	//Log an event when liscenses list is viewed in Dotcom
-	database.LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, s.db.SecurityEventLogs())
+	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, s.db.SecurityEventLogs()); err != nil {
+		log.Error(err)
+	}
 
 	return results, nil
 }

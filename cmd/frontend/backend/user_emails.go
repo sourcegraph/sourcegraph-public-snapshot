@@ -95,7 +95,9 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 
 	// Log action of new email being added to user profile
 	argsJSON, _ := json.Marshal(email)
-	database.LogSecurityEvent(ctx, database.SecurityEventNameEmailAdded, "", uint32(userID), "", "BACKEND", argsJSON, e.db.SecurityEventLogs())
+	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameEmailAdded, "", uint32(userID), "", "BACKEND", argsJSON, e.db.SecurityEventLogs()); err != nil {
+		logger.Warn("Error logging security event", log.Error(err))
+	}
 
 	if conf.EmailVerificationRequired() {
 		usr, err := e.db.Users().GetByID(ctx, userID)
@@ -140,8 +142,9 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) err
 
 		// Log action of email being removed from user profile
 		argsJSON, _ := json.Marshal(email)
-		database.LogSecurityEvent(ctx, database.SecurityEventNameEmailRemoved, "", uint32(userID), "", "BACKEND", argsJSON, e.db.SecurityEventLogs())
-
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameEmailRemoved, "", uint32(userID), "", "BACKEND", argsJSON, e.db.SecurityEventLogs()); err != nil {
+			logger.Warn("Error logging security event", log.Error(err))
+		}
 		// 🚨 SECURITY: If an email is removed, invalidate any existing password reset
 		// tokens that may have been sent to that email.
 		if err := tx.Users().DeletePasswordResetCode(ctx, userID); err != nil {
@@ -244,8 +247,9 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 	})
 
 	// Log action of email being verified/unverified
-	database.LogSecurityEvent(ctx, database.SecurityEventNameEmailVerifiedToggle, "", uint32(userID), "", "BACKEND", argsJSON, e.db.SecurityEventLogs())
-
+	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameEmailVerifiedToggle, "", uint32(userID), "", "BACKEND", argsJSON, e.db.SecurityEventLogs()); err != nil {
+		logger.Warn("Error logging security event", log.Error(err))
+	}
 	// Eagerly attempt to sync permissions again. This needs to happen _after_ the
 	// transaction has committed so that it takes into account any changes triggered
 	// by changes in the verification status of the e-mail.

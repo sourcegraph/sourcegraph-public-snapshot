@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
+	logger "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -53,7 +55,9 @@ func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, erro
 	}
 
 	// Log an event when listing organizations.
-	database.LogSecurityEvent(ctx, database.SecurityEventNameOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs())
+	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs()); err != nil {
+		logger.Error(err)
+	}
 
 	return l, nil
 }

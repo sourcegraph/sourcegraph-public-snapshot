@@ -114,14 +114,18 @@ func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfiguratio
 		// is set to true.
 		if returnSafeConfigsOnly {
 			// Log an event when site config is viewed by non-admin user.
-			database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigRedactedViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs())
+			if err := database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigRedactedViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs()); err != nil {
+				r.logger.Error("Error logging security event", log.Error(err))
+			}
 
 			return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 		}
 		return nil, err
 	}
 	// Log an event when site config is viewed by admin user.
-	database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs())
+	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs()); err != nil {
+		r.logger.Error("Error logging security event", log.Error(err))
+	}
 
 	return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 }
@@ -370,7 +374,9 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	}
 
 	// Log an event when site config is updated
-	database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", json.RawMessage(args.Input), r.db.SecurityEventLogs())
+	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", json.RawMessage(args.Input), r.db.SecurityEventLogs()); err != nil {
+		r.logger.Error("Error logging security event", log.Error(err))
+	}
 
 	return server.NeedServerRestart(), nil
 }

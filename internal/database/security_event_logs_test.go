@@ -9,6 +9,8 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -139,4 +141,39 @@ func assertEventField(t *testing.T, field map[string]any) {
 	assert.NotEmpty(t, field["argument"])
 	assert.NotEmpty(t, field["version"])
 	assert.NotEmpty(t, field["timestamp"])
+}
+
+func TestLogSecurityEvent(t *testing.T) {
+	ctx := context.Background()
+	store := NewMockSecurityEventLogsStore()
+
+	t.Run("nil store", func(t *testing.T) {
+		LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "/tokens", 1, "anon", "source", nil, nil)
+	})
+
+	t.Run("valid event", func(t *testing.T) {
+		LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "/tokens", 1, "anon", "source", nil, store)
+		require.Len(t, store.events, 1)
+		event := store.events[0]
+		require.Equal(t, event.Name, SecurityEventAccessTokenCreated)
+		require.Equal(t, event.URL, "/tokens")
+		require.Equal(t, event.UserID, uint32(1))
+		require.Equal(t, event.AnonymousUserID, "anon")
+		require.Equal(t, event.Source, "source")
+	})
+}
+
+type MockSecurityEventLogsStore struct {
+	SecurityEventLogsStore
+	events []*SecurityEvent
+}
+
+func NewMockSecurityEventLogsStore() *MockSecurityEventLogsStore {
+	return &MockSecurityEventLogsStore{
+		events: []*SecurityEvent{},
+	}
+}
+
+func (m *MockSecurityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent) {
+	m.events = append(m.events, e)
 }

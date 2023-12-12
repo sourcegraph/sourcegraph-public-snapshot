@@ -9,6 +9,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -65,7 +67,9 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 
 	argsJSON, _ := json.Marshal(args)
 	// Log an even when Outbound requests are viewed
-	database.LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
+	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+		r.logger.Error("Error logging security event", log.Error(err))
+	}
 
 	return &outboundRequestConnectionResolver{
 		first: args.First,
@@ -86,7 +90,9 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 	}
 	argsJSON, _ := json.Marshal(graphql.ID(key))
 	// Log an even when Outbound requests are viewed
-	database.LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
+	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+		r.logger.Error("Error logging security event", log.Error(err))
+	}
 
 	item, _ := httpcli.GetOutboundRequestLogItem(key)
 	return &OutboundRequestResolver{req: item}, nil

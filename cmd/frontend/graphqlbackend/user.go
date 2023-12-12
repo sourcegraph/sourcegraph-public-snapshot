@@ -492,7 +492,9 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 
 	argsJSON, _ := json.Marshal(args)
 	// Log an event when a user account is modified/updated
-	database.LogSecurityEvent(ctx, database.SecurityEventNameAccountModified, "", uint32(userID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
+	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameAccountModified, "", uint32(userID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+		r.logger.Error("Error logging security event", log.Error(err))
+	}
 
 	return UserByIDInt32(ctx, r.db, userID)
 }
@@ -927,7 +929,9 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 	}
 	argsJSON, _ := json.Marshal(args)
 	// Log an event when a user's Completions quota is updated
-	database.LogSecurityEvent(ctx, database.SecurityEventNameUserCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
+	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameUserCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+		r.logger.Error("Error logging security event", log.Error(err))
+	}
 
 	return UserByIDInt32(ctx, r.db, user.ID)
 }
@@ -968,7 +972,9 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 	}
 	argsJSON, _ := json.Marshal(args)
 	// Log an event when user's code completions quota is updated
-	database.LogSecurityEvent(ctx, database.SecurityEventNameUserCodeCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", argsJSON, r.db.SecurityEventLogs())
+	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameUserCodeCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+		r.logger.Error("Error logging security event", log.Error(err))
+	}
 
 	return UserByIDInt32(ctx, r.db, user.ID)
 }
