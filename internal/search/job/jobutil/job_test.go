@@ -1486,6 +1486,7 @@ func RunRepoSubsetTextSearch(
 		zoektParams := &search.ZoektParameters{
 			FileMatchLimit: patternInfo.FileMatchLimit,
 			Select:         patternInfo.Select,
+			// TODO: numContextLines
 		}
 
 		zoektJob := &zoektutil.RepoSubsetTextSearchJob{
@@ -1513,6 +1514,7 @@ func RunRepoSubsetTextSearch(
 			Repos:           unindexed,
 			Indexed:         false,
 			UseFullDeadline: searcherArgs.UseFullDeadline,
+			NumContextLines: searcherArgs.NumContextLines,
 		}
 
 		_, err := searcherJob.Run(ctx, job.RuntimeClients{

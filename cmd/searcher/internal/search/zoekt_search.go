@@ -77,6 +77,7 @@ func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, 
 
 	searchOpts := (&search.ZoektParameters{
 		FileMatchLimit: args.FileMatchLimit,
+		// TODO: numContextLines
 	}).ToSearchOptions(ctx)
 	searchOpts.Whole = true
 
@@ -106,7 +107,7 @@ func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, 
 		// Cancel the context on completion so that the writer doesn't
 		// block indefinitely if this stops reading.
 		defer cancel()
-		return structuralSearch(ctx, logger, comby.Tar{TarInputEventC: tarInputEventC}, all, extensionHint, args.Pattern, args.CombyRule, args.Languages, repo, sender)
+		return structuralSearch(ctx, logger, comby.Tar{TarInputEventC: tarInputEventC}, all, extensionHint, args.Pattern, args.CombyRule, args.Languages, repo, int32(searchOpts.NumContextLines), sender)
 	})
 
 	pool.Go(func() error {

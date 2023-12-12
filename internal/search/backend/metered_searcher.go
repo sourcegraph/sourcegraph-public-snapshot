@@ -85,6 +85,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			attribute.Int64("opts.max_wall_time_ms", opts.MaxWallTime.Milliseconds()),
 			attribute.Int64("opts.flush_wall_time_ms", opts.FlushWallTime.Milliseconds()),
 			attribute.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
+			attribute.Int("opts.context_lines", opts.NumContextLines),
 		}
 		tr.AddEvent("begin", fields...)
 		event.AddAttributes(fields)

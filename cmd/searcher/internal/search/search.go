@@ -213,7 +213,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			return errors.Wrap(err, "failed to get archive")
 		}
 		defer zf.Close()
-		return filteredStructuralSearch(ctx, s.Log, zipPath, zf, &p.PatternInfo, p.Repo, sender)
+		return filteredStructuralSearch(ctx, s.Log, zipPath, zf, &p.PatternInfo, p.Repo, sender, int32(p.NumContextLines))
 	}
 
 	// Compile pattern before fetching from store in case it's invalid.
@@ -251,7 +251,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	}
 	defer zf.Close()
 
-	return regexSearch(ctx, rg, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
+	return regexSearch(ctx, rg, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender, int32(p.NumContextLines))
 }
 
 func (s *Service) getZipFile(ctx context.Context, tr trace.Trace, p *protocol.Request, paths []string) (string, *zipFile, error) {

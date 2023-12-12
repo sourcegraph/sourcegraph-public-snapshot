@@ -38,6 +38,7 @@ func Search(
 	p *search.TextPatternInfo,
 	fetchTimeout time.Duration,
 	features search.Features,
+	contextLines int,
 	onMatches func([]*protocol.FileMatch),
 ) (limitHit bool, err error) {
 	if MockSearch != nil {
@@ -69,8 +70,9 @@ func Search(
 			PatternMatchesContent:        p.PatternMatchesContent,
 			PatternMatchesPath:           p.PatternMatchesPath,
 		},
-		Indexed:      indexed,
-		FetchTimeout: fetchTimeout,
+		Indexed:         indexed,
+		FetchTimeout:    fetchTimeout,
+		NumContextLines: contextLines,
 	}
 
 	body, err := json.Marshal(r)
