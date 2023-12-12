@@ -1,6 +1,6 @@
 # Licensing
 
-Sourcegraph Enterprise requires a valid license key to enable many Enterprise-specific features.
+Sourcegraph requires a valid license key to enable many of its more prominent features.
 
 Sourcegraph will periodically perform a license validation check by contacting sourcegraph.com. This check sends no information other than a unique site ID and information about the configured Sourcegraph license. This check is mandatory, and if the check fails Sourcegraph will disable all Enterprise features until a successful license check is completed.
 
@@ -12,9 +12,9 @@ License keys also need to be unique to a single instance of Sourcegraph. If the 
 
 ## How to update your license key
 
-Any current Site Admin can update your license key by going to Site Admin -> [Site configuration](../config/site_config.md) 
+Any current Site Admin can update your license key by going to Site Admin -> [Site configuration](../config/site_config.md)
 
-These settings live in the JSON object, and you will need to navigate to the _licenseKey_ section of that object.  
+These settings live in the JSON object, and you will need to navigate to the _licenseKey_ section of that object.
 
 Update the value of this with your new license key and click Save to apply your changes.
 
@@ -30,6 +30,16 @@ When upgrading to Sourcegraph 5.1 while using the same license key on multiple i
 When the second instance is upgraded while using the same license key, license verification will fail for that instance. Please make sure to contact customer support and request a new license key, so that different Sourcegraph instances all have unique license keys.
 
 ## FAQ
+
+### What happens if our Sourcegraph license expires?
+
+<span class="badge badge-note">Sourcegraph 5.3+</span>
+
+Sourcegraph will continue to function as normal, but users will be signed out of Sourcegraph and will be unable to sign in until a site admin signs in and updates the license key.
+
+<span class="badge badge-note">Before Sourcegraph 5.3</span>
+
+Sourcegraph will revert to a free license, and any features that require an enterprise license will stop functioning. This could lead to data loss if some of these features were in use, so be sure to renew your license in advance!
 
 ### We have set up a new Sourcegraph instance by replicating an existing instance, how can we generate a new site ID to ensure the instances are unique?
 
