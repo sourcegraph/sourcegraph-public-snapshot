@@ -470,11 +470,12 @@ pub fn parse_tree<'a>(
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use crate::languages::LocalConfiguration;
     use scip::types::Document;
     use scip_treesitter::snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions};
     use scip_treesitter_languages::parsers::BundledParser;
+
+    use super::*;
+    use crate::languages::LocalConfiguration;
 
     fn snapshot_syntax_document(doc: &Document, source: &str) -> String {
         dump_document_with_config(
@@ -492,8 +493,8 @@ mod test {
         let source_bytes = source_code.as_bytes();
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
-        let occ = parse_tree(config, &tree, source_bytes);
 
+        let occ = parse_tree(config, &tree, source_bytes);
         let mut doc = Document::new();
         doc.occurrences = occ;
         doc.symbols = doc
@@ -504,13 +505,64 @@ mod test {
                 ..Default::default()
             })
             .collect();
+
         doc
     }
 
     #[test]
-    fn does_locals2() {
+    fn test_can_do_go() {
         let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals.go");
+        let doc = parse_file_for_lang(config, source_code);
+
+        let dumped = snapshot_syntax_document(&doc, source_code);
+        insta::assert_snapshot!(dumped);
+    }
+
+    #[test]
+    fn test_can_do_nested_locals() {
+        let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
+        let source_code = include_str!("../testdata/locals-nested.go");
+        let doc = parse_file_for_lang(config, source_code);
+
+        let dumped = snapshot_syntax_document(&doc, source_code);
+        insta::assert_snapshot!(dumped);
+    }
+
+    #[test]
+    fn test_can_do_functions(){
+        let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
+        let source_code = include_str!("../testdata/funcs.go");
+        let doc = parse_file_for_lang(config, source_code);
+
+        let dumped = snapshot_syntax_document(&doc, source_code);
+        insta::assert_snapshot!(dumped);
+    }
+
+    #[test]
+    fn test_can_do_perl() {
+        let config = crate::languages::get_local_configuration(BundledParser::Perl).unwrap();
+        let source_code = include_str!("../testdata/perl.pm");
+        let doc = parse_file_for_lang(config, source_code);
+
+        let dumped = snapshot_syntax_document(&doc, source_code);
+        insta::assert_snapshot!(dumped);
+    }
+
+    #[test]
+    fn test_can_do_matlab() {
+        let config = crate::languages::get_local_configuration(BundledParser::Matlab).unwrap();
+        let source_code = include_str!("../testdata/locals.m");
+        let doc = parse_file_for_lang(config, source_code);
+
+        let dumped = snapshot_syntax_document(&doc, source_code);
+        insta::assert_snapshot!(dumped);
+    }
+
+    #[test]
+    fn test_can_do_java() {
+        let config = crate::languages::get_local_configuration(BundledParser::Java).unwrap();
+        let source_code = include_str!("../testdata/locals.java");
         let doc = parse_file_for_lang(config, source_code);
 
         let dumped = snapshot_syntax_document(&doc, source_code);
