@@ -274,11 +274,12 @@ func responseCodeMetric(scope constructs.Construct, id resourceid.ID, config *Co
 func responseCodeBuilder(config *Config) string {
 	var builder strings.Builder
 
-	builder.WriteString("fetch cloud_run_revision\n")
-	builder.WriteString("| metric 'run.googleapis.com/request_count'\n")
-	builder.WriteString("| group_by 15s, [value_request_count_aggregate: aggregate(value.request_count)]\n")
-	builder.WriteString("| every 15s\n")
-	builder.WriteString("| {\n")
+	builder.WriteString(`fetch cloud_run_revision
+| metric 'run.googleapis.com/request_count'
+| group_by 15s, [value_request_count_aggregate: aggregate(value.request_count)]
+| every 15s
+| {
+`)
 	if config.ResponseCodeMetric.CodeClass != nil {
 		builder.WriteString("  group_by [metric.response_code, metric.response_code_class],\n")
 	} else {
@@ -295,11 +296,12 @@ func responseCodeBuilder(config *Config) string {
 			builder.WriteString(fmt.Sprintf("  | filter (metric.response_code != '%s')\n", code))
 		}
 	}
-	builder.WriteString("; group_by [],\n")
-	builder.WriteString("  [value_request_count_aggregate_aggregate: aggregate(value_request_count_aggregate)]\n")
-	builder.WriteString("}\n")
-	builder.WriteString("| join\n")
-	builder.WriteString("| value [response_code_ratio: val(0) / val(1)]\n")
+	builder.WriteString(`; group_by [],
+  [value_request_count_aggregate_aggregate: aggregate(value_request_count_aggregate)]
+}
+| join
+| value [response_code_ratio: val(0) / val(1)]
+`)
 	builder.WriteString(fmt.Sprintf("| condition gt(val(), %s)\n", strconv.FormatFloat(config.ResponseCodeMetric.Ratio, 'f', -1, 64)))
 	return builder.String()
 }

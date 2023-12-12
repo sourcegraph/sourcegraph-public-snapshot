@@ -69,14 +69,14 @@ func (r *ResponseCodeRatioSpec) Validate() []error {
 
 	if r.CodeClass != nil {
 		if !codeClassPattern.MatchString(*r.CodeClass) {
-			errs = append(errs, errors.New("responseCodeRatios[].codeClass must match the format NXX (e.g. 4xx, 5xx)"))
+			errs = append(errs, errors.New("responseCodeRatios[].codeClass must match the format Nxx (e.g. 4xx, 5xx)"))
 		}
 	}
 
 	if r.Duration != nil {
 		duration, err := time.ParseDuration(*r.Duration)
 		if err != nil {
-			errs = append(errs, errors.New("responseCodeRatios[].duration must be in the format of XXs"))
+			errs = append(errs, errors.Wrap(err, "responseCodeRatios[].duration must be in the format of XXs"))
 		} else if duration%time.Minute != 0 {
 			errs = append(errs, errors.New("responseCodeRatios[].duration must be a multiple of 60s"))
 		}
