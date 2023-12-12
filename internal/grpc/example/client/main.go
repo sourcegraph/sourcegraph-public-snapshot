@@ -18,6 +18,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// From https://commons.wikimedia.org/w/index.php?title=File:Sun-soleil.svg&oldid=456041378
+//
 //go:embed sun.png
 var sunDrawingImage []byte
 
