@@ -202,7 +202,7 @@ Sourcegraph aggregates usage and performance metrics for some product features i
 - Cody providers data
   - Completions
     - Provider name
-    - Chat, fast chat and completion model names (only for "sourcegraph" provider)
+    - Chat, fast chat, and completion model names (only for "sourcegraph" provider)
   - Embeddings
     - Provider name
     - Model name (only for "sourcegraph" provider)
