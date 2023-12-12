@@ -1,7 +1,7 @@
 import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import { type Observable, BehaviorSubject } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 
 import { highlightNodeMultiline } from '@sourcegraph/common'
 import type { Repo } from '@sourcegraph/shared/src/util/url'
@@ -63,7 +63,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
                     <tr key={line}>
                         <td className="line" data-line={startLine + i + 1} />
                         <td className="code">
-                            <span>{line}</span>
+                            <span className="hl-text hl-plain">{line}</span>
                         </td>
                     </tr>
                 ))}
@@ -71,7 +71,10 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
         </table>
     )
 
-    const highlightedTable = highlightedLines !== undefined ? <table dangerouslySetInnerHTML={{ __html: highlightedLines.join('') }} /> : undefined
+    const highlightedTable =
+        highlightedLines !== undefined ? (
+            <table dangerouslySetInnerHTML={{ __html: highlightedLines.join('') }} />
+        ) : undefined
 
     const codeTable = highlightedTable ?? plaintextTable
 

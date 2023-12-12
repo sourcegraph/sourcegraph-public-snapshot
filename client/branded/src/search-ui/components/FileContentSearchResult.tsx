@@ -12,6 +12,7 @@ import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
 import type { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
+import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import {
     type ContentMatch,
     getFileMatchUrl,
@@ -30,7 +31,6 @@ import { SearchResultPreviewButton } from './SearchResultPreviewButton'
 
 import resultContainerStyles from './ResultContainer.module.scss'
 import styles from './SearchResult.module.scss'
-import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 
 const DEFAULT_VISIBILITY_OFFSET = { bottom: -500 }
 
@@ -117,8 +117,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         return false
     }, [settingsCascade])
 
-    const [isVisible, setIsVisible] = useState(false)
-
+    const [hasBeenVisible, setHasBeenVisible] = useState(false)
 
     const unhighlightedGroups: MatchGroup[] = useMemo(
         () =>
@@ -130,7 +129,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                     endCharacter: range.end.column,
                 }))
 
-                const blobLines = chunk.content.split(/\r?\n/)
+                const plaintextLines = chunk.content.split(/\r?\n/)
                 let minPosition = { line: Number.MAX_VALUE, character: Number.MAX_VALUE }
                 for (const match of matches) {
                     const position = { line: match.startLine + 1, character: match.startCharacter + 1 }
@@ -140,11 +139,12 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                 }
 
                 return {
-                    blobLines,
+                    plaintextLines,
+                    highlightedLines: undefined,
                     matches,
                     position: minPosition,
                     startLine: chunk.contentStart.line,
-                    endLine: chunk.contentStart.line + blobLines.length,
+                    endLine: chunk.contentStart.line + plaintextLines.length,
                 }
             }) ?? [],
         [result]
@@ -153,7 +153,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
     const [groups, setGroups] = useState(unhighlightedGroups)
     useEffect(() => {
         let subscription: Subscription | undefined
-        if (isVisible) {
+        if (hasBeenVisible) {
             subscription = fetchHighlightedFileLineRanges(
                 {
                     repoName: result.repository,
@@ -168,15 +168,17 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                 .pipe(catchError(error => [asError(error)]))
                 .subscribe(res => {
                     if (!isErrorLike(res)) {
-                        setGroups(unhighlightedGroups.map((group, i) => ({
-                            ...group,
-                            highlightedLines: res[i],
-                        })))
+                        setGroups(
+                            unhighlightedGroups.map((group, i) => ({
+                                ...group,
+                                highlightedLines: res[i],
+                            }))
+                        )
                     }
                 })
         }
         return () => subscription?.unsubscribe()
-    }, [result, unhighlightedGroups, isVisible, fetchHighlightedFileLineRanges])
+    }, [result, unhighlightedGroups, hasBeenVisible, fetchHighlightedFileLineRanges])
 
     const expandedMatchGroups = ranking.expandedResults(groups)
     const collapsedMatchGroups = ranking.collapsedResults(groups)
@@ -268,7 +270,11 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             actions={newSearchUIEnabled && <SearchResultPreviewButton result={result} />}
         >
             {/* <div data-testid="file-search-result" data-expanded={expanded}> */}
-            <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={DEFAULT_VISIBILITY_OFFSET}>
+            <VisibilitySensor
+                onChange={(visible: boolean) => setHasBeenVisible(visible || hasBeenVisible)}
+                partialVisibility={true}
+                offset={DEFAULT_VISIBILITY_OFFSET}
+            >
                 <div data-testid="file-search-result">
                     <FileMatchChildren
                         result={result}

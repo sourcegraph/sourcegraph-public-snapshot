@@ -25,7 +25,6 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
     const { result, grouped, telemetryService } = props
 
-
     const createCodeExcerptLink = (group: MatchGroup): string => {
         const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({ position: group.position })
         return appendLineRangeQueryParameter(getFileMatchUrl(result), positionOrRangeQueryParameter)
@@ -48,42 +47,37 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             data-testid="file-match-children"
             data-selectable-search-results-group="true"
         >
-            {grouped.length > 0 && grouped.map(group => (
-                <div
-                    key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${group.position.character
-                        }`}
-                    className={classNames('test-file-match-children-item-wrapper', styles.itemCodeWrapper)}
-                >
+            {grouped.length > 0 &&
+                grouped.map(group => (
                     <div
-                        data-href={createCodeExcerptLink(group)}
-                        className={classNames(
-                            'test-file-match-children-item',
-                            styles.item,
-                            styles.itemClickable
-                        )}
-                        onClick={navigateToFile}
-                        onMouseUp={navigateToFileOnMiddleMouseButtonClick}
-                        onKeyDown={navigateToFile}
-                        data-testid="file-match-children-item"
-                        tabIndex={0}
-                        role="link"
-                        data-selectable-search-result="true"
+                        key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${group.position.character}`}
+                        className={classNames('test-file-match-children-item-wrapper', styles.itemCodeWrapper)}
                     >
-                        <CodeExcerpt
-                            repoName={result.repository}
-                            commitID={result.commit || ''}
-                            filePath={result.path}
-                            startLine={group.startLine}
-                            endLine={group.endLine}
-                            highlightRanges={group.matches}
-                            plaintextLines={group.plaintextLines}
-                            highlightedLines={group.highlightedLines}
-                            onCopy={logEventOnCopy}
-                        />
+                        <div
+                            data-href={createCodeExcerptLink(group)}
+                            className={classNames('test-file-match-children-item', styles.item, styles.itemClickable)}
+                            onClick={navigateToFile}
+                            onMouseUp={navigateToFileOnMiddleMouseButtonClick}
+                            onKeyDown={navigateToFile}
+                            data-testid="file-match-children-item"
+                            tabIndex={0}
+                            role="link"
+                            data-selectable-search-result="true"
+                        >
+                            <CodeExcerpt
+                                repoName={result.repository}
+                                commitID={result.commit || ''}
+                                filePath={result.path}
+                                startLine={group.startLine}
+                                endLine={group.endLine}
+                                highlightRanges={group.matches}
+                                plaintextLines={group.plaintextLines}
+                                highlightedLines={group.highlightedLines}
+                                onCopy={logEventOnCopy}
+                            />
+                        </div>
                     </div>
-                </div>
-            ))}
+                ))}
         </div>
     )
 }
-

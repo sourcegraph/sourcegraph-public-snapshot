@@ -10,7 +10,7 @@ import { ZoektRanking } from './ZoektRanking'
 describe('ZoektRanking', () => {
     const ranking = new ZoektRanking(5)
     test('collapsedResults, single-line matches only', () => {
-        expect(ranking.collapsedResults(testDataRealMatchesByLineNumber, 1).grouped).toMatchInlineSnapshot(`
+        expect(ranking.collapsedResults(testDataRealMatchesByLineNumber, 1)).toMatchInlineSnapshot(`
             Array [
               Object {
                 "endLine": 5,

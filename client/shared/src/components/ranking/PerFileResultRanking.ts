@@ -43,7 +43,7 @@ export interface MatchItem extends ExtensionBadgeType {
  */
 export interface MatchGroup {
     plaintextLines: string[]
-    highlightedLines: string[]
+    highlightedLines?: string[]
 
     // The matches in this group to display.
     matches: MatchGroupMatch[]
