@@ -528,7 +528,7 @@ export interface SearchReferenceProps extends TelemetryProps, Pick<SearchQuerySt
 const SearchReference = React.memo(function SearchReference(props: SearchReferenceProps) {
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
 
-    const { setQueryState, telemetryService } = props
+    const { setQueryState, telemetryService, telemetryRecorder } = props
     const filter = props.filter.trim()
     const hasFilter = filter.length > 0
 
@@ -567,9 +567,10 @@ const SearchReference = React.memo(function SearchReference(props: SearchReferen
     const updateQueryWithExample = useCallback(
         (example: string) => {
             telemetryService.log(hasFilter ? 'SearchReferenceSearchedAndClicked' : 'SearchReferenceFilterClicked')
+            telemetryRecorder.recordEvent(`searchReference.${hasFilter ? 'searched' : 'filtered'}`, 'clicked')
             setQueryState(({ query }) => ({ query: query.trimEnd() + ' ' + example }))
         },
-        [setQueryState, hasFilter, telemetryService]
+        [setQueryState, hasFilter, telemetryService, telemetryRecorder]
     )
 
     const filterList = (

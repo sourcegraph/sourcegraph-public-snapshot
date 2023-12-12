@@ -16,6 +16,7 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import type { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import type { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import type { Controller } from '@sourcegraph/shared/src/extensions/controller'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { integrationTestContext } from '@sourcegraph/shared/src/testing/testHelpers'
@@ -142,6 +143,7 @@ describe('codeHost', () => {
                         codeViewResolvers: [],
                     },
                     extensionsController: createMockController(extensionHostAPI),
+                    telemetryRecorder: noOpTelemetryRecorder,
                 })
             )
             const overlayMount = document.body.querySelector('.hover-overlay-mount')
@@ -188,6 +190,7 @@ describe('codeHost', () => {
                         ],
                     },
                     extensionsController: createMockController(extensionHostAPI),
+                    telemetryRecorder: noOpTelemetryRecorder,
                     platformContext: createMockPlatformContext({
                         // Simulate an instance with repositoryPathPattern
                         requestGraphQL: mockRequestGraphQL({
@@ -274,6 +277,7 @@ describe('codeHost', () => {
                     },
                     extensionsController: createMockController(extensionHostAPI),
                     platformContext: createMockPlatformContext(),
+                    telemetryRecorder: noOpTelemetryRecorder,
                 })
             )
             await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(take(2)).toPromise()
@@ -354,6 +358,7 @@ describe('codeHost', () => {
                         ],
                     },
                     extensionsController: createMockController(extensionHostAPI),
+                    telemetryRecorder: noOpTelemetryRecorder,
                 })
             )
             await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
