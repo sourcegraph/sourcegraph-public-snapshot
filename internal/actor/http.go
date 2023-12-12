@@ -176,17 +176,18 @@ func getCondensedURLPath(urlPath string) string {
 // from the cookie if it exists. It will not overwrite an existing actor.
 func AnonymousUIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var anonymousUID string
+
+		// Get from cookie if available, otherwise get from header
+		if cookieAnonymousUID, ok := cookie.AnonymousUID(req); ok {
+			anonymousUID = cookieAnonymousUID
+		} else if headerAnonymousUID := req.Header.Get(headerKeyActorAnonymousUID); headerAnonymousUID != "" {
+			anonymousUID = headerAnonymousUID
+		}
+
 		// Don't clobber an existing authenticated actor
-		if a := FromContext(req.Context()); !a.IsAuthenticated() && !a.IsInternal() {
-			var anonymousUID string
-
-			// Get from cookie if available, otherwise get from header
-			if cookieAnonymousUID, ok := cookie.AnonymousUID(req); ok {
-				anonymousUID = cookieAnonymousUID
-			} else if headerAnonymousUID := req.Header.Get(headerKeyActorAnonymousUID); headerAnonymousUID != "" {
-				anonymousUID = headerAnonymousUID
-			}
-
+		a := FromContext(req.Context())
+		if !a.IsAuthenticated() && !a.IsInternal() {
 			// If we found an anonymous UID, use that as the actor context
 			ctx := req.Context()
 			if anonymousUID != "" {
@@ -194,6 +195,11 @@ func AnonymousUIDMiddleware(next http.Handler) http.Handler {
 			}
 			next.ServeHTTP(rw, req.WithContext(ctx))
 			return
+		}
+
+		// Otherwise, update the current actor. This won't overwrite an authenticated actor.
+		if anonymousUID != "" {
+			a.AnonymousUID = anonymousUID
 		}
 
 		next.ServeHTTP(rw, req)
