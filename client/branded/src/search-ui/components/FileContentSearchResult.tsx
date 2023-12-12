@@ -123,6 +123,8 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
 
     const [groups, setGroups] = useState(unhighlightedGroups)
     useEffect(() => {
+        // Kick off an async fetch of the highlighted code and update
+        // groups with the highlighted code once it comes back.
         let subscription: Subscription | undefined
         if (hasBeenVisible) {
             subscription = fetchHighlightedFileLineRanges(
@@ -153,8 +155,8 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
 
     const collapsedMatchGroups = truncateGroups(groups, 3)
 
-    const highlightRangesCount = groups.reduce(sumHighlightRanges, 0)
-    const collapsedHighlightRangesCount = collapsedMatchGroups.reduce(sumHighlightRanges, 0)
+    const highlightRangesCount = countHighlightRanges(groups)
+    const collapsedHighlightRangesCount = countHighlightRanges(collapsedMatchGroups)
 
     const hiddenMatchesCount = highlightRangesCount - collapsedHighlightRangesCount
     const collapsible = !showAllMatches && highlightRangesCount > collapsedHighlightRangesCount
@@ -239,13 +241,12 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             repoLastFetched={result.repoLastFetched}
             actions={newSearchUIEnabled && <SearchResultPreviewButton result={result} />}
         >
-            {/* <div data-testid="file-search-result" data-expanded={expanded}> */}
             <VisibilitySensor
                 onChange={(visible: boolean) => setHasBeenVisible(visible || hasBeenVisible)}
                 partialVisibility={true}
                 offset={DEFAULT_VISIBILITY_OFFSET}
             >
-                <div data-testid="file-search-result">
+                <div data-testid="file-search-result" data-expanded={expanded}>
                     <FileMatchChildren
                         result={result}
                         grouped={expanded ? groups : collapsedMatchGroups}
@@ -299,10 +300,12 @@ const rankByLine = (groups: MatchGroup[]): MatchGroup[] => {
     return groupsCopy
 }
 
+// truncateGroups returns a subset of match groups
 const truncateGroups = (groups: MatchGroup[], maxMatches: number): MatchGroup[] => {
     const visibleGroups = []
     let visibleMatches = 0
     for (const group of groups) {
+        // TODO: truncate within a group
         if (visibleMatches > maxMatches) {
             break
         }
@@ -341,4 +344,5 @@ const chunkToMatchGroup = (chunk: ChunkMatch): MatchGroup => {
     }
 }
 
-const sumHighlightRanges = (count: number, group: MatchGroup): number => count + group.matches.length
+const countHighlightRanges = (groups: MatchGroup[]): number =>
+    groups.reduce((count, group) => count + group.matches.length, 0)
