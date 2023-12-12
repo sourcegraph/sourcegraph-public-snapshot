@@ -23,6 +23,7 @@ export interface IEditor {
     name: string
     publisher: string
     releaseStage: string
+    docs?: string
     instructions?: React.FC<{ onBack?: () => void; onClose: () => void; showStep?: number }>
 }
 
@@ -33,6 +34,7 @@ export const editorGroups: IEditor[][] = [
             name: 'VS Code',
             publisher: 'Microsoft',
             releaseStage: 'Stable',
+            docs: 'https://docs.sourcegraph.com/cody/overview/install-vscode',
             instructions: VSCodeInstructions,
         },
         {
@@ -40,6 +42,7 @@ export const editorGroups: IEditor[][] = [
             name: 'IntelliJ IDEA',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -47,6 +50,7 @@ export const editorGroups: IEditor[][] = [
             name: 'PhpStorm ',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -54,6 +58,7 @@ export const editorGroups: IEditor[][] = [
             name: 'PyCharm',
             publisher: 'Jetbrains',
             releaseStage: 'Beta',
+            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
     ],
@@ -63,6 +68,7 @@ export const editorGroups: IEditor[][] = [
             name: 'WebStorm',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -70,6 +76,7 @@ export const editorGroups: IEditor[][] = [
             name: 'RubyMine',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -77,6 +84,7 @@ export const editorGroups: IEditor[][] = [
             name: 'GoLand',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -84,6 +92,7 @@ export const editorGroups: IEditor[][] = [
             name: 'Android Studio',
             publisher: 'Google',
             releaseStage: 'Beta',
+            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
     ],
@@ -93,6 +102,7 @@ export const editorGroups: IEditor[][] = [
             name: 'Neovim',
             publisher: 'Neovim Team',
             releaseStage: 'Experimental',
+            docs: 'https://docs.sourcegraph.com/cody/overview/install-neovim',
             instructions: NeoVimInstructions,
         },
         {
@@ -283,9 +293,6 @@ function PurposeStep({
                     onFormReady={handleFormReady}
                 />
             </div>
-            <Text size="small" className="text-muted text-center mb-0">
-                Pick one to move forward
-            </Text>
         </>
     )
 }
