@@ -59,6 +59,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Added Cody providers data to pings. [#58848](https://github.com/sourcegraph/sourcegraph/pull/58848)
+
 ### Fixed
 
 - Fixed an issue where updating a generic git code host would cause it to become unrestricted if permissions user mapping is enabled. [#58772](https://github.com/sourcegraph/sourcegraph/pull/58772)

@@ -173,28 +173,27 @@ func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 
 func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		// stepOpts := []bk.StepOpt{
-		// 	withPnpmCache(),
-		// 	bk.AutomaticRetry(3),
-		// 	bk.Cmd("./dev/ci/pnpm-install-with-retry.sh"),
-		// 	bk.Cmd("pnpm run generate"),
-		// 	bk.Env("MINIFY", "1"),
-		// }
-		//
-		// // Upload storybook to Chromatic
-		// chromaticCommand := "pnpm chromatic --exit-zero-on-changes --exit-once-uploaded"
-		// if opts.ChromaticShouldAutoAccept {
-		// 	chromaticCommand += " --auto-accept-changes"
-		// } else {
-		// 	// Unless we plan on automatically accepting these changes, we only run this
-		// 	// step on ready-for-review pull requests.
-		// 	stepOpts = append(stepOpts, bk.IfReadyForReview(opts.ForceReadyForReview))
-		// 	chromaticCommand += " | ./dev/ci/post-chromatic.sh"
-		// }
-		//
-		// TODO(burmudar): reenable chromatic
-		// pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
-		// 	append(stepOpts, bk.Cmd(chromaticCommand))...)
+		stepOpts := []bk.StepOpt{
+			withPnpmCache(),
+			bk.AutomaticRetry(3),
+			bk.Cmd("./dev/ci/pnpm-install-with-retry.sh"),
+			bk.Cmd("pnpm run generate"),
+			bk.Env("MINIFY", "1"),
+		}
+
+		// Upload storybook to Chromatic
+		chromaticCommand := "pnpm chromatic --exit-zero-on-changes --exit-once-uploaded"
+		if opts.ChromaticShouldAutoAccept {
+			chromaticCommand += " --auto-accept-changes"
+		} else {
+			// Unless we plan on automatically accepting these changes, we only run this
+			// step on ready-for-review pull requests.
+			stepOpts = append(stepOpts, bk.IfReadyForReview(opts.ForceReadyForReview))
+			chromaticCommand += " | ./dev/ci/post-chromatic.sh"
+		}
+
+		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
+			append(stepOpts, bk.Cmd(chromaticCommand))...)
 	}
 }
 

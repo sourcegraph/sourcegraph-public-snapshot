@@ -201,74 +201,70 @@ func (r *UserResolver) CodyProEnabled(ctx context.Context) bool {
 	return r.CodyProEnabledAt(ctx) != nil
 }
 
-func (r *UserResolver) CodyCurrentPeriodChatLimit(ctx context.Context) (*int32, error) {
+func (r *UserResolver) CodyCurrentPeriodChatLimit(ctx context.Context) (int32, error) {
 	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
+		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
 	if r.user.CodyProEnabledAt != nil {
-		return nil, nil
+		return 0, nil
 	}
 
 	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 
 	limit := int32(cfg.PerCommunityUserChatMonthlyInteractionLimit)
 
-	return &limit, nil
+	return limit, nil
 }
 
-func (r *UserResolver) CodyCurrentPeriodCodeLimit(ctx context.Context) (*int32, error) {
+func (r *UserResolver) CodyCurrentPeriodCodeLimit(ctx context.Context) (int32, error) {
 	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
+		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
 	if r.user.CodyProEnabledAt != nil {
-		return nil, nil
+		return 0, nil
 	}
 
 	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 
 	limit := int32(cfg.PerCommunityUserCodeCompletionsMonthlyInteractionLimit)
 
-	return &limit, nil
+	return limit, nil
 }
 
-func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (*int32, error) {
+func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (int32, error) {
 	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
+		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
 	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate(ctx)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	query := sqlf.Sprintf(`WHERE user_id = %s AND timestamp >= %s AND timestamp <= NOW() AND (name LIKE '%%recipe%%' OR name LIKE '%%command%%' OR name LIKE '%%chat%%')`, r.user.ID, currentPeriodStartDate.Time)
 
 	count, err := r.db.EventLogs().CountBySQL(ctx, query)
 
-	intCount := int32(count)
-
-	return &intCount, err
+	return int32(count), err
 }
 
-func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (*int32, error) {
+func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (int32, error) {
 	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
+		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
 	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate(ctx)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	query := sqlf.Sprintf(`WHERE user_id = %s AND timestamp >= %s AND timestamp <= NOW() AND name LIKE '%%completion:suggested%%'`, r.user.ID, currentPeriodStartDate.Time)
 
 	count, err := r.db.EventLogs().CountBySQL(ctx, query)
 
-	intCount := int32(count)
-
-	return &intCount, err
+	return int32(count), err
 }
 
 func (r *UserResolver) CodyCurrentPeriodStartDate(ctx context.Context) (*gqlutil.DateTime, error) {
@@ -316,14 +312,7 @@ func (r *UserResolver) codyCurrentPeriodDateRange(ctx context.Context) (*gqlutil
 	subscriptionStartDate := r.user.CreatedAt
 	gaReleaseDate := time.Date(2023, 12, 14, 0, 0, 0, 0, subscriptionStartDate.Location())
 
-	if r.user.CodyProEnabledAt == nil && currentDate.Before(gaReleaseDate) {
-		startDate := &gqlutil.DateTime{Time: time.Date(2023, 12, 14, 0, 0, 0, 0, subscriptionStartDate.Location())}
-		endDate := &gqlutil.DateTime{Time: time.Date(2024, 1, 13, 23, 59, 59, 59, subscriptionStartDate.Location())}
-
-		return startDate, endDate, nil
-	}
-
-	if subscriptionStartDate.Before(gaReleaseDate) {
+	if !currentDate.Before(gaReleaseDate) && subscriptionStartDate.Before(gaReleaseDate) {
 		subscriptionStartDate = gaReleaseDate
 	}
 
