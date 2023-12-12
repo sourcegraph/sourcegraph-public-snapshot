@@ -55,11 +55,9 @@ export const searchResultsToFileContent = (
                         // e.g. for query "codehost" the path match record can be
                         // "[pkg/microservice/systemconfig/core/codehost/repository/models/codehost.go, [[35, 43], [62,70]]]"
                         const pathMatches = result.pathMatches
-                            ? JSON.stringify(
-                                  `[${result.path}, [${result.pathMatches
-                                      .map(match => `[${match.start.column}, ${match.end.column}]`)
-                                      .join(' ')}]]`
-                              )
+                            ? `[${result.path}, [${result.pathMatches
+                                  .map(match => `[${match.start.column}, ${match.end.column}]`)
+                                  .join(' ')}]]`
                             : ''
 
                         // e.g. for query "codehost" the chunk match record can be
@@ -68,16 +66,14 @@ export const searchResultsToFileContent = (
                         // - line 39 with matches starting from 2 to 10 and from 22 to 30
                         const chunkMatches =
                             'chunkMatches' in result
-                                ? JSON.stringify(
-                                      result.chunkMatches
-                                          ?.map(
-                                              match =>
-                                                  `[${match.contentStart.line}, [${match.ranges
-                                                      .map(range => `[${range.start.column}, ${range.end.column}]`)
-                                                      .join(' ')}]]`
-                                          )
-                                          .join('; ')
-                                  )
+                                ? result.chunkMatches
+                                      ?.map(
+                                          match =>
+                                              `[${match.contentStart.line}, [${match.ranges
+                                                  .map(range => `[${range.start.column}, ${range.end.column}]`)
+                                                  .join(' ')}]]`
+                                      )
+                                      .join('; ')
                                 : ''
 
                         return [
@@ -104,17 +100,15 @@ export const searchResultsToFileContent = (
                         const fileURL = new URL(getFileMatchUrl(result), sourcegraphURL).toString()
 
                         // e.g. "[FIELD, codeHost, http://localhost:3443/repo/file1.java?L27:20-27:28]; [METHOD, getCodeHost, http://localhost:3443/repo/file2.java?L74:22-74:33]"
-                        const symbols = JSON.stringify(
-                            result.symbols
-                                .map(
-                                    symbol =>
-                                        `[${symbol.kind}, ${symbol.name}, ${new URL(
-                                            symbol.url,
-                                            sourcegraphURL
-                                        ).toString()}]`
-                                )
-                                .join('; ')
-                        )
+                        const symbols = result.symbols
+                            .map(
+                                symbol =>
+                                    `[${symbol.kind}, ${symbol.name}, ${new URL(
+                                        symbol.url,
+                                        sourcegraphURL
+                                    ).toString()}]`
+                            )
+                            .join('; ')
                         return [result.type, result.repository, repoURL, result.path, fileURL, symbols]
                     }),
             ]
@@ -132,12 +126,9 @@ export const searchResultsToFileContent = (
                         new URL(getRepositoryUrl(result.repository, result.branches), sourcegraphURL).toString(),
                         ...(enableRepositoryMetadata
                             ? [
-                                  '"' +
-                                      Object.entries(result.metadata ?? {})
-                                          .map(([key, value]) => (value ? `${key}:${value}` : key))
-                                          .join('\n')
-                                          .replaceAll('"', '""') +
-                                      '"',
+                                  Object.entries(result.metadata ?? {})
+                                      .map(([key, value]) => (value ? `${key}:${value}` : key))
+                                      .join('\n'),
                               ]
                             : []),
                     ]),
@@ -147,7 +138,7 @@ export const searchResultsToFileContent = (
 
         case 'commit': {
             content = [
-                [...headers, 'Date', 'Author', 'Subject', 'oid', 'Commit URL'],
+                [...headers, 'Date', 'Author', 'Message', 'oid', 'Commit URL'],
                 ...searchResults
                     .filter((result: SearchMatch): result is CommitMatch => result.type === 'commit')
                     .map(result => {
@@ -207,6 +198,7 @@ export const searchResultsToFileContent = (
         .join('\n')
 }
 
+// Escape a cell value based on IETF RFC 4180
 const escapeCell = (cell: string | undefined): string | undefined => {
     if (cell == undefined) {
         return cell
