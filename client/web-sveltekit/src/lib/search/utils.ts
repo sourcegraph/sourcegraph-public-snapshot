@@ -28,8 +28,7 @@ export function resultToMatchItems(result: ContentMatch): MatchItem[] {
               })),
               content: match.content,
               startLine: match.contentStart.line,
-              endLine: match.ranges.at(-1).end.line,
-              aggregableBadges: match.aggregableBadges,
+              endLine: match.ranges.at(-1)?.end.line ?? match.contentStart.line,
           })) ||
               result.lineMatches?.map(match => ({
                   highlightRanges: match.offsetAndLengths.map(offsetAndLength => ({
@@ -41,7 +40,6 @@ export function resultToMatchItems(result: ContentMatch): MatchItem[] {
                   content: match.line,
                   startLine: match.lineNumber,
                   endLine: match.lineNumber,
-                  aggregableBadges: match.aggregableBadges,
               })) ||
               []
         : []
