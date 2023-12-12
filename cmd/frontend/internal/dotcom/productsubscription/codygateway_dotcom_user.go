@@ -3,10 +3,11 @@ package productsubscription
 import (
 	"context"
 	"fmt"
+	"math"
+
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"math"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -228,13 +229,16 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB) (licensing.Cody
 	}, nil
 }
 
+// getCompletionsRateLimit returns a rate limit for the given user and feature.
 func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, scope types.CompletionsFeature) (licensing.CodyGatewayRateLimit, graphqlbackend.CodyGatewayRateLimitSource, error) {
 	var limit *int
 	var err error
 
-	models := allowedModels(scope)
+	isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
+	// For Cody PLG users, allow all models a Pro user can get for now.
+	models := allowedModels(scope, isCodyProEnabled, true)
 
-	// Apply override for testing if set
+	// Apply override for testing if set.
 	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
 		return licensing.CodyGatewayRateLimit{
 			AllowedModels:   models,
@@ -260,7 +264,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	// If there's no override, check the self-serve limits.
 	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 	intervalSeconds := oneDayInSeconds
-	if limit == nil && cfg != nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
+	if limit == nil && cfg != nil && isCodyProEnabled {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		actor := sgactor.FromContext(ctx)
 		user, err := actor.User(ctx, db.Users())
@@ -268,6 +272,8 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
 		}
 		isProUser := user.CodyProEnabledAt != nil
+		// Update the allowed models based on the user's plan.
+		models = allowedModels(scope,isCodyProEnabled, isProUser)
 		intervalSeconds, limit, err = getSelfServeUsageLimits(scope, isProUser, *cfg)
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
@@ -328,10 +334,27 @@ func getSelfServeUsageLimits(scope types.CompletionsFeature, isProUser bool, cfg
 	return oneDayInSeconds, nil, nil
 }
 
-func allowedModels(scope types.CompletionsFeature) []string {
+func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser bool) []string {
 	switch scope {
 	case types.CompletionsFeatureChat:
-		return []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
+		if !isCodyProEnabled {
+			return []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
+		}
+
+		// When updating the below lists, make sure you also update `isAllowedCustomChatModel` in `chat.go`
+
+		if !isProUser {
+			return []string{"anthropic/claude-2.0"}
+		}
+
+		return []string{
+			"anthropic/claude-2",
+			"anthropic/claude-2.0",
+			"anthropic/claude-2.1",
+			"anthropic/claude-instant-1.2-cyan",
+			"anthropic/claude-instant-1.2",
+			"openai/gpt-3.5-turbo",
+			"openai/gpt-4-1106-preview"}
 	case types.CompletionsFeatureCode:
 		return []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1", "fireworks/accounts/fireworks/models/starcoder-7b-w8a16", "fireworks/accounts/sourcegraph/models/starcoder-7b", "fireworks/accounts/fireworks/models/starcoder-16b-w8a16", "fireworks/accounts/sourcegraph/models/starcoder-16b"}
 	default:
