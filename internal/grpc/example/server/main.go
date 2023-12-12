@@ -182,7 +182,7 @@ func (s *weatherGRPCServer) RealTimeWeather(stream pb.WeatherService_RealTimeWea
 	}
 }
 
-func (w *weatherGRPCServer) UploadWeatherScreenshot(stream pb.WeatherService_UploadWeatherScreenshotServer) error {
+func (w *weatherGRPCServer) UploadWeatherPhoto(stream pb.WeatherService_UploadWeatherPhotoServer) error {
 	msg, err := stream.Recv()
 	if err != nil {
 		return errors.Wrap(err, "failed to receive screenshot metadata")
@@ -190,7 +190,7 @@ func (w *weatherGRPCServer) UploadWeatherScreenshot(stream pb.WeatherService_Upl
 
 	// First, we pull the first message off the stream, which should be the image metadata.
 	switch v := msg.GetContent().(type) {
-	case *pb.UploadWeatherScreenshotRequest_Metadata_:
+	case *pb.UploadWeatherPhotoRequest_Metadata_:
 		w.logger.Info("Received screenshot metadata",
 			log.String("sensorID", v.Metadata.GetSensorId()),
 			log.String("filename", v.Metadata.GetFileName()),
@@ -209,7 +209,7 @@ func (w *weatherGRPCServer) UploadWeatherScreenshot(stream pb.WeatherService_Upl
 		}
 
 		switch v := msg.GetContent().(type) {
-		case *pb.UploadWeatherScreenshotRequest_Payload_:
+		case *pb.UploadWeatherPhotoRequest_Payload_:
 			return v.Payload.GetData(), nil
 		default:
 			// Note: Depending on your use-case, you could choose to ignore unknown message types and just continue reading.
@@ -218,13 +218,13 @@ func (w *weatherGRPCServer) UploadWeatherScreenshot(stream pb.WeatherService_Upl
 		}
 	})
 
-	err = w.service.StoreWeatherScreenshot(reader)
+	err = w.service.StoreWeatherPhoto(reader)
 	if err != nil {
 		return errors.Wrap(err, "failed to store weather screenshot")
 	}
 
 	// Once we've read all the data from the stream, we can send a final message to the client and close our end of the stream.
-	return stream.SendAndClose(&pb.UploadWeatherScreenshotResponse{
+	return stream.SendAndClose(&pb.UploadWeatherPhotoResponse{
 		Message: "Screenshot received successfully.",
 	})
 }

@@ -44,7 +44,6 @@ func main() {
 	//
 	// This example demonstrates a basic client server RPC, as well as error handling tactics.
 	{
-
 		// Normal case
 		weather, err := client.GetCurrentWeather(context.Background(), &pb.GetCurrentWeatherRequest{Location: "New York"})
 		if err != nil {
@@ -188,19 +187,19 @@ subscriptionDone:
 	}
 
 	// Client Streaming RPC (send multiple request messages, receive a single response message):
-	// Upload a byte stream of a weather screenshot
+	// Upload a byte stream of a weather photo
 	//
 	// This examples demonstrates how to send a byte stream to the server in chunks using our helper package "streamio".
 	{
-		stream, err := client.UploadWeatherScreenshot(context.Background())
+		stream, err := client.UploadWeatherPhoto(context.Background())
 		if err != nil {
-			logger.Fatal("Error on upload weather screenshot", log.Error(err))
+			logger.Fatal("Error on upload weather photo", log.Error(err))
 		}
 
 		// First send the image metadata
-		err = stream.Send(&pb.UploadWeatherScreenshotRequest{
-			Content: &pb.UploadWeatherScreenshotRequest_Metadata_{
-				Metadata: &pb.UploadWeatherScreenshotRequest_Metadata{
+		err = stream.Send(&pb.UploadWeatherPhotoRequest{
+			Content: &pb.UploadWeatherPhotoRequest_Metadata_{
+				Metadata: &pb.UploadWeatherPhotoRequest_Metadata{
 					Location: "Philadelphia",
 					SensorId: "sensor-123",
 					FileName: "sun.png",
@@ -231,9 +230,9 @@ subscriptionDone:
 		//  This means that you must take care to ensure that your individual gRPC messages are not too large, otherwise you could take down an unsuspecting client or server.
 		//  The chunking strategy here (employed by streamio's internals) is one way to do that. See https://handbook.sourcegraph.com/departments/engineering/dev/tools/grpc/#grpc-message-size-limit for more details.
 		writer := streamio.NewWriter(func(p []byte) error {
-			return stream.Send(&pb.UploadWeatherScreenshotRequest{
-				Content: &pb.UploadWeatherScreenshotRequest_Payload_{
-					Payload: &pb.UploadWeatherScreenshotRequest_Payload{
+			return stream.Send(&pb.UploadWeatherPhotoRequest{
+				Content: &pb.UploadWeatherPhotoRequest_Payload_{
+					Payload: &pb.UploadWeatherPhotoRequest_Payload{
 						Data: p,
 					},
 				},

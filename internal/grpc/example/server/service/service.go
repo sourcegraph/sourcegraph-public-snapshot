@@ -59,10 +59,10 @@ func (s *WeatherService) StoreSensorData(ctx context.Context, data *SensorData) 
 	return nil
 }
 
-func (s *WeatherService) StoreWeatherScreenshot(r io.Reader) error {
+func (s *WeatherService) StoreWeatherPhoto(r io.Reader) error {
 	_, err := io.Copy(io.Discard, r)
 	if err != nil {
-		return errors.Wrap(err, "failed to copy screenshot")
+		return errors.Wrap(err, "failed to copy photo")
 	}
 
 	return nil

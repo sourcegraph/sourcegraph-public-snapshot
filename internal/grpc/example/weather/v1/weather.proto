@@ -9,17 +9,17 @@ service WeatherService {
   // Unary RPC: Get current weather for a location.
   rpc GetCurrentWeather(GetCurrentWeatherRequest) returns (GetCurrentWeatherResponse) {}
 
-  // Server Streaming RPC: Subscribe to severe weather alerts.
+  // Server Streaming RPC: Subscribe to severe weather alerts in the provided region.
   rpc SubscribeWeatherAlerts(SubscribeWeatherAlertsRequest) returns (stream SubscribeWeatherAlertsResponse) {}
 
-  // Client Streaming RPC: Send weather data from sensors.
+  // Client Streaming RPC: Send continuous weather data from sensors.
   rpc UploadWeatherData(stream UploadWeatherDataRequest) returns (UploadWeatherDataResponse) {}
 
-  // Bidirectional Streaming RPC: Real-time weather updates.
+  // Bidirectional Streaming RPC: Get real-time weather updates as the client moves around.
   rpc RealTimeWeather(stream RealTimeWeatherRequest) returns (stream RealTimeWeatherResponse) {}
 
-  // Client Streaming RPC: Upload a weather screenshot.
-  rpc UploadWeatherScreenshot(stream UploadWeatherScreenshotRequest) returns (UploadWeatherScreenshotResponse) {}
+  // Client Streaming RPC: Upload a photo of the current weather from a given sensor.
+  rpc UploadWeatherPhoto(stream UploadWeatherPhotoRequest) returns (UploadWeatherPhotoResponse) {}
 
   // Deprecated RPC: Get current weather for a location.
   rpc GetCurrentWeatherOld(GetCurrentWeatherOldRequest) returns (GetCurrentWeatherOldResponse) {
@@ -58,7 +58,7 @@ message SensorOfflineError {
   string message = 2;
 }
 
-message UploadWeatherScreenshotRequest {
+message UploadWeatherPhotoRequest {
   message Metadata {
     string location = 1;
     string sensor_id = 2;
@@ -93,7 +93,7 @@ message UploadWeatherDataRequest {
   double humidity = 3;
 }
 
-message UploadWeatherScreenshotResponse {
+message UploadWeatherPhotoResponse {
   string message = 1;
 }
 
