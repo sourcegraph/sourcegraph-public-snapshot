@@ -70,6 +70,9 @@ func FromAnonymousUser(anonymousUID string) *Actor { return &Actor{AnonymousUID:
 // FromMockUser returns an actor corresponding to a test user. Do not use outside of tests.
 func FromMockUser(uid int32) *Actor { return &Actor{UID: uid, mockUser: true} }
 
+// Internal returns an internal actor.
+func Internal() *Actor { return &Actor{Internal: true} }
+
 // UIDString is a helper method that returns the UID as a string.
 func (a *Actor) UIDString() string { return strconv.Itoa(int(a.UID)) }
 
@@ -135,5 +138,5 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 // 🚨 SECURITY: The caller MUST ensure that it performs its own access controls
 // or removal of sensitive data.
 func WithInternalActor(ctx context.Context) context.Context {
-	return context.WithValue(ctx, actorKey, &Actor{Internal: true})
+	return context.WithValue(ctx, actorKey, Internal())
 }
