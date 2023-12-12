@@ -2,8 +2,8 @@ import { spawn } from 'child_process'
 import path from 'path'
 
 const REPO_ROOT = path.join(__dirname, '../../..')
-const CSS_MODULES_GLOB = path.resolve(__dirname, '../../*/src/**/*.module.scss')
-const JETBRAINS_CSS_MODULES_GLOB = path.resolve(__dirname, '../../jetbrains/webview/**/*.module.scss')
+const CSS_MODULES_GLOB = path.resolve(__dirname, '../../*/src/**/*.module.{scss,css}')
+const JETBRAINS_CSS_MODULES_GLOB = path.resolve(__dirname, '../../jetbrains/webview/**/*.module.{scss,css}')
 const TSM_COMMAND = `pnpm exec tsm --logLevel error "{${CSS_MODULES_GLOB},${JETBRAINS_CSS_MODULES_GLOB}}" --includePaths node_modules client`
 const [BIN, ...ARGS] = TSM_COMMAND.split(' ')
 

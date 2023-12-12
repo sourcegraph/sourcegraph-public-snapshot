@@ -24,7 +24,7 @@
     {/if}
     <div class="info">
         <span class="d-flex">
-            <a class="subject" href={commit.url}>{commit.subject}</a>
+            <a class="subject" href={commit.canonicalURL}>{commit.subject}</a>
             {#if !alwaysExpanded}
                 <button type="button" on:click={() => (expanded = !expanded)}>
                     <Icon svgPath={mdiDotsHorizontal} inline />
@@ -38,7 +38,7 @@
     </div>
     {#if !alwaysExpanded}
         <div class="buttons">
-            <a href={commit.url}>{commit.abbreviatedOID}</a>
+            <a href={commit.canonicalURL}>{commit.abbreviatedOID}</a>
         </div>
     {/if}
 </div>

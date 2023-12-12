@@ -4,7 +4,7 @@ import type { NavigateFunction } from 'react-router-dom'
 
 import { uiPositionToOffset } from '../utils'
 
-import { CodeIntelAPIAdapter, type CodeIntelAPIConfig, codeIntelAPI, findOccurrenceRangeAt } from './api'
+import { CodeIntelAPIAdapter, type CodeIntelAPIConfig, codeIntelAPIAdapter, findOccurrenceRangeAt } from './api'
 import { goToDefinitionOnClick } from './definition'
 import { hoverExtension } from './hover'
 import { keyboardShortcutsExtension } from './keybindings'
@@ -77,7 +77,7 @@ const tooltipStyles = EditorView.theme({
  */
 export function createCodeIntelExtension(config: CodeIntelExtensionConfig): Extension {
     return [
-        codeIntelAPI.of(new CodeIntelAPIAdapter(config.api)),
+        codeIntelAPIAdapter.of(new CodeIntelAPIAdapter(config.api)),
         pinConfig.of(config.pin),
 
         // The order of these is important. They determine which tooltip to show if

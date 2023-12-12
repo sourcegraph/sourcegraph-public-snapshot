@@ -271,6 +271,7 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
         {
             to: '/site-admin/code-graph/ranking',
             label: 'Ranking',
+            condition: () => window.context?.codeIntelRankingDocumentReferenceCountsEnabled,
         },
         {
             label: 'Ownership signals',

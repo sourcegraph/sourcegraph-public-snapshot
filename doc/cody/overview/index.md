@@ -126,7 +126,7 @@ Cody is currently available in beta for all users.
 
 ## What is Cody?
 
-Cody is a free and open-source AI coding assistant that writes, fixes, and maintains your code. Cody understands your entire codebase by leveraging the power of [Code Graph](./../core-concepts/code-graph.md) to gather context, which assists you in writing accurate code.
+Cody is a free AI coding assistant that writes, fixes, and maintains your code. Cody understands your entire codebase by leveraging the power of [Code Graph](./../core-concepts/code-graph.md) to gather context, which assists you in writing accurate code.
 
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/cody-in-action.mp4" type="video/mp4">
@@ -146,7 +146,7 @@ You can start using Cody with one of the following clients:
   <li>
     <a class="card text-left" target="_blank" href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">
     <h3><img alt="VS Code" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/vscode.svg"/> Cody for VS Code</h3>
-    <p>Install Cody's free and open source extension for VS Code.</p>
+    <p>Install Cody's free extension for VS Code.</p>
     </a>
   </li>
   <li>
@@ -166,13 +166,9 @@ You can start using Cody with one of the following clients:
       <h3><img alt="Cody for Web" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody for Web</h3>
       <p>Use Cody in the Sourcegraph web app.</p>
     </a>
-     <a class="card text-left" target="_blank" href="https://sourcegraph.com/get-cody">
-      <h3><img alt="Cody App" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/cody-logomark-default.svg"/>Cody for Desktop</h3>
-      <p>Free desktop app to try Cody with your local codebase.</p>
-      </a>
   </li>
   <li>
-    <a class="card text-left" target="_blank" href="https://about.sourcegraph.com/cody/pricing">
+    <a class="card text-left" target="_blank" href="https://sourcegraph.com/cody/pricing">
       <h3><img alt="Cody Enterprise" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody Enterprise</h3>
       <p>Get in touch with our team to try Cody for Sourcegraph Enterprise.</p>
     </a>
@@ -198,7 +194,7 @@ Cody collects and uses data in the following ways:
 - **Prompts and responses**:  When you use Cody, Sourcegraph collects your prompts and responses to provide the service. For individuals using Cody via Sourcegraph.com, Sourcegraph may use your prompts and responses to enhance the user experience, but Sourcegraph does not use any of your data to train models.
 - **Usage data and feedback**:  Sourcegraph also collects usage data and feedback to improve the user experience.
 
-<a target="_blank" href="https://about.sourcegraph.com/terms/cody-notice">Read more about Cody Usage and Privacy policy here →</a>
+<a target="_blank" href="https://sourcegraph.com/terms/cody-notice">Read more about Cody Usage and Privacy policy here →</a>
 
 ## Compatible with Sourcegraph products
 

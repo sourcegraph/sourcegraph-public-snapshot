@@ -13,6 +13,10 @@
     $: activeBranches = $branches?.activeBranches
 </script>
 
+<svelte:head>
+    <title>Branches - {data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
+
 {#if $pending}
     <LoadingSpinner />
 {/if}

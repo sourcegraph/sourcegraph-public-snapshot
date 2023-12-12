@@ -177,5 +177,6 @@ func insertEvents(ctx context.Context, t *testing.T, db database.DB) {
 		},
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	require.NoError(t, db.EventLogs().BulkInsert(ctx, events))
 }

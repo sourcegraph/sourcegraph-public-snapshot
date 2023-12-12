@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/log"
 	"github.com/stretchr/testify/require"
@@ -475,6 +476,7 @@ func TestEmbedRepo_ExcludeChunkOnError(t *testing.T) {
 		partialFailureClient := &flakyEmbeddingsClient{
 			EmbeddingsClient:  embeddingsClient,
 			remainingFailures: 1,
+			err:               errors.New("FAIL"),
 		}
 		_, _, stats, err := EmbedRepo(ctx, partialFailureClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
@@ -489,6 +491,21 @@ func TestEmbedRepo_ExcludeChunkOnError(t *testing.T) {
 		partialFailureClient := &flakyEmbeddingsClient{
 			EmbeddingsClient:  embeddingsClient,
 			remainingFailures: 100,
+			err:               errors.New("FAIL"),
+		}
+		_, _, _, err := EmbedRepo(ctx, partialFailureClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, opts, logger, noopReport)
+		require.Error(t, err)
+	})
+
+	t.Run("immediately fail if rate limit hit", func(t *testing.T) {
+		rl := newReadLister("a.go", "b.md", "c.java", "big.java")
+		opts := opts
+		opts.TolerableFailureRatio = 0.1
+
+		partialFailureClient := &flakyEmbeddingsClient{
+			EmbeddingsClient:  embeddingsClient,
+			remainingFailures: 1,
+			err:               client.NewRateLimitExceededError(time.Now().Add(time.Minute)),
 		}
 		_, _, _, err := EmbedRepo(ctx, partialFailureClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, opts, logger, noopReport)
 		require.Error(t, err)
@@ -703,12 +720,13 @@ func (c *mockEmbeddingsClient) GetDocumentEmbeddings(_ context.Context, texts []
 type flakyEmbeddingsClient struct {
 	client.EmbeddingsClient
 	remainingFailures int
+	err               error
 }
 
 func (c *flakyEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) (*client.EmbeddingsResults, error) {
 	if c.remainingFailures > 0 {
 		c.remainingFailures -= 1
-		return nil, errors.New("FAIL")
+		return nil, c.err
 	}
 	return c.EmbeddingsClient.GetQueryEmbedding(ctx, query)
 }
@@ -716,7 +734,7 @@ func (c *flakyEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query str
 func (c *flakyEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) (*client.EmbeddingsResults, error) {
 	if c.remainingFailures > 0 {
 		c.remainingFailures -= 1
-		return nil, errors.New("FAIL")
+		return nil, c.err
 	}
 	return c.EmbeddingsClient.GetDocumentEmbeddings(ctx, documents)
 }

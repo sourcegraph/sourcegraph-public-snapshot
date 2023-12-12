@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -30,11 +29,6 @@ import (
 // before that.
 func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitserver.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		flags := featureflag.FromContext(r.Context())
-		if !flags.GetBoolOr("enable-streaming-git-blame", false) {
-			w.WriteHeader(404)
-			return
-		}
 		tr, ctx := trace.New(r.Context(), "blame.Stream")
 		defer tr.End()
 		r = r.WithContext(ctx)

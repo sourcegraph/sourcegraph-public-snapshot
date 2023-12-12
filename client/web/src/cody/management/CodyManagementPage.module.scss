@@ -1,0 +1,40 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.responsive-container {
+    @media (--sm-breakpoint-down) {
+        flex-direction: column;
+        align-items: center;
+
+        > div {
+            border: none !important;
+            align-items: center;
+        }
+    }
+}
+
+.container {
+    border-radius: 6px;
+    border: 1px solid (--border-color);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+
+.plan-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.counter {
+    font-size: 1.25rem;
+}
+
+.ide-name {
+    font-size: 1rem;
+}
+
+.modal {
+    width: 50rem;
+}
+
+.release-stage {
+    color: var(--gray-07);
+}

@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"net/http"
-	"strings"
-
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"net/http"
+	"strings"
 )
 
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
@@ -132,7 +131,7 @@ func (c *fireworksClient) makeRequest(ctx context.Context, requestParams types.C
 	payload := fireworksRequest{
 		Model:       requestParams.Model,
 		Temperature: requestParams.Temperature,
-		TopP:        int32(requestParams.TopP),
+		TopP:        requestParams.TopP,
 		N:           1,
 		Stream:      stream,
 		MaxTokens:   int32(requestParams.MaxTokensToSample),
@@ -173,7 +172,7 @@ type fireworksRequest struct {
 	Model       string   `json:"model"`
 	MaxTokens   int32    `json:"max_tokens,omitempty"`
 	Temperature float32  `json:"temperature,omitempty"`
-	TopP        int32    `json:"top_p,omitempty"`
+	TopP        float32  `json:"top_p,omitempty"`
 	N           int32    `json:"n,omitempty"`
 	Stream      bool     `json:"stream,omitempty"`
 	Echo        bool     `json:"echo,omitempty"`

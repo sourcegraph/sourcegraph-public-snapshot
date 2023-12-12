@@ -42,7 +42,11 @@ describe('StreamingSearchResults', () => {
             subjects: null,
             final: null,
         },
-        platformContext: { settings: NEVER, requestGraphQL: () => EMPTY, sourcegraphURL: 'https://sourcegraph.com' },
+        platformContext: {
+            settings: NEVER,
+            requestGraphQL: () => EMPTY,
+            sourcegraphURL: 'https://sourcegraph.com',
+        } as any,
 
         streamSearch: () => of(MULTIPLE_SEARCH_RESULT),
 
@@ -52,6 +56,7 @@ describe('StreamingSearchResults', () => {
         searchAggregationEnabled: false,
         codeMonitoringEnabled: true,
         ownEnabled: true,
+        extensionsController: {} as any,
     }
 
     const revisionsMockResponses = generateMockedResponses(GitRefType.GIT_BRANCH, 5, 'github.com/golang/oauth2')

@@ -18,11 +18,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/msp/example"
 	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // This file is only built when '-tags=msp' is passed to go build while 'sg msp'
@@ -48,9 +48,12 @@ func init() {
 	// All 'sg msp ...' subcommands
 	Command.Subcommands = []*cli.Command{
 		{
-			Name:        "init",
-			ArgsUsage:   "<service ID>",
-			Description: "Initialize a template Managed Services Platform service spec",
+			Name:      "init",
+			ArgsUsage: "<service ID>",
+			Usage:     "Initialize a template Managed Services Platform service spec",
+			UsageText: `
+sg msp init -owner core-services -name "MSP Example Service" msp-example
+`,
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:  "kind",
@@ -58,10 +61,17 @@ func init() {
 					Value: "service",
 				},
 				&cli.StringFlag{
-					Name:    "output",
-					Aliases: []string{"o"},
-					Usage:   "Output directory for generated spec file",
-					Value:   "services",
+					Name:     "owner",
+					Usage:    "Name of team owning this new service",
+					Required: true,
+				},
+				&cli.StringFlag{
+					Name:  "name",
+					Usage: "Specify a human-readable name for this service",
+				},
+				&cli.BoolFlag{
+					Name:  "dev",
+					Usage: "Generate a dev environment as the initial environment",
 				},
 			},
 			Before: msprepo.UseManagedServicesRepo,
@@ -70,110 +80,32 @@ func init() {
 					return errors.New("exactly 1 argument required: service ID")
 				}
 
-				var svc spec.Spec
+				template := example.Template{
+					ID:    c.Args().First(),
+					Name:  c.String("name"),
+					Owner: c.String("owner"),
+					Dev:   c.Bool("dev"),
+				}
+
+				var exampleSpec []byte
 				switch c.String("kind") {
 				case "service":
-					svc = spec.Spec{
-						Service: spec.ServiceSpec{
-							ID: c.Args().First(),
-						},
-						Build: spec.BuildSpec{
-							Image: "index.docker.io/sourcegraph/" + c.Args().First(),
-						},
-						Environments: []spec.EnvironmentSpec{
-							{
-								ID: "dev",
-								// For dev deployment, specify category 'test'.
-								Category: pointers.Ptr(spec.EnvironmentCategoryTest),
-
-								Deploy: spec.EnvironmentDeploySpec{
-									Type: "manual",
-									Manual: &spec.EnvironmentDeployManualSpec{
-										Tag: "insiders",
-									},
-								},
-								EnvironmentServiceSpec: &spec.EnvironmentServiceSpec{
-									Domain: &spec.EnvironmentServiceDomainSpec{
-										Type: "cloudflare",
-										Cloudflare: &spec.EnvironmentDomainCloudflareSpec{
-											Subdomain: c.Args().First(),
-											Zone:      "sgdev.org",
-											Required:  false,
-										},
-									},
-									StatupProbe: &spec.EnvironmentServiceStartupProbeSpec{
-										// Disable startup probes by default, as it is
-										// prone to causing the entire initial Terraform
-										// apply to fail.
-										Disabled: pointers.Ptr(true),
-									},
-								},
-								Instances: spec.EnvironmentInstancesSpec{
-									Resources: spec.EnvironmentInstancesResourcesSpec{
-										CPU:    1,
-										Memory: "512Mi",
-									},
-									Scaling: &spec.EnvironmentInstancesScalingSpec{
-										MaxCount: pointers.Ptr(1),
-									},
-								},
-								Env: map[string]string{
-									"SRC_LOG_LEVEL":  "info",
-									"SRC_LOG_FORMAT": "json_gcp",
-								},
-							},
-						},
+					var err error
+					exampleSpec, err = example.NewService(template)
+					if err != nil {
+						return errors.Wrap(err, "example.NewService")
 					}
 				case "job":
-					svc = spec.Spec{
-						Service: spec.ServiceSpec{
-							ID:   c.Args().First(),
-							Kind: pointers.Ptr(spec.ServiceKindJob),
-						},
-						Build: spec.BuildSpec{
-							Image: "index.docker.io/sourcegraph/" + c.Args().First(),
-						},
-						Environments: []spec.EnvironmentSpec{
-							{
-								ID: "dev",
-								// For dev deployment, specify category 'test'.
-								Category: pointers.Ptr(spec.EnvironmentCategoryTest),
-
-								Deploy: spec.EnvironmentDeploySpec{
-									Type: "manual",
-									Manual: &spec.EnvironmentDeployManualSpec{
-										Tag: "insiders",
-									},
-								},
-								EnvironmentJobSpec: &spec.EnvironmentJobSpec{
-									Schedule: &spec.EnvironmentJobScheduleSpec{
-										Cron: "0 * * * *",
-									},
-								},
-								Instances: spec.EnvironmentInstancesSpec{
-									Resources: spec.EnvironmentInstancesResourcesSpec{
-										CPU:    1,
-										Memory: "512Mi",
-									},
-								},
-								Env: map[string]string{
-									"SRC_LOG_LEVEL":  "info",
-									"SRC_LOG_FORMAT": "json_gcp",
-								},
-							},
-						},
+					var err error
+					exampleSpec, err = example.NewJob(template)
+					if err != nil {
+						return errors.Wrap(err, "example.NewJob")
 					}
 				default:
 					return errors.Newf("unsupported service kind: %q", c.String("kind"))
 				}
 
-				exampleSpec, err := svc.MarshalYAML()
-				if err != nil {
-					return err
-				}
-
-				outputPath := filepath.Join(
-					c.String("output"), c.Args().First(), "service.yaml")
+				outputPath := msprepo.ServiceYAMLPath(c.Args().First())
 
 				_ = os.MkdirAll(filepath.Dir(outputPath), 0755)
 				if err := os.WriteFile(outputPath, exampleSpec, 0644); err != nil {
@@ -186,9 +118,13 @@ func init() {
 			},
 		},
 		{
-			Name:        "generate",
-			ArgsUsage:   "<service ID> <environment ID>",
-			Description: "Generate Terraform assets for a Managed Services Platform service spec.",
+			Name:      "generate",
+			Aliases:   []string{"gen"},
+			ArgsUsage: "<service ID>",
+			Usage:     "Generate Terraform assets for a Managed Services Platform service spec.",
+			Description: `Optionally use '-all' to sync all environments for a service.
+
+Supports completions on services and environments.`,
 			UsageText: `
 # generate single env for a single service
 sg msp generate <service> <env>
@@ -215,6 +151,7 @@ sg msp generate -all <service>
 					Value: true,
 				},
 			},
+			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 			Action: func(c *cli.Context) error {
 				var (
 					generateAll    = c.Bool("all")
@@ -262,17 +199,24 @@ sg msp generate -all <service>
 			},
 		},
 		{
-			Name:        "terraform-cloud",
-			Aliases:     []string{"tfc"},
-			Description: "Manage Terraform Cloud workspaces for a service",
-			Before:      msprepo.UseManagedServicesRepo,
+			Name:    "terraform-cloud",
+			Aliases: []string{"tfc"},
+			Usage:   "Manage Terraform Cloud workspaces for a service",
+			Before:  msprepo.UseManagedServicesRepo,
 			Subcommands: []*cli.Command{
 				{
-					Name:        "sync",
-					Description: "Create or update all required Terraform Cloud workspaces for a service",
-					Usage:       "Optionally provide an environment ID as well to only sync that environment.",
-					ArgsUsage:   "<service ID> [environment ID]",
+					Name:  "sync",
+					Usage: "Create or update all required Terraform Cloud workspaces for an environment",
+					Description: `Optionally use '-all' to sync all environments for a service.
+
+Supports completions on services and environments.`,
+					ArgsUsage: "<service ID> [environment ID]",
 					Flags: []cli.Flag{
+						&cli.BoolFlag{
+							Name:  "all",
+							Usage: "Generate Terraform Cloud workspaces for all environments",
+							Value: false,
+						},
 						&cli.StringFlag{
 							Name:  "workspace-run-mode",
 							Usage: "One of 'vcs', 'cli'",
@@ -284,6 +228,7 @@ sg msp generate -all <service>
 							Value: false,
 						},
 					},
+					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
 						serviceID := c.Args().First()
 						if serviceID == "" {
@@ -291,11 +236,7 @@ sg msp generate -all <service>
 						}
 						serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
 
-						serviceSpecData, err := os.ReadFile(serviceSpecPath)
-						if err != nil {
-							return err
-						}
-						service, err := spec.Parse(serviceSpecData)
+						service, err := spec.Open(serviceSpecPath)
 						if err != nil {
 							return err
 						}
@@ -337,6 +278,9 @@ sg msp generate -all <service>
 								return errors.Wrapf(err, "sync env %q", env.ID)
 							}
 						} else {
+							if targetEnv == "" && !c.Bool("all") {
+								return errors.New("second argument environment ID is required without the '-all' flag")
+							}
 							for _, env := range service.Environments {
 								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, env); err != nil {
 									return errors.Wrapf(err, "sync env %q", env.ID)
@@ -350,8 +294,8 @@ sg msp generate -all <service>
 			},
 		},
 		{
-			Name:        "schema",
-			Description: "Generate JSON schema definition for service specification",
+			Name:  "schema",
+			Usage: "Generate JSON schema definition for service specification",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:    "output",
@@ -464,11 +408,7 @@ type generateTerraformOptions struct {
 func generateTerraform(serviceID string, opts generateTerraformOptions) error {
 	serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
 
-	serviceSpecData, err := os.ReadFile(serviceSpecPath)
-	if err != nil {
-		return err
-	}
-	service, err := spec.Parse(serviceSpecData)
+	service, err := spec.Open(serviceSpecPath)
 	if err != nil {
 		return err
 	}

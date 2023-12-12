@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/sourcegraphoperator"
 )
 
@@ -39,7 +40,7 @@ func Init() {
 
 	conf.ContributeValidator(validateConfig)
 
-	p := NewProvider(*cloudSiteConfig.AuthProviders.SourcegraphOperator)
+	p := NewProvider(*cloudSiteConfig.AuthProviders.SourcegraphOperator, httpcli.ExternalClient)
 	logger := log.Scoped(auth.SourcegraphOperatorProviderType)
 	go func() {
 		if err := p.Refresh(context.Background()); err != nil {

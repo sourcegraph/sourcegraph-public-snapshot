@@ -156,19 +156,22 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			redis: redispool.Cache,
 		},
 		&httpapi.Config{
-			RateLimitNotifier:               rateLimitNotifier,
-			AnthropicAccessToken:            config.Anthropic.AccessToken,
-			AnthropicAllowedModels:          config.Anthropic.AllowedModels,
-			AnthropicMaxTokensToSample:      config.Anthropic.MaxTokensToSample,
-			AnthropicAllowedPromptPatterns:  config.Anthropic.AllowedPromptPatterns,
-			AnthropicRequestBlockingEnabled: config.Anthropic.RequestBlockingEnabled,
-			OpenAIAccessToken:               config.OpenAI.AccessToken,
-			OpenAIOrgID:                     config.OpenAI.OrgID,
-			OpenAIAllowedModels:             config.OpenAI.AllowedModels,
-			FireworksAccessToken:            config.Fireworks.AccessToken,
-			FireworksAllowedModels:          config.Fireworks.AllowedModels,
-			EmbeddingsAllowedModels:         config.AllowedEmbeddingsModels,
-		})
+			RateLimitNotifier:                           rateLimitNotifier,
+			AnthropicAccessToken:                        config.Anthropic.AccessToken,
+			AnthropicAllowedModels:                      config.Anthropic.AllowedModels,
+			AnthropicMaxTokensToSample:                  config.Anthropic.MaxTokensToSample,
+			AnthropicAllowedPromptPatterns:              config.Anthropic.AllowedPromptPatterns,
+			AnthropicRequestBlockingEnabled:             config.Anthropic.RequestBlockingEnabled,
+			OpenAIAccessToken:                           config.OpenAI.AccessToken,
+			OpenAIOrgID:                                 config.OpenAI.OrgID,
+			OpenAIAllowedModels:                         config.OpenAI.AllowedModels,
+			FireworksAccessToken:                        config.Fireworks.AccessToken,
+			FireworksAllowedModels:                      config.Fireworks.AllowedModels,
+			FireworksLogSelfServeCodeCompletionRequests: config.Fireworks.LogSelfServeCodeCompletionRequests,
+			FireworksDisableSingleTenant:                config.Fireworks.DisableSingleTenant,
+			EmbeddingsAllowedModels:                     config.AllowedEmbeddingsModels,
+			AutoFlushStreamingResponses:                 config.AutoFlushStreamingResponses,
+		}, sources)
 	if err != nil {
 		return errors.Wrap(err, "httpapi.NewHandler")
 	}
@@ -178,8 +181,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up
 	// Cloudflare in from of Cody Gateway. This comes first.
-	hasCloudflare := !config.InsecureDev
-	handler = requestclient.ExternalHTTPMiddleware(handler, hasCloudflare)
+	handler = requestclient.ExternalHTTPMiddleware(handler)
 	handler = requestinteraction.HTTPMiddleware(handler)
 
 	// Initialize our server

@@ -25,6 +25,7 @@ import { CopyPathAction } from './CopyPathAction'
 import { FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
+import { SearchResultPreviewButton } from './SearchResultPreviewButton'
 
 import resultContainerStyles from './ResultContainer.module.scss'
 import styles from './SearchResult.module.scss'
@@ -103,6 +104,14 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             return new LineRanking(5)
         }
         return new ZoektRanking(3)
+    }, [settingsCascade])
+
+    const newSearchUIEnabled = useMemo(() => {
+        const settings = settingsCascade.final
+        if (!isErrorLike(settings)) {
+            return settings?.experimentalFeatures?.newSearchNavigationUI
+        }
+        return false
     }, [settingsCascade])
 
     // The number of lines of context to show before and after each match.
@@ -250,6 +259,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
 
     return (
         <ResultContainer
+            ref={rootRef}
             index={index}
             title={title}
             resultType={result.type}
@@ -259,8 +269,8 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             className={classNames(styles.copyButtonContainer, containerClassName)}
             resultClassName={resultContainerStyles.highlightResult}
             rankingDebug={result.debug}
-            ref={rootRef}
             repoLastFetched={result.repoLastFetched}
+            actions={newSearchUIEnabled && <SearchResultPreviewButton result={result} />}
         >
             <div data-testid="file-search-result" data-expanded={expanded}>
                 <FileMatchChildren

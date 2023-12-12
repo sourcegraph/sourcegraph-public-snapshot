@@ -2,6 +2,7 @@ load(":defs.bzl", "server_integration_test")
 
 server_integration_test(
     name = "e2e_test",
+    timeout = "long",
     args = [
         "$(location //client/web/src/end-to-end:e2e)",
         "$(rootpath //:mocha_config)",
@@ -112,6 +113,7 @@ server_integration_test(
     port = "7082",
     runner_src = ":backend_integration_test.sh",
     tags = [
+        "exclusive",
         "manual",
     ],
 )
@@ -165,6 +167,7 @@ server_integration_test(
     port = "7083",
     runner_src = ":codeintel_integration_test.sh",
     tags = [
+        "exclusive",
         "manual",
     ],
 )

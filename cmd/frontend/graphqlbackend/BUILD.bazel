@@ -242,6 +242,7 @@ go_library(
         "//cmd/frontend/hubspot/hubspotutil",
         "//cmd/frontend/internal/processrestart",
         "//cmd/frontend/internal/search/logs",
+        "//internal/accesstoken",
         "//internal/actor",
         "//internal/adminanalytics",
         "//internal/api",
@@ -289,6 +290,7 @@ go_library(
         "//internal/goroutine/recorder",
         "//internal/gosyntect",
         "//internal/gqlutil",
+        "//internal/hashutil",
         "//internal/highlight",
         "//internal/honey",
         "//internal/honey/search",
@@ -326,7 +328,6 @@ go_library(
         "//internal/src-prometheus",
         "//internal/suspiciousnames",
         "//internal/symbols",
-        "//internal/syncx",
         "//internal/temporarysettings",
         "//internal/trace",
         "//internal/txemail",
@@ -386,7 +387,7 @@ go_library(
 
 go_test(
     name = "graphqlbackend_test",
-    timeout = "moderate",
+    timeout = "long",
     srcs = [
         "access_requests_test.go",
         "access_tokens_test.go",

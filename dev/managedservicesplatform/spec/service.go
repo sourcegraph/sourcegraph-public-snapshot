@@ -18,11 +18,6 @@ type ServiceSpec struct {
 	// service.
 	Owners []string `json:"owners"`
 
-	// EnvVarPrefix is an optional prefix for env vars exposed specifically for
-	// the service, e.g. "CODY_GATEWAY_". If empty, default the an capitalized,
-	// lowercase-delimited version of the service ID.
-	EnvVarPrefix *string `json:"envVarPrefix,omitempty"`
-
 	// Kind is the type of the service, either 'service' or 'job'. Defaults to
 	// 'service'.
 	Kind *ServiceKind `json:"kind,omitempty"`

@@ -78,10 +78,12 @@ export const TryCodySignUpCtaSection: React.FC<TelemetryProps & { className?: st
             <div className={classNames(styles.codyIllustration)}>
                 <H1>Meet Cody, your AI assistant</H1>
                 <div className={classNames(styles.codyConversations)}>
-                    <div className={classNames(styles.codyConversation)}>Auto-generate unit tests</div>
-                    <div className={classNames(styles.codyConversation)}>Explain code</div>
-                    <div className={classNames(styles.codyConversation)}>Find code smells</div>
-                    <div className={classNames(styles.codyConversation)}>Generate code</div>
+                    <div className={classNames(styles.codyConversation)}>AI-powered chat for you code</div>
+                    <div className={classNames(styles.codyConversation)}>Autocomplete</div>
+                    <div className={classNames(styles.codyConversation)}>Find, fix and explain code</div>
+                    <div className={classNames(styles.codyConversation)}>Create documentation</div>
+                    <div className={classNames(styles.codyConversation)}>Generate unit tests</div>
+                    <div className={classNames(styles.codyConversation)}>Build custom commands</div>
                 </div>
                 <MeetCodySVG />
             </div>
@@ -91,8 +93,8 @@ export const TryCodySignUpCtaSection: React.FC<TelemetryProps & { className?: st
             >
                 <H2>Get free access</H2>
                 <Text>
-                    Cody combines an LLM with the context of Sourcegraph’s code graph on public code or your code at
-                    work. Use Cody with:
+                    Cody answers technical questions and write code directly in your IDE, using your code graph for
+                    context and accuracy.
                 </Text>
                 <ul className={classNames('pl-1', styles.list)}>
                     <Text as="li" size="small" className="mb-2">
@@ -101,14 +103,15 @@ export const TryCodySignUpCtaSection: React.FC<TelemetryProps & { className?: st
                         VS Code extension
                     </Text>
                     <Text as="li" size="small" className="mb-2">
-                        the Sourcegraph web application
+                        the Sourcegraph web application{' '}
+                        <ProductStatusBadge status="experimental" className={styles.experimentalBadge} />
                     </Text>
                     <Text as="li" size="small" className="mb-2">
                         our JetBrains IDE plugin{' '}
-                        <ProductStatusBadge status="experimental" className={styles.experimentalBadge} />
+                        <ProductStatusBadge status="beta" className={styles.experimentalBadge} />
                     </Text>
-                    <Text as="li" size="small" className="text-muted">
-                        Neovim and other editors (Coming soon!)
+                    <Text as="li" size="small">
+                        Neovim <ProductStatusBadge status="beta" className={styles.experimentalBadge} />
                     </Text>
                 </ul>
                 <div className="mb-2">
@@ -118,7 +121,7 @@ export const TryCodySignUpCtaSection: React.FC<TelemetryProps & { className?: st
                         className="d-inline-flex align-items-center"
                         onClick={onSignUpClick}
                     >
-                        Sign up to gain access <Icon svgPath={mdiChevronRight} aria-hidden={true} size="md" />
+                        Sign up <Icon svgPath={mdiChevronRight} aria-hidden={true} size="md" />
                     </ButtonLink>
                 </div>
                 <Link to="/help/cody/quickstart" target="_blank" rel="noopener">

@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
@@ -30,6 +32,7 @@ func NewOpenAIHandler(
 	accessToken string,
 	orgID string,
 	allowedModels []string,
+	autoFlushStreamingResponses bool,
 ) http.Handler {
 	return makeUpstreamHandler(
 		baseLogger,
@@ -58,7 +61,7 @@ func NewOpenAIHandler(
 				// We forward the actor ID to support tracking.
 				body.User = identifier
 			},
-			getRequestMetadata: func(body openaiRequest) (model string, additionalMetadata map[string]any) {
+			getRequestMetadata: func(_ context.Context, _ log.Logger, _ *actor.Actor, body openaiRequest) (model string, additionalMetadata map[string]any) {
 				return body.Model, map[string]any{"stream": body.Stream}
 			},
 			transformRequest: func(r *http.Request) {
@@ -133,6 +136,7 @@ func NewOpenAIHandler(
 		// clients from retrying at all since retries are probably not going to
 		// help in a minute-long rate limit window.
 		30, // seconds
+		autoFlushStreamingResponses,
 	)
 }
 
@@ -155,6 +159,10 @@ type openaiRequest struct {
 	FrequencyPenalty float32                `json:"frequency_penalty,omitempty"`
 	LogitBias        map[string]float32     `json:"logit_bias,omitempty"`
 	User             string                 `json:"user,omitempty"`
+}
+
+func (r openaiRequest) ShouldStream() bool {
+	return r.Stream
 }
 
 func (r openaiRequest) GetModel() string {

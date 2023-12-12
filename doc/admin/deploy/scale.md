@@ -33,7 +33,7 @@ Scaling is unnecessary if your resource usage is kept below 80%.
 
 For example, if you plan to add 100% more engaged users, and the resource usage for all services is currently at around 70%, we’d recommend using this documentation as a reference to adjust the resources that list “Number of active users” as one of their scaling factors. You can also use the output from the Resource Estimator as references alternatively.
 
-> NOTE: For assistance when scaling and tuning Sourcegraph, [contact us](https://about.sourcegraph.com/contact/). We're happy to help!
+> NOTE: For assistance when scaling and tuning Sourcegraph, [contact us](https://sourcegraph.com/contact/). We're happy to help!
 
 ---
 

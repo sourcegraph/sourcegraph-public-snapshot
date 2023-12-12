@@ -17,13 +17,19 @@ const config = {
     '**/vendor/*.js',
     'svelte.config.js',
     'vite.config.ts',
+    'vitest.config.ts',
+    'postcss.config.js',
     'playwright.config.ts',
+    'bundlesize.config.js',
+    'prettier.config.js',
+    'svgo.config.js',
     '.vscode-test',
     '**/*.json',
     '**/*.d.ts',
     'eslint-relative-formatter.js',
     'typedoc.js',
-    'bundlesize.config.js',
+    'client/web/dev/**/*',
+    'graphql-schema-linter.config.js',
   ],
   extends: ['@sourcegraph/eslint-config', 'plugin:storybook/recommended'],
   env: {
@@ -37,8 +43,8 @@ const config = {
     ecmaFeatures: {
       jsx: true,
     },
-    EXPERIMENTAL_projectService: true,
-    project: __dirname + '/tsconfig.all.json',
+    EXPERIMENTAL_useProjectService: true,
+    project: true,
   },
   settings: {
     react: {

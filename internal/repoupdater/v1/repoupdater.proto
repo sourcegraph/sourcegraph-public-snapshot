@@ -59,6 +59,8 @@ message RepoLookupResponse {
   bool error_unauthorized = 3;
   // the repository host was temporarily unavailable (e.g., rate limit exceeded)
   bool error_temporarily_unavailable = 4;
+  // the repository cannot be added because it doesn't fit restrictions.
+  string error_repo_denied = 5;
 }
 
 message RepoInfo {

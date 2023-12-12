@@ -114,13 +114,6 @@ func sortAndLimitComputedGroups(timeSeries []GeneratedTimeSeries) []GeneratedTim
 		return timeSeries[i].Points[0].Count > timeSeries[j].Points[0].Count
 	}
 	sort.SliceStable(timeSeries, descValueSort)
-	limit := minInt(20, len(timeSeries))
+	limit := min(20, len(timeSeries))
 	return timeSeries[:limit]
-}
-
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

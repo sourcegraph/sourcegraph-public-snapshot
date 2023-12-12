@@ -12,11 +12,19 @@ type CompletionsConfig struct {
 	CompletionModel          string
 	CompletionModelMaxTokens int
 
-	AccessToken                      string
-	Provider                         CompletionsProviderName
-	Endpoint                         string
-	PerUserDailyLimit                int
-	PerUserCodeCompletionsDailyLimit int
+	AccessToken                                            string
+	Provider                                               CompletionsProviderName
+	Endpoint                                               string
+	PerUserDailyLimit                                      int
+	PerUserCodeCompletionsDailyLimit                       int
+	PerCommunityUserChatMonthlyLLMRequestLimit             int
+	PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit  int
+	PerProUserChatDailyLLMRequestLimit                     int
+	PerProUserCodeCompletionsDailyLLMRequestLimit          int
+	PerCommunityUserChatMonthlyInteractionLimit            int
+	PerCommunityUserCodeCompletionsMonthlyInteractionLimit int
+	PerProUserChatDailyInteractionLimit                    int
+	PerProUserCodeCompletionsDailyInteractionLimit         int
 }
 
 type CompletionsProviderName string
@@ -31,19 +39,21 @@ const (
 )
 
 type EmbeddingsConfig struct {
-	Provider                   EmbeddingsProviderName
-	AccessToken                string
-	Model                      string
-	Endpoint                   string
-	Dimensions                 int
-	Incremental                bool
-	MinimumInterval            time.Duration
-	FileFilters                EmbeddingsFileFilters
-	MaxCodeEmbeddingsPerRepo   int
-	MaxTextEmbeddingsPerRepo   int
-	PolicyRepositoryMatchLimit *int
-	ExcludeChunkOnError        bool
-	Qdrant                     QdrantConfig
+	Provider                               EmbeddingsProviderName
+	AccessToken                            string
+	Model                                  string
+	Endpoint                               string
+	Dimensions                             int
+	Incremental                            bool
+	MinimumInterval                        time.Duration
+	FileFilters                            EmbeddingsFileFilters
+	MaxCodeEmbeddingsPerRepo               int
+	MaxTextEmbeddingsPerRepo               int
+	PolicyRepositoryMatchLimit             *int
+	ExcludeChunkOnError                    bool
+	Qdrant                                 QdrantConfig
+	PerCommunityUserEmbeddingsMonthlyLimit int
+	PerProUserEmbeddingsMonthlyLimit       int
 }
 
 type QdrantConfig struct {

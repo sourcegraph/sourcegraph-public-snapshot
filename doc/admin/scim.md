@@ -5,7 +5,7 @@
 <span class="badge badge-beta">Beta</span> This feature is in beta while we're testing it with more IdPs. Our implementation complies with the SCIM 2.0 specification, and passes the validator for Okta and Azure AD. But implementations might differ on the side of IdPs and validators don't give a 100% coverage, so we can't guarantee that our solution works with all IdPs in every case.
 </p>
 
-<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
+<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
 SCIM (System for Cross-domain Identity Management) is a standard for provisioning and deprovisioning users and groups in an organization. IdPs (identity providers) like Okta, OneLogin, and Azure Active Directory support provisioning users through SCIM.

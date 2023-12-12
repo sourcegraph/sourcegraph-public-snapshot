@@ -53,10 +53,7 @@ func Middleware(db database.DB) *auth.Middleware {
 // Sourcegraph Operator authentication provider.
 const SessionKey = "soap@0"
 
-const (
-	stateCookieName = "sg-soap-state"
-	usernamePrefix  = "sourcegraph-operator-"
-)
+const usernamePrefix = "sourcegraph-operator-"
 
 func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	logger := log.Scoped(internalauth.SourcegraphOperatorProviderType + ".authHandler")
@@ -69,11 +66,11 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return
 			}
-			openidconnect.RedirectToAuthRequest(w, r, p, stateCookieName, r.URL.Query().Get("redirect"))
+			openidconnect.RedirectToAuthRequest(w, r, p, r.URL.Query().Get("redirect"))
 			return
 
 		case "/callback": // Endpoint for the OIDC Authorization Response, see http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
-			result, safeErrMsg, errStatus, err := openidconnect.AuthCallback(db, r, stateCookieName, usernamePrefix, GetOIDCProvider)
+			result, safeErrMsg, errStatus, err := openidconnect.AuthCallback(db, r, usernamePrefix, GetOIDCProvider)
 			if err != nil {
 				logger.Error("failed to authenticate with Sourcegraph Operator", log.Error(err))
 				http.Error(w, safeErrMsg, errStatus)

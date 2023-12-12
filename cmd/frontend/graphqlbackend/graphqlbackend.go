@@ -100,6 +100,9 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 		// NOTE: It is important to propagate the correct context that carries the
 		// information of the actor, especially whether the actor is a Sourcegraph
 		// operator or not.
+		//
+		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
+		//lint:ignore SA1019 existing usage of deprecated functionality.
 		err = usagestats.LogEvent(
 			ctx,
 			t.db,
@@ -967,9 +970,24 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
+		if errcode.IsRepoDenied(err) {
+			return nil, repositoryDeniedError{err}
+		}
 		return nil, err
 	}
 	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, r.gitserverClient, repo)}, nil
+}
+
+type repositoryDeniedError struct {
+	error
+}
+
+func (r repositoryDeniedError) Error() string {
+	return r.error.Error()
+}
+
+func (r repositoryDeniedError) Extensions() map[string]any {
+	return map[string]any{"code": "ErrRepoDenied"}
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {

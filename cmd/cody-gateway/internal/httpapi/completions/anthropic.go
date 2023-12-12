@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
+
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/log"
@@ -109,6 +111,7 @@ func NewAnthropicHandler(
 	promptRecorder PromptRecorder,
 	allowedPromptPatterns []string,
 	requestBlockingEnabled bool,
+	autoFlushStreamingResponses bool,
 ) (http.Handler, error) {
 	// Tokenizer only needs to be initialized once, and can be shared globally.
 	anthropicTokenizer, err := tokenizer.NewAnthropicClaudeTokenizer()
@@ -157,7 +160,7 @@ func NewAnthropicHandler(
 					UserID: identifier,
 				}
 			},
-			getRequestMetadata: func(body anthropicRequest) (model string, additionalMetadata map[string]any) {
+			getRequestMetadata: func(_ context.Context, _ log.Logger, _ *actor.Actor, body anthropicRequest) (model string, additionalMetadata map[string]any) {
 				return body.Model, map[string]any{
 					"stream":               body.Stream,
 					"max_tokens_to_sample": body.MaxTokensToSample,
@@ -243,6 +246,7 @@ func NewAnthropicHandler(
 		// able to circumvent concurrents limits without raising an error to the
 		// user.
 		2, // seconds
+		autoFlushStreamingResponses,
 	), nil
 }
 
@@ -260,6 +264,10 @@ type anthropicRequest struct {
 
 	// Use (*anthropicRequest).GetTokenCount()
 	promptTokens *anthropicTokenCount
+}
+
+func (ar anthropicRequest) ShouldStream() bool {
+	return ar.Stream
 }
 
 func (ar anthropicRequest) GetModel() string {

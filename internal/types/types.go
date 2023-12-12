@@ -628,6 +628,8 @@ type ExternalService struct {
 	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
 	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
 	CodeHostID     *int32
+	CreatorID      *int32
+	LastUpdaterID  *int32
 }
 
 type ExternalServiceRepo struct {
@@ -1656,16 +1658,10 @@ type SearchJobsUsageStatistics struct {
 	WeeklySearchJobsUniqueDownloadClicks *int32
 	WeeklySearchJobsUniqueViewLogsClicks *int32
 	WeeklySearchJobsSearchFormShown      []SearchJobsSearchFormShownPing
-	WeeklySearchJobsValidationErrors     []SearchJobsValidationErrorPing
 }
 
 type SearchJobsSearchFormShownPing struct {
 	ValidState string
-	TotalCount int
-}
-
-type SearchJobsValidationErrorPing struct {
-	Errors     []string
 	TotalCount int
 }
 

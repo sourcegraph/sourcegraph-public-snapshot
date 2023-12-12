@@ -62,6 +62,11 @@ const SearchContextPage = lazyComponent(
 )
 const CodySearchPage = lazyComponent(() => import('./cody/search/CodySearchPage'), 'CodySearchPage')
 const CodyChatPage = lazyComponent(() => import('./cody/chat/CodyChatPage'), 'CodyChatPage')
+const CodyManagementPage = lazyComponent(() => import('./cody/management/CodyManagementPage'), 'CodyManagementPage')
+const CodySubscriptionPage = lazyComponent(
+    () => import('./cody/subscription/CodySubscriptionPage'),
+    'CodySubscriptionPage'
+)
 const OwnPage = lazyComponent(() => import('./enterprise/own/OwnPage'), 'OwnPage')
 const AppAuthCallbackPage = lazyComponent(() => import('./enterprise/app/AppAuthCallbackPage'), 'AppAuthCallbackPage')
 const AppSetup = lazyComponent(() => import('./enterprise/app/setup/AppSetupWizard'), 'AppSetupWizard')
@@ -114,7 +119,12 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.CodeMonitoring,
-        element: <LegacyRoute render={props => <GlobalCodeMonitoringArea {...props} />} />,
+        element: (
+            <LegacyRoute
+                render={props => <GlobalCodeMonitoringArea {...props} />}
+                condition={({ isSourcegraphDotCom }) => !isSourcegraphDotCom}
+            />
+        ),
     },
     {
         path: PageRoutes.Insights,
@@ -189,6 +199,14 @@ export const routes: RouteObject[] = [
     {
         path: PageRoutes.Cody + '/*',
         element: <LegacyRoute render={props => <CodyChatPage {...props} context={window.context} />} />,
+    },
+    {
+        path: PageRoutes.CodyManagement,
+        element: <LegacyRoute render={props => <CodyManagementPage {...props} />} />,
+    },
+    {
+        path: PageRoutes.CodySubscription,
+        element: <LegacyRoute render={props => <CodySubscriptionPage {...props} />} />,
     },
     {
         path: PageRoutes.Own,

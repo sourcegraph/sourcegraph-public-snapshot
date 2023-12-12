@@ -8,7 +8,7 @@ import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import shallow from 'zustand/shallow'
 
-import { Toggles } from '@sourcegraph/branded/src'
+import { Toggles } from '@sourcegraph/branded'
 import { SearchQueryState, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
@@ -383,11 +383,7 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                     )}
 
                     {isSourcegraphDotCom && (
-                        <NavItemLink
-                            url="https://about.sourcegraph.com"
-                            external={true}
-                            onClick={handleNavigationClick}
-                        >
+                        <NavItemLink url="https://sourcegraph.com" external={true} onClick={handleNavigationClick}>
                             About Sourcegraph
                         </NavItemLink>
                     )}

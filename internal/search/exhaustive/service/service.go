@@ -122,6 +122,15 @@ func newOperations(observationCtx *observation.Context) *operations {
 	return singletonOperations
 }
 
+func (s *Service) ValidateSearchJob(ctx context.Context, query string) error {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return errors.New("search jobs can only be validated by an authenticated user")
+	}
+	_, err := s.newSearcher.NewSearch(ctx, actor.UID, query)
+	return err
+}
+
 func (s *Service) CreateSearchJob(ctx context.Context, query string) (_ *types.ExhaustiveSearchJob, err error) {
 	ctx, _, endObservation := s.operations.createSearchJob.With(ctx, &err, opAttrs(
 		attribute.String("query", query),
@@ -138,7 +147,7 @@ func (s *Service) CreateSearchJob(ctx context.Context, query string) (_ *types.E
 	}
 
 	// Validate query
-	_, err = s.newSearcher.NewSearch(ctx, actor.UID, query)
+	err = s.ValidateSearchJob(ctx, query)
 	if err != nil {
 		return nil, err
 	}

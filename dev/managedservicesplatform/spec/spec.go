@@ -2,6 +2,7 @@ package spec
 
 import (
 	"os"
+	"path/filepath"
 
 	// We intentionally use sigs.k8s.io/yaml because it has some convenience features,
 	// and nicer formatting. We use this in Sourcegraph Cloud as well.
@@ -26,18 +27,33 @@ type Spec struct {
 	Environments []EnvironmentSpec `json:"environments"`
 }
 
-// Open is a shortcut for opening a spec, validating it, and unmarshalling the
-// data as a MSP spec.
+// Open a specification file, validate it, unmarshal the data as a MSP spec,
+// and load any extraneous configuration.
 func Open(specPath string) (*Spec, error) {
 	specData, err := os.ReadFile(specPath)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "ReadFile")
 	}
-	return Parse(specData)
+	spec, err := parse(specData)
+	if err != nil {
+		return nil, errors.Wrap(err, "spec.parse")
+	}
+
+	// Load extraneous resources
+	configDir := filepath.Dir(specPath)
+	for _, e := range spec.Environments {
+		if e.Resources != nil && e.Resources.BigQueryDataset != nil {
+			if err := e.Resources.BigQueryDataset.LoadSchemas(configDir); err != nil {
+				return spec, errors.Wrap(err, "BigQueryTable.LoadSchema")
+			}
+		}
+	}
+
+	return spec, nil
 }
 
-// Parse validates and unmarshals data as a MSP spec.
-func Parse(data []byte) (*Spec, error) {
+// parse validates and unmarshals data as a MSP spec.
+func parse(data []byte) (*Spec, error) {
 	var s Spec
 	if err := yaml.Unmarshal(data, &s); err != nil {
 		return nil, err
@@ -79,6 +95,14 @@ func (s Spec) GetEnvironment(id string) *EnvironmentSpec {
 		}
 	}
 	return nil
+}
+
+func (s Spec) ListEnvironmentIDs() []string {
+	var ids []string
+	for _, e := range s.Environments {
+		ids = append(ids, e.ID)
+	}
+	return ids
 }
 
 // MarshalYAML marshals the spec to YAML using our YAML library of choice.

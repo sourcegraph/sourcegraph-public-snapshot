@@ -135,7 +135,7 @@ Follow the same steps as above, but ensure you tick the `Push` option. If asked 
 
 #### Batch changes
 
-> NOTE: Experimental webhook support for Bitbucket Cloud was added in Sourcegraph 3.40. Please <a href="https://about.sourcegraph.com/contact">contact us</a> with any issues found while using webhooks.
+> NOTE: Experimental webhook support for Bitbucket Cloud was added in Sourcegraph 3.40. Please <a href="https://sourcegraph.com/contact">contact us</a> with any issues found while using webhooks.
 
 1. On Bitbucket Cloud, go to each repository, and then **Repository settings > Webhooks**.
 1. Click **Add webhook**.
@@ -156,7 +156,7 @@ Follow the same steps as above, but ensure you tick the `Push` option.
 
 #### Batch changes
 
-> NOTE: Experimental webhook support for Azure DevOps was added in Sourcegraph 5.0, and does not currently support secrets. Please <a href="https://about.sourcegraph.com/contact">contact us</a> with any issues found while using webhooks.
+> NOTE: Experimental webhook support for Azure DevOps was added in Sourcegraph 5.0, and does not currently support secrets. Please <a href="https://sourcegraph.com/contact">contact us</a> with any issues found while using webhooks.
 
 1. On Azure DevOps, go to each project, and then **Project settings > General > Service hooks**.
 2. Click **Create subscription**.

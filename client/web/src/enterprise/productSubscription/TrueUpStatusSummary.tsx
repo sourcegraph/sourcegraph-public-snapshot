@@ -63,7 +63,7 @@ export const TrueUpStatusSummary: React.FunctionComponent<React.PropsWithChildre
             </div>
             <small>
                 Learn more about{' '}
-                <Link to="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener noreferrer">
+                <Link to="https://sourcegraph.com/pricing" target="_blank" rel="noopener noreferrer">
                     Sourcegraph's true-up pricing model
                 </Link>
                 .
