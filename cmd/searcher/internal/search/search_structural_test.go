@@ -739,19 +739,6 @@ func maybeSkipComby(t *testing.T) {
 }
 
 func Test_addContext(t *testing.T) {
-	// files := map[string]string{
-	// 	"empty":             "",
-	// 	"onlyNewline":       "\n",
-	// 	"onlyNewlines":      "\n\n\n\n",
-	// 	"normal":            "abc\ndef\nghi\n",
-	// 	"noTrailingNewline": "abc\ndef\nghi",
-	// 	"singleLine":        "abc\n",
-	// 	"crlf":              "abc\r\ndef\r\nghi\r\n",
-	// 	"crlfNoTrailing":    "abc\r\ndef\r\nghi",
-	// 	"crlfOnly":          "\r\n",
-	// 	"multibyte":         "abc\nd\xE2\x9D\x89f\nghi",
-	// }
-
 	l := func(offset, line, column int32) protocol.Location {
 		return protocol.Location{Offset: offset, Line: line, Column: column}
 	}
