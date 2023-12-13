@@ -3,6 +3,7 @@ import { fireEvent, render, type RenderResult, act } from '@testing-library/reac
 import { MemoryRouter } from 'react-router-dom'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { UPDATE_USER } from './EditUserProfileForm'
@@ -55,7 +56,7 @@ describe('UserSettingsProfilePage', () => {
         queries = render(
             <MockedTestProvider mocks={mocks}>
                 <MemoryRouter>
-                    <UserSettingsProfilePage user={mockUser} />
+                    <UserSettingsProfilePage user={mockUser} telemetryRecorder={noOpTelemetryRecorder} />
                 </MemoryRouter>
             </MockedTestProvider>
         )

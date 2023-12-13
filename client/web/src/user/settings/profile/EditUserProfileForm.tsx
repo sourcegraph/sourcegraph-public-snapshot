@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container, Button, Alert, Form } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
@@ -22,7 +23,7 @@ export const UPDATE_USER = gql`
     }
 `
 
-interface Props {
+interface Props extends TelemetryV2Props {
     user: Pick<EditUserProfilePage, 'id' | 'viewerCanChangeUsername' | 'scimControlled'>
     initialValue: UserProfileFormFieldsValue
     after?: React.ReactNode
@@ -35,10 +36,12 @@ export const EditUserProfileForm: React.FunctionComponent<React.PropsWithChildre
     user,
     initialValue,
     after,
+    telemetryRecorder,
 }) => {
     const navigate = useNavigate()
     const [updateUser, { data, loading, error }] = useMutation<UpdateUserResult, UpdateUserVariables>(UPDATE_USER, {
         onCompleted: ({ updateUser }) => {
+            telemetryRecorder.recordEvent('userProfile', 'updated')
             eventLogger.log('UserProfileUpdated')
             navigate(`/users/${updateUser.username}/settings/profile`, { replace: true })
 
@@ -49,7 +52,10 @@ export const EditUserProfileForm: React.FunctionComponent<React.PropsWithChildre
                 .toPromise()
                 .finally(() => {})
         },
-        onError: () => eventLogger.log('UpdateUserFailed'),
+        onError: () => {
+            eventLogger.log('UpdateUserFailed')
+            telemetryRecorder.recordEvent('updateUser', 'failed')
+        },
     })
 
     const [userFields, setUserFields] = useState<UserProfileFormFieldsValue>(initialValue)
@@ -62,6 +68,7 @@ export const EditUserProfileForm: React.FunctionComponent<React.PropsWithChildre
         event => {
             event.preventDefault()
             eventLogger.log('UpdateUserClicked')
+            telemetryRecorder.recordEvent('updateUser', 'clicked')
             return updateUser({
                 variables: {
                     user: user.id,
@@ -71,7 +78,7 @@ export const EditUserProfileForm: React.FunctionComponent<React.PropsWithChildre
                 },
             })
         },
-        [updateUser, user.id, userFields]
+        [updateUser, user.id, userFields, telemetryRecorder]
     )
 
     const isUserScimControlled = user.scimControlled

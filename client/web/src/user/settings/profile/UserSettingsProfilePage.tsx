@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { gql } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
@@ -25,12 +26,18 @@ export const EditUserProfilePageGQLFragment = gql`
     }
 `
 
-interface Props {
+interface Props extends TelemetryV2Props {
     user: EditUserProfilePageFragment
 }
 
-export const UserSettingsProfilePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ user }) => {
-    useEffect(() => eventLogger.logViewEvent('UserProfile'), [])
+export const UserSettingsProfilePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    user,
+    telemetryRecorder,
+}) => {
+    useEffect(() => {
+        eventLogger.logViewEvent('UserProfile')
+        telemetryRecorder.recordEvent('userProfile', 'viewed')
+    }, [telemetryRecorder])
 
     return (
         <div>
@@ -65,6 +72,7 @@ export const UserSettingsProfilePage: React.FunctionComponent<React.PropsWithChi
                             </Text>
                         )
                     }
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
         </div>
