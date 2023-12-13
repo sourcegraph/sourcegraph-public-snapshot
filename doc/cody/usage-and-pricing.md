@@ -30,7 +30,7 @@ Cody Pro, designed for individuals or small teams at **$9 per user per month**, 
 
 The plan includes the ability to create an unlimited number of Custom Commands for personalized workflows. In addition to using the local context of your code to improve responses, you can embed up to **1 GB** of your private code for even better Cody responses that reflect a deep understanding of your code in VS Code, with JetBrains IDE support coming soon.
 
-Support for Cody Pro is available through Discord, ensuring prompt assistance and guidance. However, it's essential to note that the Cody Pro plan is limited to **50 developers** per month. Finally, you'll have default support with Anthropic and StarCoder as the officially supported LLMs. Moreover, Pro accounts using VS Code IDE will get an LLM selection for chat only. These LLMs are Claude Instant 1.2, Claude 2, ChatGPT 3.5 Turbo, and ChatGPT 4 Turbo Preview.
+Support for Cody Pro is available through Discord, ensuring prompt assistance and guidance. However, it's essential to note that the Cody Pro plan is limited to **50 developers** per month. Finally, you'll have default support with Anthropic and StarCoder as the officially supported LLMs. Moreover, Pro accounts using VS Code IDE will get an LLM selection for chat only. These LLMs are Claude Instant 1.2, Claude 2, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo Preview, and Mixtral.
 
 > NOTE: There will be high daily limits to catch bad actors and prevent abuse, but under most normal usage, Pro users won't experience these limits.
 
@@ -45,13 +45,13 @@ To revert back to Cody Free from Pro:
 
 ### Upgrading from Pro to Enterprise
 
-To upgrade from Cody Pro to Cody Enterprise, you should [Contact Sales](https://sourcegraph.com/contact/request-info) and connect with one of our support assistants. They will help you set up your account and start with Cody Enterprise.
+To upgrade from Cody Pro to Cody Enterprise, you should [Contact Sales](https://sourcegraph.com/contact/request-info) and connect with one of our account teams. They will help you set up your account and start with Cody Enterprise.
 
 ## Enterprise
 
-Cody Enterprise is designed for enterprises prioritizing security and administrative controls, starting at a consumption-based pricing capped at $19 per user per month. You get additional capabilities like BYOLLM (Bring Your Own LLM), supporting Single-Tenant and Self Hosted setups for flexible coding environments.
+Cody Enterprise is designed for enterprises prioritizing security and administrative controls. We offer either seat-based or token based pricing models, depending on what makes most sense for your organization. You get additional capabilities like BYOLLM (Bring Your Own LLM), supporting Single-Tenant and Self Hosted setups for flexible coding environments.
 
-Security features include SAML/SSO for enhanced authentication, audit logs for transparency, and guardrails to enforce coding standards. Cody Enterprise supports advanced Code Graph context and multi-code host context for a deeper understanding of codebases, especially in complex projects. With 24/5 enhanced support, Cody Enterprise ensures timely assistance.
+Security features include SAML/SSO for enhanced authentication and guardrails to enforce coding standards. Cody Enterprise supports advanced Code Graph context and multi-code host context for a deeper understanding of codebases, especially in complex projects. With 24/5 enhanced support, Cody Enterprise ensures timely assistance.
 
 ## Plans Comparison
 
@@ -70,7 +70,6 @@ The following table shows a high-level comparison of the three plans available o
 | **Code Editor Support**                       | VS Code, JetBrains IDEs, and Neovim | VS Code, JetBrains IDEs, and Neovim  | VS Code, JetBrains IDEs, and Neovim                |
 | **Single-Tenant and Self Hosted**     | N/A                             | N/A                              | Yes                                        |
 | **SAML/SSO**                          | N/A                             | N/A                              | Yes                                        |
-| **Audit Logs**                        | N/A                             | N/A                              | Yes                                        |
 | **Guardrails**                        | N/A                             | N/A                              | Yes                                        |
 | **Advanced Code Graph Context**                 | N/A                             | N/A                              | Included                                  |
 | **Multi-Code Host Context**           | N/A                             | N/A                              | Included                                  |

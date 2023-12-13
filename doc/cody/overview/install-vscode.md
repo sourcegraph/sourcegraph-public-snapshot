@@ -160,7 +160,7 @@ The following tables shows what happens when Enhanced Context Selection is enabl
 
 ### LLM Selection
 
-Cody Community users can choose the LLM they'd like Cody to use for chats right within the chat panel. The default LLM is set to Claude 2.0 by Anthropic, but the drop-down allows you to experiment with different LLMs and choose the one that's best for you. For Enterprise users, the LLM is determined by the administrator and cannot be changed within the editor.
+Cody Free users can choose the LLM they'd like Cody to use for chats right within the chat panel. The default LLM is set to Claude 2.0 by Anthropic, but the drop-down allows you to experiment with different LLMs and choose the one that's best for you. Users on Cody Pro also get to select Mixtral with all other LLMs suppported for Free users. For Enterprise users, the LLM is determined by the administrator and cannot be changed within the editor.
 
 ![](https://storage.googleapis.com/sourcegraph-assets/Docs/llm-select.png)
 
