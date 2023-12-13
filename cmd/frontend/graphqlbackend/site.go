@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"os"
 	"strconv"
 	"strings"
@@ -381,7 +380,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an event when site config is updated
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", json.RawMessage(args.Input), r.db.SecurityEventLogs()); err != nil {
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args.Input, r.db.SecurityEventLogs()); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
