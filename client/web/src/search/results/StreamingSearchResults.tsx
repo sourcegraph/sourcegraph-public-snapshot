@@ -67,7 +67,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     // Feature flags
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
-    const newSearchResultsUI = useExperimentalFeatures(features => features.newSearchResultsUI ?? true)
+    const newSearchResultsUI = useExperimentalFeatures(features => features.newSearchResultsUI)
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
