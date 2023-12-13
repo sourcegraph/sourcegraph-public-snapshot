@@ -46,3 +46,14 @@
         linear-gradient(90deg, #7048e8 0%, #4ac1e8 32.21%, #4d0b79 65.39%, #ff5543 104.43%);
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.03), 0 1px 1px 0 rgba(0, 0, 0, 0.05);
 }
+
+.ide-header {
+    padding: calc(var(--spacer) * 0.5);
+    margin: calc(var(--spacer) * -0.5);
+    border-radius: var(--border-radius);
+}
+
+.ide-header:hover {
+    cursor: pointer;
+    background: var(--subtle-bg);
+}
