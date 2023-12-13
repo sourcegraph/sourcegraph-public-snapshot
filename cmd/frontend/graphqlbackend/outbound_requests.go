@@ -68,7 +68,7 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an even when Outbound requests are viewed
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args, r.db.SecurityEventLogs()); err != nil {
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
@@ -93,7 +93,7 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an even when Outbound requests are viewed
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", graphql.ID(key), r.db.SecurityEventLogs()); err != nil {
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", graphql.ID(key)); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 		}
 	}

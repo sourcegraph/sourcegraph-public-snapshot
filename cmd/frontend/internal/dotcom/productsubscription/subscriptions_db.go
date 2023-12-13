@@ -90,7 +90,7 @@ INSERT INTO product_subscriptions(id, user_id, account_number) VALUES($1, $2, $3
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an event when a new subscription is created.
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionCreated, "", uint32(userID), "", "BACKEND", newUUID, s.db.SecurityEventLogs()); err != nil {
+		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionCreated, "", uint32(userID), "", "BACKEND", newUUID); err != nil {
 			log.Error(err)
 		}
 	}
@@ -144,7 +144,7 @@ func (s dbSubscriptions) List(ctx context.Context, opt dbSubscriptionsListOption
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		//Log an event when a list of subscriptions is requested.
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionsListed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", opt, s.db.SecurityEventLogs()); err != nil {
+		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionsListed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", opt); err != nil {
 			log.Error(err)
 		}
 	}
@@ -297,7 +297,7 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an event when a subscription is updated
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", id, s.db.SecurityEventLogs()); err != nil {
+		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", id); err != nil {
 			log.Error(err)
 		}
 	}
@@ -326,7 +326,7 @@ func (s dbSubscriptions) Archive(ctx context.Context, id string) error {
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an event when a subscription is archived
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionArchived, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", id, s.db.SecurityEventLogs()); err != nil {
+		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionArchived, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", id); err != nil {
 			log.Error(err)
 		}
 	}

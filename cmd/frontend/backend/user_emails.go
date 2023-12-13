@@ -96,7 +96,7 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log action of new email being added to user profile
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameEmailAdded, "", uint32(userID), "", "BACKEND", email, e.db.SecurityEventLogs()); err != nil {
+		if err := e.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailAdded, "", uint32(userID), "", "BACKEND", email); err != nil {
 			logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
@@ -144,7 +144,7 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) err
 		if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 			// Log action of email being removed from user profile
-			if err := database.LogSecurityEvent(ctx, database.SecurityEventNameEmailRemoved, "", uint32(userID), "", "BACKEND", email, e.db.SecurityEventLogs()); err != nil {
+			if err := e.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailRemoved, "", uint32(userID), "", "BACKEND", email); err != nil {
 				logger.Warn("Error logging security event", log.Error(err))
 			}
 		}
@@ -241,13 +241,7 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 	if err != nil {
 		return err
 	}
-	// argsJSON, _ := json.Marshal(struct {
-	// 	Email    string `json:"email"`
-	// 	Verified bool   `json:"verified"`
-	// }{
-	// 	Email:    email,
-	// 	Verified: verified,
-	// })
+
 	arguments := struct {
 		Email    string `json:"email"`
 		Verified bool   `json:"verified"`
@@ -258,7 +252,7 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log action of email being verified/unverified
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameEmailVerifiedToggle, "", uint32(userID), "", "BACKEND", arguments, e.db.SecurityEventLogs()); err != nil {
+		if err := e.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailVerifiedToggle, "", uint32(userID), "", "BACKEND", arguments); err != nil {
 			logger.Warn("Error logging security event", log.Error(err))
 		}
 	}

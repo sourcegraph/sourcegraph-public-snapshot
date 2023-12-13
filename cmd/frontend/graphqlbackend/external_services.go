@@ -83,7 +83,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log action of Code Host Connection being added
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionAdded, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args.Input.DisplayName, r.db.SecurityEventLogs()); err != nil {
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionAdded, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args.Input.DisplayName); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
@@ -166,7 +166,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log action of Code Host Connection being updated
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args.Input.DisplayName, r.db.SecurityEventLogs()); err != nil {
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args.Input.DisplayName); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
@@ -288,7 +288,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log action of Code Host Connection being deleted
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args, r.db.SecurityEventLogs()); err != nil {
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 
 		}

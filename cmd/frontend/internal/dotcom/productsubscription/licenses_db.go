@@ -90,7 +90,7 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an event when a license is created in DotCom
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, s.db.SecurityEventLogs()); err != nil {
+		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
 			log.Error(err)
 		}
 	}
@@ -289,7 +289,7 @@ ORDER BY created_at DESC
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		//Log an event when liscenses list is viewed in Dotcom
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", q.Args(), s.db.SecurityEventLogs()); err != nil {
+		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", q.Args()); err != nil {
 			log.Error(err)
 		}
 	}
