@@ -68,24 +68,25 @@ func main() {
 	}
 
 	cases := []struct {
-		arg  protocol.PatternInfo
-		want autogold.Value
+		arg          protocol.PatternInfo
+		contextLines int32
+		want         autogold.Value
 	}{{
-		protocol.PatternInfo{Pattern: "foo"},
-		autogold.Expect(""),
+		arg:  protocol.PatternInfo{Pattern: "foo"},
+		want: autogold.Expect(""),
 	}, {
-		protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true},
-		autogold.Expect("README.md:1:1:\n# Hello World\n"),
+		arg:  protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true},
+		want: autogold.Expect("README.md:1:1:\n# Hello World\n"),
 	}, {
-		protocol.PatternInfo{Pattern: "world", IsCaseSensitive: true},
-		autogold.Expect(`README.md:3:3:
+		arg: protocol.PatternInfo{Pattern: "world", IsCaseSensitive: true},
+		want: autogold.Expect(`README.md:3:3:
 Hello world example in go
 main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "world"},
-		autogold.Expect(`README.md:1:1:
+		arg: protocol.PatternInfo{Pattern: "world"},
+		want: autogold.Expect(`README.md:1:1:
 # Hello World
 README.md:3:3:
 Hello world example in go
@@ -93,24 +94,24 @@ main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "func.*main"},
-		autogold.Expect(""),
+		arg:  protocol.PatternInfo{Pattern: "func.*main"},
+		want: autogold.Expect(""),
 	}, {
-		protocol.PatternInfo{Pattern: "func.*main", IsRegExp: true},
-		autogold.Expect("main.go:5:5:\nfunc main() {\n"),
+		arg:  protocol.PatternInfo{Pattern: "func.*main", IsRegExp: true},
+		want: autogold.Expect("main.go:5:5:\nfunc main() {\n"),
 	}, {
 		// https://github.com/sourcegraph/sourcegraph/issues/8155
-		protocol.PatternInfo{Pattern: "^func", IsRegExp: true},
-		autogold.Expect("main.go:5:5:\nfunc main() {\n"),
+		arg:  protocol.PatternInfo{Pattern: "^func", IsRegExp: true},
+		want: autogold.Expect("main.go:5:5:\nfunc main() {\n"),
 	}, {
-		protocol.PatternInfo{Pattern: "^FuNc", IsRegExp: true},
-		autogold.Expect("main.go:5:5:\nfunc main() {\n"),
+		arg:  protocol.PatternInfo{Pattern: "^FuNc", IsRegExp: true},
+		want: autogold.Expect("main.go:5:5:\nfunc main() {\n"),
 	}, {
-		protocol.PatternInfo{Pattern: "mai", IsWordMatch: true},
-		autogold.Expect(""),
+		arg:  protocol.PatternInfo{Pattern: "mai", IsWordMatch: true},
+		want: autogold.Expect(""),
 	}, {
-		protocol.PatternInfo{Pattern: "main", IsWordMatch: true},
-		autogold.Expect(`main.go:1:1:
+		arg: protocol.PatternInfo{Pattern: "main", IsWordMatch: true},
+		want: autogold.Expect(`main.go:1:1:
 package main
 main.go:5:5:
 func main() {
@@ -118,96 +119,97 @@ func main() {
 	}, {
 		// Ensure we handle CaseInsensitive regexp searches with
 		// special uppercase chars in pattern.
-		protocol.PatternInfo{Pattern: `printL\B`, IsRegExp: true},
-		autogold.Expect(`main.go:6:6:
+		arg: protocol.PatternInfo{Pattern: `printL\B`, IsRegExp: true},
+		want: autogold.Expect(`main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "world", ExcludePattern: "README.md"},
-		autogold.Expect(`main.go:6:6:
+		arg: protocol.PatternInfo{Pattern: "world", ExcludePattern: "README.md"},
+		want: autogold.Expect(`main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.md$`}},
-		autogold.Expect(`README.md:1:1:
+		arg: protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.md$`}},
+		want: autogold.Expect(`README.md:1:1:
 # Hello World
 README.md:3:3:
 Hello world example in go
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{`\.(md|txt)$`, `\.txt$`}},
-		autogold.Expect("abc.txt:1:1:\nw\n"),
+		arg:  protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{`\.(md|txt)$`, `\.txt$`}},
+		want: autogold.Expect("abc.txt:1:1:\nw\n"),
 	}, {
-		protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md"},
-		autogold.Expect(`main.go:6:6:
+		arg: protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md"},
+		want: autogold.Expect(`main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"\\.md"}},
-		autogold.Expect(`README.md:1:1:
+		arg: protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"\\.md"}},
+		want: autogold.Expect(`README.md:1:1:
 # Hello World
 README.md:3:3:
 Hello world example in go
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"\\.(md|txt)", "README"}},
-		autogold.Expect(`README.md:1:1:
+		arg: protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"\\.(md|txt)", "README"}},
+		want: autogold.Expect(`README.md:1:1:
 # Hello World
 README.md:3:3:
 Hello world example in go
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
-		autogold.Expect(`main.go:6:6:
+		arg: protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
+		want: autogold.Expect(`main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)`}, PathPatternsAreCaseSensitive: true},
-		autogold.Expect(`main.go:6:6:
+		arg: protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)`}, PathPatternsAreCaseSensitive: true},
+		want: autogold.Expect(`main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "doesnotmatch"},
-		autogold.Expect(""),
+		arg:  protocol.PatternInfo{Pattern: "doesnotmatch"},
+		want: autogold.Expect(""),
 	}, {
-		protocol.PatternInfo{Pattern: "", IsRegExp: false, IncludePatterns: []string{"\\.png"}, PatternMatchesPath: true},
-		autogold.Expect("milton.png\n"),
+		arg:  protocol.PatternInfo{Pattern: "", IsRegExp: false, IncludePatterns: []string{"\\.png"}, PatternMatchesPath: true},
+		want: autogold.Expect("milton.png\n"),
 	}, {
-		protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
-		autogold.Expect(`main.go:1:3:
+		arg: protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
+		want: autogold.Expect(`main.go:1:3:
 package main
 
 import "fmt"
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "package main\n\\s*import \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
-		autogold.Expect(`main.go:1:3:
+		arg: protocol.PatternInfo{Pattern: "package main\n\\s*import \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
+		want: autogold.Expect(`main.go:1:3:
 package main
 
 import "fmt"
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "package main\n", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
-		autogold.Expect("main.go:1:2:\npackage main\n\n"),
+		arg:  protocol.PatternInfo{Pattern: "package main\n", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
+		want: autogold.Expect("main.go:1:2:\npackage main\n\n"),
 	}, {
-		protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
-		autogold.Expect(`main.go:1:3:
+		arg: protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
+		want: autogold.Expect(`main.go:1:3:
 package main
 
 import "fmt"
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "\nfunc", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
-		autogold.Expect("main.go:4:5:\n\nfunc main() {\n")}, {
-		protocol.PatternInfo{Pattern: "\n\\s*func", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
-		autogold.Expect(`main.go:3:5:
+		arg:  protocol.PatternInfo{Pattern: "\nfunc", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
+		want: autogold.Expect("main.go:4:5:\n\nfunc main() {\n"),
+	}, {
+		arg: protocol.PatternInfo{Pattern: "\n\\s*func", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
+		want: autogold.Expect(`main.go:3:5:
 import "fmt"
 
 func main() {
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"\n\nfunc main\\(\\) {", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
-		autogold.Expect(`main.go:1:5:
+		arg: protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"\n\nfunc main\\(\\) {", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
+		want: autogold.Expect(`main.go:1:5:
 package main
 
 import "fmt"
@@ -215,8 +217,8 @@ import "fmt"
 func main() {
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "\n", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
-		autogold.Expect(`README.md:1:3:
+		arg: protocol.PatternInfo{Pattern: "\n", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true},
+		want: autogold.Expect(`README.md:1:3:
 # Hello World
 
 Hello world example in go
@@ -231,8 +233,8 @@ fmt.Println("Hello world")
 
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "^$", IsRegExp: true},
-		autogold.Expect(`README.md:2:2:
+		arg: protocol.PatternInfo{Pattern: "^$", IsRegExp: true},
+		want: autogold.Expect(`README.md:2:2:
 
 main.go:2:2:
 
@@ -244,26 +246,26 @@ milton.png:1:1:
 
 `),
 	}, {
-		protocol.PatternInfo{
+		arg: protocol.PatternInfo{
 			Pattern:         "filename contains regex metachars",
 			IncludePatterns: []string{regexp.QuoteMeta("file++.plus")},
 			IsStructuralPat: true,
 			IsRegExp:        true, // To test for a regression, imply that IsStructuralPat takes precedence.
 		},
-		autogold.Expect(`file++.plus:1:1:
+		want: autogold.Expect(`file++.plus:1:1:
 filename contains regex metachars
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "World", IsNegated: true},
-		autogold.Expect(`abc.txt
+		arg: protocol.PatternInfo{Pattern: "World", IsNegated: true},
+		want: autogold.Expect(`abc.txt
 file++.plus
 milton.png
 nonutf8.txt
 symlink
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true, IsNegated: true},
-		autogold.Expect(`abc.txt
+		arg: protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true, IsNegated: true},
+		want: autogold.Expect(`abc.txt
 file++.plus
 main.go
 milton.png
@@ -271,8 +273,8 @@ nonutf8.txt
 symlink
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "fmt", IsNegated: true},
-		autogold.Expect(`README.md
+		arg: protocol.PatternInfo{Pattern: "fmt", IsNegated: true},
+		want: autogold.Expect(`README.md
 abc.txt
 file++.plus
 milton.png
@@ -280,17 +282,17 @@ nonutf8.txt
 symlink
 `),
 	}, {
-		protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: true},
-		autogold.Expect("abc.txt\nsymlink:1:1:\nabc.txt\n"),
+		arg:  protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: true},
+		want: autogold.Expect("abc.txt\nsymlink:1:1:\nabc.txt\n"),
 	}, {
-		protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: false, PatternMatchesContent: true},
-		autogold.Expect("symlink:1:1:\nabc.txt\n"),
+		arg:  protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: false, PatternMatchesContent: true},
+		want: autogold.Expect("symlink:1:1:\nabc.txt\n"),
 	}, {
-		protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: false},
-		autogold.Expect("abc.txt\n"),
+		arg:  protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: false},
+		want: autogold.Expect("abc.txt\n"),
 	}, {
-		protocol.PatternInfo{Pattern: "utf8", PatternMatchesPath: false, PatternMatchesContent: true},
-		autogold.Expect(`nonutf8.txt:1:1:
+		arg: protocol.PatternInfo{Pattern: "utf8", PatternMatchesPath: false, PatternMatchesContent: true},
+		want: autogold.Expect(`nonutf8.txt:1:1:
 file contains invalid utf8 � characters
 `),
 	}}
@@ -316,11 +318,12 @@ file contains invalid utf8 � characters
 			}
 
 			req := protocol.Request{
-				Repo:         "foo",
-				URL:          "u",
-				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-				PatternInfo:  test.arg,
-				FetchTimeout: fetchTimeoutForCI(t),
+				Repo:            "foo",
+				URL:             "u",
+				Commit:          "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+				PatternInfo:     test.arg,
+				FetchTimeout:    fetchTimeoutForCI(t),
+				NumContextLines: test.contextLines,
 			}
 			m, err := doSearch(ts.URL, &req)
 			if err != nil {
