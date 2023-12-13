@@ -60,6 +60,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Added Cody providers data to pings. [#58848](https://github.com/sourcegraph/sourcegraph/pull/58848)
+- Added the ability to proxy authentication requests when using the Azure OpenAI Cody provider. [#58862](https://github.com/sourcegraph/sourcegraph/pull/58862)
 
 ### Fixed
 
