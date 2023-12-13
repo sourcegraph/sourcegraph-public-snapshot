@@ -38,6 +38,9 @@ export function useDeleteInsight(): UseDeleteInsightAPI {
                 await deleteInsight(insight.id).toPromise()
                 const insightType = getTrackingTypeByInsightType(insight.type)
 
+                window.context.telemetryRecorder?.recordEvent('insightRemoval', 'deleted', {
+                    privateMetadata: { insightType },
+                })
                 eventLogger.log('InsightRemoval', { insightType }, { insightType })
             } catch (error) {
                 // TODO [VK] Improve error UI for deleting
@@ -45,7 +48,7 @@ export function useDeleteInsight(): UseDeleteInsightAPI {
                 setError(error)
             }
         },
-        [loading, deleteInsight]
+        [loading, deleteInsight, window.context.telemetryRecorder]
     )
 
     return { delete: handleDelete, loading, error }

@@ -24,9 +24,14 @@ interface CodyPlatformCardProps {
     illustration: string
 }
 
-const onSpeakToAnEngineer = (): void => eventLogger.log(EventName.SPEAK_TO_AN_ENGINEER_CTA)
-const onClickCTAButton = (type: string): void =>
+const onSpeakToAnEngineer = (): void => {
+    window.context.telemetryRecorder?.recordEvent(EventName.SPEAK_TO_AN_ENGINEER_CTA, 'clicked')
+    eventLogger.log(EventName.SPEAK_TO_AN_ENGINEER_CTA)
+}
+const onClickCTAButton = (type: string): void => {
+    window.context.telemetryRecorder?.recordEvent('signupInitiated.codySignedOut', 'clicked')
     eventLogger.log('SignupInitiated', { type, source: 'cody-signed-out' }, { type, page: 'cody-signed-out' })
+}
 
 const IDEIcon: React.FunctionComponent<{}> = () => (
     <svg viewBox="-4 -4 31 31" fill="none" xmlns="http://www.w3.org/2000/svg" className={styles.codyPlatformCardIcon}>

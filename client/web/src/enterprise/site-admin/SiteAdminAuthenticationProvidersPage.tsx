@@ -58,6 +58,7 @@ interface Props {}
  */
 export class SiteAdminAuthenticationProvidersPage extends React.Component<Props> {
     public componentDidMount(): void {
+        window.context.telemetryRecorder?.recordEvent('siteAdminAuthentication', 'viewed')
         eventLogger.logViewEvent('SiteAdminAuthentication')
     }
 

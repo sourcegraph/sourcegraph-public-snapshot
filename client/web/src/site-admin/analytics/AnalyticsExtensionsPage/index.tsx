@@ -33,8 +33,9 @@ export const AnalyticsExtensionsPage: React.FunctionComponent = () => {
         }
     )
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('adminAnalyticsExtensions', 'viewed')
         eventLogger.logPageView('AdminAnalyticsExtensions')
-    }, [])
+    }, [window.context.telemetryRecorder])
     const [stats, legends, calculatorProps, installationStats] = useMemo(() => {
         if (!data) {
             return []

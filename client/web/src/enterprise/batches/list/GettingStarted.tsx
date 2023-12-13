@@ -96,9 +96,13 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     To automate changes across your team's private repositories,{' '}
                     <Link
                         to="https://about.sourcegraph.com"
-                        onClick={() =>
+                        onClick={() => {
+                            window.context.telemetryRecorder?.recordEvent(
+                                'enterpriseCta.batchChangesGettingStarted',
+                                'clicked'
+                            )
                             eventLogger.log('ClickedOnEnterpriseCTA', { location: 'BatchChangesGettingStarted' })
-                        }
+                        }}
                     >
                         get Sourcegraph Enterprise
                     </Link>

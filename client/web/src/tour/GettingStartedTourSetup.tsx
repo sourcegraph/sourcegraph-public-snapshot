@@ -55,15 +55,17 @@ export const GettingStartedTourSetup: FC<GettingStartedTourSetupProps> = ({ user
 
     const nextStep = (): void => setStep(step => step + 1)
     const done = (): void => {
+        window.context.telemetryRecorder?.recordEvent('tourSetup', 'completed')
         eventLogger.log('TourSetupCompleted')
         setOpen(false)
     }
 
     useEffect(() => {
         if (open) {
+            window.context.telemetryRecorder?.recordEvent('tourSetup', 'shown')
             eventLogger.log('TourSetupShown')
         }
-    }, [open])
+    }, [open, window.context.telemetryRecorder])
 
     useEffect(() => {
         if (!open && repoInput && emailInput && languageInput) {
@@ -131,6 +133,7 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
         onHandleNext?.()
     }
     const skip = (): void => {
+        window.context.telemetryRecorder?.recordEvent('tourSetup', 'skipped')
         eventLogger.log('TourSetupSkipped')
         setConfig({ skipped: true })
     }

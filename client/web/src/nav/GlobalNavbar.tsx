@@ -320,7 +320,14 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             <Link
                                 to="/get-cody"
                                 className={classNames(styles.link, 'small')}
-                                onClick={() => eventLogger.log(EventName.CODY_CTA, { location: EventLocation.NAV_BAR })}
+                                onClick={() => {
+                                    window.context.telemetryRecorder?.recordEvent(EventName.CODY_CTA, 'clicked', {
+                                        privateMetadata: {
+                                            location: EventLocation.NAV_BAR,
+                                        },
+                                    })
+                                    eventLogger.log(EventName.CODY_CTA, { location: EventLocation.NAV_BAR })
+                                }}
                             >
                                 Install Cody locally
                             </Link>

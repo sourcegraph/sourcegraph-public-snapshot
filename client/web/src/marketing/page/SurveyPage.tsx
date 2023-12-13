@@ -31,6 +31,7 @@ export const SurveyPage: React.FunctionComponent<React.PropsWithChildren<SurveyP
     const score = props.forceScore || matchParameters.score
 
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('survey', 'viewed')
         eventLogger.logViewEvent('Survey')
     }, [])
 

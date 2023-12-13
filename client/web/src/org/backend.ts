@@ -80,9 +80,11 @@ export function createOrganization(args: {
         .pipe(
             mergeMap(({ data, errors }) => {
                 if (!data?.createOrganization) {
+                    window.context.telemetryRecorder?.recordEvent('newOrg', 'failed')
                     eventLogger.log('NewOrgFailed')
                     throw createAggregateError(errors)
                 }
+                window.context.telemetryRecorder?.recordEvent('newOrg', 'created')
                 eventLogger.log('NewOrgCreated')
                 return concat(refreshAuthenticatedUser(), [data.createOrganization])
             })
@@ -115,9 +117,11 @@ export function removeUserFromOrganization(args: {
     ).pipe(
         mergeMap(({ errors }) => {
             if (errors && errors.length > 0) {
+                window.context.telemetryRecorder?.recordEvent('removeOrgMember', 'failed')
                 eventLogger.log('RemoveOrgMemberFailed')
                 throw createAggregateError(errors)
             }
+            window.context.telemetryRecorder?.recordEvent('removeOrgMember', 'removed')
             eventLogger.log('OrgMemberRemoved')
             // Reload user data
             return concat(refreshAuthenticatedUser(), [undefined])
@@ -149,9 +153,11 @@ export function updateOrganization(id: Scalars['ID'], displayName: string): Prom
         .pipe(
             map(({ data, errors }) => {
                 if (!data || (errors && errors.length > 0)) {
+                    window.context.telemetryRecorder?.recordEvent('updateOrgSettings', 'failed')
                     eventLogger.log('UpdateOrgSettingsFailed')
                     throw createAggregateError(errors)
                 }
+                window.context.telemetryRecorder?.recordEvent('updateOrgSettings', 'updated')
                 eventLogger.log('OrgSettingsUpdated')
                 return
             })

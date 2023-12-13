@@ -99,6 +99,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        window.context.telemetryRecorder?.recordEvent('repositoryBranchesOverview', 'viewed')
         eventLogger.logViewEvent('RepositoryBranchesOverview')
 
         this.subscriptions.add(

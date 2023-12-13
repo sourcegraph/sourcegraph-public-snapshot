@@ -67,6 +67,7 @@ export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>>
                     ).toPromise()
                 )
 
+                window.context.telemetryRecorder?.recordEvent('newUserEmailAddress', 'added')
                 eventLogger.log('NewUserEmailAddressAdded')
                 screenReaderAnnounce('Email address added')
 

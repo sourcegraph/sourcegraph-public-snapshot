@@ -44,7 +44,10 @@ export interface ExecutorsListPageProps {
 }
 
 export const ExecutorsListPage: React.FC<ExecutorsListPageProps> = ({ queryExecutors = defaultQueryExecutors }) => {
-    useEffect(() => eventLogger.logViewEvent('ExecutorsList'))
+    useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('executorsList', 'viewed')
+        eventLogger.logViewEvent('ExecutorsList')
+    })
 
     const apolloClient = useApolloClient()
     const queryExecutorsCallback = useCallback(

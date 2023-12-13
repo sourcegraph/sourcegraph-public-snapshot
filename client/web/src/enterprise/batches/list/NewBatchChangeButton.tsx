@@ -25,6 +25,7 @@ export const NewBatchChangeButton: React.FunctionComponent<React.PropsWithChildr
             variant="primary"
             as={Link}
             onClick={() => {
+                window.context.telemetryRecorder?.recordEvent('batchChangeListPage.createBatchChange', 'clicked')
                 eventLogger.log('batch_change_list_page:create_batch_change_details:clicked')
             }}
         >

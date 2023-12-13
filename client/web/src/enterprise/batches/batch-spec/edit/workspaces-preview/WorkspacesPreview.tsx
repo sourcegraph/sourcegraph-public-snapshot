@@ -157,6 +157,10 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren
                             isWorkspacesPreviewInProgress
                                 ? cancel
                                 : () => {
+                                      window.context.telemetryRecorder?.recordEvent(
+                                          'batchChangeEditor.previewWorkspaces',
+                                          'clicked'
+                                      )
                                       eventLogger.log('batch_change_editor:preview_workspaces:clicked')
                                       return preview(debouncedCode)
                                   }

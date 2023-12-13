@@ -47,7 +47,13 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                                 as={Link}
                                 to="https://about.sourcegraph.com"
                                 variant="primary"
-                                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryInsights' })}
+                                onClick={() => {
+                                    window.context.telemetryRecorder?.recordEvent(
+                                        'enterpriseCta.tryInsights',
+                                        'clicked'
+                                    )
+                                    eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryInsights' })
+                                }}
                             >
                                 Get Sourcegraph Enterprise
                             </Button>
@@ -86,7 +92,10 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         To track Insights across your team's private repositories,{' '}
                         <Link
                             to="https://about.sourcegraph.com"
-                            onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Insights' })}
+                            onClick={() => {
+                                window.context.telemetryRecorder?.recordEvent('enterpriseCta.insights', 'clicked')
+                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Insights' })
+                            }}
                         >
                             get Sourcegraph Enterprise
                         </Link>

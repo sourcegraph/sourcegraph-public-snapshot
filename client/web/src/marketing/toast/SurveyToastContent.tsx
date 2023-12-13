@@ -55,6 +55,7 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
     })
 
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('surveryReminder', 'viewed')
         eventLogger.log('SurveyReminderViewed')
     }, [])
 

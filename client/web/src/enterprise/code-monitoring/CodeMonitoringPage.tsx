@@ -92,16 +92,19 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
         if (userHasCodeMonitors !== undefined) {
             switch (currentTab) {
                 case 'getting-started':
+                    window.context.telemetryRecorder?.recordEvent('codeMonitoringGettingStarted', 'viewed')
                     eventLogger.logPageView('CodeMonitoringGettingStartedPage')
                     break
                 case 'logs':
+                    window.context.telemetryRecorder?.recordEvent('codeMonitoringLogs', 'viewed')
                     eventLogger.logPageView('CodeMonitoringLogsPage')
                     break
                 case 'list':
+                    window.context.telemetryRecorder?.recordEvent('codeMonitoring', 'viewed')
                     eventLogger.logPageView('CodeMonitoringPage')
             }
         }
-    }, [currentTab, userHasCodeMonitors])
+    }, [currentTab, userHasCodeMonitors, window.context.telemetryRecorder])
 
     const showList = userHasCodeMonitors !== undefined && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
 

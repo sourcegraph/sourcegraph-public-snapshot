@@ -77,6 +77,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
             return
         }
 
+        window.context.telemetryRecorder?.recordEvent('survey', 'submitted')
         eventLogger.log('SurveySubmitted')
 
         await submitSurvey({

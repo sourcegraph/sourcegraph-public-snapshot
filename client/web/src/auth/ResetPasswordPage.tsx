@@ -262,6 +262,7 @@ export const ResetPasswordPage: React.FunctionComponent<ResetPasswordPageProps> 
     const location = useLocation()
 
     React.useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('resetPasswordPage', 'viewed')
         eventLogger.logViewEvent('ResetPassword', false)
     }, [])
 

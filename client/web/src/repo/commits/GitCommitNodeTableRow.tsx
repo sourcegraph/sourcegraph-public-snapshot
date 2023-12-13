@@ -30,6 +30,7 @@ export const GitCommitNodeTableRow: React.FC<
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
 
     const toggleShowCommitMessageBody = useCallback((): void => {
+        window.context.telemetryRecorder?.recordEvent('commitBody', 'toggled')
         eventLogger.log('CommitBodyToggled')
         setShowCommitMessageBody(!showCommitMessageBody)
     }, [showCommitMessageBody])

@@ -22,7 +22,10 @@ interface Props {}
  * Displays the product subscriptions that have been created on Sourcegraph.com.
  */
 export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
-    useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscriptions'), [])
+    useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('siteAdminProductSubscriptions', 'viewed')
+        eventLogger.logViewEvent('SiteAdminProductSubscriptions')
+    }, [window.context.telemetryRecorder])
 
     return (
         <div className="site-admin-product-subscriptions-page">

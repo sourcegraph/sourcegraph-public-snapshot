@@ -322,8 +322,9 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWi
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
 
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('siteAdminSurveyResponses', 'viewed')
         eventLogger.logViewEvent('SiteAdminSurveyResponses')
-    }, [])
+    }, [window.context.telemetryRecorder])
 
     return (
         <div className="site-admin-survey-responses-page">

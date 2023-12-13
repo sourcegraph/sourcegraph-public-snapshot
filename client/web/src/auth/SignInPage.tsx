@@ -39,7 +39,10 @@ export interface SignInPageProps {
 
 export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
     const { context, authenticatedUser } = props
-    useEffect(() => eventLogger.logViewEvent('SignIn', null, false))
+    useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('signIn', 'viewed')
+        eventLogger.logViewEvent('SignIn', null, false)
+    })
 
     const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
@@ -164,14 +167,20 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                             To use Sourcegraph on private repositories,{' '}
                             <Link
                                 to="https://about.sourcegraph.com/app"
-                                onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'SignInPage' })}
+                                onClick={() => {
+                                    window.context.telemetryRecorder?.recordEvent('appCta.signInPage', 'clicked')
+                                    eventLogger.log('ClickedOnAppCTA', { location: 'SignInPage' })
+                                }}
                             >
                                 download Cody app
                             </Link>{' '}
                             or{' '}
                             <Link
                                 to="https://sourcegraph.com/get-started?t=enterprise"
-                                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })}
+                                onClick={() => {
+                                    window.context.telemetryRecorder?.recordEvent('enterpriseCta.signInPage', 'clicked')
+                                    eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })
+                                }}
                             >
                                 get Sourcegraph Enterprise
                             </Link>

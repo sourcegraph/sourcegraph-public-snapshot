@@ -260,6 +260,9 @@ export const downloadSearchResults = (
         a.style.display = 'none'
         a.download = buildFileName(query)
         a.click()
+        window.context.telemetryRecorder?.recordEvent('searchExportPerformed', 'succeeded', {
+            metadata: { count: results.results.length },
+        })
         eventLogger.log('SearchExportPerformed', { count: results.results.length }, { count: results.results.length })
 
         // cleanup

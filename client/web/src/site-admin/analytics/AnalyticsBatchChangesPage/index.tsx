@@ -31,8 +31,9 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent = () => {
         }
     )
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('adminAnalyticsBatchChanges', 'viewed')
         eventLogger.logPageView('AdminAnalyticsBatchChanges')
-    }, [])
+    }, [window.context.telemetryRecorder])
     const [stats, legends, calculatorProps] = useMemo(() => {
         if (!data) {
             return []

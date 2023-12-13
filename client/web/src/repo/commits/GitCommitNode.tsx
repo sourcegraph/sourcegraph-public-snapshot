@@ -92,12 +92,17 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     const canonicalURL = getCanonicalURL(sourceType, node)
 
     const toggleShowCommitMessageBody = useCallback((): void => {
+        window.context.telemetryRecorder?.recordEvent('commitBody', 'toggled')
         eventLogger.log('CommitBodyToggled')
         setShowCommitMessageBody(!showCommitMessageBody)
     }, [showCommitMessageBody])
 
     const copyToClipboard = useCallback(
         (oid: string): void => {
+            window.context.telemetryRecorder?.recordEvent(
+                isPerforceDepot ? 'ChangelistIDCopiedToClipboard' : 'CommitSHACopiedToClipboard',
+                'copied'
+            )
             eventLogger.log(isPerforceDepot ? 'ChangelistIDCopiedToClipboard' : 'CommitSHACopiedToClipboard')
             copy(oid)
             setFlashCopiedToClipboardMessage(true)

@@ -35,8 +35,9 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
     React.PropsWithChildren<Props>
 > = props => {
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('userSubscriptionsProductSubscriptions', 'viewed')
         eventLogger.logViewEvent('UserSubscriptionsProductSubscriptions')
-    }, [])
+    }, [window.context.telemetryRecorder])
 
     const queryLicenses = useCallback(
         (args: { first?: number }): Observable<ProductSubscriptionsResult['dotcom']['productSubscriptions']> => {
@@ -85,7 +86,10 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                         Search your private code with{' '}
                         <Link
                             to="https://about.sourcegraph.com"
-                            onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Subscriptions' })}
+                            onClick={() => {
+                                window.context.telemetryRecorder?.recordEvent('enterpriseCta.subscriptions', 'clicked')
+                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Subscriptions' })
+                            }}
                         >
                             Sourcegraph Enterprise
                         </Link>

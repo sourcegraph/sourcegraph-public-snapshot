@@ -2,6 +2,7 @@ import { type FunctionComponent, useState, useCallback } from 'react'
 
 import { asError, type ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Badge, Button, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
@@ -18,7 +19,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 
 import styles from './UserEmail.module.scss'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     user: string
     email: (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
     disableControls: boolean
@@ -47,6 +48,7 @@ export const resendVerificationEmail = async (
             ).toPromise()
         )
 
+        window.context.telemetryRecorder?.recordEvent('userEmailAddressVerification', 'resent')
         eventLogger.log('UserEmailAddressVerificationResent')
 
         options?.onSuccess?.()
@@ -92,6 +94,7 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
             )
 
             setIsLoading(false)
+            window.context.telemetryRecorder?.recordEvent('userEmailAddress', 'deleted')
             eventLogger.log('UserEmailAddressDeleted')
             screenReaderAnnounce('Email address removed')
 
@@ -123,8 +126,10 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
             setIsLoading(false)
 
             if (verified) {
+                window.context.telemetryRecorder?.recordEvent('userEmailAddress', 'verified')
                 eventLogger.log('UserEmailAddressMarkedVerified')
             } else {
+                window.context.telemetryRecorder?.recordEvent('userEmailAddress', 'unverified')
                 eventLogger.log('UserEmailAddressMarkedUnverified')
             }
 

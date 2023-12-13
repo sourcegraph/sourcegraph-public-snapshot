@@ -43,11 +43,19 @@ const SOURCEGRAPH_MAC_INTEL = 'https://sourcegraph.com/.api/app/latest?arch=x86_
 
 const SOURCEGRAPH_LINUX = 'https://sourcegraph.com/.api/app/latest?arch=x86_64&target=linux'
 
-const onClickCTAButton = (type: string): void =>
+const onClickCTAButton = (type: string): void => {
+    window.context.telemetryRecorder?.recordEvent(EventName.SIGNUP_INITIATED, 'clicked', {
+        privateMetadata: { type, source: 'get-started' },
+    })
     eventLogger.log(EventName.SIGNUP_INITIATED, { type, source: 'get-started' })
+}
 
-const logEvent = (eventName: string, type?: string, source?: string): void =>
+const logEvent = (eventName: EventName, type?: string, source?: string): void => {
+    window.context.telemetryRecorder?.recordEvent(eventName, 'clicked', {
+        privateMetadata: { type, source },
+    })
     eventLogger.log(eventName, { type, source })
+}
 
 export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authenticatedUser, context }) => {
     useEffect(() => {

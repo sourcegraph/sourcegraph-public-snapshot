@@ -48,6 +48,7 @@ export function useChartFilters(props: IProps): IResult {
                     grouping:
                         value === AnalyticsDateRange.LAST_WEEK ? AnalyticsGrouping.DAILY : AnalyticsGrouping.WEEKLY,
                 })
+                window.context.telemetryRecorder?.recordEvent(`AdminAnalytics${props.name}DateRange${value}`, 'viewed')
                 eventLogger.log(`AdminAnalytics${props.name}DateRange${value}`)
             },
             items: [
@@ -60,6 +61,10 @@ export function useChartFilters(props: IProps): IResult {
             selected: data.aggregation,
             onChange: value => {
                 setData({ aggregation: value })
+                window.context.telemetryRecorder?.recordEvent(
+                    `AdminAnalytics${props.name}Aggregate${value === 'count' ? 'Totals' : 'Uniques'}`,
+                    'viewed'
+                )
                 eventLogger.log(`AdminAnalytics${props.name}Aggregate${value === 'count' ? 'Totals' : 'Uniques'}`)
             },
             items: [
@@ -80,6 +85,7 @@ export function useChartFilters(props: IProps): IResult {
             label: 'Display as',
             onChange: value => {
                 setData({ grouping: value })
+                window.context.telemetryRecorder?.recordEvent(`AdminAnalytics${props.name}DisplayAs${value}`, 'viewed')
                 eventLogger.log(`AdminAnalytics${props.name}DisplayAs${value}`)
             },
             items: [

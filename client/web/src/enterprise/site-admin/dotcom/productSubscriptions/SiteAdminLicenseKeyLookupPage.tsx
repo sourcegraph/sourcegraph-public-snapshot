@@ -28,7 +28,10 @@ const SEARCH_PARAM_KEY = 'query'
  * Displays the product licenses that have been created on Sourcegraph.com.
  */
 export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
-    useEffect(() => eventLogger.logPageView('SiteAdminLicenseKeyLookup'), [])
+    useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('siteAdminLicenseKeyLookup', 'viewed')
+        eventLogger.logPageView('SiteAdminLicenseKeyLookup')
+    }, [window.context.telemetryRecorder])
 
     const [searchParams, setSearchParams] = useSearchParams()
 

@@ -48,6 +48,7 @@ export class ToggleLineWrap extends React.PureComponent<
     public componentDidMount(): void {
         this.subscriptions.add(
             this.updates.subscribe(value => {
+                window.context.telemetryRecorder?.recordEvent(value ? 'WrappedCode' : 'UnwrappedCode', 'toggled')
                 eventLogger.log(value ? 'WrappedCode' : 'UnwrappedCode')
                 ToggleLineWrap.setValue(value)
                 this.setState({ value })

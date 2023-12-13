@@ -26,9 +26,11 @@ export function createAccessToken(
     ).pipe(
         map(({ data, errors }) => {
             if (!data?.createAccessToken || (errors && errors.length > 0)) {
+                window.context.telemetryRecorder?.recordEvent('createAccessToken', 'failed')
                 eventLogger.log('CreateAccessTokenFailed')
                 throw createAggregateError(errors)
             }
+            window.context.telemetryRecorder?.recordEvent('createAccessToken', 'succeeded')
             eventLogger.log('AccessTokenCreated')
             return data.createAccessToken
         })

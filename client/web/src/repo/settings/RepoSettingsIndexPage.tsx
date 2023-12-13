@@ -258,6 +258,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        window.context.telemetryRecorder?.recordEvent('repoSettingsIndex', 'viewed')
         eventLogger.logViewEvent('RepoSettingsIndex')
 
         this.subscriptions.add(

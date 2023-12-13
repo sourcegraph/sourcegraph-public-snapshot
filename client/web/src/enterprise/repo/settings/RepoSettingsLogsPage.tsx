@@ -43,7 +43,10 @@ export interface RepoSettingsLogsPageProps {
  */
 export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) => {
     const [activeTabIndex, setActiveTabIndex] = useState<number>(LogsPageTabs.COMMANDS)
-    useEffect(() => eventLogger.logPageView('RepoSettingsLogs'), [])
+    useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('repoSettingsLogs', 'viewed')
+        eventLogger.logPageView('RepoSettingsLogs')
+    }, [window.context.telemetryRecorder])
     const [searchParams, setSearchParams] = useSearchParams()
     const activeTab = searchParams.get('activeTab') ?? LogsPageTabs.COMMANDS.toString()
 

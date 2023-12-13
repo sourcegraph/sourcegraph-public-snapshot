@@ -181,12 +181,14 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             window.confirm('Discard settings edits?')
         ) {
             eventLogger.log('SettingsFileDiscard')
+            window.context.telemetryRecorder?.recordEvent('settingsFile', 'discarded')
             this.setState({
                 contents: undefined,
                 editingLastID: undefined,
             })
             this.props.onDidDiscard()
         } else {
+            window.context.telemetryRecorder?.recordEvent('settingsFile', 'discardedCanceled')
             eventLogger.log('SettingsFileDiscardCanceled')
         }
     }
@@ -199,6 +201,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     }
 
     private save = (): void => {
+        window.context.telemetryRecorder?.recordEvent('settingsFile', 'saved')
         eventLogger.log('SettingsFileSaved')
         this.setState({ saving: true }, () => {
             this.props.onDidCommit(this.getPropsSettingsID(), this.state.contents!)

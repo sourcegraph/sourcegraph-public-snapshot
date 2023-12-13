@@ -49,6 +49,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
             }
 
             setLoading(true)
+            window.context.telemetryRecorder?.recordEvent('initiatesSignIn', 'triggered')
             eventLogger.log('InitiateSignIn')
             fetch('/-/sign-in', {
                 credentials: 'same-origin',

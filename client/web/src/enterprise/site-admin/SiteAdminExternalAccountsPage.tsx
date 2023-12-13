@@ -41,6 +41,7 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
     private externalAccountUpdates = new Subject<void>()
 
     public componentDidMount(): void {
+        window.context.telemetryRecorder?.recordEvent('siteAdminExternalAccountsPage', 'viewed')
         eventLogger.logViewEvent('SiteAdminExternalAccounts')
     }
 

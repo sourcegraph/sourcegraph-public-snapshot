@@ -88,7 +88,10 @@ export const GoToCodeHostAction: React.FunctionComponent<
         }, [serviceType, props.perforceCodeHostUrlToSwarmUrlMap, props.repo, props.repoName, props.revision])
     )
 
-    const onClick = useCallback(() => eventLogger.log('GoToCodeHostClicked'), [])
+    const onClick = useCallback(() => {
+        window.context.telemetryRecorder?.recordEvent('goToCodeHost', 'clicked')
+        eventLogger.log('GoToCodeHostClicked')
+    }, [window.context.telemetryRecorder])
 
     // If the default branch is undefined, set to HEAD
     const defaultBranch =

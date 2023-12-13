@@ -97,6 +97,7 @@ class ApiConsoleInner extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
+        window.context.telemetryRecorder?.recordEvent('apiConsole', 'viewed')
         eventLogger.logViewEvent('ApiConsole')
 
         // Update the browser URL bar when query/variables/operation name are

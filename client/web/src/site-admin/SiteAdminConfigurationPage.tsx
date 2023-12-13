@@ -250,6 +250,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        window.context.telemetryRecorder?.recordEvent('siteAdminConfiguraation', 'viewed')
         eventLogger.logViewEvent('SiteAdminConfiguration')
 
         this.subscriptions.add(
@@ -457,6 +458,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
     }
 
     private onSave = async (newContents: string): Promise<string> => {
+        window.context.telemetryRecorder?.recordEvent('siteConfiguration', 'saved')
         eventLogger.log('SiteConfigurationSaved')
 
         this.setState({ saving: true, error: undefined })
@@ -528,6 +530,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
     }
 
     private reloadSite = (): void => {
+        window.context.telemetryRecorder?.recordEvent('siteReloaded', 'reloaded')
         eventLogger.log('SiteReloaded')
         this.siteReloads.next()
     }

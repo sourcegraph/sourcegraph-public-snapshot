@@ -67,6 +67,7 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
     const [isInviteShown, setShowInvitation] = useState<boolean>(false)
 
     const inviteUser = useCallback(() => {
+        window.context.telemetryRecorder?.recordEvent('inviteOrgMemeber', 'clicked')
         eventLogger.log('InviteOrgMemberClicked')
         ;(async () => {
             setLoading('inviteUserToOrganization')
@@ -77,7 +78,7 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
             setUsername('')
             setLoading(undefined)
         })().catch(error => setLoading(asError(error)))
-    }, [onOrganizationUpdate, orgID, setShowInvitation, username])
+    }, [onOrganizationUpdate, orgID, setShowInvitation, username, window.context.telemetryRecorder])
 
     const onInviteClick = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
         inviteUser()
@@ -226,9 +227,11 @@ function inviteUserToOrganization(
         .pipe(
             map(({ data, errors }) => {
                 if (!data?.inviteUserToOrganization || (errors && errors.length > 0)) {
+                    window.context.telemetryRecorder?.recordEvent('inviteOrgMember', 'failed')
                     eventLogger.log('InviteOrgMemberFailed')
                     throw createAggregateError(errors)
                 }
+                window.context.telemetryRecorder?.recordEvent('inviteOrgMember', 'succeeded')
                 eventLogger.log('OrgMemberInvited')
                 return data.inviteUserToOrganization
             })
@@ -253,9 +256,11 @@ function addUserToOrganization(username: string, organization: Scalars['ID']): P
         .pipe(
             map(({ data, errors }) => {
                 if (!data?.addUserToOrganization || (errors && errors.length > 0)) {
+                    window.context.telemetryRecorder?.recordEvent('addOrgMember', 'failed')
                     eventLogger.log('AddOrgMemberFailed')
                     throw createAggregateError(errors)
                 }
+                window.context.telemetryRecorder?.recordEvent('addOrgMember', 'succeeded')
                 eventLogger.log('OrgMemberAdded')
             })
         )

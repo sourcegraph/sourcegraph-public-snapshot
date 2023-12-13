@@ -3,6 +3,7 @@ import classNames from 'classnames'
 import { Badge, Icon, Link } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../tracking/eventLogger'
+import { EventName } from '../util/constants'
 
 import styles from './DownloadAppButton.module.scss'
 
@@ -11,7 +12,7 @@ interface DownloadAppButtonProps {
     icon: string
     buttonText: string
     badgeText: string
-    eventName: string
+    eventName: EventName
     eventType: string
 }
 
@@ -24,6 +25,9 @@ export const DownloadAppButton: React.FunctionComponent<DownloadAppButtonProps> 
     eventType,
 }) => {
     const handleOnClick = (): void => {
+        window.context.telemetryRecorder?.recordEvent(eventName, 'clicked', {
+            privateMetadata: { type: eventType, source: 'get-started' },
+        })
         eventLogger.log(eventName, { type: eventType })
     }
 

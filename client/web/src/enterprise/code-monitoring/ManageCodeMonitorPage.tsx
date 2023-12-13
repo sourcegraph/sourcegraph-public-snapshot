@@ -44,7 +44,10 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
 }) => {
     const LOADING = 'loading' as const
 
-    useEffect(() => eventLogger.logPageView('ManageCodeMonitorPage'), [])
+    useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('manageCodeMonitor', 'viewed')
+        eventLogger.logPageView('ManageCodeMonitorPage')
+    }, [window.context.telemetryRecorder])
 
     const { id } = useParams()
 
@@ -79,6 +82,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
 
     const updateMonitorRequest = React.useCallback(
         (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> => {
+            window.context.telemetryRecorder?.recordEvent('manageCodeMonitorForm', 'submitted')
             eventLogger.log('ManageCodeMonitorFormSubmitted')
             return updateCodeMonitor(
                 {
@@ -98,6 +102,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
 
     const deleteMonitorRequest = React.useCallback(
         (id: string): Observable<void> => {
+            window.context.telemetryRecorder?.recordEvent('manageCodeMonitorDelete', 'submitted')
             eventLogger.log('ManageCodeMonitorDeleteSubmitted')
             return deleteCodeMonitor(id)
         },

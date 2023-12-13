@@ -79,6 +79,7 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
                     variant="secondary"
                     as={Link}
                     onClick={() => {
+                        window.context.telemetryRecorder?.recordEvent('batchChangeDetails.edit', 'clicked')
                         eventLogger.log('batch_change_details:edit:clicked')
                     }}
                 >
@@ -93,6 +94,7 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
                     outline={true}
                     as={Link}
                     onClick={() => {
+                        window.context.telemetryRecorder?.recordEvent('batchChangeDetails.close', 'clicked')
                         eventLogger.log('batch_change_details:close:clicked')
                     }}
                 >

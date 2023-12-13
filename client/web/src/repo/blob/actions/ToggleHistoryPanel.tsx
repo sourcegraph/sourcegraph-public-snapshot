@@ -65,6 +65,10 @@ export class ToggleHistoryPanel extends React.PureComponent<
         this.subscriptions.add(
             this.toggles.subscribe(() => {
                 const visible = ToggleHistoryPanel.isVisible(this.props.location)
+                window.context.telemetryRecorder?.recordEvent(
+                    visible ? 'HideHistoryPanel' : 'ShowHistoryPanel',
+                    'viewed'
+                )
                 eventLogger.log(visible ? 'HideHistoryPanel' : 'ShowHistoryPanel')
                 this.props.navigate(ToggleHistoryPanel.locationWithVisibility(this.props.location, !visible))
             })

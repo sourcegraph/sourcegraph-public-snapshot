@@ -101,10 +101,11 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     }, {})
 
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('userSettingsPassword', 'viewed')
         eventLogger.logPageView('UserSettingsPassword')
 
         setAccounts({ fetched: data?.user?.externalAccounts.nodes, lastRemoved: '' })
-    }, [data])
+    }, [data, window.context.telemetryRecorder])
 
     const onAccountRemoval = (removeId: string, name: string): void => {
         // keep every account that doesn't match removeId

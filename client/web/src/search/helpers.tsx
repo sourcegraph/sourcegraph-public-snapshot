@@ -56,6 +56,9 @@ export function submitSearch({
     }
 
     const queryWithContext = appendContextFilter(query, selectedSearchContextSpec)
+    window.context.telemetryRecorder?.recordEvent('search', 'submitted', {
+        privateMetadata: { query: queryWithContext, source },
+    })
     eventLogger.log(
         'SearchSubmitted',
         {

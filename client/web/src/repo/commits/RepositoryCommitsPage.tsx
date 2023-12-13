@@ -181,6 +181,7 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
     }
 
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('repositoryCommits', 'viewed')
         eventLogger.logPageView('RepositoryCommits')
     }, [])
 

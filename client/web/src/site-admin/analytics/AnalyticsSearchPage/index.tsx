@@ -30,8 +30,9 @@ export const AnalyticsSearchPage: React.FC = () => {
         },
     })
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('adminAnalyticsSearch', 'viewed')
         eventLogger.logPageView('AdminAnalyticsSearch')
-    }, [])
+    }, [window.context.telemetryRecorder])
     const [stats, legends] = useMemo(() => {
         if (!data) {
             return []

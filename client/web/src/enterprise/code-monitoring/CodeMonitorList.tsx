@@ -81,9 +81,13 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                                 To monitor changes across your private repositories,{' '}
                                 <Link
                                     to="https://about.sourcegraph.com"
-                                    onClick={() =>
+                                    onClick={() => {
+                                        window.context.telemetryRecorder?.recordEvent(
+                                            'enterpriseCta.monitoring',
+                                            'clicked'
+                                        )
                                         eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Monitoring' })
-                                    }
+                                    }}
                                 >
                                     get Sourcegraph Enterprise
                                 </Link>

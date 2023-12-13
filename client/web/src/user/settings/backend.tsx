@@ -80,10 +80,12 @@ export function updatePassword(args: UpdatePasswordVariables): Observable<void> 
     ).pipe(
         map(({ data, errors }) => {
             if (!data?.updatePassword) {
+                window.context.telemetryRecorder?.recordEvent('updatePassword', 'failed')
                 eventLogger.log('UpdatePasswordFailed')
                 throw createAggregateError(errors)
             }
             eventLogger.log('PasswordUpdated')
+            window.context.telemetryRecorder?.recordEvent('updatePassword', 'succeeded')
         })
     )
 }

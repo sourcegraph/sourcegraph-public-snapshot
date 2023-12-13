@@ -43,6 +43,9 @@ export function useRemoveInsightFromDashboard(): useRemoveInsightFromDashboardAP
 
                 const insightType = getTrackingTypeByInsightType(insight.type)
 
+                window.context.telemetryRecorder?.recordEvent('insightRemovalFromDashboard', 'deleted', {
+                    privateMetadata: { insightType },
+                })
                 eventLogger.log('InsightRemovalFromDashboard', { insightType }, { insightType })
             } catch (error) {
                 // TODO [VK] Improve error UI for removing
@@ -50,7 +53,7 @@ export function useRemoveInsightFromDashboard(): useRemoveInsightFromDashboardAP
                 setError(error)
             }
         },
-        [loading, removeInsightFromDashboard]
+        [loading, removeInsightFromDashboard, window.context.telemetryRecorder]
     )
 
     return { remove: handleRemove, loading, error }

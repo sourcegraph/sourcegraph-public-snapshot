@@ -231,6 +231,7 @@ function handleQueryEvents(url: string): void {
     const parsedUrl = new URL(url)
     const isBadgeRedirect = !!parsedUrl.searchParams.get('badge')
     if (isBadgeRedirect) {
+        window.context.telemetryRecorder?.recordEvent('repoBadge', 'redirected')
         eventLogger.log('RepoBadgeRedirected')
     }
 
@@ -256,12 +257,18 @@ function pageViewQueryParameters(url: string): UTMMarker {
     }
 
     if (utmSource === 'saved-search-email') {
+        window.context.telemetryRecorder?.recordEvent('savedSearchEmail', 'clicked')
         eventLogger.log('SavedSearchEmailClicked')
     } else if (utmSource === 'saved-search-slack') {
+        window.context.telemetryRecorder?.recordEvent('savedSearchSlack', 'clicked')
         eventLogger.log('SavedSearchSlackClicked')
     } else if (utmSource === 'code-monitoring-email') {
+        window.context.telemetryRecorder?.recordEvent('codeMonitorEmail', 'clicked')
         eventLogger.log('CodeMonitorEmailLinkClicked')
     } else if (utmSource === 'hubspot' && utmCampaign?.match(/^cloud-onboarding-email(.*)$/)) {
+        window.context.telemetryRecorder?.recordEvent('UTMCampaignLink', 'clicked', {
+            privateMetadata: { utmProps },
+        })
         eventLogger.log('UTMCampaignLinkClicked', utmProps, utmProps)
     } else if (
         [
@@ -273,8 +280,14 @@ function pageViewQueryParameters(url: string): UTMMarker {
             'gitlab-integration',
         ].includes(utmSource ?? '')
     ) {
+        window.context.telemetryRecorder?.recordEvent('UTMCodeHostIntegration', 'clicked', {
+            privateMetadata: { utmProps },
+        })
         eventLogger.log('UTMCodeHostIntegration', utmProps, utmProps)
     } else if (utmMedium === 'VSCODE' && utmCampaign === 'vsce-sign-up') {
+        window.context.telemetryRecorder?.recordEvent('VSCODESignUpLink', 'clicked', {
+            privateMetadata: { utmProps },
+        })
         eventLogger.log('VSCODESignUpLinkClicked', utmProps, utmProps)
     }
 

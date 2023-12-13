@@ -116,6 +116,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                 setError(asError(error))
                 setLoading(false)
             })
+            window.context.telemetryRecorder?.recordEvent('initiatesSignup', 'succeded')
             eventLogger.log('InitiateSignUp')
         },
         [onSignUp, disabled, emailState, usernameState, passwordState]
@@ -125,6 +126,9 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
 
     const onClickExternalAuthSignup = useCallback(
         (type: AuthProvider['serviceType']) => () => {
+            window.context.telemetryRecorder?.recordEvent('signup', 'initiated', {
+                privateMetadata: { type },
+            })
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage
             // https://github.com/sourcegraph/sourcegraph/issues/19174
             eventLogger.log('SignupInitiated', { type }, { type })

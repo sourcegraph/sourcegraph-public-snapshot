@@ -60,7 +60,10 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
             > =>
                 submits.pipe(
                     tap(event => event.preventDefault()),
-                    tap(() => eventLogger.log('NewProductSubscriptionCreated')),
+                    tap(() => {
+                        window.context.telemetryRecorder?.recordEvent('newProductSubscription', 'created')
+                        eventLogger.log('NewProductSubscriptionCreated')
+                    }),
                     concatMapTo(
                         merge(
                             of('saving' as const),
@@ -128,6 +131,7 @@ export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
     React.PropsWithChildren<Props>
 > = props => {
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('siteAdminCreateProductSubscription', 'viewed')
         eventLogger.logViewEvent('SiteAdminCreateProductSubscription')
     })
     return (

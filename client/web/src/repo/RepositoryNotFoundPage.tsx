@@ -22,7 +22,10 @@ interface Props {
  * attempts to present the user with actions to solve the problem.
  */
 export const RepositoryNotFoundPage: React.FunctionComponent<Props> = ({ repo, viewerCanAdminister }) => {
-    React.useEffect(() => eventLogger.logViewEvent('RepositoryError'), [])
+    React.useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('repositoryError', 'viewed')
+        eventLogger.logViewEvent('RepositoryError')
+    }, [window.context.telemetryRecorder])
 
     return (
         <HeroPage

@@ -108,6 +108,9 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                                 />
                             }
                             onClick={() => {
+                                window.context.telemetryRecorder?.recordEvent('openInEditor', 'clicked', {
+                                    privateMetadata: { editor: editor.id },
+                                })
                                 eventLogger.log('OpenInEditorClicked', { editor: editor.id }, { editor: editor.id })
                                 openCurrentUrlInEditor(
                                     settings?.openInEditor,

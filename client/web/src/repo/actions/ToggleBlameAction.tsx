@@ -30,9 +30,11 @@ export const ToggleBlameAction: React.FC<Props> = props => {
     const toggleBlameState = useCallback(() => {
         if (isBlameVisible) {
             setIsBlameVisible(false)
+            window.context.telemetryRecorder?.recordEvent('gitBlame', 'disabled')
             eventLogger.log('GitBlameDisabled')
         } else {
             setIsBlameVisible(true)
+            window.context.telemetryRecorder?.recordEvent('gitBlame', 'enabled')
             eventLogger.log('GitBlameEnabled')
         }
     }, [isBlameVisible, setIsBlameVisible])

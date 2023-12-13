@@ -28,6 +28,11 @@ export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<
     }
 
     const handleChange = (score: number): void => {
+        window.context.telemetryRecorder?.recordEvent('surveyButton', 'clicked', {
+            metadata: {
+                score,
+            },
+        })
         eventLogger.log('SurveyButtonClicked', { score }, { score })
 
         if (props.onChange) {

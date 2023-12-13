@@ -30,8 +30,9 @@ export const AnalyticsUsersPage: FC = () => {
         },
     })
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('adminAnalyticsUsers', 'viewed')
         eventLogger.logPageView('AdminAnalyticsUsers')
-    }, [])
+    }, [window.context.telemetryRecorder])
     const [uniqueOrPercentage, setUniqueOrPercentage] = useState<'unique' | 'percentage'>('unique')
 
     const [frequencies, legends] = useMemo(() => {

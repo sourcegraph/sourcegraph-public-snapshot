@@ -130,7 +130,10 @@ const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ on
  * The request access page component.
  */
 export const RequestAccessPage: React.FunctionComponent = () => {
-    useEffect(() => eventLogger.logPageView('RequestAccessPage'), [])
+    useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('requestAccessPage', 'viewed')
+        eventLogger.logPageView('RequestAccessPage')
+    }, [window.context.telemetryRecorder])
     const location = useLocation()
     const navigate = useNavigate()
     const [error, setError] = useState<Error | null>(null)

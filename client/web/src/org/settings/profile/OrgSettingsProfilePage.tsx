@@ -20,6 +20,7 @@ export const OrgSettingsProfilePage: React.FunctionComponent<React.PropsWithChil
     onOrganizationUpdate,
 }) => {
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('orgSettingsProfile', 'viewed')
         eventLogger.logViewEvent('OrgSettingsProfile')
     }, [org.id])
 

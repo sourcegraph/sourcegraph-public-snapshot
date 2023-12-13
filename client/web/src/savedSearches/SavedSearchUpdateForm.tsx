@@ -90,7 +90,10 @@ class InnerSavedSearchUpdateForm extends React.Component<Props, State> {
                                 this.props.namespace.__typename === 'Org' ? this.props.namespace.id : null
                             ).pipe(
                                 mapTo(null),
-                                tap(() => eventLogger.log('SavedSearchUpdated')),
+                                tap(() => {
+                                    eventLogger.log('SavedSearchUpdated')
+                                    window.context.telemetryRecorder?.recordEvent('savedSearch', 'updated')
+                                }),
                                 mergeMap(() =>
                                     concat(
                                         // Flash "updated" text
@@ -109,6 +112,7 @@ class InnerSavedSearchUpdateForm extends React.Component<Props, State> {
 
         this.componentUpdates.next(this.props)
 
+        window.context.telemetryRecorder?.recordEvent('updateSavedSearchPage', 'viewed')
         eventLogger.logViewEvent('UpdateSavedSearchPage')
     }
 

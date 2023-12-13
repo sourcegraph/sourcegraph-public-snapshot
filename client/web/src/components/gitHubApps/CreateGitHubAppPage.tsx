@@ -78,7 +78,10 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     const [isPublic, setIsPublic] = useState<boolean>(false)
     const [error, setError] = useState<string>()
 
-    useEffect(() => eventLogger.logPageView('SiteAdminCreateGiHubApp'), [])
+    useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('siteAdminCreateGiHubApp', 'viewed')
+        eventLogger.logPageView('SiteAdminCreateGiHubApp')
+    }, [window.context.telemetryRecorder])
 
     const originURL = window.location.origin
     const getManifest = useCallback(

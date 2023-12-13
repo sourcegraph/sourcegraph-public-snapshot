@@ -30,6 +30,7 @@ interface CodeSearchPageProps {
 
 export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ authenticatedUser }) => {
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('codySearch', 'viewed')
         eventLogger.logPageView('CodySearch')
     }, [])
 
@@ -59,6 +60,9 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
             return
         }
 
+        window.context.telemetryRecorder?.recordEvent('web.codySearch', 'submitted', {
+            privateMetadata: { userPrompt: !isPrivateInstance ? { input: sanitizedInput } : null },
+        })
         eventLogger.log(
             'web:codySearch:submit',
             !isPrivateInstance ? { input: sanitizedInput } : null,
@@ -70,6 +74,9 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
                 setLoading(false)
 
                 if (query) {
+                    window.context.telemetryRecorder?.recordEvent('web.codySearch.submit', 'succeeded', {
+                        privateMetadata: { userPrompt: !isPrivateInstance ? { input: sanitizedInput } : null },
+                    })
                     eventLogger.log(
                         'web:codySearch:submitSucceeded',
                         !isPrivateInstance ? { input: sanitizedInput, translatedQuery: query } : null,
@@ -81,6 +88,13 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
                         search: buildSearchURLQuery(query, SearchPatternType.regexp, false) + '&ref=cody-search',
                     })
                 } else {
+                    window.context.telemetryRecorder?.recordEvent('web.codySearch.submit', 'failed', {
+                        privateMetadata: {
+                            userPrompt: !isPrivateInstance
+                                ? { input: sanitizedInput, reason: 'untranslateable' }
+                                : null,
+                        },
+                    })
                     eventLogger.log(
                         'web:codySearch:submitFailed',
                         !isPrivateInstance ? { input: sanitizedInput, reason: 'untranslatable' } : null,
@@ -90,6 +104,13 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
                 }
             },
             error => {
+                window.context.telemetryRecorder?.recordEvent('web.codySearch.submit', 'failed', {
+                    privateMetadata: {
+                        userPrompt: !isPrivateInstance
+                            ? { input: sanitizedInput, reason: 'unreachable', error: error?.message }
+                            : null,
+                    },
+                })
                 eventLogger.log(
                     'web:codySearch:submitFailed',
                     !isPrivateInstance

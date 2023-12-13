@@ -92,6 +92,9 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
     const willVerifyEmail = data?.recipientEmail && !data?.isVerifiedEmail
 
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('organizationInvitation', 'viewed', {
+            privateMetadata: { organizationId: orgId, invitationId: data?.id },
+        })
         eventLogger.logPageView('OrganizationInvitation', { organizationId: orgId, invitationId: data?.id })
     }, [orgId, data?.id])
 
@@ -105,6 +108,9 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
     })
 
     const acceptInvitation = useCallback(async () => {
+        window.context.telemetryRecorder?.recordEvent('organizationInvitation', 'accepted', {
+            privateMetadata: { organizationId: orgId, invitationId: data?.id, willVerifyEmail },
+        })
         eventLogger.log(
             'OrganizationInvitationAcceptClicked',
             {
@@ -125,12 +131,18 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
                     response: OrganizationInvitationResponseType.ACCEPT,
                 },
             })
+            window.context.telemetryRecorder?.recordEvent('organizationInvitation', 'accepted', {
+                privateMetadata: { organizationId: orgId, invitationId: data?.id },
+            })
             eventLogger.log(
                 'OrganizationInvitationAcceptSucceeded',
                 { organizationId: orgId, invitationId: data?.id },
                 { organizationId: orgId, invitationId: data?.id }
             )
         } catch {
+            window.context.telemetryRecorder?.recordEvent('organizationInvitation', 'rejected', {
+                privateMetadata: { organizationId: orgId, invitationId: data?.id },
+            })
             eventLogger.log(
                 'OrganizationInvitationAcceptFailed',
                 { organizationId: orgId, invitationId: data?.id },
@@ -145,6 +157,9 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
     }, [data?.id, navigate, orgId, orgName, respondToInvitation, willVerifyEmail])
 
     const declineInvitation = useCallback(async () => {
+        window.context.telemetryRecorder?.recordEvent('organizationInvitationDecline', 'clicked', {
+            privateMetadata: { organizationId: orgId, invitationId: data?.id, willVerifyEmail },
+        })
         eventLogger.log(
             'OrganizationInvitationDeclineClicked',
             {
@@ -165,12 +180,18 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
                     response: OrganizationInvitationResponseType.REJECT,
                 },
             })
+            window.context.telemetryRecorder?.recordEvent('organizationInvitationDecline', 'succeeded', {
+                privateMetadata: { organizationId: orgId, invitationId: data?.id },
+            })
             eventLogger.log(
                 'OrganizationInvitationDeclineSucceeded',
                 { organizationId: orgId, invitationId: data?.id },
                 { organizationId: orgId, invitationId: data?.id }
             )
         } catch {
+            window.context.telemetryRecorder?.recordEvent('organizationInvitationDecline', 'failed', {
+                privateMetadata: { organizationId: orgId, invitationId: data?.id },
+            })
             eventLogger.log(
                 'OrganizationInvitationDeclineFailed',
                 { organizationId: orgId, invitationId: data?.id },

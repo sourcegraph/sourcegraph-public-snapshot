@@ -34,6 +34,7 @@ interface Props {
  */
 export const RepoSettingsOptionsPage: FC<Props> = ({ repo }) => {
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('repoSettings', 'viewed')
         eventLogger.logViewEvent('RepoSettings')
     })
 

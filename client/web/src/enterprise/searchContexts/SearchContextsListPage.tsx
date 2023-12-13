@@ -60,9 +60,13 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                     To search across your team's private repositories,{' '}
                                     <Link
                                         to="https://about.sourcegraph.com"
-                                        onClick={() =>
+                                        onClick={() => {
+                                            window.context.telemetryRecorder?.recordEvent(
+                                                'enterpriseCta.contextSettings',
+                                                'clicked'
+                                            )
                                             eventLogger.log('ClickedOnEnterpriseCTA', { location: 'ContextsSettings' })
-                                        }
+                                        }}
                                     >
                                         get Sourcegraph Enterprise
                                     </Link>

@@ -41,8 +41,9 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
         useMemo(() => fromFetch<{}>('/site-admin/pings/latest', { selector: response => checkOk(response).json() }), [])
     )
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('siteAdminPings', 'viewed')
         eventLogger.logViewEvent('SiteAdminPings')
-    }, [])
+    }, [window.context.telemetryRecorder])
 
     const updatesDisabled = window.context.site['update.channel'] !== 'release'
     const jsonEditorContainerRef = useRef<HTMLDivElement | null>(null)

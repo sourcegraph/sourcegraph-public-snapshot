@@ -40,17 +40,19 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
         [location.search]
     )
 
-    useEffect(
-        () =>
-            eventLogger.logPageView('CreateCodeMonitorPage', {
-                hasTriggerQuery: !!triggerQuery,
-                hasDescription: !!description,
-            }),
-        [triggerQuery, description]
-    )
+    useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('createCodeMonitor', 'viewed', {
+            privateMetadata: { hasTriggerQuery: !!triggerQuery, hasDescription: !!description },
+        })
+        eventLogger.logPageView('CreateCodeMonitorPage', {
+            hasTriggerQuery: !!triggerQuery,
+            hasDescription: !!description,
+        })
+    }, [triggerQuery, description])
 
     const createMonitorRequest = useCallback(
         (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> => {
+            window.context.telemetryRecorder?.recordEvent('createCodeMonitorForm', 'submitted')
             eventLogger.log('CreateCodeMonitorFormSubmitted')
             return createCodeMonitor({
                 monitor: {

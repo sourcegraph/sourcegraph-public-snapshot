@@ -45,6 +45,7 @@ export class SiteAdminCreateUserPage extends React.Component<{}, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        window.context.telemetryRecorder?.recordEvent('siteAdminCreateUser', 'viewed')
         eventLogger.logViewEvent('SiteAdminCreateUser')
 
         this.subscriptions.add(

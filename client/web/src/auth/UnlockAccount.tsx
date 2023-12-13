@@ -50,10 +50,12 @@ export const UnlockAccountPage: React.FunctionComponent<React.PropsWithChildren<
                 throw new Error('The url you provided is either expired or invalid.')
             }
 
-            eventLogger.log('OkUnlockAccount', { token })
+            window.context.telemetryRecorder?.recordEvent('okUnlockAccount', 'succeeded')
+            eventLogger.log('unlockAccount', { token })
         } catch (error) {
             setError(error)
-            eventLogger.log('KoUnlockAccount', { token })
+            window.context.telemetryRecorder?.recordEvent('koUnlockAccount', 'failed')
+            eventLogger.log('unlockAccount', { token })
         } finally {
             setLoading(false)
         }
@@ -63,6 +65,7 @@ export const UnlockAccountPage: React.FunctionComponent<React.PropsWithChildren<
         if (props.authenticatedUser) {
             return
         }
+        window.context.telemetryRecorder?.recordEvent('unlockUserAccountRequest', 'viewed')
         eventLogger.logPageView('UnlockUserAccountRequest', null, false)
         unlockAccount().catch(error => {
             setError(error)

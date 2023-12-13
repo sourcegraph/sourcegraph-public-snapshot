@@ -51,6 +51,7 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
         private subscriptions = new Subscription()
 
         public componentDidMount(): void {
+            window.context.telemetryRecorder?.recordEvent('orgInvitation', 'viewed')
             eventLogger.logViewEvent('OrgInvitation')
 
             const orgChanges = this.componentUpdates.pipe(
@@ -74,7 +75,10 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
                                     organizationInvitation: org.viewerPendingInvitation!.id,
                                     responseType,
                                 }).pipe(
-                                    tap(() => eventLogger.log('OrgInvitationRespondedTo')),
+                                    tap(() => {
+                                        window.context.telemetryRecorder?.recordEvent('orgInvitation', 'responded')
+                                        eventLogger.log('OrgInvitationRespondedTo')
+                                    }),
                                     tap(() =>
                                         this.props.onDidRespondToInvitation(
                                             responseType === OrganizationInvitationResponseType.ACCEPT

@@ -70,6 +70,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
                     ).toPromise()
                 )
 
+                window.context.telemetryRecorder?.recordEvent('userEmailAddressVerificationSetAsPrimary', 'succeeded')
                 eventLogger.log('UserEmailAddressSetAsPrimary')
                 setStatusOrError(undefined)
 
@@ -80,7 +81,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
                 setStatusOrError(asError(error))
             }
         },
-        [user, primaryEmail, onDidSet]
+        [user, primaryEmail, onDidSet, window.context.telemetryRecorder]
     )
 
     return (

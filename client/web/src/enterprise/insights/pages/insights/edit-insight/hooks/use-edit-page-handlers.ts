@@ -36,6 +36,9 @@ export function useEditPageHandlers(props: { id: string | undefined }): useHandl
         }).toPromise()
 
         const insightType = getTrackingTypeByInsightType(newInsight.type)
+        window.context.telemetryRecorder?.recordEvent('insightEdit', 'updated', {
+            privateMetadata: { insightType },
+        })
         eventLogger.log('InsightEdit', { insightType }, { insightType })
         navigate(redirectUrl)
     }

@@ -210,6 +210,10 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                                                 ...percentageInputChangeLogs,
                                                 [index]: true,
                                             })
+                                            window.context.telemetryRecorder?.recordEvent(
+                                                `AdminAnalytics${page}PercentageInput`,
+                                                'edited'
+                                            )
                                             eventLogger.log(`AdminAnalytics${page}PercentageInputEdited`)
                                         }
                                     }}
@@ -235,6 +239,10 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                                             ...minutesInputChangeLogs,
                                             [index]: true,
                                         })
+                                        window.context.telemetryRecorder?.recordEvent(
+                                            `AdminAnalytics${page}MinutesInput`,
+                                            'edited'
+                                        )
                                         eventLogger.log(`AdminAnalytics${page}MinutesInputEdited`)
                                     }
                                 }}
@@ -319,6 +327,10 @@ export const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculatorPro
                                 setMinPerItemSaved(Number(event.target.value))
                                 if (!inputChangeLogged) {
                                     setInputChangeLogged(true)
+                                    window.context.telemetryRecorder?.recordEvent(
+                                        `AdminAnalytics${page}MinutesInput`,
+                                        'edited'
+                                    )
                                     eventLogger.log(`AdminAnalytics${page}MinutesInputEdited`)
                                 }
                             }}

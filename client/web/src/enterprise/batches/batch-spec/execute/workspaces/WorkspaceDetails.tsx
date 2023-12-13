@@ -195,6 +195,10 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                         className={styles.workspaceDetail}
                         onClick={() => {
                             toggleShowDiagnostics()
+                            window.context.telemetryRecorder?.recordEvent(
+                                'batchChangeExecution.workspaceTimeline',
+                                'clicked'
+                            )
                             eventLogger.log('batch_change_execution:workspace_timeline:clicked')
                         }}
                         variant="link"

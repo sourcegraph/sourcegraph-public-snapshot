@@ -62,6 +62,7 @@ function queryRepositoryComparison(args: {
             ) {
                 throw createAggregateError(errors)
             }
+            window.context.telemetryRecorder?.recordEvent('repositoryComparisionRequest', 'fetched')
             eventLogger.log('RepositoryComparisonFetched')
             return repo.comparison.range
         })
@@ -96,6 +97,7 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        window.context.telemetryRecorder?.recordEvent('repositoryComparisonOverview', 'viewed')
         eventLogger.logViewEvent('RepositoryCompareOverview')
 
         this.subscriptions.add(

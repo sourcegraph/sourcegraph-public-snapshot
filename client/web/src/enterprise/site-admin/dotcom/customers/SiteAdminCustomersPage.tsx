@@ -48,7 +48,10 @@ interface Props {}
  * Displays a list of customers associated with user accounts on Sourcegraph.com.
  */
 export const SiteAdminProductCustomersPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    useEffect(() => eventLogger.logViewEvent('SiteAdminProductCustomers'), [])
+    useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('siteAdminProductCustomers', 'viewed')
+        eventLogger.logViewEvent('SiteAdminProductCustomers')
+    }, [window.context.telemetryRecorder])
 
     const updates = useMemo(() => new Subject<void>(), [])
     const nodeProps: Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>> = {}

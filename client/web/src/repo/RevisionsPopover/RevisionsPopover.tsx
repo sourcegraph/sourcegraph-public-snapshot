@@ -101,6 +101,7 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
     const { getPathFromRevision = replaceRevisionInURL, repoServiceType } = props
 
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('revisionsPopover', 'viewed')
         eventLogger.logViewEvent('RevisionsPopover')
     }, [])
 

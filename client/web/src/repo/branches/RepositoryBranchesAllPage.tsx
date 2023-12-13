@@ -17,6 +17,7 @@ export const RepositoryBranchesAllPage: FC<Props> = props => {
     const { repo } = props
 
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('repositoryBranchesAll', 'viewed')
         eventLogger.logViewEvent('RepositoryBranchesAll')
     }, [])
 

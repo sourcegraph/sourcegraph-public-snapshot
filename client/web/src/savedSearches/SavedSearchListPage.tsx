@@ -67,6 +67,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     )
                 )
                 .subscribe(() => {
+                    window.context.telemetryRecorder?.recordEvent('savedSearch', 'deleted')
                     eventLogger.log('SavedSearchDeleted')
                     this.setState({ isDeleting: false })
                     this.props.onDelete()
@@ -136,6 +137,7 @@ interface Props extends NamespaceProps {}
 
 export const SavedSearchListPage: React.FunctionComponent<Props> = props => {
     React.useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('savedSearchListPage', 'viewed')
         eventLogger.logViewEvent('SavedSearchListPage')
     }, [])
 

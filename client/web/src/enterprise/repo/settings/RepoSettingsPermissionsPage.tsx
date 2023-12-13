@@ -62,7 +62,10 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
     telemetryService,
     telemetryRecorder,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('RepoSettingsPermissions'))
+    useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('repoSettingsPermissions', 'viewed')
+        eventLogger.logViewEvent('RepoSettingsPermissions')
+    })
 
     const [{ query }, setSearchQuery] = useURLSyncedState({ query: '' })
     const debouncedQuery = useDebounce(query, 300)

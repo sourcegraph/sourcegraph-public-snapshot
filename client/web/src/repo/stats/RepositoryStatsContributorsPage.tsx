@@ -255,6 +255,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
 
     // Log page view when initially rendered
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('repositoryStatsContributors', 'viewed')
         eventLogger.logPageView('RepositoryStatsContributors')
     }, [])
 

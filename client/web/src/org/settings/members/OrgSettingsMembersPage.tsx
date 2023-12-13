@@ -136,6 +136,7 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
     onOrganizationUpdate,
 }) => {
     React.useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('orgMembers', 'viewed')
         eventLogger.logViewEvent('OrgMembers')
     }, [])
 

@@ -41,6 +41,7 @@ export const RepositoryComparePopover: React.FunctionComponent<
     const togglePopover = (): void => setPopoverOpen(previous => !previous)
 
     const handleSelect = (): void => {
+        window.context.telemetryRecorder?.recordEvent('repositoryComparison', 'submitted')
         eventLogger.log('RepositoryComparisonSubmitted')
         togglePopover()
     }

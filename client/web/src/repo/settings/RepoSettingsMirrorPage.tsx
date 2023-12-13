@@ -287,6 +287,7 @@ interface RepoSettingsMirrorPageProps {
  * The repository settings mirror page.
  */
 export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => {
+    window.context.telemetryRecorder?.recordEvent('repoSettingsMirror', 'viewed')
     eventLogger.logPageView('RepoSettingsMirror')
     const [reachable, setReachable] = useState<boolean>()
     const [recloneRepository] = useMutation<RecloneRepositoryResult, RecloneRepositoryVariables>(

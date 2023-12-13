@@ -184,6 +184,7 @@ const FIRST_COUNT = 25
 
 export const AccessRequestsPage: React.FunctionComponent = () => {
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('accessRequestsPage', 'viewed')
         eventLogger.logPageView('AccessRequestsPage')
     }, [])
     const [error, setError] = useState<Error | null>(null)
@@ -218,6 +219,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
             if (!confirm('Are you sure you want to reject the selected access request?')) {
                 return
             }
+            window.context.telemetryRecorder?.recordEvent('accessRequest', 'rejected')
             eventLogger.log('AccessRequestRejected', { id })
             rejectAccessRequest({
                 variables: {
@@ -255,6 +257,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
             if (!confirm('Are you sure you want to approve the selected access request?')) {
                 return
             }
+            window.context.telemetryRecorder?.recordEvent('accessRequest', 'approved')
             eventLogger.log('AccessRequestApproved', { id })
             async function createUserAndApproveRequest(): Promise<void> {
                 const username = await generateUsername(name)

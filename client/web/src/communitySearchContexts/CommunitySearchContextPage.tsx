@@ -78,6 +78,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
     const onSubmitExample =
         (query: string, patternType: SearchPatternType) =>
         (event?: React.MouseEvent<HTMLButtonElement>): void => {
+            window.context.telemetryRecorder?.recordEvent('communitySearchContextSuggestion', 'clicked')
             eventLogger.log('CommunitySearchContextSuggestionClicked')
             event?.preventDefault()
             const { selectedSearchContextSpec } = props
@@ -213,8 +214,12 @@ export const CommunitySearchContextPage: React.FunctionComponent<
     )
 }
 
-const RepoLinkClicked = (repoName: string) => (): void =>
+const RepoLinkClicked = (repoName: string) => (): void => {
+    window.context.telemetryRecorder?.recordEvent('communitySearchContextPageRepoLink', 'clicked', {
+        privateMetadata: { repo_name: repoName },
+    })
     eventLogger.log('CommunitySearchContextPageRepoLinkClicked', { repo_name: repoName }, { repo_name: repoName })
+}
 
 const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }>> = ({ repo }) => (
     <li className={classNames('list-unstyled mb-3', styles.repoItem)} key={repo}>

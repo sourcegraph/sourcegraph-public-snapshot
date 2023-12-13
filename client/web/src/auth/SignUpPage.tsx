@@ -49,6 +49,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
     const isLightTheme = useIsLightTheme()
 
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('signUp', 'viewed')
         eventLogger.logViewEvent('SignUp', null, false)
 
         if (invitedBy !== null) {
@@ -56,6 +57,9 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 isAuthenticated: !!authenticatedUser,
                 allowSignup: context.allowSignup,
             }
+            window.context.telemetryRecorder?.recordEvent('signUpInvitedByUser', 'viewed', {
+                metadata: { isAuthenticated: !!authenticatedUser ? 1 : 0, allowSignup: context.allowSignup ? 1 : 0 },
+            })
             eventLogger.log('SignUpInvitedByUser', parameters, parameters)
         }
     }, [invitedBy, authenticatedUser, context.allowSignup])

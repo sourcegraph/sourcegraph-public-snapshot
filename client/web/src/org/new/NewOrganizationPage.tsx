@@ -18,6 +18,7 @@ interface Props {}
 export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
     const navigate = useNavigate()
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('newOrg', 'viewed')
         eventLogger.logViewEvent('NewOrg')
     }, [])
     const [loading, setLoading] = useState<boolean | Error>(false)
@@ -36,6 +37,7 @@ export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildre
     const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
         async event => {
             event.preventDefault()
+            window.context.telemetryRecorder?.recordEvent('createNewOrg', 'clicked')
             eventLogger.log('CreateNewOrgClicked')
             if (!event.currentTarget.checkValidity()) {
                 return
@@ -49,7 +51,7 @@ export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildre
                 setLoading(asError(error))
             }
         },
-        [displayName, navigate, name]
+        [displayName, navigate, name, window.context.telemetryRecorder]
     )
 
     return (

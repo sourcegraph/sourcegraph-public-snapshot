@@ -16,7 +16,10 @@ import { fetchPreciseIndex } from './backend'
  */
 export const SiteAdminPreciseIndexPage: React.FC<{}> = () => {
     const { id = '' } = useParams<{ id: string }>()
-    useEffect(() => eventLogger.logViewEvent('SiteAdminPreciseIndex'))
+    useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('siteAdminPreciseIndex', 'viewed')
+        eventLogger.logViewEvent('SiteAdminPreciseIndex')
+    })
 
     const indexOrError = useObservable(
         useMemo(() => fetchPreciseIndex({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)])), [id])

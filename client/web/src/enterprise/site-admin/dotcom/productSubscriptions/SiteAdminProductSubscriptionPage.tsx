@@ -49,7 +49,10 @@ interface Props {}
 export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
     const navigate = useNavigate()
     const { subscriptionUUID = '' } = useParams<{ subscriptionUUID: string }>()
-    useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscription'), [])
+    useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('siteAdminProductSubscription', 'viewed')
+        eventLogger.logViewEvent('SiteAdminProductSubscription')
+    }, [window.context.telemetryRecorder])
 
     const [showGenerate, setShowGenerate] = useState<boolean>(false)
 

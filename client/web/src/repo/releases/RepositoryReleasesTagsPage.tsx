@@ -39,6 +39,7 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWith
     queryGitReferences: queryGitReferences = queryGitReferencesFromBackend,
 }) => {
     useEffect(() => {
+        window.context.telemetryRecorder?.recordEvent('repositoryReleasesTags', 'viewed')
         eventLogger.logViewEvent('RepositoryReleasesTags')
     }, [])
 
