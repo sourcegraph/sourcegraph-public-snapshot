@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
@@ -46,15 +45,11 @@ func (r *Resolver) ExportedEvents(ctx context.Context, args *graphqlbackend.Expo
 	}
 	var before *time.Time
 	if args.After != nil {
-		cursor, err := graphqlutil.DecodeCursor(args.After)
-		if err != nil {
-			return nil, errors.Wrap(err, "invalid cursor")
-		}
-		t, err := time.Parse(time.RFC3339, cursor)
+		var err error
+		before, err = decodeExportedEventsCursor(*args.After)
 		if err != nil {
 			return nil, errors.Wrap(err, "invalid cursor data")
 		}
-		before = &t
 	}
 
 	exported, err := r.db.TelemetryEventsExportQueue().ListRecentlyExported(ctx, first, before)
@@ -65,6 +60,7 @@ func (r *Resolver) ExportedEvents(ctx context.Context, args *graphqlbackend.Expo
 	return &ExportedEventsConnectionResolver{
 		ctx:         ctx,
 		diagnostics: r.db.TelemetryEventsExportQueue(),
+		limit:       first,
 		exported:    exported,
 	}, nil
 }

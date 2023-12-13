@@ -31,7 +31,7 @@ type ExportedEventsArgs struct {
 
 type ExportedEventResolver interface {
 	ID() graphql.ID
-	ExportedAt() *graphql.Time
+	ExportedAt() *gqlutil.DateTime
 	Payload() (json.RawMessage, error)
 }
 

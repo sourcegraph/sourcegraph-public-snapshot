@@ -18,6 +18,9 @@ import (
 
 type mockTelemetryResolver struct {
 	events []TelemetryEventInput
+
+	// Embed interface directly in mock so that it satisfies TelemetryResolver.
+	// Unexpected usage of interface methods that aren't mocked will panic.
 	TelemetryResolver
 }
 

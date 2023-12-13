@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -11,9 +12,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+func decodeExportedEventsCursor(cursor string) (*time.Time, error) {
+	cursor, err := graphqlutil.DecodeCursor(&cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "invalid cursor")
+	}
+	t, err := time.Parse(time.RFC3339, cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "invalid cursor data")
+	}
+	return &t, nil
+}
+
+func encodeExportedEventsCursor(t time.Time) *graphqlutil.PageInfo {
+	ts, err := t.MarshalText()
+	if err != nil {
+		return graphqlutil.HasNextPage(false)
+	}
+	return graphqlutil.EncodeCursor(pointers.Ptr(string(ts)))
+}
 
 type ExportedEventResolver struct {
 	event database.ExportedTelemetryEvent
@@ -25,8 +47,8 @@ func (r *ExportedEventResolver) ID() graphql.ID {
 	return relay.MarshalID("ExportedEvent", r.event.ID)
 }
 
-func (r *ExportedEventResolver) ExportedAt() *graphql.Time {
-	return &graphql.Time{Time: r.event.ExportedAt}
+func (r *ExportedEventResolver) ExportedAt() *gqlutil.DateTime {
+	return &gqlutil.DateTime{Time: r.event.ExportedAt}
 }
 
 func (r *ExportedEventResolver) Payload() (json.RawMessage, error) {
@@ -41,6 +63,7 @@ type ExportedEventsConnectionResolver struct {
 	ctx         context.Context
 	diagnostics database.TelemetryEventsExportQueueDiagnosticsStore
 
+	limit    int
 	exported []database.ExportedTelemetryEvent
 }
 
@@ -63,13 +86,9 @@ func (r *ExportedEventsConnectionResolver) TotalCount() (int32, error) {
 }
 
 func (r *ExportedEventsConnectionResolver) PageInfo() *graphqlutil.PageInfo {
-	if len(r.exported) == 0 {
+	if len(r.exported) == 0 || len(r.exported) < r.limit {
 		return graphqlutil.HasNextPage(false)
 	}
 	lastEvent := r.exported[len(r.exported)-1]
-	ts, err := lastEvent.Timestamp.MarshalText()
-	if err != nil {
-		return graphqlutil.HasNextPage(false)
-	}
-	return graphqlutil.EncodeCursor(pointers.Ptr(string(ts)))
+	return encodeExportedEventsCursor(lastEvent.Timestamp)
 }
