@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +11,8 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/log"
 )
 
 func TestCombine(t *testing.T) {
@@ -81,10 +81,10 @@ git fetch --depth 100 sourcegraph
 	}
 
 	opt := Options{
-		Logger: log.New(io.Discard, "", 0),
+		Logger: log.NoOp(),
 	}
 	if testing.Verbose() {
-		opt.Logger = log.Default()
+		opt.Logger = log.Scoped("test-git-combine")
 	}
 
 	if err := Combine(dir, opt); err != nil {

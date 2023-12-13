@@ -3,7 +3,7 @@
 package honey
 
 import (
-	"log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -30,7 +30,7 @@ func init() {
 		APIKey: apiKey,
 	})
 	if err != nil {
-		log.Println("Failed to init libhoney:", err)
+		log.Scoped("honey").Error("Failed to init libhoney:", log.String("error", err.Error()))
 		apiKey = ""
 		return
 	}

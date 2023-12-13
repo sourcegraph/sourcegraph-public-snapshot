@@ -3,7 +3,6 @@ package env
 import (
 	"expvar"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
+	"github.com/sourcegraph/log"
 )
 
 type envflag struct {
@@ -189,11 +189,11 @@ func HelpString() string {
 
 // HandleHelpFlag looks at the first CLI argument. If it is "help", "-h" or "--help", then it calls
 // HelpString and exits.
-func HandleHelpFlag() {
+func HandleHelpFlag(logger log.Logger) {
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
 		case "help", "-h", "--help":
-			log.Print(HelpString())
+			logger.Info(HelpString())
 			os.Exit(0)
 		}
 	}

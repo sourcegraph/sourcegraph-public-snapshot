@@ -211,7 +211,7 @@ func run(
 	}
 
 	env.Lock()
-	env.HandleHelpFlag()
+	env.HandleHelpFlag(logger)
 
 	// Start the debug server. The ready boolean state it publishes will become true when *all*
 	// services report ready.
