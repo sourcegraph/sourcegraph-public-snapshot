@@ -72,7 +72,7 @@ func serveVerifyEmail(db database.DB) http.HandlerFunc {
 			logger.Error("Failed to grant user pending permissions", log.Int32("userID", usr.ID), log.Error(err))
 		}
 
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, "/search", http.StatusFound)
 	}
 }
 

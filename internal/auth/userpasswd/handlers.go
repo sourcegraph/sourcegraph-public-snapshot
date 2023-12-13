@@ -131,7 +131,31 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 
 	// Track user data
 	if r.UserAgent() != "Sourcegraph e2etest-bot" || r.UserAgent() != "test" {
-		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
+		getCookie := func(name string) string {
+			c, err := r.Cookie(name)
+			if err != nil || c == nil {
+				return ""
+			}
+			return c.Value
+		}
+
+		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
+			DatabaseID:             usr.ID,
+			AnonymousUserID:        creds.AnonymousUserID,
+			FirstSourceURL:         creds.FirstSourceURL,
+			LastSourceURL:          creds.LastSourceURL,
+			OriginalReferrer:       getCookie("originalReferrer"),
+			LastReferrer:           getCookie("sg_referrer"),
+			SignupSessionSourceURL: getCookie("sourcegraphSignupSourceUrl"),
+			SignupSessionReferrer:  getCookie("sourcegraphSignupReferrer"),
+			SessionUTMCampaign:     getCookie("sg_utm_campaign"),
+			SessionUTMSource:       getCookie("sg_utm_source"),
+			SessionUTMMedium:       getCookie("sg_utm_medium"),
+			SessionUTMContent:      getCookie("sg_utm_content"),
+			SessionUTMTerm:         getCookie("sg_utm_term"),
+			GoogleClickID:          getCookie("gclid"),
+			MicrosoftClickID:       getCookie("msclkid"),
+		})
 	}
 
 	// New event - we record legacy event manually for now, hence teestore.WithoutV1
@@ -142,7 +166,7 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 			"failIfNewUserIsNotInitialSiteAdmin": telemetry.MetadataBool(failIfNewUserIsNotInitialSiteAdmin),
 		},
 	})
-	// Legacy event
+	//lint:ignore SA1019 existing usage of deprecated functionality. TODO: Use only the new V2 event instead.
 	if err = usagestats.LogBackendEvent(db, usr.ID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 		logger.Warn("Failed to log event SignUpSucceeded", log.Error(err))
 	}
@@ -243,6 +267,8 @@ func unsafeSignUp(
 			return nil, http.StatusOK, nil
 		}
 		logger.Error("Error in user signup.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
+		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
+		//lint:ignore SA1019 existing usage of deprecated functionality.
 		if err = usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil); err != nil {
 			logger.Warn("Failed to log event SignUpFailed", log.Error(err))
 		}
@@ -480,6 +506,7 @@ func recordSignInSecurityEvent(r *http.Request, db database.DB, user *types.User
 
 	// Legacy event - TODO: Remove in 5.3, alongside the teestore.WithoutV1
 	// context.
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	_ = usagestats.LogBackendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil)
 }
 

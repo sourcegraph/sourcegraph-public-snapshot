@@ -105,6 +105,7 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
                         showSearchContext={showSearchContext}
                         showOwn={showOwn}
                         showCodySearch={showCodySearch}
+                        showCodyDropdown={false}
                         showSearchJobs={showSearchJobs}
                         showSearchNotebook={showSearchNotebook}
                         showCodeMonitoring={showCodeMonitoring}
@@ -383,11 +384,7 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                     )}
 
                     {isSourcegraphDotCom && (
-                        <NavItemLink
-                            url="https://about.sourcegraph.com"
-                            external={true}
-                            onClick={handleNavigationClick}
-                        >
+                        <NavItemLink url="https://sourcegraph.com" external={true} onClick={handleNavigationClick}>
                             About Sourcegraph
                         </NavItemLink>
                     )}

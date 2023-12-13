@@ -1,6 +1,8 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .responsive-container {
+    gap: 0.5rem;
+
     @media (--sm-breakpoint-down) {
         flex-direction: column;
     }
@@ -19,48 +21,42 @@
     font-size: 1rem;
 }
 
-.pro-container {
-    margin-top: -1rem;
-    margin-bottom: -1rem;
-    margin-left: -0.25rem;
-    margin-right: -0.25rem;
-    z-index: 1;
-
-    @media (--sm-breakpoint-down) {
-        margin-top: 1.5rem;
-        margin-bottom: 1.5rem;
-        margin-left: 0;
-        margin-right: 0;
-    }
-}
-
 .pro-title {
     font-size: 2.25rem;
-    color: #005bbb;
+    color: #820dde;
 }
 
 .pro-description {
-    color: #0677ef;
+    color: #820dde;
 }
 
 .pro-pricing {
     text-decoration: line-through;
 }
 
-.enterprise-color {
-    color: #dd5d35;
-}
-
-.enterprise-color-light {
-    color: #f74f56;
-}
-
 .upgrade-modal {
     width: 50rem;
+}
+
+.cancel-modal {
+    width: 30rem;
 }
 
 .subscription-summary-container {
     @media (--sm-breakpoint-down) {
         flex-direction: column;
     }
+}
+
+.pro-container {
+    margin: -1.5rem -0.625rem -1.5rem -0.625rem;
+    z-index: 1;
+}
+
+.pro-border-top {
+    height: 0.25rem;
+    z-index: 2;
+    border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+    background-color: #eff2f5;
+    background-image: linear-gradient(90deg, #7048e8, #4ac1e8 32.21%, #a112ff 65.39%, #ff5543 104.43%), none;
 }

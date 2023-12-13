@@ -76,7 +76,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
         eventLogger.log('CodeMonitoringExampleMonitorClicked')
     }, [])
 
-    let ctaBannerUrl = 'https://about.sourcegraph.com/get-started?t=enterprise'
+    let ctaBannerUrl = 'https://sourcegraph.com/get-started?t=enterprise'
     if (isCodyApp) {
         ctaBannerUrl = addSourcegraphAppOutboundUrlParameters(ctaBannerUrl, 'monitoring')
     }

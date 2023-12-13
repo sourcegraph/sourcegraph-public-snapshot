@@ -42,13 +42,21 @@ func bazelCmd(args ...string) string {
 }
 
 // Used in default run type
-func bazelPushImagesCandidates(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, true, "bazel-tests")
+func bazelPushImagesCandidates(version string, isAspectBuild bool) func(*bk.Pipeline) {
+	depKey := "bazel-tests"
+	if isAspectBuild {
+		depKey = "__main__::test"
+	}
+	return bazelPushImagesCmd(version, true, depKey)
 }
 
 // Used in default run type
-func bazelPushImagesFinal(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, false, "bazel-tests")
+func bazelPushImagesFinal(version string, isAspectBuild bool) func(*bk.Pipeline) {
+	depKey := "bazel-tests"
+	if isAspectBuild {
+		depKey = "__main__::test"
+	}
+	return bazelPushImagesCmd(version, false, depKey)
 }
 
 // Used in CandidateNoTest run type
@@ -250,7 +258,7 @@ func bazelBuild(targets ...string) func(*bk.Pipeline) {
 }
 
 // Keep: allows building an array of images on one agent. Useful for streamlining and rules_oci in the future.
-func bazelBuildCandidateDockerImages(apps []string, version string, tag string, rt runtype.RunType) operations.Operation {
+func legacyBuildCandidateDockerImages(apps []string, version string, tag string, rt runtype.RunType) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{}
 
@@ -293,12 +301,6 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 			if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
 				// Building Docker image located under $REPO_ROOT/docker-images/
 				buildScriptPath := filepath.Join("docker-images", app, "build.sh")
-				_, err := os.Stat(filepath.Join("docker-images", app, "build-bazel.sh"))
-				if err == nil {
-					// If the file exists.
-					buildScriptPath = filepath.Join("docker-images", app, "build-bazel.sh")
-				}
-
 				cmds = append(cmds,
 					bk.Cmd("ls -lah "+buildScriptPath),
 					bk.Cmd(buildScriptPath),
@@ -322,11 +324,6 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 					return "cmd/" + folder
 				}()
 				buildScriptPath := filepath.Join(cmdDir, "build.sh")
-				_, err := os.Stat(filepath.Join(cmdDir, "build-bazel.sh"))
-				if err == nil {
-					// If the file exists.
-					buildScriptPath = filepath.Join(cmdDir, "build-bazel.sh")
-				}
 				cmds = append(cmds, bk.AnnotatedCmd(buildScriptPath, buildAnnotationOptions))
 			}
 
@@ -422,7 +419,7 @@ func legacyBuildCandidateDockerImage(app string, version string, tag string, rt 
 			// Retry in case of flakes when pushing
 			// bk.AutomaticRetryStatus(3, 222),
 		)
-		pipeline.AddStep(fmt.Sprintf(":old-man::docker: :construction: Build %s", app), cmds...)
+		pipeline.AddStep(fmt.Sprintf(":older_man::docker: :construction: Build %s", app), cmds...)
 	}
 }
 

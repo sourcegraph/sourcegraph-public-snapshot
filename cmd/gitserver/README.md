@@ -49,6 +49,10 @@ To use `p4-fusion` while developing Sourcegraph, there are a couple of options.
 
 [Run `gitserver` in a Docker container](https://docs.sourcegraph.com/dev/background-information/sg#run-gitserver-in-a-docker-container). This is the option that gives an experience closest to a deployed Sourcegraph instance, and will work for any platform/OS on which you're developing (running `sg start`).
 
+#### Bazel
+
+Native binaries are provided through Bazel, built via Nix in [our fork of p4-fusion](https://github.com/sourcegraph/p4-fusion/actions/workflows/nix-build-and-upload.yaml). It can be invoked either through `./dev/p4-fusion-dev` or directly with `bazel run //dev/tools:p4-fusion`.
+
 #### Native binary executable
 
 The `p4-fusion` native binary has been built on Linux and macOS, but is untested on Windows.

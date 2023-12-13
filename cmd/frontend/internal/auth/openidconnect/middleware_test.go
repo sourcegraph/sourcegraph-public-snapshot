@@ -187,7 +187,7 @@ func TestMiddleware(t *testing.T) {
 	authedHandler.Handle("/.api/", Middleware(db).API(h))
 	authedHandler.Handle("/", Middleware(db).App(h))
 
-	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
+	doRequest := func(method, urlStr, body string, state string, cookies []*http.Cookie, authed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
 		for _, cookie := range cookies {
 			req.AddCookie(cookie)
@@ -196,7 +196,7 @@ func TestMiddleware(t *testing.T) {
 			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: mockUserID}))
 		}
 		respRecorder := httptest.NewRecorder()
-		session.SetData(respRecorder, req, "oidcState", validState)
+		session.SetData(respRecorder, req, "oidcState", state)
 		authedHandler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}
@@ -211,13 +211,13 @@ func TestMiddleware(t *testing.T) {
 	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg sign-in", func(t *testing.T) {
 		cookie := &http.Cookie{Name: auth.SignOutCookie, Value: "true"}
 
-		resp := doRequest("GET", "http://example.com/", "", []*http.Cookie{cookie}, false)
+		resp := doRequest("GET", "http://example.com/", "", "", []*http.Cookie{cookie}, false)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
 	t.Run("unauthenticated homepage visit, no sign-out cookie -> oidc auth flow", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/", "", nil, false)
+		resp := doRequest("GET", "http://example.com/", "", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -229,7 +229,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("unauthenticated subpage visit -> oidc auth flow", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/page", "", nil, false)
+		resp := doRequest("GET", "http://example.com/page", "", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -241,7 +241,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("unauthenticated non-existent page visit -> oidc auth flow", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/nonexistent", "", nil, false)
+		resp := doRequest("GET", "http://example.com/nonexistent", "", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -253,13 +253,13 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("unauthenticated API request -> pass through", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, false)
+		resp := doRequest("GET", "http://example.com/.api/foo", "", "", nil, false)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
 	t.Run("login -> oidc auth flow", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/openidconnect/login?p="+mockGetProviderValue.ConfigID().ID, "", nil, false)
+		resp := doRequest("GET", "http://example.com/.auth/openidconnect/login?p="+mockGetProviderValue.ConfigID().ID, "", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -286,13 +286,13 @@ func TestMiddleware(t *testing.T) {
 	})
 	t.Run("OIDC callback without CSRF token -> error", func(t *testing.T) {
 		invalidState := (&AuthnState{CSRFToken: "bad", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
-		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(invalidState), "", nil, false)
+		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(invalidState), "", invalidState, nil, false)
 		if want := http.StatusUnauthorized; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
 	})
 	t.Run("OIDC callback with CSRF token -> set auth cookies", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(validState), "", []*http.Cookie{{Name: stateCookieName, Value: validState}}, false)
+		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(validState), "", validState, nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
@@ -302,19 +302,19 @@ func TestMiddleware(t *testing.T) {
 	})
 	*emailPtr = "bob@invalid.com" // doesn't match requiredEmailDomain
 	t.Run("OIDC callback with bad email domain -> error", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(validState), "", []*http.Cookie{{Name: stateCookieName, Value: validState}}, false)
+		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(validState), "", validState, nil, false)
 		if want := http.StatusUnauthorized; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
 	})
 	t.Run("authenticated app request", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/", "", nil, true)
+		resp := doRequest("GET", "http://example.com/", "", "", nil, true)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
 	t.Run("authenticated API request", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, true)
+		resp := doRequest("GET", "http://example.com/.api/foo", "", "", nil, true)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -383,7 +383,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	authedHandler := Middleware(db).App(h)
 
-	doRequest := func(method, urlStr, body string, cookies []*http.Cookie) *http.Response {
+	doRequest := func(method, urlStr, body string, state string, cookies []*http.Cookie) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
 		for _, cookie := range cookies {
 			req.AddCookie(cookie)
@@ -395,7 +395,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 	}
 
 	t.Run("OIDC callback with CSRF token -> set auth cookies", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(state), "", []*http.Cookie{{Name: stateCookieName, Value: state}})
+		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(state), "", state, nil)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}

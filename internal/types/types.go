@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"reflect"
 	"sort"
 	"strings"
@@ -628,6 +629,8 @@ type ExternalService struct {
 	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
 	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
 	CodeHostID     *int32
+	CreatorID      *int32
+	LastUpdaterID  *int32
 }
 
 type ExternalServiceRepo struct {
@@ -1038,6 +1041,26 @@ type CodyAggregatedEvent struct {
 	InvalidMonth        int32
 	InvalidWeek         int32
 	InvalidDay          int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodyProviders struct {
+	Completions *CodyCompletionProvider
+	Embeddings  *CodyEmbeddingsProvider
+}
+
+type CodyCompletionProvider struct {
+	ChatModel       string
+	CompletionModel string
+	FastChatModel   string
+	Provider        conftypes.CompletionsProviderName
+}
+
+type CodyEmbeddingsProvider struct {
+	Model    string
+	Provider conftypes.EmbeddingsProviderName
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -1656,16 +1679,10 @@ type SearchJobsUsageStatistics struct {
 	WeeklySearchJobsUniqueDownloadClicks *int32
 	WeeklySearchJobsUniqueViewLogsClicks *int32
 	WeeklySearchJobsSearchFormShown      []SearchJobsSearchFormShownPing
-	WeeklySearchJobsValidationErrors     []SearchJobsValidationErrorPing
 }
 
 type SearchJobsSearchFormShownPing struct {
 	ValidState string
-	TotalCount int
-}
-
-type SearchJobsValidationErrorPing struct {
-	Errors     []string
 	TotalCount int
 }
 

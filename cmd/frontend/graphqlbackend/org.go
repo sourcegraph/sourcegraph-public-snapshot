@@ -166,20 +166,18 @@ type membersConnectionStore struct {
 	query *string
 }
 
-func (s *membersConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *membersConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	query := ""
 	if s.query != nil {
 		query = *s.query
 	}
 
-	result, err := s.db.Users().Count(ctx, &database.UsersListOptions{OrgID: s.orgID, Query: query})
+	count, err := s.db.Users().Count(ctx, &database.UsersListOptions{OrgID: s.orgID, Query: query})
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	totalCount := int32(result)
-
-	return &totalCount, nil
+	return int32(count), nil
 }
 
 func (s *membersConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*UserResolver, error) {
@@ -206,15 +204,13 @@ func (s *membersConnectionStore) MarshalCursor(node *UserResolver, _ database.Or
 	return &cursor, nil
 }
 
-func (s *membersConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *membersConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
 	nodeID, err := UnmarshalUserID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
 
-	id := string(nodeID)
-
-	return &id, nil
+	return []any{nodeID}, nil
 }
 
 func (o *OrgResolver) settingsSubject() api.SettingsSubject {

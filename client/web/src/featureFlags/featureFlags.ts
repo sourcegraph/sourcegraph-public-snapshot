@@ -28,12 +28,15 @@ export const FEATURE_FLAGS = [
     'end-user-onboarding',
     'admin-onboarding',
     'enable-sveltekit',
+    'enable-sveltekit-toggle',
     'search-content-based-lang-detection',
     'search-new-keyword',
     'search-debug',
+    'search-simple',
     'cody-chat-mock-test',
     'signup-survey-enabled',
     'cody-pro',
+    'opencodegraph',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

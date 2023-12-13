@@ -2,7 +2,10 @@ package response
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log"
 )
@@ -31,10 +34,13 @@ func JSONError(logger log.Logger, w http.ResponseWriter, code int, err error) {
 type StatusHeaderRecorder struct {
 	StatusCode int
 	http.ResponseWriter
+	Logger log.Logger
 }
 
-func NewStatusHeaderRecorder(w http.ResponseWriter) *StatusHeaderRecorder {
-	return &StatusHeaderRecorder{ResponseWriter: w}
+var _ http.Flusher = &StatusHeaderRecorder{}
+
+func NewStatusHeaderRecorder(w http.ResponseWriter, logger log.Logger) *StatusHeaderRecorder {
+	return &StatusHeaderRecorder{ResponseWriter: w, Logger: logger}
 }
 
 // Write writes the data to the connection as part of an HTTP reply.
@@ -53,6 +59,15 @@ func (r *StatusHeaderRecorder) Write(b []byte) (int, error) {
 func (r *StatusHeaderRecorder) WriteHeader(statusCode int) {
 	r.StatusCode = statusCode
 	r.ResponseWriter.WriteHeader(statusCode)
+}
+
+//nolint:bodyclose
+func (r *StatusHeaderRecorder) Flush() {
+	rc := http.NewResponseController(r.ResponseWriter)
+	// we're implementing a stdlib interface that doesn't return the error, so we log
+	if err := rc.Flush(); err != nil {
+		r.Logger.Warn("flushing response failed", log.Error(err))
+	}
 }
 
 // NewHTTPStatusCodeError records a status code error returned from a request.
@@ -88,4 +103,32 @@ func (e HTTPStatusCodeError) HTTPStatusCode() int { return e.status }
 
 func (e HTTPStatusCodeError) IsCustom() (originalCode int, isCustom bool) {
 	return e.originalStatus, e.custom
+}
+
+type autoFlusher struct {
+	rw      http.ResponseWriter
+	flusher http.Flusher
+}
+
+var _ io.Writer = autoFlusher{}
+
+// NewAutoFlushingWriter returns an io.Writer that will flush after every Write()
+// call. It will return an error if the response writer doesn't implement the Flusher interface.
+func NewAutoFlushingWriter(w http.ResponseWriter) (io.Writer, error) {
+	if flusher, ok := w.(http.Flusher); !ok {
+		return nil, errors.Newf("can't flush response using %v as it doesn't implement http.Flusher", w)
+	} else {
+		return autoFlusher{
+			rw: w, flusher: flusher,
+		}, nil
+	}
+}
+
+func (a autoFlusher) Write(p []byte) (n int, err error) {
+	n, err = a.rw.Write(p)
+	if err != nil {
+		return 0, err
+	}
+	a.flusher.Flush()
+	return n, nil
 }

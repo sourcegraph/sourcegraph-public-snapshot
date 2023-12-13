@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -418,6 +419,15 @@ func TestRepoStatistics_Compaction(t *testing.T) {
 	ctx := context.Background()
 	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 
+	// Empty table, should work, even though we should always have a row in
+	// there with 0 values.
+	if err := s.Exec(ctx, sqlf.Sprintf("DELETE FROM repo_statistics")); err != nil {
+		t.Fatalf("failed to query repo name: %s", err)
+	}
+	if err := s.CompactRepoStatistics(ctx); err != nil {
+		t.Fatalf("CompactRepoStatistics failed: %s", err)
+	}
+
 	shards := []string{
 		"shard-1",
 		"shard-2",
@@ -496,6 +506,15 @@ func TestGitserverReposStatistics_Compaction(t *testing.T) {
 	ctx := context.Background()
 	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 
+	// Empty table, should work, even though we should always have a row in
+	// there with 0 values.
+	if err := s.Exec(ctx, sqlf.Sprintf("DELETE FROM gitserver_repos_statistics")); err != nil {
+		t.Fatalf("failed to query repo name: %s", err)
+	}
+	if err := s.CompactGitserverReposStatistics(ctx); err != nil {
+		t.Fatalf("CompactGitserverReposStatistics failed: %s", err)
+	}
+
 	shards := []string{
 		"shard-1",
 		"shard-2",
@@ -564,6 +583,73 @@ func TestGitserverReposStatistics_Compaction(t *testing.T) {
 	if count != wantCount {
 		t.Fatalf("wrong statistics count. have=%d, want=%d", count, wantCount)
 	}
+}
+
+func TestReposStatisticsStore_DeleteAndRecreateStatistics(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
+
+	// Safety check: make sure it works with empty table
+	err := s.DeleteAndRecreateStatistics(ctx)
+	require.NoError(t, err)
+
+	shards := []string{
+		"shard-1",
+		"shard-2",
+		"shard-3",
+	}
+	repos := types.Repos{
+		&types.Repo{Name: "repo1"},
+		&types.Repo{Name: "repo2"},
+		&types.Repo{Name: "repo3"},
+		&types.Repo{Name: "repo4"},
+		&types.Repo{Name: "repo5"},
+		&types.Repo{Name: "repo6"},
+	}
+
+	// Trigger 21 insertions into gitserver_repos_statistics table:
+	// 6 repos added: 6 rows
+	createTestRepos(ctx, t, db, repos)
+	// 6 clone status changes and shard assignments: 12 rows
+	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloning)
+	setCloneStatus(t, db, repos[1].Name, shards[0], types.CloneStatusCloning)
+	setCloneStatus(t, db, repos[2].Name, shards[1], types.CloneStatusCloning)
+	setCloneStatus(t, db, repos[3].Name, shards[1], types.CloneStatusCloning)
+	setCloneStatus(t, db, repos[4].Name, shards[2], types.CloneStatusCloning)
+	setCloneStatus(t, db, repos[5].Name, shards[2], types.CloneStatusCloning)
+	// 2 errors: 2 rows
+	setLastError(t, db, repos[0].Name, shards[0], "internet broke repo-1")
+	setLastError(t, db, repos[4].Name, shards[2], "internet broke repo-5")
+	// 1 corruption: 1 row
+	logCorruption(t, db, repos[2].Name, shards[1], "runaway corruption repo-3")
+
+	// Safety check that the counts are right:
+	wantRepoStatistics := RepoStatistics{Total: 6, Cloning: 6, FailedFetch: 2, Corrupted: 1}
+	wantGitserverReposStatistics := []GitserverReposStatistic{
+		{ShardID: ""},
+		{ShardID: shards[0], Total: 2, Cloning: 2, FailedFetch: 1},
+		{ShardID: shards[1], Total: 2, Cloning: 2, FailedFetch: 0, Corrupted: 1},
+		{ShardID: shards[2], Total: 2, Cloning: 2, FailedFetch: 1},
+	}
+	assertRepoStatistics(t, ctx, s, wantRepoStatistics, wantGitserverReposStatistics)
+
+	// Now delete and recreate
+	err = s.DeleteAndRecreateStatistics(ctx)
+	require.NoError(t, err)
+
+	// Should be the same, except the empty shard is gone
+	wantGitserverReposStatistics = []GitserverReposStatistic{
+		{ShardID: shards[0], Total: 2, Cloning: 2, FailedFetch: 1},
+		{ShardID: shards[1], Total: 2, Cloning: 2, FailedFetch: 0, Corrupted: 1},
+		{ShardID: shards[2], Total: 2, Cloning: 2, FailedFetch: 1},
+	}
+	assertRepoStatistics(t, ctx, s, wantRepoStatistics, wantGitserverReposStatistics)
 }
 
 func queryRepoName(t *testing.T, ctx context.Context, s *repoStatisticsStore, repoID api.RepoID) api.RepoName {

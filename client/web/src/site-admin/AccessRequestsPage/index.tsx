@@ -303,7 +303,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
             {!hasRemainingSeats && (
                 <Alert variant="danger">
                     No licenses remaining. To approve requests,{' '}
-                    <Link to="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener">
+                    <Link to="https://sourcegraph.com/pricing" target="_blank" rel="noopener">
                         purchase additional licenses
                     </Link>{' '}
                     or <Link to="/site-admin/users">remove inactive users</Link>.

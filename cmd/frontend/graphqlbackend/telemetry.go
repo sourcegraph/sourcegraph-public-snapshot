@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 // TelemetryRootResolver provides TelemetryResolver via field 'telemetry' as
@@ -44,6 +45,7 @@ type RecordEventArgs struct{ Event TelemetryEventInput }
 type RecordEventsArgs struct{ Events []TelemetryEventInput }
 
 type TelemetryEventInput struct {
+	Timestamp         *gqlutil.DateTime                     `json:"timestamp"`
 	Feature           string                                `json:"feature"`
 	Action            string                                `json:"action"`
 	Source            TelemetryEventSourceInput             `json:"source"`

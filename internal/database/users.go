@@ -502,6 +502,7 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().Insert(ctx, logEvent)
 }
 
@@ -646,11 +647,8 @@ func (u *userStore) ChangeCodyPlan(ctx context.Context, id int32, pro bool) (err
 			return userNotFoundErr{args: []any{id}}
 		}
 
-		if pro {
-			return errors.New("user is already on Cody Pro plan")
-		}
-
-		return errors.New("user is already on Cody Community plan")
+		// Intentionally not returning an error if the user is already pro/commiunity. This makes the mutation idempotent.
+		return nil
 	}
 
 	return nil
@@ -842,6 +840,8 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 			Timestamp:       now,
 		}
 	}
+
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().BulkInsert(ctx, logEvents)
 }
 
@@ -963,6 +963,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 				Source:          "BACKEND",
 				Timestamp:       time.Now(),
 			}
+			//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 			_ = db.EventLogs().Insert(ctx, logEvent)
 			return err
 		}
@@ -1686,6 +1687,7 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 		Timestamp:       time.Now(),
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().Insert(ctx, logEvent)
 }
 

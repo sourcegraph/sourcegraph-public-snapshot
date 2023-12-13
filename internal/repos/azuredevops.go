@@ -158,6 +158,11 @@ func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, err
 		return nil, err
 	}
 
+	cloneURL := p.RemoteURL
+	if s.config.GitURLType == "ssh" {
+		cloneURL = p.SSHURL
+	}
+
 	name := path.Join(fullURL.Host, fullURL.Path)
 	return &types.Repo{
 		Name: api.RepoName(name),
@@ -171,7 +176,7 @@ func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, err
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: p.CloneURL,
+				CloneURL: cloneURL,
 			},
 		},
 		Metadata: p,

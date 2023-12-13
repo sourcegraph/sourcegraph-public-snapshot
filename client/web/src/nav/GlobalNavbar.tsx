@@ -48,8 +48,7 @@ import { isSearchJobsEnabled } from '../search-jobs/utility'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useDeveloperSettings, useNavbarQueryState } from '../stores'
-import { eventLogger } from '../tracking/eventLogger'
-import { EventName, EventLocation } from '../util/constants'
+import { SvelteKitNavItem } from '../sveltekit/SvelteKitNavItem'
 
 import { NavAction, NavActions, NavBar, NavGroup, NavItem, NavLink } from '.'
 import { NavDropdown, type NavDropdownItem } from './NavBar/NavDropdown'
@@ -193,6 +192,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     showSearchContext={showSearchContext}
                     showOwn={ownEnabled}
                     showCodySearch={codySearchEnabled}
+                    showCodyDropdown={isSourcegraphDotCom && !!props.authenticatedUser}
                     showSearchJobs={isSearchJobsEnabled()}
                     showSearchNotebook={showSearchNotebook}
                     showCodeMonitoring={showCodeMonitoring}
@@ -208,20 +208,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             <DeveloperSettingsGlobalNavItem />
                         </NavAction>
                     )}
+                    <SvelteKitNavItem />
                     {isCodyApp && <UpdateGlobalNav />}
                     {props.authenticatedUser?.siteAdmin && (
                         <AccessRequestsGlobalNavItem className="d-flex align-items-center py-1" />
-                    )}
-                    {isSourcegraphDotCom && (
-                        <NavAction>
-                            <Link
-                                to="/get-cody"
-                                className={classNames(styles.link, 'small')}
-                                onClick={() => eventLogger.log(EventName.CODY_CTA, { location: EventLocation.NAV_BAR })}
-                            >
-                                Install Cody locally
-                            </Link>
-                        </NavAction>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser?.siteAdmin && !isCodyApp && (
@@ -293,6 +283,7 @@ export interface InlineNavigationPanelProps {
     showSearchContext: boolean
     showOwn: boolean
     showCodySearch: boolean
+    showCodyDropdown: boolean
     showSearchJobs: boolean
     showSearchNotebook: boolean
     showCodeMonitoring: boolean
@@ -311,6 +302,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
         showSearchContext,
         showOwn,
         showCodySearch,
+        showCodyDropdown,
         showSearchJobs,
         showSearchNotebook,
         showBatchChanges,
@@ -372,11 +364,34 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
                         </NavLink>
                     </NavItem>
                 ))}
-            <NavItem icon={CodyLogo}>
-                <NavLink variant={navLinkVariant} to={PageRoutes.Cody}>
-                    Cody
-                </NavLink>
-            </NavItem>
+            {showCodyDropdown ? (
+                <NavDropdown
+                    toggleItem={{
+                        path: PageRoutes.CodyManagement,
+                        icon: CodyLogo,
+                        content: 'Cody',
+                        variant: navLinkVariant,
+                    }}
+                    routeMatch={routeMatch}
+                    items={[
+                        {
+                            path: PageRoutes.CodyManagement,
+                            content: 'Dashboard',
+                        },
+                        {
+                            path: PageRoutes.Cody,
+                            content: 'Web Chat',
+                        },
+                    ]}
+                    name="cody"
+                />
+            ) : (
+                <NavItem icon={CodyLogo}>
+                    <NavLink variant={navLinkVariant} to={PageRoutes.Cody}>
+                        Cody
+                    </NavLink>
+                </NavItem>
+            )}
             {showSearchNotebook && (
                 <NavItem icon={BookOutlineIcon}>
                     <NavLink variant={navLinkVariant} to={PageRoutes.Notebooks}>

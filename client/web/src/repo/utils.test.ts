@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { FileExtension } from './constants'
-import { containsTest, getFileInfo, getInitialSearchTerm } from './utils'
+import { FileExtension, containsTest, getFileInfo } from './fileIcons'
+import { getInitialSearchTerm } from './utils'
 
 describe('containsTest', () => {
     const tests: {
@@ -88,7 +88,7 @@ describe('getFileInfo', () => {
 
     for (const t of tests) {
         it(t.name, () => {
-            const fileInfo = getFileInfo(t.file)
+            const fileInfo = getFileInfo(t.file, t.isDirectory)
             expect(fileInfo.extension).toBe(t.expectedExtension)
             expect(fileInfo.isTest).toBe(t.expectedIsTest)
         })

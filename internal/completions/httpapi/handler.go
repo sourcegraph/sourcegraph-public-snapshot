@@ -2,15 +2,22 @@ package httpapi
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 
 	"github.com/sourcegraph/log"
 
@@ -28,8 +35,17 @@ import (
 // being cancelled.
 const maxRequestDuration = time.Minute
 
+var timeToFirstEventMetrics = metrics.NewREDMetrics(
+	prometheus.DefaultRegisterer,
+	"completions_stream_first_event",
+	metrics.WithLabels("model"),
+	metrics.WithDurationBuckets([]float64{0.25, 0.5, 0.75, 1.0, 2.0, 3.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 25.0, 30.0}),
+)
+
 func newCompletionsHandler(
 	logger log.Logger,
+	userStore database.UserStore,
+	accessTokenStore database.AccessTokenStore,
 	events *telemetry.EventRecorder,
 	feature types.CompletionsFeature,
 	rl RateLimiter,
@@ -83,17 +99,36 @@ func newCompletionsHandler(
 		isDotcom := envvar.SourcegraphDotComMode()
 		isProviderCodyGateway := completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
 		if isCodyProEnabled && isDotcom && isProviderCodyGateway {
+			// Note: if we have no Authorization header, that's fine too, this will return an error
 			apiToken, _, err := authz.ParseAuthorizationHeader(r.Header.Get("Authorization"))
 			if err != nil {
-				trace.Logger(ctx, logger).Info("Error parsing auth header", log.String("Authorization header", r.Header.Get("Authorization")), log.Error(err))
-				http.Error(w, "Error parsing auth header", http.StatusUnauthorized)
-				return
-			}
-			accessToken, err = accesstoken.GenerateDotcomUserGatewayAccessToken(apiToken)
-			if err != nil {
-				trace.Logger(ctx, logger).Info("Access token generation failed", log.String("API token", apiToken), log.Error(err))
-				http.Error(w, "Access token generation failed", http.StatusUnauthorized)
-				return
+				// No actor either, so we fail.
+				if r.Header.Get("Authorization") != "" || sgactor.FromContext(ctx) == nil {
+					trace.Logger(ctx, logger).Info("Error parsing auth header", log.String("Authorization header", r.Header.Get("Authorization")), log.Error(err))
+					http.Error(w, "Error parsing auth header", http.StatusUnauthorized)
+					return
+				}
+
+				// Get or create an internal token to use.
+				actor := sgactor.FromContext(ctx)
+				apiTokenSha256, err := accessTokenStore.GetOrCreateInternalToken(ctx, actor.UID, []string{"user:all"})
+				if err != nil {
+					trace.Logger(ctx, logger).Info("Error creating internal access token", log.Error(err))
+					http.Error(w, "Missing auth header", http.StatusUnauthorized)
+					return
+				}
+				// Convert the user's sha256-encoded access token to an "sgd_" token for Cody Gateway.
+				// Note: we can't use accesstoken.GenerateDotcomUserGatewayAccessToken here because
+				// we only need to hash this once, not twice, as this is already an SHA256-encoding
+				// of the original token.
+				accessToken = accesstoken.DotcomUserGatewayAccessTokenPrefix + hex.EncodeToString(hashutil.ToSHA256Bytes(apiTokenSha256))
+			} else {
+				accessToken, err = accesstoken.GenerateDotcomUserGatewayAccessToken(apiToken)
+				if err != nil {
+					trace.Logger(ctx, logger).Info("Access token generation failed", log.String("API token", apiToken), log.Error(err))
+					http.Error(w, "Access token generation failed", http.StatusUnauthorized)
+					return
+				}
 			}
 		}
 
@@ -104,31 +139,50 @@ func newCompletionsHandler(
 			completionsConfig.Provider,
 			accessToken,
 		)
+		l := trace.Logger(ctx, logger)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		// Check rate limit.
-		err = rl.TryAcquire(ctx)
-		if err != nil {
-			if unwrap, ok := err.(RateLimitExceededError); ok {
-				respondRateLimited(w, unwrap)
+		if !isCodyProEnabled || !isDotcom || !isProviderCodyGateway {
+			// Check rate limit.
+			err = rl.TryAcquire(ctx)
+			if err != nil {
+				if unwrap, ok := err.(RateLimitExceededError); ok {
+					actor := sgactor.FromContext(ctx)
+					user, err := actor.User(ctx, userStore)
+					if err != nil {
+						l.Error("Error while fetching user", log.Error(err))
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					}
+					isProUser := user.CodyProEnabledAt != nil
+					respondRateLimited(w, unwrap, isDotcom, isCodyProEnabled, isProUser)
+					return
+				}
+				l.Warn("Rate limit error", log.Error(err))
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
 				return
 			}
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
 		}
 
 		responseHandler(ctx, requestParams.CompletionRequestParameters, completionClient, w)
 	})
 }
 
-func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError) {
+func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError, isDotcom, isCodyProEnabled, isProUser bool) {
 	// Rate limit exceeded, write well known headers and return correct status code.
 	w.Header().Set("x-ratelimit-limit", strconv.Itoa(err.Limit))
 	w.Header().Set("x-ratelimit-remaining", strconv.Itoa(max(err.Limit-err.Used, 0)))
 	w.Header().Set("retry-after", err.RetryAfter.Format(time.RFC1123))
+	if isDotcom && isCodyProEnabled {
+		if isProUser {
+			w.Header().Set("x-is-cody-pro-user", "true")
+		} else {
+			w.Header().Set("x-is-cody-pro-user", "false")
+		}
+	}
 	http.Error(w, err.Error(), http.StatusTooManyRequests)
 }
 
@@ -160,9 +214,14 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 		defer func() {
 			_ = eventWriter.Event("done", map[string]any{})
 		}()
-
+		start := time.Now()
+		firstEventObserved := false
 		err = cc.Stream(ctx, feature, requestParams,
 			func(event types.CompletionResponse) error {
+				if !firstEventObserved {
+					firstEventObserved = true
+					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, &err, requestParams.Model)
+				}
 				return eventWriter.Event("completion", event)
 			})
 		if err != nil {
