@@ -31,6 +31,7 @@ go_cross_binary(
 
 sh_test(
     name = "sh_upgradetest",
+    timeout = "eternal",
     srcs = ["test.sh"],
     args = select({
         "//:darwin_docker_e2e_go": [
@@ -60,5 +61,26 @@ sh_test(
             "//internal/database:generate_schemas",
         ],
     }),
-    tags = ["requires-network", "no-sandbox"]
+    tags = [
+        "no-sandbox",
+        "requires-network",
+    ],
+)
+
+# bazel run //testing/tools/upgradetest:sh_upgradetest_run --config=darwin-docker
+sh_binary(
+    name = "sh_upgradetest_run",
+    srcs = ["test.sh"],
+    args = [
+        "$(location :upgradetest-darwin-arm64)",
+        "$(location //cmd/migrator:image_tarball)",
+        "$(location //cmd/frontend:image_tarball)",
+        "$(locations //internal/database:generate_schemas)",
+    ],
+    data = [
+        ":upgradetest-darwin-arm64",
+        "//cmd/frontend:image_tarball",
+        "//cmd/migrator:image_tarball",
+        "//internal/database:generate_schemas",
+    ],
 )

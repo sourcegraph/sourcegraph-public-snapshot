@@ -1,4 +1,5 @@
-// Run with bazel run //testing/tools/upgradetest:sh_upgradetest --config=darwin-docker
+// Run with bazel test //testing/tools/upgradetest:sh_upgradetest --config darwin-docker
+// Run with bazel run //testing/tools/upgradetest:sh_upgradetest_run --config darwin-docker
 // Run in CI: sg ci bazel run //testing/tools/upgradetest:sh_upgradetest
 //
 // TODO
@@ -430,7 +431,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 	//
 	// Docker bridge networks take up a lot of the docker daemons available port allocation. We run only a limited amount of test parallelization to get around this.
 	// see https://straz.to/2021-09-08-docker-address-pools/
-	networkName = fmt.Sprintf("wg_test_%s", initVersion)
+	networkName = fmt.Sprintf("%s_test_%s", testType, initVersion)
 	test.AddLog(fmt.Sprintf("🐋 creating network %s", networkName))
 
 	out, err := run.Cmd(ctx, "docker", "network", "create", networkName).Run().String()
