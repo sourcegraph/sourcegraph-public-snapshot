@@ -1,3 +1,14 @@
+/// This module contains logic to understand the binding structure of
+/// a given source file. We then emit information about references and
+/// definition of _local_ bindings. A local binding is a binding that
+/// cannot be accessed from another file. It is important to never
+/// mark a non-local as local, because that would mean we'd prevent
+/// search-based lookup from finding references to that binding.
+///
+/// We implement this in a language-agnostic way by relying on
+/// tree-sitter and a DSL built on top of its [query syntax].
+///
+/// [query syntax]: https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax
 use crate::languages::LocalConfiguration;
 use core::cmp::Ordering;
 use core::ops::Range;
@@ -27,7 +38,6 @@ use tree_sitter::Node;
 // 1. Differences to the old implementation (Feature wise)
 // 2. Performance characteristics (do some benchmarks)
 
-/// TODO: Document me
 pub fn parse_tree<'a>(
     config: &LocalConfiguration,
     tree: &'a tree_sitter::Tree,
@@ -62,6 +72,8 @@ type ScopeRef<'a> = Id<Scope<'a>>;
 
 #[derive(Debug)]
 struct Scope<'a> {
+    /// For a query that captures a "@scope.function" this will
+    /// contain the string "function"
     ty: String,
     node: Node<'a>,
     // TODO: (perf) we could also remember how many definitions
@@ -71,7 +83,10 @@ struct Scope<'a> {
 
     /// Definitions that have been hoisted to the top of this scope
     hoisted_definitions: Vec<Definition<'a>>,
+    /// Definitions that appear in this scope. Sorted lexicographical
     definitions: Vec<Definition<'a>>,
+    /// Scopes that appear nested underneath this scope. Sorted
+    /// lexicographically
     children: Vec<ScopeRef<'a>>,
 }
 
@@ -161,11 +176,11 @@ impl<'a> LocalResolver<'a> {
     }
 
     fn start_byte(&self, id: ScopeRef<'a>) -> usize {
-        self.arena.get(id).unwrap().node.start_byte()
+        self.get_scope(id).node.start_byte()
     }
 
     fn end_byte(&self, id: ScopeRef<'a>) -> usize {
-        self.arena.get(id).unwrap().node.end_byte()
+        self.get_scope(id).node.end_byte()
     }
 
     fn add_definition(
@@ -218,7 +233,7 @@ impl<'a> LocalResolver<'a> {
     fn ancestors(&self, id: ScopeRef<'a>) -> Vec<ScopeRef<'a>> {
         let mut current = id;
         let mut results = vec![];
-        while let Some(next) = self.arena.get(current).unwrap().parent {
+        while let Some(next) = self.get_scope(current).parent {
             current = next;
             results.push(current)
         }
@@ -226,15 +241,13 @@ impl<'a> LocalResolver<'a> {
     }
 
     fn parent(&self, id: ScopeRef<'a>) -> ScopeRef<'a> {
-        self.arena
-            .get(id)
-            .unwrap()
+        self.get_scope(id)
             .parent
             .expect("Tried to get the root node's parent")
     }
 
     fn print_scope(&self, id: ScopeRef<'a>, depth: usize) {
-        let scope = self.arena.get(id).unwrap();
+        let scope = self.get_scope(id);
         println!(
             "{}scope {} {}-{}",
             str::repeat(" ", depth),
@@ -434,6 +447,7 @@ impl<'a> LocalResolver<'a> {
 
         // TODO: (perf) Add refs in the pre-order traversal
         for (_ty, node) in references {
+            // See the comment on LocalResolver.definition_start_bytes
             if self.definition_start_bytes.contains(&node.start_byte()) {
                 continue;
             }
@@ -475,8 +489,10 @@ impl<'a> LocalResolver<'a> {
         // Next we build a tree structure of scopes and definitions
         let top_scope = self
             .arena
-            .alloc(Scope::new("root".to_string(), tree.root_node(), None));
+            .alloc(Scope::new("global".to_string(), tree.root_node(), None));
         self.build_tree(top_scope, captures.scopes, captures.definitions);
+        // TODO: Maybe write a couple snapshot tests that assert on
+        // the structure of this tree?
         self.print_scope(top_scope, 0); // Just for debugging
 
         // Finally we resolve all references against that tree structure
