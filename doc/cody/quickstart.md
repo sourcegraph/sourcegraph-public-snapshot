@@ -4,25 +4,29 @@
 
 1. Generate unit tests for your code
 2. Identify errors and get suggested code fixes
-3. Adding documentation to your code snippets
+3. Add documentation to your code snippets
 
 ## Prerequisites
 
 - Make sure you have the [Cody extension installed](overview/install-vscode.md) in your VS Code editor
-- You have enabled an instance for [Cody from your Sourcegraph.com](overview/cody-with-sourcegraph.md) account
-- You have a project open in VS Code that Cody has access to via Sourcegraph
+- You have a Free or Pro account through Sourcegraph.com or a Sourcegraph Enterprise account
+- You have a project open in VS Code
 
 ## Getting started with Cody extension and commands
 
-After installing the extension, the side activity bar will display an icon for **Cody**. Click this icon, and Cody's panel will open. This interface is used to start a **New Chat**, run Cody **commands** or get access to releavnt resources.
+After installing the extension, the side activity bar will display an icon for **Cody**. Click this icon, and Cody's panel will open. This interface is used to start a **New Chat**, run Cody **commands** or get access to relevant resources.
 
 ![Cody icon in side activity bar ](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-quickstart/cody-icon-vs-code.png)
 
-Cody supports **Commands** with VS Code. These are quick, ready-to-use prompt actions that you can apply to any code or text-based snippet you've highlighted. You can run a command in 3 ways:
+Cody supports **Commands** with VS Code. These are quick, ready-to-use prompt actions that you can apply to any code or text-based snippet you've highlighted. You can run a command in the following ways:
 
-1. Click **New Chat** button, type `/` in the chat bar, and Cody will suggest a list of commands
-2. Right click > Cody > Select a command
-3. Press the command hotkey (`⌥` + `c` / `alt` + `c`)
+1. Highlight your code and select the command from the sidebar
+
+![running-commands](https://storage.googleapis.com/sourcegraph-assets/Docs/using-commands.png)
+
+2. Open up the command palette with `Option+C` `Alt+C`
+3. Right-click on any code element and select **Cody > Choose a command** from the list
+4. Type `/` in the chat bar. Cody will then suggest a list of available commands
 
 ![slash-command](https://storage.googleapis.com/sourcegraph-assets/Docs/slash-command-trigger.png)
 
@@ -126,7 +130,8 @@ Leveraging the failed test output, Cody is able to identify the potential bug an
 
 ## 3. Ask Cody to add code documentation
 
-Cody can also create well-crafted code documentation and comments, significantly improving the readability experience. You can add it by selecting a code snippet and clicking **Document** from the **Commands** panel. Alternatively, select the code, and inside the Cody chat window, type `/doc`. Cody will add a comment to the top of the code snippet.
+Cody can also create well-crafted code documentation and comments, significantly improving the readability experience.
+You can add it by selecting a code snippet and running the **Document** command. Cody will add a comment to the top of the code snippet. Alternatively, select the code, and inside the Cody chat window, type `/doc`. Cody will add a comment to the top of the code snippet.
 
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/code-comments-cody.mp4" type="video/mp4">

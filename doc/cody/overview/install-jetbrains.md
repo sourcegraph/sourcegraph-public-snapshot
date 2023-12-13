@@ -123,7 +123,7 @@ The Cody extension by Sourcegraph enhances your coding experience in your IDE by
 ## Prerequisites
 
 - You have the latest version of <a href="https://www.jetbrains.com/idea/" target="_blank">JetBrains IDEs</a> installed
-- You have enabled an instance for [Cody from your Sourcegraph.com](cody-with-sourcegraph.md) account
+- You have a Free or Pro account through Sourcegraph.com or a Sourcegraph Enterprise account
 - Cody is compatible with the following JetBrains IDEs:
   - [Android Studio](https://developer.android.com/studio)
   - [AppCode](https://www.jetbrains.com/objc/)
@@ -227,19 +227,6 @@ Let's understand how the **Generate Docstring** command generates code documenta
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/jb-generate-docstring.mp4" type="video/mp4">
 </video>
-
-## Enable code graph context for context-aware answers (optional)
-
-You can optionally configure code graph content, which gives Cody the ability to provide context-aware answers. For example, Cody can write example API calls if they have the context of a codebase's API schema.
-
-Learn more about how to:
-
-- [Configure code graph context for Sourcegraph.com](cody-with-sourcegraph.md#configure-code-graph-context-for-code-aware-answers)
-- [Configure code graph context for Sourcegraph Enterprise](enable-cody-enterprise.md#enabling-codebase-aware-answers)
-
-## Embeddings
-
-For free users, embeddings are supported for the open source repos on Sourcegraph.com. Enterprise users are guided to contact their admin for a more customized embeddings experience.
 
 ## Updating the extension
 

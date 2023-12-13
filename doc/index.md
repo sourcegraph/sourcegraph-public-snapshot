@@ -28,17 +28,18 @@
 
 <img alt="Sourcegraph logo" src="/assets/sourcegraph-logo-dark.svg" width="50%" class="theme-dark-only"><img alt="Sourcegraph logo" src="/assets/sourcegraph-logo-light.svg" width="50%" class="theme-light-only"><span class="sr-only">Sourcegraph</span>
 
-Sourcegraph is a Code Intelligence platform that deeply understands your code, no matter how large or where it’s hosted, to power modern developer experiences.
+Sourcegraph is a Code AI platform that deeply understands your code, no matter how large or where it’s hosted, to power modern developer experiences.
 
 - **Code search:** Search all of your repositories across all branches and all code hosts
 - **Code intelligence:** Navigate code, find references, see code owners, trace history, and more
 - **Fix & refactor:** Roll out and track large-scale changes and migrations across repos at once
-- **AI code assistant:** Use Cody to read, write, and understand entire codebase faster
+- **AI code assistant**: Use Cody to read, write, and understand your entire codebase faster
 
 ## Quickstart
 
 <div class="cards">
-  <a class="card text-left" href="https://sourcegraph.com/cody"><b>Get Cody</b><p>Write, fix, and maintain code with the powerful & accurate AI coding assistant.</p></a>
+  <a class="card text-left" href="https://sourcegraph.com/cody"><b>Get Cody</b><p>Wite, fix, and maintain code with Sourcegraph’s AI coding assistant, Cody.
+</p></a>
   <a class="card text-left" href="https://sourcegraph.com/search"><b>Try Code Search</b><p>Search all of your repositories across all branches and all code hosts.</p></a>
 </div>
 <div class="cards">
@@ -52,6 +53,7 @@ Some of the main Sourcegraph features include:
 
 | **Feature**                    | **Description**                                                                                                                        |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Cody**            | Cody is a free AI coding assistant that writes, fixes, and maintains your code      |
 | **Code Navigation**            | Jump-to-definition, find references, and other IDE-like code browsing features on any branch, commit, or PR/code review      |
 | **Code Insights**              | Reveal high-level information about your codebase at its current state and over time, to track migrations, version usage, vulnerability remediation, ownership, and more |
 | **Batch Changes**              | Make large-scale code changes across many repositories and codehosts                                                              |
