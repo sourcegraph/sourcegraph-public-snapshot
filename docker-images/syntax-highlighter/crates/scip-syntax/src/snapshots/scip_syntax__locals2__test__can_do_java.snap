@@ -16,7 +16,6 @@ expression: dumped
   
    public Locals(String chars) {
 //                      ^^^^^ definition local 3
-//                      ^^^^^ reference local 2
     this.chars = chars;
 //       ^^^^^ reference local 3
 //               ^^^^^ reference local 3
@@ -24,7 +23,6 @@ expression: dumped
   
    public Locals append(String chars, int num, Locals text) {
 //                             ^^^^^ definition local 4
-//                             ^^^^^ reference local 2
 //                                        ^^^ definition local 5
 //                                                    ^^^^ definition local 6
     return new Locals(this.chars + chars + text.getChars());
@@ -95,7 +93,6 @@ expression: dumped
   
     Flags(int bits) {
 //            ^^^^ definition local 22
-//            ^^^^ reference local 21
      this.bits = bits;
 //        ^^^^ reference local 22
 //               ^^^^ reference local 22
@@ -103,7 +100,6 @@ expression: dumped
   
     public static boolean hasNodeText(Flags bits) {
 //                                          ^^^^ definition local 23
-//                                          ^^^^ reference local 21
      return (bits.bits & Flags.NODE_TEXT.bits) != 0;
 //           ^^^^ reference local 23
 //                ^^^^ reference local 23

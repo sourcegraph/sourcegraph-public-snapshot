@@ -9,6 +9,7 @@ use scip::{
     types::{Occurrence, Symbol},
 };
 use scip_treesitter::prelude::*;
+use std::collections::HashSet;
 use std::fmt;
 use std::slice::Iter;
 use tree_sitter::Node;
@@ -25,6 +26,16 @@ use tree_sitter::Node;
 //
 // 1. Differences to the old implementation (Feature wise)
 // 2. Performance characteristics (do some benchmarks)
+
+/// TODO: Document me
+pub fn parse_tree<'a>(
+    config: &LocalConfiguration,
+    tree: &'a tree_sitter::Tree,
+    source_bytes: &'a [u8],
+) -> Vec<Occurrence> {
+    let resolver = LocalResolver::new(source_bytes);
+    resolver.process(config, tree)
+}
 
 #[derive(Debug, Clone)]
 struct Definition<'a> {
@@ -131,6 +142,10 @@ struct LocalResolver<'a> {
     arena: Arena<Scope<'a>>,
     source_bytes: &'a [u8],
     definition_id_supply: usize,
+    // TODO: This is a hack to not record references that overlap with
+    // definitions. We should either fix our queries so this doesn't
+    // happen, or do it in a more performant manner.
+    definition_start_bytes: HashSet<usize>,
     occurrences: Vec<Occurrence>,
 }
 
@@ -140,6 +155,7 @@ impl<'a> LocalResolver<'a> {
             arena: Arena::new(),
             source_bytes,
             definition_id_supply: 0,
+            definition_start_bytes: HashSet::new(),
             occurrences: vec![],
         }
     }
@@ -167,6 +183,9 @@ impl<'a> LocalResolver<'a> {
             symbol_roles,
             ..Default::default()
         });
+
+        self.definition_start_bytes
+            .insert(definition.node.start_byte());
 
         match hoist {
             Some(hoist_scope) => {
@@ -415,6 +434,10 @@ impl<'a> LocalResolver<'a> {
 
         // TODO: (perf) Add refs in the pre-order traversal
         for (_ty, node) in references {
+            if self.definition_start_bytes.contains(&node.start_byte()) {
+                continue;
+            }
+
             let reference_string = node
                 .utf8_text(self.source_bytes)
                 .expect("non utf8 reference");
@@ -422,7 +445,6 @@ impl<'a> LocalResolver<'a> {
             loop {
                 let scope = self.get_scope(current_scope);
 
-                // TODO: Need to filter all refs that overlap with definitions
                 if let Some(def) = scope.find_def(reference_string, node.start_byte()) {
                     let symbol = format_symbol(Symbol::new_local(def.id));
                     ref_occurrences.push(scip::types::Occurrence {
@@ -462,15 +484,6 @@ impl<'a> LocalResolver<'a> {
 
         self.occurrences
     }
-}
-
-pub fn parse_tree<'a>(
-    config: &LocalConfiguration,
-    tree: &'a tree_sitter::Tree,
-    source_bytes: &'a [u8],
-) -> Vec<Occurrence> {
-    let resolver = LocalResolver::new(source_bytes);
-    resolver.process(config, tree)
 }
 
 #[cfg(test)]

@@ -32,7 +32,6 @@ expression: dumped
     if true {
      x := true
 //   ^ definition local 7
-//   ^ reference local 6
     }
    }
    if true {

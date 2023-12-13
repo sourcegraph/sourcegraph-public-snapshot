@@ -23,7 +23,6 @@ expression: dumped
     overwriteName := func(local int) int {
 //  ^^^^^^^^^^^^^ definition local 7
 //                        ^^^^^ definition local 8
-//                        ^^^^^ reference local 2
      return local + unrelated
 //          ^^^^^ reference local 8
 //                  ^^^^^^^^^ reference local 4
