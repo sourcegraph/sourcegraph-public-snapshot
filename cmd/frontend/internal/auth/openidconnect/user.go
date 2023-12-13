@@ -27,7 +27,7 @@ type ExternalAccountData struct {
 // getOrCreateUser gets or creates a user account based on the OpenID Connect token. It returns the
 // authenticated actor if successful; otherwise it returns a friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
-func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, token *oauth2.Token, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims, usernamePrefix, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, _ *actor.Actor, safeErrMsg string, err error) {
+func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, token *oauth2.Token, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims, usernamePrefix string, hubSpotProps *hubspot.ContactProperties) (newUserCreated bool, _ *actor.Actor, safeErrMsg string, err error) {
 	if userInfo.Email == "" {
 		return false, nil, "Only users with an email address may authenticate to Sourcegraph.", errors.New("no email address in claims")
 	}
@@ -103,11 +103,7 @@ func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, token *oa
 	if err != nil {
 		return false, nil, safeErrMsg, err
 	}
-	go hubspotutil.SyncUser(email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
-		AnonymousUserID: anonymousUserID,
-		FirstSourceURL:  firstSourceURL,
-		LastSourceURL:   lastSourceURL,
-	})
+	go hubspotutil.SyncUser(email, hubspotutil.SignupEventID, hubSpotProps)
 	return newUserCreated, actor.FromUser(userID), "", nil
 }
 

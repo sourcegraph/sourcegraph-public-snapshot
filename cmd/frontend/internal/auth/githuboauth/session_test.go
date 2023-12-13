@@ -297,7 +297,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				}
 
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-				_, actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+				_, actr, _, err := s.GetOrCreateUser(ctx, tok, nil)
 				if got, exp := actr, c.expActor; !reflect.DeepEqual(got, exp) {
 					t.Errorf("expected actor %v, got %v", exp, got)
 				}
@@ -364,7 +364,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		allowOrgs:   nil,
 	}
 	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+	_, _, _, err := s.GetOrCreateUser(ctx, tok, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -417,7 +417,7 @@ func TestSessionIssuerHelper_SignupFailsWithLastError(t *testing.T) {
 		allowOrgs:   nil,
 	}
 	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+	_, _, _, err := s.GetOrCreateUser(ctx, tok, nil)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
