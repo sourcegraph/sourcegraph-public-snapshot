@@ -1,0 +1,58 @@
+diff --git a/internal/gcimporter/ureader_yes.go b/internal/gcimporter/ureader_yes.go
+index b977435f6..4bf4a9e0b 100644
+--- a/internal/gcimporter/ureader_yes.go
++++ b/internal/gcimporter/ureader_yes.go
+@@ -10,9 +10,11 @@
+ package gcimporter
+
+ import (
++	"encoding/json"
+ 	"fmt"
+ 	"go/token"
+ 	"go/types"
++	"os"
+ 	"sort"
+ 	"strings"
+
+@@ -133,14 +135,25 @@ func readUnifiedPackage(fset *token.FileSet, ctxt *types.Context, imports map[st
+
+ 	// Imports() of pkg are all of the transitive packages that were loaded.
+ 	var imps []*types.Package
++	var impss []string
+ 	for _, imp := range pr.pkgs {
+ 		if imp != nil && imp != pkg {
+ 			imps = append(imps, imp)
++			impss = append(impss, imp.Path())
+ 		}
+ 	}
+ 	sort.Sort(byPath(imps))
+ 	pkg.SetImports(imps)
+
++	f, err := os.Create("/tmp/bazel_log/" + "UREADER_" + strings.ReplaceAll(pkg.Path(), "/", "_") + ".json")
++	if err != nil {
++		panic(err)
++	}
++	defer f.Close()
++	fmt.Fprintln(f, input.PkgPath())
++	b, _ := json.MarshalIndent(impss, "", "\t")
++	fmt.Fprint(f, string(b))
++
+ 	pkg.MarkComplete()
+ 	return pkg
+ }
+@@ -485,7 +498,6 @@ func (r *reader) obj() (types.Object, []types.Type) {
+ }
+
+ func (pr *pkgReader) objIdx(idx pkgbits.Index) (*types.Package, string) {
+-
+ 	var objPkg *types.Package
+ 	var objName string
+ 	var tag pkgbits.CodeObj
+@@ -615,7 +627,6 @@ func (pr *pkgReader) objIdx(idx pkgbits.Index) (*types.Package, string) {
+ }
+
+ func (pr *pkgReader) objDictIdx(idx pkgbits.Index) *readerDict {
+-
+ 	var dict readerDict
+
+ 	{
