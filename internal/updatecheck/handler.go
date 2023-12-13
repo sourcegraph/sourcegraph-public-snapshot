@@ -94,7 +94,7 @@ type Meter struct {
 
 // Handle handles the ping requests and responds with information about software
 // updates for Sourcegraph.
-func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, w http.ResponseWriter, r *http.Request) {
+func Handle(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter, w http.ResponseWriter, r *http.Request) {
 	meter.RequestCounter.Add(r.Context(), 1)
 
 	pr, err := readPingRequest(r)
@@ -396,7 +396,7 @@ type pingPayload struct {
 	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
 }
 
-func logPing(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, r *http.Request, pr *pingRequest, hasUpdate bool) {
+func logPing(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter, r *http.Request, pr *pingRequest, hasUpdate bool) {
 	logger = logger.Scoped("logPing")
 	defer func() {
 		if err := recover(); err != nil {

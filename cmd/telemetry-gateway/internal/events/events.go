@@ -15,12 +15,12 @@ import (
 )
 
 type Publisher struct {
-	topic pubsub.TopicClient
+	topic pubsub.TopicPublisher
 
 	metadataJSON json.RawMessage
 }
 
-func NewPublisherForStream(eventsTopic pubsub.TopicClient, metadata *telemetrygatewayv1.RecordEventsRequestMetadata) (*Publisher, error) {
+func NewPublisherForStream(eventsTopic pubsub.TopicPublisher, metadata *telemetrygatewayv1.RecordEventsRequestMetadata) (*Publisher, error) {
 	metadataJSON, err := protojson.Marshal(metadata)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshaling metadata")
