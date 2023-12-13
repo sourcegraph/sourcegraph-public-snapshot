@@ -472,9 +472,7 @@ function renderNode({
             onClick={event => {
                 event.preventDefault()
                 handleSelect(event)
-                // When clicking on a non-expanded folder, we want to navigate
-                // to it _and_ expand it.
-                if (isBranch && !isExpanded) {
+                if (isBranch) {
                     handleExpand(event)
                 }
             }}
