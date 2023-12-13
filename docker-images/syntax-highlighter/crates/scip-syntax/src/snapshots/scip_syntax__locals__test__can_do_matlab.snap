@@ -99,9 +99,11 @@ expression: dumped
   
   myObject = MyClass(5);
 //^^^^^^^^ definition local 35
+//           ^^^^^^^ reference local 27
   result = myObject.method1();
 //^^^^^^ definition local 36
 //         ^^^^^^^^ reference local 35
+//                  ^^^^^^^ reference local 32
   
   addTwoNumbers = @(x, y) x + y;
 //^^^^^^^^^^^^^ definition local 37
