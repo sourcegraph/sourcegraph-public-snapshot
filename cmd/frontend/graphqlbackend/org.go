@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -50,9 +51,12 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 		if err := hasAccess(); err != nil {
 			// site admin can access org ID
 			if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
-				// Log action for site admin vieweing an organization's details in dotcom
-				if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs()); err != nil {
-					r.logger.Warn("Error logging security event", log.Error(err))
+				if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
+
+					// Log action for site admin vieweing an organization's details in dotcom
+					if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs()); err != nil {
+						r.logger.Warn("Error logging security event", log.Error(err))
+					}
 				}
 				onlyOrgID := &types.Org{ID: org.ID}
 				return &OrgResolver{db: r.db, org: onlyOrgID}, nil
@@ -60,14 +64,17 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 			return nil, err
 		}
 	}
-	argsJSON, _ := json.Marshal(args)
 
-	// Log action for siteadmin viewing an organization's details
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
-		r.logger.Warn("Error logging security event", log.Error(err))
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
 
+		argsJSON, _ := json.Marshal(args)
+
+		// Log action for siteadmin viewing an organization's details
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+
+		}
 	}
-
 	return &OrgResolver{db: r.db, org: org}, nil
 }
 
@@ -332,14 +339,17 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	argsJSON, _ := json.Marshal(args)
 
-	// Log an event when a new organization being created
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOrgCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
-		r.logger.Warn("Error logging security event", log.Error(err))
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
 
+		argsJSON, _ := json.Marshal(args)
+
+		// Log an event when a new organization being created
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOrgCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+
+		}
 	}
-
 	// Write the org_id into orgs open beta stats table on Cloud
 	if envvar.SourcegraphDotComMode() && args.StatsID != nil {
 		// we do not throw errors here as this is best effort
@@ -378,14 +388,17 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	argsJSON, _ := json.Marshal(args)
 
-	// Log an event when organization settings are updated
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOrgUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
-		r.logger.Warn("Error logging security event", log.Error(err))
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
 
+		argsJSON, _ := json.Marshal(args)
+
+		// Log an event when organization settings are updated
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOrgUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+
+		}
 	}
-
 	return &OrgResolver{db: r.db, org: updatedOrg}, nil
 }
 

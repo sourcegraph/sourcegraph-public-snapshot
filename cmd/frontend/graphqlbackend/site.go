@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -113,20 +114,24 @@ func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfiguratio
 		// The only way a non-admin can access this field is when `returnSafeConfigsOnly`
 		// is set to true.
 		if returnSafeConfigsOnly {
-			// Log an event when site config is viewed by non-admin user.
-			if err := database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigRedactedViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs()); err != nil {
-				r.logger.Error("Error logging security event", log.Error(err))
-			}
+			if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
 
+				// Log an event when site config is viewed by non-admin user.
+				if err := database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigRedactedViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs()); err != nil {
+					r.logger.Warn("Error logging security event", log.Error(err))
+				}
+			}
 			return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 		}
 		return nil, err
 	}
-	// Log an event when site config is viewed by admin user.
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs()); err != nil {
-		r.logger.Error("Error logging security event", log.Error(err))
-	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
 
+		// Log an event when site config is viewed by admin user.
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs()); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+		}
+	}
 	return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 }
 
@@ -373,11 +378,13 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		return false, err
 	}
 
-	// Log an event when site config is updated
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", json.RawMessage(args.Input), r.db.SecurityEventLogs()); err != nil {
-		r.logger.Error("Error logging security event", log.Error(err))
-	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
 
+		// Log an event when site config is updated
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", json.RawMessage(args.Input), r.db.SecurityEventLogs()); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+		}
+	}
 	return server.NeedServerRestart(), nil
 }
 

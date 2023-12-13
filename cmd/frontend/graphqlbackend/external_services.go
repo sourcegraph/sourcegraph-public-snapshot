@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -79,11 +80,14 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
-	// Log action of Code Host Connection being added
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionAdded, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs()); err != nil {
-		r.logger.Warn("Error logging security event", log.Error(err))
-	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
 
+		argsJSON, _ := json.Marshal(args.Input.DisplayName)
+		// Log action of Code Host Connection being added
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionAdded, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+		}
+	}
 	// Now, schedule the external service for syncing immediately.
 	s := repos.NewStore(r.logger, r.db)
 	err = s.EnqueueSingleSyncJob(ctx, externalService.ID)
@@ -160,10 +164,13 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	argsJSON, err := json.Marshal(args)
-	// Log action of Code Host Connection being updated
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
-		r.logger.Warn("Error logging security event", log.Error(err))
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
+
+		argsJSON, _ := json.Marshal(args.Input.DisplayName)
+		// Log action of Code Host Connection being updated
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+		}
 	}
 	// Fetch from database again to get all fields with updated values.
 	es, err = r.db.ExternalServices().GetByID(ctx, id)
@@ -280,13 +287,15 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		}
 	}
 
-	argsJSON, _ := json.Marshal(args)
-	// Log action of Code Host Connection being deleted
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
-		r.logger.Warn("Error logging security event", log.Error(err))
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
 
+		argsJSON, _ := json.Marshal(args)
+		// Log action of Code Host Connection being deleted
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+
+		}
 	}
-
 	return &EmptyResponse{}, nil
 }
 
@@ -324,13 +333,6 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		}
 		opt.RepoID = repoID
 	}
-
-	argsJSON, _ := json.Marshal(args)
-	// Log action of Code Host Connections being viewed
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionsViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
-		r.logger.Warn("Error logging security event", log.Error(err))
-	}
-
 	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
 }
 

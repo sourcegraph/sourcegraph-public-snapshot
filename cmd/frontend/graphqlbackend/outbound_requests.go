@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -65,12 +66,14 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 		after = ""
 	}
 
-	argsJSON, _ := json.Marshal(args)
-	// Log an even when Outbound requests are viewed
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
-		r.logger.Error("Error logging security event", log.Error(err))
-	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
 
+		argsJSON, _ := json.Marshal(args)
+		// Log an even when Outbound requests are viewed
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+		}
+	}
 	return &outboundRequestConnectionResolver{
 		first: args.First,
 		after: after,
@@ -88,12 +91,15 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 	if err != nil {
 		return nil, err
 	}
-	argsJSON, _ := json.Marshal(graphql.ID(key))
-	// Log an even when Outbound requests are viewed
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
-		r.logger.Error("Error logging security event", log.Error(err))
-	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
+
+		argsJSON, _ := json.Marshal(graphql.ID(key))
+		// Log an even when Outbound requests are viewed
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+		}
+	}
 	item, _ := httpcli.GetOutboundRequestLogItem(key)
 	return &OutboundRequestResolver{req: item}, nil
 }

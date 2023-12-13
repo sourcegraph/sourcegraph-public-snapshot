@@ -478,13 +478,14 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 		return nil, err
 	}
 	//logAccountModifiedEvent(ctx, r.db, userID, "USER_SETTINGS")
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
 
-	argsJSON, _ := json.Marshal(args)
-	// Log an event when a user account is modified/updated
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameAccountModified, "", uint32(userID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
-		r.logger.Error("Error logging security event", log.Error(err))
+		argsJSON, _ := json.Marshal(args)
+		// Log an event when a user account is modified/updated
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameAccountModified, "", uint32(userID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+			r.logger.Error("Error logging security event", log.Error(err))
+		}
 	}
-
 	return UserByIDInt32(ctx, r.db, userID)
 }
 
@@ -916,12 +917,14 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 	if err := r.db.Users().SetChatCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
-	argsJSON, _ := json.Marshal(args)
-	// Log an event when a user's Completions quota is updated
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameUserCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
-		r.logger.Error("Error logging security event", log.Error(err))
-	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
 
+		argsJSON, _ := json.Marshal(args)
+		// Log an event when a user's Completions quota is updated
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameUserCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+			r.logger.Error("Error logging security event", log.Error(err))
+		}
+	}
 	return UserByIDInt32(ctx, r.db, user.ID)
 }
 
@@ -959,11 +962,13 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 	if err := r.db.Users().SetCodeCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
-	argsJSON, _ := json.Marshal(args)
-	// Log an event when user's code completions quota is updated
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameUserCodeCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
-		r.logger.Error("Error logging security event", log.Error(err))
-	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
 
+		argsJSON, _ := json.Marshal(args)
+		// Log an event when user's code completions quota is updated
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameUserCodeCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+			r.logger.Error("Error logging security event", log.Error(err))
+		}
+	}
 	return UserByIDInt32(ctx, r.db, user.ID)
 }

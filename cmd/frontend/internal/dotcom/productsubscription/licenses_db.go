@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -87,11 +88,13 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		return "", errors.Wrap(err, "insert")
 	}
 
-	// Log an event when a license is created in DotCom
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, s.db.SecurityEventLogs()); err != nil {
-		log.Error(err)
-	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
 
+		// Log an event when a license is created in DotCom
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, s.db.SecurityEventLogs()); err != nil {
+			log.Error(err)
+		}
+	}
 	return id, nil
 }
 
@@ -284,12 +287,14 @@ ORDER BY created_at DESC
 		results = append(results, &v)
 	}
 
-	argsJSON, _ := json.Marshal(q.Args())
-	//Log an event when liscenses list is viewed in Dotcom
-	if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, s.db.SecurityEventLogs()); err != nil {
-		log.Error(err)
-	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
 
+		argsJSON, _ := json.Marshal(q.Args())
+		//Log an event when liscenses list is viewed in Dotcom
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, s.db.SecurityEventLogs()); err != nil {
+			log.Error(err)
+		}
+	}
 	return results, nil
 }
 
