@@ -79,6 +79,12 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req = req.Clone(req.Context())
 
 	actor := FromContext(req.Context())
+
+	// We always propagate AnonymousUID if present.
+	if actor.AnonymousUID != "" {
+		req.Header.Set(headerKeyActorAnonymousUID, actor.AnonymousUID)
+	}
+
 	path := getCondensedURLPath(req.URL.Path)
 	switch {
 	// Indicate this is an internal user
@@ -94,9 +100,6 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Indicate no authenticated actor is associated with request
 	default:
 		req.Header.Set(headerKeyActorUID, headerValueNoActor)
-		if actor.AnonymousUID != "" {
-			req.Header.Set(headerKeyActorAnonymousUID, actor.AnonymousUID)
-		}
 		metricOutgoingActors.WithLabelValues(metricActorTypeNone, path).Inc()
 	}
 
@@ -113,8 +116,10 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 func HTTPMiddleware(logger log.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
-		uidStr := req.Header.Get(headerKeyActorUID)
 		path := getCondensedURLPath(req.URL.Path)
+		act := &Actor{}
+
+		uidStr := req.Header.Get(headerKeyActorUID)
 		switch uidStr {
 		// Request associated with internal actor - add internal actor to context
 		//
@@ -122,16 +127,11 @@ func HTTPMiddleware(logger log.Logger, next http.Handler) http.Handler {
 		// actor.HTTPTransport or similar, since assuming internal actor grants a lot of
 		// access in some cases.
 		case headerValueInternalActor:
-			ctx = WithInternalActor(ctx)
+			act = Internal()
 			metricIncomingActors.WithLabelValues(metricActorTypeInternal, path).Inc()
 
 		// Request not associated with an authenticated user
 		case "", headerValueNoActor:
-			// Even though the current user is not authenticated, we may still have an
-			// anonymous UID to propagate.
-			if anonymousUID := req.Header.Get(headerKeyActorAnonymousUID); anonymousUID != "" {
-				ctx = WithActor(ctx, FromAnonymousUser(anonymousUID))
-			}
 			metricIncomingActors.WithLabelValues(metricActorTypeNone, path).Inc()
 
 		// Request associated with authenticated user - add user actor to context
@@ -150,13 +150,18 @@ func HTTPMiddleware(logger log.Logger, next http.Handler) http.Handler {
 				return
 			}
 
-			// Valid user, add to context
-			actor := FromUser(int32(uid))
-			ctx = WithActor(ctx, actor)
+			// Valid user
+			act = FromUser(int32(uid))
 			metricIncomingActors.WithLabelValues(metricActorTypeUser, path).Inc()
 		}
 
-		next.ServeHTTP(rw, req.WithContext(ctx))
+		// Always preserve the AnonymousUID
+		if anonymousUID := req.Header.Get(headerKeyActorAnonymousUID); anonymousUID != "" {
+			act.AnonymousUID = anonymousUID
+		}
+
+		// FromContext always returns a non-nil Actor, so it's okay to always add it
+		next.ServeHTTP(rw, req.WithContext(WithActor(ctx, act)))
 	})
 }
 
@@ -176,17 +181,18 @@ func getCondensedURLPath(urlPath string) string {
 // from the cookie if it exists. It will not overwrite an existing actor.
 func AnonymousUIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var anonymousUID string
+
+		// Get from cookie if available, otherwise get from header
+		if cookieAnonymousUID, ok := cookie.AnonymousUID(req); ok {
+			anonymousUID = cookieAnonymousUID
+		} else if headerAnonymousUID := req.Header.Get(headerKeyActorAnonymousUID); headerAnonymousUID != "" {
+			anonymousUID = headerAnonymousUID
+		}
+
 		// Don't clobber an existing authenticated actor
-		if a := FromContext(req.Context()); !a.IsAuthenticated() && !a.IsInternal() {
-			var anonymousUID string
-
-			// Get from cookie if available, otherwise get from header
-			if cookieAnonymousUID, ok := cookie.AnonymousUID(req); ok {
-				anonymousUID = cookieAnonymousUID
-			} else if headerAnonymousUID := req.Header.Get(headerKeyActorAnonymousUID); headerAnonymousUID != "" {
-				anonymousUID = headerAnonymousUID
-			}
-
+		a := FromContext(req.Context())
+		if !a.IsAuthenticated() && !a.IsInternal() {
 			// If we found an anonymous UID, use that as the actor context
 			ctx := req.Context()
 			if anonymousUID != "" {
@@ -194,6 +200,11 @@ func AnonymousUIDMiddleware(next http.Handler) http.Handler {
 			}
 			next.ServeHTTP(rw, req.WithContext(ctx))
 			return
+		}
+
+		// Otherwise, update the current actor. This won't overwrite an authenticated actor.
+		if anonymousUID != "" {
+			a.AnonymousUID = anonymousUID
 		}
 
 		next.ServeHTTP(rw, req)

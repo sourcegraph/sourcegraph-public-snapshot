@@ -41,8 +41,8 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Commands](cody/capabilities/commands.md)
   - [Debug Code](cody/capabilities/debug-code.md)
 - [Core Concepts](cody/core-concepts/index.md)
-- [Cody Use Cases](cody/use-cases.md)
-<!-- - [Custom Commands](cody/custom-commands.md) -->
+- [Cody Use Cases](cody/use-cases/generate-unit-tests.md)
+  - [Generate Unit Tests](cody/use-cases/generate-unit-tests.md)
 - [Feature Parity Reference](cody/feature-reference.md)
 - [Troubleshooting](cody/troubleshooting.md)
 - [FAQ](cody/faq.md)

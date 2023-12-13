@@ -27,9 +27,8 @@ import {
 
 import type { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
 
-import { FILE_ICONS, FileExtension } from './constants'
+import { FILE_ICONS, FileExtension, getFileInfo } from './fileIcons'
 import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
-import { getFileInfo } from './utils'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
 

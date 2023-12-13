@@ -105,6 +105,7 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
                         showSearchContext={showSearchContext}
                         showOwn={showOwn}
                         showCodySearch={showCodySearch}
+                        showCodyDropdown={false}
                         showSearchJobs={showSearchJobs}
                         showSearchNotebook={showSearchNotebook}
                         showCodeMonitoring={showCodeMonitoring}

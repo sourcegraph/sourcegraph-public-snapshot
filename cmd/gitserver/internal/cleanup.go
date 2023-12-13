@@ -624,7 +624,7 @@ func cleanupRepos(
 	}
 
 	if len(repoToSize) > 0 {
-		_, err := db.GitserverRepos().UpdateRepoSizes(ctx, shardID, repoToSize)
+		_, err := db.GitserverRepos().UpdateRepoSizes(ctx, logger, shardID, repoToSize)
 		if err != nil {
 			logger.Error("setting repo sizes", log.Error(err))
 		}

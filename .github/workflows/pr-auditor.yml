@@ -18,5 +18,5 @@ jobs:
       - run: './check-pr.sh'
         env:
           GITHUB_EVENT_PATH: ${{ env.GITHUB_EVENT_PATH }}
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.PR_AUDITOR_TOKEN }}
           GITHUB_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

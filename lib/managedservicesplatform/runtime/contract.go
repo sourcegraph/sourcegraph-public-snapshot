@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -82,10 +83,15 @@ type HandlerRegisterer interface {
 
 type ServiceState interface {
 	// Healthy should return nil if the service is healthy, or an error with
-	// detailed diagnostics if the service is not healthy.
+	// detailed diagnostics if the service is not healthy. The query parameter
+	// provides the URL query parameters the healtcheck was called with, to
+	// implement different "degrees" of healtchecks.
+	//
+	// The default MSP healthchecks are called without any query parameters, and
+	// should be implemented such that they can evaluate quickly.
 	//
 	// Healthy is only called if the correct service secret is provided.
-	Healthy(context.Context) error
+	Healthy(ctx context.Context, query url.Values) error
 }
 
 // RegisterDiagnosticsHandlers registers MSP-standard debug handlers on '/-/...',
@@ -115,7 +121,7 @@ func (c Contract) RegisterDiagnosticsHandlers(r HandlerRegisterer, state Service
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			logger := opentelemetry.TracedLogger(r.Context(), c.internal.logger)
 
-			if err := state.Healthy(r.Context()); err != nil {
+			if err := state.Healthy(r.Context(), r.URL.Query()); err != nil {
 				logger.Error("service not healthy", log.Error(err))
 
 				w.WriteHeader(http.StatusInternalServerError)
