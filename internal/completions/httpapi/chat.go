@@ -2,10 +2,12 @@ package httpapi
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"net/http"
 
 	"github.com/sourcegraph/log"
 
@@ -40,6 +42,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 				isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
 				isProUser := user.CodyProEnabledAt != nil
 				if isAllowedCustomChatModel(requestParams.Model, isProUser || !isCodyProEnabled) {
+					fmt.Println("CHOOSING ZE MODEL", requestParams.Model)
 					return requestParams.Model, nil
 				}
 			}
@@ -64,7 +67,7 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 			"anthropic/claude-instant-1.2",
 			"openai/gpt-3.5-turbo",
 			"openai/gpt-4-1106-preview",
-			"fireworks/accounts/fireworks/models/mixtral-8x7b-fw-chat":
+			"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct":
 			return true
 		}
 	} else {
