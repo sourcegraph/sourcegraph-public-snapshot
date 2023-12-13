@@ -44,9 +44,12 @@ type ExportedEvent {
     payload: JSONValue!
 }
 
+"""
+A list of recently exported telemetry event payloads.
+"""
 type ExportedEventsConnection {
     """
-    A list of exported events.
+    A list of exported events, with the most recent events first.
     """
     nodes: [ExportedEvent!]!
 

@@ -37,6 +37,10 @@ go_test(
         "telemetrygateway_test.go",
     ],
     embed = [":resolvers"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//internal/actor",
