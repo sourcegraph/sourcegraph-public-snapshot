@@ -672,7 +672,7 @@ func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, l
 	for repo, size := range repos {
 		start := time.Now()
 
-		queries[currentCount] = sqlf.Sprintf("(%s::text, %s::bigint)", repo, size)
+		queries[currentCount] = sqlf.Sprintf("(%s::citext, %s::bigint)", repo, size)
 
 		currentCount += 1
 
