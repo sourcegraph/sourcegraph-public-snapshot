@@ -212,6 +212,9 @@ func extendRangeToLines(inputRange protocol.Range, buf []byte) protocol.Range {
 }
 
 func addContextLines(inputRange protocol.Range, buf []byte, contextLines int32) protocol.Range {
+	if contextLines == 0 {
+		return inputRange
+	}
 	firstLineStart := inputRange.Start.Offset
 	lastLineEnd := inputRange.End.Offset
 
@@ -263,11 +266,10 @@ func lineEnd(buf []byte, offset int32) int32 {
 	end := int32(len(buf))
 	if loc := bytes.IndexByte(buf[offset:], '\n'); loc >= 0 {
 		end = int32(loc) + offset
-		if buf[end] == '\r' {
+		if bytes.HasSuffix(buf[:end], []byte("\r")) {
 			end -= 1
 		}
 	}
-
 	return end
 }
 

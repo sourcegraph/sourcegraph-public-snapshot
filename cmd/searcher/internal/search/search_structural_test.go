@@ -737,3 +737,175 @@ func maybeSkipComby(t *testing.T) {
 		t.Skipf("skipping comby test when not on CI: %v", err)
 	}
 }
+
+func Test_addContext(t *testing.T) {
+	// files := map[string]string{
+	// 	"empty":             "",
+	// 	"onlyNewline":       "\n",
+	// 	"onlyNewlines":      "\n\n\n\n",
+	// 	"normal":            "abc\ndef\nghi\n",
+	// 	"noTrailingNewline": "abc\ndef\nghi",
+	// 	"singleLine":        "abc\n",
+	// 	"crlf":              "abc\r\ndef\r\nghi\r\n",
+	// 	"crlfNoTrailing":    "abc\r\ndef\r\nghi",
+	// 	"crlfOnly":          "\r\n",
+	// 	"multibyte":         "abc\nd\xE2\x9D\x89f\nghi",
+	// }
+
+	l := func(offset, line, column int32) protocol.Location {
+		return protocol.Location{Offset: offset, Line: line, Column: column}
+	}
+
+	r := func(start, end protocol.Location) protocol.Range {
+		return protocol.Range{Start: start, End: end}
+	}
+
+	testCases := []struct {
+		file         string
+		contextLines int32
+		inputRange   protocol.Range
+		expected     string
+	}{
+		{
+			"",
+			0,
+			r(l(0, 0, 0), l(0, 0, 0)),
+			"",
+		},
+		{
+			"",
+			1,
+			r(l(0, 0, 0), l(0, 0, 0)),
+			"",
+		},
+		{
+			"\n",
+			0,
+			r(l(0, 0, 0), l(0, 0, 0)),
+			"",
+		},
+		{
+			"\n",
+			1,
+			r(l(0, 0, 0), l(0, 0, 0)),
+			"",
+		},
+		{
+			"\n\n\n",
+			0,
+			r(l(1, 1, 0), l(1, 1, 0)),
+			"",
+		},
+		{
+			"\n\n\n\n",
+			1,
+			r(l(1, 1, 0), l(1, 1, 0)),
+			"\n\n",
+		},
+		{
+			"\n\n\n\n",
+			2,
+			r(l(1, 1, 0), l(1, 1, 0)),
+			"\n\n\n",
+		},
+		{
+			"abc\ndef\nghi\n",
+			0,
+			r(l(1, 0, 1), l(1, 0, 1)),
+			"abc",
+		},
+		{
+			"abc\ndef\nghi\n",
+			1,
+			r(l(1, 0, 1), l(1, 0, 1)),
+			"abc\ndef",
+		},
+		{
+			"abc\ndef\nghi\n",
+			2,
+			r(l(1, 0, 1), l(1, 0, 1)),
+			"abc\ndef\nghi",
+		},
+		{
+			"abc\ndef\nghi",
+			0,
+			r(l(1, 0, 1), l(1, 0, 1)),
+			"abc",
+		},
+		{
+			"abc\ndef\nghi",
+			1,
+			r(l(1, 0, 1), l(1, 0, 1)),
+			"abc\ndef",
+		},
+		{
+			"abc\ndef\nghi",
+			2,
+			r(l(1, 0, 1), l(1, 0, 1)),
+			"abc\ndef\nghi",
+		},
+		{
+			"abc\ndef\nghi",
+			2,
+			r(l(5, 1, 1), l(6, 1, 2)),
+			"abc\ndef\nghi",
+		},
+		{
+			"abc",
+			0,
+			r(l(1, 0, 1), l(2, 0, 2)),
+			"abc",
+		},
+		{
+			"abc",
+			1,
+			r(l(1, 0, 1), l(2, 0, 2)),
+			"abc",
+		},
+		{
+			"abc\r\ndef\r\nghi\r\n",
+			1,
+			r(l(1, 0, 1), l(2, 0, 2)),
+			"abc\r\ndef",
+		},
+		{
+			"abc\r\ndef\r\nghi",
+			3,
+			r(l(1, 0, 1), l(2, 0, 2)),
+			"abc\r\ndef\r\nghi",
+		},
+		{
+			"\r\n",
+			0,
+			r(l(0, 0, 0), l(0, 0, 0)),
+			"",
+		},
+		{
+			"\r\n",
+			1,
+			r(l(0, 0, 0), l(0, 0, 0)),
+			"",
+		},
+		{
+			"abc\nd\xE2\x9D\x89f\nghi",
+			0,
+			r(l(4, 1, 0), l(5, 1, 1)),
+			"d\xE2\x9D\x89f",
+		},
+		{
+			"abc\nd\xE2\x9D\x89f\nghi",
+			1,
+			r(l(4, 1, 0), l(5, 1, 1)),
+			"abc\nd\xE2\x9D\x89f\nghi",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run("", func(t *testing.T) {
+			buf := []byte(testCase.file)
+			extendedRange := extendRangeToLines(testCase.inputRange, buf)
+			contextedRange := addContextLines(extendedRange, buf, testCase.contextLines)
+			require.Equal(t, testCase.expected, string(buf[contextedRange.Start.Offset:contextedRange.End.Offset]))
+		})
+	}
+}

@@ -85,6 +85,46 @@ main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
+		arg:          protocol.PatternInfo{Pattern: "world", IsCaseSensitive: true},
+		contextLines: 1,
+		want: autogold.Expect(`README.md:2:3:
+
+Hello world example in go
+main.go:5:7:
+func main() {
+fmt.Println("Hello world")
+}
+`),
+	}, {
+		arg:          protocol.PatternInfo{Pattern: "world", IsCaseSensitive: true},
+		contextLines: 2,
+		want: autogold.Expect(`README.md:1:3:
+# Hello World
+
+Hello world example in go
+main.go:4:7:
+
+func main() {
+fmt.Println("Hello world")
+}
+`),
+	}, {
+		arg:          protocol.PatternInfo{Pattern: "world", IsCaseSensitive: true},
+		contextLines: 999,
+		want: autogold.Expect(`README.md:1:3:
+# Hello World
+
+Hello world example in go
+main.go:1:7:
+package main
+
+import "fmt"
+
+func main() {
+fmt.Println("Hello world")
+}
+`),
+	}, {
 		arg: protocol.PatternInfo{Pattern: "world"},
 		want: autogold.Expect(`README.md:1:1:
 # Hello World
@@ -161,6 +201,23 @@ Hello world example in go
 		arg: protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
 		want: autogold.Expect(`main.go:6:6:
 fmt.Println("Hello world")
+`),
+	}, {
+		arg:          protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
+		contextLines: 1,
+		want: autogold.Expect(`main.go:5:7:
+func main() {
+fmt.Println("Hello world")
+}
+`),
+	}, {
+		arg:          protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
+		contextLines: 2,
+		want: autogold.Expect(`main.go:4:7:
+
+func main() {
+fmt.Println("Hello world")
+}
 `),
 	}, {
 		arg: protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)`}, PathPatternsAreCaseSensitive: true},
