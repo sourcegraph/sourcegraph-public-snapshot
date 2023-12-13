@@ -73,7 +73,7 @@ func NewFireworksHandler(
 			},
 			getRequestMetadata: func(ctx context.Context, logger log.Logger, act *actor.Actor, feature codygateway.Feature, body fireworksRequest) (model string, additionalMetadata map[string]any) {
 				// Check that this is a code completion request and that the actor is a PLG user
-				if feature != codygateway.FeatureCodeCompletions && logSelfServeCodeCompletionRequests && act.IsDotComActor() {
+				if feature == codygateway.FeatureCodeCompletions && logSelfServeCodeCompletionRequests && act.IsDotComActor() {
 					// LogEvent is a channel send (not an external request), so should be ok here
 					if err := eventLogger.LogEvent(
 						ctx,
