@@ -233,6 +233,7 @@ export const FETCH_HIGHLIGHTED_BLOB = gql`
                 blob(path: $path) {
                     ...HighlightedGitBlobFields
                     content
+                    languages
                 }
             }
         }

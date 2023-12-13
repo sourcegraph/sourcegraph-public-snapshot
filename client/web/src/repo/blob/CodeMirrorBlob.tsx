@@ -133,6 +133,9 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     /** LSIF syntax-highlighting data */
     lsif?: string
 
+    /** Potential language(s) for content as determined by the backend. */
+    languages: string[]
+
     /** If present, the file is stored in Git LFS (large file storage). */
     lfs?: { byteSize: Scalars['BigInt'] } | null
 

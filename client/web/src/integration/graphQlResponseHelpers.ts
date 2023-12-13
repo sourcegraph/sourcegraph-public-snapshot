@@ -48,6 +48,7 @@ export const createBlobContentResult = (content: string, lsif?: JsonDocument): B
                     aborted: false,
                     lsif: lsif ? JSON.stringify(lsif) : '',
                 },
+                languages: [], // OK as this is only for testing
             },
         },
         changelist: null,

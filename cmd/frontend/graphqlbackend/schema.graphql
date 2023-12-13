@@ -5815,6 +5815,10 @@ interface File2 {
         """
         endLine: Int
     ): HighlightedFile!
+    """
+    The language(s) determined based on the file's contents, paths etc.
+    """
+    languages: [String!]!
 }
 
 """
@@ -5918,6 +5922,10 @@ type VirtualFile implements File2 {
         """
         endLine: Int
     ): HighlightedFile!
+    """
+    The language(s) determined based on the file's contents, paths etc.
+    """
+    languages: [String!]!
 }
 
 """
@@ -6061,6 +6069,10 @@ type GitBlob implements TreeEntry & File2 {
         """
         endLine: Int
     ): HighlightedFile!
+    """
+    The language(s) determined based on the file's contents, paths etc.
+    """
+    languages: [String!]!
     """
     Submodule metadata if this tree points to a submodule
     """

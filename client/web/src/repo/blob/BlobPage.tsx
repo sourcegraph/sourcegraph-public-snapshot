@@ -210,6 +210,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                                 revision,
                                 filePath,
                                 mode,
+                                languages: blob.languages,
                                 // Properties used in `BlobPage` but not `Blob`
                                 richHTML: blob.richHTML,
                                 aborted: false,
@@ -263,6 +264,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                             revision,
                             filePath,
                             mode,
+                            languages: blob.languages,
                             // Properties used in `BlobPage` but not `Blob`
                             richHTML: blob.richHTML,
                             aborted: blob.highlight.aborted,

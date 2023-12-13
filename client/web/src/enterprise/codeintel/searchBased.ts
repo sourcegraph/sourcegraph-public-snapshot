@@ -4,7 +4,6 @@ import escapeRegExp from 'lodash/escapeRegExp'
 
 import { appendLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import type { Range } from '@sourcegraph/extension-api-types'
-import type { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 
 import { raceWithDelayOffset } from '../../codeintel/promise'
 import type { Result } from '../../codeintel/searchBased'
@@ -14,14 +13,14 @@ import { isDefined } from '../../codeintel/util/helpers'
 export function definitionQuery({
     searchToken,
     path,
-    fileExts,
+    languages,
 }: {
     /** The search token text. */
     searchToken: string
     /** The path to file **/
     path: string
-    /** File extensions used by the current extension. */
-    fileExts: string[]
+    /** Potential languages for this file */
+    languages: string[]
 }): string[] {
     return [
         `^${searchToken}$`,
@@ -29,7 +28,7 @@ export function definitionQuery({
         'patternType:regexp',
         'count:50',
         'case:yes',
-        fileExtensionTerm(path, fileExts),
+        ...languageFilter(languages, path),
     ]
 }
 
@@ -41,14 +40,14 @@ export function definitionQuery({
 export function referencesQuery({
     searchToken,
     path,
-    fileExts,
+    languages,
 }: {
     /** The search token text. */
     searchToken: string
     /** The path to file **/
     path: string
-    /** File extensions used by the current extension. */
-    fileExts: string[]
+    /** Language(s) applicable to current file */
+    languages: string[]
 }): string[] {
     let pattern = ''
     if (/^\w/.test(searchToken)) {
@@ -58,26 +57,19 @@ export function referencesQuery({
     if (/\w$/.test(searchToken)) {
         pattern += '\\b'
     }
-    return [pattern, 'type:file', 'patternType:regexp', 'count:500', 'case:yes', fileExtensionTerm(path, fileExts)]
+    return [pattern, 'type:file', 'patternType:regexp', 'count:500', 'case:yes', ...languageFilter(languages, path)]
 }
-/**
- * Constructs a file term containing include-listed extensions. If the current
- * text document path has an excluded extension or an extension absent from the
- * include list, an empty file term will be returned.
- *
- * @param textDocument The current text document.
- * @param includelist The file extensions for the current language.
- */
-function fileExtensionTerm(path: string, includelist: string[]): string {
-    const extension = extname(path).slice(1)
-    if (!extension || excludelist.has(extension) || !includelist.includes(extension)) {
-        return ''
+
+function languageFilter(languages: string[], path: string): string[] {
+    if (languages.length > 0) {
+        return [languages.map(language => `lang:${language}`).join(' OR ')]
     }
-
-    return `file:\\.(${includelist.join('|')})$`
+    const extension = extname(path).slice(1)
+    if (extension === '') {
+        return []
+    }
+    return [`file:\\.${extension}`]
 }
-
-const excludelist = new Set(['thrift', 'proto', 'graphql'])
 
 /**
  * Returns fork and archived terms that should be supplied with the query.
@@ -242,7 +234,7 @@ export function isSourcegraphDotCom(): boolean {
  * @param result The search result.
  */
 export function isExternalPrivateSymbol(
-    spec: LanguageSpec | undefined,
+    languages: string[],
     path: string,
     { fileLocal, file, symbolKind }: Result
 ): boolean {
@@ -250,8 +242,12 @@ export function isExternalPrivateSymbol(
     // doesn't let us treat that way.
     // See https://github.com/universal-ctags/ctags/issues/1844
 
-    if (spec && spec.languageID === 'java' && symbolKind === 'ENUMMEMBER') {
-        return false
+    if (symbolKind === 'ENUMMEMBER') {
+        for (const language of languages) {
+            if (language.toLowerCase() === 'java') {
+                return false
+            }
+        }
     }
 
     return !!fileLocal && file !== path

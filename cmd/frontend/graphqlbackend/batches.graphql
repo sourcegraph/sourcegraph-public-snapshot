@@ -3728,4 +3728,8 @@ type BatchSpecWorkspaceFile implements File2 & Node {
         """
         endLine: Int
     ): HighlightedFile!
+    """
+    The language(s) determined based on the file's contents, paths etc.
+    """
+    languages: [String!]!
 }

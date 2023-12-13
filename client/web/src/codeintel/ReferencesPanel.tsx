@@ -12,12 +12,9 @@ import { CodeExcerpt } from '@sourcegraph/branded'
 import { type ErrorLike, logger, pluralize } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import type { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
-import { findLanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/languages'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
-import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -47,6 +44,7 @@ import {
     useSessionStorage,
 } from '@sourcegraph/wildcard'
 
+import { blobPropsFacet } from '../repo/blob/codemirror'
 import * as BlobAPI from '../repo/blob/use-blob-store'
 import type { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
@@ -255,6 +253,9 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
         )
     }
 
+    const blobView = BlobAPI.getBlobEditView()
+    const languages = blobView?.state.facet(blobPropsFacet).blobInfo.languages ?? []
+
     return (
         <ReferencesList
             // Force the references list to recreate when the user settings
@@ -267,7 +268,7 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
             // the spec purely based on the file path is wrong.
             //
             // See FIXME(id: language-detection).
-            spec={findLanguageSpec(getModeFromPath(props.token.filePath))}
+            languages={languages}
         />
     )
 }
@@ -291,7 +292,7 @@ const ReferencesList: React.FunctionComponent<
     React.PropsWithChildren<
         ReferencesPanelPropsWithToken & {
             searchToken: string
-            spec: LanguageSpec | undefined
+            languages: string[]
             fileContent: string
             collapsedState: State['collapsedState']
         }
@@ -340,7 +341,7 @@ const ReferencesList: React.FunctionComponent<
         },
         fileContent: props.fileContent,
         searchToken: props.searchToken,
-        spec: props.spec,
+        languages: props.languages,
         isFork: props.isFork,
         isArchived: props.isArchived,
         getSetting,
