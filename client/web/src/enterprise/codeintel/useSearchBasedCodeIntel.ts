@@ -51,7 +51,7 @@ interface UseSearchBasedCodeIntelOptions {
     searchToken: string
     fileContent: string
 
-    spec: LanguageSpec
+    spec: LanguageSpec | undefined
 
     isFork: boolean
     isArchived: boolean
@@ -227,7 +227,11 @@ async function searchBasedDefinitionsViaSquirrel(
 
 async function searchBasedReferencesViaSearchQueries(options: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
     const { searchToken, path, repo, isFork, isArchived, commit, spec, filter } = options
-    const queryTerms = referencesQuery({ searchToken, path, fileExts: spec.fileExts })
+    const queryTerms = referencesQuery({
+        searchToken,
+        path,
+        fileExts: getFileExtensionsForSearchBasedQuery(spec, path),
+    })
     const filterReferences = (results: Location[]): Location[] =>
         filter ? results.filter(location => location.file.includes(filter)) : results
 
@@ -249,10 +253,33 @@ async function searchBasedReferencesViaSearchQueries(options: UseSearchBasedCode
     return flatten(await Promise.all([sameRepoReferences, remoteRepoReferences]))
 }
 
+function getFileExtension(filePath: string): string {
+    const lastDot = filePath.lastIndexOf('.')
+    if (lastDot === -1) {
+        const lastSlash = filePath.lastIndexOf('/')
+        if (lastSlash === -1) {
+            return filePath
+        }
+        return filePath.slice(lastSlash + 1)
+    }
+    return filePath.slice(lastDot + 1)
+}
+
+function getFileExtensionsForSearchBasedQuery(spec: LanguageSpec | undefined, path: string): string[] {
+    if (spec !== undefined) {
+        return spec.fileExts
+    }
+    return [getFileExtension(path)]
+}
+
 async function searchBasedDefinitionsViaSearchQueries(options: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
     const { searchToken, path, repo, isFork, fileContent, isArchived, commit, spec, filter } = options
     // Construct base definition query without scoping terms
-    const queryTerms = definitionQuery({ searchToken, path, fileExts: spec.fileExts })
+    const queryTerms = definitionQuery({
+        searchToken,
+        path,
+        fileExts: getFileExtensionsForSearchBasedQuery(spec, path),
+    })
     const filterDefinitions = (results: Location[]): Location[] => {
         const filteredByName = filter ? results.filter(location => location.file.includes(filter)) : results
         return spec?.filterDefinitions
@@ -326,7 +353,7 @@ async function searchAndFilterDefinitions({
     queryTerms,
 }: {
     /** The LanguageSpec of the language in which we're searching */
-    spec: LanguageSpec
+    spec: LanguageSpec | undefined
     /** The file we're in */
     path: string
     /** The function used to filter definitions. */

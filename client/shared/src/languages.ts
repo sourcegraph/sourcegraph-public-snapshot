@@ -3,9 +3,22 @@ import { basename } from 'path'
 /** The LSP mode used for plain text files and all other unrecognized files. */
 const PLAINTEXT_MODE = 'plaintext'
 
+// FIXME(id: language-detection)
+//
+// For correctness, we should do language detection on the server
+// and use the inferred language on the client instead of incorrectly
+// doing language detection on the client using incomplete information
+// like file extensions.
+//
+// For example, MATLAB and Objective-C both use the '.m' file extension.
+//
+// See https://github.com/sourcegraph/sourcegraph/issues/56376
+
 /**
  * getModeFromPath returns the LSP mode for the provided file path. If the file path does not correspond to any
  * known mode, 'plaintext' is returned.
+ *
+ * DO NOT introduce new usages of this API. See FIXME(id: language-detection).
  */
 export function getModeFromPath(path: string): string {
     const fileName = basename(path)
