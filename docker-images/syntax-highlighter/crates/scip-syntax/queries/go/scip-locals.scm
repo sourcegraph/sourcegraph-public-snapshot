@@ -6,7 +6,7 @@
 ;; extra scope other than the blocks they open
 (if_statement) @scope
 (for_statement) @scope
-(block) @scope.block
+(block) @scope
 
 (short_var_declaration
  left: (expression_list (identifier) @definition.term))
@@ -32,10 +32,7 @@
     name: (package_identifier) @definition.namespace))
 
 (var_spec
- name: (identifier) @definition.var
-;; Uncomment me for testing hoisting
-;; (#set! "hoist" "function")
-)
+ name: (identifier) @definition.var)
 
 (for_statement
  (range_clause
@@ -49,14 +46,6 @@
 (type_declaration
   (type_spec
     name: (type_identifier) @definition.type))
-
-;; TODO: I think it's a good idea to be more explicit about references
-;; than simply treating every (identifier) in the grammar as a reference
-
-;; (call_expression
-;;  function: (identifier) @reference)
-;; (assignment_statement
-;;  left: (expression_list (identifier) @reference))
 
 (identifier) @reference
 (type_identifier) @reference
