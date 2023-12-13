@@ -41,7 +41,7 @@ func NewOpenAIHandler(
 		rateLimitNotifier,
 		httpClient,
 		string(conftypes.CompletionsProviderNameOpenAI),
-		openAIURL,
+		func(_ codygateway.Feature) string { return openAIURL },
 		allowedModels,
 		upstreamHandlerMethods[openaiRequest]{
 			validateRequest: func(_ context.Context, _ log.Logger, feature codygateway.Feature, _ openaiRequest) (int, *flaggingResult, error) {
@@ -61,7 +61,7 @@ func NewOpenAIHandler(
 				// We forward the actor ID to support tracking.
 				body.User = identifier
 			},
-			getRequestMetadata: func(_ context.Context, _ log.Logger, _ *actor.Actor, body openaiRequest) (model string, additionalMetadata map[string]any) {
+			getRequestMetadata: func(_ context.Context, _ log.Logger, _ *actor.Actor, _ codygateway.Feature, body openaiRequest) (model string, additionalMetadata map[string]any) {
 				return body.Model, map[string]any{"stream": body.Stream}
 			},
 			transformRequest: func(r *http.Request) {

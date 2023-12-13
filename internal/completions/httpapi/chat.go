@@ -2,10 +2,13 @@ package httpapi
 
 import (
 	"context"
+	"fmt"
+
+	"net/http"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"net/http"
 
 	"github.com/sourcegraph/log"
 
@@ -40,6 +43,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 				isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
 				isProUser := user.CodyProEnabledAt != nil
 				if isAllowedCustomChatModel(requestParams.Model, isProUser || !isCodyProEnabled) {
+					fmt.Println("CHOOSING ZE MODEL", requestParams.Model)
 					return requestParams.Model, nil
 				}
 			}
@@ -55,6 +59,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 // We only allow dotcom clients to select a custom chat model and maintain an allowlist for which
 // custom values we support
 func isAllowedCustomChatModel(model string, isProUser bool) bool {
+	// When updating these two lists, make sure you also update `allowedModels` in codygateway_dotcom_user.go.
 	if isProUser {
 		switch model {
 		case "anthropic/claude-2",
@@ -63,7 +68,8 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 			"anthropic/claude-instant-1.2-cyan",
 			"anthropic/claude-instant-1.2",
 			"openai/gpt-3.5-turbo",
-			"openai/gpt-4-1106-preview":
+			"openai/gpt-4-1106-preview",
+			"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct":
 			return true
 		}
 	} else {
