@@ -6,6 +6,7 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 
 import { asError, createAggregateError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { LoadingSpinner, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
@@ -69,7 +70,7 @@ function queryRepositoryComparison(args: {
     )
 }
 
-interface Props extends RepositoryCompareAreaPageProps {
+interface Props extends RepositoryCompareAreaPageProps, TelemetryV2Props {
     /** The base of the comparison. */
     base: { repoName: string; repoID: Scalars['ID']; revision?: string | null }
 
@@ -97,7 +98,7 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        window.context.telemetryRecorder?.recordEvent('repositoryComparisonOverview', 'viewed')
+        this.props.telemetryRecorder.recordEvent('repositoryComparisonOverview', 'viewed')
         eventLogger.logViewEvent('RepositoryCompareOverview')
 
         this.subscriptions.add(

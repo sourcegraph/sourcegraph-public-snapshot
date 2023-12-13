@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import { mdiAccountDetails, mdiAccountDetailsOutline } from '@mdi/js'
 
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { RenderMode } from '@sourcegraph/shared/src/util/url'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
@@ -16,7 +17,7 @@ interface Props {
     renderMode?: RenderMode
     isPackage: boolean
 }
-export const ToggleBlameAction: React.FC<Props> = props => {
+export const ToggleBlameAction: React.FC<Props & TelemetryV2Props> = props => {
     const [isBlameVisible, setIsBlameVisible] = useBlameVisibility(props.isPackage)
 
     const disabled = props.isPackage || props.renderMode === 'rendered'
@@ -30,14 +31,14 @@ export const ToggleBlameAction: React.FC<Props> = props => {
     const toggleBlameState = useCallback(() => {
         if (isBlameVisible) {
             setIsBlameVisible(false)
-            window.context.telemetryRecorder?.recordEvent('gitBlame', 'disabled')
+            props.telemetryRecorder.recordEvent('gitBlame', 'disabled')
             eventLogger.log('GitBlameDisabled')
         } else {
             setIsBlameVisible(true)
-            window.context.telemetryRecorder?.recordEvent('gitBlame', 'enabled')
+            props.telemetryRecorder.recordEvent('gitBlame', 'enabled')
             eventLogger.log('GitBlameEnabled')
         }
-    }, [isBlameVisible, setIsBlameVisible])
+    }, [isBlameVisible, setIsBlameVisible, props.telemetryRecorder])
 
     const icon = (
         <Icon aria-hidden={true} svgPath={isBlameVisible && !disabled ? mdiAccountDetails : mdiAccountDetailsOutline} />

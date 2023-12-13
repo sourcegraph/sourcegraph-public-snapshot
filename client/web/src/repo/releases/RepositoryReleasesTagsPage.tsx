@@ -2,6 +2,7 @@ import React, { useCallback, useEffect } from 'react'
 
 import { type Observable, of } from 'rxjs'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
@@ -20,7 +21,7 @@ import {
     queryGitReferences as queryGitReferencesFromBackend,
 } from '../GitReference'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     repo: RepositoryFields | undefined
     isPackage?: boolean
     queryGitReferences?: (args: {
@@ -37,9 +38,10 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWith
     repo,
     isPackage,
     queryGitReferences: queryGitReferences = queryGitReferencesFromBackend,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('repositoryReleasesTags', 'viewed')
+        telemetryRecorder.recordEvent('repositoryReleasesTags', 'viewed')
         eventLogger.logViewEvent('RepositoryReleasesTags')
     }, [])
 

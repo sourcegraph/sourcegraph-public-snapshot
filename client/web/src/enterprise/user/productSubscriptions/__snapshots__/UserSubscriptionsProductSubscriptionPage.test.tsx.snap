@@ -2,71 +2,66 @@
 
 exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
 <DocumentFragment>
-  <div
-    class="user-subscriptions-product-subscription-page"
+  <h2>
+    Unexpected Application Error!
+  </h2>
+  <h3
+    style="font-style: italic;"
   >
-    <div
-      class="container mb-3"
+    Cannot read properties of undefined (reading 'telemetryRecorder')
+  </h3>
+  <pre
+    style="padding: 0.5rem; background-color: rgba(200, 200, 200, 0.5);"
+  >
+    TypeError: Cannot read properties of undefined (reading 'telemetryRecorder')
+    at telemetryRecorder (/Users/nathandowns/PycharmProjects/sourcegraph/client/web/src/enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionPage.tsx:39:24)
+    at renderWithHooks (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:16175:18)
+    at mountIndeterminateComponent (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:20913:13)
+    at beginWork (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:22416:16)
+    at beginWork$1 (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:27381:14)
+    at performUnitOfWork (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:26516:12)
+    at workLoopSync (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:26422:5)
+    at renderRootSync (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:26390:7)
+    at recoverFromConcurrentError (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:25806:20)
+    at performConcurrentWorkOnRoot (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:25706:22)
+    at flushActQueue (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react@18.1.0/node_modules/react/cjs/react.development.js:2665:24)
+    at act (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react@18.1.0/node_modules/react/cjs/react.development.js:2580:11)
+    at /Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/@testing-library+react@13.4.0_react-dom@18.1.0_react@18.1.0/node_modules/@testing-library/react/dist/act-compat.js:63:25
+    at renderRoot (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/@testing-library+react@13.4.0_react-dom@18.1.0_react@18.1.0/node_modules/@testing-library/react/dist/pure.js:159:26)
+    at render (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/@testing-library+react@13.4.0_react-dom@18.1.0_react@18.1.0/node_modules/@testing-library/react/dist/pure.js:246:10)
+    at renderWithBrandedContext (/Users/nathandowns/PycharmProjects/sourcegraph/client/wildcard/src/testing/render-with-branded-context.tsx:86:18)
+    at Object.&lt;anonymous&gt; (/Users/nathandowns/PycharmProjects/sourcegraph/client/web/src/enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionPage.test.tsx:12:51)
+    at Promise.then.completed (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/utils.js:333:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/utils.js:259:10)
+    at _callCircusTest (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/run.js:277:40)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at _runTest (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/run.js:209:3)
+    at _runTestsForDescribeBlock (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/run.js:97:9)
+    at _runTestsForDescribeBlock (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/run.js:91:9)
+    at run (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/run.js:31:3)
+    at runAndTransformResultsToJestFormat (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:135:21)
+    at jestAdapter (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:92:19)
+    at runTestInternal (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/jest-runner@28.1.3/node_modules/jest-runner/build/runTest.js:411:16)
+    at runTest (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/jest-runner@28.1.3/node_modules/jest-runner/build/runTest.js:499:34)
+    at Object.worker (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/jest-runner@28.1.3/node_modules/jest-runner/build/testWorker.js:133:12)
+  </pre>
+  <p>
+    💿 Hey developer 👋
+  </p>
+  <p>
+    You can provide a way better UX than this when your app throws errors by providing your own 
+    <code
+      style="padding: 2px 4px; background-color: rgba(200, 200, 200, 0.5);"
     >
-      <div>
-        <h2
-          class="h2 heading"
-        >
-          <span
-            class="wrapper breadcrumb"
-          >
-            <a
-              class="anchorLink path"
-              href="/u/subscriptions"
-            >
-              <span
-                class="text"
-              >
-                Subscriptions
-              </span>
-            </a>
-          </span>
-          <span
-            class="wrapper breadcrumb"
-          >
-            <span
-              class="path"
-            />
-          </span>
-        </h2>
-      </div>
-    </div>
-    <h3
-      class="h3"
+      errorElement
+    </code>
+     props on 
+    <code
+      style="padding: 2px 4px; background-color: rgba(200, 200, 200, 0.5);"
     >
-      Cody services 
-      <span
-        style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-      >
-        This feature is currently in beta
-      </span>
-      <span
-        aria-hidden="true"
-        class="badge info productStatusBadge"
-        status="beta"
-      >
-        beta
-      </span>
-    </h3>
-    <div
-      class="container mb-3"
-    >
-      <h4
-        class="h4"
-      >
-        Access token
-      </h4>
-      <p
-        class="mb-2"
-      >
-        Access tokens can be used for Cody Gateway access. In most cases this is not needed, since access tokens are automatically generated from each instance's configured license key.
-      </p>
-    </div>
-  </div>
+      &lt;Route&gt;
+    </code>
+  </p>
 </DocumentFragment>
 `;

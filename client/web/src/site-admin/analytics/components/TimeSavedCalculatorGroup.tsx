@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import type { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Card, Input, Text, H2 } from '@sourcegraph/wildcard'
 
 import { AnalyticsDateRange } from '../../../graphql-operations'
@@ -43,7 +44,7 @@ const calculateHoursSaved = (
         hoursSaved: (item.minPerItem * item.value * (item.percentage ?? 100)) / (60 * 100),
     }))
 
-export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculatorGroupProps> = ({
+export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculatorGroupProps & TelemetryV2Props> = ({
     page,
     items,
     color,
@@ -52,6 +53,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
     description,
     label,
     dateRange,
+    telemetryRecorder,
 }) => {
     const [memoizedItems, setMemoizedItems] = useState(calculateHoursSaved(items))
     const [minutesInputChangeLogs, setMinutesInputChangeLogs] = useState<{ [index: number]: boolean }>({})
@@ -124,7 +126,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
             return (totalSavedHours * 12) / 3
         }
         return totalSavedHours
-    }, [totalSavedHours, dateRange])
+    }, [totalSavedHours, dateRange, telemetryRecorder])
 
     return (
         <div>
@@ -210,7 +212,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                                                 ...percentageInputChangeLogs,
                                                 [index]: true,
                                             })
-                                            window.context.telemetryRecorder?.recordEvent(
+                                            telemetryRecorder.recordEvent(
                                                 `AdminAnalytics${page}PercentageInput`,
                                                 'edited'
                                             )
@@ -239,10 +241,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                                             ...minutesInputChangeLogs,
                                             [index]: true,
                                         })
-                                        window.context.telemetryRecorder?.recordEvent(
-                                            `AdminAnalytics${page}MinutesInput`,
-                                            'edited'
-                                        )
+                                        telemetryRecorder.recordEvent(`AdminAnalytics${page}MinutesInput`, 'edited')
                                         eventLogger.log(`AdminAnalytics${page}MinutesInputEdited`)
                                     }
                                 }}
@@ -273,7 +272,7 @@ export interface TimeSavedCalculatorProps {
     temporarySettingsKey: keyof TemporarySettingsSchema
 }
 
-export const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculatorProps> = ({
+export const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculatorProps & TelemetryV2Props> = ({
     page,
     color,
     label,
@@ -283,6 +282,7 @@ export const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculatorPro
     percentage,
     dateRange,
     temporarySettingsKey,
+    telemetryRecorder,
 }) => {
     const [minPerItemSavedSetting, setMinPerItemSaved] = useTemporarySetting(temporarySettingsKey, defaultMinPerItem)
     const minPerItemSaved = Number(minPerItemSavedSetting) || defaultMinPerItem
@@ -327,10 +327,7 @@ export const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculatorPro
                                 setMinPerItemSaved(Number(event.target.value))
                                 if (!inputChangeLogged) {
                                     setInputChangeLogged(true)
-                                    window.context.telemetryRecorder?.recordEvent(
-                                        `AdminAnalytics${page}MinutesInput`,
-                                        'edited'
-                                    )
+                                    telemetryRecorder.recordEvent(`AdminAnalytics${page}MinutesInput`, 'edited')
                                     eventLogger.log(`AdminAnalytics${page}MinutesInputEdited`)
                                 }
                             }}

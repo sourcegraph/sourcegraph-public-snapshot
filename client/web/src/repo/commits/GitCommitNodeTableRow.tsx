@@ -4,6 +4,7 @@ import { mdiDotsHorizontal } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Link, Icon, Code } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
@@ -17,20 +18,28 @@ import { GitCommitNodeByline } from './GitCommitNodeByline'
 import styles from './GitCommitNode.module.scss'
 
 export const GitCommitNodeTableRow: React.FC<
-    Omit<
-        GitCommitNodeProps,
-        | 'wrapperElement'
-        | 'afterElement'
-        | 'preferAbsoluteTimestamps'
-        | 'showSHAAndParentsRow'
-        | 'onHandleDiffMode'
-        | 'diffMode'
-    >
-> = ({ node, className, expandCommitMessageBody, hideExpandCommitMessageBody, messageSubjectClassName }) => {
+    TelemetryV2Props &
+        Omit<
+            GitCommitNodeProps,
+            | 'wrapperElement'
+            | 'afterElement'
+            | 'preferAbsoluteTimestamps'
+            | 'showSHAAndParentsRow'
+            | 'onHandleDiffMode'
+            | 'diffMode'
+        >
+> = ({
+    node,
+    className,
+    expandCommitMessageBody,
+    hideExpandCommitMessageBody,
+    messageSubjectClassName,
+    telemetryRecorder,
+}) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
 
     const toggleShowCommitMessageBody = useCallback((): void => {
-        window.context.telemetryRecorder?.recordEvent('commitBody', 'toggled')
+        telemetryRecorder.recordEvent('commitBody', 'toggled')
         eventLogger.log('CommitBodyToggled')
         setShowCommitMessageBody(!showCommitMessageBody)
     }, [showCommitMessageBody])

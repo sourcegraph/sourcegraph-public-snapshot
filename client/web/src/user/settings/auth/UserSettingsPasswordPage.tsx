@@ -4,6 +4,7 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Button,
     Container,
@@ -27,7 +28,7 @@ import { updatePassword } from '../backend'
 
 import styles from './UserSettingsPasswordPage.module.scss'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     user: UserAreaUserFields
     authenticatedUser: AuthenticatedUser
 }
@@ -57,14 +58,14 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        window.context.telemetryRecorder?.recordEvent('userSettingsPassword', 'viewed')
+        this.props.telemetryRecorder.recordEvent('userSettingsPassword', 'viewed')
         eventLogger.logViewEvent('UserSettingsPassword')
         this.subscriptions.add(
             this.submits
                 .pipe(
                     tap(event => {
                         event.preventDefault()
-                        window.context.telemetryRecorder?.recordEvent('updatePassword', 'clicked')
+                        this.props.telemetryRecorder.recordEvent('updatePassword', 'clicked')
                         eventLogger.log('UpdatePasswordClicked')
                     }),
                     filter(event => event.currentTarget.checkValidity()),

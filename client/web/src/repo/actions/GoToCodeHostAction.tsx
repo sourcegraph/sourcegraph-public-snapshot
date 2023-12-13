@@ -13,6 +13,7 @@ import type { Position, Range } from '@sourcegraph/extension-api-types'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 // TODO: Switch mdi icon
 import { HelixSwarmIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { type ButtonLinkProps, Icon, Link, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
@@ -22,7 +23,7 @@ import { fetchCommitMessage, fetchFileExternalLinks } from '../backend'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 import type { RepoHeaderContext } from '../RepoHeader'
 
-interface Props extends RevisionSpec, Partial<FileSpec> {
+interface Props extends RevisionSpec, Partial<FileSpec>, TelemetryV2Props {
     repo?: Pick<RepositoryFields, 'name' | 'defaultBranch' | 'externalURLs' | 'externalRepository'> | null
     filePath?: string
     commitRange?: string
@@ -46,7 +47,7 @@ interface Props extends RevisionSpec, Partial<FileSpec> {
 export const GoToCodeHostAction: React.FunctionComponent<
     React.PropsWithChildren<Props & RepoHeaderContext>
 > = props => {
-    const { repo, revision, filePath } = props
+    const { repo, revision, filePath, telemetryRecorder } = props
 
     const serviceType = props.repo?.externalRepository?.serviceType
 
@@ -89,7 +90,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
     )
 
     const onClick = useCallback(() => {
-        window.context.telemetryRecorder?.recordEvent('goToCodeHost', 'clicked')
+        telemetryRecorder.recordEvent('goToCodeHost', 'clicked')
         eventLogger.log('GoToCodeHostClicked')
     }, [window.context.telemetryRecorder])
 

@@ -6,6 +6,7 @@ import { catchError, map, switchMap } from 'rxjs/operators'
 import type { Omit } from 'utility-types'
 
 import { type ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -15,7 +16,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { type SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
-interface Props extends NamespaceProps {
+interface Props extends NamespaceProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     location: Location
@@ -69,7 +70,7 @@ class InnerSavedSearchCreateForm extends React.Component<Props, State> {
                 .subscribe(([createdOrError, queryDescription]) => {
                     this.setState({ createdOrError })
                     if (createdOrError === true) {
-                        window.context.telemetryRecorder?.recordEvent('savedSearch', 'created')
+                        this.props.telemetryRecorder.recordEvent('savedSearch', 'created')
                         eventLogger.log('SavedSearchCreated')
                         screenReaderAnnounce(`Saved ${queryDescription} search`)
                         this.props.navigate(`${this.props.namespace.url}/searches`, {
@@ -78,7 +79,7 @@ class InnerSavedSearchCreateForm extends React.Component<Props, State> {
                     }
                 })
         )
-        window.context.telemetryRecorder?.recordEvent('newSavedSearchPage', 'viewed')
+        this.props.telemetryRecorder.recordEvent('newSavedSearchPage', 'viewed')
         eventLogger.logViewEvent('NewSavedSearchPage')
     }
 

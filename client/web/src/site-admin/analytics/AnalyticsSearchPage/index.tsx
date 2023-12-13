@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, type Series } from '@sourcegraph/wildcard'
 
 import type { SearchStatisticsResult, SearchStatisticsVariables } from '../../../graphql-operations'
@@ -210,7 +211,14 @@ export const AnalyticsSearchPage: React.FC = () => {
                     </div>
                 )}
                 <H2 className="my-3">Total time saved</H2>
-                {calculatorProps && <TimeSavedCalculatorGroup {...calculatorProps} />}
+                {calculatorProps && (
+                    <TimeSavedCalculatorGroup
+                        {...calculatorProps}
+                        telemetryRecorder={
+                            window.context.telemetryRecorder ? window.context.telemetryRecorder : noOpTelemetryRecorder
+                        }
+                    />
+                )}
                 <div className={styles.suggestionBox}>
                     <H4 className="my-3">Suggestions</H4>
                     <div className={classNames(styles.border, 'mb-3')} />

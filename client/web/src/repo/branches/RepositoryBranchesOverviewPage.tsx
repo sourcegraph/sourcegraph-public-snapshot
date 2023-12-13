@@ -14,6 +14,7 @@ import {
 } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Link, LoadingSpinner, CardHeader, Card, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
@@ -84,7 +85,7 @@ export const queryGitBranches = memoizeObservable(
     args => `${args.repo}:${args.first}`
 )
 
-interface Props extends RepositoryBranchesAreaPageProps {}
+interface Props extends RepositoryBranchesAreaPageProps, TelemetryV2Props {}
 
 interface State {
     /** The page content, undefined while loading, or an error. */
@@ -99,7 +100,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        window.context.telemetryRecorder?.recordEvent('repositoryBranchesOverview', 'viewed')
+        this.props.telemetryRecorder.recordEvent('repositoryBranchesOverview', 'viewed')
         eventLogger.logViewEvent('RepositoryBranchesOverview')
 
         this.subscriptions.add(

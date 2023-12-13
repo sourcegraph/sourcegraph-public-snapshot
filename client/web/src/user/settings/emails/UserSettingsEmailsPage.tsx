@@ -139,9 +139,15 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
                 user={user}
                 onDidAdd={fetchEmails}
                 emails={new Set(emails.map(userEmail => userEmail.email))}
+                telemetryRecorder={telemetryRecorder}
             />
             <hr className="my-4" aria-hidden="true" />
-            <SetUserPrimaryEmailForm user={user} emails={emails} onDidSet={fetchEmails} />
+            <SetUserPrimaryEmailForm
+                user={user}
+                emails={emails}
+                onDidSet={fetchEmails}
+                telemetryRecorder={telemetryRecorder}
+            />
         </div>
     )
 }

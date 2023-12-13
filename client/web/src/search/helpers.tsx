@@ -3,7 +3,7 @@ import type { SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { eventLogger } from '../tracking/eventLogger'
+import { eventLogger, telemetryRecorder } from '../tracking/eventLogger'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './results/components/aggregation/constants'
 
@@ -56,7 +56,7 @@ export function submitSearch({
     }
 
     const queryWithContext = appendContextFilter(query, selectedSearchContextSpec)
-    window.context.telemetryRecorder?.recordEvent('search', 'submitted', {
+    telemetryRecorder?.recordEvent('search', 'submitted', {
         privateMetadata: { query: queryWithContext, source },
     })
     eventLogger.log(

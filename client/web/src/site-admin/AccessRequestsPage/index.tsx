@@ -7,6 +7,7 @@ import { capitalize } from 'lodash'
 
 import { pluralize } from '@sourcegraph/common'
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Card, Text, Alert, PageSwitcher, Link, Select, Button, Badge, Tooltip } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
@@ -182,11 +183,11 @@ const AccessRequestStatusPicker: React.FunctionComponent<{
 
 const FIRST_COUNT = 25
 
-export const AccessRequestsPage: React.FunctionComponent = () => {
+export const AccessRequestsPage: React.FunctionComponent<TelemetryV2Props> = ({ telemetryRecorder }) => {
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('accessRequestsPage', 'viewed')
+        telemetryRecorder.recordEvent('accessRequestsPage', 'viewed')
         eventLogger.logPageView('AccessRequestsPage')
-    }, [])
+    }, [telemetryRecorder])
     const [error, setError] = useState<Error | null>(null)
 
     const [status, setStatus] = useURLSyncedString('status', AccessRequestStatus.PENDING)
@@ -219,7 +220,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
             if (!confirm('Are you sure you want to reject the selected access request?')) {
                 return
             }
-            window.context.telemetryRecorder?.recordEvent('accessRequest', 'rejected')
+            telemetryRecorder.recordEvent('accessRequest', 'rejected')
             eventLogger.log('AccessRequestRejected', { id })
             rejectAccessRequest({
                 variables: {
@@ -233,7 +234,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                     console.error(error)
                 })
         },
-        [refetch, rejectAccessRequest]
+        [refetch, rejectAccessRequest, telemetryRecorder]
     )
 
     const [lastApprovedUser, setLastApprovedUser] = useState<{
@@ -257,7 +258,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
             if (!confirm('Are you sure you want to approve the selected access request?')) {
                 return
             }
-            window.context.telemetryRecorder?.recordEvent('accessRequest', 'approved')
+            telemetryRecorder.recordEvent('accessRequest', 'approved')
             eventLogger.log('AccessRequestApproved', { id })
             async function createUserAndApproveRequest(): Promise<void> {
                 const username = await generateUsername(name)
@@ -291,7 +292,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                 console.error(error)
             })
         },
-        [generateUsername, createUser, approveAccessRequest, refetch]
+        [generateUsername, createUser, approveAccessRequest, refetch, telemetryRecorder]
     )
 
     const hasRemainingSeats = useHasRemainingSeats()

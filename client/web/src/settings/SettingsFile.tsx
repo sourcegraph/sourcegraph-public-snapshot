@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
@@ -54,7 +55,7 @@ const MonacoSettingsEditor = React.lazy(async () => ({
     default: (await import('./MonacoSettingsEditor')).MonacoSettingsEditor,
 }))
 
-export class SettingsFile extends React.PureComponent<Props, State> {
+export class SettingsFile extends React.PureComponent<Props & TelemetryV2Props, State> {
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
@@ -181,14 +182,14 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             window.confirm('Discard settings edits?')
         ) {
             eventLogger.log('SettingsFileDiscard')
-            window.context.telemetryRecorder?.recordEvent('settingsFile', 'discarded')
+            this.props.telemetryRecorder.recordEvent('settingsFile', 'discarded')
             this.setState({
                 contents: undefined,
                 editingLastID: undefined,
             })
             this.props.onDidDiscard()
         } else {
-            window.context.telemetryRecorder?.recordEvent('settingsFile', 'discardedCanceled')
+            this.props.telemetryRecorder.recordEvent('settingsFile', 'discardedCanceled')
             eventLogger.log('SettingsFileDiscardCanceled')
         }
     }
@@ -201,7 +202,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     }
 
     private save = (): void => {
-        window.context.telemetryRecorder?.recordEvent('settingsFile', 'saved')
+        this.props.telemetryRecorder.recordEvent('settingsFile', 'saved')
         eventLogger.log('SettingsFileSaved')
         this.setState({ saving: true }, () => {
             this.props.onDidCommit(this.getPropsSettingsID(), this.state.contents!)

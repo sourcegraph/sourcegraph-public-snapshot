@@ -15,6 +15,7 @@ import {
 } from 'rxjs/operators'
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -25,7 +26,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { type SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
-interface Props extends NamespaceProps {
+interface Props extends NamespaceProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     searchId: string
@@ -92,7 +93,7 @@ class InnerSavedSearchUpdateForm extends React.Component<Props, State> {
                                 mapTo(null),
                                 tap(() => {
                                     eventLogger.log('SavedSearchUpdated')
-                                    window.context.telemetryRecorder?.recordEvent('savedSearch', 'updated')
+                                    this.props.telemetryRecorder.recordEvent('savedSearch', 'updated')
                                 }),
                                 mergeMap(() =>
                                     concat(
@@ -112,7 +113,7 @@ class InnerSavedSearchUpdateForm extends React.Component<Props, State> {
 
         this.componentUpdates.next(this.props)
 
-        window.context.telemetryRecorder?.recordEvent('updateSavedSearchPage', 'viewed')
+        this.props.telemetryRecorder.recordEvent('updateSavedSearchPage', 'viewed')
         eventLogger.logViewEvent('UpdateSavedSearchPage')
     }
 

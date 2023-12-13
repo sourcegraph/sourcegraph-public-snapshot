@@ -5,6 +5,7 @@ import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Container,
     PageHeader,
@@ -279,7 +280,7 @@ const CorruptionLogsContainer: FC<CorruptionLogProps> = props => {
     )
 }
 
-interface RepoSettingsMirrorPageProps {
+interface RepoSettingsMirrorPageProps extends TelemetryV2Props {
     repo: SettingsAreaRepositoryFields
 }
 
@@ -287,7 +288,7 @@ interface RepoSettingsMirrorPageProps {
  * The repository settings mirror page.
  */
 export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => {
-    window.context.telemetryRecorder?.recordEvent('repoSettingsMirror', 'viewed')
+    props.telemetryRecorder.recordEvent('repoSettingsMirror', 'viewed')
     eventLogger.logPageView('RepoSettingsMirror')
     const [reachable, setReachable] = useState<boolean>()
     const [recloneRepository] = useMutation<RecloneRepositoryResult, RecloneRepositoryVariables>(

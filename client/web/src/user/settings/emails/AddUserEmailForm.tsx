@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { asError, isErrorLike, type ErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
 import { screenReaderAnnounce, Input, Label, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -12,7 +13,7 @@ import { LoaderButton } from '../../../components/LoaderButton'
 import type { AddUserEmailResult, AddUserEmailVariables, UserSettingsAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     user: Pick<UserSettingsAreaUserFields, 'id' | 'scimControlled'>
     onDidAdd: () => void
     emails: Set<string>
@@ -34,6 +35,7 @@ export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>>
     className,
     onDidAdd,
     emails,
+    telemetryRecorder,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
 
@@ -67,7 +69,7 @@ export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>>
                     ).toPromise()
                 )
 
-                window.context.telemetryRecorder?.recordEvent('newUserEmailAddress', 'added')
+                telemetryRecorder.recordEvent('newUserEmailAddress', 'added')
                 eventLogger.log('NewUserEmailAddressAdded')
                 screenReaderAnnounce('Email address added')
 

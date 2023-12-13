@@ -3,6 +3,7 @@ import { type FC, useCallback, useEffect, useState } from 'react'
 import { noop } from 'lodash'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Container, ErrorAlert, H2, LoadingSpinner, PageHeader, renderError, Text } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../components/CopyableText'
@@ -25,16 +26,16 @@ import { RedirectionAlert } from './components/RedirectionAlert'
 
 import styles from './RepoSettingsOptionsPage.module.scss'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     repo: SettingsAreaRepositoryFields
 }
 
 /**
  * The repository settings options page.
  */
-export const RepoSettingsOptionsPage: FC<Props> = ({ repo }) => {
+export const RepoSettingsOptionsPage: FC<Props> = ({ repo, telemetryRecorder }) => {
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('repoSettings', 'viewed')
+        telemetryRecorder.recordEvent('repoSettings', 'viewed')
         eventLogger.logViewEvent('RepoSettings')
     })
 

@@ -12,6 +12,7 @@ import {
     toPositionOrRangeQueryParameter,
     toViewStateHash,
 } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
@@ -28,7 +29,8 @@ export class ToggleHistoryPanel extends React.PureComponent<
         isPackage: boolean
         location: Location
         navigate: NavigateFunction
-    } & RepoHeaderContext
+    } & RepoHeaderContext &
+        TelemetryV2Props
 > {
     private toggles = new Subject<boolean>()
     private subscriptions = new Subscription()
@@ -65,10 +67,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
         this.subscriptions.add(
             this.toggles.subscribe(() => {
                 const visible = ToggleHistoryPanel.isVisible(this.props.location)
-                window.context.telemetryRecorder?.recordEvent(
-                    visible ? 'HideHistoryPanel' : 'ShowHistoryPanel',
-                    'viewed'
-                )
+                this.props.telemetryRecorder.recordEvent(visible ? 'HideHistoryPanel' : 'ShowHistoryPanel', 'viewed')
                 eventLogger.log(visible ? 'HideHistoryPanel' : 'ShowHistoryPanel')
                 this.props.navigate(ToggleHistoryPanel.locationWithVisibility(this.props.location, !visible))
             })

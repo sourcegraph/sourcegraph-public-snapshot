@@ -4,6 +4,7 @@ import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -51,6 +52,7 @@ const externalService = {
         namespaceName: 'johndoe',
         url: '/users/johndoe',
     },
+    rateLimiterState: null,
 }
 
 const queryExternalServiceSyncJobs: typeof _queryExternalServiceSyncJobs = () =>
@@ -136,6 +138,7 @@ export const ExternalServiceWithRepos: Story<WebStoryChildrenProps> = props => (
             queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
             afterDeleteRoute="/site-admin/after-delete"
             telemetryService={NOOP_TELEMETRY_SERVICE}
+            telemetryRecorder={noOpTelemetryRecorder}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
         />

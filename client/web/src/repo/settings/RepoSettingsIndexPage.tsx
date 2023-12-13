@@ -9,6 +9,7 @@ import { map, switchMap, tap } from 'rxjs/operators'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Button,
     Container,
@@ -251,14 +252,14 @@ interface State {
 /**
  * The repository settings index page.
  */
-export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
+export class RepoSettingsIndexPage extends React.PureComponent<Props & TelemetryV2Props, State> {
     public state: State = { loading: true }
 
     private updates = new Subject<void>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        window.context.telemetryRecorder?.recordEvent('repoSettingsIndex', 'viewed')
+        this.props.telemetryRecorder.recordEvent('repoSettingsIndex', 'viewed')
         eventLogger.logViewEvent('RepoSettingsIndex')
 
         this.subscriptions.add(

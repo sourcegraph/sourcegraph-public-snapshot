@@ -51,8 +51,8 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownTitle: 'Close changesets',
         dropdownDescription:
             'Attempt to close all selected changesets on the code hosts. The changesets will remain part of the batch change.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
-            window.context.telemetryRecorder?.recordEvent('batchChangeDetails.bulkActionClose', 'clicked')
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
+            telemetryRecorder.recordEvent('batchChangeDetails.bulkActionClose', 'clicked')
             eventLogger.log('batch_change_details:bulk_action_close:clicked')
             return (
                 <CloseChangesetsModal
@@ -70,8 +70,8 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownTitle: 'Create comment',
         dropdownDescription:
             'Create a comment on all selected changesets. For example, you could ask people for reviews, give an update, or post a cat GIF.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
-            window.context.telemetryRecorder?.recordEvent('batchChangeDetails.bulkActionComment', 'clicked')
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
+            telemetryRecorder.recordEvent('batchChangeDetails.bulkActionComment', 'clicked')
             eventLogger.log('batch_change_details:bulk_action_comment:clicked')
             return (
                 <CreateCommentModal

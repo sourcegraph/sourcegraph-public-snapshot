@@ -10,6 +10,7 @@ import { useCallbackRef } from 'use-callback-ref'
 
 import { logger } from '@sourcegraph/common'
 import type { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
     Container,
@@ -33,7 +34,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './SavedSearchListPage.module.scss'
 
-interface NodeProps extends SearchPatternTypeProps {
+interface NodeProps extends SearchPatternTypeProps, TelemetryV2Props {
     savedSearch: SavedSearchFields
     onDelete: () => void
     linkRef: React.MutableRefObject<HTMLAnchorElement | null> | null
@@ -67,7 +68,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     )
                 )
                 .subscribe(() => {
-                    window.context.telemetryRecorder?.recordEvent('savedSearch', 'deleted')
+                    this.props.telemetryRecorder.recordEvent('savedSearch', 'deleted')
                     eventLogger.log('SavedSearchDeleted')
                     this.setState({ isDeleting: false })
                     this.props.onDelete()
@@ -133,11 +134,11 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
     }
 }
 
-interface Props extends NamespaceProps {}
+interface Props extends NamespaceProps, TelemetryV2Props {}
 
 export const SavedSearchListPage: React.FunctionComponent<Props> = props => {
     React.useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('savedSearchListPage', 'viewed')
+        props.telemetryRecorder.recordEvent('savedSearchListPage', 'viewed')
         eventLogger.logViewEvent('SavedSearchListPage')
     }, [])
 

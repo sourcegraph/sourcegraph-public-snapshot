@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 
 import type { ErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Container,
     PageHeader,
@@ -55,7 +56,7 @@ interface UserExternalAccountsResult {
     }
 }
 
-interface Props {
+interface Props extends TelemetryV2Props {
     user: UserAreaUserFields
     authenticatedUser: AuthenticatedUser
     context: Pick<SourcegraphContext, 'authProviders'>
@@ -101,11 +102,11 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     }, {})
 
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('userSettingsPassword', 'viewed')
+        props.telemetryRecorder.recordEvent('userSettingsPassword', 'viewed')
         eventLogger.logPageView('UserSettingsPassword')
 
         setAccounts({ fetched: data?.user?.externalAccounts.nodes, lastRemoved: '' })
-    }, [data, window.context.telemetryRecorder])
+    }, [data, props.telemetryRecorder])
 
     const onAccountRemoval = (removeId: string, name: string): void => {
         // keep every account that doesn't match removeId

@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { groupBy, sortBy, startCase, sumBy } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import {
     Card,
     H2,
@@ -183,6 +184,7 @@ export const AnalyticsCodeIntelPage: React.FC = () => {
                         'Compiler-accurate code navigation takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant additional time savings.',
                 },
             ],
+            telemetryRecorder: noOpTelemetryRecorder,
         }
 
         return [stats, legends, calculatorProps]

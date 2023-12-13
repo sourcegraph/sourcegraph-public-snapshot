@@ -10,6 +10,7 @@ import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
     Button,
@@ -191,7 +192,7 @@ const BATCH_COUNT = 20
 
 const equalOrEmpty = (a: string | undefined, b: string | undefined): boolean => a === b || (!a && !b)
 
-interface Props extends RepositoryStatsAreaPageProps {}
+interface Props extends RepositoryStatsAreaPageProps, TelemetryV2Props {}
 
 const contributorsPageInputIds: Record<string, string> = {
     REVISION_RANGE: 'repository-stats-contributors-page__revision-range',
@@ -211,7 +212,7 @@ const getUrlQuery = (spec: Partial<QuerySpec>): string => {
 }
 
 /** A page that shows a repository's contributors. */
-export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = ({ repo }) => {
+export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = ({ repo, telemetryRecorder }) => {
     const location = useLocation()
     const navigate = useNavigate()
     const queryParameters = new URLSearchParams(location.search)
@@ -255,9 +256,9 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
 
     // Log page view when initially rendered
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('repositoryStatsContributors', 'viewed')
+        telemetryRecorder.recordEvent('repositoryStatsContributors', 'viewed')
         eventLogger.logPageView('RepositoryStatsContributors')
-    }, [])
+    }, [telemetryRecorder])
 
     // Update spec when search params change
     useEffect(() => {

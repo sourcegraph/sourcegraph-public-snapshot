@@ -7,6 +7,7 @@ import type { NavigateFunction } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     createRectangle,
     createLinkClickHandler,
@@ -109,7 +110,7 @@ const usePopover = ({
     return { isOpen, open, close, openWithTimeout, closeWithTimeout }
 }
 
-interface BlameDecorationProps {
+interface BlameDecorationProps extends TelemetryV2Props {
     line: number // 1-based line number
     blameHunk?: BlameHunk
     firstCommitDate?: BlameHunkData['firstCommitDate']
@@ -129,12 +130,13 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
     externalURLs,
     hideRecency,
     navigate,
+    telemetryRecorder,
 }) => {
     const hunkStartLine = blameHunk?.startLine ?? line
     const id = hunkStartLine?.toString() || ''
     const onOpen = useCallback(() => {
         onSelect?.(hunkStartLine)
-        window.context.telemetryRecorder?.recordEvent('gitBlamePopup', 'viewed')
+        telemetryRecorder.recordEvent('gitBlamePopup', 'viewed')
         eventLogger.log('GitBlamePopupViewed')
     }, [onSelect, hunkStartLine, window.context.telemetryRecorder])
     const onClose = useCallback(() => onDeselect?.(hunkStartLine), [onDeselect, hunkStartLine])

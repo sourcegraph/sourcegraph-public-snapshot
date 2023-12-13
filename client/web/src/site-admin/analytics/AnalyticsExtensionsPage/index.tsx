@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, type Series } from '@sourcegraph/wildcard'
 
 import type { ExtensionsStatisticsResult, ExtensionsStatisticsVariables } from '../../../graphql-operations'
@@ -151,6 +152,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent = () => {
                         "Searches from VS Code across all of your company's code without locally cloning repositories or complex scripting.",
                 },
             ],
+            telemetryRecorder: noOpTelemetryRecorder,
         }
         const totalUsersCount = data?.site.users.totalCount
         const installationStats =

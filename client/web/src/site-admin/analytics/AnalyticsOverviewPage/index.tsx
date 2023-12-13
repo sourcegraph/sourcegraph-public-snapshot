@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import format from 'date-fns/format'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { AnchorLink, Card, H2, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
@@ -23,7 +24,7 @@ import { Sidebar } from './Sidebar'
 
 import styles from './index.module.scss'
 
-interface Props {}
+interface Props extends TelemetryV2Props {}
 
 export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
     const { dateRange } = useChartFilters({ name: 'Overview' })

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 
 import { escapeRevspecForURL } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
@@ -18,7 +19,7 @@ interface RevisionComparison {
     head: RepositoryCompareHeaderProps['head']
 }
 
-interface RepositoryComparePopoverProps {
+interface RepositoryComparePopoverProps extends TelemetryV2Props {
     /**
      * Uniquely identify this specific popover. Used to link the trigger button with the popover to display
      */
@@ -36,12 +37,12 @@ interface RepositoryComparePopoverProps {
 
 export const RepositoryComparePopover: React.FunctionComponent<
     React.PropsWithChildren<RepositoryComparePopoverProps>
-> = ({ id, comparison, repo, type }) => {
+> = ({ id, comparison, repo, type, telemetryRecorder }) => {
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = (): void => setPopoverOpen(previous => !previous)
 
     const handleSelect = (): void => {
-        window.context.telemetryRecorder?.recordEvent('repositoryComparison', 'submitted')
+        telemetryRecorder.recordEvent('repositoryComparison', 'submitted')
         eventLogger.log('RepositoryComparisonSubmitted')
         togglePopover()
     }
@@ -90,6 +91,7 @@ export const RepositoryComparePopover: React.FunctionComponent<
                     getPathFromRevision={getPathFromRevision}
                     showSpeculativeResults={true}
                     onSelect={handleSelect}
+                    telemetryRecorder={telemetryRecorder}
                 />
             </PopoverContent>
         </Popover>

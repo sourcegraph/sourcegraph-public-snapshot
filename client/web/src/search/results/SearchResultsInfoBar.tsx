@@ -148,7 +148,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             return
         }
 
-        window.context.telemetryRecorder?.recordEvent('web.codySearch.feedback', 'submitted', {
+        props.telemetryRecorder.recordEvent('web.codySearch.feedback', 'submitted', {
             privateMetadata: { userPropmpt: !isPrivateInstance ? { ...codySearchInput, positive } : null },
         })
         eventLogger.log(

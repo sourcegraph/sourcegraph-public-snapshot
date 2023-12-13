@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { Subscription } from 'rxjs'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Badge,
     type BADGE_VARIANTS,
@@ -318,11 +319,13 @@ const LAST_TAB_STORAGE_KEY = 'site-admin-survey-responses-last-tab'
  * A page displaying the survey responses on this site.
  */
 
-export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
+export const SiteAdminSurveyResponsesPage: React.FunctionComponent<
+    React.PropsWithChildren<Props & TelemetryV2Props>
+> = ({ telemetryRecorder }) => {
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
 
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('siteAdminSurveyResponses', 'viewed')
+        telemetryRecorder.recordEvent('siteAdminSurveyResponses', 'viewed')
         eventLogger.logViewEvent('SiteAdminSurveyResponses')
     }, [window.context.telemetryRecorder])
 

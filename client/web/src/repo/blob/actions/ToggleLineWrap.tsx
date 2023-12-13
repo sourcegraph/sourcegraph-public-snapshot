@@ -5,6 +5,7 @@ import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { WrapDisabledIcon } from '@sourcegraph/shared/src/components/icons'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -21,7 +22,8 @@ export class ToggleLineWrap extends React.PureComponent<
          * false means off).
          */
         onDidUpdate: (value: boolean) => void
-    } & RepoHeaderContext,
+    } & RepoHeaderContext &
+        TelemetryV2Props,
     { value: boolean }
 > {
     private static STORAGE_KEY = 'wrap-code'
@@ -48,7 +50,7 @@ export class ToggleLineWrap extends React.PureComponent<
     public componentDidMount(): void {
         this.subscriptions.add(
             this.updates.subscribe(value => {
-                window.context.telemetryRecorder?.recordEvent(value ? 'WrappedCode' : 'UnwrappedCode', 'toggled')
+                this.props.telemetryRecorder.recordEvent(value ? 'WrappedCode' : 'UnwrappedCode', 'toggled')
                 eventLogger.log(value ? 'WrappedCode' : 'UnwrappedCode')
                 ToggleLineWrap.setValue(value)
                 this.setState({ value })

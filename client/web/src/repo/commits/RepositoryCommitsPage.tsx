@@ -181,9 +181,9 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
     }
 
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('repositoryCommits', 'viewed')
+        props.telemetryRecorder.recordEvent('repositoryCommits', 'viewed')
         eventLogger.logPageView('RepositoryCommits')
-    }, [])
+    }, [props.telemetryRecorder])
 
     useBreadcrumb(
         useMemo(() => {
@@ -251,7 +251,13 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
                     {error && <ErrorAlert error={error} className="w-100 mb-0" />}
                     <ConnectionList className="list-group list-group-flush w-100">
                         {connection?.nodes.map(node => (
-                            <GitCommitNode key={node.id} className="list-group-item" wrapperElement="li" node={node} />
+                            <GitCommitNode
+                                key={node.id}
+                                className="list-group-item"
+                                wrapperElement="li"
+                                node={node}
+                                telemetryRecorder={props.telemetryRecorder}
+                            />
                         ))}
                     </ConnectionList>
                     {loading && <ConnectionLoading />}

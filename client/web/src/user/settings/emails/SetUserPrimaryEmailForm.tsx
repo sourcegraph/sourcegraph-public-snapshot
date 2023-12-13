@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Select, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
@@ -20,7 +21,7 @@ import styles from './SetUserPrimaryEmailForm.module.scss'
 
 type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
 
-interface Props {
+interface Props extends TelemetryV2Props {
     user: Pick<UserSettingsAreaUserFields, 'id' | 'scimControlled'>
     emails: UserEmail[]
     onDidSet: () => void
@@ -37,6 +38,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
     emails,
     onDidSet,
     className,
+    telemetryRecorder,
 }) => {
     const currentPrimaryEmail = findPrimaryEmail(emails)
     const [primaryEmail, setPrimaryEmail] = useState<string | undefined>(currentPrimaryEmail)
@@ -70,7 +72,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
                     ).toPromise()
                 )
 
-                window.context.telemetryRecorder?.recordEvent('userEmailAddressVerificationSetAsPrimary', 'succeeded')
+                telemetryRecorder.recordEvent('userEmailAddressVerificationSetAsPrimary', 'succeeded')
                 eventLogger.log('UserEmailAddressSetAsPrimary')
                 setStatusOrError(undefined)
 
@@ -81,7 +83,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
                 setStatusOrError(asError(error))
             }
         },
-        [user, primaryEmail, onDidSet, window.context.telemetryRecorder]
+        [user, primaryEmail, onDidSet, telemetryRecorder]
     )
 
     return (

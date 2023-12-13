@@ -3,6 +3,7 @@ import React, { useMemo, useEffect } from 'react'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Card, LoadingSpinner, H2, Text, LineChart, type Series } from '@sourcegraph/wildcard'
 
 import type { BatchChangesStatisticsResult, BatchChangesStatisticsVariables } from '../../../graphql-operations'
@@ -31,9 +32,9 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent = () => {
         }
     )
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('adminAnalyticsBatchChanges', 'viewed')
+        // telemetryRecorder.recordEvent('adminAnalyticsBatchChanges', 'viewed')
         eventLogger.logPageView('AdminAnalyticsBatchChanges')
-    }, [window.context.telemetryRecorder])
+    }, [])
     const [stats, legends, calculatorProps] = useMemo(() => {
         if (!data) {
             return []
@@ -132,7 +133,9 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent = () => {
                     </div>
                 </div>
                 <H2 className="my-3">Total time saved</H2>
-                {calculatorProps && <TimeSavedCalculator {...calculatorProps} />}
+                {calculatorProps && (
+                    <TimeSavedCalculator {...calculatorProps} telemetryRecorder={noOpTelemetryRecorder} />
+                )}
             </Card>
             <Text className="font-italic text-center mt-2">
                 All events are generated from entries in the event logs table and are updated every 24 hours.

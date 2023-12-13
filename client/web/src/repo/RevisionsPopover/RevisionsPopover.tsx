@@ -4,6 +4,7 @@ import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { GitRefType, type Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, useLocalStorage, Tab, TabList, TabPanel, TabPanels, Icon } from '@sourcegraph/wildcard'
 
 import type { GitCommitAncestorFields, GitRefFields } from '../../graphql-operations'
@@ -17,7 +18,7 @@ import { RevisionsPopoverReferences } from './RevisionsPopoverReferences'
 
 import styles from './RevisionsPopover.module.scss'
 
-export interface RevisionsPopoverProps {
+export interface RevisionsPopoverProps extends TelemetryV2Props {
     repoId: Scalars['ID']
     repoName: string
     repoServiceType: string
@@ -98,10 +99,10 @@ const VERSIONS_TAB: RevisionsPopoverTab = {
  * the current repository.
  */
 export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<RevisionsPopoverProps>> = props => {
-    const { getPathFromRevision = replaceRevisionInURL, repoServiceType } = props
+    const { getPathFromRevision = replaceRevisionInURL, repoServiceType, telemetryRecorder } = props
 
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('revisionsPopover', 'viewed')
+        telemetryRecorder.recordEvent('revisionsPopover', 'viewed')
         eventLogger.logViewEvent('RevisionsPopover')
     }, [])
 

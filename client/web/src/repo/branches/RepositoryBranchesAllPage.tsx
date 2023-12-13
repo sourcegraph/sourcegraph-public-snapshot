@@ -2,6 +2,8 @@ import { type FC, useCallback, useEffect } from 'react'
 
 import type { Observable } from 'rxjs'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+
 import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { GitRefType, type GitRefConnectionFields, type GitRefFields } from '../../graphql-operations'
@@ -13,11 +15,11 @@ import type { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 interface Props extends RepositoryBranchesAreaPageProps {}
 
 /** A page that shows all of a repository's branches. */
-export const RepositoryBranchesAllPage: FC<Props> = props => {
-    const { repo } = props
+export const RepositoryBranchesAllPage: FC<Props & TelemetryV2Props> = props => {
+    const { repo, telemetryRecorder } = props
 
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('repositoryBranchesAll', 'viewed')
+        telemetryRecorder.recordEvent('repositoryBranchesAll', 'viewed')
         eventLogger.logViewEvent('RepositoryBranchesAll')
     }, [])
 

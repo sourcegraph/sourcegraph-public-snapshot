@@ -15,7 +15,7 @@ import type {
     SetUserEmailVerifiedVariables,
     UserEmailsResult,
 } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
+import { eventLogger, telemetryRecorder } from '../../../tracking/eventLogger'
 
 import styles from './UserEmail.module.scss'
 
@@ -48,7 +48,7 @@ export const resendVerificationEmail = async (
             ).toPromise()
         )
 
-        window.context.telemetryRecorder?.recordEvent('userEmailAddressVerification', 'resent')
+        telemetryRecorder?.recordEvent('userEmailAddressVerification', 'resent')
         eventLogger.log('UserEmailAddressVerificationResent')
 
         options?.onSuccess?.()
@@ -65,6 +65,7 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
     onDidRemove,
     onEmailVerify,
     onEmailResendVerification,
+    telemetryRecorder,
 }) => {
     const [isLoading, setIsLoading] = useState(false)
 
@@ -94,7 +95,7 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
             )
 
             setIsLoading(false)
-            window.context.telemetryRecorder?.recordEvent('userEmailAddress', 'deleted')
+            telemetryRecorder.recordEvent('userEmailAddress', 'deleted')
             eventLogger.log('UserEmailAddressDeleted')
             screenReaderAnnounce('Email address removed')
 
@@ -126,10 +127,10 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
             setIsLoading(false)
 
             if (verified) {
-                window.context.telemetryRecorder?.recordEvent('userEmailAddress', 'verified')
+                telemetryRecorder.recordEvent('userEmailAddress', 'verified')
                 eventLogger.log('UserEmailAddressMarkedVerified')
             } else {
-                window.context.telemetryRecorder?.recordEvent('userEmailAddress', 'unverified')
+                telemetryRecorder.recordEvent('userEmailAddress', 'unverified')
                 eventLogger.log('UserEmailAddressMarkedUnverified')
             }
 
