@@ -7,7 +7,6 @@ import type { Observable } from 'rxjs'
 
 import { isErrorLike, pluralize } from '@sourcegraph/common'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import type { AggregableBadge } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
 import type { MatchItem } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
@@ -19,7 +18,7 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Icon, Badge } from '@sourcegraph/wildcard'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { CopyPathAction } from './CopyPathAction'
 import { FileMatchChildren } from './FileMatchChildren'
@@ -141,7 +140,6 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                       content: match.content,
                       startLine: match.contentStart.line,
                       endLine: match.ranges.at(-1)!.end.line,
-                      aggregableBadges: match.aggregableBadges,
                   })) ||
                   result.lineMatches?.map(match => ({
                       highlightRanges: match.offsetAndLengths.map(offsetAndLength => ({
@@ -153,7 +151,6 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                       content: match.line,
                       startLine: match.lineNumber,
                       endLine: match.lineNumber,
-                      aggregableBadges: match.aggregableBadges,
                   })) ||
                   []
                 : [],
@@ -191,24 +188,6 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         }
     }, [collapsible, expanded])
 
-    const description =
-        items.length > 0 ? (
-            <>
-                {aggregateBadges(items).map(badge => (
-                    <Badge
-                        key={badge.text}
-                        href={badge.linkURL}
-                        tooltip={badge.hoverMessage}
-                        variant="secondary"
-                        small={true}
-                        className="text-muted text-uppercase file-match__badge"
-                    >
-                        {badge.text}
-                    </Badge>
-                ))}
-            </>
-        ) : undefined
-
     const title = (
         <>
             <span className="d-flex align-items-center">
@@ -231,7 +210,6 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                     telemetryService={telemetryService}
                 />
             </span>
-            {description && <span className={classNames('ml-2', styles.headerDescription)}>{description}</span>}
         </>
     )
 
@@ -306,13 +284,4 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             </div>
         </ResultContainer>
     )
-}
-
-function aggregateBadges(items: MatchItem[]): AggregableBadge[] {
-    const aggregatedBadges = new Map<string, AggregableBadge>()
-    for (const badge of items.flatMap(item => item.aggregableBadges || [])) {
-        aggregatedBadges.set(badge.text, badge)
-    }
-
-    return [...aggregatedBadges.values()].sort((a, b) => a.text.localeCompare(b.text))
 }
