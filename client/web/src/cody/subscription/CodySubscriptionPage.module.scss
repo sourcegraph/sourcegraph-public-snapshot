@@ -24,11 +24,21 @@
 .pro-title {
     font-size: 2.25rem;
     color: #820dde;
+
+    :global(.theme-dark) & {
+        color: white;
+    }
 }
 
 .pro-description {
     color: #820dde;
+
+    :global(.theme-dark) & {
+        color: white;
+    }
 }
+
+--brand-secondary-2
 
 .pro-pricing {
     text-decoration: line-through;
