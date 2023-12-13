@@ -185,7 +185,7 @@ impl<'a> LocalResolver<'a> {
         }
     }
 
-    fn start_byte(&self, id: ScopeRef<'a>) -> usize {
+    fn _start_byte(&self, id: ScopeRef<'a>) -> usize {
         self.get_scope(id).node.start_byte()
     }
 
@@ -256,7 +256,7 @@ impl<'a> LocalResolver<'a> {
             .expect("Tried to get the root node's parent")
     }
 
-    fn print_scope(&self, id: ScopeRef<'a>, depth: usize) {
+    fn _print_scope(&self, id: ScopeRef<'a>, depth: usize) {
         let scope = self.get_scope(id);
         println!(
             "{}scope {} {}-{}",
@@ -276,12 +276,12 @@ impl<'a> LocalResolver<'a> {
             // are not a thing in Rust
             match (definitions_iter.peek(), children_iter.peek()) {
                 (Some(d), Some(c)) => {
-                    if d.node.start_byte() < self.start_byte(**c) {
+                    if d.node.start_byte() < self._start_byte(**c) {
                         let definition = definitions_iter.next().unwrap();
                         println!("{}{}", str::repeat(" ", depth + 2), definition);
                     } else {
                         let child = children_iter.next().unwrap();
-                        self.print_scope(*child, depth + 2)
+                        self._print_scope(*child, depth + 2)
                     }
                 }
                 (Some(_), None) => {
@@ -290,7 +290,7 @@ impl<'a> LocalResolver<'a> {
                 }
                 (None, Some(_)) => {
                     let child = children_iter.next().unwrap();
-                    self.print_scope(*child, depth + 2)
+                    self._print_scope(*child, depth + 2)
                 }
                 (None, None) => break,
             };
@@ -503,7 +503,7 @@ impl<'a> LocalResolver<'a> {
         self.build_tree(top_scope, captures.scopes, captures.definitions);
         // TODO: Maybe write a couple snapshot tests that assert on
         // the structure of this tree?
-        self.print_scope(top_scope, 0); // Just for debugging
+        // self.print_scope(top_scope, 0); // Just for debugging
 
         // Finally we resolve all references against that tree structure
         self.resolve_references(top_scope, captures.references);
