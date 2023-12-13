@@ -138,9 +138,9 @@ func (c *fireworksClient) makeRequest(ctx context.Context, feature types.Complet
 	if feature == types.CompletionsFeatureCode {
 		// For compatibility reasons with other models, we expect to find the prompt
 		// in the first and only message
-		prompt, err := getPrompt(requestParams.Messages)
-		if err != nil {
-			return nil, err
+		prompt, promptErr := getPrompt(requestParams.Messages)
+		if promptErr != nil {
+			return nil, promptErr
 		}
 
 		payload := fireworksRequest{
