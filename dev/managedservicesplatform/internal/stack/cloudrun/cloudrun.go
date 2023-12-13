@@ -37,7 +37,7 @@ import (
 )
 
 type CrossStackOutput struct {
-	RedisID *string
+	RedisInstanceID *string
 }
 
 type Variables struct {
@@ -146,7 +146,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	// redisInstance is only created and non-nil if Redis is configured for the
 	// environment.
 	// If Redis is configured, populate cross-stack output with Redis ID.
-	var redisID *string
+	var redisInstanceID *string
 	if vars.Environment.Resources != nil && vars.Environment.Resources.Redis != nil {
 		redisInstance, err := redis.New(stack,
 			resourceid.New("redis"),
@@ -160,7 +160,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			return nil, errors.Wrap(err, "failed to render Redis instance")
 		}
 
-		redisID = redisInstance.ID
+		redisInstanceID = redisInstance.ID
 
 		// Configure endpoint string.
 		cloudRunBuilder.AddEnv("REDIS_ENDPOINT", redisInstance.Endpoint)
@@ -267,7 +267,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	locals.Add("image_tag", imageTag.StringValue,
 		"Resolved tag of service image to deploy")
 	return &CrossStackOutput{
-		RedisID: redisID,
+		RedisInstanceID: redisInstanceID,
 	}, nil
 }
 

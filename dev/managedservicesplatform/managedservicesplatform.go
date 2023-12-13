@@ -132,7 +132,7 @@ func (r *Renderer) RenderEnvironment(
 			}
 			return nil
 		}(),
-		RedisID: cloudrunOutput.RedisID,
+		RedisInstanceID: cloudrunOutput.RedisInstanceID,
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create monitoring stack")
 	}

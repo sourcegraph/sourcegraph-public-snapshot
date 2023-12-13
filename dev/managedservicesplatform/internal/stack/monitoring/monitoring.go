@@ -58,7 +58,7 @@ type Variables struct {
 	MaxCount   *int
 
 	// If Redis is enabled we configure alerts for it
-	RedisID *string
+	RedisInstanceID *string
 }
 
 const StackName = "monitoring"
@@ -94,7 +94,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		return nil, errors.New("unknown service kind")
 	}
 
-	if vars.RedisID != nil {
+	if vars.RedisInstanceID != nil {
 		if err = redisAlerts(stack, id.Group("redis"), vars); err != nil {
 			return nil, errors.Wrap(err, "failed to create redis alerts")
 		}
@@ -277,7 +277,7 @@ func redisAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) e
 		},
 	} {
 		config.ProjectID = vars.ProjectID
-		config.ServiceName = *vars.RedisID
+		config.ServiceName = *vars.RedisInstanceID
 		config.ServiceKind = monitoringalertpolicy.CloudRedis
 		if _, err := monitoringalertpolicy.New(stack, id, &config); err != nil {
 			return err
