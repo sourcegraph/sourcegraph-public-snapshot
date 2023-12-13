@@ -44,6 +44,8 @@ Here's a feature parity matrix that compares the capabilities of Cody Clients ac
 | Show context files     |    ✓    |     ✓     |   ✓    |
 | Custom commands     |    ✓    |     x     |   x   |
 | Clear chat history     |    ✓    |     ✓     |   x    |
+| LLM Selection   | ✓           | x             | x          |
+| Enhanced  Context Selection   | ✓           | x             | x          |
 
 ## Code Autocomplete
 
@@ -65,14 +67,6 @@ Here's a feature parity matrix that compares the capabilities of Cody Clients ac
 | Local repo context     |    ✓    |     x     |   x    |
 | Embeddings     |    ✓    |     ✓     |   ✓    |
 | Context UI     |    ✓    |     ✓     |   x    |
-
-## Inline Chat
-
-| **Feature**               | **VS Code** | **JetBrains** | **Neovim** |
-|-------------------------|---------|-----------|--------|
-| Questions     |    ✓    |     x     |   ✓    |
-| Fix-ups     |    ✓    |     x     |   ✓    |
-| Touch     |    ✓    |     x     |   x    |
 
 ## Commands
 

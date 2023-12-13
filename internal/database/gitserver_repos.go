@@ -11,9 +11,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -65,7 +66,7 @@ type GitserverRepoStore interface {
 	// counting repos with an associated cloud_default external service.
 	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
 	// UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
-	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoName]int64) (int, error)
+	UpdateRepoSizes(ctx context.Context, logger log.Logger, shardID string, repos map[api.RepoName]int64) (int, error)
 	// SetCloningProgress updates a piece of text description from how cloning proceeds.
 	SetCloningProgress(context.Context, api.RepoName, string) error
 	// GetLastSyncOutput returns the last stored output from a repo sync (clone or fetch), or ok: false if
@@ -593,7 +594,6 @@ func (s *gitserverRepoStore) LogCorruption(ctx context.Context, name api.RepoNam
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos as gtr
 SET
-	shard_id = %s,
 	corrupted_at = NOW(),
 	-- prepend the json and then ensure we only keep 10 items in the resulting json array
 	corruption_logs = (SELECT jsonb_path_query_array(%s||gtr.corruption_logs, '$[0 to 9]')),
@@ -601,7 +601,9 @@ SET
 WHERE
 	repo_id = (SELECT id FROM repo WHERE name = %s)
 AND
-	corrupted_at IS NULL`, shardID, rawLog, name))
+	(shard_id = %s OR shard_id = '')
+AND
+	corrupted_at IS NULL`, rawLog, name, shardID))
 	if err != nil {
 		return errors.Wrapf(err, "logging repo corruption")
 	}
@@ -650,43 +652,50 @@ WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
 	return nil
 }
 
-func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoName]int64) (updated int, err error) {
-	// NOTE: We have two args per row, so rows*2 should be less than maximum
-	// Postgres allows.
-	const batchSize = batch.MaxNumPostgresParameters / 2
-	return s.updateRepoSizesWithBatchSize(ctx, repos, batchSize)
+func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, logger log.Logger, shardID string, repos map[api.RepoName]int64) (updated int, err error) {
+	logger = logger.Scoped("gitserverRepoStore.UpdateRepoSizes")
+	// batchSize is 100 because we started with really large batch sizes (32k)
+	// and noticed that it was really slow in production.
+	// While testing locally, we noticed that even batch sizes of 1000 are slow.
+	const batchSize = 100
+	return s.updateRepoSizesWithBatchSize(ctx, logger, repos, batchSize)
 }
 
-func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, repos map[api.RepoName]int64, batchSize int) (updated int, err error) {
-	tx, err := s.Store.Transact(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer func() { err = tx.Done(err) }()
-
+func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, logger log.Logger, repos map[api.RepoName]int64, batchSize int) (updated int, err error) {
 	queries := make([]*sqlf.Query, batchSize)
+
+	logger.Info("Updating repository sizes", log.Int("count", len(repos)), log.Int("batchSize", batchSize))
 
 	left := len(repos)
 	currentCount := 0
 	updatedRows := 0
 	for repo, size := range repos {
+		start := time.Now()
+
 		queries[currentCount] = sqlf.Sprintf("(%s::text, %s::bigint)", repo, size)
 
 		currentCount += 1
 
 		if currentCount == batchSize || currentCount == left {
+			logger.Info("Updating batch of repository sizes", log.Int("left", left))
+
 			// IMPORTANT: we only take the elements of batch up to currentCount
 			q := sqlf.Sprintf(updateRepoSizesQueryFmtstr, sqlf.Join(queries[:currentCount], ","))
-			res, err := tx.ExecResult(ctx, q)
+			res, err := s.ExecResult(ctx, q)
 			if err != nil {
-				return 0, err
+				logger.Info("Failed to update batch", log.Error(err))
+				return updatedRows, err
 			}
 
 			rowsAffected, err := res.RowsAffected()
 			if err != nil {
-				return 0, err
+				logger.Info("Failed to read updated rows", log.Error(err))
+				return updatedRows, err
 			}
 			updatedRows += int(rowsAffected)
+
+			duration := time.Since(start)
+			logger.Info("Batch updated", log.Duration("duration", duration), log.Int("rowsAffected", int(rowsAffected)))
 
 			left -= currentCount
 			currentCount = 0
@@ -702,24 +711,17 @@ WITH update_data AS (
 		-- (<repo_name>, <repo_size_bytes>),
 		%s
 	) AS tmp(repo_name, repo_size_bytes)
-),
-locked_data AS (
-	SELECT update_data.*, gr.repo_id
-	FROM update_data
-	JOIN gitserver_repos gr ON gr.repo_id = (SELECT r.id FROM repo r WHERE r.name = update_data.repo_name)
-	WHERE
-		update_data.repo_size_bytes IS DISTINCT FROM gr.repo_size_bytes
-	ORDER BY gr.repo_id ASC
-	FOR UPDATE OF gr
 )
-
 UPDATE gitserver_repos AS gr
 SET
-    repo_size_bytes = locked_data.repo_size_bytes,
+    repo_size_bytes = update_data.repo_size_bytes,
 	updated_at = NOW()
-FROM locked_data
+FROM repo r
+INNER JOIN update_data on update_data.repo_name = r.name
 WHERE
-	locked_data.repo_id = gr.repo_id
+	r.id = gr.repo_id
+AND
+	update_data.repo_size_bytes IS DISTINCT FROM gr.repo_size_bytes
 `
 
 // sanitizeToUTF8 will remove any null character terminated string. The null character can be

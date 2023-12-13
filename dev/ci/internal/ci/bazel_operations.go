@@ -419,7 +419,7 @@ func legacyBuildCandidateDockerImage(app string, version string, tag string, rt 
 			// Retry in case of flakes when pushing
 			// bk.AutomaticRetryStatus(3, 222),
 		)
-		pipeline.AddStep(fmt.Sprintf(":old-man::docker: :construction: Build %s", app), cmds...)
+		pipeline.AddStep(fmt.Sprintf(":older_man::docker: :construction: Build %s", app), cmds...)
 	}
 }
 

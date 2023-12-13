@@ -194,6 +194,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether global policies are enabled for auto-indexing. */
     codeIntelAutoIndexingAllowGlobalPolicies: boolean
 
+    /** Whether to enable the document reference counts feature (a.k.a ranking job). Currently experimental. */
+    codeIntelRankingDocumentReferenceCountsEnabled: boolean
+
     /** Whether code insights API is enabled on the site. */
     codeInsightsEnabled: boolean
 

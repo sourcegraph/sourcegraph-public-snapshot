@@ -2,11 +2,15 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
+	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
@@ -19,10 +23,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -192,74 +199,70 @@ func (r *UserResolver) CodyProEnabled(ctx context.Context) bool {
 	return r.CodyProEnabledAt(ctx) != nil
 }
 
-func (r *UserResolver) CodyCurrentPeriodChatLimit(ctx context.Context) (*int32, error) {
+func (r *UserResolver) CodyCurrentPeriodChatLimit(ctx context.Context) (int32, error) {
 	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
+		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
 	if r.user.CodyProEnabledAt != nil {
-		return nil, nil
+		return 0, nil
 	}
 
 	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 
 	limit := int32(cfg.PerCommunityUserChatMonthlyInteractionLimit)
 
-	return &limit, nil
+	return limit, nil
 }
 
-func (r *UserResolver) CodyCurrentPeriodCodeLimit(ctx context.Context) (*int32, error) {
+func (r *UserResolver) CodyCurrentPeriodCodeLimit(ctx context.Context) (int32, error) {
 	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
+		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
 	if r.user.CodyProEnabledAt != nil {
-		return nil, nil
+		return 0, nil
 	}
 
 	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 
 	limit := int32(cfg.PerCommunityUserCodeCompletionsMonthlyInteractionLimit)
 
-	return &limit, nil
+	return limit, nil
 }
 
-func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (*int32, error) {
+func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (int32, error) {
 	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
+		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
 	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate(ctx)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	query := sqlf.Sprintf(`WHERE user_id = %s AND timestamp >= %s AND timestamp <= NOW() AND (name LIKE '%%recipe%%' OR name LIKE '%%command%%' OR name LIKE '%%chat%%')`, r.user.ID, currentPeriodStartDate.Time)
 
 	count, err := r.db.EventLogs().CountBySQL(ctx, query)
 
-	intCount := int32(count)
-
-	return &intCount, err
+	return int32(count), err
 }
 
-func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (*int32, error) {
+func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (int32, error) {
 	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
+		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
 	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate(ctx)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	query := sqlf.Sprintf(`WHERE user_id = %s AND timestamp >= %s AND timestamp <= NOW() AND name LIKE '%%completion:suggested%%'`, r.user.ID, currentPeriodStartDate.Time)
 
 	count, err := r.db.EventLogs().CountBySQL(ctx, query)
 
-	intCount := int32(count)
-
-	return &intCount, err
+	return int32(count), err
 }
 
 func (r *UserResolver) CodyCurrentPeriodStartDate(ctx context.Context) (*gqlutil.DateTime, error) {
@@ -307,14 +310,7 @@ func (r *UserResolver) codyCurrentPeriodDateRange(ctx context.Context) (*gqlutil
 	subscriptionStartDate := r.user.CreatedAt
 	gaReleaseDate := time.Date(2023, 12, 14, 0, 0, 0, 0, subscriptionStartDate.Location())
 
-	if r.user.CodyProEnabledAt == nil && currentDate.Before(gaReleaseDate) {
-		startDate := &gqlutil.DateTime{Time: time.Date(2023, 12, 14, 0, 0, 0, 0, subscriptionStartDate.Location())}
-		endDate := &gqlutil.DateTime{Time: time.Date(2024, 1, 13, 23, 59, 59, 59, subscriptionStartDate.Location())}
-
-		return startDate, endDate, nil
-	}
-
-	if subscriptionStartDate.Before(gaReleaseDate) {
+	if !currentDate.Before(gaReleaseDate) && subscriptionStartDate.Before(gaReleaseDate) {
 		subscriptionStartDate = gaReleaseDate
 	}
 
@@ -514,7 +510,47 @@ func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPla
 		return nil, err
 	}
 
+	if err := r.refreshGatewayRateLimits(ctx); err != nil {
+		// We intentionally don't fail the upgrade flow here, Gateway will pickup
+		// the new limits automatically. (Just later than we'd like.)
+		r.logger.Warn("refresh gateway limits", log.Error(err))
+	}
+
 	return UserByIDInt32(ctx, r.db, userID)
+}
+
+// refreshGatewayRateLimits refreshes the rate limits for the user on Cody Gateway.
+func (r *schemaResolver) refreshGatewayRateLimits(ctx context.Context) error {
+	completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+	// We don't need to do anything if the target is not Cody Gateway, but it's not an error either.
+	if completionsConfig.Provider != conftypes.CompletionsProviderNameSourcegraph {
+		return nil
+	}
+
+	a := actor.FromContext(ctx)
+	apiTokenSha256, err := r.db.AccessTokens().GetOrCreateInternalToken(ctx, a.UID, []string{"user:all"})
+	if err != nil {
+		return errors.Wrap(err, "getting internal access token")
+	}
+	gatewayToken := accesstoken.DotcomUserGatewayAccessTokenPrefix + hex.EncodeToString(hashutil.ToSHA256Bytes(apiTokenSha256))
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, completionsConfig.Endpoint+"/v1/limits/refresh", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", gatewayToken))
+
+	resp, err := httpcli.UncachedExternalDoer.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.Errorf("non-200 response refreshing Gateway limits: %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 // CurrentUser returns the authenticated user if any. If there is no authenticated user, it returns

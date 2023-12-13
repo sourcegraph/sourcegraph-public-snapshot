@@ -36,6 +36,7 @@ go_library(
         "//cmd/frontend/internal/telemetry/resolvers:__pkg__",
         "//cmd/telemetry-gateway/internal/events:__pkg__",
         "//cmd/telemetry-gateway/internal/server:__pkg__",
+        "//cmd/telemetry-gateway/service:__pkg__",
         "//cmd/telemetry-gateway/shared:__pkg__",
         "//cmd/telemetrygateway/server:__pkg__",
         "//cmd/telemetrygateway/shared:__pkg__",
