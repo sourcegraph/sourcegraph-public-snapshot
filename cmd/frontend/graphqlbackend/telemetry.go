@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -31,8 +30,8 @@ type ExportedEventsArgs struct {
 
 type ExportedEventResolver interface {
 	ID() graphql.ID
-	ExportedAt() *gqlutil.DateTime
-	Payload() (json.RawMessage, error)
+	ExportedAt() gqlutil.DateTime
+	Payload() (JSONValue, error)
 }
 
 type ExportedEventsConnectionResolver interface {

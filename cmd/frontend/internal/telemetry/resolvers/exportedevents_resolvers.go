@@ -47,16 +47,17 @@ func (r *ExportedEventResolver) ID() graphql.ID {
 	return relay.MarshalID("ExportedEvent", r.event.ID)
 }
 
-func (r *ExportedEventResolver) ExportedAt() *gqlutil.DateTime {
-	return &gqlutil.DateTime{Time: r.event.ExportedAt}
+func (r *ExportedEventResolver) ExportedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.event.ExportedAt}
 }
 
-func (r *ExportedEventResolver) Payload() (json.RawMessage, error) {
+func (r *ExportedEventResolver) Payload() (graphqlbackend.JSONValue, error) {
 	payload, err := protojson.Marshal(r.event.Payload)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to marshal payload of event ID %q", r.event.ID)
+		return graphqlbackend.JSONValue{Value: struct{}{}},
+			errors.Wrapf(err, "failed to marshal payload of event ID %q", r.event.ID)
 	}
-	return json.RawMessage(payload), nil
+	return graphqlbackend.JSONValue{Value: json.RawMessage(payload)}, nil
 }
 
 type ExportedEventsConnectionResolver struct {
