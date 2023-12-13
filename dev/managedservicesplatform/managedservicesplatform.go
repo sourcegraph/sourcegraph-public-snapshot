@@ -102,6 +102,7 @@ func (r *Renderer) RenderEnvironment(
 		ProjectID: *projectOutput.Project.ProjectId(),
 		Image:     build.Image,
 		Service:   svc,
+		SecretEnv: env.SecretEnv,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create IAM stack")

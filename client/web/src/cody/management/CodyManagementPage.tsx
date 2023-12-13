@@ -244,8 +244,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                 <div className={classNames('p-4 border bg-1 mt-4 mb-5', styles.container)}>
                     <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                         <div>
-                            <H2>Extensions & Plugins</H2>
-                            <Text className="text-muted mb-0">Cody integrates with your workflow.</Text>
+                            <H2>Use Cody directly in your editor</H2>
+                            <Text className="text-muted mb-0">
+                                Download the Cody extension in your editor to start using Cody.
+                            </Text>
                         </div>
                         <div>
                             <Link
@@ -273,7 +275,21 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                         'border-left': index !== 0,
                                     })}
                                 >
-                                    <div className="d-flex mb-3 align-items-center">
+                                    <div
+                                        className={classNames('d-flex mb-3 align-items-center', styles.ideHeader)}
+                                        onClick={() => {
+                                            setSelectedEditor(editor)
+                                            setSelectedEditorStep(0)
+                                        }}
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                setSelectedEditor(editor)
+                                                setSelectedEditorStep(0)
+                                            }
+                                        }}
+                                    >
                                         <div>
                                             <img
                                                 alt={editor.name}
@@ -290,9 +306,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                             <H5 className={styles.releaseStage}>{editor.releaseStage}</H5>
                                         </div>
                                     </div>
+
                                     {editor.instructions && (
-                                        <Text
-                                            size="small"
+                                        <Link
+                                            to="#"
                                             className="mb-2 text-muted"
                                             onClick={() => {
                                                 setSelectedEditor(editor)
@@ -300,11 +317,11 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                             }}
                                         >
                                             <Icon svgPath={mdiInformationOutline} aria-hidden={true} /> Quickstart Guide
-                                        </Text>
+                                        </Link>
                                     )}
                                     {editor.docs && (
                                         <Link to={editor.docs} target="_blank" rel="noopener">
-                                            <Text size="small" className="text-muted">
+                                            <Text className="text-muted">
                                                 <Icon svgPath={mdiOpenInNew} aria-hidden={true} /> Documentation
                                             </Text>
                                         </Link>

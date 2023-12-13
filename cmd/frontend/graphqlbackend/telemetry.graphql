@@ -24,6 +24,15 @@ Properties comprising a telemetry V2 event that can be reported by a client.
 """
 input TelemetryEventInput {
     """
+    Timestamp at which the time was recorded. If not provided, a timestamp is
+    generated when the server receives the event, but this does not guarantee
+    consistent ordering or accuracy.
+
+    This parameter is only available in Sourcegraph 5.2.5 and later.
+    """
+    timestamp: DateTime
+
+    """
     Feature associated with the event in camelCase, e.g. 'myFeature'.
 
     Feature names must come from a static set of values in libraries - it is

@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
@@ -30,7 +31,7 @@ type sessionIssuerHelper struct {
 	allowSignup *bool
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, _, _, _ string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, _ *hubspot.ContactProperties) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
 	user, err := userFromContext(ctx)
 	if err != nil {
 		return false, nil, "failed to read Azure DevOps Profile from oauth2 callback request", errors.Wrap(err, "azureoauth.GetOrCreateUser: failed to read user from context of callback request")
