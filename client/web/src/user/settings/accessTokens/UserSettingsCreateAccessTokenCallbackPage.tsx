@@ -94,8 +94,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
         name: 'Neovim',
         redirectURL: 'http://localhost:$PORT/api/sourcegraph/token?token=$TOKEN',
         successMessage: 'Restart Neovim and your credentials will be saved.',
-        infoMessage:
-            'Please make sure you still have Neovim running on your machine when clicking this link.',
+        infoMessage: 'Please make sure you still have Neovim running on your machine when clicking this link.',
         callbackType: 'open',
     },
 }
@@ -224,7 +223,6 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                     if (isRedirectable(requestFrom) && port) {
                                         uri = replacePlaceholder(uri, 'PORT', port)
                                     }
-
 
                                     // If we're in App, override the callbackType
                                     // because we need to use tauriShellOpen to open the
