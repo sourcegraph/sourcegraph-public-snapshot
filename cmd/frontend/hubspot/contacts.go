@@ -25,10 +25,10 @@ func (c *Client) CreateOrUpdateContact(email string, params *ContactProperties) 
 		return &resp, err
 	}
 	if resp.IsNew {
-		// First source URL should only be sent when a contact is new. Although the user's cookie value should
-		// not change, minimize risk of login via multiple browsers, clearing of cookies, etc. by not sending
-		// this value on subsequent logins.
-		err = c.postJSON("CreateOrUpdateContact", c.baseContactURL(email), firstSourceURLValue(params), &resp)
+		// Certain properties (such as first source URL) should only be sent when a contact is new. Although
+		// the user's cookie value should not change, minimize risk of login via multiple browsers, clearing
+		// of cookies, etc. by not sending these values on subsequent logins.
+		err = c.postJSON("CreateOrUpdateContact", c.baseContactURL(email), firstTimeUserValues(params), &resp)
 	}
 	return &resp, err
 }
@@ -47,11 +47,48 @@ type ContactProperties struct {
 	IsServerAdmin                bool   `json:"is_server_admin"`
 	LatestPing                   int64  `json:"latest_ping"`
 	AnonymousUserID              string `json:"anonymous_user_id"`
-	FirstSourceURL               string `json:"first_source_url"`
-	LastSourceURL                string `json:"last_source_url"`
 	DatabaseID                   int32  `json:"database_id"`
 	HasAgreedToToS               bool   `json:"has_agreed_to_tos_and_pp"`
 	VSCodyInstalledEmailsEnabled bool   `json:"vs_cody_installed_emails_enabled"`
+
+	// The URL of the first page a user landed on their first session on a Sourcegraph site.
+	FirstSourceURL string `json:"first_source_url"`
+
+	// The URL of the first page a user landed on their latest session on a Sourcegraph site.
+	LastSourceURL string `json:"last_source_url"`
+
+	// The URL of the first page a user landed on the session when they signed up.
+	SignupSessionSourceURL string `json:"signup_session_source_url"`
+
+	// The referrer for a user on their first session on a Sourcegraph site.
+	OriginalReferrer string `json:"original_referrer"`
+
+	// The referrer for a user on their latest session on a Sourcegraph site.
+	LastReferrer string `json:"most_recent_referrer_url"`
+
+	// The referrer for a user on the session when they signed up.
+	SignupSessionReferrer string `json:"signup_session_referrer"`
+
+	// The UTM campaign associated with the current session.
+	SessionUTMCampaign string `json:"utm_campaign"`
+
+	// The UTM source associated with the current session.
+	SessionUTMSource string `json:"utm_source"`
+
+	// The UTM medium associated with the current session.
+	SessionUTMMedium string `json:"utm_medium"`
+
+	// The UTM term associated with the current session.
+	SessionUTMTerm string `json:"utm_term"`
+
+	// The UTM content associated with the current session.
+	SessionUTMContent string `json:"utm_content"`
+
+	// The Google Ads click ID
+	GoogleClickID string `json:"gclid"`
+
+	// The Microsoft Ads click ID
+	MicrosoftClickID string `json:"msclkid"`
 }
 
 // ContactResponse represents HubSpot user properties returned
@@ -69,16 +106,27 @@ func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps.set("is_server_admin", h.IsServerAdmin)
 	apiProps.set("latest_ping", h.LatestPing)
 	apiProps.set("anonymous_user_id", h.AnonymousUserID)
-	apiProps.set("last_source_url", h.LastSourceURL)
 	apiProps.set("database_id", h.DatabaseID)
 	apiProps.set("has_agreed_to_tos_and_pp", h.HasAgreedToToS)
+	apiProps.set("last_source_url", h.LastSourceURL)
+	apiProps.set("signup_session_source_url", h.SignupSessionSourceURL)
+	apiProps.set("most_recent_referrer_url", h.LastReferrer)
+	apiProps.set("signup_session_referrer", h.SignupSessionReferrer)
+	apiProps.set("utm_campaign", h.SessionUTMCampaign)
+	apiProps.set("utm_source", h.SessionUTMSource)
+	apiProps.set("utm_medium", h.SessionUTMMedium)
+	apiProps.set("utm_term", h.SessionUTMTerm)
+	apiProps.set("utm_content", h.SessionUTMContent)
+	apiProps.set("gclid", h.GoogleClickID)
+	apiProps.set("msclkid", h.MicrosoftClickID)
 	return apiProps
 }
 
-func firstSourceURLValue(h *ContactProperties) *apiProperties {
-	firstSourceProp := &apiProperties{}
-	firstSourceProp.set("first_source_url", h.FirstSourceURL)
-	return firstSourceProp
+func firstTimeUserValues(h *ContactProperties) *apiProperties {
+	firstTimeUserProps := &apiProperties{}
+	firstTimeUserProps.set("first_source_url", h.FirstSourceURL)
+	firstTimeUserProps.set("original_referrer", h.OriginalReferrer)
+	return firstTimeUserProps
 }
 
 // apiProperties represents a list of HubSpot API-compliant key-value pairs

@@ -647,11 +647,8 @@ func (u *userStore) ChangeCodyPlan(ctx context.Context, id int32, pro bool) (err
 			return userNotFoundErr{args: []any{id}}
 		}
 
-		if pro {
-			return errors.New("user is already on Cody Pro plan")
-		}
-
-		return errors.New("user is already on Cody Community plan")
+		// Intentionally not returning an error if the user is already pro/commiunity. This makes the mutation idempotent.
+		return nil
 	}
 
 	return nil

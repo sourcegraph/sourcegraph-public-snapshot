@@ -131,7 +131,31 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 
 	// Track user data
 	if r.UserAgent() != "Sourcegraph e2etest-bot" || r.UserAgent() != "test" {
-		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
+		getCookie := func(name string) string {
+			c, err := r.Cookie(name)
+			if err != nil || c == nil {
+				return ""
+			}
+			return c.Value
+		}
+
+		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
+			DatabaseID:             usr.ID,
+			AnonymousUserID:        creds.AnonymousUserID,
+			FirstSourceURL:         creds.FirstSourceURL,
+			LastSourceURL:          creds.LastSourceURL,
+			OriginalReferrer:       getCookie("originalReferrer"),
+			LastReferrer:           getCookie("sg_referrer"),
+			SignupSessionSourceURL: getCookie("sourcegraphSignupSourceUrl"),
+			SignupSessionReferrer:  getCookie("sourcegraphSignupReferrer"),
+			SessionUTMCampaign:     getCookie("sg_utm_campaign"),
+			SessionUTMSource:       getCookie("sg_utm_source"),
+			SessionUTMMedium:       getCookie("sg_utm_medium"),
+			SessionUTMContent:      getCookie("sg_utm_content"),
+			SessionUTMTerm:         getCookie("sg_utm_term"),
+			GoogleClickID:          getCookie("gclid"),
+			MicrosoftClickID:       getCookie("msclkid"),
+		})
 	}
 
 	// New event - we record legacy event manually for now, hence teestore.WithoutV1
