@@ -3,19 +3,20 @@ name: pr-auditor
 on:
   pull_request_target:
     types: [ closed, edited, opened, synchronize, ready_for_review ]
+  workflow_dispatch:
 
 jobs:
   check-pr:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: 'sourcegraph/pr-auditor'
       - uses: actions/setup-go@v4
-        with: { go-version: '1.20' }
+        with: { go-version: '1.21' }
 
       - run: './check-pr.sh'
         env:
           GITHUB_EVENT_PATH: ${{ env.GITHUB_EVENT_PATH }}
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.PR_AUDITOR_TOKEN }}
           GITHUB_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
