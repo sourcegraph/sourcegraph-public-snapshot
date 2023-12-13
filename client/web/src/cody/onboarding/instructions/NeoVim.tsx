@@ -36,7 +36,7 @@ export function NeoVimInstructions({
                                         Open the plugin repo on GitHub
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
-                                        Follow the instructions detailed in the <strong>Readme.md</strong> file to
+                                        Follow the instructions detailed in the <strong>readme.md</strong> file to
                                         install the plugin.
                                     </Text>
                                 </div>
