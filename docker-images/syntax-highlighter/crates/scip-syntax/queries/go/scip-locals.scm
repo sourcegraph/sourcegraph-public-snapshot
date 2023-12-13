@@ -1,10 +1,10 @@
 (func_literal) @scope
-(function_declaration) @scope.function
+(function_declaration) @scope
 (method_declaration) @scope
 (expression_switch_statement) @scope
 ;: See https://gobyexample.com/if-else for why if_statements need an
 ;; extra scope other than the blocks they open
-(if_statement) @scope.if
+(if_statement) @scope
 (for_statement) @scope
 (block) @scope.block
 
@@ -16,8 +16,9 @@
 (variadic_parameter_declaration (identifier) @definition.var)
 
 (function_declaration
-    name: ((identifier) @definition.function
-           (#set! "scope" "global")))
+ name: ((identifier) @definition.function
+        (#set! "hoist" "function")
+        (#set! "scope" "global")))
 
 ((method_declaration name: (field_identifier) @definition.method))
 

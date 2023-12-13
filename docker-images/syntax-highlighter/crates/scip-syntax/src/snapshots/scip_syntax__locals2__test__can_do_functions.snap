@@ -22,6 +22,7 @@ expression: dumped
   func Another() {
 //     ^^^^^^^ definition local 4
    Something()
+// ^^^^^^^^^ reference local 2
    if true {
     x := true
 //  ^ definition local 5
