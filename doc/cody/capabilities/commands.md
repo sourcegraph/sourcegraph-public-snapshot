@@ -18,7 +18,7 @@ Support for commands may vary by IDE extension. Read the [feature parity referen
 
 ## Running commands
 
-The process of running a command varies from one IDE to another. For example, in VS Code, there several ways to run a command:
+The process of running a command varies from one IDE to another. For example, in VS Code, there are several ways to run a command:
 
 1. Highlight your code and select the command from the sidebar
 
@@ -27,8 +27,6 @@ The process of running a command varies from one IDE to another. For example, in
 2. Open up the command palette with `Option+C` `Alt+C`
 3. Right-click on any code element and select **Cody > Choose a command** from the list
 4. Type `/` in the chat bar. Cody will then suggest a list of available commands
-
-To access it, navigate to the `Commands` panel (next to the `Chat` panel), and you can find each available command as a button within the UI.
 
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/commands-working.mp4" type="video/mp4">
@@ -44,14 +42,6 @@ For any feedback, you can <a href="https://about.sourcegraph.com/contact">contac
 ">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">create a post on X</a>.
 </p>
 </aside>
-
-<!-- <aside class="beta">
-<p>
-<span style="margin-right:0.25rem;" class="badge badge-beta">Beta</span> Custom Commands are in the Beta stage.
-<br />
-For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">create a post on X</a>.
-</p>
-</aside> -->
 
 **Custom Commands** allow you to create and define reusable prompts for Cody tailored to your development workflows. They are defined in `JSON` format and will enable you to call CLI tools, write custom prompts, and select context to be sent to Cody. This provides a flexible way to configure Cody to handle use cases like:
 
