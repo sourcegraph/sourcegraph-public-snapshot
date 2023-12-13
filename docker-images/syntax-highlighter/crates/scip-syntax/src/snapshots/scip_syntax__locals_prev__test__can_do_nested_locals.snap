@@ -1,5 +1,5 @@
 ---
-source: crates/scip-syntax/src/locals2.rs
+source: crates/scip-syntax/src/locals_prev.rs
 expression: dumped
 ---
   package main
@@ -13,15 +13,15 @@ expression: dumped
 //                   ^^^^^^^^^ definition local 4
     superNested := func(deeplyNested int) int {
 //  ^^^^^^^^^^^ definition local 5
-//                      ^^^^^^^^^^^^ definition local 6
+//                      ^^^^^^^^^^^^ definition local 7
      return local + unrelated + deeplyNested
 //          ^^^^^ reference local 2
 //                  ^^^^^^^^^ reference local 4
-//                              ^^^^^^^^^^^^ reference local 6
+//                              ^^^^^^^^^^^^ reference local 7
     }
   
     overwriteName := func(local int) int {
-//  ^^^^^^^^^^^^^ definition local 7
+//  ^^^^^^^^^^^^^ definition local 6
 //                        ^^^^^ definition local 8
      return local + unrelated
 //          ^^^^^ reference local 8
@@ -30,7 +30,7 @@ expression: dumped
   
     return superNested(1) + overwriteName(1)
 //         ^^^^^^^^^^^ reference local 5
-//                          ^^^^^^^^^^^^^ reference local 7
+//                          ^^^^^^^^^^^^^ reference local 6
    }
   
    println(local, something)

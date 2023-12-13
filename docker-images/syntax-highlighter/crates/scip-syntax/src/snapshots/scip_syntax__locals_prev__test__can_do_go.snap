@@ -1,5 +1,5 @@
 ---
-source: crates/scip-syntax/src/locals2.rs
+source: crates/scip-syntax/src/locals_prev.rs
 expression: dumped
 ---
   package main
@@ -7,21 +7,21 @@ expression: dumped
   func main() {
 //     ^^^^ definition local 1
    local := true
-// ^^^^^ definition local 2
+// ^^^^^ definition local 3
    something := func(local int) int {
-// ^^^^^^^^^ definition local 3
-//                   ^^^^^ definition local 4
+// ^^^^^^^^^ definition local 4
+//                   ^^^^^ definition local 5
     return local
-//         ^^^^^ reference local 4
+//         ^^^^^ reference local 5
    }
   
    println(local, something)
-//         ^^^^^ reference local 2
-//                ^^^^^^^^^ reference local 3
+//         ^^^^^ reference local 3
+//                ^^^^^^^^^ reference local 4
   }
   
   func Another(local int) int {
-//     ^^^^^^^ definition local 5
+//     ^^^^^^^ definition local 2
 //             ^^^^^ definition local 6
    return local
 //        ^^^^^ reference local 6

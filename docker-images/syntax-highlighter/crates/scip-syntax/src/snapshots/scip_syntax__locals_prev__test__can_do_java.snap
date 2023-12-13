@@ -1,5 +1,5 @@
 ---
-source: crates/scip-syntax/src/locals2.rs
+source: crates/scip-syntax/src/locals_prev.rs
 expression: dumped
 ---
   package com.hello;

@@ -13,14 +13,14 @@ expression: dumped
   func Something() {
 //     ^^^^^^^^^ definition local 2
    y := ", world"
-// ^ definition local 4
+// ^ definition local 3
    f.Println("hello", y)
 // ^ reference local 1
-//                    ^ reference local 4
+//                    ^ reference local 3
   }
   
   func Another() {
-//     ^^^^^^^ definition local 3
+//     ^^^^^^^ definition local 4
    Something()
 // ^^^^^^^^^ reference local 2
    if true {

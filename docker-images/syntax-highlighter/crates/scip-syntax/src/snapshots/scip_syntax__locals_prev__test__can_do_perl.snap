@@ -1,21 +1,21 @@
 ---
-source: crates/scip-syntax/src/locals2.rs
+source: crates/scip-syntax/src/locals_prev.rs
 expression: dumped
 ---
   sub add {
       if (@_ == 2) {
           my $self = shift;
-//           ^^^^^ definition local 1
+//           ^^^^^ definition local 3
           push(@$self, shift);
-//              ^^^^^ reference local 1
+//              ^^^^^ reference local 3
           return;
       }
       my($self, %spec) = @_;
-//       ^^^^^ definition local 2
-//              ^^^^^ definition local 3
+//       ^^^^^ definition local 1
+//              ^^^^^ definition local 2
       push(@$self, \%spec);
-//          ^^^^^ reference local 2
-//                  ^^^^^ reference local 3
+//          ^^^^^ reference local 1
+//                  ^^^^^ reference local 2
       return;
   }
   
