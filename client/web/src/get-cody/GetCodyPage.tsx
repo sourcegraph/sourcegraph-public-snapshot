@@ -11,6 +11,7 @@ import {
 import classNames from 'classnames'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Badge, H2, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { ExternalsAuth } from '../auth/components/ExternalsAuth'
@@ -26,13 +27,13 @@ import { BackgroundImage, IntellijIcon, EmacsIcon, NeovimIcon } from './GetCodyP
 
 import styles from './GetCodyPage.module.scss'
 
-interface WaitListButtonProps {
+interface WaitListButtonProps extends TelemetryV2Props {
     title: string
     to: string
     icon: React.ReactElement
 }
 
-interface GetCodyPageProps {
+interface GetCodyPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<SourcegraphContext, 'authProviders'>
 }
@@ -57,7 +58,11 @@ const logEvent = (eventName: EventName, type?: string, source?: string): void =>
     eventLogger.log(eventName, { type, source })
 }
 
-export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authenticatedUser, context }) => {
+export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({
+    authenticatedUser,
+    context,
+    telemetryRecorder,
+}) => {
     useEffect(() => {
         logEvent(EventName.VIEW_GET_CODY)
     }, [])
@@ -202,11 +207,13 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                     to="https://info.sourcegraph.com/waitlist"
                                     icon={<NeovimIcon className={styles.joinWaitlistButtonIcon} />}
                                     title="Neovim"
+                                    telemetryRecorder={telemetryRecorder}
                                 />
                                 <WaitListButton
                                     to="https://info.sourcegraph.com/waitlist"
                                     icon={<EmacsIcon className={styles.joinWaitlistButtonIcon} />}
                                     title="Emacs"
+                                    telemetryRecorder={telemetryRecorder}
                                 />
                             </div>
                         </div>
@@ -231,6 +238,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                     eventName={EventName.DOWNLOAD_APP}
                                     eventType="Mac Silicon"
                                     icon={mdiApple}
+                                    telemetryRecorder={telemetryRecorder}
                                 />
                                 <DownloadAppButton
                                     to={SOURCEGRAPH_MAC_INTEL}
@@ -239,6 +247,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                     eventName={EventName.DOWNLOAD_APP}
                                     eventType="Mac Intel"
                                     icon={mdiApple}
+                                    telemetryRecorder={telemetryRecorder}
                                 />
                             </div>
 
@@ -249,6 +258,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                 eventName={EventName.DOWNLOAD_APP}
                                 eventType="Linux"
                                 icon={mdiLinux}
+                                telemetryRecorder={telemetryRecorder}
                             />
 
                             <Link to="/help/app" className={styles.otherOptions} target="_blank" rel="noopener">

@@ -6,6 +6,7 @@ import type { Observable } from 'rxjs'
 import { startWith, catchError, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { PageHeader, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -23,7 +24,7 @@ import {
 } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-interface ManageCodeMonitorPageProps {
+interface ManageCodeMonitorPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
 
     fetchCodeMonitor?: typeof _fetchCodeMonitor
@@ -41,11 +42,12 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
     updateCodeMonitor = _updateCodeMonitor,
     deleteCodeMonitor = _deleteCodeMonitor,
     isSourcegraphDotCom,
+    telemetryRecorder,
 }) => {
     const LOADING = 'loading' as const
 
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('manageCodeMonitor', 'viewed')
+        telemetryRecorder.recordEvent('manageCodeMonitor', 'viewed')
         eventLogger.logPageView('ManageCodeMonitorPage')
     }, [window.context.telemetryRecorder])
 
@@ -82,7 +84,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
 
     const updateMonitorRequest = React.useCallback(
         (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> => {
-            window.context.telemetryRecorder?.recordEvent('manageCodeMonitorForm', 'submitted')
+            telemetryRecorder.recordEvent('manageCodeMonitorForm', 'submitted')
             eventLogger.log('ManageCodeMonitorFormSubmitted')
             return updateCodeMonitor(
                 {
@@ -102,7 +104,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
 
     const deleteMonitorRequest = React.useCallback(
         (id: string): Observable<void> => {
-            window.context.telemetryRecorder?.recordEvent('manageCodeMonitorDelete', 'submitted')
+            telemetryRecorder.recordEvent('manageCodeMonitorDelete', 'submitted')
             eventLogger.log('ManageCodeMonitorDeleteSubmitted')
             return deleteCodeMonitor(id)
         },

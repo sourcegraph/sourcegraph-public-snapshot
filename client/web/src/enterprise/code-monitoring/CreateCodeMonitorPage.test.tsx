@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { assertAriaDisabled } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -33,6 +34,7 @@ describe('CreateCodeMonitorPage', () => {
         ),
         isLightTheme: true,
         isSourcegraphDotCom: false,
+        telemetryRecorder: noOpTelemetryRecorder,
     }
 
     const origContext = window.context

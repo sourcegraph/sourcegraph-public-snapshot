@@ -104,27 +104,27 @@ const GitserversPageProps = lazyComponent(() => import('./SiteAdminGitserversPag
 export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/',
-        render: () => <AnalyticsOverviewPage />,
+        render: props => <AnalyticsOverviewPage {...props} />,
     },
     {
         path: '/analytics/search',
-        render: () => <AnalyticsSearchPage />,
+        render: props => <AnalyticsSearchPage {...props} />,
     },
     {
         path: '/analytics/code-intel',
-        render: () => <AnalyticsCodeIntelPage />,
+        render: props => <AnalyticsCodeIntelPage {...props} />,
     },
     {
         path: '/analytics/extensions',
-        render: () => <AnalyticsExtensionsPage />,
+        render: props => <AnalyticsExtensionsPage {...props} />,
     },
     {
         path: '/analytics/users',
-        render: () => <AnalyticsUsersPage />,
+        render: props => <AnalyticsUsersPage {...props} />,
     },
     {
         path: '/analytics/code-insights',
-        render: () => <AnalyticsCodeInsightsPage />,
+        render: props => <AnalyticsCodeInsightsPage {...props} />,
         condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
     },
     {
@@ -134,7 +134,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/analytics/notebooks',
-        render: () => <AnalyticsNotebooksPage />,
+        render: props => <AnalyticsNotebooksPage {...props} />,
     },
     {
         path: '/configuration',
@@ -167,12 +167,12 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/account-requests',
-        render: () => <AccessRequestsPage />,
+        render: props => <AccessRequestsPage {...props} />,
         condition: () => checkRequestAccessAllowed(window.context),
     },
     {
         path: '/users/new',
-        render: () => <SiteAdminCreateUserPage />,
+        render: props => <SiteAdminCreateUserPage {...props} />,
     },
     {
         path: '/tokens',

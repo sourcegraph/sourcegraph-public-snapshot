@@ -5,6 +5,7 @@ import React, { useEffect } from 'react'
 import { mdiCardBulletedOutline, mdiDotsVertical, mdiProgressPencil, mdiShuffleVariant } from '@mdi/js'
 
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/dist/chat/recipes/translate'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
@@ -15,9 +16,12 @@ import { Recipe } from './components/Recipe'
 import { RecipeAction } from './components/RecipeAction'
 import { Recipes } from './components/Recipes'
 
-export const CodyRecipesWidget: React.FC<{ editor?: CodeMirrorEditor }> = ({ editor }) => {
+export const CodyRecipesWidget: React.FC<TelemetryV2Props & { editor?: CodeMirrorEditor }> = ({
+    editor,
+    telemetryRecorder,
+}) => {
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent(EventName.CODY_CHAT_EDITOR_WIDGET_VIEWED, 'viewed')
+        telemetryRecorder.recordEvent(EventName.CODY_CHAT_EDITOR_WIDGET_VIEWED, 'viewed')
         eventLogger.log(EventName.CODY_CHAT_EDITOR_WIDGET_VIEWED)
     }, [])
 

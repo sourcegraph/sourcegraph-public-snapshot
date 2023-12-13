@@ -1,6 +1,7 @@
 import { mdiChevronRight, mdiCodeBracesBox, mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
 import { H1, H2, H3, H4, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
@@ -17,7 +18,7 @@ import { CodyColorIcon, CodyHelpIcon, CodyWorkIcon } from '../../chat/CodyPageIc
 
 import styles from './CodyMarketingPage.module.scss'
 
-interface CodyPlatformCardProps {
+interface CodyPlatformCardProps extends TelemetryV2Props {
     icon: string | JSX.Element
     title: string
     description: string | JSX.Element
@@ -102,7 +103,7 @@ const codyPlatformCardItems = (
           ]),
 ]
 
-export interface CodyMarketingPageProps {
+export interface CodyMarketingPageProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
     context: Pick<SourcegraphContext, 'authProviders'>
     authenticatedUser: AuthenticatedUser | null
@@ -112,6 +113,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
     context,
     isSourcegraphDotCom,
     authenticatedUser,
+    telemetryRecorder,
 }) => {
     const { theme } = useTheme()
     const isDarkTheme = theme === Theme.Dark
@@ -238,6 +240,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                             description={item.description}
                             illustration={isDarkTheme ? item.illustration.dark : item.illustration.light}
                             icon={item.icon}
+                            telemetryRecorder={telemetryRecorder}
                         />
                     ))}
                 </div>

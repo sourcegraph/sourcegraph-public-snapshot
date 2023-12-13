@@ -3,6 +3,7 @@ import React, { useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import { of } from 'rxjs'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container, Link, H2, H3 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -22,8 +23,9 @@ import type { CodeMonitoringPageProps } from './CodeMonitoringPage'
 
 interface CodeMonitorListProps
     extends Required<
-        Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'fetchCodeMonitors' | 'toggleCodeMonitorEnabled'>
-    > {
+            Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'fetchCodeMonitors' | 'toggleCodeMonitorEnabled'>
+        >,
+        TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -38,6 +40,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
     fetchUserCodeMonitors,
     fetchCodeMonitors,
     toggleCodeMonitorEnabled,
+    telemetryRecorder,
 }) => {
     const location = useLocation()
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
@@ -58,7 +61,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                 after: args.after ?? null,
             })
         },
-        [authenticatedUser, fetchUserCodeMonitors]
+        [authenticatedUser, fetchUserCodeMonitors, telemetryRecorder]
     )
 
     const queryAllConnection = useCallback(
@@ -82,10 +85,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                                 <Link
                                     to="https://about.sourcegraph.com"
                                     onClick={() => {
-                                        window.context.telemetryRecorder?.recordEvent(
-                                            'enterpriseCta.monitoring',
-                                            'clicked'
-                                        )
+                                        telemetryRecorder.recordEvent('enterpriseCta.monitoring', 'clicked')
                                         eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Monitoring' })
                                     }}
                                 >

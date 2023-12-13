@@ -2,6 +2,7 @@ import React from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, Container, H2, H3, Link, Text, Icon, useReducedMotion } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -9,7 +10,7 @@ import { CallToActionBanner } from '../../../components/CallToActionBanner'
 import { CtaBanner } from '../../../components/CtaBanner'
 import { eventLogger } from '../../../tracking/eventLogger'
 
-export interface GettingStartedProps {
+export interface GettingStartedProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
     // canCreate indicates whether or not the currently-authenticated user has sufficient
     // permissions to create a batch change in whatever context this getting started
@@ -25,6 +26,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
     isSourcegraphDotCom,
     canCreate,
     className,
+    telemetryRecorder,
 }) => {
     const allowAutoplay = !useReducedMotion()
 
@@ -97,10 +99,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     <Link
                         to="https://about.sourcegraph.com"
                         onClick={() => {
-                            window.context.telemetryRecorder?.recordEvent(
-                                'enterpriseCta.batchChangesGettingStarted',
-                                'clicked'
-                            )
+                            telemetryRecorder.recordEvent('enterpriseCta.batchChangesGettingStarted', 'clicked')
                             eventLogger.log('ClickedOnEnterpriseCTA', { location: 'BatchChangesGettingStarted' })
                         }}
                     >

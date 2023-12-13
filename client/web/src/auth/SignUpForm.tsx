@@ -7,6 +7,7 @@ import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     useInputValidation,
     type ValidationOptions,
@@ -34,7 +35,7 @@ export interface SignUpArguments {
     lastSourceUrl?: string
 }
 
-interface SignUpFormProps {
+interface SignUpFormProps extends TelemetryV2Props {
     className?: string
 
     /** Called to perform the signup on the server. */
@@ -61,6 +62,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
     className,
     context,
     experimental = false,
+    telemetryRecorder,
 }) => {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<Error | null>(null)
@@ -116,7 +118,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                 setError(asError(error))
                 setLoading(false)
             })
-            window.context.telemetryRecorder?.recordEvent('initiatesSignup', 'succeded')
+            telemetryRecorder.recordEvent('initiatesSignup', 'succeded')
             eventLogger.log('InitiateSignUp')
         },
         [onSignUp, disabled, emailState, usernameState, passwordState]
@@ -126,7 +128,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
 
     const onClickExternalAuthSignup = useCallback(
         (type: AuthProvider['serviceType']) => () => {
-            window.context.telemetryRecorder?.recordEvent('signup', 'initiated', {
+            telemetryRecorder.recordEvent('signup', 'initiated', {
                 privateMetadata: { type },
             })
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage

@@ -4,6 +4,7 @@ import { mdiInformationOutline, mdiChevronDown } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import { animated } from 'react-spring'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Button,
     Checkbox,
@@ -24,7 +25,7 @@ import type { ExecutionOptions } from '../BatchSpecContext'
 
 import styles from './RunBatchSpecButton.module.scss'
 
-interface RunBatchSpecButtonProps {
+interface RunBatchSpecButtonProps extends TelemetryV2Props {
     execute: () => void
     /**
      * Whether or not the button should be disabled. An optional tooltip string to display
@@ -40,6 +41,7 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
     isExecutionDisabled = false,
     options,
     onChangeOptions,
+    telemetryRecorder,
 }) => {
     const [isOpen, setIsOpen] = useState(false)
 
@@ -54,7 +56,7 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
                         variant="primary"
                         onClick={() => {
                             execute()
-                            window.context.telemetryRecorder?.recordEvent('batchChangeEditor.runBatchSpec', 'clicked')
+                            telemetryRecorder.recordEvent('batchChangeEditor.runBatchSpec', 'clicked')
                             eventLogger.log('batch_change_editor:run_batch_spec:clicked')
                         }}
                         aria-label={typeof isExecutionDisabled === 'string' ? isExecutionDisabled : undefined}

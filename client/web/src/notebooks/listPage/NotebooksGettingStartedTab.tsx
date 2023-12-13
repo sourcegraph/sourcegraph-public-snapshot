@@ -140,10 +140,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     <Link
                         to="https://about.sourcegraph.com"
                         onClick={() => {
-                            window.context.telemetryRecorder?.recordEvent(
-                                'enterpriseCta.notebookGettingStarted',
-                                'clicked'
-                            )
+                            telemetryRecorder.recordEvent('enterpriseCta.notebookGettingStarted', 'clicked')
                             eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NotebooksGettingStarted' })
                         }}
                     >

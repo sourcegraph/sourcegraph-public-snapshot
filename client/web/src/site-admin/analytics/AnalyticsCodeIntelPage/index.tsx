@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { groupBy, sortBy, startCase, sumBy } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryV2Props, noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import {
     Card,
     H2,
@@ -35,8 +35,11 @@ import { CODEINTEL_STATISTICS } from './queries'
 
 import styles from './index.module.scss'
 
-export const AnalyticsCodeIntelPage: React.FC = () => {
-    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'CodeIntel' })
+export const AnalyticsCodeIntelPage: React.FC<TelemetryV2Props> = props => {
+    const { dateRange, aggregation, grouping } = useChartFilters({
+        name: 'CodeIntel',
+        telemetryRecorder: noOpTelemetryRecorder,
+    })
     const { data, error, loading } = useQuery<CodeIntelStatisticsResult, CodeIntelStatisticsVariables>(
         CODEINTEL_STATISTICS,
         {
@@ -47,7 +50,7 @@ export const AnalyticsCodeIntelPage: React.FC = () => {
         }
     )
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('adminAnalyticsCodeIntel', 'viewed')
+        props.telemetryRecorder.recordEvent('adminAnalyticsCodeIntel', 'viewed')
         eventLogger.logPageView('AdminAnalyticsCodeIntel')
     }, [window.context.telemetryRecorder])
 

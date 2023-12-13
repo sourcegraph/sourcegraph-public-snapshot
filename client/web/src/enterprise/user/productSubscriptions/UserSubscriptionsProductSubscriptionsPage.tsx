@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container, PageHeader, Link, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
@@ -24,7 +25,7 @@ import {
     type ProductSubscriptionNodeProps,
 } from '../../dotcom/productSubscriptions/ProductSubscriptionNode'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     user: UserAreaUserFields
 }
 
@@ -35,7 +36,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
     React.PropsWithChildren<Props>
 > = props => {
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('userSubscriptionsProductSubscriptions', 'viewed')
+        props.telemetryRecorder.recordEvent('userSubscriptionsProductSubscriptions', 'viewed')
         eventLogger.logViewEvent('UserSubscriptionsProductSubscriptions')
     }, [window.context.telemetryRecorder])
 
@@ -87,7 +88,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                         <Link
                             to="https://about.sourcegraph.com"
                             onClick={() => {
-                                window.context.telemetryRecorder?.recordEvent('enterpriseCta.subscriptions', 'clicked')
+                                props.telemetryRecorder.recordEvent('enterpriseCta.subscriptions', 'clicked')
                                 eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Subscriptions' })
                             }}
                         >

@@ -7,6 +7,7 @@ import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, useEventObservable, Link, Alert, Icon, H2, Form } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../../auth'
@@ -49,7 +50,8 @@ const createProductSubscription = (
     )
 
 const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildren<UserCreateSubscriptionNodeProps>> = (
-    props: UserCreateSubscriptionNodeProps
+    props: UserCreateSubscriptionNodeProps,
+    telemetryRecorder
 ) => {
     const [onSubmit, createdSubscription] = useEventObservable(
         useCallback(
@@ -61,7 +63,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
                 submits.pipe(
                     tap(event => event.preventDefault()),
                     tap(() => {
-                        window.context.telemetryRecorder?.recordEvent('newProductSubscription', 'created')
+                        telemetryRecorder.recordEvent('newProductSubscription', 'created')
                         eventLogger.log('NewProductSubscriptionCreated')
                     }),
                     concatMapTo(
@@ -128,10 +130,10 @@ interface Props {
  * For use on Sourcegraph.com by Sourcegraph teammates only.
  */
 export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
-    React.PropsWithChildren<Props>
+    React.PropsWithChildren<Props & TelemetryV2Props>
 > = props => {
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('siteAdminCreateProductSubscription', 'viewed')
+        props.telemetryRecorder.recordEvent('siteAdminCreateProductSubscription', 'viewed')
         eventLogger.logViewEvent('SiteAdminCreateProductSubscription')
     })
     return (

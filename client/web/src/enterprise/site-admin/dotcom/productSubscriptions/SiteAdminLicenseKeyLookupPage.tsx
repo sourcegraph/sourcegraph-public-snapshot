@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { useSearchParams } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container, H2, Text } from '@sourcegraph/wildcard'
 
 import {
@@ -20,16 +21,16 @@ import { eventLogger } from '../../../../tracking/eventLogger'
 import { useQueryProductLicensesConnection } from './backend'
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
 
-interface Props {}
+interface Props extends TelemetryV2Props {}
 
 const SEARCH_PARAM_KEY = 'query'
 
 /**
  * Displays the product licenses that have been created on Sourcegraph.com.
  */
-export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
+export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('siteAdminLicenseKeyLookup', 'viewed')
+        props.telemetryRecorder.recordEvent('siteAdminLicenseKeyLookup', 'viewed')
         eventLogger.logPageView('SiteAdminLicenseKeyLookup')
     }, [window.context.telemetryRecorder])
 

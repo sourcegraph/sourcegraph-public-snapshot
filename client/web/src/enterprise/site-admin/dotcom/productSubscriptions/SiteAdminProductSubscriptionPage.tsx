@@ -6,6 +6,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { logger } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, LoadingSpinner, Link, Icon, ErrorAlert, PageHeader, Container, H3 } from '@sourcegraph/wildcard'
 
 import {
@@ -41,16 +42,16 @@ import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminG
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
 import { accessTokenPath, errorForPath } from './utils'
 
-interface Props {}
+interface Props extends TelemetryV2Props {}
 
 /**
  * Displays a product subscription in the site admin area.
  */
-export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
+export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const navigate = useNavigate()
     const { subscriptionUUID = '' } = useParams<{ subscriptionUUID: string }>()
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('siteAdminProductSubscription', 'viewed')
+        props.telemetryRecorder.recordEvent('siteAdminProductSubscription', 'viewed')
         eventLogger.logViewEvent('SiteAdminProductSubscription')
     }, [window.context.telemetryRecorder])
 

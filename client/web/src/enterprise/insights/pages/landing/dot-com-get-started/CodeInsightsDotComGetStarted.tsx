@@ -48,10 +48,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                                 to="https://about.sourcegraph.com"
                                 variant="primary"
                                 onClick={() => {
-                                    window.context.telemetryRecorder?.recordEvent(
-                                        'enterpriseCta.tryInsights',
-                                        'clicked'
-                                    )
+                                    telemetryRecorder.recordEvent('enterpriseCta.tryInsights', 'clicked')
                                     eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryInsights' })
                                 }}
                             >
@@ -93,7 +90,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         <Link
                             to="https://about.sourcegraph.com"
                             onClick={() => {
-                                window.context.telemetryRecorder?.recordEvent('enterpriseCta.insights', 'clicked')
+                                telemetryRecorder.recordEvent('enterpriseCta.insights', 'clicked')
                                 eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Insights' })
                             }}
                         >

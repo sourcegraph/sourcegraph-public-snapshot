@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Link, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../../../../components/FilteredConnection'
@@ -16,14 +17,14 @@ import {
     type SiteAdminProductSubscriptionNodeProps,
 } from './SiteAdminProductSubscriptionNode'
 
-interface Props {}
+interface Props extends TelemetryV2Props {}
 
 /**
  * Displays the product subscriptions that have been created on Sourcegraph.com.
  */
-export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
+export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('siteAdminProductSubscriptions', 'viewed')
+        props.telemetryRecorder.recordEvent('siteAdminProductSubscriptions', 'viewed')
         eventLogger.logViewEvent('SiteAdminProductSubscriptions')
     }, [window.context.telemetryRecorder])
 

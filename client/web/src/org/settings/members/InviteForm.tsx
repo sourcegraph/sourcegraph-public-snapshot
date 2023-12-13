@@ -7,6 +7,7 @@ import { map } from 'rxjs/operators'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     LoadingSpinner,
     Button,
@@ -42,7 +43,7 @@ interface Invited extends InviteUserToOrganizationFields {
     username: string
 }
 
-interface Props {
+interface Props extends TelemetryV2Props {
     orgID: Scalars['ID']
     authenticatedUser: AuthenticatedUser | null
 
@@ -57,6 +58,7 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
     authenticatedUser,
     onDidUpdateOrganizationMembers,
     onOrganizationUpdate,
+    telemetryRecorder,
 }) => {
     const [username, setUsername] = useState<string>('')
     const onUsernameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
@@ -67,7 +69,7 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
     const [isInviteShown, setShowInvitation] = useState<boolean>(false)
 
     const inviteUser = useCallback(() => {
-        window.context.telemetryRecorder?.recordEvent('inviteOrgMemeber', 'clicked')
+        telemetryRecorder.recordEvent('inviteOrgMemeber', 'clicked')
         eventLogger.log('InviteOrgMemberClicked')
         ;(async () => {
             setLoading('inviteUserToOrganization')

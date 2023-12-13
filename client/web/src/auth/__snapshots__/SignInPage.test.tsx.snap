@@ -366,13 +366,13 @@ exports[`SignInPage renders sign in page (dotcom) 1`] = `
   <h3
     style="font-style: italic;"
   >
-    Cannot read properties of undefined (reading 'telemetryRecorder')
+    Cannot read properties of undefined (reading 'recordEvent')
   </h3>
   <pre
     style="padding: 0.5rem; background-color: rgba(200, 200, 200, 0.5);"
   >
-    TypeError: Cannot read properties of undefined (reading 'telemetryRecorder')
-    at telemetryRecorder (/Users/nathandowns/PycharmProjects/sourcegraph/client/web/src/auth/SignInPage.tsx:43:24)
+    TypeError: Cannot read properties of undefined (reading 'recordEvent')
+    at recordEvent (/Users/nathandowns/PycharmProjects/sourcegraph/client/web/src/auth/SignInPage.tsx:44:33)
     at commitHookEffectListMount (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:23049:26)
     at commitPassiveMountOnFiber (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:24821:11)
     at commitPassiveMountEffects_complete (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:24781:9)
@@ -566,13 +566,13 @@ exports[`SignInPage renders sign in page (server) with email form expanded 1`] =
   <h3
     style="font-style: italic;"
   >
-    Cannot read properties of undefined (reading 'telemetryRecorder')
+    Cannot read properties of undefined (reading 'recordEvent')
   </h3>
   <pre
     style="padding: 0.5rem; background-color: rgba(200, 200, 200, 0.5);"
   >
-    TypeError: Cannot read properties of undefined (reading 'telemetryRecorder')
-    at telemetryRecorder (/Users/nathandowns/PycharmProjects/sourcegraph/client/web/src/auth/SignInPage.tsx:43:24)
+    TypeError: Cannot read properties of undefined (reading 'recordEvent')
+    at recordEvent (/Users/nathandowns/PycharmProjects/sourcegraph/client/web/src/auth/SignInPage.tsx:44:33)
     at commitHookEffectListMount (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:23049:26)
     at commitPassiveMountOnFiber (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:24821:11)
     at commitPassiveMountEffects_complete (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:24781:9)
@@ -632,13 +632,13 @@ exports[`SignInPage renders sign in page (server) with only builtin authProvider
   <h3
     style="font-style: italic;"
   >
-    Cannot read properties of undefined (reading 'telemetryRecorder')
+    Cannot read properties of undefined (reading 'recordEvent')
   </h3>
   <pre
     style="padding: 0.5rem; background-color: rgba(200, 200, 200, 0.5);"
   >
-    TypeError: Cannot read properties of undefined (reading 'telemetryRecorder')
-    at telemetryRecorder (/Users/nathandowns/PycharmProjects/sourcegraph/client/web/src/auth/SignInPage.tsx:43:24)
+    TypeError: Cannot read properties of undefined (reading 'recordEvent')
+    at recordEvent (/Users/nathandowns/PycharmProjects/sourcegraph/client/web/src/auth/SignInPage.tsx:44:33)
     at commitHookEffectListMount (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:23049:26)
     at commitPassiveMountOnFiber (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:24821:11)
     at commitPassiveMountEffects_complete (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:24781:9)
@@ -832,13 +832,13 @@ exports[`SignInPage with Gerrit auth provider does not render the Gerrit provide
   <h3
     style="font-style: italic;"
   >
-    Cannot read properties of undefined (reading 'telemetryRecorder')
+    Cannot read properties of undefined (reading 'recordEvent')
   </h3>
   <pre
     style="padding: 0.5rem; background-color: rgba(200, 200, 200, 0.5);"
   >
-    TypeError: Cannot read properties of undefined (reading 'telemetryRecorder')
-    at telemetryRecorder (/Users/nathandowns/PycharmProjects/sourcegraph/client/web/src/auth/SignInPage.tsx:43:24)
+    TypeError: Cannot read properties of undefined (reading 'recordEvent')
+    at recordEvent (/Users/nathandowns/PycharmProjects/sourcegraph/client/web/src/auth/SignInPage.tsx:44:33)
     at commitHookEffectListMount (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:23049:26)
     at commitPassiveMountOnFiber (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:24821:11)
     at commitPassiveMountEffects_complete (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:24781:9)
@@ -899,13 +899,13 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 
   <h3
     style="font-style: italic;"
   >
-    Cannot read properties of undefined (reading 'telemetryRecorder')
+    Cannot read properties of undefined (reading 'recordEvent')
   </h3>
   <pre
     style="padding: 0.5rem; background-color: rgba(200, 200, 200, 0.5);"
   >
-    TypeError: Cannot read properties of undefined (reading 'telemetryRecorder')
-    at telemetryRecorder (/Users/nathandowns/PycharmProjects/sourcegraph/client/web/src/auth/SignInPage.tsx:43:24)
+    TypeError: Cannot read properties of undefined (reading 'recordEvent')
+    at recordEvent (/Users/nathandowns/PycharmProjects/sourcegraph/client/web/src/auth/SignInPage.tsx:44:33)
     at commitHookEffectListMount (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:23049:26)
     at commitPassiveMountOnFiber (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:24821:11)
     at commitPassiveMountEffects_complete (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:24781:9)

@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Badge, Icon, Link } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../tracking/eventLogger'
@@ -7,7 +8,7 @@ import { EventName } from '../util/constants'
 
 import styles from './DownloadAppButton.module.scss'
 
-interface DownloadAppButtonProps {
+interface DownloadAppButtonProps extends TelemetryV2Props {
     to: string
     icon: string
     buttonText: string
@@ -23,9 +24,10 @@ export const DownloadAppButton: React.FunctionComponent<DownloadAppButtonProps> 
     badgeText,
     eventName,
     eventType,
+    telemetryRecorder,
 }) => {
     const handleOnClick = (): void => {
-        window.context.telemetryRecorder?.recordEvent(eventName, 'clicked', {
+        telemetryRecorder.recordEvent(eventName, 'clicked', {
             privateMetadata: { type: eventType, source: 'get-started' },
         })
         eventLogger.log(eventName, { type: eventType })

@@ -8,6 +8,7 @@ import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime } from 'rxjs/operators'
 
 import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
@@ -33,7 +34,7 @@ query {
 }
 `
 
-interface Props {
+interface Props extends TelemetryV2Props {
     location: H.Location
     navigate: NavigateFunction
 }
@@ -58,11 +59,11 @@ interface Parameters {
     operationName?: string
 }
 
-export const ApiConsole: React.FC<{}> = () => {
+export const ApiConsole: React.FC<TelemetryV2Props> = props => {
     const navigate = useNavigate()
     const location = useLocation()
 
-    return <ApiConsoleInner location={location} navigate={navigate} />
+    return <ApiConsoleInner location={location} navigate={navigate} telemetryRecorder={props.telemetryRecorder} />
 }
 
 /**
@@ -97,7 +98,7 @@ class ApiConsoleInner extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        window.context.telemetryRecorder?.recordEvent('apiConsole', 'viewed')
+        this.props.telemetryRecorder.recordEvent('apiConsole', 'viewed')
         eventLogger.logViewEvent('ApiConsole')
 
         // Update the browser URL bar when query/variables/operation name are

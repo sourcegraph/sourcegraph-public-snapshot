@@ -4,6 +4,7 @@ import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
@@ -13,7 +14,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 
-interface CodeMonitoringGettingStartedProps {
+interface CodeMonitoringGettingStartedProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     isCodyApp: boolean
 }
@@ -67,13 +68,13 @@ const createCodeMonitorUrl = (example: ExampleCodeMonitor): string => {
 
 export const CodeMonitoringGettingStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeMonitoringGettingStartedProps>
-> = ({ authenticatedUser, isCodyApp }) => {
+> = ({ authenticatedUser, isCodyApp, telemetryRecorder }) => {
     const isLightTheme = useIsLightTheme()
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
     const assetsRoot = window.context?.assetsRoot || ''
 
     const logExampleMonitorClicked = useCallback(() => {
-        window.context.telemetryRecorder?.recordEvent('codeMonitoringExampleMonitorClicked', 'clicked')
+        telemetryRecorder.recordEvent('codeMonitoringExampleMonitorClicked', 'clicked')
         eventLogger.log('CodeMonitoringExampleMonitorClicked')
     }, [window.context.telemetryRecorder])
 

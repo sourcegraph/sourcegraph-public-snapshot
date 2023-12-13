@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { ButtonLink, Container, ErrorAlert, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { type GitHubAppsResult, type GitHubAppsVariables, GitHubAppDomain } from '../../graphql-operations'
@@ -24,11 +25,11 @@ import { GitHubAppFailureAlert } from './GitHubAppFailureAlert'
 
 import styles from './GitHubAppsPage.module.scss'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     batchChangesEnabled: boolean
 }
 
-export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled }) => {
+export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled, telemetryRecorder }) => {
     const { data, loading, error, refetch } = useQuery<GitHubAppsResult, GitHubAppsVariables>(GITHUB_APPS_QUERY, {
         variables: {
             domain: GitHubAppDomain.REPOS,
@@ -37,7 +38,7 @@ export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled }) => {
     const gitHubApps = useMemo(() => data?.gitHubApps?.nodes ?? [], [data])
 
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('siteAdminGithubApps', 'viewed')
+        telemetryRecorder.recordEvent('siteAdminGithubApps', 'viewed')
         eventLogger.logPageView('SiteAdminGitHubApps')
     }, [window.context.telemetryRecorder])
 

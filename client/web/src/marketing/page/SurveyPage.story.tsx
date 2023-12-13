@@ -1,5 +1,7 @@
 import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import { WebStory } from '../../components/WebStory'
 
 import { SurveyPage } from './SurveyPage'
@@ -16,4 +18,6 @@ const config: Meta = {
 
 export default config
 
-export const Page: Story = () => <SurveyPage authenticatedUser={null} forceScore="10" />
+export const Page: Story = () => (
+    <SurveyPage authenticatedUser={null} forceScore="10" telemetryRecorder={noOpTelemetryRecorder} />
+)

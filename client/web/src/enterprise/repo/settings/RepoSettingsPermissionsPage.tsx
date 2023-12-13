@@ -63,7 +63,7 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
     telemetryRecorder,
 }) => {
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('repoSettingsPermissions', 'viewed')
+        telemetryRecorder.recordEvent('repoSettingsPermissions', 'viewed')
         eventLogger.logViewEvent('RepoSettingsPermissions')
     })
 

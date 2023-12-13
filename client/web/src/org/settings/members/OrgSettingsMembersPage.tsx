@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { pluralize } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Container,
     PageHeader,
@@ -40,7 +41,7 @@ import { InviteForm } from './InviteForm'
 
 import styles from './OrgSettingsMembersPage.module.scss'
 
-interface UserNodeProps {
+interface UserNodeProps extends TelemetryV2Props {
     /** The user to display in this list item. */
     node: OrganizationMemberNode
 
@@ -134,9 +135,10 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
     org,
     authenticatedUser,
     onOrganizationUpdate,
+    telemetryRecorder,
 }) => {
     React.useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('orgMembers', 'viewed')
+        telemetryRecorder.recordEvent('orgMembers', 'viewed')
         eventLogger.logViewEvent('OrgMembers')
     }, [])
 
@@ -214,6 +216,7 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
                     authenticatedUser={authenticatedUser}
                     onOrganizationUpdate={onOrganizationUpdate}
                     onDidUpdateOrganizationMembers={refetch}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
             <Container className="mt-3">
@@ -265,6 +268,7 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
                             authenticatedUser={authenticatedUser}
                             blockRemoveOnlyMember={blockRemoveOnlyMember}
                             onDidUpdate={onDidUpdate}
+                            telemetryRecorder={telemetryRecorder}
                         />
                     ))}
                 </ul>

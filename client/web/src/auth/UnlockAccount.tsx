@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { Navigate, useLocation, useParams } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, Link, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -15,7 +16,7 @@ import { getReturnTo } from './SignInSignUpCommon'
 
 import unlockAccountStyles from './SignInSignUpCommon.module.scss'
 
-interface UnlockAccountPageProps {
+interface UnlockAccountPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
@@ -50,27 +51,27 @@ export const UnlockAccountPage: React.FunctionComponent<React.PropsWithChildren<
                 throw new Error('The url you provided is either expired or invalid.')
             }
 
-            window.context.telemetryRecorder?.recordEvent('okUnlockAccount', 'succeeded')
+            props.telemetryRecorder.recordEvent('okUnlockAccount', 'succeeded')
             eventLogger.log('unlockAccount', { token })
         } catch (error) {
             setError(error)
-            window.context.telemetryRecorder?.recordEvent('koUnlockAccount', 'failed')
+            props.telemetryRecorder.recordEvent('koUnlockAccount', 'failed')
             eventLogger.log('unlockAccount', { token })
         } finally {
             setLoading(false)
         }
-    }, [token, props.context.xhrHeaders])
+    }, [token, props.context.xhrHeaders, props.telemetryRecorder])
 
     useEffect(() => {
         if (props.authenticatedUser) {
             return
         }
-        window.context.telemetryRecorder?.recordEvent('unlockUserAccountRequest', 'viewed')
+        props.telemetryRecorder.recordEvent('unlockUserAccountRequest', 'viewed')
         eventLogger.logPageView('UnlockUserAccountRequest', null, false)
         unlockAccount().catch(error => {
             setError(error)
         })
-    }, [unlockAccount, props.authenticatedUser])
+    }, [unlockAccount, props.authenticatedUser, props.telemetryRecorder])
 
     if (props.authenticatedUser) {
         const returnTo = getReturnTo(location)

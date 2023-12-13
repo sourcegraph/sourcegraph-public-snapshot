@@ -53,7 +53,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
     telemetryRecorder,
 }) => {
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('userSettingsPermissions', 'viewed')
+        telemetryRecorder.recordEvent('userSettingsPermissions', 'viewed')
         eventLogger.logViewEvent('UserSettingsPermissions')
     }, [window.context.telemetryRecorder])
 

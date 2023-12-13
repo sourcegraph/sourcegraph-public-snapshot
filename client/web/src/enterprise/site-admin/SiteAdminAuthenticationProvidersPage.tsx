@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Badge, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
@@ -51,14 +52,14 @@ const authProviderFragment = gql`
     }
 `
 
-interface Props {}
+interface Props extends TelemetryV2Props {}
 
 /**
  * A page displaying the auth providers in site configuration.
  */
 export class SiteAdminAuthenticationProvidersPage extends React.Component<Props> {
     public componentDidMount(): void {
-        window.context.telemetryRecorder?.recordEvent('siteAdminAuthentication', 'viewed')
+        this.props.telemetryRecorder.recordEvent('siteAdminAuthentication', 'viewed')
         eventLogger.logViewEvent('SiteAdminAuthentication')
     }
 

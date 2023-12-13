@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import classNames from 'classnames'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Text, Link, ErrorAlert, Form, Input, Button, LoadingSpinner, TextArea, Label } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../components/HeroPage'
@@ -129,9 +130,9 @@ const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ on
 /**
  * The request access page component.
  */
-export const RequestAccessPage: React.FunctionComponent = () => {
+export const RequestAccessPage: React.FunctionComponent<TelemetryV2Props> = props => {
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('requestAccessPage', 'viewed')
+        props.telemetryRecorder.recordEvent('requestAccessPage', 'viewed')
         eventLogger.logPageView('RequestAccessPage')
     }, [window.context.telemetryRecorder])
     const location = useLocation()

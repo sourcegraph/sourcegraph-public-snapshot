@@ -49,7 +49,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
     const isLightTheme = useIsLightTheme()
 
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('signUp', 'viewed')
+        telemetryRecorder.recordEvent('signUp', 'viewed')
         eventLogger.logViewEvent('SignUp', null, false)
 
         if (invitedBy !== null) {
@@ -57,7 +57,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 isAuthenticated: !!authenticatedUser,
                 allowSignup: context.allowSignup,
             }
-            window.context.telemetryRecorder?.recordEvent('signUpInvitedByUser', 'viewed', {
+            telemetryRecorder.recordEvent('signUpInvitedByUser', 'viewed', {
                 metadata: { isAuthenticated: !!authenticatedUser ? 1 : 0, allowSignup: context.allowSignup ? 1 : 0 },
             })
             eventLogger.log('SignUpInvitedByUser', parameters, parameters)
@@ -136,7 +136,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                         {context.sourcegraphDotComMode && (
                             <Text className="pt-1 pb-2">Start searching public code now</Text>
                         )}
-                        <SignUpForm context={context} onSignUp={handleSignUp} />
+                        <SignUpForm context={context} onSignUp={handleSignUp} telemetryRecorder={telemetryRecorder} />
                         <Text className="mt-3">
                             Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>
                         </Text>

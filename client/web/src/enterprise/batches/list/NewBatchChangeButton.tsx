@@ -2,11 +2,12 @@ import React from 'react'
 
 import { mdiPlus } from '@mdi/js'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Link, type LinkProps, Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 
-interface NewBatchChangeButtonProps extends Pick<LinkProps, 'to'> {
+interface NewBatchChangeButtonProps extends Pick<LinkProps, 'to'>, TelemetryV2Props {
     // canCreate indicates whether or not the currently-authenticated user has sufficient
     // permissions to create a batch change in whatever context this button is being
     // presented. If not, canCreate should be a string reason why the user cannot create
@@ -17,6 +18,7 @@ interface NewBatchChangeButtonProps extends Pick<LinkProps, 'to'> {
 export const NewBatchChangeButton: React.FunctionComponent<React.PropsWithChildren<NewBatchChangeButtonProps>> = ({
     canCreate,
     to,
+    telemetryRecorder,
 }) => {
     const button = (
         <Button
@@ -25,7 +27,7 @@ export const NewBatchChangeButton: React.FunctionComponent<React.PropsWithChildr
             variant="primary"
             as={Link}
             onClick={() => {
-                window.context.telemetryRecorder?.recordEvent('batchChangeListPage.createBatchChange', 'clicked')
+                telemetryRecorder.recordEvent('batchChangeListPage.createBatchChange', 'clicked')
                 eventLogger.log('batch_change_list_page:create_batch_change_details:clicked')
             }}
         >

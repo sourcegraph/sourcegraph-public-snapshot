@@ -4,6 +4,7 @@ import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiOpenInNew } from '@mdi/
 import { useLocation } from 'react-router-dom'
 import { animated, useSpring } from 'react-spring'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, useLocalStorage, H3, H4, Icon, Link, Text, VIEWPORT_XL } from '@sourcegraph/wildcard'
 
 import type { Scalars } from '../../../../../graphql-operations'
@@ -58,7 +59,11 @@ type LibraryPaneProps =
           isReadOnly: true
       }
 
-export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<LibraryPaneProps>> = ({ name, ...props }) => {
+export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<LibraryPaneProps & TelemetryV2Props>> = ({
+    name,
+    telemetryRecorder,
+    ...props
+}) => {
     // Remember the last collapsed state of the pane
     const [defaultCollapsed, setDefaultCollapsed] = useLocalStorage(LIBRARY_PANE_DEFAULT_COLLAPSED, false)
     // Start with the library collapsed by default if the batch spec is read-only, or if
@@ -130,7 +135,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
         if (selectedItem && !('isReadOnly' in props && props.isReadOnly)) {
             const codeWithName = updateTemplateWithQueryAndName(selectedItem.code)
             const templateName = selectedItem.name
-            window.context.telemetryRecorder?.recordEvent('batchChangeEditor.template', 'loaded', {
+            telemetryRecorder.recordEvent('batchChangeEditor.template', 'loaded', {
                 privateMetadata: { template: templateName },
             })
             eventLogger.log('batch_change_editor:template:loaded', { template: templateName })
@@ -189,10 +194,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                             rel="noopener noreferrer"
                             to="https://github.com/sourcegraph/batch-change-examples"
                             onClick={() => {
-                                window.context.telemetryRecorder?.recordEvent(
-                                    'batchChangeEditor.viewMoreExamples',
-                                    'clicked'
-                                )
+                                telemetryRecorder.recordEvent('batchChangeEditor.viewMoreExamples', 'clicked')
                                 eventLogger.log('batch_change_editor:view_more_examples:clicked')
                             }}
                         >

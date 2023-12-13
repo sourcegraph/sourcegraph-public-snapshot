@@ -4,6 +4,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import { useLocation } from 'react-router-dom'
 import type { Observable } from 'rxjs'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -17,7 +18,7 @@ import { convertActionsForCreate } from './action-converters'
 import { createCodeMonitor as _createCodeMonitor } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-interface CreateCodeMonitorPageProps {
+interface CreateCodeMonitorPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
 
     createCodeMonitor?: typeof _createCodeMonitor
@@ -27,7 +28,7 @@ interface CreateCodeMonitorPageProps {
 
 const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
     React.PropsWithChildren<CreateCodeMonitorPageProps>
-> = ({ authenticatedUser, createCodeMonitor = _createCodeMonitor, isSourcegraphDotCom }) => {
+> = ({ authenticatedUser, createCodeMonitor = _createCodeMonitor, isSourcegraphDotCom, telemetryRecorder }) => {
     const location = useLocation()
 
     const triggerQuery = useMemo(
@@ -41,7 +42,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
     )
 
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('createCodeMonitor', 'viewed', {
+        telemetryRecorder.recordEvent('createCodeMonitor', 'viewed', {
             privateMetadata: { hasTriggerQuery: !!triggerQuery, hasDescription: !!description },
         })
         eventLogger.logPageView('CreateCodeMonitorPage', {
@@ -52,7 +53,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
 
     const createMonitorRequest = useCallback(
         (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> => {
-            window.context.telemetryRecorder?.recordEvent('createCodeMonitorForm', 'submitted')
+            telemetryRecorder.recordEvent('createCodeMonitorForm', 'submitted')
             eventLogger.log('CreateCodeMonitorFormSubmitted')
             return createCodeMonitor({
                 monitor: {

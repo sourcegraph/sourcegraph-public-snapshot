@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import classNames from 'classnames'
 import { range } from 'lodash'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
@@ -16,7 +17,9 @@ interface SurveyRatingRadio {
     openSurveyInNewTab?: boolean
 }
 
-export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<SurveyRatingRadio>> = props => {
+export const SurveyRatingRadio: React.FunctionComponent<
+    React.PropsWithChildren<SurveyRatingRadio & TelemetryV2Props>
+> = props => {
     const [focusedIndex, setFocusedIndex] = useState<number | null>(props.score || null)
 
     const handleFocus = (index: number): void => {
@@ -28,7 +31,7 @@ export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<
     }
 
     const handleChange = (score: number): void => {
-        window.context.telemetryRecorder?.recordEvent('surveyButton', 'clicked', {
+        props.telemetryRecorder.recordEvent('surveyButton', 'clicked', {
             metadata: {
                 score,
             },

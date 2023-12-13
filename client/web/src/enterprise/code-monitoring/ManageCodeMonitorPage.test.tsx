@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -47,6 +48,7 @@ describe('ManageCodeMonitorPage', () => {
         deleteCodeMonitor: sinon.spy((id: string) => of(undefined)),
         isLightTheme: false,
         isSourcegraphDotCom: false,
+        telemetryRecorder: noOpTelemetryRecorder,
     }
 
     test('Form is pre-loaded with code monitor data', () => {
@@ -105,16 +107,6 @@ describe('ManageCodeMonitorPage', () => {
                             priority: MonitorEmailPriority.NORMAL,
                             recipients: ['userID'],
                             header: '',
-                        },
-                    },
-                },
-                {
-                    slackWebhook: {
-                        id: 'test-action-1',
-                        update: {
-                            enabled: true,
-                            includeResults: false,
-                            url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
                         },
                     },
                 },

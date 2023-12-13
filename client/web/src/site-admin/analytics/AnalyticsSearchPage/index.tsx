@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryV2Props, noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, type Series } from '@sourcegraph/wildcard'
 
 import type { SearchStatisticsResult, SearchStatisticsVariables } from '../../../graphql-operations'
@@ -22,8 +22,11 @@ import { SEARCH_STATISTICS } from './queries'
 
 import styles from './index.module.scss'
 
-export const AnalyticsSearchPage: React.FC = () => {
-    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Search' })
+export const AnalyticsSearchPage: React.FC<TelemetryV2Props> = props => {
+    const { dateRange, aggregation, grouping } = useChartFilters({
+        name: 'Search',
+        telemetryRecorder: noOpTelemetryRecorder,
+    })
     const { data, error, loading } = useQuery<SearchStatisticsResult, SearchStatisticsVariables>(SEARCH_STATISTICS, {
         variables: {
             dateRange: dateRange.value,
@@ -31,7 +34,7 @@ export const AnalyticsSearchPage: React.FC = () => {
         },
     })
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('adminAnalyticsSearch', 'viewed')
+        props.telemetryRecorder.recordEvent('adminAnalyticsSearch', 'viewed')
         eventLogger.logPageView('AdminAnalyticsSearch')
     }, [window.context.telemetryRecorder])
     const [stats, legends] = useMemo(() => {

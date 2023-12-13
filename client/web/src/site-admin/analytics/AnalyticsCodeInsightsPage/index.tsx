@@ -3,6 +3,7 @@ import React, { useMemo, useEffect } from 'react'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props, noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Card, LoadingSpinner, Text, LineChart, type Series, H2 } from '@sourcegraph/wildcard'
 
 import type { InsightsStatisticsResult, InsightsStatisticsVariables } from '../../../graphql-operations'
@@ -36,8 +37,12 @@ export const calculateMinutesSaved = (data: typeof MinutesSaved): number =>
     data.LanguageSeries * MinutesSaved.LanguageSeries +
     data.ComputeSeries * MinutesSaved.ComputeSeries
 
-export const AnalyticsCodeInsightsPage: React.FunctionComponent = () => {
-    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Insights', aggregation: 'count' })
+export const AnalyticsCodeInsightsPage: React.FunctionComponent<TelemetryV2Props> = props => {
+    const { dateRange, aggregation, grouping } = useChartFilters({
+        name: 'Insights',
+        aggregation: 'count',
+        telemetryRecorder: noOpTelemetryRecorder,
+    })
     const { data, error, loading } = useQuery<InsightsStatisticsResult, InsightsStatisticsVariables>(
         INSIGHTS_STATISTICS,
         {
@@ -48,7 +53,7 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent = () => {
         }
     )
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('adminAnalyticsCodeInsights', 'viewed')
+        props.telemetryRecorder.recordEvent('adminAnalyticsCodeInsights', 'viewed')
         eventLogger.logPageView('AdminAnalyticsCodeInsights')
     }, [window.context.telemetryRecorder])
 

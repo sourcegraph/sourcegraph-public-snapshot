@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -21,7 +22,7 @@ import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
-export interface SignInPageProps {
+export interface SignInPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
@@ -40,7 +41,7 @@ export interface SignInPageProps {
 export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
     const { context, authenticatedUser } = props
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('signIn', 'viewed')
+        props.telemetryRecorder.recordEvent('signIn', 'viewed')
         eventLogger.logViewEvent('SignIn', null, false)
     })
 
@@ -168,7 +169,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                             <Link
                                 to="https://about.sourcegraph.com/app"
                                 onClick={() => {
-                                    window.context.telemetryRecorder?.recordEvent('appCta.signInPage', 'clicked')
+                                    props.telemetryRecorder.recordEvent('appCta.signInPage', 'clicked')
                                     eventLogger.log('ClickedOnAppCTA', { location: 'SignInPage' })
                                 }}
                             >
@@ -178,7 +179,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                             <Link
                                 to="https://sourcegraph.com/get-started?t=enterprise"
                                 onClick={() => {
-                                    window.context.telemetryRecorder?.recordEvent('enterpriseCta.signInPage', 'clicked')
+                                    props.telemetryRecorder.recordEvent('enterpriseCta.signInPage', 'clicked')
                                     eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })
                                 }}
                             >

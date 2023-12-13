@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { H2 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../../backend/graphql'
@@ -47,9 +48,11 @@ interface Props {}
 /**
  * Displays a list of customers associated with user accounts on Sourcegraph.com.
  */
-export const SiteAdminProductCustomersPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+export const SiteAdminProductCustomersPage: React.FunctionComponent<
+    React.PropsWithChildren<Props & TelemetryV2Props>
+> = props => {
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('siteAdminProductCustomers', 'viewed')
+        props.telemetryRecorder.recordEvent('siteAdminProductCustomers', 'viewed')
         eventLogger.logViewEvent('SiteAdminProductCustomers')
     }, [window.context.telemetryRecorder])
 

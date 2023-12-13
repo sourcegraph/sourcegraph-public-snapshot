@@ -14,7 +14,7 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
     style="padding: 0.5rem; background-color: rgba(200, 200, 200, 0.5);"
   >
     TypeError: Cannot read properties of undefined (reading 'telemetryRecorder')
-    at telemetryRecorder (/Users/nathandowns/PycharmProjects/sourcegraph/client/web/src/enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionPage.tsx:39:24)
+    at telemetryRecorder (/Users/nathandowns/PycharmProjects/sourcegraph/client/web/src/enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionPage.tsx:40:24)
     at renderWithHooks (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:16175:18)
     at mountIndeterminateComponent (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:20913:13)
     at beginWork (/Users/nathandowns/PycharmProjects/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:22416:16)

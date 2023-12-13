@@ -6,6 +6,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
@@ -24,7 +25,7 @@ import {
     externalAccountsConnectionFragment,
 } from '../user/settings/ExternalAccountNode'
 
-interface Props {}
+interface Props extends TelemetryV2Props {}
 
 interface FilterParameters {
     user?: Scalars['ID']
@@ -41,7 +42,7 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
     private externalAccountUpdates = new Subject<void>()
 
     public componentDidMount(): void {
-        window.context.telemetryRecorder?.recordEvent('siteAdminExternalAccountsPage', 'viewed')
+        this.props.telemetryRecorder.recordEvent('siteAdminExternalAccountsPage', 'viewed')
         eventLogger.logViewEvent('SiteAdminExternalAccounts')
     }
 

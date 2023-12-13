@@ -116,16 +116,10 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                             )}
                             onClick={() => {
                                 if (batchChange) {
-                                    window.context.telemetryRecorder?.recordEvent(
-                                        'batchChangeExecutionPreview.appplyUpdate',
-                                        'clicked'
-                                    )
+                                    telemetryRecorder.recordEvent('batchChangeExecutionPreview.appplyUpdate', 'clicked')
                                     eventLogger.log('batch_change_execution_preview:apply_update:clicked')
                                 } else {
-                                    window.context.telemetryRecorder?.recordEvent(
-                                        'batchChangeExecutionPreview.create',
-                                        'clicked'
-                                    )
+                                    telemetryRecorder.recordEvent('batchChangeExecutionPreview.create', 'clicked')
                                     eventLogger.log('batch_change_execution_preview:apply:clicked')
                                 }
                                 return onApply()

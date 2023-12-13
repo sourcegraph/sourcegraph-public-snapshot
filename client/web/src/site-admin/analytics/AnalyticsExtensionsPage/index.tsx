@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryV2Props, noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, type Series } from '@sourcegraph/wildcard'
 
 import type { ExtensionsStatisticsResult, ExtensionsStatisticsVariables } from '../../../graphql-operations'
@@ -22,8 +22,11 @@ import { EXTENSIONS_STATISTICS } from './queries'
 
 import styles from './index.module.scss'
 
-export const AnalyticsExtensionsPage: React.FunctionComponent = () => {
-    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Extensions' })
+export const AnalyticsExtensionsPage: React.FunctionComponent<TelemetryV2Props> = props => {
+    const { dateRange, aggregation, grouping } = useChartFilters({
+        name: 'Extensions',
+        telemetryRecorder: noOpTelemetryRecorder,
+    })
     const { data, error, loading } = useQuery<ExtensionsStatisticsResult, ExtensionsStatisticsVariables>(
         EXTENSIONS_STATISTICS,
         {
@@ -34,7 +37,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent = () => {
         }
     )
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('adminAnalyticsExtensions', 'viewed')
+        props.telemetryRecorder.recordEvent('adminAnalyticsExtensions', 'viewed')
         eventLogger.logPageView('AdminAnalyticsExtensions')
     }, [window.context.telemetryRecorder])
     const [stats, legends, calculatorProps, installationStats] = useMemo(() => {

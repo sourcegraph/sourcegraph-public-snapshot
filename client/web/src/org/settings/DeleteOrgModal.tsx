@@ -52,7 +52,7 @@ export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<Del
                 pathname: '/settings',
             })
         } catch {
-            window.context.telemetryRecorder?.recordEvent('orgDeletion', 'failed')
+            props.telemetryRecorder.recordEvent('orgDeletion', 'failed')
             eventLogger.log('OrgDeletionFailed')
         }
     }, [org, deleteOrganization, navigate, window.context.telemetryRecorder])

@@ -7,6 +7,7 @@ import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLa
 import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { LoadingSpinner, Button, Link, Alert, H3, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
@@ -25,7 +26,7 @@ import { OrgAvatar } from '../OrgAvatar'
 
 import type { OrgAreaRouteContext } from './OrgArea'
 
-interface Props extends OrgAreaRouteContext {
+interface Props extends OrgAreaRouteContext, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
 
     /** Called when the viewer responds to the invitation. */
@@ -43,7 +44,7 @@ interface State {
  * Displays the organization invitation for the current user, if any.
  */
 export const OrgInvitationPageLegacy = withAuthenticatedUser(
-    class OrgInvitationPage extends React.PureComponent<Props, State> {
+    class OrgInvitationPage extends React.PureComponent<Props & TelemetryV2Props, State> {
         public state: State = {}
 
         private componentUpdates = new Subject<Props>()

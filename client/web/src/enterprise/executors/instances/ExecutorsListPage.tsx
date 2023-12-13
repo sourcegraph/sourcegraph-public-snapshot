@@ -3,6 +3,7 @@ import React, { useCallback, useEffect } from 'react'
 import { useApolloClient } from '@apollo/client'
 import { mdiMapSearch } from '@mdi/js'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container, Link, PageHeader, Icon, H3, Text } from '@sourcegraph/wildcard'
 
 import {
@@ -39,13 +40,16 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export interface ExecutorsListPageProps {
+export interface ExecutorsListPageProps extends TelemetryV2Props {
     queryExecutors?: typeof defaultQueryExecutors
 }
 
-export const ExecutorsListPage: React.FC<ExecutorsListPageProps> = ({ queryExecutors = defaultQueryExecutors }) => {
+export const ExecutorsListPage: React.FC<ExecutorsListPageProps> = ({
+    queryExecutors = defaultQueryExecutors,
+    telemetryRecorder,
+}) => {
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('executorsList', 'viewed')
+        telemetryRecorder.recordEvent('executorsList', 'viewed')
         eventLogger.logViewEvent('ExecutorsList')
     })
 

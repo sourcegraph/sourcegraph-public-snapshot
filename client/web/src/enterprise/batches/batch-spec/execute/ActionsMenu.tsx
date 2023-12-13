@@ -5,6 +5,7 @@ import { noop } from 'lodash'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Button,
     Icon,
@@ -46,7 +47,10 @@ export interface ActionsMenuProps {
     defaultMode?: ActionsMenuMode
 }
 
-export const ActionsMenu: React.FunctionComponent<React.PropsWithChildren<ActionsMenuProps>> = ({ defaultMode }) => {
+export const ActionsMenu: React.FunctionComponent<React.PropsWithChildren<ActionsMenuProps & TelemetryV2Props>> = ({
+    defaultMode,
+    telemetryRecorder,
+}) => {
     const { batchChange, batchSpec, setActionsError } = useBatchSpecContext<BatchSpecExecutionFields>()
 
     return (
@@ -55,15 +59,24 @@ export const ActionsMenu: React.FunctionComponent<React.PropsWithChildren<Action
             batchSpec={batchSpec}
             setActionsError={setActionsError}
             defaultMode={defaultMode}
+            telemetryRecorder={telemetryRecorder}
         />
     )
 }
 
 const MemoizedActionsMenu: React.FunctionComponent<
     React.PropsWithChildren<
-        Pick<BatchSpecContextState, 'batchChange' | 'batchSpec' | 'setActionsError'> & ActionsMenuProps
+        Pick<BatchSpecContextState, 'batchChange' | 'batchSpec' | 'setActionsError'> &
+            ActionsMenuProps &
+            TelemetryV2Props
     >
-> = React.memo(function MemoizedActionsMenu({ batchChange, batchSpec, setActionsError, defaultMode }) {
+> = React.memo(function MemoizedActionsMenu({
+    batchChange,
+    batchSpec,
+    setActionsError,
+    defaultMode,
+    telemetryRecorder,
+}) {
     const navigate = useNavigate()
     const location = useLocation()
 
@@ -161,7 +174,7 @@ const MemoizedActionsMenu: React.FunctionComponent<
                     className={styles.previewButton}
                     style={{ width: menuWidth }}
                     onClick={() => {
-                        window.context.telemetryRecorder?.recordEvent('batchChangeExecution.preview', 'clicked')
+                        telemetryRecorder.recordEvent('batchChangeExecution.preview', 'clicked')
                         eventLogger.log('batch_change_execution:preview:clicked')
                     }}
                 >
@@ -221,15 +234,12 @@ const MemoizedActionsMenu: React.FunctionComponent<
                 onConfirm={
                     cancelModalType === 'cancel'
                         ? () => {
-                              window.context.telemetryRecorder?.recordEvent(
-                                  'batchChangeExecution.actionsExecutionCancel',
-                                  'clicked'
-                              )
+                              telemetryRecorder.recordEvent('batchChangeExecution.actionsExecutionCancel', 'clicked')
                               eventLogger.log('batch_change_execution:actions_execution_cancel:clicked')
                               return cancelBatchSpecExecution()
                           }
                         : () => {
-                              window.context.telemetryRecorder?.recordEvent(
+                              telemetryRecorder.recordEvent(
                                   'batchChangeExecution.actionsExecutionCancelAndEdit',
                                   'clicked'
                               )

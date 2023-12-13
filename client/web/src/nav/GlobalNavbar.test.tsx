@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchSearchContexts,
@@ -23,7 +24,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     batchChangesExecutionEnabled: false,
     batchChangesWebhookLogsEnabled: false,
     telemetryService: {} as any,
-    telemetryRecorder: {} as any,
+    telemetryRecorder: noOpTelemetryRecorder,
     showSearchBox: true,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,

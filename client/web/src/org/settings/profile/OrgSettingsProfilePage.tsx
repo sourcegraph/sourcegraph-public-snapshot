@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container, PageHeader, Button, LoadingSpinner, Input, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../..'
@@ -10,7 +11,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import type { OrgAreaRouteContext } from '../../area/OrgArea'
 import { updateOrganization } from '../../backend'
 
-interface Props extends Pick<OrgAreaRouteContext, 'org' | 'onOrganizationUpdate'> {}
+interface Props extends Pick<OrgAreaRouteContext, 'org' | 'onOrganizationUpdate'>, TelemetryV2Props {}
 
 /**
  * The organization profile settings page.
@@ -18,9 +19,10 @@ interface Props extends Pick<OrgAreaRouteContext, 'org' | 'onOrganizationUpdate'
 export const OrgSettingsProfilePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     org,
     onOrganizationUpdate,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('orgSettingsProfile', 'viewed')
+        telemetryRecorder.recordEvent('orgSettingsProfile', 'viewed')
         eventLogger.logViewEvent('OrgSettingsProfile')
     }, [org.id])
 

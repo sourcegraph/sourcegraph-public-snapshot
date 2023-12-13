@@ -1,3 +1,5 @@
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+
 import { AnalyticsDateRange, AnalyticsGrouping } from '../../graphql-operations'
 import { useURLSyncedState } from '../../hooks'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -31,7 +33,7 @@ interface IResult {
     }
 }
 
-export function useChartFilters(props: IProps): IResult {
+export function useChartFilters(props: IProps & TelemetryV2Props): IResult {
     const [data, setData] = useURLSyncedState({
         dateRange: props.dateRange || AnalyticsDateRange.LAST_THREE_MONTHS,
         aggregation: props.aggregation || 'count',
@@ -48,7 +50,7 @@ export function useChartFilters(props: IProps): IResult {
                     grouping:
                         value === AnalyticsDateRange.LAST_WEEK ? AnalyticsGrouping.DAILY : AnalyticsGrouping.WEEKLY,
                 })
-                window.context.telemetryRecorder?.recordEvent(`AdminAnalytics${props.name}DateRange${value}`, 'viewed')
+                props.telemetryRecorder.recordEvent(`AdminAnalytics${props.name}DateRange${value}`, 'viewed')
                 eventLogger.log(`AdminAnalytics${props.name}DateRange${value}`)
             },
             items: [
@@ -61,7 +63,7 @@ export function useChartFilters(props: IProps): IResult {
             selected: data.aggregation,
             onChange: value => {
                 setData({ aggregation: value })
-                window.context.telemetryRecorder?.recordEvent(
+                props.telemetryRecorder.recordEvent(
                     `AdminAnalytics${props.name}Aggregate${value === 'count' ? 'Totals' : 'Uniques'}`,
                     'viewed'
                 )
@@ -85,7 +87,7 @@ export function useChartFilters(props: IProps): IResult {
             label: 'Display as',
             onChange: value => {
                 setData({ grouping: value })
-                window.context.telemetryRecorder?.recordEvent(`AdminAnalytics${props.name}DisplayAs${value}`, 'viewed')
+                props.telemetryRecorder.recordEvent(`AdminAnalytics${props.name}DisplayAs${value}`, 'viewed')
                 eventLogger.log(`AdminAnalytics${props.name}DisplayAs${value}`)
             },
             items: [

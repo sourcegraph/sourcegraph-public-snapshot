@@ -6,6 +6,7 @@ import { parseISO } from 'date-fns'
 import { useSearchParams } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Text,
     PageHeader,
@@ -34,17 +35,17 @@ import { formatDuration } from './utils'
 
 import styles from './RepoSettingsLogsPage.module.scss'
 
-export interface RepoSettingsLogsPageProps {
+export interface RepoSettingsLogsPageProps extends TelemetryV2Props {
     repo: SettingsAreaRepositoryFields
 }
 
 /**
  * The repository settings log page.
  */
-export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) => {
+export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo, telemetryRecorder }) => {
     const [activeTabIndex, setActiveTabIndex] = useState<number>(LogsPageTabs.COMMANDS)
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('repoSettingsLogs', 'viewed')
+        telemetryRecorder.recordEvent('repoSettingsLogs', 'viewed')
         eventLogger.logPageView('RepoSettingsLogs')
     }, [window.context.telemetryRecorder])
     const [searchParams, setSearchParams] = useSearchParams()

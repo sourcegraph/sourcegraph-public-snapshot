@@ -4,6 +4,7 @@ import { mdiFileDownload } from '@mdi/js'
 import { kebabCase } from 'lodash'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Icon, Text, Tooltip, Button, AnchorLink } from '@sourcegraph/wildcard'
 
@@ -52,13 +53,23 @@ export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({ originalInp
     )
 }
 
-interface BatchSpecDownloadLinkProps extends Omit<BatchSpecProps, 'isLightTheme'>, Pick<BatchChangeFields, 'name'> {
+interface BatchSpecDownloadLinkProps
+    extends Omit<BatchSpecProps, 'isLightTheme'>,
+        Pick<BatchChangeFields, 'name'>,
+        TelemetryV2Props {
     className?: string
     asButton: boolean
 }
 
 export const BatchSpecDownloadLink: React.FunctionComponent<React.PropsWithChildren<BatchSpecDownloadLinkProps>> =
-    React.memo(function BatchSpecDownloadLink({ children, className, name, originalInput, asButton }) {
+    React.memo(function BatchSpecDownloadLink({
+        children,
+        className,
+        name,
+        originalInput,
+        asButton,
+        telemetryRecorder,
+    }) {
         const component = asButton ? (
             <Button
                 variant="primary"
@@ -69,7 +80,7 @@ export const BatchSpecDownloadLink: React.FunctionComponent<React.PropsWithChild
                 rel="noopener noreferrer"
                 className={className}
                 onClick={() => {
-                    window.context.telemetryRecorder?.recordEvent('batchChangeEditor.downloadForSrcCli', 'clicked')
+                    telemetryRecorder.recordEvent('batchChangeEditor.downloadForSrcCli', 'clicked')
                     eventLogger.log('batch_change_editor:download_for_src_cli:clicked')
                 }}
             >
@@ -81,7 +92,7 @@ export const BatchSpecDownloadLink: React.FunctionComponent<React.PropsWithChild
                 to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
                 className={className}
                 onClick={() => {
-                    window.context.telemetryRecorder?.recordEvent('batchChangeEditor.downloadForSrcCli', 'clicked')
+                    telemetryRecorder.recordEvent('batchChangeEditor.downloadForSrcCli', 'clicked')
                     eventLogger.log('batch_change_editor:download_for_src_cli:clicked')
                 }}
             >
@@ -94,10 +105,15 @@ export const BatchSpecDownloadLink: React.FunctionComponent<React.PropsWithChild
 
 // TODO: Consider merging this component with BatchSpecDownloadLink
 export const BatchSpecDownloadButton: React.FunctionComponent<
-    Omit<BatchSpecProps, 'isLightTheme'> & Pick<BatchChangeFields, 'name'>
+    Omit<BatchSpecProps, 'isLightTheme'> & Pick<BatchChangeFields, 'name'> & TelemetryV2Props
 > = React.memo(function BatchSpecDownloadButton(props) {
     return (
-        <BatchSpecDownloadLink className="text-right text-nowrap" {...props} asButton={false}>
+        <BatchSpecDownloadLink
+            className="text-right text-nowrap"
+            {...props}
+            asButton={false}
+            telemetryRecorder={props.telemetryRecorder}
+        >
             <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download YAML
         </BatchSpecDownloadLink>
     )

@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryV2Props, noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Card, LoadingSpinner, useMatchMedia, Text, LineChart, BarChart, type Series } from '@sourcegraph/wildcard'
 
 import type { UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
@@ -26,6 +26,7 @@ export const AnalyticsUsersPage: FC<TelemetryV2Props> = context => {
     const { dateRange, aggregation, grouping } = useChartFilters({
         name: 'Users',
         aggregation: 'uniqueUsers',
+        telemetryRecorder: noOpTelemetryRecorder,
     })
     const { data, error, loading } = useQuery<UsersStatisticsResult, UsersStatisticsVariables>(USERS_STATISTICS, {
         variables: {

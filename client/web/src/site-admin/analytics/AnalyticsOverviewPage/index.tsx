@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import format from 'date-fns/format'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { noOpTelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { AnchorLink, Card, H2, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
@@ -26,14 +26,14 @@ import styles from './index.module.scss'
 
 interface Props extends TelemetryV2Props {}
 
-export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
-    const { dateRange } = useChartFilters({ name: 'Overview' })
+export const AnalyticsOverviewPage: React.FunctionComponent<Props> = props => {
+    const { dateRange } = useChartFilters({ name: 'Overview', telemetryRecorder: noOpTelemetryRecorder })
     const { data, error, loading } = useQuery<OverviewStatisticsResult, OverviewStatisticsVariables>(
         OVERVIEW_STATISTICS,
         {}
     )
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('adminAnalyticsOverview', 'viewed')
+        props.telemetryRecorder.recordEvent('adminAnalyticsOverview', 'viewed')
         eventLogger.logPageView('AdminAnalyticsOverview')
     }, [window.context.telemetryRecorder])
 

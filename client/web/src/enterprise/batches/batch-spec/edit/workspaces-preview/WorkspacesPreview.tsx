@@ -6,6 +6,7 @@ import classNames from 'classnames'
 import { animated, useSpring } from 'react-spring'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, Button, H4, Icon, Tooltip, useAccordion, useStopwatch, ErrorAlert } from '@sourcegraph/wildcard'
 
 import type { Connection } from '../../../../../components/FilteredConnection'
@@ -57,9 +58,9 @@ interface WorkspacesPreviewProps {
     isReadOnly?: boolean
 }
 
-export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<WorkspacesPreviewProps>> = ({
-    isReadOnly = false,
-}) => {
+export const WorkspacesPreview: React.FunctionComponent<
+    React.PropsWithChildren<WorkspacesPreviewProps & TelemetryV2Props>
+> = ({ isReadOnly = false, telemetryRecorder }) => {
     const { batchSpec, editor, workspacesPreview } = useBatchSpecContext()
 
     return (
@@ -68,15 +69,23 @@ export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<
             editor={editor}
             workspacesPreview={workspacesPreview}
             isReadOnly={isReadOnly}
+            telemetryRecorder={telemetryRecorder}
         />
     )
 }
 
 type MemoizedWorkspacesPreviewProps = WorkspacesPreviewProps &
-    Pick<BatchSpecContextState, 'batchSpec' | 'editor' | 'workspacesPreview'>
+    Pick<BatchSpecContextState, 'batchSpec' | 'editor' | 'workspacesPreview'> &
+    TelemetryV2Props
 
 const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<MemoizedWorkspacesPreviewProps>> =
-    React.memo(function MemoizedWorkspacesPreview({ isReadOnly, batchSpec, editor, workspacesPreview }) {
+    React.memo(function MemoizedWorkspacesPreview({
+        isReadOnly,
+        batchSpec,
+        editor,
+        workspacesPreview,
+        telemetryRecorder,
+    }) {
         const { debouncedCode, excludeRepo, isServerStale } = editor
         const {
             resolutionState,
@@ -157,10 +166,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren
                             isWorkspacesPreviewInProgress
                                 ? cancel
                                 : () => {
-                                      window.context.telemetryRecorder?.recordEvent(
-                                          'batchChangeEditor.previewWorkspaces',
-                                          'clicked'
-                                      )
+                                      telemetryRecorder.recordEvent('batchChangeEditor.previewWorkspaces', 'clicked')
                                       eventLogger.log('batch_change_editor:preview_workspaces:clicked')
                                       return preview(debouncedCode)
                                   }

@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom'
 import { validate as validateUUID } from 'uuid'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { LoadingSpinner, H4, Text, Link, ErrorAlert, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
@@ -28,13 +29,13 @@ interface Props {
 /**
  * Displays a product subscription in the user subscriptions area.
  */
-export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    user,
-}) => {
+export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<
+    React.PropsWithChildren<Props & TelemetryV2Props>
+> = ({ user, telemetryRecorder }) => {
     const { subscriptionUUID = '' } = useParams<{ subscriptionUUID: string }>()
 
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('userSubscriptionsProductScription', 'viewed')
+        telemetryRecorder.recordEvent('userSubscriptionsProductScription', 'viewed')
         eventLogger.logViewEvent('UserSubscriptionsProductSubscription')
     }, [window.context.telemetryRecorder])
 

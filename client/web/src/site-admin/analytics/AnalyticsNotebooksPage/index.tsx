@@ -23,7 +23,10 @@ import { NOTEBOOKS_STATISTICS } from './queries'
 import styles from './index.module.scss'
 
 export const AnalyticsNotebooksPage: React.FunctionComponent<TelemetryV2Props> = () => {
-    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Notebooks' })
+    const { dateRange, aggregation, grouping } = useChartFilters({
+        name: 'Notebooks',
+        telemetryRecorder: noOpTelemetryRecorder,
+    })
     const { data, error, loading } = useQuery<NotebooksStatisticsResult, NotebooksStatisticsVariables>(
         NOTEBOOKS_STATISTICS,
         {

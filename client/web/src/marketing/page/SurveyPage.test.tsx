@@ -1,13 +1,14 @@
 import type { MockedProviderProps } from '@apollo/client/testing'
 import { cleanup, fireEvent, within, waitFor } from '@testing-library/react'
 
+import { TelemetryV2Props, noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SurveyPage } from './SurveyPage'
 import { mockVariables, submitSurveyMock } from './SurveyPage.mocks'
 
-interface RenderSurveyPageParameters {
+interface RenderSurveyPageParameters extends TelemetryV2Props {
     mocks: MockedProviderProps['mocks']
     routerProps?: {
         matchParam?: string
@@ -23,10 +24,10 @@ describe('SurveyPage', () => {
 
     afterEach(cleanup)
 
-    const renderSurveyPage = ({ mocks, routerProps }: RenderSurveyPageParameters) =>
+    const renderSurveyPage = ({ mocks, routerProps, telemetryRecorder }: RenderSurveyPageParameters) =>
         renderWithBrandedContext(
             <MockedTestProvider mocks={mocks}>
-                <SurveyPage authenticatedUser={null} />
+                <SurveyPage authenticatedUser={null} telemetryRecorder={telemetryRecorder} />
             </MockedTestProvider>,
             {
                 path: '/survey/:score?',
@@ -39,7 +40,7 @@ describe('SurveyPage', () => {
 
     describe('Prior to submission', () => {
         beforeEach(() => {
-            renderResult = renderSurveyPage({ mocks: [submitSurveyMock] })
+            renderResult = renderSurveyPage({ mocks: [submitSurveyMock], telemetryRecorder: noOpTelemetryRecorder })
         })
 
         it('renders and handles form fields correctly', async () => {
@@ -69,6 +70,7 @@ describe('SurveyPage', () => {
             renderResult = renderSurveyPage({
                 mocks: [],
                 routerProps: { matchParam: 'thanks', locationState: { score: 10, feedback: 'great' } },
+                telemetryRecorder: noOpTelemetryRecorder,
             })
         })
 

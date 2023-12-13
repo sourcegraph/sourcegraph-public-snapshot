@@ -135,6 +135,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     notebooksEnabled,
     ownEnabled,
     showFeedbackModal,
+    telemetryRecorder,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -321,7 +322,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 to="/get-cody"
                                 className={classNames(styles.link, 'small')}
                                 onClick={() => {
-                                    window.context.telemetryRecorder?.recordEvent(EventName.CODY_CTA, 'clicked', {
+                                    telemetryRecorder.recordEvent(EventName.CODY_CTA, 'clicked', {
                                         privateMetadata: {
                                             location: EventLocation.NAV_BAR,
                                         },
@@ -379,6 +380,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 isCodyApp={isCodyApp}
                                 showFeedbackModal={showFeedbackModal}
+                                telemetryRecorder={telemetryRecorder}
                             />
                         </NavAction>
                     )}
@@ -392,6 +394,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         searchContextsEnabled={searchContextsEnabled}
                         isRepositoryRelatedPage={isRepositoryRelatedPage}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 </div>
             )}

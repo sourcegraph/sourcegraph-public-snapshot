@@ -23,6 +23,7 @@ import {
 } from '@sourcegraph/cody-ui/dist/Chat'
 import type { FileLinkProps } from '@sourcegraph/cody-ui/dist/chat/ContextFiles'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -44,7 +45,7 @@ const onFeedbackSubmit = (feedback: string): void => {
     eventLogger.log(`web:cody:feedbackSubmit:${feedback}`)
 }
 
-interface IChatUIProps {
+interface IChatUIProps extends TelemetryV2Props {
     codyChatStore: CodyChatStore
     isCodyApp?: boolean
     isCodyChatPage?: boolean
@@ -56,6 +57,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({
     isCodyApp,
     isCodyChatPage,
     authenticatedUser,
+    telemetryRecorder,
 }): JSX.Element => {
     const {
         submitMessage,
@@ -283,7 +285,7 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = React.mem
                 to="/get-cody"
                 className="d-inline-block w-100 ml-auto text-right font-italic"
                 onClick={() => {
-                    window.context.telemetryRecorder?.recordEvent(EventName.CODY_CTA, 'clickedd')
+                    window.context.telemetryRecorder?.recordEvent(EventName.CODY_CTA, 'clicked')
                     eventLogger.log(EventName.CODY_CTA, { location: EventLocation.CHAT_RESPONSE })
                 }}
             >

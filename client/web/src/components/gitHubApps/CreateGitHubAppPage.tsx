@@ -3,6 +3,7 @@ import React, { type FC, useState, useCallback, useRef, useEffect } from 'react'
 import { noop } from 'lodash'
 import { Link } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, Container, Button, Input, Label, Text, PageHeader, ButtonLink, Checkbox } from '@sourcegraph/wildcard'
 
 import { GitHubAppDomain } from '../../graphql-operations'
@@ -57,7 +58,7 @@ export interface CreateGitHubAppPageProps {
 /**
  * Page for creating and connecting a new GitHub App.
  */
-export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
+export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps & TelemetryV2Props> = ({
     defaultEvents,
     defaultPermissions,
     pageTitle = 'Create GitHub App',
@@ -67,6 +68,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     defaultAppName = 'Sourcegraph',
     baseURL,
     validateURL,
+    telemetryRecorder,
 }) => {
     const ref = useRef<HTMLFormElement>(null)
     const formInput = useRef<HTMLInputElement>(null)
@@ -79,7 +81,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     const [error, setError] = useState<string>()
 
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('siteAdminCreateGiHubApp', 'viewed')
+        telemetryRecorder.recordEvent('siteAdminCreateGiHubApp', 'viewed')
         eventLogger.logPageView('SiteAdminCreateGiHubApp')
     }, [window.context.telemetryRecorder])
 

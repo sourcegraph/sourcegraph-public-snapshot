@@ -7,6 +7,7 @@ import { logger } from '@sourcegraph/common'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, AnchorLink, Button, LoadingSpinner, Link, H2, H3, Form } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
@@ -25,7 +26,7 @@ import { OrgAvatar } from '../OrgAvatar'
 
 import styles from './OrgInvitationPage.module.scss'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
     className?: string
 }
@@ -69,6 +70,7 @@ export const INVITATION_BY_TOKEN = gql`
 export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     className,
+    telemetryRecorder,
 }) => {
     const { token } = useParams<{ token: string }>()
     const navigate = useNavigate()
@@ -92,7 +94,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
     const willVerifyEmail = data?.recipientEmail && !data?.isVerifiedEmail
 
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('organizationInvitation', 'viewed', {
+        telemetryRecorder.recordEvent('organizationInvitation', 'viewed', {
             privateMetadata: { organizationId: orgId, invitationId: data?.id },
         })
         eventLogger.logPageView('OrganizationInvitation', { organizationId: orgId, invitationId: data?.id })
@@ -108,7 +110,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
     })
 
     const acceptInvitation = useCallback(async () => {
-        window.context.telemetryRecorder?.recordEvent('organizationInvitation', 'accepted', {
+        telemetryRecorder.recordEvent('organizationInvitation', 'accepted', {
             privateMetadata: { organizationId: orgId, invitationId: data?.id, willVerifyEmail },
         })
         eventLogger.log(
@@ -131,7 +133,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
                     response: OrganizationInvitationResponseType.ACCEPT,
                 },
             })
-            window.context.telemetryRecorder?.recordEvent('organizationInvitation', 'accepted', {
+            telemetryRecorder.recordEvent('organizationInvitation', 'accepted', {
                 privateMetadata: { organizationId: orgId, invitationId: data?.id },
             })
             eventLogger.log(
@@ -140,7 +142,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
                 { organizationId: orgId, invitationId: data?.id }
             )
         } catch {
-            window.context.telemetryRecorder?.recordEvent('organizationInvitation', 'rejected', {
+            telemetryRecorder.recordEvent('organizationInvitation', 'rejected', {
                 privateMetadata: { organizationId: orgId, invitationId: data?.id },
             })
             eventLogger.log(
@@ -157,7 +159,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
     }, [data?.id, navigate, orgId, orgName, respondToInvitation, willVerifyEmail])
 
     const declineInvitation = useCallback(async () => {
-        window.context.telemetryRecorder?.recordEvent('organizationInvitationDecline', 'clicked', {
+        telemetryRecorder.recordEvent('organizationInvitationDecline', 'clicked', {
             privateMetadata: { organizationId: orgId, invitationId: data?.id, willVerifyEmail },
         })
         eventLogger.log(
@@ -180,7 +182,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
                     response: OrganizationInvitationResponseType.REJECT,
                 },
             })
-            window.context.telemetryRecorder?.recordEvent('organizationInvitationDecline', 'succeeded', {
+            telemetryRecorder.recordEvent('organizationInvitationDecline', 'succeeded', {
                 privateMetadata: { organizationId: orgId, invitationId: data?.id },
             })
             eventLogger.log(
@@ -189,7 +191,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
                 { organizationId: orgId, invitationId: data?.id }
             )
         } catch {
-            window.context.telemetryRecorder?.recordEvent('organizationInvitationDecline', 'failed', {
+            telemetryRecorder.recordEvent('organizationInvitationDecline', 'failed', {
                 privateMetadata: { organizationId: orgId, invitationId: data?.id },
             })
             eventLogger.log(

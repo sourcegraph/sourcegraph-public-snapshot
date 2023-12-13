@@ -78,7 +78,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
     const onSubmitExample =
         (query: string, patternType: SearchPatternType) =>
         (event?: React.MouseEvent<HTMLButtonElement>): void => {
-            window.context.telemetryRecorder?.recordEvent('communitySearchContextSuggestion', 'clicked')
+            props.telemetryRecorder.recordEvent('communitySearchContextSuggestion', 'clicked')
             eventLogger.log('CommunitySearchContextSuggestionClicked')
             event?.preventDefault()
             const { selectedSearchContextSpec } = props

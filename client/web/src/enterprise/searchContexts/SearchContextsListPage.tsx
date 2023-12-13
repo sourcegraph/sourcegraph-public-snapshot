@@ -4,6 +4,7 @@ import { mdiMagnify, mdiPlus } from '@mdi/js'
 
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { PageHeader, Link, Button, Icon, Alert } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -17,7 +18,8 @@ import styles from './SearchContextsListPage.module.scss'
 
 export interface SearchContextsListPageProps
     extends Pick<SearchContextProps, 'fetchSearchContexts' | 'getUserSearchContextNamespaces'>,
-        PlatformContextProps<'requestGraphQL'> {
+        PlatformContextProps<'requestGraphQL'>,
+        TelemetryV2Props {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
 }
@@ -28,6 +30,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
     fetchSearchContexts,
     platformContext,
     isSourcegraphDotCom,
+    telemetryRecorder,
 }) => {
     const [alert, setAlert] = useState<string | undefined>()
 
@@ -61,10 +64,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                     <Link
                                         to="https://about.sourcegraph.com"
                                         onClick={() => {
-                                            window.context.telemetryRecorder?.recordEvent(
-                                                'enterpriseCta.contextSettings',
-                                                'clicked'
-                                            )
+                                            telemetryRecorder.recordEvent('enterpriseCta.contextSettings', 'clicked')
                                             eventLogger.log('ClickedOnEnterpriseCTA', { location: 'ContextsSettings' })
                                         }}
                                     >

@@ -4,6 +4,7 @@ import { Navigate, useParams } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { LoadingSpinner, useObservable, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -14,10 +15,10 @@ import { fetchPreciseIndex } from './backend'
 /**
  * A page displaying metadata about a precise index.
  */
-export const SiteAdminPreciseIndexPage: React.FC<{}> = () => {
+export const SiteAdminPreciseIndexPage: React.FC<TelemetryV2Props> = props => {
     const { id = '' } = useParams<{ id: string }>()
     useEffect(() => {
-        window.context.telemetryRecorder?.recordEvent('siteAdminPreciseIndex', 'viewed')
+        props.telemetryRecorder.recordEvent('siteAdminPreciseIndex', 'viewed')
         eventLogger.logViewEvent('SiteAdminPreciseIndex')
     })
 
