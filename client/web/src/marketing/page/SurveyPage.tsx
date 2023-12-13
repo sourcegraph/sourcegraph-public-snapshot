@@ -34,7 +34,7 @@ export const SurveyPage: React.FunctionComponent<React.PropsWithChildren<SurveyP
     useEffect(() => {
         props.telemetryRecorder.recordEvent('survey', 'viewed')
         eventLogger.logViewEvent('Survey')
-    }, [])
+    }, [props.telemetryRecorder])
 
     if (score === 'thanks') {
         return (

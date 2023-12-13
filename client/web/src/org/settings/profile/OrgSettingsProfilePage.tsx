@@ -24,7 +24,7 @@ export const OrgSettingsProfilePage: React.FunctionComponent<React.PropsWithChil
     useEffect(() => {
         telemetryRecorder.recordEvent('orgSettingsProfile', 'viewed')
         eventLogger.logViewEvent('OrgSettingsProfile')
-    }, [org.id])
+    }, [org.id, telemetryRecorder])
 
     const [displayName, setDisplayName] = useState<string>(org.displayName ?? '')
     const onDisplayNameFieldChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {

@@ -49,7 +49,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
     useEffect(() => {
         telemetryRecorder.recordEvent('manageCodeMonitor', 'viewed')
         eventLogger.logPageView('ManageCodeMonitorPage')
-    }, [window.context.telemetryRecorder])
+    }, [telemetryRecorder])
 
     const { id } = useParams()
 
@@ -99,7 +99,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
                 convertActionsForUpdate(codeMonitor.actions.nodes, authenticatedUser.id)
             )
         },
-        [authenticatedUser.id, id, updateCodeMonitor]
+        [authenticatedUser.id, id, updateCodeMonitor, telemetryRecorder]
     )
 
     const deleteMonitorRequest = React.useCallback(
@@ -108,7 +108,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
             eventLogger.log('ManageCodeMonitorDeleteSubmitted')
             return deleteCodeMonitor(id)
         },
-        [deleteCodeMonitor]
+        [deleteCodeMonitor, telemetryRecorder]
     )
 
     return (

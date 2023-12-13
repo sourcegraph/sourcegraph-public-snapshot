@@ -21,7 +21,7 @@ export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildre
     useEffect(() => {
         props.telemetryRecorder.recordEvent('newOrg', 'viewed')
         eventLogger.logViewEvent('NewOrg')
-    }, [])
+    }, [props.telemetryRecorder])
     const [loading, setLoading] = useState<boolean | Error>(false)
     const [name, setName] = useState<string>('')
     const [displayName, setDisplayName] = useState<string>('')
@@ -52,7 +52,7 @@ export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildre
                 setLoading(asError(error))
             }
         },
-        [displayName, navigate, name, window.context.telemetryRecorder]
+        [displayName, navigate, name, props.telemetryRecorder]
     )
 
     return (

@@ -55,7 +55,7 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<TelemetryV2Props
     useEffect(() => {
         props.telemetryRecorder.recordEvent('adminAnalyticsCodeInsights', 'viewed')
         eventLogger.logPageView('AdminAnalyticsCodeInsights')
-    }, [window.context.telemetryRecorder])
+    }, [props.telemetryRecorder])
 
     const legends = useMemo(() => {
         if (!data) {

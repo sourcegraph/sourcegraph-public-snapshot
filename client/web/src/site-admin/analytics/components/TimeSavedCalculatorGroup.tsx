@@ -126,7 +126,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
             return (totalSavedHours * 12) / 3
         }
         return totalSavedHours
-    }, [totalSavedHours, dateRange, telemetryRecorder])
+    }, [totalSavedHours, dateRange])
 
     return (
         <div>

@@ -55,7 +55,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
     useEffect(() => {
         telemetryRecorder.recordEvent('userSettingsPermissions', 'viewed')
         eventLogger.logViewEvent('UserSettingsPermissions')
-    }, [window.context.telemetryRecorder])
+    }, [telemetryRecorder])
 
     const [{ query }, setSearchQuery] = useURLSyncedState({ query: '' })
     const debouncedQuery = useDebounce(query, 300)

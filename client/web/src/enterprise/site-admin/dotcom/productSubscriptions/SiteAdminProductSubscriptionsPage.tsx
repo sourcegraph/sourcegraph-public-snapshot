@@ -26,7 +26,7 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
     useEffect(() => {
         props.telemetryRecorder.recordEvent('siteAdminProductSubscriptions', 'viewed')
         eventLogger.logViewEvent('SiteAdminProductSubscriptions')
-    }, [window.context.telemetryRecorder])
+    }, [props.telemetryRecorder])
 
     return (
         <div className="site-admin-product-subscriptions-page">

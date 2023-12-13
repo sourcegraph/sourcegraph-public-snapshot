@@ -140,7 +140,7 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
     React.useEffect(() => {
         telemetryRecorder.recordEvent('orgMembers', 'viewed')
         eventLogger.logViewEvent('OrgMembers')
-    }, [])
+    }, [telemetryRecorder])
 
     const navigate = useNavigate()
     const [onlyMemberRemovalAttempted, setOnlyMemberRemovalAttempted] = React.useState(false)

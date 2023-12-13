@@ -55,7 +55,7 @@ export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<Del
             props.telemetryRecorder.recordEvent('orgDeletion', 'failed')
             eventLogger.log('OrgDeletionFailed')
         }
-    }, [org, deleteOrganization, navigate, window.context.telemetryRecorder])
+    }, [org, deleteOrganization, navigate, props.telemetryRecorder])
 
     return (
         <Modal

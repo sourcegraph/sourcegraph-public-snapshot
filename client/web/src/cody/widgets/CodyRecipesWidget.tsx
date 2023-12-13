@@ -23,7 +23,7 @@ export const CodyRecipesWidget: React.FC<TelemetryV2Props & { editor?: CodeMirro
     useEffect(() => {
         telemetryRecorder.recordEvent(EventName.CODY_CHAT_EDITOR_WIDGET_VIEWED, 'viewed')
         eventLogger.log(EventName.CODY_CHAT_EDITOR_WIDGET_VIEWED)
-    }, [])
+    }, [telemetryRecorder])
 
     // dirty fix becasue it is rendered under a separate React DOM tree.
     const codySidebarStore = (window as any).codySidebarStore as ReturnType<typeof useCodySidebar>

@@ -54,7 +54,7 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<
     useEffect(() => {
         props.telemetryRecorder.recordEvent('siteAdminProductCustomers', 'viewed')
         eventLogger.logViewEvent('SiteAdminProductCustomers')
-    }, [window.context.telemetryRecorder])
+    }, [props.telemetryRecorder])
 
     const updates = useMemo(() => new Subject<void>(), [])
     const nodeProps: Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>> = {}

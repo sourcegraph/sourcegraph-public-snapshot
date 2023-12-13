@@ -140,7 +140,7 @@ export const SavedSearchListPage: React.FunctionComponent<Props> = props => {
     React.useEffect(() => {
         props.telemetryRecorder.recordEvent('savedSearchListPage', 'viewed')
         eventLogger.logViewEvent('SavedSearchListPage')
-    }, [])
+    }, [props.telemetryRecorder])
 
     const { connection, loading, error, refetch, ...paginationProps } = usePageSwitcherPagination<
         SavedSearchesResult,

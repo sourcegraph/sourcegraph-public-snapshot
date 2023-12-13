@@ -38,7 +38,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
     useEffect(() => {
         props.telemetryRecorder.recordEvent('userSubscriptionsProductSubscriptions', 'viewed')
         eventLogger.logViewEvent('UserSubscriptionsProductSubscriptions')
-    }, [window.context.telemetryRecorder])
+    }, [props.telemetryRecorder])
 
     const queryLicenses = useCallback(
         (args: { first?: number }): Observable<ProductSubscriptionsResult['dotcom']['productSubscriptions']> => {

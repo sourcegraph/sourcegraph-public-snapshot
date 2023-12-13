@@ -49,7 +49,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
             hasTriggerQuery: !!triggerQuery,
             hasDescription: !!description,
         })
-    }, [triggerQuery, description])
+    }, [triggerQuery, description, telemetryRecorder])
 
     const createMonitorRequest = useCallback(
         (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> => {
@@ -66,7 +66,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
                 actions: convertActionsForCreate(codeMonitor.actions.nodes, authenticatedUser.id),
             })
         },
-        [authenticatedUser.id, createCodeMonitor]
+        [authenticatedUser.id, createCodeMonitor, telemetryRecorder]
     )
 
     return (

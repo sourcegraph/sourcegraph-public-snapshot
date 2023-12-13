@@ -83,7 +83,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps & TelemetryV2Props
     useEffect(() => {
         telemetryRecorder.recordEvent('siteAdminCreateGiHubApp', 'viewed')
         eventLogger.logPageView('SiteAdminCreateGiHubApp')
-    }, [window.context.telemetryRecorder])
+    }, [telemetryRecorder])
 
     const originURL = window.location.origin
     const getManifest = useCallback(

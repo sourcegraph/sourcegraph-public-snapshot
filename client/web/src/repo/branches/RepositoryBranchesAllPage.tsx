@@ -21,7 +21,7 @@ export const RepositoryBranchesAllPage: FC<Props & TelemetryV2Props> = props => 
     useEffect(() => {
         telemetryRecorder.recordEvent('repositoryBranchesAll', 'viewed')
         eventLogger.logViewEvent('RepositoryBranchesAll')
-    }, [])
+    }, [telemetryRecorder])
 
     const queryBranches = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>

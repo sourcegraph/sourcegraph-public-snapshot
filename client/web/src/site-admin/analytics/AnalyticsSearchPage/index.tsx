@@ -36,7 +36,7 @@ export const AnalyticsSearchPage: React.FC<TelemetryV2Props> = props => {
     useEffect(() => {
         props.telemetryRecorder.recordEvent('adminAnalyticsSearch', 'viewed')
         eventLogger.logPageView('AdminAnalyticsSearch')
-    }, [window.context.telemetryRecorder])
+    }, [props.telemetryRecorder])
     const [stats, legends] = useMemo(() => {
         if (!data) {
             return []

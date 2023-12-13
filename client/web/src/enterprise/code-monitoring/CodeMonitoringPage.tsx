@@ -106,7 +106,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                     eventLogger.logPageView('CodeMonitoringPage')
             }
         }
-    }, [currentTab, userHasCodeMonitors, window.context.telemetryRecorder])
+    }, [currentTab, userHasCodeMonitors, telemetryRecorder])
 
     const showList = userHasCodeMonitors !== undefined && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
 

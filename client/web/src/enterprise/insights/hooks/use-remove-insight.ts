@@ -53,7 +53,7 @@ export function useRemoveInsightFromDashboard(): useRemoveInsightFromDashboardAP
                 setError(error)
             }
         },
-        [loading, removeInsightFromDashboard, window.context.telemetryRecorder]
+        [loading, removeInsightFromDashboard]
     )
 
     return { remove: handleRemove, loading, error }

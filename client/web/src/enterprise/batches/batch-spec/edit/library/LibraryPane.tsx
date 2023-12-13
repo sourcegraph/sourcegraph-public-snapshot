@@ -142,7 +142,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
             props.onReplaceItem(codeWithName)
             setSelectedItem(undefined)
         }
-    }, [selectedItem, props, updateTemplateWithQueryAndName])
+    }, [selectedItem, props, updateTemplateWithQueryAndName, telemetryRecorder])
 
     return (
         <div role="region" aria-label="batch spec template library">

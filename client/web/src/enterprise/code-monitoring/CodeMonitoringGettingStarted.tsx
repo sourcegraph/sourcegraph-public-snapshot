@@ -76,7 +76,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
     const logExampleMonitorClicked = useCallback(() => {
         telemetryRecorder.recordEvent('codeMonitoringExampleMonitorClicked', 'clicked')
         eventLogger.log('CodeMonitoringExampleMonitorClicked')
-    }, [window.context.telemetryRecorder])
+    }, [telemetryRecorder])
 
     let ctaBannerUrl = 'https://about.sourcegraph.com/get-started?t=enterprise'
     if (isCodyApp) {

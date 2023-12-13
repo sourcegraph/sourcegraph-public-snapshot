@@ -327,7 +327,7 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<
     useEffect(() => {
         telemetryRecorder.recordEvent('siteAdminSurveyResponses', 'viewed')
         eventLogger.logViewEvent('SiteAdminSurveyResponses')
-    }, [window.context.telemetryRecorder])
+    }, [telemetryRecorder])
 
     return (
         <div className="site-admin-survey-responses-page">

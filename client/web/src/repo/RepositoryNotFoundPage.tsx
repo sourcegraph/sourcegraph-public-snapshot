@@ -30,7 +30,7 @@ export const RepositoryNotFoundPage: React.FunctionComponent<Props> = ({
     React.useEffect(() => {
         telemetryRecorder.recordEvent('repositoryError', 'viewed')
         eventLogger.logViewEvent('RepositoryError')
-    }, [window.context.telemetryRecorder])
+    }, [telemetryRecorder])
 
     return (
         <HeroPage

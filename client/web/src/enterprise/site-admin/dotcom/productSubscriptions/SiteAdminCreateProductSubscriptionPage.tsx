@@ -75,7 +75,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
                         )
                     )
                 ),
-            [props.node.id]
+            [props.node.id, telemetryRecorder]
         )
     )
 

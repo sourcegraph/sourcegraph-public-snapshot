@@ -47,7 +47,7 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo, tele
     useEffect(() => {
         telemetryRecorder.recordEvent('repoSettingsLogs', 'viewed')
         eventLogger.logPageView('RepoSettingsLogs')
-    }, [window.context.telemetryRecorder])
+    }, [telemetryRecorder])
     const [searchParams, setSearchParams] = useSearchParams()
     const activeTab = searchParams.get('activeTab') ?? LogsPageTabs.COMMANDS.toString()
 

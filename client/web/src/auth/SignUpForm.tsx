@@ -121,7 +121,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
             telemetryRecorder.recordEvent('initiatesSignup', 'succeded')
             eventLogger.log('InitiateSignUp')
         },
-        [onSignUp, disabled, emailState, usernameState, passwordState]
+        [onSignUp, disabled, emailState, usernameState, passwordState, telemetryRecorder]
     )
 
     const externalAuthProviders = context.authProviders.filter(provider => !provider.isBuiltin)
@@ -135,7 +135,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
             // https://github.com/sourcegraph/sourcegraph/issues/19174
             eventLogger.log('SignupInitiated', { type }, { type })
         },
-        []
+        [telemetryRecorder]
     )
 
     return (

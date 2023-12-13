@@ -134,7 +134,7 @@ export const RequestAccessPage: React.FunctionComponent<TelemetryV2Props> = prop
     useEffect(() => {
         props.telemetryRecorder.recordEvent('requestAccessPage', 'viewed')
         eventLogger.logPageView('RequestAccessPage')
-    }, [window.context.telemetryRecorder])
+    }, [props.telemetryRecorder])
     const location = useLocation()
     const navigate = useNavigate()
     const [error, setError] = useState<Error | null>(null)

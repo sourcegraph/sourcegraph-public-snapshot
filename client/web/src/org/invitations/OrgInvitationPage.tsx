@@ -98,7 +98,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
             privateMetadata: { organizationId: orgId, invitationId: data?.id },
         })
         eventLogger.logPageView('OrganizationInvitation', { organizationId: orgId, invitationId: data?.id })
-    }, [orgId, data?.id])
+    }, [orgId, data?.id, telemetryRecorder])
 
     const [respondToInvitation, { loading: respondLoading, error: respondError }] = useMutation<
         RespondToOrgInvitationResult,
@@ -156,7 +156,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
         if (orgName) {
             navigate(orgURL(orgName))
         }
-    }, [data?.id, navigate, orgId, orgName, respondToInvitation, willVerifyEmail])
+    }, [data?.id, navigate, orgId, orgName, respondToInvitation, willVerifyEmail, telemetryRecorder])
 
     const declineInvitation = useCallback(async () => {
         telemetryRecorder.recordEvent('organizationInvitationDecline', 'clicked', {
@@ -202,7 +202,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
         }
 
         navigate(userURL(authenticatedUser.username))
-    }, [authenticatedUser.username, data?.id, navigate, orgId, respondToInvitation, willVerifyEmail])
+    }, [authenticatedUser.username, data?.id, navigate, orgId, respondToInvitation, willVerifyEmail, telemetryRecorder])
 
     const loading = inviteLoading || respondLoading
     const error = inviteError?.message || respondError?.message

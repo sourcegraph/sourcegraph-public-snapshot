@@ -138,7 +138,7 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
         onSelect?.(hunkStartLine)
         telemetryRecorder.recordEvent('gitBlamePopup', 'viewed')
         eventLogger.log('GitBlamePopupViewed')
-    }, [onSelect, hunkStartLine, window.context.telemetryRecorder])
+    }, [onSelect, hunkStartLine, telemetryRecorder])
     const onClose = useCallback(() => onDeselect?.(hunkStartLine), [onDeselect, hunkStartLine])
     const { isOpen, open, close, closeWithTimeout, openWithTimeout } = usePopover({
         id,

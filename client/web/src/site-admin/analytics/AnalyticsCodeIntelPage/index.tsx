@@ -52,7 +52,7 @@ export const AnalyticsCodeIntelPage: React.FC<TelemetryV2Props> = props => {
     useEffect(() => {
         props.telemetryRecorder.recordEvent('adminAnalyticsCodeIntel', 'viewed')
         eventLogger.logPageView('AdminAnalyticsCodeIntel')
-    }, [window.context.telemetryRecorder])
+    }, [props.telemetryRecorder])
 
     type Kind = 'inApp' | 'codeHost' | 'crossRepo' | 'precise'
 

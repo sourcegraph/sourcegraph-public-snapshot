@@ -53,7 +53,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
     useEffect(() => {
         props.telemetryRecorder.recordEvent('siteAdminProductSubscription', 'viewed')
         eventLogger.logViewEvent('SiteAdminProductSubscription')
-    }, [window.context.telemetryRecorder])
+    }, [props.telemetryRecorder])
 
     const [showGenerate, setShowGenerate] = useState<boolean>(false)
 

@@ -35,7 +35,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = props => {
     useEffect(() => {
         props.telemetryRecorder.recordEvent('adminAnalyticsOverview', 'viewed')
         eventLogger.logPageView('AdminAnalyticsOverview')
-    }, [window.context.telemetryRecorder])
+    }, [props.telemetryRecorder])
 
     const userStatisticsItems = useMemo(() => {
         if (!data) {

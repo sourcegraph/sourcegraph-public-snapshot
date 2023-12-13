@@ -36,7 +36,7 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
     useEffect(() => {
         telemetryRecorder.recordEvent('codySearch', 'viewed')
         eventLogger.logPageView('CodySearch')
-    }, [])
+    }, [telemetryRecorder])
 
     const navigate = useNavigate()
 
@@ -136,7 +136,7 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
                 setInputError(`Unable to reach Cody. Error: ${error?.message}`)
             }
         )
-    }, [navigate, input, authenticatedUser, setCodySearchInput])
+    }, [navigate, input, authenticatedUser, setCodySearchInput, telemetryRecorder])
 
     const isLightTheme = useIsLightTheme()
 

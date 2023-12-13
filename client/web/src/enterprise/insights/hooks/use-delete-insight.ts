@@ -48,7 +48,7 @@ export function useDeleteInsight(): UseDeleteInsightAPI {
                 setError(error)
             }
         },
-        [loading, deleteInsight, window.context.telemetryRecorder]
+        [loading, deleteInsight]
     )
 
     return { delete: handleDelete, loading, error }

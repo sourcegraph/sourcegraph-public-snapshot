@@ -32,7 +32,7 @@ export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsW
     useEffect(() => {
         props.telemetryRecorder.recordEvent('siteAdminLicenseKeyLookup', 'viewed')
         eventLogger.logPageView('SiteAdminLicenseKeyLookup')
-    }, [window.context.telemetryRecorder])
+    }, [props.telemetryRecorder])
 
     const [searchParams, setSearchParams] = useSearchParams()
 

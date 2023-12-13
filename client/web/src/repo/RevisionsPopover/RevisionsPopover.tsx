@@ -104,7 +104,7 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
     useEffect(() => {
         telemetryRecorder.recordEvent('revisionsPopover', 'viewed')
         eventLogger.logViewEvent('RevisionsPopover')
-    }, [])
+    }, [telemetryRecorder])
 
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])

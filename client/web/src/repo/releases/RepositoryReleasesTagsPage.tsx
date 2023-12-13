@@ -43,7 +43,7 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWith
     useEffect(() => {
         telemetryRecorder.recordEvent('repositoryReleasesTags', 'viewed')
         eventLogger.logViewEvent('RepositoryReleasesTags')
-    }, [])
+    }, [telemetryRecorder])
 
     const queryTags = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> => {

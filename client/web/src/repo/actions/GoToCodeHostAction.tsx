@@ -92,7 +92,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
     const onClick = useCallback(() => {
         telemetryRecorder.recordEvent('goToCodeHost', 'clicked')
         eventLogger.log('GoToCodeHostClicked')
-    }, [window.context.telemetryRecorder])
+    }, [telemetryRecorder])
 
     // If the default branch is undefined, set to HEAD
     const defaultBranch =

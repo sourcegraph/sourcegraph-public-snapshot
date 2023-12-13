@@ -54,15 +54,15 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
 
         if (invitedBy !== null) {
             const parameters = {
-                isAuthenticated: !!authenticatedUser,
+                isAuthenticated: !authenticatedUser,
                 allowSignup: context.allowSignup,
             }
             telemetryRecorder.recordEvent('signUpInvitedByUser', 'viewed', {
-                metadata: { isAuthenticated: !!authenticatedUser ? 1 : 0, allowSignup: context.allowSignup ? 1 : 0 },
+                metadata: { isAuthenticated: !authenticatedUser ? 1 : 0, allowSignup: context.allowSignup ? 1 : 0 },
             })
             eventLogger.log('SignUpInvitedByUser', parameters, parameters)
         }
-    }, [invitedBy, authenticatedUser, context.allowSignup])
+    }, [invitedBy, authenticatedUser, context.allowSignup, telemetryRecorder])
 
     if (authenticatedUser) {
         return <Navigate to={returnTo} replace={true} />

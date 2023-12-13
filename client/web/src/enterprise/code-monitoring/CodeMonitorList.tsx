@@ -61,7 +61,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                 after: args.after ?? null,
             })
         },
-        [authenticatedUser, fetchUserCodeMonitors, telemetryRecorder]
+        [authenticatedUser, fetchUserCodeMonitors]
     )
 
     const queryAllConnection = useCallback(

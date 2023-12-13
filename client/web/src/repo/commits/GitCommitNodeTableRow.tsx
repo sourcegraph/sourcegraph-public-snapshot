@@ -42,7 +42,7 @@ export const GitCommitNodeTableRow: React.FC<
         telemetryRecorder.recordEvent('commitBody', 'toggled')
         eventLogger.log('CommitBodyToggled')
         setShowCommitMessageBody(!showCommitMessageBody)
-    }, [showCommitMessageBody])
+    }, [showCommitMessageBody, telemetryRecorder])
 
     const canonicalURL =
         isPerforceChangelistMappingEnabled() && node.perforceChangelist?.canonicalURL

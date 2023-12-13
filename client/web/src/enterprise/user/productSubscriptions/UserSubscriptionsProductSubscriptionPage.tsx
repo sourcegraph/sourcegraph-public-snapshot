@@ -37,7 +37,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<
     useEffect(() => {
         telemetryRecorder.recordEvent('userSubscriptionsProductScription', 'viewed')
         eventLogger.logViewEvent('UserSubscriptionsProductSubscription')
-    }, [window.context.telemetryRecorder])
+    }, [telemetryRecorder])
 
     const isValidUUID = validateUUID(subscriptionUUID!)
     const validationError = !isValidUUID && new Error('Subscription ID is not a valid UUID')

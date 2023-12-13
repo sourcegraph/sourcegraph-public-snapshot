@@ -80,7 +80,7 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
             setUsername('')
             setLoading(undefined)
         })().catch(error => setLoading(asError(error)))
-    }, [onOrganizationUpdate, orgID, setShowInvitation, username, window.context.telemetryRecorder])
+    }, [onOrganizationUpdate, orgID, setShowInvitation, username, telemetryRecorder])
 
     const onInviteClick = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
         inviteUser()

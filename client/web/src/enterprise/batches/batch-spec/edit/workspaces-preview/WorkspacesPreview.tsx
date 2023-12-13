@@ -181,7 +181,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren
                     </Button>
                 </Tooltip>
             ),
-            [isWorkspacesPreviewInProgress, isPreviewDisabled, cancel, preview, debouncedCode, error]
+            [isWorkspacesPreviewInProgress, isPreviewDisabled, cancel, preview, debouncedCode, error, telemetryRecorder]
         )
 
         const [exampleReference, exampleOpen, setExampleOpen, exampleStyle] = useAccordion()
