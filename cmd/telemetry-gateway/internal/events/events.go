@@ -69,6 +69,10 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 				"event.hasPrivateMetadata": strconv.FormatBool(
 					event.GetParameters().GetPrivateMetadata() != nil),
 			}); err != nil {
+				// Try to record the cancel cause in case one is recorded.
+				if cancelCause := context.Cause(ctx); cancelCause != nil {
+					return errors.Wrap(err, "interrupted event publish")
+				}
 				return errors.Wrap(err, "publishing event")
 			}
 
