@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
@@ -51,7 +50,7 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 		if err := hasAccess(); err != nil {
 			// site admin can access org ID
 			if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
-				if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
+				if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 					// Log action for site admin vieweing an organization's details in dotcom
 					if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, r.db.SecurityEventLogs()); err != nil {
@@ -65,12 +64,10 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 		}
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
-
-		argsJSON, _ := json.Marshal(args)
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log action for siteadmin viewing an organization's details
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args, r.db.SecurityEventLogs()); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 
 		}
@@ -340,12 +337,9 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
-
-		argsJSON, _ := json.Marshal(args)
-
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 		// Log an event when a new organization being created
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOrgCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOrgCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args, r.db.SecurityEventLogs()); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 
 		}
@@ -389,12 +383,9 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
-
-		argsJSON, _ := json.Marshal(args)
-
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 		// Log an event when organization settings are updated
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOrgUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameOrgUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args, r.db.SecurityEventLogs()); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 
 		}

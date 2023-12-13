@@ -248,7 +248,12 @@ func (s *securityEventLogsStore) LogEventList(ctx context.Context, events []*Sec
 	}
 }
 
-func LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments []byte, logStore SecurityEventLogsStore) error {
+func LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any, logStore SecurityEventLogsStore) error {
+	argsJSON, err := json.Marshal(arguments)
+	if err != nil {
+		return errors.New("erro marshalling arguments")
+
+	}
 	if logStore == nil {
 		return errors.New("SecurityEventLogStore required")
 	}
@@ -258,7 +263,7 @@ func LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url stri
 		URL:             url,
 		UserID:          userID,
 		AnonymousUserID: anonymousUserID,
-		Argument:        arguments,
+		Argument:        argsJSON,
 		Source:          source,
 		Timestamp:       time.Now(),
 	}

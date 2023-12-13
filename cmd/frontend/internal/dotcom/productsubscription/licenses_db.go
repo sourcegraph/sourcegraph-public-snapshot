@@ -2,7 +2,6 @@ package productsubscription
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -88,7 +87,7 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		return "", errors.Wrap(err, "insert")
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an event when a license is created in DotCom
 		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil, s.db.SecurityEventLogs()); err != nil {
@@ -287,11 +286,10 @@ ORDER BY created_at DESC
 		results = append(results, &v)
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
-		argsJSON, _ := json.Marshal(q.Args())
 		//Log an event when liscenses list is viewed in Dotcom
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, s.db.SecurityEventLogs()); err != nil {
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", q.Args(), s.db.SecurityEventLogs()); err != nil {
 			log.Error(err)
 		}
 	}

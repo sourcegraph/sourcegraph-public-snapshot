@@ -80,11 +80,10 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
-		argsJSON, _ := json.Marshal(args.Input.DisplayName)
 		// Log action of Code Host Connection being added
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionAdded, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionAdded, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args.Input.DisplayName, r.db.SecurityEventLogs()); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
@@ -164,11 +163,10 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
-		argsJSON, _ := json.Marshal(args.Input.DisplayName)
 		// Log action of Code Host Connection being updated
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args.Input.DisplayName, r.db.SecurityEventLogs()); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
@@ -287,11 +285,10 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		}
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog_expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
-		argsJSON, _ := json.Marshal(args)
 		// Log action of Code Host Connection being deleted
-		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", argsJSON, r.db.SecurityEventLogs()); err != nil {
+		if err := database.LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args, r.db.SecurityEventLogs()); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 
 		}
