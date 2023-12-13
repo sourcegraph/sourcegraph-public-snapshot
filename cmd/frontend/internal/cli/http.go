@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/ipallowlist"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	internalhttpapi "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
@@ -49,6 +50,8 @@ func newExternalHTTPHandler(
 	newGitHubAppSetupHandler enterprise.NewGitHubAppSetupHandler,
 ) (http.Handler, error) {
 	logger := log.Scoped("external", "external http handlers")
+
+	ipAllowlistMiddleware := ipallowlist.New(logger)
 
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
@@ -124,6 +127,8 @@ func newExternalHTTPHandler(
 	h = internalauth.ForbidAllRequestsMiddleware(h)
 	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
 	h = instrumentation.HTTPMiddleware("external", h)
+	// 🚨 SECURITY: ip allowlist must be the first middleware to run to avoid doing unnecessary things
+	h = ipAllowlistMiddleware.Handle(h)
 
 	return h, nil
 }

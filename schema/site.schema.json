@@ -1130,6 +1130,59 @@
       ],
       "group": "Security"
     },
+    "auth.allowedIpAddress": {
+      "description": "IP allowlist for access to the Sourcegraph instance. If set, only requests from these IP addresses will be allowed. By default client IP is infered connected client IP address, and you may configure to use a request header to determine the user IP.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Whether to enable the IP allowlist.",
+          "type": "boolean",
+          "default": false
+        },
+        "clientIpAddress": {
+          "description": "List of client IP addresses to allow. If empty, all IP addresses are allowed. This is useful to restrict who can open connection with the Sorcegraph instance, e.g., the request source range of the upsteam application load balancer.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": ["100.100.100.0/25", "23.34.56.21"]
+        },
+        "trustedClientIpAddress": {
+          "description": "List of trusted client IP addresses that will bypass user IP address check. If empty, nothing can be bypass. This is useful to support access from trusted internal services. It will always permit connection from `127.0.0.1`. You must include the IP range allocated for the Sourcegraph deployment services to allow inter-service communication, e.g., kubernetes pod ip range.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": ["100.100.100.0/25", "23.34.56.21"]
+        },
+        "userIpAddress": {
+          "description": "List of user IP addresses to allow. If empty, all IP addresses are allowed.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": ["100.100.100.0/25", "23.34.56.21"]
+        },
+        "userIpRequestHeaders": {
+          "description": "An optional list of case-insensitive request header names to use for resolving the callers user IP address. You must ensure that the header is coming from a trusted source. If the header contains multiple IP addresses, the right-most is used. If no IP is found from provided headers, the connected client IP address is used.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": ["X-Forwarded-For", "X-Real-IP", "CF-Connecting-IP"]
+        },
+        "errorMessageTemplate": {
+          "description": "A template to customize the error message display to users on unauthorized access.  Available template variables: `{{.Error}}`, `{{.UserIP}}`",
+          "type": "string",
+          "default": "Access from your IP address is not allowed.",
+          "examples": [
+            "Please reach out to your Sourcegraph instance admin at admin@acme.com to unblock your IP address: {{.UserIP}}.",
+            "{{.Error}}. Please reach out to your Sourcegraph instance admin at admin@acme.com to request access."
+          ]
+        }
+      },
+      "group": "Security"
+    },
     "authz.enforceForSiteAdmins": {
       "description": "When true, site admins will only be able to see private code they have access to via our authz system.",
       "type": "boolean",
