@@ -56,6 +56,9 @@ type Variables struct {
 	Service    spec.ServiceSpec
 	Monitoring spec.MonitoringSpec
 	MaxCount   *int
+
+	// If Redis is enabled we configure alerts for it
+	RedisInstanceID *string
 }
 
 const StackName = "monitoring"
@@ -67,38 +70,47 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	}
 
 	id := resourceid.New("monitoring")
-	err = commonAlerts(stack, id, vars)
+	err = commonAlerts(stack, id.Group("common"), vars)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create common alerts")
 	}
 
 	switch pointers.Deref(vars.Service.Kind, spec.ServiceKindService) {
 	case spec.ServiceKindService:
-		err = serviceAlerts(stack, id, vars)
-		if err != nil {
+		if err = serviceAlerts(stack, id.Group("service"), vars); err != nil {
 			return nil, errors.Wrap(err, "failed to create service alerts")
 		}
 
 		if vars.Monitoring.Alerts.ResponseCodeRatios != nil {
-			err = responseCodeMetrics(stack, id, vars)
-		}
-
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create response code metrics")
+			if err = responseCodeMetrics(stack, id.Group("response-code"), vars); err != nil {
+				return nil, errors.Wrap(err, "failed to create response code metrics")
+			}
 		}
 	case spec.ServiceKindJob:
-		err = jobAlerts(stack, id, vars)
-		if err != nil {
+		if err = jobAlerts(stack, id.Group("job"), vars); err != nil {
 			return nil, errors.Wrap(err, "failed to create job alerts")
 		}
 	default:
 		return nil, errors.New("unknown service kind")
 	}
 
+	if vars.RedisInstanceID != nil {
+		if err = redisAlerts(stack, id.Group("redis"), vars); err != nil {
+			return nil, errors.Wrap(err, "failed to create redis alerts")
+		}
+	}
+
 	return &CrossStackOutput{}, nil
 }
 
 func commonAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
+	// Convert a spec.ServiceKind into a monitoringalertpolicy.ServiceKind
+	serviceKind := monitoringalertpolicy.CloudRunService
+	kind := pointers.Deref(vars.Service.Kind, "service")
+	if kind == spec.ServiceKindJob {
+		serviceKind = monitoringalertpolicy.CloudRunJob
+	}
+
 	for _, config := range []monitoringalertpolicy.Config{
 		{
 			ID:          "cpu",
@@ -140,9 +152,8 @@ func commonAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) 
 
 		config.ProjectID = vars.ProjectID
 		config.ServiceName = vars.Service.ID
-		config.ServiceKind = pointers.Deref(vars.Service.Kind, "service")
-		_, err := monitoringalertpolicy.New(stack, id, &config)
-		if err != nil {
+		config.ServiceKind = serviceKind
+		if _, err := monitoringalertpolicy.New(stack, id, &config); err != nil {
 			return err
 		}
 	}
@@ -153,21 +164,20 @@ func commonAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) 
 func serviceAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
 	// Only provision if MaxCount is specified above 5
 	if pointers.Deref(vars.MaxCount, 0) > 5 {
-		_, err := monitoringalertpolicy.New(stack, id, &monitoringalertpolicy.Config{
+		if _, err := monitoringalertpolicy.New(stack, id, &monitoringalertpolicy.Config{
 			ID:          "instance_count",
 			Name:        "Container Instance Count",
 			Description: pointers.Ptr("There are a lot of Cloud Run instances running - we may need to increase per-instance requests make make sure we won't hit the configured max instance count"),
 			ProjectID:   vars.ProjectID,
 			ServiceName: vars.Service.ID,
-			ServiceKind: spec.ServiceKindService,
+			ServiceKind: monitoringalertpolicy.CloudRunService,
 			ThresholdAggregation: &monitoringalertpolicy.ThresholdAggregation{
 				Filters: map[string]string{"metric.type": "run.googleapis.com/container/instance_count"},
 				Aligner: monitoringalertpolicy.MonitoringAlignMax,
 				Reducer: monitoringalertpolicy.MonitoringReduceMax,
 				Period:  "60s",
 			},
-		})
-		if err != nil {
+		}); err != nil {
 			return err
 		}
 	}
@@ -176,26 +186,25 @@ func serviceAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables)
 
 func jobAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
 	// Alert whenever a Cloud Run Job fails
-	_, err := monitoringalertpolicy.New(stack, id, &monitoringalertpolicy.Config{
+	if _, err := monitoringalertpolicy.New(stack, id, &monitoringalertpolicy.Config{
 		ID:          "job_failures",
 		Name:        "Cloud Run Job Failures",
 		Description: pointers.Ptr("Failed executions of Cloud Run Job"),
 		ProjectID:   vars.ProjectID,
 		ServiceName: vars.Service.ID,
-		ServiceKind: spec.ServiceKindJob,
+		ServiceKind: monitoringalertpolicy.CloudRunJob,
 		ThresholdAggregation: &monitoringalertpolicy.ThresholdAggregation{
 			Filters: map[string]string{
 				"metric.type":          "run.googleapis.com/job/completed_task_attempt_count",
 				"metric.labels.result": "failed",
 			},
-			GroupByField: "metric.label.result",
-			Aligner:      monitoringalertpolicy.MonitoringAlignCount,
-			Reducer:      monitoringalertpolicy.MonitoringReduceSum,
-			Period:       "60s",
-			Threshold:    0,
+			GroupByFields: []string{"metric.label.result"},
+			Aligner:       monitoringalertpolicy.MonitoringAlignCount,
+			Reducer:       monitoringalertpolicy.MonitoringReduceSum,
+			Period:        "60s",
+			Threshold:     0,
 		},
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 
@@ -205,12 +214,12 @@ func jobAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) err
 func responseCodeMetrics(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
 	for _, config := range vars.Monitoring.Alerts.ResponseCodeRatios {
 
-		_, err := monitoringalertpolicy.New(stack, id, &monitoringalertpolicy.Config{
+		if _, err := monitoringalertpolicy.New(stack, id, &monitoringalertpolicy.Config{
 			ID:          config.ID,
 			ProjectID:   vars.ProjectID,
 			Name:        config.Name,
 			ServiceName: vars.Service.ID,
-			ServiceKind: spec.ServiceKindService,
+			ServiceKind: monitoringalertpolicy.CloudRunService,
 			ResponseCodeMetric: &monitoringalertpolicy.ResponseCodeMetric{
 				Code:         config.Code,
 				CodeClass:    config.CodeClass,
@@ -218,8 +227,59 @@ func responseCodeMetrics(stack cdktf.TerraformStack, id resourceid.ID, vars Vari
 				Ratio:        config.Ratio,
 				Duration:     config.Duration,
 			},
-		})
-		if err != nil {
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func redisAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
+	for _, config := range []monitoringalertpolicy.Config{
+		{
+			ID:          "memory",
+			Name:        "Cloud Redis - System Memory Utilization",
+			Description: pointers.Ptr("This alert fires if the system memory utilization is above the set threshold. The utilization is measured on a scale of 0 to 1."),
+			ThresholdAggregation: &monitoringalertpolicy.ThresholdAggregation{
+				Filters:   map[string]string{"metric.type": "redis.googleapis.com/stats/memory/system_memory_usage_ratio"},
+				Aligner:   monitoringalertpolicy.MonitoringAlignMean,
+				Reducer:   monitoringalertpolicy.MonitoringReduceNone,
+				Period:    "300s",
+				Threshold: 0.8,
+			},
+		},
+		{
+			ID:          "cpu",
+			Name:        "Cloud Redis - System CPU Utilization",
+			Description: pointers.Ptr("This alert fires if the Redis Engine CPU Utilization goes above the set threshold. The utilization is measured on a scale of 0 to 1."),
+			ThresholdAggregation: &monitoringalertpolicy.ThresholdAggregation{
+				Filters:       map[string]string{"metric.type": "redis.googleapis.com/stats/cpu_utilization_main_thread"},
+				GroupByFields: []string{"resource.label.instance_id", "resource.label.node_id"},
+				Aligner:       monitoringalertpolicy.MonitoringAlignRate,
+				Reducer:       monitoringalertpolicy.MonitoringReduceSum,
+				Period:        "300s",
+				Threshold:     0.9,
+			},
+		},
+		{
+			ID:          "failover",
+			Name:        "Cloud Redis - Standard Instance Failover",
+			Description: pointers.Ptr("This alert fires if failover occurs for a standard tier instance."),
+			ThresholdAggregation: &monitoringalertpolicy.ThresholdAggregation{
+				Filters:       map[string]string{"metric.type": "redis.googleapis.com/stats/cpu_utilization_main_thread"},
+				GroupByFields: []string{"resource.label.instance_id", "resource.label.node_id"},
+				Aligner:       monitoringalertpolicy.MonitoringAlignStddev,
+				Reducer:       monitoringalertpolicy.MonitoringReduceNone,
+				Period:        "300s",
+				Threshold:     0,
+			},
+		},
+	} {
+		config.ProjectID = vars.ProjectID
+		config.ServiceName = *vars.RedisInstanceID
+		config.ServiceKind = monitoringalertpolicy.CloudRedis
+		if _, err := monitoringalertpolicy.New(stack, id, &config); err != nil {
 			return err
 		}
 	}

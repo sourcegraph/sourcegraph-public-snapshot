@@ -18,7 +18,7 @@ func TestBuildFilter(t *testing.T) {
 			name: "Service Metric",
 			config: Config{
 				ServiceName: "my-service-name",
-				ServiceKind: "service",
+				ServiceKind: CloudRunService,
 				ThresholdAggregation: &ThresholdAggregation{
 					Filters: map[string]string{
 						"metric.type": "run.googleapis.com/container/startup_latencies",
@@ -31,7 +31,7 @@ func TestBuildFilter(t *testing.T) {
 			name: "Job Metric",
 			config: Config{
 				ServiceName: "my-job-name",
-				ServiceKind: "job",
+				ServiceKind: CloudRunJob,
 				ThresholdAggregation: &ThresholdAggregation{
 					Filters: map[string]string{
 						"metric.type":          "run.googleapis.com/job/completed_task_attempt_count",

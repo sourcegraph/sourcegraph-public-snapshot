@@ -38,7 +38,16 @@ type ResponseCodeRatioSpec struct {
 
 func (s *MonitoringAlertsSpec) Validate() []error {
 	var errs []error
+	// Use map to contain seen IDs to ensure uniqueness
+	ids := make(map[string]struct{})
 	for _, r := range s.ResponseCodeRatios {
+		if r.ID == "" {
+			errs = append(errs, errors.New("responseCodeRatios[].id is required and cannot be empty"))
+		}
+		if _, ok := ids[r.ID]; ok {
+			errs = append(errs, errors.Newf("response code alert IDs must be unique, found duplicate ID: %s", r.ID))
+		}
+		ids[r.ID] = struct{}{}
 		errs = append(errs, r.Validate()...)
 	}
 	return errs
