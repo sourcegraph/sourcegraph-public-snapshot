@@ -235,13 +235,12 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	var err error
 
 	isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
-	// For Cody PLG users, allow all models a Pro user can get for now.
-	models := allowedModels(scope, isCodyProEnabled, true)
 
 	// Apply override for testing if set.
 	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
 		return licensing.CodyGatewayRateLimit{
-			AllowedModels:   models,
+			// For this special tester user, just allow all models a Pro user can get.
+			AllowedModels:   allowedModels(scope, true, true),
 			Limit:           1,
 			IntervalSeconds: math.MaxInt32,
 		}, graphqlbackend.CodyGatewayRateLimitSourceOverride, nil
@@ -264,6 +263,8 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	// If there's no override, check the self-serve limits.
 	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 	intervalSeconds := oneDayInSeconds
+	// Default to the pre-PLG model list for now.
+	models := allowedModels(scope, false, false)
 	if limit == nil && cfg != nil && isCodyProEnabled {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		actor := sgactor.FromContext(ctx)
