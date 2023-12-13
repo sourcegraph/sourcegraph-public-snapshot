@@ -103,8 +103,8 @@ export function isAccessTokenCallbackPage(): boolean {
     return location.pathname.endsWith('/settings/tokens/new/callback')
 }
 
-function isRedirectable(name: string): boolean {
-    return name === 'JETBRAINS' || name === 'NEOVIM'
+function isRedirectable(name: string | null): boolean {
+    return name !== null && (name === 'JETBRAINS' || name === 'NEOVIM')
 }
 
 /**
