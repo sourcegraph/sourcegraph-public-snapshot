@@ -48,36 +48,32 @@
     }
 }
 
-@media (prefers-color-scheme: dark) {
-    [data-reach-dialog-overlay] {
-        background: linear-gradient(180deg, rgba(17, 20, 27, 0.92) 0%, rgba(13, 16, 25, 0.92) 100%);
-        backdrop-filter: blur(7px);
-    }
-
-    .highlight-step {
-        background: radial-gradient(50% 100% at 50% 100%, var(--gray-09) 0%, transparent 100%);
-    }
-
-    .modal {
-        background-image: repeating-conic-gradient(
-            rgba(112, 72, 232, 0.3) 50%,
-            rgba(0, 203, 236, 0.3) 75%,
-            rgba(161, 18, 255, 0.5) 100%,
-            rgba(255, 85, 67, 0.3) 125%,
-            rgba(112, 72, 232, 0.3) 150%
-        );
-    }
+:global(.theme-dark) [data-reach-dialog-overlay] {
+    background: linear-gradient(180deg, rgba(17, 20, 27, 0.92) 0%, rgba(13, 16, 25, 0.92) 100%);
+    backdrop-filter: blur(7px);
 }
 
-@media (prefers-color-scheme: light) {
-    [data-reach-dialog-overlay] {
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(244, 244, 244, 0.9) 100%);
-        backdrop-filter: blur(7px);
-    }
+:global(.theme-dark) .highlight-step {
+    background: radial-gradient(50% 100% at 50% 100%, var(--gray-09) 0%, transparent 100%);
+}
 
-    .highlight-step {
-        background: radial-gradient(50% 100% at 50% 100%, var(--gray-04) 0%, transparent 100%);
-    }
+:global(.theme-dark) .modal {
+    background-image: repeating-conic-gradient(
+        rgba(112, 72, 232, 0.3) 50%,
+        rgba(0, 203, 236, 0.3) 75%,
+        rgba(161, 18, 255, 0.5) 100%,
+        rgba(255, 85, 67, 0.3) 125%,
+        rgba(112, 72, 232, 0.3) 150%
+    );
+}
+
+:global(.theme-light) [data-reach-dialog-overlay] {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(244, 244, 244, 0.9) 100%);
+    backdrop-filter: blur(7px);
+}
+
+:global(.theme-light) .highlight-step {
+    background: radial-gradient(50% 100% at 50% 100%, var(--gray-04) 0%, transparent 100%);
 }
 
 .release-stage {
