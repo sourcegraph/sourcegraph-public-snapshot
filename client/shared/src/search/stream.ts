@@ -12,7 +12,6 @@ import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operator
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 
-import type { AggregableBadge } from '../codeintel/legacy-extensions/api'
 import type { SearchPatternType, SymbolKind } from '../graphql-operations'
 
 import { SearchMode } from './searchQueryState'
@@ -94,14 +93,12 @@ export interface LineMatch {
     line: string
     lineNumber: number
     offsetAndLengths: number[][]
-    aggregableBadges?: AggregableBadge[]
 }
 
 interface ChunkMatch {
     content: string
     contentStart: Location
     ranges: Range[]
-    aggregableBadges?: AggregableBadge[]
 }
 
 export interface SymbolMatch {

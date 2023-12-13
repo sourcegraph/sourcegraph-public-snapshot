@@ -29,6 +29,9 @@ type Flags struct {
 	// AdditionalContext contains a paragraph that will be appended at the end of the created exception. It enables
 	// repositories to further explain why an exception has been recorded.
 	AdditionalContext string
+
+	// SkipStatus if true will skip updating commit status on GitHub and just record exceptions. Useful when crawling through failed runs caused by infrastructure issues.
+	SkipStatus bool
 }
 
 func (f *Flags) Parse() {
@@ -39,6 +42,7 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.IssuesRepoName, "issues.repo-name", "sec-pr-audit-trail", "name of repo to create issues in")
 	flag.StringVar(&f.ProtectedBranch, "protected-branch", "", "name of branch that if set as the base branch in a PR, will always open an exception")
 	flag.StringVar(&f.AdditionalContext, "additional-context", "", "additional information that will be appended to the recorded exception, if any.")
+	flag.BoolVar(&f.SkipStatus, "skip-status", false, "skip updating commit status on GitHub and just record exceptions")
 	flag.Parse()
 }
 
@@ -123,7 +127,7 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 	}
 
 	owner, repo := payload.Repository.GetOwnerAndName()
-	if result.Error != nil {
+	if result.Error != nil && !flags.SkipStatus {
 		_, _, statusErr := ghc.Repositories.CreateStatus(ctx, owner, repo, payload.PullRequest.Head.SHA, &github.RepoStatus{
 			Context:     github.String(commitStatusPostMerge),
 			State:       github.String("error"),

@@ -5,6 +5,7 @@ import { mdiHelpCircleOutline, mdiTrendingUp, mdiInformationOutline, mdiOpenInNe
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery, useMutation } from '@sourcegraph/http-client'
 import {
     Icon,
@@ -97,10 +98,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const { codyProEnabled } = data.currentUser
 
-    const showUpgradeBanner =
-        !codyProEnabled &&
-        ((codyCurrentPeriodCodeUsage >= codyCurrentPeriodCodeLimit && codyCurrentPeriodCodeLimit > 0) ||
-            (codyCurrentPeriodChatUsage >= codyCurrentPeriodChatLimit && codyCurrentPeriodChatLimit > 0))
+    const codeLimitReached = codyCurrentPeriodCodeUsage >= codyCurrentPeriodCodeLimit && codyCurrentPeriodCodeLimit > 0
+    const chatLimitReached = codyCurrentPeriodChatUsage >= codyCurrentPeriodChatLimit && codyCurrentPeriodChatLimit > 0
+
+    const showUpgradeBanner = !codyProEnabled && (codeLimitReached || chatLimitReached)
 
     return (
         <>
@@ -142,7 +143,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         <div>
                             <H2>My Subscription</H2>
                             <Text className="text-muted mb-0">
-                                You are on a {codyProEnabled ? 'pro' : 'community'} tier.
+                                You are on the {codyProEnabled ? 'Pro' : 'Free'} tier.
                             </Text>
                         </div>
                         {codyProEnabled ? (
@@ -180,10 +181,23 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     </Text>
                                 ) : usageData?.currentUser ? (
                                     <>
-                                        <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
+                                        <Text
+                                            weight="bold"
+                                            className={classNames(
+                                                'd-inline mb-0',
+                                                styles.counter,
+                                                codeLimitReached ? 'text-danger' : 'text-muted'
+                                            )}
+                                        >
                                             {Math.min(codyCurrentPeriodCodeUsage, codyCurrentPeriodCodeLimit)} /
                                         </Text>{' '}
-                                        <Text className="text-muted d-inline b-0" size="small">
+                                        <Text
+                                            className={classNames(
+                                                'd-inline b-0',
+                                                codeLimitReached ? 'text-danger' : 'text-muted'
+                                            )}
+                                            size="small"
+                                        >
                                             {codyCurrentPeriodCodeLimit}
                                         </Text>
                                     </>
@@ -191,12 +205,19 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     <LoadingSpinner />
                                 )}
                             </div>
-                            <H4 className="mb-0">Autocomplete suggestions</H4>
-                            {!codyProEnabled && (
-                                <Text className="text-muted mb-0" size="small">
-                                    this month
-                                </Text>
-                            )}
+                            <H4 className={classNames('mb-0', codeLimitReached ? 'text-danger' : 'text-muted')}>
+                                Autocomplete suggestions
+                            </H4>
+                            {!codyProEnabled &&
+                                (codeLimitReached && usageData?.currentUser?.codyCurrentPeriodEndDate ? (
+                                    <Text className="text-danger mb-0" size="small">
+                                        Renews in <Timestamp date={usageData?.currentUser?.codyCurrentPeriodEndDate} />
+                                    </Text>
+                                ) : (
+                                    <Text className="text-muted mb-0" size="small">
+                                        this month
+                                    </Text>
+                                ))}
                         </div>
                         <div className="d-flex flex-column align-items-center flex-grow-1 p-3">
                             <ChatMessagesIcon />
@@ -207,10 +228,23 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     </Text>
                                 ) : usageData?.currentUser ? (
                                     <>
-                                        <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
+                                        <Text
+                                            weight="bold"
+                                            className={classNames(
+                                                'd-inline mb-0',
+                                                styles.counter,
+                                                chatLimitReached ? 'text-danger' : 'text-muted'
+                                            )}
+                                        >
                                             {Math.min(codyCurrentPeriodChatUsage, codyCurrentPeriodChatLimit)} /
                                         </Text>{' '}
-                                        <Text className="text-muted d-inline b-0" size="small">
+                                        <Text
+                                            className={classNames(
+                                                'd-inline b-0',
+                                                chatLimitReached ? 'text-danger' : 'text-muted'
+                                            )}
+                                            size="small"
+                                        >
                                             {codyCurrentPeriodChatLimit}
                                         </Text>
                                     </>
@@ -218,12 +252,19 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     <LoadingSpinner />
                                 )}
                             </div>
-                            <H4 className="mb-0">Chat messages and commands</H4>
-                            {!codyProEnabled && (
-                                <Text className="text-muted mb-0" size="small">
-                                    this month
-                                </Text>
-                            )}
+                            <H4 className={classNames('mb-0', chatLimitReached ? 'text-danger' : 'text-muted')}>
+                                Chat messages and commands
+                            </H4>
+                            {!codyProEnabled &&
+                                (chatLimitReached && usageData?.currentUser?.codyCurrentPeriodEndDate ? (
+                                    <Text className="text-danger mb-0" size="small">
+                                        Renews <Timestamp date={usageData?.currentUser?.codyCurrentPeriodEndDate} />
+                                    </Text>
+                                ) : (
+                                    <Text className="text-muted mb-0" size="small">
+                                        this month
+                                    </Text>
+                                ))}
                         </div>
                         {codyProEnabled && (
                             <div className="d-flex flex-column align-items-center flex-grow-1 p-3 border-left">

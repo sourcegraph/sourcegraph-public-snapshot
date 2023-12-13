@@ -121,15 +121,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="mb-3 d-inline-block">
                                     Code context and personalization
-                                    <Tooltip content="Advanced code context is used to personalize Cody's responses to a user's own codebase">
-                                        <Icon
-                                            className="ml-1 text-muted"
-                                            svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
-                                        />
-                                    </Tooltip>
                                 </Text>
-                                <Text className="mb-0 text-muted">Advance personalization for small codebases</Text>
+                                <Text className="mb-0 text-muted">Personalization for small codebases</Text>
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="mb-3 d-inline-block">
@@ -194,7 +187,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </div>
                             <div className="d-flex flex-column border-bottom py-4">
                                 <div className="mb-1">
-                                    <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>9$</H2>
+                                    <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>$9</H2>
                                     <Text className="mb-0 text-muted d-inline">/ month</Text>
                                 </div>
                                 <Text className="mb-3 text-muted" size="small">
@@ -247,13 +240,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="mb-3 d-inline-block">
                                     Code context and personalization
-                                    <Tooltip content="Advanced code context is used to personalize Cody's responses to a user's own codebase">
-                                        <Icon
-                                            className="ml-1 text-muted"
-                                            svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
-                                        />
-                                    </Tooltip>
                                 </Text>
                                 <Text className="mb-0 text-muted">Personalization for larger codebases</Text>
                             </div>
@@ -261,9 +247,16 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 <Text weight="bold" className="mb-3 d-inline-block">
                                     LLM Support
                                 </Text>
-                                <Tooltip content="Claude Instant 1.2, Claude 2, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo Preview">
-                                    <Text className="mb-1 text-muted">Multiple LLM choices for chat</Text>
-                                </Tooltip>
+                                <Text className="mb-1 text-muted">
+                                    Multiple LLM choices for chat
+                                    <Tooltip content="Claude Instant 1.2, Claude 2, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo Preview">
+                                        <Icon
+                                            className="ml-1 text-muted"
+                                            svgPath={mdiInformationOutline}
+                                            aria-hidden={true}
+                                        />
+                                    </Tooltip>
+                                </Text>
                                 <Text className="mb-0 text-muted">Default LLMs for Commands, and Autocomplete</Text>
                             </div>
                             <div className="border-bottom py-4">
@@ -324,8 +317,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                         </div>
                         <div className="d-flex flex-column border-bottom py-4">
                             <div className="mb-1">
-                                <H2 className={classNames('text-muted d-inline mb-0')}>19$</H2>
-                                <Text className="mb-0 text-muted d-inline">/ user / month</Text>
+                                <Text className="mb-0 text-muted d-inline">Up to $19 / user / month</Text>
                             </div>
                             <Text className="mb-3 text-muted" size="small">
                                 25 users minimum
@@ -361,15 +353,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                         <div className="border-bottom py-4">
                             <Text weight="bold" className="mb-3 d-inline-block">
                                 Code context and personalization
-                                <Tooltip content="Advanced code context is used to personalize Cody's responses to a user's own codebase">
-                                    <Icon
-                                        className="ml-1 text-muted"
-                                        svgPath={mdiInformationOutline}
-                                        aria-hidden={true}
-                                    />
-                                </Tooltip>
                             </Text>
-                            <Text className="mb-0 text-muted">Personalization for larger codebases</Text>
+                            <Text className="mb-0 text-muted">Advanced personalization for Enterprise codebases</Text>
                         </div>
                         <div className="border-bottom py-4">
                             <Text weight="bold" className="mb-3 d-inline-block">
@@ -411,9 +396,12 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
             </Page>
             {showUpgradeToPro && (
                 <UpgradeToProModal
-                    onClose={() => {
+                    onSuccess={() => {
                         setShowUpgradeToPro(false)
                         navigate('/cody/manage')
+                    }}
+                    onClose={() => {
+                        setShowUpgradeToPro(false)
                     }}
                     authenticatedUser={authenticatedUser}
                 />
