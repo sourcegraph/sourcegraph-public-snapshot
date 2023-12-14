@@ -1,14 +1,13 @@
 import { readFileSync } from 'fs'
 import path from 'path'
 
-import { CodegenConfig, generate } from '@graphql-codegen/cli'
+import { type CodegenConfig, generate } from '@graphql-codegen/cli'
 import { glob } from 'glob'
 import { GraphQLError } from 'graphql'
 
 const ROOT_FOLDER = path.resolve(__dirname, '../../../')
 
 const WEB_FOLDER = path.resolve(ROOT_FOLDER, './client/web')
-const SVELTEKIT_FOLDER = path.resolve(ROOT_FOLDER, './client/web-sveltekit')
 const BROWSER_FOLDER = path.resolve(ROOT_FOLDER, './client/browser')
 const SHARED_FOLDER = path.resolve(ROOT_FOLDER, './client/shared')
 const VSCODE_FOLDER = path.resolve(ROOT_FOLDER, './client/vscode')
@@ -22,8 +21,6 @@ const WEB_DOCUMENTS_GLOB = [
     `${WEB_FOLDER}/src/regression/**/*.*`,
     `!${WEB_FOLDER}/src/end-to-end/**/*.*`, // TODO(bazel): can remove when non-bazel dropped
 ]
-
-const SVELTEKIT_DOCUMENTS_GLOB = [`${SVELTEKIT_FOLDER}/src/lib/**/*.ts`]
 
 const BROWSER_DOCUMENTS_GLOB = [
     `${BROWSER_FOLDER}/src/**/*.{ts,tsx}`,
@@ -41,11 +38,11 @@ const GLOBS: Record<string, string[]> = {
     SharedGraphQlOperations: SHARED_DOCUMENTS_GLOB,
     VSCodeGraphQlOperations: VSCODE_DOCUMENTS_GLOB,
     WebGraphQlOperations: WEB_DOCUMENTS_GLOB,
-    SvelteKitGraphQlOperations: SVELTEKIT_DOCUMENTS_GLOB,
 }
 
 const EXTRA_PLUGINS: Record<string, string[]> = {
     SharedGraphQlOperations: ['typescript-apollo-client-helpers'],
+    SvelteKitGraphQlOperations: ['typed-document-node'],
 }
 
 const SHARED_PLUGINS = [
@@ -66,10 +63,6 @@ export const ALL_INPUTS: Input[] = [
     {
         interfaceNameForOperations: 'WebGraphQlOperations',
         outputPath: path.join(WEB_FOLDER, './src/graphql-operations.ts'),
-    },
-    {
-        interfaceNameForOperations: 'SvelteKitGraphQlOperations',
-        outputPath: path.join(SVELTEKIT_FOLDER, './src/lib/graphql-operations.ts'),
     },
     {
         interfaceNameForOperations: 'SharedGraphQlOperations',
@@ -152,7 +145,7 @@ function createCodegenConfig(operations: Input[]): CodegenConfig {
 
 if (require.main === module) {
     // Entry point to generate all GraphQL operations files, or a single one.
-    async function main(args: string[]) {
+    async function main(args: string[]): Promise<void> {
         if (args.length !== 0 && args.length !== 2) {
             throw new Error('Usage: [<schemaName> <outputPath>]')
         }

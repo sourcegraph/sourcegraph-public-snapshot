@@ -16,6 +16,7 @@ js_library(
     visibility = [
         "//client/backstage-backend/node_modules/@sourcegraph/shared/dev:__pkg__",
         "//client/shared/dev:__pkg__",
+        "//client/web-sveltekit:__pkg__",
     ],
 )
 
