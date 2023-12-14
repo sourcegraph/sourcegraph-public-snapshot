@@ -63,9 +63,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const location = useLocation()
     const navigate = useNavigate()
     const { addRecentSearch } = useRecentSearches()
-    const featureOverrides = useFeatureFlagOverrides()
 
     // Feature flags
+    const featureOverrides = useFeatureFlagOverrides()
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
     const newSearchResultsUI = useExperimentalFeatures(features => features.newSearchResultsUI)
 
