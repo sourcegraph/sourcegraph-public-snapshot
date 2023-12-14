@@ -56,7 +56,7 @@ export const editorGroups: IEditor[][] = [
         {
             icon: 'PyCharm',
             name: 'PyCharm',
-            publisher: 'Jetbrains',
+            publisher: 'JetBrains',
             releaseStage: 'Beta',
             docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
@@ -108,7 +108,7 @@ export const editorGroups: IEditor[][] = [
         {
             icon: 'Emacs',
             name: 'Emacs',
-            publisher: 'Free Software Foundation',
+            publisher: 'GNU',
             releaseStage: 'Coming Soon',
         },
     ],
