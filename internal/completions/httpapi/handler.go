@@ -5,11 +5,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
@@ -204,24 +206,33 @@ func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFea
 // It writes events to an SSE stream as they come in.
 func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
 	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
-		eventWriter, err := streamhttp.NewWriter(w)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		var eventWriter *streamhttp.Writer
 
 		// Always send a final done event so clients know the stream is shutting down.
 		defer func() {
-			_ = eventWriter.Event("done", map[string]any{})
+			if eventWriter != nil {
+				_ = eventWriter.Event("done", map[string]any{})
+			}
 		}()
+
 		start := time.Now()
 		firstEventObserved := false
-		err = cc.Stream(ctx, feature, requestParams,
+		err := cc.Stream(ctx, feature, requestParams,
 			func(event types.CompletionResponse) error {
+				var err error
+
 				if !firstEventObserved {
 					firstEventObserved = true
 					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, &err, requestParams.Model)
 				}
+
+				if eventWriter == nil {
+					eventWriter, err = streamhttp.NewWriter(w)
+					if err != nil {
+						return err
+					}
+				}
+
 				return eventWriter.Event("completion", event)
 			})
 		if err != nil {
@@ -229,6 +240,13 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 
 			logFields := []log.Field{log.Error(err)}
 			if errNotOK, ok := types.IsErrStatusNotOK(err); ok {
+
+				if eventWriter == nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					errNotOK.WriteHeader(w)
+					w.Write([]byte("say hi"))
+				}
+
 				if tc := errNotOK.SourceTraceContext; tc != nil {
 					logFields = append(logFields,
 						log.String("sourceTraceContext.traceID", tc.TraceID),
@@ -237,12 +255,14 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 			}
 			l.Error("error while streaming completions", logFields...)
 
-			// Note that we do NOT attempt to forward the status code to the
-			// client here, since we are using streamhttp.Writer - see
-			// streamhttp.NewWriter for more details. Instead, we send an error
-			// event, which clients should check as appropriate.
-			if err := eventWriter.Event("error", map[string]string{"error": err.Error()}); err != nil {
-				l.Error("error reporting streaming completion error", log.Error(err))
+			if eventWriter != nil {
+				// Note that we do NOT attempt to forward the status code to the
+				// client here, since we are using streamhttp.Writer - see
+				// streamhttp.NewWriter for more details. Instead, we send an error
+				// event, which clients should check as appropriate.
+				if err := eventWriter.Event("error", map[string]string{"error": err.Error()}); err != nil {
+					l.Error("error reporting streaming completion error", log.Error(err))
+				}
 			}
 			return
 		}
