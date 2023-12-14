@@ -148,9 +148,15 @@ export function UpgradeToProModal({
                                 <Button
                                     variant="primary"
                                     onClick={() => {
-                                        eventLogger.log(EventName.CODY_SUBSCRIPTION_PLAN_CONFIRMED, {
-                                            tier: 'pro',
-                                        })
+                                        eventLogger.log(
+                                            EventName.CODY_SUBSCRIPTION_PLAN_CONFIRMED,
+                                            {
+                                                tier: 'pro',
+                                            },
+                                            {
+                                                tier: 'pro',
+                                            }
+                                        )
 
                                         changeCodyPlan({ variables: { pro: true, id: authenticatedUser.id } })
                                     }}
