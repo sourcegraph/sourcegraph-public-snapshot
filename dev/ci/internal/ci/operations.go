@@ -182,7 +182,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		}
 
 		// Upload storybook to Chromatic
-		chromaticCommand := "pnpm chromatic --exit-zero-on-changes --exit-once-uploaded"
+		chromaticCommand := "./dev/ci/run-chromatic.sh --exit-zero-on-changes --exit-once-uploaded"
 		if opts.ChromaticShouldAutoAccept {
 			chromaticCommand += " --auto-accept-changes"
 		} else {
