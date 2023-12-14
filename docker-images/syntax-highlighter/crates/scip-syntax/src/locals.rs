@@ -1,5 +1,5 @@
 /// This module contains logic to understand the binding structure of
-/// a given source file. We then emit information about references and
+/// a given source file. We emit information about references and
 /// definition of _local_ bindings. A local binding is a binding that
 /// cannot be accessed from another file. It is important to never
 /// mark a non-local as local, because that would mean we'd prevent
@@ -171,19 +171,19 @@ fn compare_range(a: Range<usize>, b: Range<usize>) -> Ordering {
 #[derive(Debug)]
 struct Captures<'a> {
     scopes: Vec<(&'a str, Node<'a>)>,
-    definitions: Vec<CaptureDef<'a>>,
-    references: Vec<CaptureRef<'a>>,
+    definitions: Vec<DefCapture<'a>>,
+    references: Vec<RefCapture<'a>>,
 }
 
 #[derive(Debug)]
-struct CaptureDef<'a> {
+struct DefCapture<'a> {
     ty: String,
     hoist: Option<String>,
     node: Node<'a>,
 }
 
 #[derive(Debug)]
-struct CaptureRef<'a> {
+struct RefCapture<'a> {
     _ty: String,
     node: Node<'a>,
 }
@@ -337,10 +337,10 @@ impl<'a> LocalResolver<'a> {
     fn add_refs_while<'b, F>(
         &mut self,
         scope: ScopeRef<'a>,
-        references_iter: &mut Iter<'b, CaptureRef<'a>>,
+        references_iter: &mut Iter<'b, RefCapture<'a>>,
         f: F,
     ) where
-        F: Fn(&CaptureRef<'a>) -> bool,
+        F: Fn(&RefCapture<'a>) -> bool,
         'a: 'b,
     {
         for ref_capture in references_iter.take_while_ref(|ref_capture| f(ref_capture)) {
@@ -361,10 +361,10 @@ impl<'a> LocalResolver<'a> {
     fn add_defs_while<'b, F>(
         &mut self,
         scope: ScopeRef<'a>,
-        definitions_iter: &mut Iter<'b, CaptureDef<'a>>,
+        definitions_iter: &mut Iter<'b, DefCapture<'a>>,
         f: F,
     ) where
-        F: Fn(&CaptureDef<'a>) -> bool,
+        F: Fn(&DefCapture<'a>) -> bool,
         'a: 'b,
     {
         for def_capture in definitions_iter.take_while_ref(|def_capture| f(def_capture)) {
@@ -394,8 +394,8 @@ impl<'a> LocalResolver<'a> {
         let capture_names = config.query.capture_names();
 
         let mut scopes: Vec<(&str, Node<'a>)> = vec![];
-        let mut definitions: Vec<CaptureDef> = vec![];
-        let mut references: Vec<CaptureRef<'a>> = vec![];
+        let mut definitions: Vec<DefCapture> = vec![];
+        let mut references: Vec<RefCapture<'a>> = vec![];
 
         for match_ in cursor.matches(&config.query, tree.root_node(), source_bytes) {
             let properties = config.query.property_settings(match_.pattern_index);
@@ -414,7 +414,7 @@ impl<'a> LocalResolver<'a> {
                     let ty = capture_name
                         .strip_prefix("definition.")
                         .unwrap_or(capture_name);
-                    definitions.push(CaptureDef {
+                    definitions.push(DefCapture {
                         ty: ty.to_string(),
                         hoist: hoist_scope,
                         node: capture.node,
@@ -423,7 +423,7 @@ impl<'a> LocalResolver<'a> {
                     let ty = capture_name
                         .strip_prefix("reference.")
                         .unwrap_or(capture_name);
-                    references.push(CaptureRef {
+                    references.push(RefCapture {
                         _ty: ty.to_string(),
                         node: capture.node,
                     })
@@ -441,16 +441,17 @@ impl<'a> LocalResolver<'a> {
     }
 
     /// This function is probably the most complicated bit in here.
-    /// scopes and definitions are sorted to allow us to build a tree
-    /// of scope in pre-traversal order here. We make sure to add all
-    /// definitions to their narrowest enclosing scope, or to hoist
-    /// them to the closest matching scope.
+    /// scopes, definitions, and references are sorted to allow us to
+    /// build a tree of scope in pre-traversal order here. We make
+    /// sure to add all definitions and references to their narrowest
+    /// enclosing scope, or to hoist them to the closest matching
+    /// scope.
     fn build_tree(
         &mut self,
         top_scope: ScopeRef<'a>,
         mut scopes: Vec<(&'a str, Node<'a>)>,
-        mut definitions: Vec<CaptureDef<'a>>,
-        mut references: Vec<CaptureRef<'a>>,
+        mut definitions: Vec<DefCapture<'a>>,
+        mut references: Vec<RefCapture<'a>>,
     ) {
         // In order to do a pre-order traversal we need to sort scopes and definitions
         // TODO: (perf) Do a pass to check if they're already sorted first?
