@@ -16,6 +16,7 @@ js_library(
     visibility = [
         "//client/backstage-backend/node_modules/@sourcegraph/shared/dev:__pkg__",
         "//client/shared/dev:__pkg__",
+        "//client/web-sveltekit:__pkg__",
     ],
 )
 
@@ -321,7 +322,6 @@ go_library(
         "//internal/search/streaming",
         "//internal/search/symbol",
         "//internal/search/zoekt",
-        "//internal/service/servegit",
         "//internal/settings",
         "//internal/siteid",
         "//internal/sourcegraphoperator",

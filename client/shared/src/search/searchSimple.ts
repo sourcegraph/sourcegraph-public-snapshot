@@ -62,9 +62,24 @@ export function hacksGobQueriesToRegex(query: string): string {
 }
 
 function gobToRegex(gob: string): string {
-    // We escape all the regex special chars, but special case * to .*.
-    // NOTE: We use the same special chars as go but it gets rewritten a bit by eslint https://sourcegraph.com/github.com/golang/go@go1.21.5/-/blob/src/regexp/regexp.go?L720
-    let r: string = gob.replaceAll(/[$()*+.?[\\\]^{|}]/g, match => (match === '*' ? '.*' : `\\${match}`))
+    // We escape all the regex special chars, but special case * to .*. We
+    // additionally preserve escaping.
+    //
+    // NOTE: We use the same special chars as go
+    // https://sourcegraph.com/github.com/golang/go@go1.21.5/-/blob/src/regexp/regexp.go?L720
+    const s = gob.split('')
+    for (let i = 0; i < s.length; i++) {
+        if (s[i] === '\\') {
+            // skip handling the next char
+            i++
+            continue
+        } else if (s[i] === '*') {
+            s[i] = '.*'
+        } else if (s[i].match(/[$()+.?[\]^{|}]/)) {
+            s[i] = '\\' + s[i]
+        }
+    }
+    let r = s.join('')
 
     // Special case ".*" since it doesn't play nice with the anchoring logic below
     if (r === '.*') {

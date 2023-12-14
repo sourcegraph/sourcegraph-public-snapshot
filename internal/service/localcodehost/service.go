@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -35,7 +34,7 @@ func ensureExtSVC(observationCtx *observation.Context, config *Config) error {
 	}
 
 	return store.Upsert(ctx, &types.ExternalService{
-		ID:          servegit.ExtSVCID,
+		ID:          extsvc.ServeGitExtSVCID,
 		Kind:        extsvc.VariantLocalGit.AsKind(),
 		DisplayName: "Local repositories",
 		Config:      extsvc.NewUnencryptedConfig(string(serviceConfig)),
