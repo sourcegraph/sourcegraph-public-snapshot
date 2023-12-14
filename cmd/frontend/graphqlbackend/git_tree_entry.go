@@ -15,6 +15,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -24,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -225,6 +227,15 @@ func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 	return binary.IsBinary(r.fullContentBytes), nil
 }
 
+var (
+	syntaxHighlightFileBlocklist = []string{
+		"package.json",
+		"yarn.lock",
+		"pnpm-lock.yaml",
+		"package-lock.json",
+	}
+)
+
 func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	// Currently, pagination + highlighting is not supported, throw out an error if it is attempted.
 	if (args.StartLine != nil || args.EndLine != nil) && args.Format != "HTML_PLAINTEXT" {
@@ -235,6 +246,17 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 	content, err := r.Content(ctx, &GitTreeContentPageArgs{StartLine: args.StartLine, EndLine: args.EndLine})
 	if err != nil {
 		return nil, err
+	}
+
+	// special handling in dotcom to prevent syntax highlighting large files
+	if envvar.SourcegraphDotComMode() {
+		for _, f := range syntaxHighlightFileBlocklist {
+			if strings.HasSuffix(r.Path(), f) {
+				// this will force the content to be returned as plaintext
+				// without hitting the syntax highlighter
+				args.Format = string(gosyntect.FormatHTMLPlaintext)
+			}
+		}
 	}
 
 	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{
