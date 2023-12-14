@@ -152,15 +152,11 @@ func TestLogSecurityEvent1(t *testing.T) {
 	t.Run("valid event", func(t *testing.T) {
 		err := db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "http://sourcegraph.com", 123, "AnonymousUserID", "source", nil)
 		require.NoError(t, err)
-
-		// Assert event was logged
 	})
 
 	t.Run("invalid arguments", func(t *testing.T) {
 		err := db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "http://sourcegraph.com", 123, "AnonymousUserID", "source", make(chan int))
 		require.Error(t, err)
-
-		// Assert error from marshalling arguments
 	})
 
 }

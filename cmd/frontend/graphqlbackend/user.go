@@ -516,7 +516,6 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	if err := r.db.Users().Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
-	//logAccountModifiedEvent(ctx, r.db, userID, "USER_SETTINGS")
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an event when a user account is modified/updated
