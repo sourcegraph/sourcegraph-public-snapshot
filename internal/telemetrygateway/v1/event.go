@@ -17,7 +17,11 @@ import (
 )
 
 // DefaultEventIDFunc is the default generator for telemetry event IDs.
-var DefaultEventIDFunc = uuid.NewString
+// We currently use V7, which is time-ordered, making them useful for event IDs.
+// https://datatracker.ietf.org/doc/html/draft-peabody-dispatch-new-uuid-format-03#name-uuid-version-7
+var DefaultEventIDFunc = func() string {
+	return uuid.Must(uuid.NewV7()).String()
+}
 
 // NewEventWithDefaults creates a uniform event with defaults filled in. All
 // constructors making raw events should start with this. In particular, this
