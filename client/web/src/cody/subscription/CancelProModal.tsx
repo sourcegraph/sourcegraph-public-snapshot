@@ -52,9 +52,15 @@ export function CancelProModal({
                         <Button
                             variant="secondary"
                             onClick={() => {
-                                eventLogger.log(EventName.CODY_SUBSCRIPTION_PLAN_CONFIRMED, {
-                                    tier: 'free',
-                                })
+                                eventLogger.log(
+                                    EventName.CODY_SUBSCRIPTION_PLAN_CONFIRMED,
+                                    {
+                                        tier: 'free',
+                                    },
+                                    {
+                                        tier: 'free',
+                                    }
+                                )
 
                                 changeCodyPlan({ variables: { pro: false, id: authenticatedUser.id } })
                             }}

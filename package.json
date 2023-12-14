@@ -441,6 +441,13 @@
         "dependencies": {
           "ws": "*"
         }
+      },
+      "@graphql-codegen/cli@5": {
+        "peerDependencies": {
+          "@graphql-codegen/typescript": "*",
+          "@graphql-codegen/typescript-operations": "*",
+          "@graphql-codegen/near-operation-file-preset": "*"
+        }
       }
     }
   },

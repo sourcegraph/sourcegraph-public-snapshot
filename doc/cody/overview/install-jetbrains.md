@@ -115,7 +115,7 @@ The Cody extension by Sourcegraph enhances your coding experience in your IDE by
   <li>
     <a class="card text-left" target="_blank" href="https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph">
       <h3><img alt="JetBrains" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/jb_beam.svg" />JetBrains Extension (Beta)</h3>
-      <p>Install Cody's free and open source extension for JetBrains.</p>
+      <p>Install Cody's free extension for JetBrains.</p>
     </a>
   </li>
   </ul>
@@ -123,7 +123,7 @@ The Cody extension by Sourcegraph enhances your coding experience in your IDE by
 ## Prerequisites
 
 - You have the latest version of <a href="https://www.jetbrains.com/idea/" target="_blank">JetBrains IDEs</a> installed
-- You have enabled an instance for [Cody from your Sourcegraph.com](cody-with-sourcegraph.md) account
+- You have a Free or Pro account through Sourcegraph.com or a Sourcegraph Enterprise account
 - Cody is compatible with the following JetBrains IDEs:
   - [Android Studio](https://developer.android.com/studio)
   - [AppCode](https://www.jetbrains.com/objc/)
@@ -147,7 +147,7 @@ Follow these steps to install the Cody plugin:
 
 ![cody-for-intellij](https://storage.googleapis.com/sourcegraph-assets/Docs/Media/cody-for-intellij.png)
 
-Alternatively, you can [Download and install the extension from the Jetbrains marketplace](https://plugins.jetbrains.com/plugin/9682-sourcegraph).
+Alternatively, you can [Download and install the extension from the JetBrains marketplace](https://plugins.jetbrains.com/plugin/9682-sourcegraph).
 
 ## Connect the extension to Sourcegraph
 
@@ -228,19 +228,6 @@ Let's understand how the **Generate Docstring** command generates code documenta
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/jb-generate-docstring.mp4" type="video/mp4">
 </video>
 
-## Enable code graph context for context-aware answers (optional)
-
-You can optionally configure code graph content, which gives Cody the ability to provide context-aware answers. For example, Cody can write example API calls if they have the context of a codebase's API schema.
-
-Learn more about how to:
-
-- [Configure code graph context for Sourcegraph.com](cody-with-sourcegraph.md#configure-code-graph-context-for-code-aware-answers)
-- [Configure code graph context for Sourcegraph Enterprise](enable-cody-enterprise.md#enabling-codebase-aware-answers)
-
-## Embeddings
-
-For free users, embeddings are supported for the open source repos on Sourcegraph.com. Enterprise users are guided to contact their admin for a more customized embeddings experience.
-
 ## Updating the extension
 
 JetBrains IntelliJ will typically notify you when updates are available for installed extensions. Follow the prompts to update the Cody extension to the latest version.
@@ -251,5 +238,5 @@ For more information on what to do next, we recommend the following resources:
 
 <div class="cards">
   <a class="card text-left" href="./../quickstart"><b>Cody Quickstart</b><p>This guide recommends how to use Cody once you have installed the extension in your VS Code editor.</p></a>
-  <a class="card text-left" href="./../use-cases"><b>Cody Use Cases</b><p>Explore some of the most common use cases of Cody that helps you with your development workflow.</p></a>
+  <a class="card text-left" href="./../use-cases/generate-unit-tests"><b>Cody Use Cases</b><p>Explore some of the most common use cases of Cody that helps you with your development workflow.</p></a>
 </div>

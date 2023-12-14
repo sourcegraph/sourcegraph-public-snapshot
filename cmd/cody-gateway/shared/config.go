@@ -112,6 +112,7 @@ func (c *Config) Load() {
 			"claude-instant-v1.1",
 			"claude-instant-v1.1-100k",
 			"claude-instant-v1.2",
+			"claude-instant-1.2",
 			"claude-instant-1.2-cyan",
 		}, ","),
 		"Anthropic models that can be used."))

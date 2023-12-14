@@ -174,7 +174,7 @@ const COMMIT_QUERY = gql`
 `
 
 interface FetchRepoCommitsArgs {
-    repoID: Scalars['ID']
+    repoID: Scalars['ID']['input']
     revision: string
     filePath?: string
     first?: number
@@ -213,7 +213,7 @@ export async function fetchRepoCommit(repoId: string, revision: string): Promise
 export type RepositoryComparisonDiff = Extract<RepositoryComparisonDiffResult['node'], { __typename?: 'Repository' }>
 
 export async function queryRepositoryComparisonFileDiffs(args: {
-    repo: Scalars['ID']
+    repo: Scalars['ID']['input']
     base: string | null
     head: string | null
     first: number | null
@@ -270,7 +270,7 @@ export async function queryRepositoryComparisonFileDiffs(args: {
 }
 
 export async function fetchDiff(
-    repoID: Scalars['ID'],
+    repoID: Scalars['ID']['input'],
     revspec: string,
     paths: string[] = []
 ): Promise<FileDiffFields[]> {

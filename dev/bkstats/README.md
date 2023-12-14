@@ -1,7 +1,7 @@
 # Bkstats
 
 A crude script to compute simple "red time" statistics from our Buildkite pipelines and post them to Slack.
-Owned by the [DevX team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience).
+Owned by the [DevInfra team](https://handbook.sourcegraph.com/departments/engineering/teams/devinfra/).
 
 "Red time" is defined to be the duration from the _end of a failed build_ to the _end of the first subsequent green build_.
 
