@@ -12,7 +12,7 @@
 - You have a Free or Pro account through Sourcegraph.com or a Sourcegraph Enterprise account
 - You have a project open in VS Code
 
-## Getting started with Cody extension and commands
+## Getting started with the Cody extension and commands
 
 After installing the extension, the side activity bar will display an icon for **Cody**. Click this icon, and Cody's panel will open. This interface is used to start a **New Chat**, run Cody **commands** or get access to relevant resources.
 

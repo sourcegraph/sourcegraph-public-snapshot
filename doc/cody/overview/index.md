@@ -177,7 +177,7 @@ Cody's main features include:
 | [Commands](./../capabilities/commands.md)    | Cody offers quick ready-to-use commands for common actions, such as adding code documentation, generating unit tests, and detecting code smells. |
 | [Debug Code](./../capabilities/debug-code.md)    | Cody can debug your code in the editor and also helps you identify code smells |
 
-## What data is collected and how it's used?
+## What data is collected and how is it used?
 
 Cody collects and uses data in the following ways:
 

@@ -124,10 +124,6 @@ Enterprise users can also log in to their Sourcegraph.com Enterprise instance an
 
 To view how Cody works in the web, open **Cody Web Chat**. Here, you can ask Cody general coding questions or questions about the repositories you care about.
 
-<video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
-  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/run-search-query.mp4" type="video/mp4">
-</video>
-
 You can view the default **Ask Cody** chat interface on the right sidebar. Once connected, Cody automatically gains context to your connected codebase to help you provide contextually-aware and accurate answers to your questions. There are also example questions that you can use to get started.
 
 When using Cody chat in the web, you can select up to **10 repositories** to use as context for your question. If you’re logged in to Sourcegraph.com, these can be any **10 open source repositories** that Sourcegraph indexes. If you are an enterprise customer logged in to your company’s Sourcegraph instance, these can be **any 10 repositories** (both private or public) indexed by your admin.
