@@ -654,12 +654,13 @@ WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
 
 func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, logger log.Logger, shardID string, repos map[api.RepoName]int64) (updated int, err error) {
 	logger = logger.Scoped("gitserverRepoStore.UpdateRepoSizes")
-	// batchSize is 200 because we started with really large batch sizes (32k)
+	// batchSize is 1000 because we started with really large batch sizes (32k)
 	// and noticed that it was really slow in production.
 	//
-	// As of today (13 Dec 2023) updating 200 rows (with all of them having new
-	// values) on sourcegraph.com takes ~800ms.
-	const batchSize = 200
+	// As of today (14 Dec 2023) updating 1000 rows (worst case: all of them
+	// need to be updated) would take ~2 seconds. But normal case should be
+	// much faster.
+	const batchSize = 1000
 	return s.updateRepoSizesWithBatchSize(ctx, logger, repos, batchSize)
 }
 
