@@ -328,7 +328,10 @@ func newNonStreamingResponseHandler(logger log.Logger, feature types.Completions
 			} else {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
-			_, _ = w.Write([]byte(err.Error()))
+			_, err = w.Write([]byte(err.Error()))
+			if err != nil {
+				logger.Error("failed to write", log.Error(err))
+			}
 
 			trace.Logger(ctx, logger).Error("error on completion", logFields...)
 			return

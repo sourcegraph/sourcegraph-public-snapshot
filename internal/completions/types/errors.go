@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/log"
 
@@ -92,6 +93,11 @@ func IsErrStatusNotOK(err error) (*ErrStatusNotOK, bool) {
 // the message in different formats.
 func (e *ErrStatusNotOK) WriteHeader(w http.ResponseWriter) {
 	for k, vs := range e.responseHeader {
+		// Never forward content-length headers, they will not correctly resemble
+		// what we are going to send.
+		if strings.EqualFold(k, "content-length") {
+			continue
+		}
 		for _, v := range vs {
 			w.Header().Set(k, v)
 		}
