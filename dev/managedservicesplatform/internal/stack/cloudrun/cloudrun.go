@@ -36,7 +36,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-type CrossStackOutput struct{}
+type CrossStackOutput struct {
+	RedisInstanceID *string
+}
 
 type Variables struct {
 	ProjectID                      string
@@ -143,6 +145,8 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 
 	// redisInstance is only created and non-nil if Redis is configured for the
 	// environment.
+	// If Redis is configured, populate cross-stack output with Redis ID.
+	var redisInstanceID *string
 	if vars.Environment.Resources != nil && vars.Environment.Resources.Redis != nil {
 		redisInstance, err := redis.New(stack,
 			resourceid.New("redis"),
@@ -155,6 +159,8 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render Redis instance")
 		}
+
+		redisInstanceID = redisInstance.ID
 
 		// Configure endpoint string.
 		cloudRunBuilder.AddEnv("REDIS_ENDPOINT", redisInstance.Endpoint)
@@ -265,7 +271,9 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		"Cloud Run resource location")
 	locals.Add("image_tag", imageTag.StringValue,
 		"Resolved tag of service image to deploy")
-	return &CrossStackOutput{}, nil
+	return &CrossStackOutput{
+		RedisInstanceID: redisInstanceID,
+	}, nil
 }
 
 type envVariablesData struct {

@@ -106,6 +106,22 @@ type AuthAccessTokens struct {
 	Allow string `json:"allow,omitempty"`
 }
 
+// AuthAllowedIpAddress description: IP allowlist for access to the Sourcegraph instance. If set, only requests from these IP addresses will be allowed. By default client IP is infered connected client IP address, and you may configure to use a request header to determine the user IP.
+type AuthAllowedIpAddress struct {
+	// ClientIpAddress description: List of client IP addresses to allow. If empty, all IP addresses are allowed. This is useful to restrict who can open connection with the Sorcegraph instance, e.g., the request source range of the upsteam application load balancer.
+	ClientIpAddress []string `json:"clientIpAddress,omitempty"`
+	// Enabled description: Whether to enable the IP allowlist.
+	Enabled bool `json:"enabled,omitempty"`
+	// ErrorMessageTemplate description: A template to customize the error message display to users on unauthorized access.  Available template variables: `{{.Error}}`, `{{.UserIP}}`
+	ErrorMessageTemplate string `json:"errorMessageTemplate,omitempty"`
+	// TrustedClientIpAddress description: List of trusted client IP addresses that will bypass user IP address check. If empty, nothing can be bypass. This is useful to support access from trusted internal services. It will always permit connection from `127.0.0.1`. You must include the IP range allocated for the Sourcegraph deployment services to allow inter-service communication, e.g., kubernetes pod ip range.
+	TrustedClientIpAddress []string `json:"trustedClientIpAddress,omitempty"`
+	// UserIpAddress description: List of user IP addresses to allow. If empty, all IP addresses are allowed.
+	UserIpAddress []string `json:"userIpAddress,omitempty"`
+	// UserIpRequestHeaders description: An optional list of case-insensitive request header names to use for resolving the callers user IP address. You must ensure that the header is coming from a trusted source. If the header contains multiple IP addresses, the right-most is used. If no IP is found from provided headers, the connected client IP address is used.
+	UserIpRequestHeaders []string `json:"userIpRequestHeaders,omitempty"`
+}
+
 // AuthLockout description: The config options for account lockout
 type AuthLockout struct {
 	// ConsecutivePeriod description: The number of seconds to be considered as a consecutive period
@@ -2613,6 +2629,8 @@ type SiteConfiguration struct {
 	AuthAccessRequest *AuthAccessRequest `json:"auth.accessRequest,omitempty"`
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 	AuthAccessTokens *AuthAccessTokens `json:"auth.accessTokens,omitempty"`
+	// AuthAllowedIpAddress description: IP allowlist for access to the Sourcegraph instance. If set, only requests from these IP addresses will be allowed. By default client IP is infered connected client IP address, and you may configure to use a request header to determine the user IP.
+	AuthAllowedIpAddress *AuthAllowedIpAddress `json:"auth.allowedIpAddress,omitempty"`
 	// AuthEnableUsernameChanges description: Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.
 	AuthEnableUsernameChanges bool `json:"auth.enableUsernameChanges,omitempty"`
 	// AuthLockout description: The config options for account lockout
@@ -2918,6 +2936,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "app")
 	delete(m, "auth.accessRequest")
 	delete(m, "auth.accessTokens")
+	delete(m, "auth.allowedIpAddress")
 	delete(m, "auth.enableUsernameChanges")
 	delete(m, "auth.lockout")
 	delete(m, "auth.minPasswordLength")
