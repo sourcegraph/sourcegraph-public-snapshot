@@ -230,7 +230,7 @@ func TestExternalServiceValidate(t *testing.T) {
 			return nil
 		},
 	}
-	err := externalServiceValidate(ctx, &types.ExternalService{}, src)
+	err := externalServiceValidate(ctx, src)
 	if err != nil {
 		t.Errorf("expected nil, got %v", err)
 	}
