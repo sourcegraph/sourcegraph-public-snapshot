@@ -118,11 +118,13 @@ oci_push(
 sh_binary(
     name = "binary.push",
     srcs = ["_binary.push.sh"],
-    args = ["$(location :executor)"],
+    args = [
+        "$(location //dev/tools:gsutil)",
+        "$(location :executor)",
+    ],
     data = [
         ":executor",
         "//dev/tools:gsutil",
     ],
     tags = ["releasable"],
-    deps = ["@bazel_tools//tools/bash/runfiles"],
 )

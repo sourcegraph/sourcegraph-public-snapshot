@@ -1,38 +1,31 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC1090
 
-# --- begin runfiles.bash initialization v3 ---
-# Copy-pasted from the Bazel Bash runfiles library v3.
-set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
-source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
-  source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2- -d' ')" 2>/dev/null || \
-  source "$0.runfiles/$f" 2>/dev/null || \
-  source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
-  source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
-  { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
-# --- end runfiles.bash initialization v3 ---
+## Setting up inputs/data
+gcloud="$1"
+packer="$2"
+srccli="$3"
+executor="$4"
+executor_image="$5"
 
-## Setting up tools
-gcloud=$(rlocation sourcegraph_workspace/dev/tools/gcloud)
-packer=$(rlocation sourcegraph_workspace/dev/tools/packer)
 base="cmd/executor/vm-image/"
 
 ## Setting up the folder we're going to use with packer
-mkdir workdir
+mkdir -p workdir
 workdir_abs="$(pwd)/workdir"
 trap 'rm -Rf "$workdir_abs"' EXIT
 
-cp $base/executor.pkr.hcl workdir/
-cp $base/aws_regions.json workdir/
-cp $base/install.sh workdir/
-cp "cmd/executor/executor_/executor" workdir
+cp "${base}/executor.pkr.hcl" workdir/
+cp "${base}/aws_regions.json" workdir/
+cp "${base}/install.sh" workdir/
+cp "$executor" workdir
 
 # Copy src-cli, see //dev/tools:src-cli
-cp "$(rlocation src-cli-linux-amd64/src)" workdir/
+cp "$srccli" workdir/
 
 # Load the docker image, whose tag is going to be candidate,
 # but we need to retag this with the version.
-docker-images/executor-vm/image_tarball.sh
+"$executor_image" # this is equivalent to a docker load --input=tarball and the base tag comes from the rule that builds it.
+
 docker tag executor-vm:candidate "sourcegraph/executor-vm:$VERSION"
 docker save --output workdir/executor-vm.tar "sourcegraph/executor-vm:$VERSION"
 

@@ -1,29 +1,17 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC1090
-
-# --- begin runfiles.bash initialization v3 ---
-# Copy-pasted from the Bazel Bash runfiles library v3.
-set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
-source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
-  source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2- -d' ')" 2>/dev/null || \
-  source "$0.runfiles/$f" 2>/dev/null || \
-  source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
-  source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
-  { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
-# --- end runfiles.bash initialization v3 ---
 
 ## Setting up tools
-gcloud=$(rlocation sourcegraph_workspace/dev/tools/gcloud)
-packer=$(rlocation sourcegraph_workspace/dev/tools/packer)
+gcloud="$1"
+packer="$2"
 base="cmd/executor/docker-mirror/"
 
 ## Setting up the folder we're going to use with packer
 mkdir workdir
 trap "rm -Rf workdir" EXIT
 
-cp $base/docker-mirror.pkr.hcl workdir/
-cp $base/aws_regions.json workdir/
-cp $base/install.sh workdir/
+cp "${base}/docker-mirror.pkr.hcl" workdir/
+cp "${base}/aws_regions.json" workdir/
+cp "${base}/install.sh" workdir/
 
 "$gcloud" secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"workdir/builder-sa-key.json"
 

@@ -5,7 +5,13 @@ sh_binary(
     srcs = [
         "_ami.build.sh",
     ],
-    args = [],
+    args = [
+        "$(location //dev/tools:gcloud)",
+        "$(location //dev/tools:packer)",
+        "$(location @src-cli-linux-amd64)",
+        "$(location //cmd/executor)",
+        "$(location //docker-images/executor-vm:image_tarball)",
+    ],
     data = [
         # Files to populate the AMI with
         "aws_regions.json",
@@ -22,7 +28,6 @@ sh_binary(
     env = {
         "SRC_CLI_VERSION": SRC_CLI_VERSION,
     },
-    deps = ["@bazel_tools//tools/bash/runfiles"],
 )
 
 sh_binary(
@@ -30,10 +35,12 @@ sh_binary(
     srcs = [
         "_ami.push.sh",
     ],
+    args = [
+        "$(location //dev/tools:gcloud)",
+    ],
     data = [
         # aws-cli is baked in the agents, because it's not that easy to get Bazel to install it.
         "//dev/tools:gcloud",
     ],
     tags = ["releasable"],
-    deps = ["@bazel_tools//tools/bash/runfiles"],
 )
