@@ -102,6 +102,9 @@ struct Scope<'a> {
     parent: Option<ScopeRef<'a>>,
 
     /// Definitions that have been hoisted to the top of this scope
+    // TODO: (perf) for hoisted definitions the lexicographical order
+    // shouldn't matter anymore, so we might want to turn this into a
+    // HashMap for faster lookups
     hoisted_definitions: Vec<Definition<'a>>,
     /// Definitions that appear in this scope. Sorted lexicographical
     definitions: Vec<Definition<'a>>,
