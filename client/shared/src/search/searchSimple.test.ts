@@ -55,9 +55,9 @@ describe('hacksGobQueriesToRegex', () => {
         // We escape the string twice, once for javascript interpreting this
         // string and once for the quotes inside of the string (which the
         // query layer parses)
-        //expect(hacksGobQueriesToRegex('repo:"foo\\\\*bar"')).toEqual('repo:"^foo\\\\*bar$"')
-        //expect(hacksGobQueriesToRegex('repo:"foo\\\\*"')).toEqual('repo:"^foo\\\\*$"')
-        //expect(hacksGobQueriesToRegex('repo:"\\\\*bar"')).toEqual('repo:"^\\\\*bar$"')
+        // expect(hacksGobQueriesToRegex('repo:"foo\\\\*bar"')).toEqual('repo:"^foo\\\\*bar$"')
+        // expect(hacksGobQueriesToRegex('repo:"foo\\\\*"')).toEqual('repo:"^foo\\\\*$"')
+        // expect(hacksGobQueriesToRegex('repo:"\\\\*bar"')).toEqual('repo:"^\\\\*bar$"')
     })
 
     test('queries to regex', () => {
