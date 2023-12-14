@@ -218,13 +218,15 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 		})
 
 		// Always send a final done event so clients know the stream is shutting down.
+		firstEventObserved := false
 		defer func() {
-			if ev := eventWriter(); ev != nil {
-				_ = ev.Event("done", map[string]any{})
+			if firstEventObserved {
+				if ev := eventWriter(); ev != nil {
+					_ = ev.Event("done", map[string]any{})
+				}
 			}
 		}()
 		start := time.Now()
-		firstEventObserved := false
 		err := cc.Stream(ctx, feature, requestParams,
 			func(event types.CompletionResponse) error {
 				if !firstEventObserved {
@@ -241,8 +243,7 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 
 			logFields := []log.Field{log.Error(err)}
 			if errNotOK, ok := types.IsErrStatusNotOK(err); ok {
-				if errNotOK.StatusCode == http.StatusTooManyRequests {
-					errNotOK.WriteHeader(w)
+				if !firstEventObserved && errNotOK.StatusCode == http.StatusTooManyRequests {
 					actor := sgactor.FromContext(ctx)
 					user, err := actor.User(ctx, userStore)
 					if err != nil {
@@ -260,6 +261,7 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 							w.Header().Set("x-is-cody-pro-user", "false")
 						}
 					}
+					errNotOK.WriteHeader(w)
 					return
 
 				}
@@ -275,9 +277,11 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 			// client here, since we are using streamhttp.Writer - see
 			// streamhttp.NewWriter for more details. Instead, we send an error
 			// event, which clients should check as appropriate.
-			if ev := eventWriter(); ev != nil {
-				if err := ev.Event("error", map[string]string{"error": err.Error()}); err != nil {
-					l.Error("error reporting streaming completion error", log.Error(err))
+			if firstEventObserved {
+				if ev := eventWriter(); ev != nil {
+					if err := ev.Event("error", map[string]string{"error": err.Error()}); err != nil {
+						l.Error("error reporting streaming completion error", log.Error(err))
+					}
 				}
 			}
 			return
