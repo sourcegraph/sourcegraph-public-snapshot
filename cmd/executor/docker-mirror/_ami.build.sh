@@ -3,8 +3,8 @@
 set -eu
 
 ## Setting up tools
-gcloud="$1"
-packer="$2"
+gcloud="$(pwd)/$1"
+packer="$(pwd)/$2"
 base="cmd/executor/docker-mirror/"
 
 ## Setting up the folder we're going to use with packer

@@ -3,8 +3,8 @@
 set -eu
 
 ## Setting up inputs/data
-gcloud="$1"
-packer="$2"
+gcloud="$(pwd)/$1"
+packer="$(pwd)/$2"
 srccli="$3"
 executor="$4"
 executor_image="$5"
