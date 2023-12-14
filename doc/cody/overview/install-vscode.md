@@ -117,7 +117,7 @@ You can use Sourcegraph Enterprise with the Cody VS Code extension. Click the **
 
 Once connected, click the Cody icon from the sidebar again. The Cody extension will open in a configurable side panel.
 
-![code-panel](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-new-panel.png)
+![code-panel](https://storage.googleapis.com/sourcegraph-assets/Docs/NLS-Beta.png)
 
 Let's create an autocomplete suggestion to verify that the Cody extension has been successfully installed and is working as expected.
 
