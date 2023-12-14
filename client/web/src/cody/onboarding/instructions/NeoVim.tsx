@@ -22,7 +22,7 @@ export function NeoVimInstructions({
             {step === 0 && (
                 <>
                     <div className="pb-3 border-bottom">
-                        <H2>Setup instructions for NeoVim</H2>
+                        <H2>Setup instructions for Neovim</H2>
                     </div>
 
                     <div className={classNames('pt-3 px-3', styles.instructionsContainer)}>
@@ -50,7 +50,7 @@ export function NeoVimInstructions({
                                     Navigate to GitHub repo
                                 </ButtonLink>
                                 <img
-                                    alt="NeoVim Repo"
+                                    alt="Neovim Repo"
                                     className="mt-2 m-auto"
                                     width="70%"
                                     src="https://storage.googleapis.com/sourcegraph-assets/NeoVimInstructions/NeovimStep1.png"
@@ -79,7 +79,7 @@ export function NeoVimInstructions({
             {step === 1 && (
                 <>
                     <div className="mb-3 pb-3 border-bottom">
-                        <H2>Cody Features</H2>
+                        <H2>Cody features</H2>
                     </div>
                     <div className="d-flex">
                         <div className="flex-1 p-3 border-right d-flex flex-column justify-content-center align-items-center">
