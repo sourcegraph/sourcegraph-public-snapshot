@@ -34,7 +34,7 @@ export const editorGroups: IEditor[][] = [
             name: 'VS Code',
             publisher: 'Microsoft',
             releaseStage: 'Stable',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-vscode',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-vscode',
             instructions: VSCodeInstructions,
         },
         {
@@ -42,7 +42,7 @@ export const editorGroups: IEditor[][] = [
             name: 'IntelliJ IDEA',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -50,7 +50,7 @@ export const editorGroups: IEditor[][] = [
             name: 'PhpStorm ',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -58,7 +58,7 @@ export const editorGroups: IEditor[][] = [
             name: 'PyCharm',
             publisher: 'Jetbrains',
             releaseStage: 'Beta',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
     ],
@@ -68,7 +68,7 @@ export const editorGroups: IEditor[][] = [
             name: 'WebStorm',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -76,7 +76,7 @@ export const editorGroups: IEditor[][] = [
             name: 'RubyMine',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -84,7 +84,7 @@ export const editorGroups: IEditor[][] = [
             name: 'GoLand',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -92,7 +92,7 @@ export const editorGroups: IEditor[][] = [
             name: 'Android Studio',
             publisher: 'Google',
             releaseStage: 'Beta',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
     ],
@@ -102,7 +102,7 @@ export const editorGroups: IEditor[][] = [
             name: 'Neovim',
             publisher: 'Neovim Team',
             releaseStage: 'Experimental',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-neovim',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-neovim',
             instructions: NeoVimInstructions,
         },
         {
