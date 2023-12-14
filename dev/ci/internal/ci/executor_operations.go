@@ -19,8 +19,6 @@ func bazelBuildExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
-			// We shouldn't need this, yet we do? It complains about the Go SDK not being built.
-			bk.Cmd(bazelStampedCmd("build //cmd/executor/vm-image:ami.build")),
 		}
 
 		cmd := bazelStampedCmd("run //cmd/executor/vm-image:ami.build")
@@ -45,8 +43,6 @@ func bazelPublishExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
-			// We shouldn't need this, yet we do? It complains about the Go SDK not being built.
-			bk.Cmd(bazelStampedCmd("build //cmd/executor/vm-image:ami.push")),
 		}
 
 		cmd := bazelStampedCmd("run //cmd/executor/vm-image:ami.push")
@@ -73,8 +69,6 @@ func bazelBuildExecutorDockerMirror(c Config) operations.Operation {
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
-			// We shouldn't need this, yet we do? It complains about the Go SDK not being built.
-			bk.Cmd(bazelStampedCmd("build //cmd/executor/docker-mirror:ami.build")),
 			bk.Cmd(bazelStampedCmd("run //cmd/executor/docker-mirror:ami.build")),
 		}
 		pipeline.AddStep(":bazel::packer: :construction: Build docker registry mirror image", stepOpts...)
@@ -91,8 +85,6 @@ func bazelPublishExecutorDockerMirror(c Config) operations.Operation {
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
-			// We shouldn't need this, yet we do? It complains about the Go SDK not being built.
-			bk.Cmd(bazelStampedCmd("build //cmd/executor/docker-mirror:ami.push")),
 			bk.Cmd(bazelStampedCmd("run //cmd/executor/docker-mirror:ami.push")),
 		}
 		pipeline.AddStep(":packer: :white_check_mark: Publish docker registry mirror image", stepOpts...)
