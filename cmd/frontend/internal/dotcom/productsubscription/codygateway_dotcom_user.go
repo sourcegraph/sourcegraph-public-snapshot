@@ -336,13 +336,28 @@ func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser b
 	switch scope {
 	case types.CompletionsFeatureChat:
 		if !isCodyProEnabled {
-			return []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1.2", "anthropic/claude-instant-1", "openai/gpt-4-1106-preview", "fireworks/accounts/fireworks/models/mixtral-8x7b-instruct"}
+			return []string{
+				"anthropic/claude-v1",
+				"anthropic/claude-2",
+				"anthropic/claude-2.0",
+				"anthropic/claude-2.1",
+				"anthropic/claude-instant-v1",
+				"anthropic/claude-instant-1.2",
+				"anthropic/claude-instant-1",
+				"openai/gpt-4-1106-preview",
+				"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct",
+			}
 		}
 
 		// When updating the below lists, make sure you also update `isAllowedCustomChatModel` in `chat.go`
 
 		if !isProUser {
-			return []string{"anthropic/claude-2.0"}
+			return []string{
+				"anthropic/claude-2.0",
+				"anthropic/claude-instant-v1",
+				"anthropic/claude-instant-1.2",
+				"anthropic/claude-instant-1",
+			}
 		}
 
 		return []string{
@@ -353,9 +368,17 @@ func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser b
 			"anthropic/claude-instant-1.2",
 			"openai/gpt-3.5-turbo",
 			"openai/gpt-4-1106-preview",
-			"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct"}
+			"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct",
+		}
 	case types.CompletionsFeatureCode:
-		return []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1", "fireworks/accounts/fireworks/models/starcoder-7b-w8a16", "fireworks/accounts/sourcegraph/models/starcoder-7b", "fireworks/accounts/fireworks/models/starcoder-16b-w8a16", "fireworks/accounts/sourcegraph/models/starcoder-16b"}
+		return []string{
+			"anthropic/claude-instant-v1",
+			"anthropic/claude-instant-1",
+			"fireworks/accounts/fireworks/models/starcoder-7b-w8a16",
+			"fireworks/accounts/sourcegraph/models/starcoder-7b",
+			"fireworks/accounts/fireworks/models/starcoder-16b-w8a16",
+			"fireworks/accounts/sourcegraph/models/starcoder-16b",
+		}
 	default:
 		return []string{}
 	}
