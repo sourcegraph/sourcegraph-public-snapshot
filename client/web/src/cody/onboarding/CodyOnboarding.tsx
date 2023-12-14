@@ -151,7 +151,13 @@ export function CodyOnboarding({
     }
 
     return (
-        <Modal isOpen={true} aria-label="Cody Onboarding" className={styles.modal} position="center">
+        <Modal
+            isOpen={true}
+            position="center"
+            aria-label="Cody Onboarding"
+            className={styles.modal}
+            containerClassName={styles.root}
+        >
             {step === 0 && <WelcomeStep onNext={onNext} pro={enrollPro} />}
             {step === 1 && (
                 <PurposeStep
