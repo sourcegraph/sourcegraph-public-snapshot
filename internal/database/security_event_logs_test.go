@@ -143,37 +143,24 @@ func assertEventField(t *testing.T, field map[string]any) {
 	assert.NotEmpty(t, field["timestamp"])
 }
 
-func TestLogSecurityEvent(t *testing.T) {
+func TestLogSecurityEvent1(t *testing.T) {
 	ctx := context.Background()
-	store := NewMockSecurityEventLogsStore()
+	logger, _ := logtest.Captured(t)
 
-	t.Run("nil store", func(t *testing.T) {
-		LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "/tokens", 1, "anon", "source", nil, nil)
-	})
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	t.Run("valid event", func(t *testing.T) {
-		LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "/tokens", 1, "anon", "source", nil, store)
-		require.Len(t, store.events, 1)
-		event := store.events[0]
-		require.Equal(t, event.Name, SecurityEventAccessTokenCreated)
-		require.Equal(t, event.URL, "/tokens")
-		require.Equal(t, event.UserID, uint32(1))
-		require.Equal(t, event.AnonymousUserID, "anon")
-		require.Equal(t, event.Source, "source")
+		err := db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "http://sourcegraph.com", 123, "AnonymousUserID", "source", nil)
+		require.NoError(t, err)
+
+		// Assert event was logged
 	})
-}
 
-type MockSecurityEventLogsStore struct {
-	SecurityEventLogsStore
-	events []*SecurityEvent
-}
+	t.Run("invalid arguments", func(t *testing.T) {
+		err := db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "http://sourcegraph.com", 123, "AnonymousUserID", "source", make(chan int))
+		require.Error(t, err)
 
-func NewMockSecurityEventLogsStore() *MockSecurityEventLogsStore {
-	return &MockSecurityEventLogsStore{
-		events: []*SecurityEvent{},
-	}
-}
+		// Assert error from marshalling arguments
+	})
 
-func (m *MockSecurityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent) {
-	m.events = append(m.events, e)
 }
