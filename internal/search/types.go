@@ -37,6 +37,7 @@ type Inputs struct {
 	OnSourcegraphDotCom    bool
 	Features               *Features
 	Protocol               Protocol
+	ContextLines           int32
 	SanitizeSearchPatterns []*regexp.Regexp
 }
 

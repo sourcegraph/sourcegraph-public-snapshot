@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -107,7 +106,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 			features:        inputs.Features,
 			fileMatchLimit:  fileMatchLimit,
 			selector:        selector,
-			numContextLines: pointers.Deref(inputs.UserSettings.SearchContextLines, 1),
+			numContextLines: int(inputs.ContextLines),
 		}
 
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
@@ -355,7 +354,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					UseFullDeadline: useFullDeadline,
 					Features:        *searchInputs.Features,
 					PathRegexps:     getPathRegexpsFromTextPatternInfo(patternInfo),
-					NumContextLines: pointers.Deref(searchInputs.UserSettings.SearchContextLines, 1),
+					NumContextLines: int(searchInputs.ContextLines),
 				}
 
 				addJob(&repoPagerJob{
