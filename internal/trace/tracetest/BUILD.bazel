@@ -6,8 +6,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/trace/tracetest",
     visibility = ["//:__subpackages__"],
     deps = [
-        "@io_opentelemetry_go_otel//:otel",
-        "@io_opentelemetry_go_otel_sdk//trace",
-        "@io_opentelemetry_go_otel_trace//:trace",
+        "//vendor/go.opentelemetry.io/otel",
+        "//vendor/go.opentelemetry.io/otel/sdk/trace",
+        "//vendor/go.opentelemetry.io/otel/trace",
     ],
 )

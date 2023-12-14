@@ -5,7 +5,7 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/corrupt-archives",
     visibility = ["//visibility:private"],
-    deps = ["//lib/errors"],
+    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
 )
 
 go_binary(

@@ -7,8 +7,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/api",
     visibility = ["//visibility:public"],
     deps = [
-        "@com_github_grafana_regexp//:regexp",
-        "@com_github_masterminds_semver//:semver",
+        "//vendor/github.com/Masterminds/semver",
+        "//vendor/github.com/grafana/regexp",
     ],
 )
 
@@ -18,8 +18,8 @@ go_test(
     srcs = ["version_check_test.go"],
     embed = [":api"],
     deps = [
-        "//lib/errors",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/stretchr/testify/assert",
+        "//vendor/github.com/stretchr/testify/require",
     ],
 )

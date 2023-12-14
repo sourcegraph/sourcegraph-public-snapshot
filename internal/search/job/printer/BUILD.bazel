@@ -13,7 +13,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/search/job",
-        "@io_opentelemetry_go_otel//attribute",
+        "//vendor/go.opentelemetry.io/otel/attribute",
     ],
 )
 
@@ -30,7 +30,7 @@ go_test(
     embed = [":printer"],
     deps = [
         "//internal/search/job",
-        "@com_github_hexops_autogold_v2//:autogold",
-        "@io_opentelemetry_go_otel//attribute",
+        "//vendor/github.com/hexops/autogold/v2:autogold",
+        "//vendor/go.opentelemetry.io/otel/attribute",
     ],
 )

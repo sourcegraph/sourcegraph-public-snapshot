@@ -11,7 +11,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/msp-example/internal/example",
-        "//lib/managedservicesplatform/runtime",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime",
     ],
 )
 

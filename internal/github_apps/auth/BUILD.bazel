@@ -12,8 +12,8 @@ go_library(
         "//internal/extsvc/github",
         "//internal/httpcli",
         "//internal/rcache",
-        "//lib/errors",
-        "@com_github_golang_jwt_jwt_v4//:jwt",
+        "//vendor/github.com/golang-jwt/jwt/v4:jwt",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -28,8 +28,8 @@ go_test(
     deps = [
         "//internal/encryption/keyring",
         "//internal/rcache",
-        "@com_github_google_uuid//:uuid",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
+        "//vendor/github.com/google/uuid",
+        "//vendor/github.com/stretchr/testify/assert",
+        "//vendor/github.com/stretchr/testify/require",
     ],
 )

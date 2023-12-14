@@ -9,9 +9,9 @@ go_library(
         "//dev/managedservicesplatform/internal/resource/gsmsecret",
         "//dev/managedservicesplatform/internal/resourceid",
         "//dev/managedservicesplatform/spec",
-        "//lib/pointers",
-        "@com_github_aws_constructs_go_constructs_v10//:constructs",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computenetwork",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//redisinstance",
+        "//vendor/github.com/aws/constructs-go/constructs/v10:constructs",
+        "//vendor/github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computenetwork",
+        "//vendor/github.com/sourcegraph/managed-services-platform-cdktf/gen/google/redisinstance",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
     ],
 )

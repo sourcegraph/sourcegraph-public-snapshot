@@ -16,7 +16,7 @@ go_library(
     cgo = True,
     importpath = "github.com/sourcegraph/sourcegraph/internal/fastwalk",
     visibility = ["//:__subpackages__"],
-    deps = ["//lib/errors"],
+    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
 )
 
 go_test(

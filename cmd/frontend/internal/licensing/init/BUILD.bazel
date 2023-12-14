@@ -23,7 +23,7 @@ go_library(
         "//internal/licensing",
         "//internal/observation",
         "//internal/usagestats",
-        "//lib/pointers",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
     ],
 )

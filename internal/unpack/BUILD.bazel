@@ -9,7 +9,7 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/unpack",
     visibility = ["//:__subpackages__"],
-    deps = ["//lib/errors"],
+    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
 )
 
 go_test(
@@ -18,7 +18,7 @@ go_test(
     srcs = ["unpack_test.go"],
     embed = [":unpack"],
     deps = [
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_google_go_cmp//cmp/cmpopts",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/google/go-cmp/cmp/cmpopts",
     ],
 )

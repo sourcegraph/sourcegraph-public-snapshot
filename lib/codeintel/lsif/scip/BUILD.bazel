@@ -10,10 +10,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/scip",
     visibility = ["//visibility:public"],
     deps = [
-        "//lib/codeintel/lsif/conversion",
-        "//lib/codeintel/precise",
-        "//lib/codeintel/upload",
-        "@com_github_sourcegraph_scip//bindings/go/scip",
+        "//vendor/github.com/sourcegraph/scip/bindings/go/scip",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/precise",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/upload",
     ],
 )
 
@@ -27,9 +27,9 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":scip"],
     deps = [
-        "//lib/codeintel/precise",
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_google_go_cmp//cmp/cmpopts",
-        "@com_github_sourcegraph_scip//bindings/go/scip",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/google/go-cmp/cmp/cmpopts",
+        "//vendor/github.com/sourcegraph/scip/bindings/go/scip",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/precise",
     ],
 )

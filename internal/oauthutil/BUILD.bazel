@@ -12,9 +12,9 @@ go_library(
     deps = [
         "//internal/extsvc/auth",
         "//internal/httpcli",
-        "//lib/errors",
-        "@com_github_sourcegraph_log//:log",
-        "@org_golang_x_oauth2//:oauth2",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/golang.org/x/oauth2",
     ],
 )
 
@@ -26,6 +26,6 @@ go_test(
     deps = [
         "//internal/extsvc/auth",
         "//internal/httpcli",
-        "@com_github_sourcegraph_log//logtest",
+        "//vendor/github.com/sourcegraph/log/logtest",
     ],
 )

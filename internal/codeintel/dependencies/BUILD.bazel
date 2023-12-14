@@ -25,7 +25,7 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//internal/packagefilters",
-        "//lib/errors",
-        "@io_opentelemetry_go_otel//attribute",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/go.opentelemetry.io/otel/attribute",
     ],
 )

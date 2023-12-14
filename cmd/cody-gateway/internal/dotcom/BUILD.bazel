@@ -12,10 +12,10 @@ go_library(
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/dotcom/genhelper",
-        "@com_github_khan_genqlient//graphql",
-        "@io_opentelemetry_go_otel//:otel",
-        "@io_opentelemetry_go_otel//attribute",
-        "@io_opentelemetry_go_otel_trace//:trace",
+        "//vendor/github.com/Khan/genqlient/graphql",
+        "//vendor/go.opentelemetry.io/otel",
+        "//vendor/go.opentelemetry.io/otel/attribute",
+        "//vendor/go.opentelemetry.io/otel/trace",
     ],
 )
 

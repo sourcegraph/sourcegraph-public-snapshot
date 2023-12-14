@@ -12,7 +12,7 @@ go_library(
     deps = [
         "//internal/hashutil",
         "//internal/lazyregexp",
-        "//lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 

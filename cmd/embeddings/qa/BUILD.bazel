@@ -9,6 +9,6 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/embeddings",
-        "//lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

@@ -12,7 +12,7 @@ go_library(
     deps = [
         "//internal/env",
         "//internal/goroutine",
-        "@com_github_gorilla_mux//:mux",
-        "@com_github_inconshreveable_log15//:log15",
+        "//vendor/github.com/gorilla/mux",
+        "//vendor/github.com/inconshreveable/log15",
     ],
 )

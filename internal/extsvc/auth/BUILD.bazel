@@ -13,8 +13,8 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/httpcli",
-        "//lib/errors",
-        "@com_github_gomodule_oauth1//oauth",
+        "//vendor/github.com/gomodule/oauth1/oauth",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -27,5 +27,5 @@ go_test(
         "oauth_bearer_test.go",
     ],
     embed = [":auth"],
-    deps = ["@com_github_gomodule_oauth1//oauth"],
+    deps = ["//vendor/github.com/gomodule/oauth1/oauth"],
 )

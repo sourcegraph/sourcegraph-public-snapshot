@@ -8,8 +8,8 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/luasandbox/util",
-        "@com_github_yuin_gopher_lua//:gopher-lua",
-        "@com_layeh_gopher_luar//:gopher-luar",
+        "//vendor/github.com/yuin/gopher-lua",
+        "//vendor/layeh.com/gopher-luar",
     ],
 )
 
@@ -18,5 +18,5 @@ go_test(
     timeout = "short",
     srcs = ["paths_test.go"],
     embed = [":libs"],
-    deps = ["@com_github_google_go_cmp//cmp"],
+    deps = ["//vendor/github.com/google/go-cmp/cmp"],
 )

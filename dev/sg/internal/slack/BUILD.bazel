@@ -8,7 +8,7 @@ go_library(
     deps = [
         "//dev/sg/internal/secrets",
         "//dev/sg/internal/std",
-        "//lib/errors",
-        "@com_github_slack_go_slack//:slack",
+        "//vendor/github.com/slack-go/slack",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

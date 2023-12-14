@@ -16,7 +16,7 @@ go_library(
         "//internal/featureflag",
         "//internal/types",
         "//internal/usagestats",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/sourcegraph/log",
     ],
 )
 
@@ -36,8 +36,8 @@ go_test(
         "//internal/errcode",
         "//internal/types",
         "//schema",
-        "@com_github_sourcegraph_log//logtest",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
+        "//vendor/github.com/sourcegraph/log/logtest",
+        "//vendor/github.com/stretchr/testify/assert",
+        "//vendor/github.com/stretchr/testify/require",
     ],
 )

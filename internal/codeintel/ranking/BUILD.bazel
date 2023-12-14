@@ -31,7 +31,7 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//schema",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/sourcegraph/log",
     ],
 )
 

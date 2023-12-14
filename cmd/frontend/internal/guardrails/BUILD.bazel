@@ -18,6 +18,6 @@ go_library(
         "//internal/httpcli",
         "//internal/observation",
         "//internal/search/client",
-        "//lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

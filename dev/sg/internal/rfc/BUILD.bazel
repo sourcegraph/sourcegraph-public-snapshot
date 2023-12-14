@@ -13,15 +13,15 @@ go_library(
         "//dev/sg/internal/open",
         "//dev/sg/internal/secrets",
         "//dev/sg/internal/std",
-        "//lib/errors",
-        "//lib/output",
-        "@com_github_grafana_regexp//:regexp",
-        "@com_github_sourcegraph_log//:log",
-        "@org_golang_google_api//docs/v1:docs",
-        "@org_golang_google_api//drive/v3:drive",
-        "@org_golang_google_api//option",
-        "@org_golang_x_oauth2//:oauth2",
-        "@org_golang_x_oauth2//google",
+        "//vendor/github.com/grafana/regexp",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/output",
+        "//vendor/golang.org/x/oauth2",
+        "//vendor/golang.org/x/oauth2/google",
+        "//vendor/google.golang.org/api/docs/v1:docs",
+        "//vendor/google.golang.org/api/drive/v3:drive",
+        "//vendor/google.golang.org/api/option",
     ],
 )
 
@@ -36,6 +36,6 @@ go_test(
     ],
     deps = [
         "//dev/sg/internal/std",
-        "@org_golang_x_oauth2//:oauth2",
+        "//vendor/golang.org/x/oauth2",
     ],
 )

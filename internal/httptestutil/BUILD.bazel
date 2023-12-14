@@ -11,9 +11,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/httpcli",
-        "//lib/errors",
-        "@com_github_dnaeon_go_vcr//cassette",
-        "@com_github_dnaeon_go_vcr//recorder",
+        "//vendor/github.com/dnaeon/go-vcr/cassette",
+        "//vendor/github.com/dnaeon/go-vcr/recorder",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -23,7 +23,7 @@ go_test(
     srcs = ["recorder_test.go"],
     embed = [":httptestutil"],
     deps = [
-        "@com_github_dnaeon_go_vcr//cassette",
-        "@com_github_google_go_cmp//cmp",
+        "//vendor/github.com/dnaeon/go-vcr/cassette",
+        "//vendor/github.com/google/go-cmp/cmp",
     ],
 )

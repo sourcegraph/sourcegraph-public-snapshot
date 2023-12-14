@@ -14,9 +14,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/types/scheduler/window",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//lib/errors",
         "//schema",
-        "@org_uber_go_ratelimit//:ratelimit",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/go.uber.org/ratelimit",
     ],
 )
 
@@ -33,10 +33,10 @@ go_test(
     ],
     embed = [":window"],
     deps = [
-        "//lib/errors",
-        "//lib/pointers",
         "//schema",
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_stretchr_testify//assert",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
+        "//vendor/github.com/stretchr/testify/assert",
     ],
 )

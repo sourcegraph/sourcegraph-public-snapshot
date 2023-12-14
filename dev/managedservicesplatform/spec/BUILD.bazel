@@ -14,10 +14,10 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dev/managedservicesplatform/internal/imageupdater",
-        "//lib/errors",
-        "//lib/pointers",
-        "@com_github_grafana_regexp//:regexp",
-        "@io_k8s_sigs_yaml//:yaml",
+        "//vendor/github.com/grafana/regexp",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
+        "//vendor/sigs.k8s.io/yaml",
     ],
 )
 
@@ -29,8 +29,8 @@ go_test(
     ],
     embed = [":spec"],
     deps = [
-        "//lib/pointers",
-        "@com_github_hexops_autogold_v2//:autogold",
-        "@com_github_stretchr_testify//assert",
+        "//vendor/github.com/hexops/autogold/v2:autogold",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
+        "//vendor/github.com/stretchr/testify/assert",
     ],
 )

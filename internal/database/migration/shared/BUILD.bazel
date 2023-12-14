@@ -14,6 +14,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database/migration/definition",
-        "//lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

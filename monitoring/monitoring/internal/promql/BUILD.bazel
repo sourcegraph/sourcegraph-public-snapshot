@@ -10,10 +10,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/promql",
     visibility = ["//monitoring/monitoring:__subpackages__"],
     deps = [
-        "//lib/errors",
-        "@com_github_grafana_regexp//:regexp",
-        "@com_github_prometheus_prometheus//model/labels",
-        "@com_github_prometheus_prometheus//promql/parser",
+        "//vendor/github.com/grafana/regexp",
+        "//vendor/github.com/prometheus/prometheus/model/labels",
+        "//vendor/github.com/prometheus/prometheus/promql/parser",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -23,7 +23,7 @@ go_test(
     srcs = ["promql_test.go"],
     embed = [":promql"],
     deps = [
-        "@com_github_prometheus_prometheus//model/labels",
-        "@com_github_stretchr_testify//assert",
+        "//vendor/github.com/prometheus/prometheus/model/labels",
+        "//vendor/github.com/stretchr/testify/assert",
     ],
 )

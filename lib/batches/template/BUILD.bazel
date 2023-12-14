@@ -11,11 +11,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/batches/template",
     visibility = ["//visibility:public"],
     deps = [
-        "//lib/batches/execution",
-        "//lib/batches/git",
-        "//lib/errors",
-        "@com_github_gobwas_glob//:glob",
-        "@com_github_grafana_regexp//:regexp",
+        "//vendor/github.com/gobwas/glob",
+        "//vendor/github.com/grafana/regexp",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches/execution",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches/git",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -29,10 +29,10 @@ go_test(
     ],
     embed = [":template"],
     deps = [
-        "//lib/batches/execution",
-        "//lib/batches/git",
-        "//lib/errors",
-        "@com_github_google_go_cmp//cmp",
-        "@in_gopkg_yaml_v3//:yaml_v3",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches/execution",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches/git",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/gopkg.in/yaml.v3:yaml_v3",
     ],
 )

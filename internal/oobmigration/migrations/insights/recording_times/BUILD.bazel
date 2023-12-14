@@ -13,8 +13,8 @@ go_library(
         "//internal/database/basestore",
         "//internal/insights",
         "//internal/oobmigration",
-        "//lib/errors",
-        "@com_github_keegancsmith_sqlf//:sqlf",
+        "//vendor/github.com/keegancsmith/sqlf",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -34,9 +34,9 @@ go_test(
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_hexops_autogold_v2//:autogold",
-        "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_sourcegraph_log//logtest",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/hexops/autogold/v2:autogold",
+        "//vendor/github.com/keegancsmith/sqlf",
+        "//vendor/github.com/sourcegraph/log/logtest",
     ],
 )

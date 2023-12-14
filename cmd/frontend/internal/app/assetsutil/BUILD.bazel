@@ -14,6 +14,6 @@ go_library(
         "//internal/conf",
         "//internal/env",
         "//ui/assets",
-        "@com_github_shurcool_httpgzip//:httpgzip",
+        "//vendor/github.com/shurcooL/httpgzip",
     ],
 )

@@ -11,8 +11,8 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/luasandbox/util",
-        "//lib/codeintel/autoindex/config",
-        "//lib/errors",
-        "@com_github_yuin_gopher_lua//:gopher-lua",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/yuin/gopher-lua",
     ],
 )

@@ -30,10 +30,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/monitoring/definitions",
     visibility = ["//visibility:public"],
     deps = [
-        "//lib/pointers",
-        "//monitoring/definitions/shared",
-        "//monitoring/monitoring",
-        "@com_github_grafana_tools_sdk//:sdk",
-        "@com_github_prometheus_common//model",
+        "//vendor/github.com/grafana-tools/sdk",
+        "//vendor/github.com/prometheus/common/model",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
+        "//vendor/github.com/sourcegraph/sourcegraph/monitoring/definitions/shared",
+        "//vendor/github.com/sourcegraph/sourcegraph/monitoring/monitoring",
     ],
 )

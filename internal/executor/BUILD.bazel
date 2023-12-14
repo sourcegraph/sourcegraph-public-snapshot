@@ -5,5 +5,5 @@ go_library(
     srcs = ["store.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/executor",
     visibility = ["//:__subpackages__"],
-    deps = ["//lib/errors"],
+    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
 )

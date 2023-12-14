@@ -13,6 +13,6 @@ go_library(
         "//internal/httpcli",
         "//internal/observation",
         "//internal/redispool",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/sourcegraph/log",
     ],
 )

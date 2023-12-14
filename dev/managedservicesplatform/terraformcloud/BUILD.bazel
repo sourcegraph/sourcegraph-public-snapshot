@@ -8,8 +8,8 @@ go_library(
     deps = [
         "//dev/managedservicesplatform/internal/terraform",
         "//dev/managedservicesplatform/spec",
-        "//lib/errors",
-        "//lib/pointers",
-        "@com_github_hashicorp_go_tfe//:go-tfe",
+        "//vendor/github.com/hashicorp/go-tfe",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
     ],
 )

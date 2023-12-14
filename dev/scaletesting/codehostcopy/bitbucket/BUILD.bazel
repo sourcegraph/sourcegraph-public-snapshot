@@ -8,5 +8,5 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/scaletesting/codehostcopy/bitbucket",
     visibility = ["//visibility:public"],
-    deps = ["//lib/errors"],
+    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
 )

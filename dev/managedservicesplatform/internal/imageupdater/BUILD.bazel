@@ -6,11 +6,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/imageupdater",
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
-        "//lib/errors",
-        "@com_github_google_go_containerregistry//pkg/authn",
-        "@com_github_google_go_containerregistry//pkg/name",
-        "@com_github_google_go_containerregistry//pkg/v1/google",
-        "@com_github_google_go_containerregistry//pkg/v1/remote",
-        "@org_golang_x_exp//slices",
+        "//vendor/github.com/google/go-containerregistry/pkg/authn",
+        "//vendor/github.com/google/go-containerregistry/pkg/name",
+        "//vendor/github.com/google/go-containerregistry/pkg/v1/google",
+        "//vendor/github.com/google/go-containerregistry/pkg/v1/remote",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/golang.org/x/exp/slices",
     ],
 )

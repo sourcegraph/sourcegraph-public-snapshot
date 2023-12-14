@@ -40,8 +40,8 @@ go_library(
         "//internal/workerutil",
         "//internal/workerutil/dbworker",
         "//internal/workerutil/dbworker/store",
-        "//lib/errors",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -54,6 +54,6 @@ go_test(
         "//internal/conf/conftypes",
         "//internal/embeddings/embed",
         "//internal/gitserver",
-        "@com_github_google_go_cmp//cmp",
+        "//vendor/github.com/google/go-cmp/cmp",
     ],
 )

@@ -9,9 +9,9 @@ go_library(
     deps = [
         "//internal/audit",
         "//internal/conf/conftypes",
-        "@com_github_sourcegraph_log//:log",
-        "@org_golang_google_grpc//:go_default_library",
-        "@org_uber_go_atomic//:atomic",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/go.uber.org/atomic",
+        "//vendor/google.golang.org/grpc",
     ],
 )
 
@@ -25,10 +25,10 @@ go_test(
         "//internal/conf/conftypes",
         "//internal/requestclient",
         "//schema",
-        "@com_github_sourcegraph_log//:log",
-        "@com_github_sourcegraph_log//logtest",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
-        "@org_golang_google_grpc//:go_default_library",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/log/logtest",
+        "//vendor/github.com/stretchr/testify/assert",
+        "//vendor/github.com/stretchr/testify/require",
+        "//vendor/google.golang.org/grpc",
     ],
 )

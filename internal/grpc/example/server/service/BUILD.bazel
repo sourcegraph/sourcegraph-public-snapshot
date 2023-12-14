@@ -5,5 +5,5 @@ go_library(
     srcs = ["service.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/example/server/service",
     visibility = ["//:__subpackages__"],
-    deps = ["//lib/errors"],
+    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
 )

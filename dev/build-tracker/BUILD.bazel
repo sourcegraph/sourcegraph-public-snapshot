@@ -10,9 +10,9 @@ go_library(
         "//dev/build-tracker/build",
         "//dev/build-tracker/config",
         "//dev/build-tracker/notify",
-        "//lib/errors",
-        "@com_github_gorilla_mux//:mux",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/gorilla/mux",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -36,9 +36,9 @@ go_test(
         "//dev/build-tracker/config",
         "//dev/build-tracker/notify",
         "//dev/team",
-        "@com_github_buildkite_go_buildkite_v3//buildkite",
-        "@com_github_gorilla_mux//:mux",
-        "@com_github_sourcegraph_log//logtest",
-        "@com_github_stretchr_testify//require",
+        "//vendor/github.com/buildkite/go-buildkite/v3/buildkite",
+        "//vendor/github.com/gorilla/mux",
+        "//vendor/github.com/sourcegraph/log/logtest",
+        "//vendor/github.com/stretchr/testify/require",
     ],
 )

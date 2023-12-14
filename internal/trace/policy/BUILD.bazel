@@ -10,8 +10,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/trace/policy",
     visibility = ["//:__subpackages__"],
     deps = [
-        "@org_golang_google_grpc//metadata",
-        "@org_uber_go_atomic//:atomic",
+        "//vendor/go.uber.org/atomic",
+        "//vendor/google.golang.org/grpc/metadata",
     ],
 )
 
@@ -21,7 +21,7 @@ go_test(
     srcs = ["grpc_test.go"],
     embed = [":policy"],
     deps = [
-        "@com_github_stretchr_testify//require",
-        "@org_golang_google_grpc//metadata",
+        "//vendor/github.com/stretchr/testify/require",
+        "//vendor/google.golang.org/grpc/metadata",
     ],
 )

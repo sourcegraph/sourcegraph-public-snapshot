@@ -24,7 +24,7 @@ go_library(
         "//internal/oobmigration",
         "//internal/oobmigration/migrations",
         "//internal/version/upgradestore",
-        "//lib/errors",
-        "//lib/output",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/output",
     ],
 )

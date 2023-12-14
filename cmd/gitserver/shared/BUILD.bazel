@@ -46,10 +46,10 @@ go_library(
         "//internal/service",
         "//internal/trace",
         "//internal/wrexec",
-        "//lib/errors",
-        "@com_github_sourcegraph_log//:log",
-        "@org_golang_google_grpc//:go_default_library",
-        "@org_golang_x_sync//semaphore",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/golang.org/x/sync/semaphore",
+        "//vendor/google.golang.org/grpc",
     ],
 )
 
@@ -65,9 +65,9 @@ go_test(
     # path is sandboxed properly.
     env = {"COURSIER_CACHE_DIR": "/tmp"},
     deps = [
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_sourcegraph_log//:log",
-        "@com_github_sourcegraph_log//logtest",
-        "@org_golang_google_grpc//:go_default_library",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/log/logtest",
+        "//vendor/google.golang.org/grpc",
     ],
 )

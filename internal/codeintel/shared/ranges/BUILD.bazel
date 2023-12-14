@@ -29,8 +29,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/ranges",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//lib/errors",
-        "@com_github_sourcegraph_scip//bindings/go/scip",
+        "//vendor/github.com/sourcegraph/scip/bindings/go/scip",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -39,7 +39,7 @@ go_test(
     srcs = ["ranges_test.go"],
     embed = [":ranges"],
     deps = [
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_sourcegraph_scip//bindings/go/scip",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/sourcegraph/scip/bindings/go/scip",
     ],
 )

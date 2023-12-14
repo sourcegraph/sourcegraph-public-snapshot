@@ -19,5 +19,5 @@ go_test(
     srcs = ["trie_test.go"],
     data = glob(["testdata/**"]),
     embed = [":trie"],
-    deps = ["//lib/errors"],
+    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
 )

@@ -22,8 +22,8 @@ go_library(
         "//internal/actor",
         "//internal/env",
         "//internal/trace",
-        "//lib/errors",
-        "@com_github_gorilla_mux//:mux",
+        "//vendor/github.com/gorilla/mux",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 

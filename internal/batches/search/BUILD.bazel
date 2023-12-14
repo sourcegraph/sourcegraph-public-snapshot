@@ -11,7 +11,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/batches/search/syntax",
-        "//lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -22,7 +22,7 @@ go_test(
     embed = [":search"],
     deps = [
         "//internal/batches/search/syntax",
-        "//lib/errors",
-        "@com_github_google_go_cmp//cmp",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

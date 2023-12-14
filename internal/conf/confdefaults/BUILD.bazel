@@ -7,6 +7,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf/conftypes",
-        "@com_github_russellhaering_gosaml2//uuid",
+        "//vendor/github.com/russellhaering/gosaml2/uuid",
     ],
 )

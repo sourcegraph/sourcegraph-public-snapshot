@@ -19,8 +19,8 @@ go_test(
         "iterator_test.go",
     ],
     deps = [
-        ":iterator",
-        "//lib/errors",
-        "@com_github_stretchr_testify//assert",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/iterator",
+        "//vendor/github.com/stretchr/testify/assert",
     ],
 )

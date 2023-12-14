@@ -11,8 +11,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/deployment-lag-notifier",
     visibility = ["//visibility:private"],
     deps = [
-        "//lib/errors",
-        "@com_github_joho_godotenv//autoload",
+        "//vendor/github.com/joho/godotenv/autoload",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 

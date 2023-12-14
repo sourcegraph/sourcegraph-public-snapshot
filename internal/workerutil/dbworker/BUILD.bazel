@@ -15,11 +15,11 @@ go_library(
         "//internal/observation",
         "//internal/workerutil",
         "//internal/workerutil/dbworker/store",
-        "//lib/errors",
-        "@com_github_derision_test_glock//:glock",
-        "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/derision-test/glock",
+        "//vendor/github.com/keegancsmith/sqlf",
+        "//vendor/github.com/prometheus/client_golang/prometheus",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -31,8 +31,8 @@ go_test(
     deps = [
         "//internal/workerutil/dbworker/store",
         "//internal/workerutil/dbworker/store/mocks",
-        "@com_github_derision_test_glock//:glock",
-        "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_sourcegraph_log//logtest",
+        "//vendor/github.com/derision-test/glock",
+        "//vendor/github.com/prometheus/client_golang/prometheus",
+        "//vendor/github.com/sourcegraph/log/logtest",
     ],
 )

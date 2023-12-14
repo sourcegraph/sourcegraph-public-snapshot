@@ -12,11 +12,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/pr-auditor",
     visibility = ["//visibility:private"],
     deps = [
-        "//lib/errors",
-        "@com_github_google_go_github_v55//github",
-        "@com_github_grafana_regexp//:regexp",
-        "@org_golang_x_exp//slices",
-        "@org_golang_x_oauth2//:oauth2",
+        "//vendor/github.com/google/go-github/v55/github",
+        "//vendor/github.com/grafana/regexp",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/golang.org/x/exp/slices",
+        "//vendor/golang.org/x/oauth2",
     ],
 )
 
@@ -36,8 +36,8 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":pr-auditor_lib"],
     deps = [
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/stretchr/testify/assert",
+        "//vendor/github.com/stretchr/testify/require",
     ],
 )

@@ -5,5 +5,5 @@ go_library(
     srcs = ["exported_router.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router",
     visibility = ["//cmd/frontend:__subpackages__"],
-    deps = ["@com_github_gorilla_mux//:mux"],
+    deps = ["//vendor/github.com/gorilla/mux"],
 )

@@ -9,6 +9,6 @@ go_library(
         "//dev/sg/buf",
         "//dev/sg/internal/generate",
         "//dev/sg/internal/std",
-        "//lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

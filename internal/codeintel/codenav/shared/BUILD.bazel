@@ -7,6 +7,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/codeintel/uploads/shared",
-        "//lib/codeintel/precise",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/precise",
     ],
 )

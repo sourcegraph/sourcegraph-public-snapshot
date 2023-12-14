@@ -18,10 +18,10 @@ go_library(
         "//internal/database/migration/definition",
         "//internal/database/migration/schemas",
         "//internal/database/migration/shared",
-        "//lib/errors",
-        "@com_github_jackc_pgconn//:pgconn",
-        "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/jackc/pgconn",
+        "//vendor/github.com/keegancsmith/sqlf",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -41,9 +41,9 @@ go_test(
         "//internal/database/migration/runner/testdata",
         "//internal/database/migration/schemas",
         "//internal/database/migration/shared",
-        "//lib/errors",
-        "@com_github_derision_test_go_mockgen//testutil/assert",
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_sourcegraph_log//logtest",
+        "//vendor/github.com/derision-test/go-mockgen/testutil/assert",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/sourcegraph/log/logtest",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

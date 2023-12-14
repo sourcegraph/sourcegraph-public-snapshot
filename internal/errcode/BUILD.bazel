@@ -11,8 +11,8 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/gitserver/gitdomain",
-        "//lib/errors",
-        "@com_github_gorilla_schema//:schema",
+        "//vendor/github.com/gorilla/schema",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -24,5 +24,5 @@ go_test(
         "presentation_error_test.go",
     ],
     embed = [":errcode"],
-    deps = ["//lib/errors"],
+    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
 )

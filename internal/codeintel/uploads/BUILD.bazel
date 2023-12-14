@@ -33,11 +33,11 @@ go_library(
         "//internal/observation",
         "//internal/uploadhandler",
         "//internal/uploadstore",
-        "//lib/codeintel/precise",
-        "//lib/errors",
-        "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_sourcegraph_log//:log",
-        "@io_opentelemetry_go_otel//attribute",
+        "//vendor/github.com/prometheus/client_golang/prometheus",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/precise",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/go.opentelemetry.io/otel/attribute",
     ],
 )
 
@@ -59,8 +59,8 @@ go_test(
         "//internal/types",
         "//internal/workerutil",
         "//internal/workerutil/dbworker/store",
-        "//lib/codeintel/precise",
-        "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_sourcegraph_scip//bindings/go/scip",
+        "//vendor/github.com/keegancsmith/sqlf",
+        "//vendor/github.com/sourcegraph/scip/bindings/go/scip",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/precise",
     ],
 )

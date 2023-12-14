@@ -6,12 +6,12 @@ go_library(
     srcs = ["gitservice.go"],
     importpath = "github.com/sourcegraph/sourcegraph/lib/gitservice",
     visibility = ["//visibility:public"],
-    deps = ["//lib/errors"],
+    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
 )
 
 go_test(
     name = "gitservice_test",
     timeout = "short",
     srcs = ["gitservice_test.go"],
-    deps = [":gitservice"],
+    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/gitservice"],
 )

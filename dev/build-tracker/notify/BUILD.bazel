@@ -8,10 +8,10 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dev/team",
-        "//lib/errors",
-        "@com_github_google_go_github_v55//github",
-        "@com_github_slack_go_slack//:slack",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/google/go-github/v55/github",
+        "//vendor/github.com/slack-go/slack",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -20,5 +20,5 @@ go_test(
     timeout = "short",
     srcs = ["slack_test.go"],
     embed = [":notify"],
-    deps = ["@com_github_hexops_autogold_v2//:autogold"],
+    deps = ["//vendor/github.com/hexops/autogold/v2:autogold"],
 )

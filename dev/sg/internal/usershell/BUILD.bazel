@@ -14,7 +14,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell",
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
-        "//lib/errors",
-        "@com_github_sourcegraph_run//:run",
+        "//vendor/github.com/sourcegraph/run",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

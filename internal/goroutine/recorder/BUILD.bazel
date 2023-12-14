@@ -12,8 +12,8 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/rcache",
-        "//lib/errors",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -28,8 +28,8 @@ go_test(
     ],
     deps = [
         "//internal/rcache",
-        "//lib/errors",
-        "@com_github_sourcegraph_log//:log",
-        "@com_github_stretchr_testify//assert",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/stretchr/testify/assert",
     ],
 )

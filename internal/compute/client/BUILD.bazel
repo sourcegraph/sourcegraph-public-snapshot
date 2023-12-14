@@ -13,7 +13,7 @@ go_library(
         "//internal/compute",
         "//internal/search/streaming/api",
         "//internal/search/streaming/http",
-        "//lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -29,6 +29,6 @@ go_test(
         "//internal/compute",
         "//internal/search/streaming/api",
         "//internal/search/streaming/http",
-        "@com_github_hexops_autogold_v2//:autogold",
+        "//vendor/github.com/hexops/autogold/v2:autogold",
     ],
 )

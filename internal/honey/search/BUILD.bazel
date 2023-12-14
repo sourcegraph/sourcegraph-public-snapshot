@@ -8,6 +8,6 @@ go_library(
     deps = [
         "//internal/actor",
         "//internal/honey",
-        "@io_opentelemetry_go_otel_trace//:trace",
+        "//vendor/go.opentelemetry.io/otel/trace",
     ],
 )

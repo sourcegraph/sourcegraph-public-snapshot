@@ -12,7 +12,7 @@ go_library(
     deps = [
         "//internal/executor/types",
         "//internal/executor/util",
-        "//lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -21,7 +21,7 @@ go_test(
     srcs = ["util_test.go"],
     deps = [
         ":util",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
+        "//vendor/github.com/stretchr/testify/assert",
+        "//vendor/github.com/stretchr/testify/require",
     ],
 )

@@ -7,10 +7,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/security/gsm",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//lib/errors",
-        "@com_github_googleapis_gax_go_v2//:gax-go",
-        "@com_google_cloud_go_secretmanager//apiv1",
-        "@com_google_cloud_go_secretmanager//apiv1/secretmanagerpb",
+        "//vendor/cloud.google.com/go/secretmanager/apiv1",
+        "//vendor/cloud.google.com/go/secretmanager/apiv1/secretmanagerpb",
+        "//vendor/github.com/googleapis/gax-go/v2:gax-go",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -20,9 +20,9 @@ go_test(
     srcs = ["gsm_test.go"],
     embed = [":gsm"],
     deps = [
-        "//lib/errors",
-        "@com_github_googleapis_gax_go_v2//:gax-go",
-        "@com_github_stretchr_testify//assert",
-        "@com_google_cloud_go_secretmanager//apiv1/secretmanagerpb",
+        "//vendor/cloud.google.com/go/secretmanager/apiv1/secretmanagerpb",
+        "//vendor/github.com/googleapis/gax-go/v2:gax-go",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/stretchr/testify/assert",
     ],
 )

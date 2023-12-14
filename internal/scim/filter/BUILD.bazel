@@ -17,10 +17,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/scim/filter",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//lib/errors",
-        "@com_github_di_wu_xsd_datetime//:xsd-datetime",
-        "@com_github_elimity_com_scim//schema",
-        "@com_github_scim2_filter_parser_v2//:filter-parser",
+        "//vendor/github.com/di-wu/xsd-datetime",
+        "//vendor/github.com/elimity-com/scim/schema",
+        "//vendor/github.com/scim2/filter-parser/v2:filter-parser",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -38,7 +38,7 @@ go_test(
     ],
     embed = [":filter"],
     deps = [
-        "@com_github_elimity_com_scim//schema",
-        "@com_github_scim2_filter_parser_v2//:filter-parser",
+        "//vendor/github.com/elimity-com/scim/schema",
+        "//vendor/github.com/scim2/filter-parser/v2:filter-parser",
     ],
 )

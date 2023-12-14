@@ -12,6 +12,6 @@ go_library(
         "//internal/extsvc/auth",
         "//internal/gitserver/protocol",
         "//internal/types",
-        "//lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

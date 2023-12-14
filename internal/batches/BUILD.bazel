@@ -17,6 +17,6 @@ go_library(
         "//internal/goroutine",
         "//internal/httpcli",
         "//internal/observation",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/sourcegraph/log",
     ],
 )

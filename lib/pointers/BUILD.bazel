@@ -13,7 +13,7 @@ go_test(
     srcs = ["ptr_test.go"],
     embed = [":pointers"],
     deps = [
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
+        "//vendor/github.com/stretchr/testify/assert",
+        "//vendor/github.com/stretchr/testify/require",
     ],
 )

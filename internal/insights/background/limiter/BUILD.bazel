@@ -12,8 +12,8 @@ go_library(
     deps = [
         "//internal/conf",
         "//internal/ratelimit",
-        "@com_github_sourcegraph_log//:log",
-        "@org_golang_x_time//rate",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/golang.org/x/time/rate",
     ],
 )
 

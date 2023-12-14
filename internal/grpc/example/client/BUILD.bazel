@@ -10,9 +10,9 @@ go_library(
         "//internal/grpc/defaults",
         "//internal/grpc/example/weather/v1:weather",
         "//internal/grpc/streamio",
-        "@com_github_sourcegraph_log//:log",
-        "@org_golang_google_grpc//codes",
-        "@org_golang_google_grpc//status",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/google.golang.org/grpc/codes",
+        "//vendor/google.golang.org/grpc/status",
     ],
 )
 

@@ -15,7 +15,7 @@ go_library(
         "//internal/database",
         "//internal/redispool",
         "//internal/telemetry/telemetryrecorder",
-        "//lib/errors",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

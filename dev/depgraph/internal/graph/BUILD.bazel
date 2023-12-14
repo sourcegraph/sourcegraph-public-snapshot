@@ -13,6 +13,6 @@ go_library(
     visibility = ["//dev/depgraph:__subpackages__"],
     deps = [
         "//internal/byteutils",
-        "@com_github_grafana_regexp//:regexp",
+        "//vendor/github.com/grafana/regexp",
     ],
 )

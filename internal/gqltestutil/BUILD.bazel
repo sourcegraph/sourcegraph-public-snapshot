@@ -31,9 +31,9 @@ go_library(
         "//internal/search/streaming/api",
         "//internal/search/streaming/http",
         "//internal/types",
-        "//lib/errors",
         "//schema",
-        "@com_github_graph_gophers_graphql_go//:graphql-go",
-        "@com_github_json_iterator_go//:go",
+        "//vendor/github.com/graph-gophers/graphql-go",
+        "//vendor/github.com/json-iterator/go",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

@@ -7,7 +7,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//internal/gqltestutil",
-        "@com_github_json_iterator_go//:go",
+        "//vendor/github.com/json-iterator/go",
     ],
 )
 

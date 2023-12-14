@@ -11,7 +11,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//dev/codeintel-qa/internal",
-        "//lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 

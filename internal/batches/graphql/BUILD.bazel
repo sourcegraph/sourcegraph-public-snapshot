@@ -9,7 +9,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/graphql",
     visibility = ["//:__subpackages__"],
     deps = [
-        "@com_github_graph_gophers_graphql_go//:graphql-go",
-        "@com_github_graph_gophers_graphql_go//relay",
+        "//vendor/github.com/graph-gophers/graphql-go",
+        "//vendor/github.com/graph-gophers/graphql-go/relay",
     ],
 )

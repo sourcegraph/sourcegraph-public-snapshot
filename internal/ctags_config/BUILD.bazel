@@ -6,8 +6,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/ctags_config",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//lib/codeintel/languages",
-        "//lib/errors",
         "//schema",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/languages",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

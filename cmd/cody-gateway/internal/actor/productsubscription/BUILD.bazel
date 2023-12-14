@@ -14,14 +14,14 @@ go_library(
         "//internal/licensing",
         "//internal/productsubscription",
         "//internal/trace",
-        "//lib/errors",
-        "@com_github_gregjones_httpcache//:httpcache",
-        "@com_github_khan_genqlient//graphql",
-        "@com_github_sourcegraph_log//:log",
-        "@com_github_vektah_gqlparser_v2//gqlerror",
-        "@io_opentelemetry_go_otel//attribute",
-        "@io_opentelemetry_go_otel_trace//:trace",
-        "@org_golang_x_exp//slices",
+        "//vendor/github.com/Khan/genqlient/graphql",
+        "//vendor/github.com/gregjones/httpcache",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/vektah/gqlparser/v2/gqlerror",
+        "//vendor/go.opentelemetry.io/otel/attribute",
+        "//vendor/go.opentelemetry.io/otel/trace",
+        "//vendor/golang.org/x/exp/slices",
     ],
 )
 
@@ -32,6 +32,6 @@ go_test(
     deps = [
         "//cmd/cody-gateway/internal/dotcom",
         "//internal/codygateway",
-        "@com_github_stretchr_testify//assert",
+        "//vendor/github.com/stretchr/testify/assert",
     ],
 )

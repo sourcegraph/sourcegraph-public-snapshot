@@ -7,8 +7,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/batcheshelper/log",
     visibility = ["//visibility:public"],
     deps = [
-        "//lib/batches",
-        "//lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -17,8 +17,8 @@ go_test(
     srcs = ["log_test.go"],
     deps = [
         ":log",
-        "//lib/batches",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches",
+        "//vendor/github.com/stretchr/testify/assert",
+        "//vendor/github.com/stretchr/testify/require",
     ],
 )

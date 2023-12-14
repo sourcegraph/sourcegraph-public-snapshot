@@ -19,10 +19,10 @@ go_library(
         "//internal/errcode",
         "//internal/gitserver",
         "//internal/types",
-        "//lib/errors",
-        "@com_github_gorilla_mux//:mux",
-        "@com_github_inconshreveable_log15//:log15",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/gorilla/mux",
+        "//vendor/github.com/inconshreveable/log15",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -36,7 +36,7 @@ go_test(
         "//internal/api",
         "//internal/database/dbmocks",
         "//internal/types",
-        "//lib/errors",
-        "@com_github_sourcegraph_log//logtest",
+        "//vendor/github.com/sourcegraph/log/logtest",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

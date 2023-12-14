@@ -25,10 +25,10 @@ go_library(
         "//internal/env",
         "//internal/hostname",
         "//internal/version",
-        "//lib/errors",
-        "@com_github_joho_godotenv//:godotenv",
-        "@com_github_sourcegraph_log//:log",
-        "@org_golang_x_sync//errgroup",
+        "//vendor/github.com/joho/godotenv",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/golang.org/x/sync/errgroup",
     ],
 )
 
@@ -46,5 +46,5 @@ go_test(
     # FAIL
     # TODO(bazel): fix test
     tags = ["manual"],
-    deps = ["@com_github_google_go_cmp//cmp"],
+    deps = ["//vendor/github.com/google/go-cmp/cmp"],
 )

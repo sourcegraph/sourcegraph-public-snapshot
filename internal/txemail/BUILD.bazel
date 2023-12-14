@@ -14,12 +14,12 @@ go_library(
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/txemail/txtypes",
-        "//lib/errors",
         "//schema",
-        "@com_github_jordan_wright_email//:email",
-        "@com_github_k3a_html2text//:html2text",
-        "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "//vendor/github.com/jordan-wright/email",
+        "//vendor/github.com/k3a/html2text",
+        "//vendor/github.com/prometheus/client_golang/prometheus",
+        "//vendor/github.com/prometheus/client_golang/prometheus/promauto",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -35,9 +35,9 @@ go_test(
     deps = [
         "//internal/txemail/txtypes",
         "//schema",
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_hexops_autogold_v2//:autogold",
-        "@com_github_jordan_wright_email//:email",
-        "@com_github_stretchr_testify//require",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/hexops/autogold/v2:autogold",
+        "//vendor/github.com/jordan-wright/email",
+        "//vendor/github.com/stretchr/testify/require",
     ],
 )

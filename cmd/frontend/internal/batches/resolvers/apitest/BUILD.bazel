@@ -13,9 +13,9 @@ go_library(
         "//internal/batches/types",
         "//internal/gqlutil",
         "//internal/jsonc",
-        "//lib/batches",
-        "@com_github_graph_gophers_graphql_go//:graphql-go",
-        "@com_github_graph_gophers_graphql_go//errors",
-        "@com_github_sourcegraph_go_diff//diff",
+        "//vendor/github.com/graph-gophers/graphql-go",
+        "//vendor/github.com/graph-gophers/graphql-go/errors",
+        "//vendor/github.com/sourcegraph/go-diff/diff",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches",
     ],
 )

@@ -12,9 +12,9 @@ go_library(
         "//internal/httpcli",
         "//internal/lazyregexp",
         "//internal/ratelimit",
-        "//lib/errors",
-        "@com_github_sourcegraph_log//:log",
-        "@org_golang_x_net//html",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/golang.org/x/net/html",
     ],
 )
 
@@ -30,8 +30,8 @@ go_test(
         "//internal/ratelimit",
         "//internal/testutil",
         "//internal/unpack",
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_grafana_regexp//:regexp",
-        "@org_golang_x_time//rate",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/grafana/regexp",
+        "//vendor/golang.org/x/time/rate",
     ],
 )

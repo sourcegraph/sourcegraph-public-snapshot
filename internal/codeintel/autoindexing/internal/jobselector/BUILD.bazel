@@ -16,8 +16,8 @@ go_library(
         "//internal/database",
         "//internal/env",
         "//internal/gitserver",
-        "//lib/codeintel/autoindex/config",
-        "//lib/errors",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

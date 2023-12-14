@@ -10,7 +10,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/writer",
     visibility = ["//visibility:public"],
     deps = [
-        "//lib/codeintel/lsif/protocol",
-        "@com_github_json_iterator_go//:go",
+        "//vendor/github.com/json-iterator/go",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol",
     ],
 )

@@ -22,10 +22,10 @@ go_library(
         "//internal/workerutil",
         "//internal/workerutil/dbworker",
         "//internal/workerutil/dbworker/store",
-        "//lib/errors",
-        "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_lib_pq//:pq",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/keegancsmith/sqlf",
+        "//vendor/github.com/lib/pq",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -46,7 +46,7 @@ go_test(
         "//internal/insights/types",
         "//internal/observation",
         "//schema",
-        "@com_github_sourcegraph_log//logtest",
-        "@com_github_stretchr_testify//assert",
+        "//vendor/github.com/sourcegraph/log/logtest",
+        "//vendor/github.com/stretchr/testify/assert",
     ],
 )

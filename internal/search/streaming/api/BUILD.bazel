@@ -21,6 +21,6 @@ go_test(
     deps = [
         "//internal/api",
         "//internal/testutil",
-        "//lib/pointers",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
     ],
 )

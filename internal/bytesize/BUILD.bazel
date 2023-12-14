@@ -6,12 +6,12 @@ go_library(
     srcs = ["bytesize.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/bytesize",
     visibility = ["//:__subpackages__"],
-    deps = ["//lib/errors"],
+    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
 )
 
 go_test(
     name = "bytesize_test",
     srcs = ["bytesize_test.go"],
     embed = [":bytesize"],
-    deps = ["@com_github_stretchr_testify//require"],
+    deps = ["//vendor/github.com/stretchr/testify/require"],
 )

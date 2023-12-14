@@ -12,7 +12,7 @@ go_library(
     deps = [
         "//internal/conf",
         "//internal/env",
-        "//lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -21,5 +21,5 @@ go_test(
     timeout = "short",
     srcs = ["prometheus_test.go"],
     embed = [":src-prometheus"],
-    deps = ["//lib/errors"],
+    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
 )

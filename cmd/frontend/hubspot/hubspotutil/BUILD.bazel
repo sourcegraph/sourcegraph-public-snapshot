@@ -9,7 +9,7 @@ go_library(
         "//cmd/frontend/envvar",
         "//cmd/frontend/hubspot",
         "//internal/env",
-        "//lib/errors",
-        "@com_github_inconshreveable_log15//:log15",
+        "//vendor/github.com/inconshreveable/log15",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

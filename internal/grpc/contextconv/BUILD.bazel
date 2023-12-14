@@ -10,9 +10,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/contextconv",
     visibility = ["//:__subpackages__"],
     deps = [
-        "@org_golang_google_grpc//:go_default_library",
-        "@org_golang_google_grpc//codes",
-        "@org_golang_google_grpc//status",
+        "//vendor/google.golang.org/grpc",
+        "//vendor/google.golang.org/grpc/codes",
+        "//vendor/google.golang.org/grpc/status",
     ],
 )
 
@@ -21,10 +21,10 @@ go_test(
     srcs = ["conversion_test.go"],
     embed = [":contextconv"],
     deps = [
-        "//lib/errors",
-        "@com_github_google_go_cmp//cmp",
-        "@org_golang_google_grpc//:go_default_library",
-        "@org_golang_google_grpc//codes",
-        "@org_golang_google_grpc//status",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/google.golang.org/grpc",
+        "//vendor/google.golang.org/grpc/codes",
+        "//vendor/google.golang.org/grpc/status",
     ],
 )

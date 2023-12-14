@@ -9,9 +9,9 @@ go_library(
     deps = [
         "//internal/pubsub",
         "//internal/telemetrygateway/v1:telemetrygateway",
-        "//lib/errors",
-        "@com_github_sourcegraph_conc//pool",
-        "@org_golang_google_protobuf//encoding/protojson",
+        "//vendor/github.com/sourcegraph/conc/pool",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/google.golang.org/protobuf/encoding/protojson",
     ],
 )
 
@@ -22,7 +22,7 @@ go_test(
         ":events",
         "//internal/pubsub/pubsubtest",
         "//internal/telemetrygateway/v1:telemetrygateway",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
+        "//vendor/github.com/stretchr/testify/assert",
+        "//vendor/github.com/stretchr/testify/require",
     ],
 )

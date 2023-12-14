@@ -7,11 +7,11 @@ go_library(
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/internal/resourceid",
-        "//lib/pointers",
-        "@com_github_aws_constructs_go_constructs_v10//:constructs",
-        "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//datagooglesecretmanagersecretversion",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//secretmanagersecret",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//secretmanagersecretversion",
+        "//vendor/github.com/aws/constructs-go/constructs/v10:constructs",
+        "//vendor/github.com/hashicorp/terraform-cdk-go/cdktf",
+        "//vendor/github.com/sourcegraph/managed-services-platform-cdktf/gen/google/datagooglesecretmanagersecretversion",
+        "//vendor/github.com/sourcegraph/managed-services-platform-cdktf/gen/google/secretmanagersecret",
+        "//vendor/github.com/sourcegraph/managed-services-platform-cdktf/gen/google/secretmanagersecretversion",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
     ],
 )

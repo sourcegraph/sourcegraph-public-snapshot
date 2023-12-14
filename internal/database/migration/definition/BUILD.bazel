@@ -12,9 +12,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/lazyregexp",
-        "//lib/errors",
-        "@com_github_keegancsmith_sqlf//:sqlf",
-        "@in_gopkg_yaml_v2//:yaml_v2",
+        "//vendor/github.com/keegancsmith/sqlf",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/gopkg.in/yaml.v2:yaml_v2",
     ],
 )
 
@@ -29,7 +29,7 @@ go_test(
     embed = [":definition"],
     deps = [
         "//internal/database/migration/definition/testdata",
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_keegancsmith_sqlf//:sqlf",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/keegancsmith/sqlf",
     ],
 )

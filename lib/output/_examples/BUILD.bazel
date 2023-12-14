@@ -5,7 +5,7 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/lib/output/_examples",
     visibility = ["//visibility:private"],
-    deps = ["//lib/output"],
+    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/output"],
 )
 
 go_binary(

@@ -6,10 +6,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/metrics",
     visibility = ["//cmd/executor:__subpackages__"],
     deps = [
-        "//lib/errors",
-        "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_prometheus_client_model//go",
-        "@com_github_prometheus_common//expfmt",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/prometheus/client_golang/prometheus",
+        "//vendor/github.com/prometheus/client_model/go",
+        "//vendor/github.com/prometheus/common/expfmt",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

@@ -16,13 +16,13 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//dev/team",
-        "//lib/errors",
-        "//lib/pointers",
-        "@com_github_buildkite_go_buildkite_v3//buildkite",
-        "@com_github_google_go_github_v55//github",
-        "@com_github_honeycombio_libhoney_go//:libhoney-go",
-        "@com_github_slack_go_slack//:slack",
-        "@org_golang_x_oauth2//:oauth2",
+        "//vendor/github.com/buildkite/go-buildkite/v3/buildkite",
+        "//vendor/github.com/google/go-github/v55/github",
+        "//vendor/github.com/honeycombio/libhoney-go",
+        "//vendor/github.com/slack-go/slack",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
+        "//vendor/golang.org/x/oauth2",
     ],
 )
 
@@ -47,11 +47,11 @@ go_test(
     deps = [
         "//dev/team",
         "//internal/httptestutil",
-        "@com_github_buildkite_go_buildkite_v3//buildkite",
-        "@com_github_dnaeon_go_vcr//cassette",
-        "@com_github_google_go_github_v55//github",
-        "@com_github_hexops_autogold_v2//:autogold",
-        "@com_github_stretchr_testify//assert",
-        "@org_golang_x_oauth2//:oauth2",
+        "//vendor/github.com/buildkite/go-buildkite/v3/buildkite",
+        "//vendor/github.com/dnaeon/go-vcr/cassette",
+        "//vendor/github.com/google/go-github/v55/github",
+        "//vendor/github.com/hexops/autogold/v2:autogold",
+        "//vendor/github.com/stretchr/testify/assert",
+        "//vendor/golang.org/x/oauth2",
     ],
 )

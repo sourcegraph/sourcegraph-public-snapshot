@@ -5,5 +5,5 @@ go_library(
     srcs = ["diff.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/searcher/diff",
     visibility = ["//visibility:public"],
-    deps = ["//lib/errors"],
+    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
 )

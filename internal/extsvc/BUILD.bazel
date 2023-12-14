@@ -13,10 +13,10 @@ go_library(
         "//internal/api",
         "//internal/encryption",
         "//internal/jsonc",
-        "//lib/errors",
         "//schema",
-        "@io_opentelemetry_go_otel//attribute",
-        "@org_golang_x_time//rate",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/go.opentelemetry.io/otel/attribute",
+        "//vendor/golang.org/x/time/rate",
     ],
 )
 
@@ -31,9 +31,9 @@ go_test(
     deps = [
         "//internal/api",
         "//schema",
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
-        "@org_golang_x_time//rate",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/stretchr/testify/assert",
+        "//vendor/github.com/stretchr/testify/require",
+        "//vendor/golang.org/x/time/rate",
     ],
 )

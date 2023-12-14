@@ -9,6 +9,6 @@ go_library(
         "//internal/authbearer",
         "//internal/trace",
         "//internal/version",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/sourcegraph/log",
     ],
 )

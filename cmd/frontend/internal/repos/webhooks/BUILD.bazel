@@ -21,9 +21,9 @@ go_library(
         "//internal/extsvc/gitlab/webhooks",
         "//internal/observation",
         "//internal/repoupdater",
-        "//lib/errors",
-        "@com_github_google_go_github_v55//github",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/google/go-github/v55/github",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -57,10 +57,10 @@ go_test(
         "//internal/repoupdater/v1:repoupdater",
         "//internal/types",
         "//schema",
-        "@com_github_sourcegraph_log//logtest",
-        "@com_github_stretchr_testify//assert",
-        "@org_golang_google_grpc//:go_default_library",
-        "@org_golang_google_grpc//codes",
-        "@org_golang_google_grpc//status",
+        "//vendor/github.com/sourcegraph/log/logtest",
+        "//vendor/github.com/stretchr/testify/assert",
+        "//vendor/google.golang.org/grpc",
+        "//vendor/google.golang.org/grpc/codes",
+        "//vendor/google.golang.org/grpc/status",
     ],
 )

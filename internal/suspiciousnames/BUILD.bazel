@@ -7,6 +7,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
-        "//lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

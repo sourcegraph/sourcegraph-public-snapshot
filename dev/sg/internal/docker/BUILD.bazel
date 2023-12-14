@@ -9,10 +9,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/docker",
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
-        "//lib/errors",
-        "@com_github_docker_docker_credential_helpers//client",
-        "@com_github_docker_docker_credential_helpers//credentials",
-        "@com_github_moby_buildkit//frontend/dockerfile/instructions",
-        "@com_github_moby_buildkit//frontend/dockerfile/parser",
+        "//vendor/github.com/docker/docker-credential-helpers/client",
+        "//vendor/github.com/docker/docker-credential-helpers/credentials",
+        "//vendor/github.com/moby/buildkit/frontend/dockerfile/instructions",
+        "//vendor/github.com/moby/buildkit/frontend/dockerfile/parser",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

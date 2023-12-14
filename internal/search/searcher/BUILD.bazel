@@ -31,14 +31,14 @@ go_library(
         "//internal/symbols",
         "//internal/trace",
         "//internal/types",
-        "//lib/errors",
-        "@com_github_grafana_regexp//:regexp",
-        "@com_github_sourcegraph_conc//pool",
-        "@com_github_sourcegraph_log//:log",
-        "@io_opentelemetry_go_otel//attribute",
-        "@org_golang_google_grpc//codes",
-        "@org_golang_google_grpc//status",
-        "@org_golang_x_sync//errgroup",
+        "//vendor/github.com/grafana/regexp",
+        "//vendor/github.com/sourcegraph/conc/pool",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/go.opentelemetry.io/otel/attribute",
+        "//vendor/golang.org/x/sync/errgroup",
+        "//vendor/google.golang.org/grpc/codes",
+        "//vendor/google.golang.org/grpc/status",
     ],
 )
 
@@ -50,6 +50,6 @@ go_test(
     deps = [
         "//internal/search/result",
         "//internal/types",
-        "@com_github_google_go_cmp//cmp",
+        "//vendor/github.com/google/go-cmp/cmp",
     ],
 )

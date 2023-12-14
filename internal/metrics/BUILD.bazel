@@ -11,9 +11,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/diskusage",
-        "//lib/errors",
-        "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/prometheus/client_golang/prometheus",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -23,8 +23,8 @@ go_test(
     srcs = ["metrics_test.go"],
     embed = [":metrics"],
     deps = [
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_prometheus_client_golang//prometheus/testutil",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/prometheus/client_golang/prometheus",
+        "//vendor/github.com/prometheus/client_golang/prometheus/testutil",
     ],
 )

@@ -15,7 +15,7 @@ go_library(
     visibility = ["//dev/depgraph:__subpackages__"],
     deps = [
         "//dev/depgraph/internal/graph",
-        "//lib/errors",
-        "@com_github_grafana_regexp//:regexp",
+        "//vendor/github.com/grafana/regexp",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

@@ -24,13 +24,13 @@ go_library(
         "//dev/sg/interrupt",
         "//dev/sg/root",
         "//internal/download",
-        "//lib/errors",
-        "//lib/output",
-        "//lib/process",
-        "@com_github_grafana_regexp//:regexp",
-        "@com_github_rjeczalik_notify//:notify",
-        "@com_github_sourcegraph_conc//pool",
-        "@org_golang_x_sync//semaphore",
+        "//vendor/github.com/grafana/regexp",
+        "//vendor/github.com/rjeczalik/notify",
+        "//vendor/github.com/sourcegraph/conc/pool",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/output",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/process",
+        "//vendor/golang.org/x/sync/semaphore",
     ],
 )
 
@@ -39,5 +39,5 @@ go_test(
     timeout = "short",
     srcs = ["logger_test.go"],
     embed = [":run"],
-    deps = ["@com_github_stretchr_testify//assert"],
+    deps = ["//vendor/github.com/stretchr/testify/assert"],
 )

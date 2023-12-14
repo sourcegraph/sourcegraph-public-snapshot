@@ -13,7 +13,7 @@ go_library(
     deps = [
         "//internal/api/internalapi/v1:internalapi",
         "//schema",
-        "@org_golang_google_protobuf//types/known/durationpb",
+        "//vendor/google.golang.org/protobuf/types/known/durationpb",
     ],
 )
 
@@ -21,5 +21,5 @@ go_test(
     name = "conftypes_test",
     srcs = ["conftypes_test.go"],
     embed = [":conftypes"],
-    deps = ["@com_github_google_go_cmp//cmp"],
+    deps = ["//vendor/github.com/google/go-cmp/cmp"],
 )

@@ -7,8 +7,8 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dev/sg/root",
-        "//lib/errors",
-        "//lib/output",
-        "@com_github_sourcegraph_run//:run",
+        "//vendor/github.com/sourcegraph/run",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/output",
     ],
 )

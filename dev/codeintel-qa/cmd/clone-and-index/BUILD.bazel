@@ -8,9 +8,9 @@ go_library(
     deps = [
         "//dev/codeintel-qa/internal",
         "//dev/sg/root",
-        "//lib/errors",
-        "@com_github_sourcegraph_conc//pool",
-        "@com_github_sourcegraph_run//:run",
+        "//vendor/github.com/sourcegraph/conc/pool",
+        "//vendor/github.com/sourcegraph/run",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 

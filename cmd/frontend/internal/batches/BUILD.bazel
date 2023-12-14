@@ -19,6 +19,6 @@ go_library(
         "//internal/encryption/keyring",
         "//internal/gitserver",
         "//internal/observation",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/sourcegraph/log",
     ],
 )

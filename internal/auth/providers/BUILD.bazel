@@ -12,7 +12,7 @@ go_library(
     deps = [
         "//internal/extsvc",
         "//schema",
-        "@com_github_inconshreveable_log15//:log15",
+        "//vendor/github.com/inconshreveable/log15",
     ],
 )
 
@@ -22,6 +22,6 @@ go_test(
     embed = [":providers"],
     deps = [
         "//schema",
-        "@com_github_stretchr_testify//require",
+        "//vendor/github.com/stretchr/testify/require",
     ],
 )

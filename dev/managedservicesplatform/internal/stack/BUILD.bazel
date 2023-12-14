@@ -8,9 +8,9 @@ go_library(
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/internal/resourceid",
-        "//lib/pointers",
-        "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
-        "@org_golang_x_exp//maps",
+        "//vendor/github.com/hashicorp/terraform-cdk-go/cdktf",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
+        "//vendor/golang.org/x/exp/maps",
     ],
 )
 
@@ -18,5 +18,5 @@ go_test(
     name = "stack_test",
     srcs = ["stacks_test.go"],
     embed = [":stack"],
-    deps = ["@com_github_stretchr_testify//assert"],
+    deps = ["//vendor/github.com/stretchr/testify/assert"],
 )

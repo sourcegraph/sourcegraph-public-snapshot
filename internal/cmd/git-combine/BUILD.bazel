@@ -8,12 +8,12 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/cmd/git-combine",
     visibility = ["//visibility:private"],
     deps = [
-        "//lib/errors",
-        "@com_github_go_git_go_git_v5//:go-git",
-        "@com_github_go_git_go_git_v5//plumbing",
-        "@com_github_go_git_go_git_v5//plumbing/filemode",
-        "@com_github_go_git_go_git_v5//plumbing/object",
-        "@com_github_go_git_go_git_v5//plumbing/storer",
+        "//vendor/github.com/go-git/go-git/v5:go-git",
+        "//vendor/github.com/go-git/go-git/v5/plumbing",
+        "//vendor/github.com/go-git/go-git/v5/plumbing/filemode",
+        "//vendor/github.com/go-git/go-git/v5/plumbing/object",
+        "//vendor/github.com/go-git/go-git/v5/plumbing/storer",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -29,8 +29,8 @@ go_test(
     srcs = ["git-combine_test.go"],
     embed = [":git-combine_lib"],
     deps = [
-        "@com_github_go_git_go_git_v5//plumbing",
-        "@com_github_go_git_go_git_v5//plumbing/object",
-        "@com_github_google_go_cmp//cmp",
+        "//vendor/github.com/go-git/go-git/v5/plumbing",
+        "//vendor/github.com/go-git/go-git/v5/plumbing/object",
+        "//vendor/github.com/google/go-cmp/cmp",
     ],
 )

@@ -20,9 +20,9 @@ go_library(
         "//internal/search/streaming",
         "//internal/trace",
         "//internal/types",
-        "@com_github_grafana_regexp//:regexp",
-        "@com_github_sourcegraph_conc//pool",
-        "@io_opentelemetry_go_otel//attribute",
+        "//vendor/github.com/grafana/regexp",
+        "//vendor/github.com/sourcegraph/conc/pool",
+        "//vendor/go.opentelemetry.io/otel/attribute",
     ],
 )
 
@@ -37,6 +37,6 @@ go_test(
         "//internal/gitserver/protocol",
         "//internal/search/query",
         "//internal/types",
-        "@com_github_stretchr_testify//require",
+        "//vendor/github.com/stretchr/testify/require",
     ],
 )

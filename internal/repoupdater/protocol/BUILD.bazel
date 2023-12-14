@@ -15,6 +15,6 @@ go_library(
         "//internal/extsvc/gitlab",
         "//internal/repoupdater/v1:repoupdater",
         "//internal/types",
-        "@org_golang_google_protobuf//types/known/timestamppb",
+        "//vendor/google.golang.org/protobuf/types/known/timestamppb",
     ],
 )

@@ -28,5 +28,5 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":context"],
-    deps = ["@com_github_hexops_autogold_v2//:autogold"],
+    deps = ["//vendor/github.com/hexops/autogold/v2:autogold"],
 )

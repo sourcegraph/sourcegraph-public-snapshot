@@ -11,9 +11,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/encryption",
-        "@com_github_hashicorp_golang_lru_v2//:golang-lru",
-        "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "//vendor/github.com/hashicorp/golang-lru/v2:golang-lru",
+        "//vendor/github.com/prometheus/client_golang/prometheus",
+        "//vendor/github.com/prometheus/client_golang/prometheus/promauto",
     ],
 )
 
@@ -24,7 +24,7 @@ go_test(
     embed = [":cache"],
     deps = [
         "//internal/encryption",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
+        "//vendor/github.com/stretchr/testify/assert",
+        "//vendor/github.com/stretchr/testify/require",
     ],
 )

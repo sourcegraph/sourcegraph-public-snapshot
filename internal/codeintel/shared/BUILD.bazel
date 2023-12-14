@@ -11,7 +11,7 @@ go_library(
     deps = [
         "//internal/database/basestore",
         "//internal/database/dbutil",
-        "//lib/errors",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

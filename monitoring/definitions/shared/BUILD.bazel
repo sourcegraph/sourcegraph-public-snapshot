@@ -37,11 +37,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/monitoring/definitions/shared",
     visibility = ["//visibility:public"],
     deps = [
-        "//monitoring/monitoring",
-        "@com_github_grafana_tools_sdk//:sdk",
-        "@com_github_iancoleman_strcase//:strcase",
-        "@com_github_prometheus_common//model",
-        "@org_golang_x_text//cases",
-        "@org_golang_x_text//language",
+        "//vendor/github.com/grafana-tools/sdk",
+        "//vendor/github.com/iancoleman/strcase",
+        "//vendor/github.com/prometheus/common/model",
+        "//vendor/github.com/sourcegraph/sourcegraph/monitoring/monitoring",
+        "//vendor/golang.org/x/text/cases",
+        "//vendor/golang.org/x/text/language",
     ],
 )

@@ -39,10 +39,10 @@ go_library(
         "//internal/types",
         "//internal/workerutil",
         "//internal/workerutil/dbworker",
-        "//lib/errors",
-        "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_sourcegraph_log//:log",
+        "//vendor/github.com/keegancsmith/sqlf",
+        "//vendor/github.com/prometheus/client_golang/prometheus",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -74,9 +74,9 @@ go_test(
         "//internal/licensing",
         "//internal/timeutil",
         "//internal/types",
-        "//lib/errors",
-        "@com_github_hexops_autogold_v2//:autogold",
-        "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_sourcegraph_log//logtest",
+        "//vendor/github.com/hexops/autogold/v2:autogold",
+        "//vendor/github.com/keegancsmith/sqlf",
+        "//vendor/github.com/sourcegraph/log/logtest",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

@@ -12,8 +12,8 @@ go_library(
         "//internal/extsvc/auth",
         "//internal/httpcli",
         "//internal/oauthutil",
-        "//lib/errors",
-        "@org_golang_x_oauth2//:oauth2",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/golang.org/x/oauth2",
     ],
 )
 
@@ -26,7 +26,7 @@ go_test(
         "//internal/extsvc",
         "//internal/extsvc/auth",
         "//internal/oauthutil",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
+        "//vendor/github.com/stretchr/testify/assert",
+        "//vendor/github.com/stretchr/testify/require",
     ],
 )

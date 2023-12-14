@@ -6,7 +6,7 @@ go_library(
     srcs = ["chunker.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/chunk",
     visibility = ["//:__subpackages__"],
-    deps = ["@org_golang_google_protobuf//proto"],
+    deps = ["//vendor/google.golang.org/protobuf/proto"],
 )
 
 go_test(
@@ -14,11 +14,11 @@ go_test(
     srcs = ["chunker_test.go"],
     embed = [":chunk"],
     deps = [
-        "@com_github_dustin_go_humanize//:go-humanize",
-        "@com_github_stretchr_testify//require",
-        "@org_golang_google_grpc//:go_default_library",
-        "@org_golang_google_grpc//credentials/insecure",
-        "@org_golang_google_grpc//interop/grpc_testing",
-        "@org_golang_google_protobuf//proto",
+        "//vendor/github.com/dustin/go-humanize",
+        "//vendor/github.com/stretchr/testify/require",
+        "//vendor/google.golang.org/grpc",
+        "//vendor/google.golang.org/grpc/credentials/insecure",
+        "//vendor/google.golang.org/grpc/interop/grpc_testing",
+        "//vendor/google.golang.org/protobuf/proto",
     ],
 )

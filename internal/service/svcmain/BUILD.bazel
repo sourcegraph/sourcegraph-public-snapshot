@@ -18,9 +18,9 @@ go_library(
         "//internal/singleprogram",
         "//internal/tracer",
         "//internal/version",
-        "@com_github_getsentry_sentry_go//:sentry-go",
-        "@com_github_sourcegraph_log//:log",
-        "@com_github_sourcegraph_log//output",
-        "@com_github_urfave_cli_v2//:cli",
+        "//vendor/github.com/getsentry/sentry-go",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/log/output",
+        "//vendor/github.com/urfave/cli/v2:cli",
     ],
 )

@@ -8,9 +8,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database/basestore",
-        "//lib/errors",
-        "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_segmentio_fasthash//fnv1",
+        "//vendor/github.com/keegancsmith/sqlf",
+        "//vendor/github.com/segmentio/fasthash/fnv1",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -26,6 +26,6 @@ go_test(
     deps = [
         "//internal/database/basestore",
         "//internal/database/dbtest",
-        "@com_github_sourcegraph_log//logtest",
+        "//vendor/github.com/sourcegraph/log/logtest",
     ],
 )

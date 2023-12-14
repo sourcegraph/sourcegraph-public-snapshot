@@ -12,5 +12,5 @@ go_test(
     name = "diskusage_test",
     srcs = ["diskusage_test.go"],
     embed = [":diskusage"],
-    deps = ["@com_github_stretchr_testify//require"],
+    deps = ["//vendor/github.com/stretchr/testify/require"],
 )

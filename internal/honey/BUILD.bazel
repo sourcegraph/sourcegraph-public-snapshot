@@ -15,9 +15,9 @@ go_library(
     deps = [
         "//internal/env",
         "//internal/hostname",
-        "@com_github_honeycombio_libhoney_go//:libhoney-go",
-        "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_prometheus_client_golang//prometheus/promauto",
-        "@io_opentelemetry_go_otel//attribute",
+        "//vendor/github.com/honeycombio/libhoney-go",
+        "//vendor/github.com/prometheus/client_golang/prometheus",
+        "//vendor/github.com/prometheus/client_golang/prometheus/promauto",
+        "//vendor/go.opentelemetry.io/otel/attribute",
     ],
 )

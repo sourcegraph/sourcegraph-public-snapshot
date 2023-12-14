@@ -17,9 +17,9 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dev/codehost_testing/config",
-        "//lib/errors",
-        "@com_github_google_go_github_v55//github",
-        "@com_github_google_uuid//:uuid",
+        "//vendor/github.com/google/go-github/v55/github",
+        "//vendor/github.com/google/uuid",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 

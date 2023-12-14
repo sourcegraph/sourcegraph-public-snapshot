@@ -11,11 +11,11 @@ go_library(
         "//internal/conf",
         "//internal/trace",
         "//internal/wrexec",
-        "//lib/errors",
-        "//lib/process",
-        "@com_github_sourcegraph_conc//pool",
-        "@com_github_sourcegraph_log//:log",
-        "@io_opentelemetry_go_otel//attribute",
+        "//vendor/github.com/sourcegraph/conc/pool",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/process",
+        "//vendor/go.opentelemetry.io/otel/attribute",
     ],
 )
 
@@ -26,7 +26,7 @@ go_test(
     deps = [
         "//internal/conf",
         "//schema",
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_stretchr_testify//assert",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/stretchr/testify/assert",
     ],
 )

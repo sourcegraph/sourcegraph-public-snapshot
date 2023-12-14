@@ -5,7 +5,7 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/insight-data-gen",
     visibility = ["//visibility:private"],
-    deps = ["@com_github_cockroachdb_errors//:errors"],
+    deps = ["//vendor/github.com/cockroachdb/errors"],
 )
 
 go_binary(

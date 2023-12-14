@@ -7,9 +7,8 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dev/linters/nolint",
-        "@cc_mvdan_unparam//check:go_default_library",
+        "//vendor/golang.org/x/tools/go/packages",
         "@org_golang_x_tools//go/analysis",
         "@org_golang_x_tools//go/analysis/passes/buildssa",
-        "@org_golang_x_tools//go/packages",
     ],
 )

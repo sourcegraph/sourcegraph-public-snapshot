@@ -10,8 +10,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/process",
     visibility = ["//visibility:public"],
     deps = [
-        "//lib/errors",
-        "@com_github_sourcegraph_conc//pool",
+        "//vendor/github.com/sourcegraph/conc/pool",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 

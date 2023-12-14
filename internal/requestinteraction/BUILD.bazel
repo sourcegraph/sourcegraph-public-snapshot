@@ -11,7 +11,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/grpc/propagator",
-        "@com_github_sourcegraph_log//:log",
-        "@org_golang_google_grpc//metadata",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/google.golang.org/grpc/metadata",
     ],
 )

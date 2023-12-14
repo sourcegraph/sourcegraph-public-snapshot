@@ -7,8 +7,8 @@ go_library(
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/internal/stack",
-        "//lib/pointers",
-        "@com_github_aws_constructs_go_constructs_v10//:constructs",
-        "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
+        "//vendor/github.com/aws/constructs-go/constructs/v10:constructs",
+        "//vendor/github.com/hashicorp/terraform-cdk-go/cdktf",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
     ],
 )

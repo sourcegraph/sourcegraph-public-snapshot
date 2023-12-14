@@ -7,7 +7,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dev/linters/nolint",
-        "//lib/errors",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
         "@co_honnef_go_tools//unused",
         "@org_golang_x_tools//go/analysis",
     ],

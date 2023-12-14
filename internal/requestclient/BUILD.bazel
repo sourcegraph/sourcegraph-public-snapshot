@@ -15,10 +15,10 @@ go_library(
         "//internal/env",
         "//internal/grpc/propagator",
         "//internal/requestclient/geolocation",
-        "//lib/errors",
-        "@com_github_sourcegraph_log//:log",
-        "@org_golang_google_grpc//metadata",
-        "@org_golang_google_grpc//peer",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/google.golang.org/grpc/metadata",
+        "//vendor/google.golang.org/grpc/peer",
     ],
 )
 
@@ -30,9 +30,9 @@ go_test(
     ],
     embed = [":requestclient"],
     deps = [
-        "@com_github_hexops_autogold_v2//:autogold",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
-        "@org_golang_google_grpc//peer",
+        "//vendor/github.com/hexops/autogold/v2:autogold",
+        "//vendor/github.com/stretchr/testify/assert",
+        "//vendor/github.com/stretchr/testify/require",
+        "//vendor/google.golang.org/grpc/peer",
     ],
 )

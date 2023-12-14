@@ -21,9 +21,9 @@ go_library(
         "//internal/search/streaming/client",
         "//internal/search/streaming/http",
         "//internal/trace",
-        "//lib/errors",
-        "@com_github_sourcegraph_conc//stream",
-        "@com_github_sourcegraph_log//:log",
-        "@io_opentelemetry_go_otel//attribute",
+        "//vendor/github.com/sourcegraph/conc/stream",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/go.opentelemetry.io/otel/attribute",
     ],
 )

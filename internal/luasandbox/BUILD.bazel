@@ -27,10 +27,10 @@ go_library(
         "//internal/memo",
         "//internal/metrics",
         "//internal/observation",
-        "//lib/errors",
-        "@com_github_sourcegraph_log//:log",
-        "@com_github_yuin_gopher_lua//:gopher-lua",
-        "@com_layeh_gopher_luar//:gopher-luar",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/yuin/gopher-lua",
+        "//vendor/layeh.com/gopher-luar",
     ],
 )
 
@@ -42,7 +42,7 @@ go_test(
     deps = [
         "//internal/luasandbox/util",
         "//internal/observation",
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_yuin_gopher_lua//:gopher-lua",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/yuin/gopher-lua",
     ],
 )

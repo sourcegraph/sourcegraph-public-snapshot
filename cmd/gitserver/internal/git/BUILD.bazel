@@ -22,9 +22,9 @@ go_library(
         "//internal/gitserver/gitdomain",
         "//internal/trace",
         "//internal/wrexec",
-        "//lib/errors",
-        "@com_github_sourcegraph_log//:log",
-        "@io_opentelemetry_go_otel//attribute",
+        "//vendor/github.com/sourcegraph/log",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/go.opentelemetry.io/otel/attribute",
     ],
 )
 
@@ -40,8 +40,8 @@ go_test(
         "//internal/api",
         "//internal/gitserver/gitdomain",
         "//internal/wrexec",
-        "//lib/errors",
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_stretchr_testify//require",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//vendor/github.com/stretchr/testify/require",
     ],
 )

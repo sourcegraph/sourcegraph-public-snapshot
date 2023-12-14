@@ -10,6 +10,6 @@ go_library(
         "//internal/executor",
         "//internal/workerutil",
         "//internal/workerutil/dbworker/store",
-        "@com_github_keegancsmith_sqlf//:sqlf",
+        "//vendor/github.com/keegancsmith/sqlf",
     ],
 )

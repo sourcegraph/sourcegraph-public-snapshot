@@ -25,8 +25,8 @@ go_library(
         "//internal/memo",
         "//internal/observation",
         "//internal/timeutil",
-        "//lib/errors",
-        "@com_github_prometheus_client_golang//prometheus",
+        "//vendor/github.com/prometheus/client_golang/prometheus",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -53,10 +53,10 @@ go_test(
         "//internal/types",
         "//internal/workerutil",
         "//internal/workerutil/dbworker/store",
-        "//lib/codeintel/precise",
-        "//lib/pointers",
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_sourcegraph_scip//bindings/go/scip",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/keegancsmith/sqlf",
+        "//vendor/github.com/sourcegraph/scip/bindings/go/scip",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/precise",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
     ],
 )

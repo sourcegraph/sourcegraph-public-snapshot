@@ -22,9 +22,9 @@ go_library(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/types",
-        "//lib/errors",
-        "@com_github_graph_gophers_graphql_go//:graphql-go",
-        "@com_github_graph_gophers_graphql_go//relay",
+        "//vendor/github.com/graph-gophers/graphql-go",
+        "//vendor/github.com/graph-gophers/graphql-go/relay",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 
@@ -43,8 +43,8 @@ go_test(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/types",
-        "//lib/errors",
-        "@com_github_derision_test_go_mockgen//testutil/require",
-        "@com_github_google_go_cmp//cmp",
+        "//vendor/github.com/derision-test/go-mockgen/testutil/require",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

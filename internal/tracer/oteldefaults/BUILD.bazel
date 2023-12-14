@@ -6,8 +6,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults",
     visibility = ["//:__subpackages__"],
     deps = [
-        "@io_opentelemetry_go_contrib_propagators_jaeger//:jaeger",
-        "@io_opentelemetry_go_contrib_propagators_ot//:ot",
-        "@io_opentelemetry_go_otel//propagation",
+        "//vendor/go.opentelemetry.io/contrib/propagators/jaeger",
+        "//vendor/go.opentelemetry.io/contrib/propagators/ot",
+        "//vendor/go.opentelemetry.io/otel/propagation",
     ],
 )

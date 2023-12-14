@@ -8,9 +8,9 @@ go_library(
     deps = [
         "//dev/managedservicesplatform/internal/resource/random",
         "//dev/managedservicesplatform/internal/resourceid",
-        "//lib/pointers",
-        "@com_github_aws_constructs_go_constructs_v10//:constructs",
-        "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computemanagedsslcertificate",
+        "//vendor/github.com/aws/constructs-go/constructs/v10:constructs",
+        "//vendor/github.com/hashicorp/terraform-cdk-go/cdktf",
+        "//vendor/github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computemanagedsslcertificate",
+        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
     ],
 )

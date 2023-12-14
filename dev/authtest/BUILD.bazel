@@ -24,8 +24,8 @@ go_test(
         "//internal/extsvc",
         "//internal/gqltestutil",
         "//schema",
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_inconshreveable_log15//:log15",
-        "@com_github_json_iterator_go//:go",
+        "//vendor/github.com/google/go-cmp/cmp",
+        "//vendor/github.com/inconshreveable/log15",
+        "//vendor/github.com/json-iterator/go",
     ],
 )
