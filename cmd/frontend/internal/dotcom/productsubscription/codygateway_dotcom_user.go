@@ -371,6 +371,8 @@ func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser b
 			"anthropic/claude-2.1",
 			"anthropic/claude-instant-1.2-cyan",
 			"anthropic/claude-instant-1.2",
+			"anthropic/claude-instant-v1",
+			"anthropic/claude-instant-1",
 			"openai/gpt-3.5-turbo",
 			"openai/gpt-4-1106-preview",
 			"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct",
@@ -379,6 +381,8 @@ func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser b
 		return []string{
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1",
+			"anthropic/claude-instant-1.2-cyan",
+			"anthropic/claude-instant-1.2",
 			"fireworks/accounts/fireworks/models/starcoder-7b-w8a16",
 			"fireworks/accounts/sourcegraph/models/starcoder-7b",
 			"fireworks/accounts/fireworks/models/starcoder-16b-w8a16",
