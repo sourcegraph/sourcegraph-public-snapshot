@@ -34,6 +34,7 @@ Foreign-key constraints:
  creator_user_id | integer                  |           | not null | 
  scopes          | text[]                   |           | not null | 
  internal        | boolean                  |           |          | false
+ expires_at      | timestamp with time zone |           |          | 
 Indexes:
     "access_tokens_pkey" PRIMARY KEY, btree (id)
     "access_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)

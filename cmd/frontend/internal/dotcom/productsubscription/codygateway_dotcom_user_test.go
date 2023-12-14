@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
@@ -113,7 +114,7 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 			adminContext := actor.WithActor(context.Background(), actor.FromActualUser(adminUser))
 
 			// Generate a dotcom api Token for the test user
-			_, dotcomToken, err := db.AccessTokens().Create(context.Background(), test.user.ID, []string{authz.ScopeUserAll}, test.name, test.user.ID)
+			_, dotcomToken, err := db.AccessTokens().Create(context.Background(), test.user.ID, []string{authz.ScopeUserAll}, test.name, test.user.ID, time.Time{})
 			require.NoError(t, err)
 			// convert token into a gateway token
 			gatewayToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(dotcomToken)
@@ -194,7 +195,7 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	codyUser, err := db.Users().Create(ctx, database.NewUser{Username: "cody", EmailIsVerified: true, Email: "cody@test.com"})
 	require.NoError(t, err)
 	// Generate a token for the cody user
-	_, codyUserApiToken, err := db.AccessTokens().Create(context.Background(), codyUser.ID, []string{authz.ScopeUserAll}, "cody", codyUser.ID)
+	_, codyUserApiToken, err := db.AccessTokens().Create(context.Background(), codyUser.ID, []string{authz.ScopeUserAll}, "cody", codyUser.ID, time.Time{})
 	require.NoError(t, err)
 	codyUserGatewayToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(codyUserApiToken)
 	require.NoError(t, err)
@@ -384,7 +385,7 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 			require.NoError(t, err)
 
 			// Create resolver and get user
-			_, apiToken, err := db.AccessTokens().Create(ctx, user.ID, []string{authz.ScopeUserAll}, "test", user.ID)
+			_, apiToken, err := db.AccessTokens().Create(ctx, user.ID, []string{authz.ScopeUserAll}, "test", user.ID, time.Time{})
 			require.NoError(t, err)
 			gatewayToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(apiToken)
 			require.NoError(t, err)
