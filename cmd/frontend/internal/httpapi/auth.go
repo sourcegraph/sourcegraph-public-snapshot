@@ -40,7 +40,7 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 
 		// The license check handler uses a Bearer token and request body which
 		// is checked in `productsubscription/license_check_handler.go`
-		if strings.HasPrefix(r.URL.Path, "/.api/license/check") {
+		if envvar.SourcegraphDotComMode() && strings.HasPrefix(r.URL.Path, "/.api/license/check") {
 			next.ServeHTTP(w, r)
 			return
 		}

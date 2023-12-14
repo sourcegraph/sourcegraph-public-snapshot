@@ -78,7 +78,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		})
 	}
 
-	t.Run("license check bypasses handler", func(t *testing.T) {
+	t.Run("license check bypasses handler in dotcom mode", func(t *testing.T) {
 		currMode := envvar.SourcegraphDotComMode()
 		envvar.MockSourcegraphDotComMode(true)
 		t.Cleanup(func() {
