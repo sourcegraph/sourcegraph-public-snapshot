@@ -71,11 +71,11 @@ func main() {
 	// initialize test results
 	var results TestResults
 
-	// Run Standard Upgrade Tests in goroutines. The current limit is set as 3 concurrent goroutines per test type (std, mvu, auto). This is to address
+	// Run Standard Upgrade Tests in goroutines. The current limit is set as 10 concurrent goroutines per test type (std, mvu, auto). This is to address
 	// dynamic port allocation issues that occur in docker when creating many bridge networks, but tests begin to fail when a sufficient number of
 	// goroutines are running on local machine. We may tune this in CI.
 	// TODO this should likely be made an env var or something to make it easy to swamp out depending on the test box.
-	stdTestPool := pool.New().WithMaxGoroutines(3).WithErrors()
+	stdTestPool := pool.New().WithMaxGoroutines(10).WithErrors()
 	for _, version := range stdVersions {
 		version := version
 		if slices.Contains(knownBugVersions, version.String()) {
@@ -95,7 +95,7 @@ func main() {
 	}
 
 	// Run MVU Upgrade Tests
-	mvuTestPool := pool.New().WithMaxGoroutines(3).WithErrors()
+	mvuTestPool := pool.New().WithMaxGoroutines(10).WithErrors()
 	for _, version := range mvuVersions {
 		version := version
 		if slices.Contains(knownBugVersions, version.String()) {
@@ -718,9 +718,9 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	}
 
 	// poll db until initial versions.version is set
-	setVersionTimeout, cancel := context.WithTimeout(ctx, time.Second*60)
+	setInitTimeout, cancel := context.WithTimeout(ctx, time.Second*60)
 	defer cancel()
-	test.AddLog("🔎 checking pgsql versions.version set")
+	test.AddLog("🔎 checking db initialization complete")
 
 	dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@%s/sg?sslmode=disable", dbs[0].ContainerHostPort))
 	if err != nil {
@@ -728,15 +728,16 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	}
 	defer dbClient.Close()
 
+	// Poll till versions.version is set
 	for {
 		select {
-		case <-setVersionTimeout.Done():
-			return cleanup, setVersionTimeout.Err()
+		case <-setInitTimeout.Done():
+			return cleanup, setInitTimeout.Err()
 		default:
 		}
 		// check version string set
 		var dbVersion string
-		row := dbClient.QueryRowContext(setVersionTimeout, `SELECT version FROM versions;`)
+		row := dbClient.QueryRowContext(setInitTimeout, versionQuery)
 		err = row.Scan(&dbVersion)
 		if err != nil {
 			test.AddLog(fmt.Sprintf("... querying versions.version: %s", err))
@@ -756,8 +757,45 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 		}
 	}
 
+	// poll db until site-config is initialized, migrator will sometimes fail if this initialization of the frontend db hasnt finished
+	// returning an error like: "instance is new"
+	for {
+		select {
+		case <-setInitTimeout.Done():
+			return cleanup, setInitTimeout.Err()
+		default:
+		}
+		// check version string set
+		var siteConfig string
+		row := dbClient.QueryRowContext(setInitTimeout, siteConfigQuery)
+		err = row.Scan(&siteConfig)
+		if err != nil {
+			test.AddLog(fmt.Sprintf("... checking site-config initialized: %s", err))
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		if siteConfig == "" {
+			test.AddLog("... waiting for site-config to be initialized")
+			time.Sleep(1 * time.Second)
+			continue
+		} else {
+			test.AddLog("✅ site-config is initialized")
+			break
+		}
+	}
+
 	return cleanup, nil
 }
+
+const versionQuery = `SELECT version FROM versions;`
+
+const siteConfigQuery = `
+SELECT c.contents
+FROM critical_and_site_config c
+WHERE c.type = 'site'
+ORDER BY c.id DESC
+LIMIT 1
+`
 
 // dockerMigratorBaseString a slice of strings constituting the necessary arguments to run the migrator via docker container the CI test env.
 func dockerMigratorBaseString(test Test, cmd, migratorImage, networkName string, dbs []*testDB) []string {
