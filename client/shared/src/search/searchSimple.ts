@@ -67,7 +67,7 @@ function gobToRegex(gob: string): string {
     //
     // NOTE: We use the same special chars as go
     // https://sourcegraph.com/github.com/golang/go@go1.21.5/-/blob/src/regexp/regexp.go?L720
-    let s = gob.split('')
+    const s = gob.split('')
     for (let i = 0; i < s.length; i++) {
         if (s[i] === '\\') {
             // skip handling the next char
