@@ -69,8 +69,10 @@ func Start[
 	contract := newContract(log.Scoped("msp.contract"), env, service)
 
 	// Enable Sentry error log reporting
+	var sentryEnabled bool
 	if contract.internal.sentryDSN != nil {
 		liblog.Update(func() log.SinksConfig {
+			sentryEnabled = true
 			return log.SinksConfig{
 				Sentry: &log.SentrySink{
 					ClientOptions: sentry.ClientOptions{
@@ -105,6 +107,10 @@ func Start[
 	}
 
 	// Start service routine, and block until it stops.
+	logger.Info("starting service",
+		log.Int("port", contract.Port),
+		log.Bool("msp", contract.MSP),
+		log.Bool("sentry", sentryEnabled))
 	background.Monitor(ctx, routine)
 	logger.Info("service stopped")
 }

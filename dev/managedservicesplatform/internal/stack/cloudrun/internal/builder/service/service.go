@@ -211,18 +211,26 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 			Volumes: b.volumes,
 		}})
 
-	// Allow IAM-free access to the service - auth should be handled generally
-	// by the service itself.
-	//
-	// TODO: Parameterize this so internal services can choose to auth only via
-	// GCP IAM?
-	_ = cloudrunv2serviceiammember.NewCloudRunV2ServiceIamMember(stack, pointers.Ptr("cloudrun-allusers-runinvoker"), &cloudrunv2serviceiammember.CloudRunV2ServiceIamMemberConfig{
-		Name:     svc.Name(),
-		Location: svc.Location(),
-		Project:  &vars.GCPProjectID,
-		Member:   pointers.Ptr("allUsers"),
-		Role:     pointers.Ptr("roles/run.invoker"),
-	})
+	// Allow IAM-free access to the service by default - auth should be handled
+	// generally by the service itself.
+	if vars.Environment.Authentication == nil {
+		_ = cloudrunv2serviceiammember.NewCloudRunV2ServiceIamMember(stack, pointers.Ptr("cloudrun-allusers-runinvoker"), &cloudrunv2serviceiammember.CloudRunV2ServiceIamMemberConfig{
+			Name:     svc.Name(),
+			Location: svc.Location(),
+			Project:  &vars.GCPProjectID,
+			Member:   pointers.Ptr("allUsers"),
+			Role:     pointers.Ptr("roles/run.invoker"),
+		})
+	} else if vars.Environment.Authentication.Sourcegraph != nil {
+		_ = cloudrunv2serviceiammember.NewCloudRunV2ServiceIamMember(stack, pointers.Ptr("cloudrun-domain-runinvoker"), &cloudrunv2serviceiammember.CloudRunV2ServiceIamMemberConfig{
+			Name:     svc.Name(),
+			Location: svc.Location(),
+			Project:  &vars.GCPProjectID,
+			// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service_iam#member/members
+			Member: pointers.Ptr("domain:sourcegraph.com"),
+			Role:   pointers.Ptr("roles/run.invoker"),
+		})
+	}
 
 	// Then add whatever the user requested to expose the service publicly
 	switch domain := vars.Environment.Domain; domain.Type {

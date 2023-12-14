@@ -623,7 +623,7 @@ func TestRepos_List_OnlyCorrupted(t *testing.T) {
 	assertCount(t, ReposListOptions{}, 1)
 	assertCount(t, ReposListOptions{OnlyCorrupted: true}, 0)
 
-	logCorruption(t, db, repo.Name, "", "some corruption")
+	logCorruption(t, db, repo.Name, shardID, "some corruption")
 	assertCount(t, ReposListOptions{OnlyCorrupted: true}, 1)
 	assertCount(t, ReposListOptions{}, 1)
 }

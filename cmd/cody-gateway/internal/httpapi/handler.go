@@ -2,8 +2,9 @@ package httpapi
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"net/http"
+
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
@@ -40,6 +41,7 @@ type Config struct {
 	FireworksAllowedModels                      []string
 	FireworksLogSelfServeCodeCompletionRequests bool
 	EmbeddingsAllowedModels                     []string
+	AutoFlushStreamingResponses                 bool
 }
 
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
@@ -88,6 +90,7 @@ func NewHandler(
 			promptRecorder,
 			config.AnthropicAllowedPromptPatterns,
 			config.AnthropicRequestBlockingEnabled,
+			config.AutoFlushStreamingResponses,
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "init Anthropic handler")
@@ -127,6 +130,7 @@ func NewHandler(
 								config.OpenAIAccessToken,
 								config.OpenAIOrgID,
 								config.OpenAIAllowedModels,
+								config.AutoFlushStreamingResponses,
 							),
 						),
 					),
@@ -195,6 +199,7 @@ func NewHandler(
 								config.FireworksAllowedModels,
 								config.FireworksLogSelfServeCodeCompletionRequests,
 								config.FireworksDisableSingleTenant,
+								config.AutoFlushStreamingResponses,
 							),
 						),
 					),

@@ -36,6 +36,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         codyRequiresVerifiedEmail: false,
         codeIntelAutoIndexingEnabled: false,
         codeIntelAutoIndexingAllowGlobalPolicies: false,
+        codeIntelRankingDocumentReferenceCountsEnabled: false,
         codeInsightsEnabled: true,
         productResearchPageEnabled: true,
         assetsRoot: '/.assets',

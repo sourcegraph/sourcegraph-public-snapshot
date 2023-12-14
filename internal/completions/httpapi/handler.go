@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"net/http"
 	"strconv"
 	"time"
@@ -32,6 +34,13 @@ import (
 // maxRequestDuration is the maximum amount of time a request can take before
 // being cancelled.
 const maxRequestDuration = time.Minute
+
+var timeToFirstEventMetrics = metrics.NewREDMetrics(
+	prometheus.DefaultRegisterer,
+	"completions_stream_first_event",
+	metrics.WithLabels("model"),
+	metrics.WithDurationBuckets([]float64{0.25, 0.5, 0.75, 1.0, 2.0, 3.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 25.0, 30.0}),
+)
 
 func newCompletionsHandler(
 	logger log.Logger,
@@ -109,7 +118,10 @@ func newCompletionsHandler(
 					return
 				}
 				// Convert the user's sha256-encoded access token to an "sgd_" token for Cody Gateway.
-				accessToken = "sgd_" + hex.EncodeToString(hashutil.ToSHA256Bytes(apiTokenSha256))
+				// Note: we can't use accesstoken.GenerateDotcomUserGatewayAccessToken here because
+				// we only need to hash this once, not twice, as this is already an SHA256-encoding
+				// of the original token.
+				accessToken = accesstoken.DotcomUserGatewayAccessTokenPrefix + hex.EncodeToString(hashutil.ToSHA256Bytes(apiTokenSha256))
 			} else {
 				accessToken, err = accesstoken.GenerateDotcomUserGatewayAccessToken(apiToken)
 				if err != nil {
@@ -133,24 +145,26 @@ func newCompletionsHandler(
 			return
 		}
 
-		// Check rate limit.
-		err = rl.TryAcquire(ctx)
-		if err != nil {
-			if unwrap, ok := err.(RateLimitExceededError); ok {
-				actor := sgactor.FromContext(ctx)
-				user, err := actor.User(ctx, userStore)
-				if err != nil {
-					l.Error("Error while fetching user", log.Error(err))
-					http.Error(w, "Internal server error", http.StatusInternalServerError)
+		if !isCodyProEnabled || !isDotcom || !isProviderCodyGateway {
+			// Check rate limit.
+			err = rl.TryAcquire(ctx)
+			if err != nil {
+				if unwrap, ok := err.(RateLimitExceededError); ok {
+					actor := sgactor.FromContext(ctx)
+					user, err := actor.User(ctx, userStore)
+					if err != nil {
+						l.Error("Error while fetching user", log.Error(err))
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					}
+					isProUser := user.CodyProEnabledAt != nil
+					respondRateLimited(w, unwrap, isDotcom, isCodyProEnabled, isProUser)
 					return
 				}
-				isProUser := user.CodyProEnabledAt != nil
-				respondRateLimited(w, unwrap, isDotcom, isCodyProEnabled, isProUser)
+				l.Warn("Rate limit error", log.Error(err))
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
 				return
 			}
-			l.Warn("Rate limit error", log.Error(err))
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
 		}
 
 		responseHandler(ctx, requestParams.CompletionRequestParameters, completionClient, w)
@@ -200,9 +214,14 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 		defer func() {
 			_ = eventWriter.Event("done", map[string]any{})
 		}()
-
+		start := time.Now()
+		firstEventObserved := false
 		err = cc.Stream(ctx, feature, requestParams,
 			func(event types.CompletionResponse) error {
+				if !firstEventObserved {
+					firstEventObserved = true
+					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, &err, requestParams.Model)
+				}
 				return eventWriter.Event("completion", event)
 			})
 		if err != nil {

@@ -64,7 +64,7 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
 	// to be reported here - instead, use parseResponseAndUsage to extract usage,
 	// which for some providers we can only know after the fact based on what
 	// upstream tells us.
-	getRequestMetadata func(context.Context, log.Logger, *actor.Actor, ReqT) (model string, additionalMetadata map[string]any)
+	getRequestMetadata func(context.Context, log.Logger, *actor.Actor, codygateway.Feature, ReqT) (model string, additionalMetadata map[string]any)
 	// parseResponseAndUsage should extract details from the response we get back from
 	// upstream as well as overall usage for tracking purposes.
 	//
@@ -75,6 +75,7 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
 
 type UpstreamRequest interface {
 	GetModel() string
+	ShouldStream() bool
 }
 
 func makeUpstreamHandler[ReqT UpstreamRequest](
@@ -88,7 +89,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// provider names defined clientside, i.e. "anthropic" or "openai".
 	upstreamName string,
 
-	upstreamAPIURL string,
+	upstreamAPIURL func(feature codygateway.Feature) string,
 	allowedModels []string,
 
 	methods upstreamHandlerMethods[ReqT],
@@ -97,9 +98,11 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// limit events in case a retry-after is not provided by the upstream
 	// response.
 	defaultRetryAfterSeconds int,
+	autoFlushStreamingResponses bool,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped(upstreamName).
-		With(log.String("upstream.url", upstreamAPIURL))
+		// This URL is used only for logging reason so we default to the chat endpoint
+		With(log.String("upstream.url", upstreamAPIURL(codygateway.FeatureChatCompletions)))
 
 	// Convert allowedModels to the Cody Gateway configuration format with the
 	// provider as a prefix. This aligns with the models returned when we query
@@ -219,7 +222,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			}
 
 			// Create a new request to send upstream, making sure we retain the same context.
-			req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, upstreamAPIURL, bytes.NewReader(upstreamPayload))
+			req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, upstreamAPIURL(feature), bytes.NewReader(upstreamPayload))
 			if err != nil {
 				response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to create request"))
 				return
@@ -229,7 +232,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			methods.transformRequest(req)
 
 			// Retrieve metadata from the initial request.
-			model, requestMetadata := methods.getRequestMetadata(r.Context(), logger, act, body)
+			model, requestMetadata := methods.getRequestMetadata(r.Context(), logger, act, feature, body)
 
 			// Match the model against the allowlist of models, which are configured
 			// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
@@ -303,7 +306,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 					logger.Error("failed to log event", log.Error(err))
 				}
 			}()
-
 			resp, err := httpClient.Do(req)
 			if err != nil {
 				// Ignore reporting errors where client disconnected
@@ -328,7 +330,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				return
 			}
 			defer func() { _ = resp.Body.Close() }()
-
 			// Forward upstream http headers.
 			for k, vv := range resp.Header {
 				for _, v := range vv {
@@ -372,8 +373,18 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			// Set up a buffer to capture the response as it's streamed and sent to the client.
 			var responseBuf bytes.Buffer
 			respBody := io.TeeReader(resp.Body, &responseBuf)
-			// Forward response to client.
-			_, _ = io.Copy(w, respBody)
+			// if this is a streaming request, we want to flush ourselves instead of leaving that to the http.Server
+			// (so events are sent to the client as soon as possible)
+			var responseWriter io.Writer = w
+			if autoFlushStreamingResponses && body.ShouldStream() && feature == codygateway.FeatureCodeCompletions {
+				if fw, err := response.NewAutoFlushingWriter(w); err == nil {
+					responseWriter = fw
+				} else {
+					// We can't stream the response, but it's better to write it without streaming that fail, so we just log the error
+					logger.Error("failed to create auto-flushing writer", log.Error(err))
+				}
+			}
+			_, _ = io.Copy(responseWriter, respBody)
 
 			if upstreamStatusCode >= 200 && upstreamStatusCode < 300 {
 				// Pass reader to response transformer to capture token counts.

@@ -51,6 +51,7 @@ go_test(
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/external/session",
+        "//cmd/frontend/hubspot",
         "//internal/actor",
         "//internal/auth/providers",
         "//internal/conf",

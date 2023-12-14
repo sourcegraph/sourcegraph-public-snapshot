@@ -36,17 +36,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newPingResponse("5.2.4")
+	latestReleaseDockerServerImageBuild = newPingResponse("5.2.5")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newPingResponse("5.2.4")
+	latestReleaseKubernetesBuild = newPingResponse("5.2.5")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.2.4")
+	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.2.5")
 
 	// latestReleaseApp is only used by sourcegraph.com to tell existing Sourcegraph
 	// App instances what the latest version is. The version here _must_ be available for download/released
@@ -263,6 +263,7 @@ type pingRequest struct {
 	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Cody App
 	HasCodyEnabled                bool            `json:"hasCodyEnabled,omitempty"`
 	CodyUsage                     json.RawMessage `json:"codyUsage,omitempty"`
+	CodyProviders                 json.RawMessage `json:"codyProviders,omitempty"`
 	RepoMetadataUsage             json.RawMessage `json:"repoMetadataUsage,omitempty"`
 }
 
@@ -391,6 +392,7 @@ type pingPayload struct {
 	Timestamp                     string          `json:"timestamp"`
 	HasCodyEnabled                string          `json:"has_cody_enabled"`
 	CodyUsage                     json.RawMessage `json:"cody_usage"`
+	CodyProviders                 json.RawMessage `json:"cody_providers"`
 	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
 }
 
@@ -496,6 +498,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		Timestamp:                     now.UTC().Format(time.RFC3339),
 		HasCodyEnabled:                strconv.FormatBool(pr.HasCodyEnabled),
 		CodyUsage:                     codyUsage,
+		CodyProviders:                 pr.CodyProviders,
 		RepoMetadataUsage:             pr.RepoMetadataUsage,
 	})
 }

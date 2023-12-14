@@ -1,5 +1,3 @@
-import type { AggregableBadge, Badge as ExtensionBadgeType } from '../../codeintel/legacy-extensions/api'
-
 /**
  * Interface for different ranking algorithms that determine how to display search results in the client.
  *
@@ -21,7 +19,7 @@ export interface RankingResult {
     grouped: MatchGroup[]
 }
 
-export interface MatchItem extends ExtensionBadgeType {
+export interface MatchItem {
     highlightRanges: {
         startLine: number
         startCharacter: number
@@ -40,7 +38,6 @@ export interface MatchItem extends ExtensionBadgeType {
      * The 0-based line number where the matched content ends.
      */
     endLine: number
-    aggregableBadges?: AggregableBadge[]
 }
 
 /**

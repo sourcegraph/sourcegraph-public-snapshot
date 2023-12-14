@@ -17,9 +17,11 @@ import styles from './CodySubscriptionPage.module.scss'
 export function UpgradeToProModal({
     authenticatedUser,
     onClose,
+    onSuccess,
 }: {
     authenticatedUser: AuthenticatedUser
     onClose: () => void
+    onSuccess: () => void
 }): JSX.Element {
     const [changeCodyPlan, { data }] = useMutation<ChangeCodyPlanResult, ChangeCodyPlanVariables>(CHANGE_CODY_PLAN)
 
@@ -28,11 +30,11 @@ export function UpgradeToProModal({
             {data?.changeCodyPlan?.codyProEnabled ? (
                 <div className="d-flex flex-column justify-content-between align-items-center mby-4 py-4">
                     <CodyColorIcon width={40} height={40} className="mb-4" />
-                    <H2>Pro Membership: Confirmed!</H2>
-                    <Text>Welcome to the exclusive zone of coding</Text>
+                    <H2>Upgraded to Cody Pro 🎉</H2>
+                    <Text>You now have unlimited autocomplete suggestions, chat messages and commands.</Text>
 
-                    <Button className="mt-4" variant="primary" onClick={onClose}>
-                        Close
+                    <Button className="mt-4" variant="primary" onClick={onSuccess}>
+                        Get Started
                     </Button>
                 </div>
             ) : (
@@ -47,15 +49,12 @@ export function UpgradeToProModal({
                             <div className="mr-4 border p-3">
                                 <div className="border-bottom pb-2 mb-4">
                                     <H1 className={classNames('mb-1', styles.proTitle)}>Pro</H1>
-                                    <Text
-                                        className={classNames('mb-1 text-primary', styles.proDescription)}
-                                        size="small"
-                                    >
+                                    <Text className={classNames('mb-1', styles.proDescription)} size="small">
                                         Best for professional developers
                                     </Text>
                                 </div>
                                 <div className="mb-1">
-                                    <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>$22</H2>
+                                    <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>$9</H2>
                                     <Text className="mb-0 text-muted d-inline">/ month</Text>
                                 </div>
                                 <Text className="mb-4 text-muted" size="small">
@@ -67,13 +66,8 @@ export function UpgradeToProModal({
                                 <Text className="mb-2">
                                     <strong>Unlimited</strong> Messages and Commands
                                 </Text>
-                                <Text className="mb-2">
-                                    <strong>Unlimited</strong> Private Code Embeddings
-                                </Text>
-                                <Text className="mb-2">Context with keyword search</Text>
-                                <Text className="mb-2">Embeddings on some public repos</Text>
-                                <Text className="mb-2">All suppored Code Editors</Text>
-                                <Text className="mb-4">Community Support</Text>
+                                <Text className="mb-2">Personalization for larger codebases</Text>
+                                <Text className="mb-2">Multiple LLM choices for chat</Text>
                             </div>
                         </div>
                         <div className="flex-1">
