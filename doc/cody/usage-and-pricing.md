@@ -30,7 +30,7 @@ Cody Pro, designed for individuals or small teams at **$9 per user per month**, 
 
 The plan includes the ability to create an unlimited number of Custom Commands for personalized workflows. In addition to using the local context of your code to improve responses, you can embed up to **1 GB** of your private code for even better Cody responses that reflect a deep understanding of your code in VS Code, with JetBrains IDE support coming soon.
 
-Support for Cody Pro is available through Discord, ensuring prompt assistance and guidance. However, it's essential to note that the Cody Pro plan is limited to **50 developers** per month. Finally, you'll have default support with Anthropic and StarCoder as the officially supported LLMs. Moreover, Pro accounts using VS Code IDE will get an LLM selection for chat only. These LLMs are Claude Instant 1.2, Claude 2, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo Preview, and Mixtral.
+Support for Cody Pro is available through Discord, ensuring prompt assistance and guidance. Finally, you'll have default support with Anthropic and StarCoder as the officially supported LLMs. Moreover, Pro accounts using VS Code IDE will get an LLM selection for chat only. These LLMs are Claude Instant 1.2, Claude 2, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo Preview, and Mixtral.
 
 > NOTE: There will be high daily limits to catch bad actors and prevent abuse, but under most normal usage, Pro users won't experience these limits.
 
