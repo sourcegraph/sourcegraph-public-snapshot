@@ -1,4 +1,5 @@
 // "OpenTracing interop with OpenTelemetry is set up, but the libraries are deprecated - use OpenTelemetry directly instead: https://go.opentelemetry.io/otel/trace"
+// Keep up to date with dev/sg/linters/go_checks.go
 package tracinglibraries
 
 import (
@@ -28,7 +29,7 @@ var Analyzer = createAnalyzer()
 
 func createAnalyzer() *analysis.Analyzer {
 	settings := &depguard.LinterSettings{
-		"tracing libraries": &depguard.List{
+		"tracinglibraries": &depguard.List{
 			Files: allowedFiles,
 			Deny:  deniedLibraries,
 		},
