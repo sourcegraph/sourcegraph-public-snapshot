@@ -106,6 +106,9 @@ func (l *bigQueryLogger) LogEvent(spanCtx context.Context, event Event) (err err
 	// HACK: Inject Sourcegraph actor that is held in the span context
 	event.Metadata["sg.actor"] = sgactor.FromContext(spanCtx)
 
+	// Inject trace metadata
+	event.Metadata["trace_id"] = oteltrace.SpanContextFromContext(spanCtx).TraceID().String()
+
 	metadata, err := json.Marshal(event.Metadata)
 	if err != nil {
 		return errors.Wrap(err, "marshaling metadata")

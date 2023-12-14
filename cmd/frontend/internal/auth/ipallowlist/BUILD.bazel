@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ipallowlist",
+    srcs = ["ipallowlist.go"],
+    embedsrcs = ["error.html"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/ipallowlist",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/frontend/internal/auth/ipallowlist/checker",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

@@ -1,3 +1,15 @@
+.root {
+    :global(.theme-dark) & {
+        background: linear-gradient(180deg, rgba(17, 20, 27, 0.92) 0%, rgba(13, 16, 25, 0.92) 100%);
+        backdrop-filter: blur(7px);
+    }
+
+    :global(.theme-light) & {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(244, 244, 244, 0.9) 100%);
+        backdrop-filter: blur(7px);
+    }
+}
+
 .modal {
     width: 54rem;
     border-radius: 6px;
@@ -18,19 +30,29 @@
 
     /* to let gradient shadow be behind the modal */
     transform-style: preserve-3d;
-}
 
-/* Colorful shadow on the modali */
-.modal::after {
-    content: '';
-    position: absolute;
-    width: 90%;
-    height: 2.8125rem;
-    background: linear-gradient(90deg, #7048e8 0%, #4ac1e8 32.21%, #4d0b79 65.39%, #ff5543 104.43%), #eff2f5;
-    transform: translateZ(-1px);
-    filter: blur(30px);
-    opacity: 0.9;
-    animation: modal-shadow 6s ease-in-out infinite;
+    /* Colorful shadow on the modal */
+    &::after {
+        content: '';
+        position: absolute;
+        width: 90%;
+        height: 2.8125rem;
+        background: linear-gradient(90deg, #7048e8 0%, #4ac1e8 32.21%, #4d0b79 65.39%, #ff5543 104.43%), #eff2f5;
+        transform: translateZ(-1px);
+        filter: blur(30px);
+        opacity: 0.9;
+        animation: modal-shadow 6s ease-in-out infinite;
+    }
+
+    :global(.theme-dark) & {
+        background-image: repeating-conic-gradient(
+            rgba(112, 72, 232, 0.3) 50%,
+            rgba(0, 203, 236, 0.3) 75%,
+            rgba(161, 18, 255, 0.5) 100%,
+            rgba(255, 85, 67, 0.3) 125%,
+            rgba(112, 72, 232, 0.3) 150%
+        );
+    }
 }
 
 @keyframes modal-shadow {
@@ -48,35 +70,13 @@
     }
 }
 
-@media (prefers-color-scheme: dark) {
-    [data-reach-dialog-overlay] {
-        background: linear-gradient(180deg, rgba(17, 20, 27, 0.92) 0%, rgba(13, 16, 25, 0.92) 100%);
-        backdrop-filter: blur(7px);
-    }
-
-    .highlight-step {
-        background: radial-gradient(50% 100% at 50% 100%, var(--gray-09) 0%, transparent 100%);
-    }
-
-    .modal {
-        background-image: repeating-conic-gradient(
-            rgba(112, 72, 232, 0.3) 50%,
-            rgba(0, 203, 236, 0.3) 75%,
-            rgba(161, 18, 255, 0.5) 100%,
-            rgba(255, 85, 67, 0.3) 125%,
-            rgba(112, 72, 232, 0.3) 150%
-        );
-    }
-}
-
-@media (prefers-color-scheme: light) {
-    [data-reach-dialog-overlay] {
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(244, 244, 244, 0.9) 100%);
-        backdrop-filter: blur(7px);
-    }
-
-    .highlight-step {
+.highlight-step {
+    :global(.theme-light) & {
         background: radial-gradient(50% 100% at 50% 100%, var(--gray-04) 0%, transparent 100%);
+    }
+
+    :global(.theme-dark) & {
+        background: radial-gradient(50% 100% at 50% 100%, var(--gray-09) 0%, transparent 100%);
     }
 }
 
@@ -120,7 +120,6 @@
 }
 
 /* Initial welcome */
-
 .welcome-title {
     font-size: 2.5rem;
     font-weight: 600;

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
@@ -178,7 +177,7 @@ func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) 
 		return nil, nil
 	}
 
-	rateLimit, err := getEmbeddingsRateLimit(ctx, r.db)
+	rateLimit, err := getEmbeddingsRateLimit(ctx, r.db, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +190,7 @@ func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) 
 	}, nil
 }
 
-func getEmbeddingsRateLimit(ctx context.Context, db database.DB) (licensing.CodyGatewayRateLimit, error) {
+func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (licensing.CodyGatewayRateLimit, error) {
 	// Hard-coded defaults: 200M tokens for life
 	limit := int64(20 * tokensPerDollar)
 	intervalSeconds := int32(math.MaxInt32)
@@ -199,8 +198,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB) (licensing.Cody
 	// Apply self-serve limits if available
 	cfg := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
 	if cfg != nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
-		actor := sgactor.FromContext(ctx)
-		user, err := actor.User(ctx, db.Users())
+		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, err
 		}
@@ -263,12 +261,16 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	// If there's no override, check the self-serve limits.
 	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 	intervalSeconds := oneDayInSeconds
-	// Default to the pre-PLG model list for now.
-	models := allowedModels(scope, false, false)
+	// We may not update the limit, but we should check the models
+	user, err := db.Users().GetByID(ctx, userID)
+	if err != nil {
+		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
+	}
+	isProUser := user.CodyProEnabledAt != nil
+	models := allowedModels(scope, isCodyProEnabled, isProUser)
 	if limit == nil && cfg != nil && isCodyProEnabled {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
-		actor := sgactor.FromContext(ctx)
-		user, err := actor.User(ctx, db.Users())
+		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
 		}
@@ -339,13 +341,28 @@ func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser b
 	switch scope {
 	case types.CompletionsFeatureChat:
 		if !isCodyProEnabled {
-			return []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1", "fireworks/accounts/fireworks/models/mixtral-8x7b-instruct"}
+			return []string{
+				"anthropic/claude-v1",
+				"anthropic/claude-2",
+				"anthropic/claude-2.0",
+				"anthropic/claude-2.1",
+				"anthropic/claude-instant-v1",
+				"anthropic/claude-instant-1.2",
+				"anthropic/claude-instant-1",
+				"openai/gpt-4-1106-preview",
+				"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct",
+			}
 		}
 
 		// When updating the below lists, make sure you also update `isAllowedCustomChatModel` in `chat.go`
 
 		if !isProUser {
-			return []string{"anthropic/claude-2.0"}
+			return []string{
+				"anthropic/claude-2.0",
+				"anthropic/claude-instant-v1",
+				"anthropic/claude-instant-1.2",
+				"anthropic/claude-instant-1",
+			}
 		}
 
 		return []string{
@@ -356,9 +373,17 @@ func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser b
 			"anthropic/claude-instant-1.2",
 			"openai/gpt-3.5-turbo",
 			"openai/gpt-4-1106-preview",
-			"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct"}
+			"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct",
+		}
 	case types.CompletionsFeatureCode:
-		return []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1", "fireworks/accounts/fireworks/models/starcoder-7b-w8a16", "fireworks/accounts/sourcegraph/models/starcoder-7b", "fireworks/accounts/fireworks/models/starcoder-16b-w8a16", "fireworks/accounts/sourcegraph/models/starcoder-16b"}
+		return []string{
+			"anthropic/claude-instant-v1",
+			"anthropic/claude-instant-1",
+			"fireworks/accounts/fireworks/models/starcoder-7b-w8a16",
+			"fireworks/accounts/sourcegraph/models/starcoder-7b",
+			"fireworks/accounts/fireworks/models/starcoder-16b-w8a16",
+			"fireworks/accounts/sourcegraph/models/starcoder-16b",
+		}
 	default:
 		return []string{}
 	}
