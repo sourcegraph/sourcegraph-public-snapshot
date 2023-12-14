@@ -141,7 +141,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                 <div className={classNames('p-4 border bg-1 mt-4', styles.container)}>
                     <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                         <div>
-                            <H2>My Subscription</H2>
+                            <H2>My subscription</H2>
                             <Text className="text-muted mb-0">
                                 You are on the {codyProEnabled ? 'Pro' : 'Free'} tier.
                             </Text>
@@ -351,20 +351,25 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     {editor.instructions && (
                                         <Link
                                             to="#"
-                                            className="mb-2 text-muted"
+                                            className="mb-2 text-muted d-flex align-items-center"
                                             onClick={() => {
                                                 setSelectedEditor(editor)
                                                 setSelectedEditorStep(0)
                                             }}
                                         >
-                                            <Icon svgPath={mdiInformationOutline} aria-hidden={true} /> Quickstart guide
+                                            <Icon svgPath={mdiInformationOutline} aria-hidden={true} className="mr-1" />{' '}
+                                            Quickstart guide
                                         </Link>
                                     )}
                                     {editor.docs && (
-                                        <Link to={editor.docs} target="_blank" rel="noopener">
-                                            <Text className="text-muted">
-                                                <Icon svgPath={mdiOpenInNew} aria-hidden={true} /> Documentation
-                                            </Text>
+                                        <Link
+                                            to={editor.docs}
+                                            target="_blank"
+                                            rel="noopener"
+                                            className="text-muted d-flex align-items-center"
+                                        >
+                                            <Icon svgPath={mdiOpenInNew} aria-hidden={true} className="mr-1" />{' '}
+                                            Documentation
                                         </Link>
                                     )}
                                     {selectedEditor?.name === editor.name &&
