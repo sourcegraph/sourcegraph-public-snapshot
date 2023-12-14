@@ -49,7 +49,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     const utm_source = parameters.get('utm_source')
 
     useEffect(() => {
-        eventLogger.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source })
+        eventLogger.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
     }, [utm_source])
 
     const { data } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
@@ -199,9 +199,15 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                             className="mb-0 text-muted d-inline cursor-pointer"
                                             size="small"
                                             onClick={() => {
-                                                eventLogger.log(EventName.CODY_SUBSCRIPTION_PLAN_CLICKED, {
-                                                    tier: 'free',
-                                                })
+                                                eventLogger.log(
+                                                    EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
+                                                    {
+                                                        tier: 'free',
+                                                    },
+                                                    {
+                                                        tier: 'free',
+                                                    }
+                                                )
                                                 setShowCancelPro(true)
                                             }}
                                         >
@@ -213,7 +219,11 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         className="flex-1"
                                         variant="primary"
                                         onClick={() => {
-                                            eventLogger.log(EventName.CODY_SUBSCRIPTION_PLAN_CLICKED, { tier: 'pro' })
+                                            eventLogger.log(
+                                                EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
+                                                { tier: 'pro' },
+                                                { tier: 'pro' }
+                                            )
                                             setShowUpgradeToPro(true)
                                         }}
                                     >
@@ -329,7 +339,11 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 to="https://sourcegraph.com/contact/request-info?utm_source=cody_subscription_page"
                                 target="_blank"
                                 onClick={() => {
-                                    eventLogger.log(EventName.CODY_SUBSCRIPTION_PLAN_CLICKED, { tier: 'enterprise' })
+                                    eventLogger.log(
+                                        EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
+                                        { tier: 'enterprise' },
+                                        { tier: 'enterprise' }
+                                    )
                                 }}
                             >
                                 Contact sales
