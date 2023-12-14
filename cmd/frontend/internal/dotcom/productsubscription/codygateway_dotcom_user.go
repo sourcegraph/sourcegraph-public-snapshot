@@ -261,8 +261,13 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	// If there's no override, check the self-serve limits.
 	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 	intervalSeconds := oneDayInSeconds
-	// Default to the pre-PLG model list for now.
-	models := allowedModels(scope, false, false)
+	// We may not update the limit, but we should check the models
+	user, err := db.Users().GetByID(ctx, userID)
+	if err != nil {
+		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
+	}
+	isProUser := user.CodyProEnabledAt != nil
+	models := allowedModels(scope, isCodyProEnabled, isProUser)
 	if limit == nil && cfg != nil && isCodyProEnabled {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		user, err := db.Users().GetByID(ctx, userID)
