@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { H2, Text, Button, Link } from '@sourcegraph/wildcard'
+import { Button, H2, Link, Text } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
 
@@ -64,7 +64,7 @@ export function JetBrainsInstructions({
                                 </div>
                                 <div>
                                     <Text className="mb-1" weight="bold">
-                                        Install the Cody Plugin
+                                        Install the Cody plugin
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
                                         Type "Cody" in the search bar and <strong>install</strong> the plugin.
@@ -86,13 +86,13 @@ export function JetBrainsInstructions({
                                 </div>
                                 <div>
                                     <Text className="mb-1" weight="bold">
-                                        Open the Plugin and Login
+                                        Open the plugin and log in
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
                                         Cody will be available on the right side of your IDE. Click the Cody icon to
                                         open the sidebar and login.
                                         <br />
-                                        Login with the same method you use to create this account.
+                                        Log in with the same method you use to create this account.
                                     </Text>
                                 </div>
                             </div>
@@ -188,7 +188,7 @@ export function JetBrainsInstructions({
                                     to="https://discord.gg/rDPqBejz93"
                                     className="d-flex w-100 justify-content-center "
                                 >
-                                    <strong>Join our Discord</strong>
+                                    <strong>Discord chat</strong>
                                 </Link>
                                 <Link
                                     to="https://github.com/sourcegraph/cody/discussions/new?category=product-feedback"

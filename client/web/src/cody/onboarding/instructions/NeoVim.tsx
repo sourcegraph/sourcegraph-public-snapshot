@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { Link, H2, Text, Button, ButtonLink } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, H2, Link, Text } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
 
@@ -47,7 +47,7 @@ export function NeoVimInstructions({
                                     to="https://github.com/sourcegraph/sg.nvim#setup"
                                     target="_blank"
                                 >
-                                    Navigate to GitHub Repo
+                                    Navigate to GitHub repo
                                 </ButtonLink>
                                 <img
                                     alt="NeoVim Repo"
@@ -141,7 +141,7 @@ export function NeoVimInstructions({
                                     to="https://discord.gg/rDPqBejz93"
                                     className="d-flex w-100 justify-content-center "
                                 >
-                                    <strong>Join our Discord</strong>
+                                    <strong>Discord chat</strong>
                                 </Link>
                                 <Link
                                     to="https://github.com/sourcegraph/cody/discussions/new?category=product-feedback"
