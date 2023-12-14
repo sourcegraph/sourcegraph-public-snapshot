@@ -17,7 +17,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryV2Props, noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Badge,
@@ -53,7 +53,7 @@ import { CodyColorIcon } from './CodyPageIcon'
 
 import styles from './CodyChatPage.module.scss'
 
-interface CodyChatPageProps {
+interface CodyChatPageProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
     isCodyApp: boolean
@@ -96,6 +96,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     context,
     isSourcegraphDotCom,
     isCodyApp,
+    telemetryRecorder,
 }) => {
     const { pathname } = useLocation()
     const navigate = useNavigate()
@@ -157,6 +158,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                 isSourcegraphDotCom={isSourcegraphDotCom}
                 authenticatedUser={authenticatedUser}
                 context={context}
+                telemetryRecorder={telemetryRecorder}
             />
         )
     }

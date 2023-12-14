@@ -29,6 +29,7 @@ const onSpeakToAnEngineer = (): void => {
     window.context.telemetryRecorder?.recordEvent(EventName.SPEAK_TO_AN_ENGINEER_CTA, 'clicked')
     eventLogger.log(EventName.SPEAK_TO_AN_ENGINEER_CTA)
 }
+
 const onClickCTAButton = (type: string): void => {
     window.context.telemetryRecorder?.recordEvent('signupInitiated.codySignedOut', 'clicked')
     eventLogger.log('SignupInitiated', { type, source: 'cody-signed-out' }, { type, page: 'cody-signed-out' })

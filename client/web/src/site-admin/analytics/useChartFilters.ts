@@ -1,4 +1,4 @@
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 
 import { AnalyticsDateRange, AnalyticsGrouping } from '../../graphql-operations'
 import { useURLSyncedState } from '../../hooks'
@@ -11,6 +11,7 @@ interface IProps {
     aggregation?: IAggregation
     dateRange?: AnalyticsDateRange
     grouping?: AnalyticsGrouping
+    telemetryRecorder: TelemetryRecorder
 }
 
 interface IResult {
@@ -31,9 +32,10 @@ interface IResult {
         onChange: (value: AnalyticsGrouping) => void
         items: { value: AnalyticsGrouping; label: string }[]
     }
+    telemetryRecorder: TelemetryRecorder
 }
 
-export function useChartFilters(props: IProps & TelemetryV2Props): IResult {
+export function useChartFilters(props: IProps): IResult {
     const [data, setData] = useURLSyncedState({
         dateRange: props.dateRange || AnalyticsDateRange.LAST_THREE_MONTHS,
         aggregation: props.aggregation || 'count',
@@ -95,5 +97,6 @@ export function useChartFilters(props: IProps & TelemetryV2Props): IResult {
                 { value: AnalyticsGrouping.WEEKLY, label: 'Weekly' },
             ],
         },
+        telemetryRecorder: props.telemetryRecorder,
     }
 }

@@ -80,6 +80,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
             buttonLabel="Sign up"
             experimental={true}
             className="my-3"
+            telemetryRecorder={telemetryRecorder}
         />
     )
 

@@ -21,7 +21,10 @@ import { BATCHCHANGES_STATISTICS } from './queries'
 export const DEFAULT_MINS_SAVED_PER_CHANGESET = 15
 
 export const AnalyticsBatchChangesPage: React.FunctionComponent = () => {
-    const { dateRange, grouping } = useChartFilters({ name: 'BatchChanges' })
+    const { dateRange, grouping, telemetryRecorder } = useChartFilters({
+        name: 'BatchChanges',
+        telemetryRecorder: window.context.telemetryRecorder ? window.context.telemetryRecorder : noOpTelemetryRecorder,
+    })
     const { data, error, loading } = useQuery<BatchChangesStatisticsResult, BatchChangesStatisticsVariables>(
         BATCHCHANGES_STATISTICS,
         {
@@ -32,9 +35,9 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent = () => {
         }
     )
     useEffect(() => {
-        // telemetryRecorder.recordEvent('adminAnalyticsBatchChanges', 'viewed')
+        telemetryRecorder.recordEvent('adminAnalyticsBatchChanges', 'viewed')
         eventLogger.logPageView('AdminAnalyticsBatchChanges')
-    }, [])
+    }, [telemetryRecorder])
     const [stats, legends, calculatorProps] = useMemo(() => {
         if (!data) {
             return []
