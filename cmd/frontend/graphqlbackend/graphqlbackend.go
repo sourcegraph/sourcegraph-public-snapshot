@@ -604,12 +604,6 @@ func NewSchema(
 			schemas = append(schemas, guardrailsSchema)
 		}
 
-		if appResolver := optional.AppResolver; appResolver != nil {
-			// Not under enterpriseResolvers, as this is a OSS schema extension.
-			resolver.AppResolver = appResolver
-			schemas = append(schemas, appSchema)
-		}
-
 		if contentLibraryResolver := optional.ContentLibraryResolver; contentLibraryResolver != nil {
 			EnterpriseResolvers.contentLibraryResolver = contentLibraryResolver
 			resolver.ContentLibraryResolver = contentLibraryResolver
@@ -663,7 +657,6 @@ type schemaResolver struct {
 // OptionalResolver are the resolvers that do not have to be set. If a field
 // is non-nil, NewSchema will register the corresponding graphql schema.
 type OptionalResolver struct {
-	AppResolver
 	AuthzResolver
 	BatchChangesResolver
 	CodeIntelResolver

@@ -6,8 +6,6 @@ This page outlines how extensions and other clients can integrate with Cody app.
 
 The Cody app API is a GraphQL API exposed on the localhost port which is `http://localhost:3080` by default.
 
-The GraphQL resolvers for app-specific API calls are defined in [frontend/internal/app/resolvers/app.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/cmd/frontend/internal/app/resolvers/app.go).
-
 ## App.json file
 
 The `app.json` file is placed in the app's local data directory when it runs for the first time and it provides the token and local endpoint URL that local clients can use to connect with the app's API.

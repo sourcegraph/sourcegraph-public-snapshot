@@ -32,7 +32,6 @@ go_library(
         "access_requests.go",
         "access_token.go",
         "access_tokens.go",
-        "app.go",
         "auth_provider.go",
         "auth_providers.go",
         "authz.go",
@@ -198,7 +197,6 @@ go_library(
         "webhooks.go",
     ],
     embedsrcs = [
-        "app.graphql",
         "authz.graphql",
         "batches.graphql",
         "code_monitors.graphql",
