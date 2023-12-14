@@ -23,6 +23,7 @@ export interface IEditor {
     name: string
     publisher: string
     releaseStage: string
+    docs?: string
     instructions?: React.FC<{ onBack?: () => void; onClose: () => void; showStep?: number }>
 }
 
@@ -33,6 +34,7 @@ export const editorGroups: IEditor[][] = [
             name: 'VS Code',
             publisher: 'Microsoft',
             releaseStage: 'Stable',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-vscode',
             instructions: VSCodeInstructions,
         },
         {
@@ -40,6 +42,7 @@ export const editorGroups: IEditor[][] = [
             name: 'IntelliJ IDEA',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -47,13 +50,15 @@ export const editorGroups: IEditor[][] = [
             name: 'PhpStorm ',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
             icon: 'PyCharm',
             name: 'PyCharm',
-            publisher: 'Jetbrains',
+            publisher: 'JetBrains',
             releaseStage: 'Beta',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
     ],
@@ -63,6 +68,7 @@ export const editorGroups: IEditor[][] = [
             name: 'WebStorm',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -70,6 +76,7 @@ export const editorGroups: IEditor[][] = [
             name: 'RubyMine',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -77,6 +84,7 @@ export const editorGroups: IEditor[][] = [
             name: 'GoLand',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -84,6 +92,7 @@ export const editorGroups: IEditor[][] = [
             name: 'Android Studio',
             publisher: 'Google',
             releaseStage: 'Beta',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
     ],
@@ -93,12 +102,13 @@ export const editorGroups: IEditor[][] = [
             name: 'Neovim',
             publisher: 'Neovim Team',
             releaseStage: 'Experimental',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-neovim',
             instructions: NeoVimInstructions,
         },
         {
             icon: 'Emacs',
             name: 'Emacs',
-            publisher: 'Free Software Foundation',
+            publisher: 'GNU',
             releaseStage: 'Coming Soon',
         },
     ],
@@ -189,8 +199,8 @@ function WelcomeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
                         <source
                             src={
                                 isLightTheme
-                                    ? 'https://storage.googleapis.com/sourcegraph-assets/codyWelcomeAnim.mp4'
-                                    : 'https://storage.googleapis.com/sourcegraph-assets/codyWelcomeAnim_dark.mp4'
+                                    ? 'https://storage.googleapis.com/sourcegraph-assets/hiCodyWhite.mp4'
+                                    : 'https://storage.googleapis.com/sourcegraph-assets/hiCodyDark.mp4'
                             }
                             type="video/mp4"
                         />
@@ -198,7 +208,7 @@ function WelcomeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
                     </video>
                     <Text className={classNames('mb-4 pb-4', styles.fadeIn, styles.fadeSecond, styles.welcomeSubtitle)}>
                         Ready to breeze through the basics and get comfortable with Cody
-                        {pro ? ' to Cody Pro Trial' : ''}?
+                        {pro ? ' Pro Trial' : ''}?
                     </Text>
                     <Button
                         onClick={onNext}
@@ -283,9 +293,6 @@ function PurposeStep({
                     onFormReady={handleFormReady}
                 />
             </div>
-            <Text size="small" className="text-muted text-center mb-0">
-                Pick one to move forward
-            </Text>
         </>
     )
 }

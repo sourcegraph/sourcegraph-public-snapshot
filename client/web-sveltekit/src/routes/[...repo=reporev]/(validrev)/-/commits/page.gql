@@ -1,0 +1,26 @@
+#import "$lib/Commit.gql"
+
+fragment Commits on GitCommitConnection {
+    nodes {
+        ...Commit
+    }
+    pageInfo {
+        hasNextPage
+        endCursor
+    }
+}
+
+query CommitsQuery($repo: ID!, $revspec: String!, $first: Int, $afterCursor: String) {
+    node(id: $repo) {
+        __typename
+        ... on Repository {
+            id
+            commit(rev: $revspec) {
+                id
+                ancestors(first: $first, afterCursor: $afterCursor) {
+                    ...Commits
+                }
+            }
+        }
+    }
+}

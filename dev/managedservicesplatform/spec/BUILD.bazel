@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "build.go",
         "environment.go",
+        "monitoring.go",
         "service.go",
         "spec.go",
     ],

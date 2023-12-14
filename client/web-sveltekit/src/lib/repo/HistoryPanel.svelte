@@ -87,7 +87,7 @@
                         {commit.subject}
                     {/if}
                 </td>
-                <td><Timestamp date={new Date(commit.author.date)} /></td>
+                <td><Timestamp date={new Date(commit.author.date)} strict /></td>
                 <td><a href={commit.canonicalURL}>{commit.abbreviatedOID}</a></td>
                 <td>
                     {#if selected}

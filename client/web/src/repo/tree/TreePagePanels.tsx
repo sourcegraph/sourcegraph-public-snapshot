@@ -25,8 +25,7 @@ import type { BlobFileFields, TreeHistoryFields } from '../../graphql-operations
 import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
-import { FILE_ICONS, FileExtension } from '../constants'
-import { getFileInfo } from '../utils'
+import { FILE_ICONS, FileExtension, getFileInfo } from '../fileIcons'
 
 import styles from './TreePagePanels.module.scss'
 

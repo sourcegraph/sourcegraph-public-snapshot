@@ -241,7 +241,40 @@ func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (int32, e
 		return 0, err
 	}
 
-	query := sqlf.Sprintf(`WHERE user_id = %s AND timestamp >= %s AND timestamp <= NOW() AND (name LIKE '%%recipe%%' OR name LIKE '%%command%%' OR name LIKE '%%chat%%')`, r.user.ID, currentPeriodStartDate.Time)
+	query := sqlf.Sprintf(`
+		WHERE
+			user_id = %s
+			AND timestamp >= %s
+			AND timestamp <= NOW()
+			AND name NOT LIKE '%%clicked%%'
+			AND name NOT LIKE '%%resetChat%%'
+			AND name NOT LIKE '%%menu:opened%%'
+			AND name NOT LIKE 'cody.%%'
+			AND (
+					(
+						SOURCE = 'IDEEXTENSION'
+						AND (
+							name LIKE '%%recipe%%'
+							OR name LIKE '%%command%%'
+							OR name LIKE '%%chat:executed%%'
+							OR name LIKE '%%chat-question:executed%%'
+							OR name LIKE '%%inline-chat%%'
+							OR name LIKE '%%inline-assist%%'
+							OR name LIKE '%%chat:submitted%%'
+						)
+					)
+
+					OR
+
+					(
+						SOURCE = 'WEB'
+						AND (
+							name = 'web:codyChat:submit'
+							OR name LIKE 'web:codyChat:recipe:%%'
+						)
+					)
+			)
+	`, r.user.ID, currentPeriodStartDate.Time)
 
 	count, err := r.db.EventLogs().CountBySQL(ctx, query)
 
@@ -258,7 +291,14 @@ func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (int32, e
 		return 0, err
 	}
 
-	query := sqlf.Sprintf(`WHERE user_id = %s AND timestamp >= %s AND timestamp <= NOW() AND name LIKE '%%completion:suggested%%'`, r.user.ID, currentPeriodStartDate.Time)
+	query := sqlf.Sprintf(`
+		WHERE
+			user_id = %s
+			AND timestamp >= %s
+			AND timestamp <= NOW()
+			AND source = 'IDEEXTENSION'
+			AND name LIKE '%%completion:suggested%%'
+	`, r.user.ID, currentPeriodStartDate.Time)
 
 	count, err := r.db.EventLogs().CountBySQL(ctx, query)
 

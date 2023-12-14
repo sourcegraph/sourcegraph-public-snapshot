@@ -12,6 +12,7 @@ go_library(
         "//dev/managedservicesplatform/internal/stack",
         "//dev/managedservicesplatform/internal/stack/cloudrun",
         "//dev/managedservicesplatform/internal/stack/iam",
+        "//dev/managedservicesplatform/internal/stack/monitoring",
         "//dev/managedservicesplatform/internal/stack/options/terraformversion",
         "//dev/managedservicesplatform/internal/stack/options/tfcbackend",
         "//dev/managedservicesplatform/internal/stack/project",

@@ -75,7 +75,7 @@ export const REPOSITORY_GIT_REFS = gql`
 `
 
 export async function queryGitReferences(args: {
-    repo: Scalars['ID']
+    repo: Scalars['ID']['input']
     first?: number
     query?: string
     type: GitRefType
@@ -102,7 +102,7 @@ interface Data {
     hasMoreActiveBranches: boolean
 }
 
-export async function queryGitBranchesOverview(args: { repo: Scalars['ID']; first: number }): Promise<Data> {
+export async function queryGitBranchesOverview(args: { repo: Scalars['ID']['input']; first: number }): Promise<Data> {
     const data = await query<RepositoryGitBranchesOverviewResult, RepositoryGitBranchesOverviewVariables>(
         gql`
             query RepositoryGitBranchesOverview($repo: ID!, $first: Int!, $withBehindAhead: Boolean!) {

@@ -264,6 +264,19 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
 
 const SHOW_SPINNER_DELAY_MS = 100
 
+const useSpinner = (loading: boolean): boolean => {
+    // We only show the inline loading message if loading takes longer than
+    // SHOW_SPINNER_DELAY_MS milliseconds.
+    const [canShowSpinner, setCanShowSpinner] = useState(false)
+    useEffect(() => {
+        const handle = setTimeout(() => setCanShowSpinner(loading), SHOW_SPINNER_DELAY_MS)
+        // In case the component un-mounts before
+        return () => clearTimeout(handle)
+        // Make sure this effect only runs once
+    }, [loading])
+    return canShowSpinner
+}
+
 const ReferencesList: React.FunctionComponent<
     React.PropsWithChildren<
         ReferencesPanelPropsWithToken & {
@@ -323,20 +336,7 @@ const ReferencesList: React.FunctionComponent<
         getSetting,
     })
 
-    // We only show the inline loading message if loading takes longer than
-    // SHOW_SPINNER_DELAY_MS milliseconds.
-    const [canShowSpinner, setCanShowSpinner] = useState(false)
-    useEffect(() => {
-        const handle = setTimeout(() => setCanShowSpinner(loading), SHOW_SPINNER_DELAY_MS)
-        // In case the component un-mounts before
-        return () => clearTimeout(handle)
-        // Make sure this effect only runs once
-    }, [loading])
-
-    const references = data?.references.nodes ?? LocationsGroup.empty
-    const definitions = data?.definitions.nodes ?? LocationsGroup.empty
-    const implementations = data?.implementations.nodes ?? LocationsGroup.empty
-    const prototypes = data?.prototypes.nodes ?? LocationsGroup.empty
+    const showSpinner = useSpinner(loading)
 
     // The "active URL" is the URL of the highlighted line number in SideBlob,
     // which also influences which item gets highlighted inside
@@ -359,6 +359,19 @@ const ReferencesList: React.FunctionComponent<
         [setActiveURL]
     )
 
+    const definitions = data?.definitions.nodes
+    // If props.jumpToFirst is true and we finished loading (and have
+    // definitions) we select the first definition. We set it as activeLocation
+    // and push it to the blobMemoryHistory so the code blob is open.
+    useEffect(() => {
+        if (props.jumpToFirst) {
+            const firstDef = definitions?.first
+            if (firstDef) {
+                setActiveLocation(firstDef)
+            }
+        }
+    }, [setActiveLocation, props.jumpToFirst, definitions?.first])
+
     const sideblob = useMemo(() => parseSideBlobProps(activeURL), [activeURL])
 
     const isActiveLocation = (location: Location): boolean => {
@@ -373,27 +386,11 @@ const ReferencesList: React.FunctionComponent<
         return result
     }
 
-    // If props.jumpToFirst is true and we finished loading (and have
-    // definitions) we select the first definition. We set it as activeLocation
-    // and push it to the blobMemoryHistory so the code blob is open.
-    useEffect(() => {
-        if (props.jumpToFirst) {
-            const firstDef = definitions.first
-            if (firstDef) {
-                setActiveLocation(firstDef)
-            }
-        }
-    }, [setActiveLocation, props.jumpToFirst, definitions.first, setActiveURL])
-
     const onBlobNav = (url: string): void => {
         // Store the URL that the user promoted even if no definition/reference
         // points to the same line. In case they press "back" in the browser history,
         // the promoted line should be highlighted.
         setActiveURL(url)
-        navigate(url)
-    }
-
-    const navigateToUrl = (url: string): void => {
         navigate(url)
     }
 
@@ -428,8 +425,8 @@ const ReferencesList: React.FunctionComponent<
                     <small>
                         <Icon
                             aria-hidden={true}
-                            as={canShowSpinner ? LoadingSpinner : undefined}
-                            svgPath={!canShowSpinner ? mdiFilterOutline : undefined}
+                            as={showSpinner ? LoadingSpinner : undefined}
+                            svgPath={!showSpinner ? mdiFilterOutline : undefined}
                             size="md"
                             className={styles.filterIcon}
                         />
@@ -446,12 +443,11 @@ const ReferencesList: React.FunctionComponent<
                     <CollapsibleLocationList
                         {...props}
                         name="definitions"
-                        locationsGroup={definitions}
+                        locationsGroup={data.definitions.nodes}
                         hasMore={false}
                         loadingMore={false}
                         filter={debouncedFilter}
                         activeURL={activeURL || ''}
-                        navigateToUrl={navigateToUrl}
                         isActiveLocation={isActiveLocation}
                         setActiveLocation={setActiveLocation}
                         handleOpenChange={handleOpenChange}
@@ -460,13 +456,12 @@ const ReferencesList: React.FunctionComponent<
                     <CollapsibleLocationList
                         {...props}
                         name="references"
-                        locationsGroup={references}
+                        locationsGroup={data.references.nodes}
                         hasMore={referencesHasNextPage}
                         fetchMore={fetchMoreReferences}
                         loadingMore={fetchMoreReferencesLoading}
                         filter={debouncedFilter}
                         activeURL={activeURL || ''}
-                        navigateToUrl={navigateToUrl}
                         setActiveLocation={setActiveLocation}
                         isActiveLocation={isActiveLocation}
                         handleOpenChange={handleOpenChange}
@@ -475,7 +470,7 @@ const ReferencesList: React.FunctionComponent<
                     <CollapsibleLocationList
                         {...props}
                         name="implementations"
-                        locationsGroup={implementations}
+                        locationsGroup={data.implementations.nodes}
                         hasMore={implementationsHasNextPage}
                         fetchMore={fetchMoreImplementations}
                         loadingMore={fetchMoreImplementationsLoading}
@@ -483,14 +478,13 @@ const ReferencesList: React.FunctionComponent<
                         filter={debouncedFilter}
                         isActiveLocation={isActiveLocation}
                         activeURL={activeURL || ''}
-                        navigateToUrl={navigateToUrl}
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
                     />
                     <CollapsibleLocationList
                         {...props}
                         name="prototypes"
-                        locationsGroup={prototypes}
+                        locationsGroup={data.prototypes.nodes}
                         hasMore={prototypesHasNextPage}
                         fetchMore={fetchMorePrototypes}
                         loadingMore={fetchMorePrototypesLoading}
@@ -498,7 +492,6 @@ const ReferencesList: React.FunctionComponent<
                         filter={debouncedFilter}
                         isActiveLocation={isActiveLocation}
                         activeURL={activeURL || ''}
-                        navigateToUrl={navigateToUrl}
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
                     />
@@ -529,7 +522,7 @@ const ReferencesList: React.FunctionComponent<
                                     to={activeURL}
                                     onClick={event => {
                                         event.preventDefault()
-                                        navigateToUrl(activeURL)
+                                        navigate(activeURL)
                                     }}
                                     className={styles.sideBlobFilename}
                                 >
@@ -570,7 +563,6 @@ interface CollapsibleLocationListProps
     hasMore: boolean
     fetchMore?: () => void
     loadingMore: boolean
-    navigateToUrl: (url: string) => void
     activeURL: string
 }
 
@@ -620,7 +612,6 @@ const CollapsibleLocationList: React.FunctionComponent<
                                     isActiveLocation={props.isActiveLocation}
                                     setActiveLocation={props.setActiveLocation}
                                     filter={props.filter}
-                                    navigateToUrl={props.navigateToUrl}
                                     handleOpenChange={(id, isOpen) => props.handleOpenChange(props.name + id, isOpen)}
                                     isOpen={id => props.isOpen(props.name + id)}
                                     fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
@@ -689,7 +680,6 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
             SearchTokenProps &
             HighlightedFileLineRangesProps & {
                 filter: string | undefined
-                navigateToUrl: (url: string) => void
                 locations: LocationsGroupedByRepo
                 openByDefault: boolean
                 activeURL: string
@@ -699,7 +689,6 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
     locations,
     isActiveLocation,
     setActiveLocation,
-    navigateToUrl,
     filter,
     openByDefault,
     isOpen,
@@ -742,7 +731,6 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                             filter={filter}
                             handleOpenChange={(id, isOpen) => handleOpenChange(repoName + id, isOpen)}
                             isOpen={id => isOpen(repoName + id)}
-                            navigateToUrl={navigateToUrl}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                         />
                     ))}
@@ -761,7 +749,6 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                 repoName: string
                 group: LocationsGroupedByFile
                 filter: string | undefined
-                navigateToUrl: (url: string) => void
                 activeURL: string
             }
     >
@@ -774,7 +761,6 @@ const CollapsibleLocationGroup: React.FunctionComponent<
     isOpen,
     handleOpenChange,
     fetchHighlightedFileLineRanges,
-    navigateToUrl,
 }) => {
     // On the first load, update the scroll position towards the active
     // location.  Without this behavior, the scroll position points at the top
@@ -834,6 +820,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
     }
 
     const open = isOpen(group.path) ?? true
+    const navigate = useNavigate()
 
     return (
         <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(group.path, isOpen)}>
@@ -903,14 +890,14 @@ const CollapsibleLocationGroup: React.FunctionComponent<
 
                                     event.preventDefault()
                                     if (isActive) {
-                                        navigateToUrl(locationToUrl(reference))
+                                        navigate(locationToUrl(reference))
                                     } else {
                                         setActiveLocation(reference)
                                     }
                                 }
                                 const doubleClickReference = (event: MouseEvent<HTMLElement>): void => {
                                     event.preventDefault()
-                                    navigateToUrl(locationToUrl(reference))
+                                    navigate(locationToUrl(reference))
                                 }
 
                                 return (

@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { H2, Text, Button, Link } from '@sourcegraph/wildcard'
+import { Button, H2, Link, Text } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
 
@@ -64,7 +64,7 @@ export function JetBrainsInstructions({
                                 </div>
                                 <div>
                                     <Text className="mb-1" weight="bold">
-                                        Install the Cody Plugin
+                                        Install the Cody plugin
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
                                         Type "Cody" in the search bar and <strong>install</strong> the plugin.
@@ -86,13 +86,13 @@ export function JetBrainsInstructions({
                                 </div>
                                 <div>
                                     <Text className="mb-1" weight="bold">
-                                        Open the Plugin and Login
+                                        Open the plugin and log in
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
                                         Cody will be available on the right side of your IDE. Click the Cody icon to
                                         open the sidebar and login.
                                         <br />
-                                        Login with the same method you use to create this account.
+                                        Log in with the same method you use to create this account.
                                     </Text>
                                 </div>
                             </div>
@@ -139,9 +139,9 @@ export function JetBrainsInstructions({
                             </Text>
                             <img
                                 alt="Cody Autocomplete"
-                                width="90%"
+                                width="100%"
                                 className="mt-4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/autoCompleteIllustration.svg"
+                                src="https://storage.googleapis.com/sourcegraph-assets/codyFeaturesImgs/featureAutoCompletions.png"
                             />
                         </div>
                         <div className="flex-1 p-3 d-flex flex-column justify-content-center align-items-center">
@@ -154,9 +154,9 @@ export function JetBrainsInstructions({
                             </Text>
                             <img
                                 alt="Cody Chat"
-                                width="80%"
+                                width="100%"
                                 className="mt-4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/chatIllustration.svg"
+                                src="https://storage.googleapis.com/sourcegraph-assets/codyFeaturesImgs/featureChat.png"
                             />
                         </div>
                     </div>
@@ -171,9 +171,9 @@ export function JetBrainsInstructions({
                             </Text>
                             <img
                                 alt="Cody Commands"
-                                width="80%"
+                                width="100%"
                                 className="mt-4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/commandsIllustration.svg"
+                                src="https://storage.googleapis.com/sourcegraph-assets/codyFeaturesImgs/featureCommands.png"
                             />
                         </div>
                         <div className="flex-1 p-3 d-flex flex-column justify-content-center align-items-center">
@@ -183,25 +183,20 @@ export function JetBrainsInstructions({
                             <Text className="mb-0 text-muted w-100" size="small">
                                 Feel free to join our Discord to leave feedback or ask questions about Cody.
                             </Text>
-                            <Link to="https://discord.gg/rDPqBejz93" className="d-flex w-100 justify-content-center">
-                                <img
-                                    alt="Discord Feedback"
-                                    width="50%"
-                                    className="mt-4"
-                                    src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/discordCTA.svg"
-                                />
-                            </Link>
-                            <Link
-                                to="https://github.com/sourcegraph/cody/discussions/new?category=product-feedback"
-                                className="d-flex w-100 justify-content-center"
-                            >
-                                <img
-                                    alt="GitHub Feedback"
-                                    width="50%"
-                                    className="mt-4"
-                                    src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/feedbackCTA.svg"
-                                />
-                            </Link>
+                            <div className="mt-4 d-flex flex-column justify-content-center h-100">
+                                <Link
+                                    to="https://discord.gg/rDPqBejz93"
+                                    className="d-flex w-100 justify-content-center "
+                                >
+                                    <strong>Discord chat</strong>
+                                </Link>
+                                <Link
+                                    to="https://github.com/sourcegraph/cody/discussions/new?category=product-feedback"
+                                    className="d-flex w-100 justify-content-center mt-4"
+                                >
+                                    <strong>GitHub Discussions</strong>
+                                </Link>
+                            </div>
                         </div>
                     </div>
                     {showStep === undefined ? (

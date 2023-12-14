@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { Link, H2, Text, Button, ButtonLink } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, H2, Link, Text } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
 
@@ -36,7 +36,8 @@ export function NeoVimInstructions({
                                         Open the plugin repo on GitHub
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
-                                        Download the latest version of the plugin from the repo.
+                                        Follow the instructions detailed in the <strong>readme.md</strong> file to
+                                        install the plugin.
                                     </Text>
                                 </div>
                             </div>
@@ -46,7 +47,7 @@ export function NeoVimInstructions({
                                     to="https://github.com/sourcegraph/sg.nvim#setup"
                                     target="_blank"
                                 >
-                                    Navigate to GitHub Repo
+                                    Navigate to GitHub repo
                                 </ButtonLink>
                                 <img
                                     alt="NeoVim Repo"
@@ -54,20 +55,6 @@ export function NeoVimInstructions({
                                     width="70%"
                                     src="https://storage.googleapis.com/sourcegraph-assets/NeoVimInstructions/NeovimStep1.png"
                                 />
-                            </div>
-                        </div>
-
-                        <div className="mt-3 pb-5 d-flex flex-column border-bottom">
-                            <div className="d-flex align-items-center">
-                                <div className="mr-1">
-                                    <div className={classNames('mr-2', styles.step)}>2</div>
-                                </div>
-                                <div>
-                                    <Text className="mb-1" weight="bold">
-                                        Follow the instructions detailed in the <strong>Readme.md</strong> file to
-                                        install the plugin.
-                                    </Text>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -100,13 +87,14 @@ export function NeoVimInstructions({
                                 Autocomplete
                             </Text>
                             <Text className="mb-0 w-100 text-muted" size="small">
-                                Cody will autocomplete your code as you type
+                                Let Cody automatically write code for you. Start writing a comment or a line of code and
+                                Cody will suggest the next few lines.
                             </Text>
                             <img
                                 alt="Cody Autocomplete"
-                                width="90%"
+                                width="100%"
                                 className="mt-4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/autoCompleteIllustration.svg"
+                                src="https://storage.googleapis.com/sourcegraph-assets/codyFeaturesImgs/featureAutoCompletions.png"
                             />
                         </div>
                         <div className="flex-1 p-3 d-flex flex-column justify-content-center align-items-center">
@@ -114,13 +102,14 @@ export function NeoVimInstructions({
                                 Chat
                             </Text>
                             <Text className="mb-0 text-muted  w-100" size="small">
-                                Cody will autocomplete your code as you type
+                                Answer questions about programming topics generally or your codebase specifically with
+                                Cody chat.
                             </Text>
                             <img
                                 alt="Cody Chat"
-                                width="80%"
+                                width="100%"
                                 className="mt-4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/chatIllustration.svg"
+                                src="https://storage.googleapis.com/sourcegraph-assets/codyFeaturesImgs/featureChat.png"
                             />
                         </div>
                     </div>
@@ -130,13 +119,14 @@ export function NeoVimInstructions({
                                 Commands
                             </Text>
                             <Text className="mb-0 text-muted  w-100" size="small">
-                                Cody will autocomplete your code as you type
+                                Streamline your development process by using Cody commands to understand, improve, fix,
+                                document, and generate unit tests for your code.
                             </Text>
                             <img
                                 alt="Cody Commands"
-                                width="80%"
+                                width="100%"
                                 className="mt-4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/commandsIllustration.svg"
+                                src="https://storage.googleapis.com/sourcegraph-assets/codyFeaturesImgs/featureCommands.png"
                             />
                         </div>
                         <div className="flex-1 p-3 d-flex flex-column justify-content-center align-items-center">
@@ -144,27 +134,22 @@ export function NeoVimInstructions({
                                 Feedback
                             </Text>
                             <Text className="mb-0 text-muted w-100" size="small">
-                                Cody will autocomplete your code as you type
+                                Feel free to join our Discord to leave feedback or ask questions about Cody.
                             </Text>
-                            <Link to="https://discord.gg/rDPqBejz93" className="d-flex w-100 justify-content-center">
-                                <img
-                                    alt="Discord Feedback"
-                                    width="50%"
-                                    className="mt-4"
-                                    src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/discordCTA.svg"
-                                />
-                            </Link>
-                            <Link
-                                to="https://github.com/sourcegraph/cody/discussions/new?category=product-feedback"
-                                className="d-flex w-100 justify-content-center"
-                            >
-                                <img
-                                    alt="GitHub Feedback"
-                                    width="50%"
-                                    className="mt-4"
-                                    src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/feedbackCTA.svg"
-                                />
-                            </Link>
+                            <div className="mt-4 d-flex flex-column justify-content-center h-100">
+                                <Link
+                                    to="https://discord.gg/rDPqBejz93"
+                                    className="d-flex w-100 justify-content-center "
+                                >
+                                    <strong>Discord chat</strong>
+                                </Link>
+                                <Link
+                                    to="https://github.com/sourcegraph/cody/discussions/new?category=product-feedback"
+                                    className="d-flex w-100 justify-content-center mt-4"
+                                >
+                                    <strong>GitHub Discussions</strong>
+                                </Link>
+                            </div>
                         </div>
                     </div>
                     {showStep === undefined ? (
