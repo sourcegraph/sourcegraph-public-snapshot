@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
 
+	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/server"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
@@ -53,7 +54,12 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	// TODO(@bobheadxi): Maybe don't use defaults.NewServer, which is geared
 	// towards in-Sourcegraph services.
 	grpcServer := defaults.NewServer(logger)
-	telemetryGatewayServer, err := server.New(logger, eventsTopic)
+	telemetryGatewayServer, err := server.New(
+		logger,
+		eventsTopic,
+		events.PublishStreamOptions{
+			ConcurrencyLimit: config.Events.StreamPublishConcurrency,
+		})
 	if err != nil {
 		return nil, errors.Wrap(err, "init telemetry gateway server")
 	}
