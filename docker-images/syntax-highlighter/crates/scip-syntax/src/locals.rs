@@ -10,6 +10,7 @@
 ///
 /// [query syntax]: https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax
 use crate::languages::LocalConfiguration;
+use anyhow::Result;
 use core::cmp::Ordering;
 use core::ops::Range;
 use id_arena::{Arena, Id};
@@ -24,7 +25,6 @@ use std::collections::HashSet;
 use std::fmt;
 use std::slice::Iter;
 use tree_sitter::Node;
-use anyhow::Result;
 
 // What needs to be documented?
 //
@@ -77,6 +77,11 @@ impl fmt::Display for Definition<'_> {
     }
 }
 
+#[derive(Debug, Clone)]
+struct Reference<'a> {
+    node: Node<'a>,
+}
+
 /// We use id_arena to allocate our scopes.
 type ScopeRef<'a> = Id<Scope<'a>>;
 
@@ -95,6 +100,8 @@ struct Scope<'a> {
     hoisted_definitions: Vec<Definition<'a>>,
     /// Definitions that appear in this scope. Sorted lexicographical
     definitions: Vec<Definition<'a>>,
+    /// References that appear in this scope. Sorted lexicographical
+    references: Vec<Reference<'a>>,
     /// Scopes that appear nested underneath this scope. Sorted
     /// lexicographically
     children: Vec<ScopeRef<'a>>,
@@ -108,6 +115,7 @@ impl<'a> Scope<'a> {
             parent,
             hoisted_definitions: vec![],
             definitions: vec![],
+            references: vec![],
             children: vec![],
         }
     }
@@ -118,15 +126,17 @@ impl<'a> Scope<'a> {
             return Some(def);
         };
 
-        // TODO: (perf) Binary search
-        if let Some(def) = self.definitions.iter().find(|def| {
-            def.text == name &&
+        for definition in self.definitions.iter() {
             // For non-hoisted definitions we're only looking for
             // definitions that lexically precede the reference
-                def.node.start_byte() < start_byte
-        }) {
-            return Some(def);
-        };
+            if definition.node.start_byte() > start_byte {
+                break;
+            }
+
+            if definition.text == name {
+                return Some(definition);
+            }
+        }
 
         None
     }
@@ -152,13 +162,19 @@ fn compare_range(a: Range<usize>, b: Range<usize>) -> Ordering {
 struct Captures<'a> {
     scopes: Vec<(&'a str, Node<'a>)>,
     definitions: Vec<CaptureDef<'a>>,
-    references: Vec<(&'a str, Node<'a>)>,
+    references: Vec<CaptureRef<'a>>,
 }
 
 #[derive(Debug)]
 struct CaptureDef<'a> {
     ty: String,
     hoist: Option<String>,
+    node: Node<'a>,
+}
+
+#[derive(Debug)]
+struct CaptureRef<'a> {
+    _ty: String,
     node: Node<'a>,
 }
 
@@ -191,6 +207,10 @@ impl<'a> LocalResolver<'a> {
 
     fn end_byte(&self, id: ScopeRef<'a>) -> usize {
         self.get_scope(id).node.end_byte()
+    }
+
+    fn add_reference(&mut self, id: ScopeRef<'a>, reference: Reference<'a>) {
+        self.get_scope_mut(id).references.push(reference)
     }
 
     fn add_definition(
@@ -297,6 +317,23 @@ impl<'a> LocalResolver<'a> {
         }
     }
 
+    fn add_refs_while<'b, F>(
+        &mut self,
+        scope: ScopeRef<'a>,
+        references_iter: &mut Iter<'b, CaptureRef<'a>>,
+        f: F,
+    ) where
+        F: Fn(&CaptureRef<'a>) -> bool,
+        'a: 'b,
+    {
+        for ref_capture in references_iter.take_while_ref(|ref_capture| f(ref_capture)) {
+            let reference = Reference {
+                node: ref_capture.node,
+            };
+            self.add_reference(scope, reference)
+        }
+    }
+
     fn add_defs_while<'b, F>(
         &mut self,
         scope: ScopeRef<'a>,
@@ -321,19 +358,6 @@ impl<'a> LocalResolver<'a> {
         }
     }
 
-    fn find_enclosing_scope(&self, top_scope: ScopeRef<'a>, node: Node<'a>) -> ScopeRef<'a> {
-        let mut current_scope = top_scope;
-
-        while let Some(next) = self.get_scope(current_scope).children.iter().find(|child| {
-            let child_scope = self.get_scope(**child);
-            child_scope.node.byte_range().contains(&node.start_byte())
-        }) {
-            current_scope = *next
-        }
-
-        current_scope
-    }
-
     fn collect_captures(
         config: &'a LocalConfiguration,
         tree: &'a tree_sitter::Tree,
@@ -344,7 +368,7 @@ impl<'a> LocalResolver<'a> {
 
         let mut scopes: Vec<(&str, Node<'a>)> = vec![];
         let mut definitions: Vec<CaptureDef> = vec![];
-        let mut references: Vec<(&str, Node<'a>)> = vec![];
+        let mut references: Vec<CaptureRef<'a>> = vec![];
 
         for match_ in cursor.matches(&config.query, tree.root_node(), source_bytes) {
             let properties = config.query.property_settings(match_.pattern_index);
@@ -369,7 +393,13 @@ impl<'a> LocalResolver<'a> {
                         node: capture.node,
                     })
                 } else if capture_name.starts_with("reference") {
-                    references.push((capture_name, capture.node))
+                    let ty = capture_name
+                        .strip_prefix("reference.")
+                        .unwrap_or(capture_name);
+                    references.push(CaptureRef {
+                        _ty: ty.to_string(),
+                        node: capture.node,
+                    })
                 } else {
                     eprintln!("Discarded capture: {}", capture_name)
                 }
@@ -393,6 +423,7 @@ impl<'a> LocalResolver<'a> {
         top_scope: ScopeRef<'a>,
         mut scopes: Vec<(&'a str, Node<'a>)>,
         mut definitions: Vec<CaptureDef<'a>>,
+        references: Vec<CaptureRef<'a>>,
     ) {
         // In order to do a pre-order traversal we need to sort scopes and definitions
         // TODO: (perf) Do a pass to check if they're already sorted first?
@@ -400,6 +431,7 @@ impl<'a> LocalResolver<'a> {
         definitions.sort_by_key(|a| a.node.start_byte());
 
         let mut definitions_iter = definitions.iter();
+        let mut references_iter = references.iter();
 
         let mut current_scope = top_scope;
         for (scope_ty, scope) in scopes {
@@ -412,12 +444,20 @@ impl<'a> LocalResolver<'a> {
                     def_capture.node.start_byte() < scope_end_byte
                 });
 
+                self.add_refs_while(current_scope, &mut references_iter, |ref_capture| {
+                    ref_capture.node.start_byte() < scope_end_byte
+                });
+
                 current_scope = self.parent(current_scope)
             }
             // Before adding the new scope we first attach all
             // definitions that belong to the current scope
             self.add_defs_while(current_scope, &mut definitions_iter, |def_capture| {
                 def_capture.node.start_byte() < scope.start_byte()
+            });
+
+            self.add_refs_while(current_scope, &mut references_iter, |ref_capture| {
+                ref_capture.node.start_byte() < scope.start_byte()
             });
 
             let new_scope =
@@ -435,6 +475,10 @@ impl<'a> LocalResolver<'a> {
                 def_capture.node.start_byte() < scope_end_byte
             });
 
+            self.add_refs_while(current_scope, &mut references_iter, |ref_capture| {
+                ref_capture.node.start_byte() < scope_end_byte
+            });
+
             if current_scope == top_scope {
                 break;
             }
@@ -448,42 +492,40 @@ impl<'a> LocalResolver<'a> {
         );
     }
 
-    fn resolve_references(
-        &mut self,
-        top_scope: ScopeRef<'a>,
-        references: Vec<(&'a str, Node<'a>)>,
-    ) {
+    fn resolve_references(&mut self) {
         let mut ref_occurrences = vec![];
 
-        // TODO: (perf) Add refs in the pre-order traversal
-        for (_ty, node) in references {
-            // See the comment on LocalResolver.definition_start_bytes
-            if self.definition_start_bytes.contains(&node.start_byte()) {
-                continue;
-            }
+        for (scope_ref, scope) in self.arena.iter() {
+            for Reference { node } in scope.references.iter() {
+                // See the comment on LocalResolver.definition_start_bytes
+                if self.definition_start_bytes.contains(&node.start_byte()) {
+                    continue;
+                }
 
-            let reference_string = node
-                .utf8_text(self.source_bytes)
-                .expect("non utf8 reference");
-            let mut current_scope = self.find_enclosing_scope(top_scope, node);
-            loop {
-                let scope = self.get_scope(current_scope);
+                let reference_string = node
+                    .utf8_text(self.source_bytes)
+                    .expect("non utf8 reference");
+                let mut current_scope = scope_ref;
+                loop {
+                    let scope = self.get_scope(current_scope);
 
-                if let Some(def) = scope.find_def(reference_string, node.start_byte()) {
-                    let symbol = format_symbol(Symbol::new_local(def.id));
-                    ref_occurrences.push(scip::types::Occurrence {
-                        range: node.to_scip_range(),
-                        symbol: symbol.clone(),
-                        ..Default::default()
-                    });
-                    break;
-                } else if let Some(parent_scope) = scope.parent {
-                    current_scope = parent_scope
-                } else {
-                    break;
+                    if let Some(def) = scope.find_def(reference_string, node.start_byte()) {
+                        let symbol = format_symbol(Symbol::new_local(def.id));
+                        ref_occurrences.push(scip::types::Occurrence {
+                            range: node.to_scip_range(),
+                            symbol: symbol.clone(),
+                            ..Default::default()
+                        });
+                        break;
+                    } else if let Some(parent_scope) = scope.parent {
+                        current_scope = parent_scope
+                    } else {
+                        break;
+                    }
                 }
             }
         }
+
         self.occurrences.extend(ref_occurrences);
     }
 
@@ -500,13 +542,18 @@ impl<'a> LocalResolver<'a> {
         let top_scope = self
             .arena
             .alloc(Scope::new("global".to_string(), tree.root_node(), None));
-        self.build_tree(top_scope, captures.scopes, captures.definitions);
+        self.build_tree(
+            top_scope,
+            captures.scopes,
+            captures.definitions,
+            captures.references,
+        );
         // TODO: Maybe write a couple snapshot tests that assert on
         // the structure of this tree?
         // self.print_scope(top_scope, 0); // Just for debugging
 
         // Finally we resolve all references against that tree structure
-        self.resolve_references(top_scope, captures.references);
+        self.resolve_references();
 
         self.occurrences
     }
