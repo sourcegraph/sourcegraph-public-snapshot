@@ -29,8 +29,7 @@ use tree_sitter::Node;
 
 // What needs to be documented?
 //
-// 1. How to use the hoisting DSL
-// 2. Missing features at this point
+// 1. Missing features at this point
 //   a) Python's definition vs reference
 //   b) Namespacing (Need to figure out what the DSL should be)
 //   c) Marking globals to avoid emitting them into occurrences

@@ -1,0 +1,77 @@
+# scip-locals
+
+## Globals (To be documented)
+## Symbols (To be documented)
+
+## Locals
+
+`src/locals.rs` implements an evaluator for our tree-sitter query based DSL to label local definitions and references for various programming languages using purely syntactic information. This data is used to enable fast and lightweight file-local navigation in the blob view.
+
+Queries describing the local binding structure of various programming languages are maintained in `queries/*/scip-locals.scm`.
+
+### The Query DSL
+
+For specifying how to resolve local bindings we use the [tree-sitter query language] and a set of custom captures and properties. The three main concepts are _scopes_, _definitions_, and _references_.
+
+### Scopes
+
+Scopes are specified by labeling a capture as a `@scope[.kind]`. The optional scope kind can be used to hoist definitions to scopes of that kind. There is an implicit top-level scope that is of kind `"global"`
+
+#### Examples
+
+```scm
+(block @scope)
+(function_declaration @scope.function)
+```
+
+### Definitions
+
+Definitions are specified by labeling a capture as a `@definition`.
+
+#### Lexical scoping
+
+```scm
+(variable_definition (identifier) @definition)
+```
+
+The default behaviour for a definition is to be visible to all references that appear lexically _after_ the definition.
+
+```js
+print(my_var) // Will not be resolved
+
+let my_var = 10
+print(my_var) // Will be resolved
+```
+
+#### Hoisting
+
+If you want a definition to be _hoisted_ instead, you can specify what kind of scope it should be hoisted to.
+
+```scm
+(function_definition
+ (identifier) @definition
+ #set! "hoist" "function")
+```
+
+It'll then be visible from the closest parent scope with the given kind. If no parent with the given kind is found, the definition will be visible in the global scope.
+
+```js
+my_func(10) // Will be resolved
+
+function my_func(x) {
+  print(x)
+}
+```
+
+### References
+
+References are specified by labeling a capture as a `@reference`.
+
+```scm
+(variable_expression (identifier) @reference)
+```
+
+They will be resolved against definitions in the current scope and parent scopes. Non-hoisted definitions are only resolved if they are defined _before_ the reference.
+
+
+[tree-sitter Query language]: https://tree-sitter.github.io/tree-sitter/using-parsers#pattern-matching-with-queries
