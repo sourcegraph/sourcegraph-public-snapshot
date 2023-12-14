@@ -89,7 +89,7 @@ export async function fetchSidebarFileTree({
     commitID,
     filePath,
 }: {
-    repoID: Scalars['ID']
+    repoID: Scalars['ID']['input']
     commitID: string
     filePath: string
 }): Promise<{ root: TreeRoot; values: FileTreeNodeValue[] }> {
@@ -111,7 +111,7 @@ export async function fetchSidebarFileTree({
 }
 
 export type FileTreeLoader = (args: {
-    repoID: Scalars['ID']
+    repoID: Scalars['ID']['input']
     commitID: string
     filePath: string
     parent?: FileTreeProvider
@@ -120,7 +120,7 @@ export type FileTreeLoader = (args: {
 interface FileTreeProviderArgs {
     root: NonNullable<GitCommitFieldsWithTree['tree']>
     values: FileTreeNodeValue[]
-    repoID: Scalars['ID']
+    repoID: Scalars['ID']['input']
     commitID: string
     loader: FileTreeLoader
     parent?: TreeProvider<FileTreeNodeValue>
@@ -133,7 +133,7 @@ export class FileTreeProvider implements TreeProvider<FileTreeNodeValue> {
         return this.args.root
     }
 
-    getRepoID(): Scalars['ID'] {
+    getRepoID(): Scalars['ID']['input'] {
         return this.args.repoID
     }
 

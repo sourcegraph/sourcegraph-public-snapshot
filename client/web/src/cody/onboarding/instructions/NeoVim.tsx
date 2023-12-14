@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { Link, H2, Text, Button, ButtonLink } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, H2, Link, Text } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
 
@@ -36,7 +36,8 @@ export function NeoVimInstructions({
                                         Open the plugin repo on GitHub
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
-                                        Download the latest version of the plugin from the repo.
+                                        Follow the instructions detailed in the <strong>readme.md</strong> file to
+                                        install the plugin.
                                     </Text>
                                 </div>
                             </div>
@@ -46,7 +47,7 @@ export function NeoVimInstructions({
                                     to="https://github.com/sourcegraph/sg.nvim#setup"
                                     target="_blank"
                                 >
-                                    Navigate to GitHub Repo
+                                    Navigate to GitHub repo
                                 </ButtonLink>
                                 <img
                                     alt="NeoVim Repo"
@@ -54,20 +55,6 @@ export function NeoVimInstructions({
                                     width="70%"
                                     src="https://storage.googleapis.com/sourcegraph-assets/NeoVimInstructions/NeovimStep1.png"
                                 />
-                            </div>
-                        </div>
-
-                        <div className="mt-3 pb-5 d-flex flex-column border-bottom">
-                            <div className="d-flex align-items-center">
-                                <div className="mr-1">
-                                    <div className={classNames('mr-2', styles.step)}>2</div>
-                                </div>
-                                <div>
-                                    <Text className="mb-1" weight="bold">
-                                        Follow the instructions detailed in the <strong>Readme.md</strong> file to
-                                        install the plugin.
-                                    </Text>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -154,7 +141,7 @@ export function NeoVimInstructions({
                                     to="https://discord.gg/rDPqBejz93"
                                     className="d-flex w-100 justify-content-center "
                                 >
-                                    <strong>Join our Discord</strong>
+                                    <strong>Discord chat</strong>
                                 </Link>
                                 <Link
                                     to="https://github.com/sourcegraph/cody/discussions/new?category=product-feedback"

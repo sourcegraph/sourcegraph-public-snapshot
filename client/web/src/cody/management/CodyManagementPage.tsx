@@ -1,24 +1,24 @@
-import React, { useEffect } from 'react'
 import type { ReactElement } from 'react'
+import React, { useEffect } from 'react'
 
-import { mdiHelpCircleOutline, mdiTrendingUp, mdiInformationOutline, mdiOpenInNew } from '@mdi/js'
+import { mdiHelpCircleOutline, mdiInformationOutline, mdiOpenInNew, mdiTrendingUp } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { useQuery, useMutation } from '@sourcegraph/http-client'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 import {
-    Icon,
-    PageHeader,
-    Link,
+    ButtonLink,
+    H2,
     H4,
     H5,
-    H2,
-    Text,
-    ButtonLink,
-    Modal,
-    useSearchParameters,
+    Icon,
+    Link,
     LoadingSpinner,
+    Modal,
+    PageHeader,
+    Text,
+    useSearchParameters,
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -26,19 +26,19 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type {
+    ChangeCodyPlanResult,
+    ChangeCodyPlanVariables,
     UserCodyPlanResult,
     UserCodyPlanVariables,
     UserCodyUsageResult,
     UserCodyUsageVariables,
-    ChangeCodyPlanResult,
-    ChangeCodyPlanVariables,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, editorGroups, type IEditor } from '../onboarding/CodyOnboarding'
 import { ProTierIcon } from '../subscription/CodySubscriptionPage'
-import { USER_CODY_PLAN, USER_CODY_USAGE, CHANGE_CODY_PLAN } from '../subscription/queries'
+import { CHANGE_CODY_PLAN, USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
 
 import styles from './CodyManagementPage.module.scss'
 
@@ -149,7 +149,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         {codyProEnabled ? (
                             <div>
                                 <ButtonLink to="/cody/subscription" variant="secondary" outline={true} size="sm">
-                                    Manage Subscription
+                                    Manage subscription
                                 </ButtonLink>
                             </div>
                         ) : (
@@ -275,7 +275,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     </Text>
                                 </div>
                                 <Text className="text-muted mb-0" size="small">
-                                    Until 14th of February 2024
+                                    Until Feb 14, 2024
                                 </Text>
                             </div>
                         )}
@@ -357,7 +357,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                                 setSelectedEditorStep(0)
                                             }}
                                         >
-                                            <Icon svgPath={mdiInformationOutline} aria-hidden={true} /> Quickstart Guide
+                                            <Icon svgPath={mdiInformationOutline} aria-hidden={true} /> Quickstart guide
                                         </Link>
                                     )}
                                     {editor.docs && (
