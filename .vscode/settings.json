@@ -11,7 +11,8 @@
     "**/.cache": true,
     "**/.nyc_output": true,
     "doc/_resources/assets": true,
-    "**/.eslintcache": true
+    "**/.eslintcache": true,
+    "bazel*/**": true
   },
   "files.exclude": {
     "**/*.scss.d.ts": true
@@ -23,11 +24,15 @@
   },
   "json.schemas": [
     {
-      "fileMatch": ["dev/critical-config.json"],
+      "fileMatch": [
+        "dev/critical-config.json"
+      ],
       "url": "/schema/critical/critical.schema.json"
     },
     {
-      "fileMatch": ["dev/site-config.json"],
+      "fileMatch": [
+        "dev/site-config.json"
+      ],
       "url": "/schema/site.schema.json"
     }
   ],
@@ -46,11 +51,21 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "eslint.packageManager": "pnpm",
   "eslint.lintTask.enable": false,
-  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
   "editor.codeActionsOnSave": {},
   "eslint.codeActionsOnSave.mode": "problems",
-  "eslint.options": { "cache": true },
-  "eslint.workingDirectories": ["./dev/release", "./client/*"],
+  "eslint.options": {
+    "cache": true
+  },
+  "eslint.workingDirectories": [
+    "./dev/release",
+    "./client/*"
+  ],
   "go.lintTool": "golangci-lint",
   "shellformat.flag": "-i 2 -ci",
   "vscode-graphql.useSchemaFileDefinitions": true,
@@ -70,5 +85,8 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "cody.codebase": "github.com/sourcegraph/sourcegraph",
-  "rust-analyzer.linkedProjects": ["docker-images/syntax-highlighter/Cargo.toml", "src-tauri/Cargo.toml"]
+  "rust-analyzer.linkedProjects": [
+    "docker-images/syntax-highlighter/Cargo.toml",
+    "src-tauri/Cargo.toml"
+  ]
 }
