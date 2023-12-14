@@ -267,8 +267,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	models := allowedModels(scope, false, false)
 	if limit == nil && cfg != nil && isCodyProEnabled {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
-		actor := sgactor.FromContext(ctx)
-		user, err := actor.User(ctx, db.Users())
+		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
 		}
