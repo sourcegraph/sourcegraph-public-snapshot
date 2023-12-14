@@ -50,7 +50,7 @@ export interface UseCodeIntelParameters {
     searchToken: string
     fileContent: string
 
-    spec: LanguageSpec
+    spec: LanguageSpec | undefined
 
     isFork: boolean
     isArchived: boolean
