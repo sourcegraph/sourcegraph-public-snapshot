@@ -31,7 +31,7 @@ export function UpgradeToProModal({
                 <div className="d-flex flex-column justify-content-between align-items-center mby-4 py-4">
                     <CodyColorIcon width={40} height={40} className="mb-4" />
                     <H2>Upgraded to Cody Pro 🎉</H2>
-                    <Text>You now have unlimited autocomplete suggestions, chat messages and commands.</Text>
+                    <Text>You now have unlimited autocompletions, chat messages and commands.</Text>
 
                     <Button className="mt-4" variant="primary" onClick={onSuccess}>
                         Get started
@@ -55,7 +55,7 @@ export function UpgradeToProModal({
                                 </div>
                                 <div className="mb-1">
                                     <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>$9</H2>
-                                    <Text className="mb-0 text-muted d-inline">/ month</Text>
+                                    <Text className="mb-0 text-muted d-inline">/month</Text>
                                 </div>
                                 <Text className="mb-4 text-muted" size="small">
                                     Free until Feb 2024, <strong>no credit card needed</strong>
