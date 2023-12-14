@@ -108,7 +108,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
     const newSearchUIEnabled = useMemo(() => {
         const settings = settingsCascade.final
         if (!isErrorLike(settings)) {
-            return settings?.experimentalFeatures?.newSearchNavigationUI
+            return settings?.experimentalFeatures?.newSearchResultsUI
         }
         return false
     }, [settingsCascade])
