@@ -24,20 +24,22 @@
     export let date: Date | string
 
     /** Use exact timestamps (i.e. omit "less than", "about", etc.) */
-    export let strict: boolean | undefined = undefined
+    export let strict: boolean = false
 
     /** Show absolute timestamp and show relative timestamp in label*/
-    export let showAbsolute: boolean | undefined = undefined
+    export let showAbsolute: boolean = false
 
-    /** Show an appropriate suffix, e.g. 'ago' */
-    export let addSuffix: boolean = true
+    /** Hide suffix (e.g. ago) */
+    export let hideSuffix: boolean = false
 
     /** Show time in UTC */
     export let utc: boolean | undefined = undefined
 
     $: dateObj = typeof date === 'string' ? new Date(date) : date
     $: formattedDate = formatDate(dateObj, { utc })
-    $: relativeDate = (strict ? formatDistanceStrict : formatDistance)(dateObj, $currentDate, { addSuffix })
+    $: relativeDate = (strict ? formatDistanceStrict : formatDistance)(dateObj, $currentDate, {
+        addSuffix: !hideSuffix,
+    })
 </script>
 
 <Tooltip tooltip={showAbsolute ? relativeDate : formattedDate}>

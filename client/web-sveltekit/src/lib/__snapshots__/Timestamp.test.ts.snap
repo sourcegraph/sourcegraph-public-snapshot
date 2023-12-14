@@ -1,11 +1,11 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Timestamp.svelte > props: { addSuffix: false } 1`] = `"about 23 hours ago"`;
+exports[`Timestamp.svelte > props: { hideSuffix: true } 1`] = `"about 23 hours"`;
 
-exports[`Timestamp.svelte > props: { addSuffix: false, strict: true } 1`] = `"about 23 hours ago"`;
+exports[`Timestamp.svelte > props: { hideSuffix: true, strict: true } 1`] = `"23 hours"`;
 
-exports[`Timestamp.svelte > props: { showAbsolute: true } 1`] = `"about 23 hours ago"`;
+exports[`Timestamp.svelte > props: { showAbsolute: true } 1`] = `"2021-05-23 12:57:34 PM"`;
 
-exports[`Timestamp.svelte > props: { strict: true } 1`] = `"about 23 hours ago"`;
+exports[`Timestamp.svelte > props: { strict: true } 1`] = `"23 hours ago"`;
 
 exports[`Timestamp.svelte > props: {} 1`] = `"about 23 hours ago"`;
