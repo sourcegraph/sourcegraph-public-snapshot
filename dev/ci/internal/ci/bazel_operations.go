@@ -64,6 +64,16 @@ func bazelPushImagesNoTest(version string) func(*bk.Pipeline) {
 	return bazelPushImagesCmd(version, false, "pipeline-gen")
 }
 
+func bazelRunDebug() func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":bazel::cheese: Debug bazel run sdk thing",
+			bk.Agent("queue", "bazel"),
+			bk.Cmd(bazelCmd("run", "--execution_log_binary_file=exec.log --logging=6 --verbose_failures --subcommands //dev/sg:sg -- version")),
+			bk.ArtifactPaths("./exec.log"),
+		)
+	}
+}
+
 func bazelPushImagesCmd(version string, isCandidate bool, depKey string) func(*bk.Pipeline) {
 	stepName := ":bazel::docker: Push final images"
 	stepKey := "bazel-push-images"

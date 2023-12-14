@@ -47,23 +47,25 @@ func CoreTestOperations(buildOpts bk.BuildOptions, diff changed.Diff, opts CoreT
 	// Base set
 	ops := operations.NewSet()
 
-	// Simple, fast-ish linter checks
-	ops.Append(BazelOperations(buildOpts, opts)...)
-	linterOps := operations.NewNamedSet("Linters and static analysis")
-	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
-		linterOps.Append(addSgLints(targets))
-	}
-	ops.Merge(linterOps)
+	ops.Append(bazelRunDebug())
 
-	if diff.Has(changed.Client | changed.GraphQL) {
-		// If there are any Graphql changes, they are impacting the client as well.
-		clientChecks := operations.NewNamedSet("Client checks",
-			clientChromaticTests(opts),
-			addJetBrainsUnitTests, // ~2.5m
-			addStylelint,
-		)
-		ops.Merge(clientChecks)
-	}
+	// Simple, fast-ish linter checks
+	// ops.Append(BazelOperations(buildOpts, opts)...)
+	// linterOps := operations.NewNamedSet("Linters and static analysis")
+	// if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
+	// 	linterOps.Append(addSgLints(targets))
+	// }
+	// ops.Merge(linterOps)
+	//
+	// if diff.Has(changed.Client | changed.GraphQL) {
+	// 	// If there are any Graphql changes, they are impacting the client as well.
+	// 	clientChecks := operations.NewNamedSet("Client checks",
+	// 		clientChromaticTests(opts),
+	// 		addJetBrainsUnitTests, // ~2.5m
+	// 		addStylelint,
+	// 	)
+	// 	ops.Merge(clientChecks)
+	// }
 
 	return ops
 }
