@@ -38,7 +38,7 @@ export function findSearchToken(args: {
     // In the common case, when 'Find references' is triggered through
     // the blob view, the 'end' parameter will be provided.
     if (args.end) {
-        return line.slice(args.start.character, args.end.character + 1)
+        return line.slice(args.start.character, args.end.character)
     }
 
     // For old URLs, have a fallback where we attempt to detect identifier
