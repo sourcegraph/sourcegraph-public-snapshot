@@ -1113,7 +1113,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 		Pattern:        "foo",
 	}
 
-	matches, common, err := RunRepoSubsetTextSearch(
+	matches, common, err := runRepoSubsetTextSearch(
 		context.Background(),
 		logtest.Scoped(t),
 		patternInfo,
@@ -1143,7 +1143,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 
 	// If we specify a rev and it isn't found, we fail the whole search since
 	// that should be checked earlier.
-	_, _, err = RunRepoSubsetTextSearch(
+	_, _, err = runRepoSubsetTextSearch(
 		context.Background(),
 		logtest.Scoped(t),
 		patternInfo,
@@ -1214,7 +1214,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		Pattern:        "foo",
 	}
 
-	matches, _, err := RunRepoSubsetTextSearch(
+	matches, _, err := runRepoSubsetTextSearch(
 		context.Background(),
 		logtest.Scoped(t),
 		patternInfo,
@@ -1284,7 +1284,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 
 	repos := makeRepositoryRevisions("foo@master:mybranch:branch3:branch4")
 
-	matches, _, err := RunRepoSubsetTextSearch(
+	matches, _, err := runRepoSubsetTextSearch(
 		context.Background(),
 		logtest.Scoped(t),
 		patternInfo,
@@ -1426,8 +1426,8 @@ func mkRepos(names ...string) []types.MinimalRepo {
 	return repos
 }
 
-// RunRepoSubsetTextSearch is a convenience function that simulates the RepoSubsetTextSearch job.
-func RunRepoSubsetTextSearch(
+// runRepoSubsetTextSearch is a convenience function that simulates the RepoSubsetTextSearch job.
+func runRepoSubsetTextSearch(
 	ctx context.Context,
 	logger log.Logger,
 	patternInfo *search.TextPatternInfo,
@@ -1484,9 +1484,9 @@ func RunRepoSubsetTextSearch(
 		}
 
 		zoektParams := &search.ZoektParameters{
-			FileMatchLimit: patternInfo.FileMatchLimit,
-			Select:         patternInfo.Select,
-			// TODO: numContextLines
+			FileMatchLimit:  patternInfo.FileMatchLimit,
+			Select:          patternInfo.Select,
+			NumContextLines: 0,
 		}
 
 		zoektJob := &zoektutil.RepoSubsetTextSearchJob{
