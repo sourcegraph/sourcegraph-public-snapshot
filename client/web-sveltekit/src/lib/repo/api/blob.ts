@@ -2,7 +2,7 @@ import { query, gql, type NodeFromResult } from '$lib/graphql'
 import type { BlobResult, BlobVariables, HighlightResult, HighlightVariables, Scalars } from '$lib/graphql-operations'
 
 interface FetchBlobOptions {
-    repoID: Scalars['ID']
+    repoID: Scalars['ID']['input']
     commitID: string
     filePath: string
     disableTimeout?: boolean

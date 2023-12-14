@@ -21,6 +21,14 @@
             "pointer": true
           }
         },
+        "newSearchResultsUI": {
+          "description": "Enables new experimental search results UI, such as preview panel feature and updated search and filter layouts.",
+          "type": "boolean",
+          "default": true,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeInsightsRepoUI": {
           "description": "Specifies which (code insight repo) editor to use for repo query UI",
           "type": "string",

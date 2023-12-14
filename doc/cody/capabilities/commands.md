@@ -43,6 +43,7 @@ For any feedback, you can <a href="https://about.sourcegraph.com/contact">contac
 </p>
 </aside>
 
+
 **Custom Commands** allow you to create and define reusable prompts for Cody tailored to your development workflows. They are defined in `JSON` format and will enable you to call CLI tools, write custom prompts, and select context to be sent to Cody. This provides a flexible way to configure Cody to handle use cases like:
 
 - Integrate with your build system to suggest fixes for errors/warnings in the latest build
@@ -50,14 +51,14 @@ For any feedback, you can <a href="https://about.sourcegraph.com/contact">contac
 - Read test command failures to explain and suggest fixes
 - Explain code quality output like linter warnings
 
-> NOTE: Cody supports Custom Commands only for VS Code version 0.8 and above.
+> NOTE: Cody supports Custom commands only for VS Code version 0.8 and above.
 
-### Creating a Custom Command
+### Creating a custom command
 
 You can create a custom command by editing the configuration JSON file or using the command builder within the VS Code editor. To access the command builder within VS Code:
 
 - Open the Cody commands menu (`⌥C` on Mac or `Alt-C` on Windows/Linux)
-- Select **Custom commands > New Custom Command**
+- Select **Custom Commands > New Custom Command**
 - Type the slash `/` name you want to use, for example, `/my-custom-command`
 - Next, write a suitable description for the command in sentence case. For example, `Compare files in open tabs` or `Explain current directory`
 - Provide the relevant instructions for Cody to follow. This is the `prompt` that Cody will use to pass relevant context to the LLM
@@ -66,7 +67,7 @@ You can create a custom command by editing the configuration JSON file or using 
 - Press **Enter** to complete the process, and your custom command is successfully created
 - You can hit `esc` key at any time to discard a new custom command
 
-### Running Custom Commands
+### Running custom commands
 
 You can invoke custom commands with the same hotkey as predefined commands. Once created, your custom commands will appear with the rest of the predefined commands in the chat and command palette lists. Let's type `/my-custom-command` in the chat window, and it will appear. Now, you can run this new command on your code and get answers to your questions accordingly.
 
@@ -76,7 +77,7 @@ Alternatively, you can right-click the selected code and select **Cody > Custom 
 
 ### Configuring file paths
 
-Custom Commands can be defined in the following two file paths:
+Custom commands can be defined in the following two file paths:
 
 - **User Settings (`~/.vscode/code.json`)**: Stored locally. Use this for personal commands to use across all your projects
 - **Workspace Settings (`.vscode/cody.json`)**: Stored in your project’s repository. Use this to share commands with others working on the same codebase and for project-specific commands

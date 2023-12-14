@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
@@ -178,7 +177,7 @@ func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) 
 		return nil, nil
 	}
 
-	rateLimit, err := getEmbeddingsRateLimit(ctx, r.db)
+	rateLimit, err := getEmbeddingsRateLimit(ctx, r.db, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +190,7 @@ func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) 
 	}, nil
 }
 
-func getEmbeddingsRateLimit(ctx context.Context, db database.DB) (licensing.CodyGatewayRateLimit, error) {
+func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (licensing.CodyGatewayRateLimit, error) {
 	// Hard-coded defaults: 200M tokens for life
 	limit := int64(20 * tokensPerDollar)
 	intervalSeconds := int32(math.MaxInt32)
@@ -199,8 +198,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB) (licensing.Cody
 	// Apply self-serve limits if available
 	cfg := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
 	if cfg != nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
-		actor := sgactor.FromContext(ctx)
-		user, err := actor.User(ctx, db.Users())
+		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, err
 		}
@@ -267,8 +265,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	models := allowedModels(scope, false, false)
 	if limit == nil && cfg != nil && isCodyProEnabled {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
-		actor := sgactor.FromContext(ctx)
-		user, err := actor.User(ctx, db.Users())
+		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
 		}
@@ -339,7 +336,7 @@ func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser b
 	switch scope {
 	case types.CompletionsFeatureChat:
 		if !isCodyProEnabled {
-			return []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1", "fireworks/accounts/fireworks/models/mixtral-8x7b-instruct"}
+			return []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1.2", "anthropic/claude-instant-1", "openai/gpt-4-1106-preview", "fireworks/accounts/fireworks/models/mixtral-8x7b-instruct"}
 		}
 
 		// When updating the below lists, make sure you also update `isAllowedCustomChatModel` in `chat.go`

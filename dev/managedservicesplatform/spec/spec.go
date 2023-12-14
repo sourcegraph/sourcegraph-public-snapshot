@@ -25,6 +25,7 @@ type Spec struct {
 	Service      ServiceSpec       `json:"service"`
 	Build        BuildSpec         `json:"build"`
 	Environments []EnvironmentSpec `json:"environments"`
+	Monitoring   MonitoringSpec    `json:"monitoring"`
 }
 
 // Open a specification file, validate it, unmarshal the data as a MSP spec,
@@ -83,6 +84,7 @@ func (s Spec) Validate() []error {
 	for _, env := range s.Environments {
 		errs = append(errs, env.Validate()...)
 	}
+	errs = append(errs, s.Monitoring.Validate()...)
 	return errs
 }
 

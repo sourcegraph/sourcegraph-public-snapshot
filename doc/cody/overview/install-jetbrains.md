@@ -147,7 +147,7 @@ Follow these steps to install the Cody plugin:
 
 ![cody-for-intellij](https://storage.googleapis.com/sourcegraph-assets/Docs/Media/cody-for-intellij.png)
 
-Alternatively, you can [Download and install the extension from the Jetbrains marketplace](https://plugins.jetbrains.com/plugin/9682-sourcegraph).
+Alternatively, you can [Download and install the extension from the JetBrains marketplace](https://plugins.jetbrains.com/plugin/9682-sourcegraph).
 
 ## Connect the extension to Sourcegraph
 

@@ -182,6 +182,7 @@ Let's understand how the `/doc` command generates code documentation for a funct
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/code-comments-cody.mp4" type="video/mp4">
 </video>
 
+
 ### Custom Commands
 
 <aside class="beta">
@@ -195,7 +196,7 @@ For customization and advanced use cases, you can create **Custom Commands** tai
 
 Learn more about [Custom Commands here →](./../capabilities/commands.md#custom-commands)
 
-## Cody VS Code Actions
+## Cody VS Code actions
 
 Cody VS Code extension users can also use the **Code Actions** feature to `fix`, `explain`, and `edit` code. These Code Actions are triggered by the following:
 
