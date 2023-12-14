@@ -40,7 +40,7 @@ func (r *Resolver) ExportedEvents(ctx context.Context, args *graphqlbackend.Expo
 	}
 
 	first := int(args.First)
-	if first == 0 {
+	if first <= 0 {
 		first = 50
 	}
 	var before *time.Time
