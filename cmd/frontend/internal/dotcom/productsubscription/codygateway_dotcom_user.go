@@ -336,7 +336,7 @@ func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser b
 	switch scope {
 	case types.CompletionsFeatureChat:
 		if !isCodyProEnabled {
-			return []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1", "fireworks/accounts/fireworks/models/mixtral-8x7b-instruct"}
+			return []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1", "openai/gpt-4-1106-preview", "fireworks/accounts/fireworks/models/mixtral-8x7b-instruct"}
 		}
 
 		// When updating the below lists, make sure you also update `isAllowedCustomChatModel` in `chat.go`
