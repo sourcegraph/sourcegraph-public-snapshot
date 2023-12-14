@@ -351,20 +351,25 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     {editor.instructions && (
                                         <Link
                                             to="#"
-                                            className="mb-2 text-muted"
+                                            className="mb-2 text-muted d-flex align-items-center"
                                             onClick={() => {
                                                 setSelectedEditor(editor)
                                                 setSelectedEditorStep(0)
                                             }}
                                         >
-                                            <Icon svgPath={mdiInformationOutline} aria-hidden={true} /> Quickstart guide
+                                            <Icon svgPath={mdiInformationOutline} aria-hidden={true} className="mr-1" />{' '}
+                                            Quickstart guide
                                         </Link>
                                     )}
                                     {editor.docs && (
-                                        <Link to={editor.docs} target="_blank" rel="noopener">
-                                            <Text className="text-muted">
-                                                <Icon svgPath={mdiOpenInNew} aria-hidden={true} /> Documentation
-                                            </Text>
+                                        <Link
+                                            to={editor.docs}
+                                            target="_blank"
+                                            rel="noopener"
+                                            className="text-muted d-flex align-items-center"
+                                        >
+                                            <Icon svgPath={mdiOpenInNew} aria-hidden={true} className="mr-1" />{' '}
+                                            Documentation
                                         </Link>
                                     )}
                                     {selectedEditor?.name === editor.name &&
