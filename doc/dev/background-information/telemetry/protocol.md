@@ -317,6 +317,7 @@ Sourcegraph.com instance.
 | ----- | ---- | ----- | ----------- |
 | license_key | [string](#string) |  | <p>License key configured in the Sourcegraph instance emitting the event.</p> |
 | instance_id | [string](#string) |  | <p>Self-reported Sourcegraph instance identifier.</p> |
+| external_url | [string](#string) |  | <p>Instance external URL defined in the instance site configuration.</p> |
 
 
 
@@ -332,6 +333,7 @@ Sourcegraph.com instance.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | instance_id | [string](#string) |  | <p>Self-reported Sourcegraph instance identifier.</p> |
+| external_url | [string](#string) |  | <p>Instance external URL defined in the instance site configuration.</p> |
 
 
 
