@@ -143,22 +143,20 @@ describe('Search contexts', () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
             // TODO: fix this test
-            RepositoriesByNames: ({ names, first, after }) => {
-                return {
-                    repositories: {
-                        nodes: names.map((name, index) => ({ id: `index-${index}`, name })),
-                        pageInfo: {
-                            endCursor: null,
-                            hasNextPage: true,
-                        },
+            RepositoriesByNames: ({ names, first, after }) => ({
+                repositories: {
+                    nodes: names.map((name, index) => ({ id: `index-${index}`, name })),
+                    pageInfo: {
+                        endCursor: null,
+                        hasNextPage: true,
                     },
-                    variables: {
-                        names,
-                        first,
-                        after,
-                    },
-                }
-            },
+                },
+                variables: {
+                    names,
+                    first,
+                    after,
+                },
+            }),
             CreateSearchContext: ({ searchContext, repositories }) => ({
                 createSearchContext: {
                     __typename: 'SearchContext',
@@ -306,22 +304,20 @@ describe('Search contexts', () => {
     test('Edit search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            RepositoriesByNames: ({ names, first, after }) => {
-                return {
-                    repositories: {
-                        nodes: names.map((name, index) => ({ id: `index-${index}`, name })),
-                        pageInfo: {
-                            endCursor: null,
-                            hasNextPage: true,
-                        },
+            RepositoriesByNames: ({ names, first, after }) => ({
+                repositories: {
+                    nodes: names.map((name, index) => ({ id: `index-${index}`, name })),
+                    pageInfo: {
+                        endCursor: null,
+                        hasNextPage: true,
                     },
-                    variables: {
-                        names,
-                        first,
-                        after,
-                    },
-                }
-            },
+                },
+                variables: {
+                    names,
+                    first,
+                    after,
+                },
+            }),
             UpdateSearchContext: ({ id, searchContext, repositories }) => ({
                 updateSearchContext: {
                     __typename: 'SearchContext',
