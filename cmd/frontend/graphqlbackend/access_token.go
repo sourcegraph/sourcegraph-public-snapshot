@@ -69,3 +69,11 @@ func (r *accessTokenResolver) CreatedAt() gqlutil.DateTime {
 func (r *accessTokenResolver) LastUsedAt() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(r.accessToken.LastUsedAt)
 }
+
+func (r *accessTokenResolver) ExpiresAt() *gqlutil.DateTime {
+	if r.accessToken.ExpiresAt.IsZero() {
+		return nil
+	}
+
+	return &gqlutil.DateTime{Time: r.accessToken.ExpiresAt}
+}

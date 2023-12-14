@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
+import { parseISO } from 'date-fns'
 import { map, mapTo } from 'rxjs/operators'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -35,6 +36,7 @@ export const accessTokenFragment = gql`
         creator {
             username
         }
+        expiresAt
     }
 `
 
@@ -129,6 +131,12 @@ export const AccessTokenNode: React.FunctionComponent<React.PropsWithChildren<Ac
                             <>
                                 {' '}
                                 by <Link to={userURL(node.creator.username)}>{node.creator.username}</Link>
+                            </>
+                        )}
+                        {node.expiresAt !== null && (
+                            <>
+                                {' '}
+                                | Expires <Timestamp date={parseISO(node.expiresAt)} />
                             </>
                         )}
                     </small>

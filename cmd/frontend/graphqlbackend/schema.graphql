@@ -306,7 +306,7 @@ type Mutation {
     # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
     # introduce any breaking changes, and let new parameters be optional with
     # reasonable defaults instead.
-    createAccessToken(user: ID!, scopes: [String!]!, note: String!): CreateAccessTokenResult!
+    createAccessToken(user: ID!, expiresAt: DateTime, scopes: [String!]!, note: String!): CreateAccessTokenResult!
     """
     Deletes and immediately revokes the specified access token, specified by either its ID or by the token
     itself.
@@ -6599,6 +6599,10 @@ type AccessToken implements Node {
     The date when the access token was last used to authenticate a request.
     """
     lastUsedAt: DateTime
+    """
+    If non-null, the token may no longer be used after this date.
+    """
+    expiresAt: DateTime
 }
 
 """

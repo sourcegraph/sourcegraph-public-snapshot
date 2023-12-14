@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/license"
@@ -100,7 +100,12 @@ WHERE t.id IN (
 	SELECT t2.id FROM access_tokens t2
 	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
 	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
-	WHERE digest(value_sha256, 'sha256')=%s AND t2.deleted_at IS NULL
+	WHERE
+		digest(value_sha256, 'sha256')=%s
+		AND
+		t2.deleted_at IS NULL
+		AND
+		(t2.expires_at IS NULL OR t2.expires_at > NOW())
 )
 RETURNING t.subject_user_id`,
 		decoded,

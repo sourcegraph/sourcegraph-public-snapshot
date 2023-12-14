@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
@@ -29,7 +30,7 @@ import (
 func TestMutation_CreateAccessToken(t *testing.T) {
 	newMockAccessTokens := func(t *testing.T, wantCreatorUserID int32, wantScopes []string) database.AccessTokenStore {
 		accessTokens := dbmocks.NewMockAccessTokenStore()
-		accessTokens.CreateFunc.SetDefaultHook(func(_ context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (int64, string, error) {
+		accessTokens.CreateFunc.SetDefaultHook(func(_ context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, expiresAt time.Time) (int64, string, error) {
 			if want := int32(1); subjectUserID != want {
 				t.Errorf("got %v, want %v", subjectUserID, want)
 			}

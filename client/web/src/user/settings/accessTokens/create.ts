@@ -11,18 +11,19 @@ import { eventLogger } from '../../../tracking/eventLogger'
 export function createAccessToken(
     user: Scalars['ID'],
     scopes: string[],
-    note: string
+    note: string,
+    expiresAt: Date | null
 ): Observable<CreateAccessTokenResult['createAccessToken']> {
     return requestGraphQL<CreateAccessTokenResult, CreateAccessTokenVariables>(
         gql`
-            mutation CreateAccessToken($user: ID!, $scopes: [String!]!, $note: String!) {
-                createAccessToken(user: $user, scopes: $scopes, note: $note) {
+            mutation CreateAccessToken($user: ID!, $scopes: [String!]!, $note: String!, $expiresAt: DateTime) {
+                createAccessToken(user: $user, scopes: $scopes, note: $note, expiresAt: $expiresAt) {
                     id
                     token
                 }
             }
         `,
-        { user, scopes, note }
+        { user, scopes, note, expiresAt }
     ).pipe(
         map(({ data, errors }) => {
             if (!data?.createAccessToken || (errors && errors.length > 0)) {

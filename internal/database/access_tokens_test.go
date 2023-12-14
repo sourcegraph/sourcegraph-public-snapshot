@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
@@ -75,7 +76,7 @@ func testAccessTokens_Create(t *testing.T) {
 	}
 
 	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 0)
-	tid0, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	tid0, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID, time.Time{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,15 +161,15 @@ func testAccessTokens_Delete(t *testing.T) {
 	subjectActor := actor.FromUser(subject.ID)
 	ctxWithActor := actor.WithActor(context.Background(), subjectActor)
 
-	tid0, _, err := db.AccessTokens().Create(ctxWithActor, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	tid0, _, err := db.AccessTokens().Create(ctxWithActor, subject.ID, []string{"a", "b"}, "n0", creator.ID, time.Time{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, tv1, err := db.AccessTokens().Create(ctxWithActor, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	_, tv1, err := db.AccessTokens().Create(ctxWithActor, subject.ID, []string{"a", "b"}, "n0", creator.ID, time.Time{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	tid2, _, err := db.AccessTokens().Create(ctxWithActor, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	tid2, _, err := db.AccessTokens().Create(ctxWithActor, subject.ID, []string{"a", "b"}, "n0", creator.ID, time.Time{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,11 +269,11 @@ func testAccessTokens_List(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, _, err = db.AccessTokens().Create(ctx, subject1.ID, []string{"a", "b"}, "n0", subject1.ID)
+	_, _, err = db.AccessTokens().Create(ctx, subject1.ID, []string{"a", "b"}, "n0", subject1.ID, time.Time{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _, err = db.AccessTokens().Create(ctx, subject1.ID, []string{"a", "b"}, "n1", subject1.ID)
+	_, _, err = db.AccessTokens().Create(ctx, subject1.ID, []string{"a", "b"}, "n1", subject1.ID, time.Time{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -350,7 +351,7 @@ func testAccessTokens_Lookup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tid0, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	tid0, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID, time.Time{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -421,7 +422,7 @@ func testAccessTokens_Lookup_deletedUser(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a"}, "n0", creator.ID)
+		_, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a"}, "n0", creator.ID, time.Time{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -432,7 +433,7 @@ func testAccessTokens_Lookup_deletedUser(t *testing.T) {
 			t.Fatal("Lookup: want error looking up token for deleted subject user")
 		}
 
-		if _, _, err := db.AccessTokens().Create(ctx, subject.ID, nil, "n0", creator.ID); err == nil {
+		if _, _, err := db.AccessTokens().Create(ctx, subject.ID, nil, "n0", creator.ID, time.Time{}); err == nil {
 			t.Fatal("Create: want error creating token for deleted subject user")
 		}
 	})
@@ -457,7 +458,7 @@ func testAccessTokens_Lookup_deletedUser(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a"}, "n0", creator.ID)
+		_, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a"}, "n0", creator.ID, time.Time{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -468,7 +469,7 @@ func testAccessTokens_Lookup_deletedUser(t *testing.T) {
 			t.Fatal("Lookup: want error looking up token for deleted creator user")
 		}
 
-		if _, _, err := db.AccessTokens().Create(ctx, subject.ID, nil, "n0", creator.ID); err == nil {
+		if _, _, err := db.AccessTokens().Create(ctx, subject.ID, nil, "n0", creator.ID, time.Time{}); err == nil {
 			t.Fatal("Create: want error creating token for deleted creator user")
 		}
 	})
@@ -506,11 +507,11 @@ func testAccessTokens_Lookup_expiredLicense(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, adminToken, err := db.AccessTokens().Create(ctx, adminUser.ID, []string{"a"}, "n0", adminUser.ID)
+	_, adminToken, err := db.AccessTokens().Create(ctx, adminUser.ID, []string{"a"}, "n0", adminUser.ID, time.Time{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, regularToken, err := db.AccessTokens().Create(ctx, regularUser.ID, []string{"a"}, "n0", regularUser.ID)
+	_, regularToken, err := db.AccessTokens().Create(ctx, regularUser.ID, []string{"a"}, "n0", regularUser.ID, time.Time{})
 	if err != nil {
 		t.Fatal(err)
 	}

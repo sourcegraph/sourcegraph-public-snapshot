@@ -1227,7 +1227,7 @@ func NewMockAccessTokenStore() *MockAccessTokenStore {
 			},
 		},
 		CreateFunc: &AccessTokenStoreCreateFunc{
-			defaultHook: func(context.Context, int32, []string, string, int32) (r0 int64, r1 string, r2 error) {
+			defaultHook: func(context.Context, int32, []string, string, int32, time.Time) (r0 int64, r1 string, r2 error) {
 				return
 			},
 		},
@@ -1304,7 +1304,7 @@ func NewStrictMockAccessTokenStore() *MockAccessTokenStore {
 			},
 		},
 		CreateFunc: &AccessTokenStoreCreateFunc{
-			defaultHook: func(context.Context, int32, []string, string, int32) (int64, string, error) {
+			defaultHook: func(context.Context, int32, []string, string, int32, time.Time) (int64, string, error) {
 				panic("unexpected invocation of MockAccessTokenStore.Create")
 			},
 		},
@@ -1532,24 +1532,24 @@ func (c AccessTokenStoreCountFuncCall) Results() []interface{} {
 // AccessTokenStoreCreateFunc describes the behavior when the Create method
 // of the parent MockAccessTokenStore instance is invoked.
 type AccessTokenStoreCreateFunc struct {
-	defaultHook func(context.Context, int32, []string, string, int32) (int64, string, error)
-	hooks       []func(context.Context, int32, []string, string, int32) (int64, string, error)
+	defaultHook func(context.Context, int32, []string, string, int32, time.Time) (int64, string, error)
+	hooks       []func(context.Context, int32, []string, string, int32, time.Time) (int64, string, error)
 	history     []AccessTokenStoreCreateFuncCall
 	mutex       sync.Mutex
 }
 
 // Create delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockAccessTokenStore) Create(v0 context.Context, v1 int32, v2 []string, v3 string, v4 int32) (int64, string, error) {
-	r0, r1, r2 := m.CreateFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.CreateFunc.appendCall(AccessTokenStoreCreateFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
+func (m *MockAccessTokenStore) Create(v0 context.Context, v1 int32, v2 []string, v3 string, v4 int32, v5 time.Time) (int64, string, error) {
+	r0, r1, r2 := m.CreateFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.CreateFunc.appendCall(AccessTokenStoreCreateFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the Create method of the
 // parent MockAccessTokenStore instance is invoked and the hook queue is
 // empty.
-func (f *AccessTokenStoreCreateFunc) SetDefaultHook(hook func(context.Context, int32, []string, string, int32) (int64, string, error)) {
+func (f *AccessTokenStoreCreateFunc) SetDefaultHook(hook func(context.Context, int32, []string, string, int32, time.Time) (int64, string, error)) {
 	f.defaultHook = hook
 }
 
@@ -1557,7 +1557,7 @@ func (f *AccessTokenStoreCreateFunc) SetDefaultHook(hook func(context.Context, i
 // Create method of the parent MockAccessTokenStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *AccessTokenStoreCreateFunc) PushHook(hook func(context.Context, int32, []string, string, int32) (int64, string, error)) {
+func (f *AccessTokenStoreCreateFunc) PushHook(hook func(context.Context, int32, []string, string, int32, time.Time) (int64, string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1566,19 +1566,19 @@ func (f *AccessTokenStoreCreateFunc) PushHook(hook func(context.Context, int32, 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *AccessTokenStoreCreateFunc) SetDefaultReturn(r0 int64, r1 string, r2 error) {
-	f.SetDefaultHook(func(context.Context, int32, []string, string, int32) (int64, string, error) {
+	f.SetDefaultHook(func(context.Context, int32, []string, string, int32, time.Time) (int64, string, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *AccessTokenStoreCreateFunc) PushReturn(r0 int64, r1 string, r2 error) {
-	f.PushHook(func(context.Context, int32, []string, string, int32) (int64, string, error) {
+	f.PushHook(func(context.Context, int32, []string, string, int32, time.Time) (int64, string, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *AccessTokenStoreCreateFunc) nextHook() func(context.Context, int32, []string, string, int32) (int64, string, error) {
+func (f *AccessTokenStoreCreateFunc) nextHook() func(context.Context, int32, []string, string, int32, time.Time) (int64, string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1626,6 +1626,9 @@ type AccessTokenStoreCreateFuncCall struct {
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
 	Arg4 int32
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int64
@@ -1640,7 +1643,7 @@ type AccessTokenStoreCreateFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c AccessTokenStoreCreateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
 }
 
 // Results returns an interface slice containing the results of this

@@ -273,7 +273,7 @@ func dbAddAccessTokenAction(cmd *cli.Context) error {
 		}
 
 		// Generate the token
-		_, token, err := tx.AccessTokens().Create(ctx, user.ID, scopes, note, user.ID)
+		_, token, err := tx.AccessTokens().Create(ctx, user.ID, scopes, note, user.ID, time.Time{})
 		if err != nil {
 			return err
 		}

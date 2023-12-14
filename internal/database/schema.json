@@ -1568,6 +1568,19 @@
           "Comment": ""
         },
         {
+          "Name": "expires_at",
+          "Index": 11,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "bigint",

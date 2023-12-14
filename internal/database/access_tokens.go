@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -34,6 +35,10 @@ type AccessToken struct {
 	Internal   bool
 	CreatedAt  time.Time
 	LastUsedAt *time.Time
+	// ExpiresAt denotes the server time after which the token shall no longer be
+	// valid and not grant access anymore.
+	// IsZero will be true for access tokens without expiry.
+	ExpiresAt time.Time
 }
 
 // ErrAccessTokenNotFound occurs when a database operation expects a specific access token to exist
@@ -72,7 +77,7 @@ type AccessTokenStore interface {
 	//
 	// 🚨 SECURITY: The caller must ensure that the actor is permitted to create tokens for the
 	// specified user (i.e., that the actor is either the user or a site admin).
-	Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error)
+	Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, expiresAt time.Time) (id int64, token string, err error)
 
 	// CreateInternal creates an *internal* access token for the specified user. An
 	// internal access token will be used by Sourcegraph to talk to its API from
@@ -159,15 +164,15 @@ func (s *accessTokenStore) WithTransact(ctx context.Context, f func(AccessTokenS
 	})
 }
 
-func (s *accessTokenStore) Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error) {
-	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, false)
+func (s *accessTokenStore) Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, expiresAt time.Time) (id int64, token string, err error) {
+	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, expiresAt, false)
 }
 
 func (s *accessTokenStore) CreateInternal(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error) {
-	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, true)
+	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, time.Time{}, true)
 }
 
-func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, internal bool) (id int64, token string, err error) {
+func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, expiresAt time.Time, internal bool) (id int64, token string, err error) {
 	if len(scopes) == 0 {
 		// Prevent mistakes. There is no point in creating an access token with no scopes, and the
 		// GraphQL API wouldn't let you do so anyway.
@@ -200,12 +205,12 @@ creator_user AS (
   SELECT id FROM users WHERE id=$5 AND deleted_at IS NULL FOR UPDATE
 ),
 insert_values AS (
-  SELECT subject_user.id AS subject_user_id, $2::text[] AS scopes, $3::bytea AS value_sha256, $4::text AS note, creator_user.id AS creator_user_id, $6::boolean AS internal
+  SELECT subject_user.id AS subject_user_id, $2::text[] AS scopes, $3::bytea AS value_sha256, $4::text AS note, creator_user.id AS creator_user_id, $6::timestamp with time zone AS expires_at, $7::boolean AS internal
   FROM subject_user, creator_user
 )
-INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_user_id, internal) SELECT * FROM insert_values RETURNING id
+INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_user_id, expires_at, internal) SELECT * FROM insert_values RETURNING id
 `,
-		subjectUserID, pq.Array(scopes), hashutil.ToSHA256Bytes(b[:]), note, creatorUserID, internal,
+		subjectUserID, pq.Array(scopes), hashutil.ToSHA256Bytes(b[:]), note, creatorUserID, dbutil.NullTimeColumn(expiresAt), internal,
 	).Scan(&id); err != nil {
 		return 0, "", err
 	}
@@ -213,15 +218,17 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 	// only log access tokens created by users
 	if !internal {
 		arg, err := json.Marshal(struct {
-			SubjectUserId int32    `json:"subject_user_id"`
-			CreatorUserId int32    `json:"creator_user_id"`
-			Scopes        []string `json:"scopes"`
-			Note          string   `json:"note"`
+			SubjectUserId int32     `json:"subject_user_id"`
+			CreatorUserId int32     `json:"creator_user_id"`
+			Scopes        []string  `json:"scopes"`
+			Note          string    `json:"note"`
+			ExpiresAt     time.Time `json:"expires_at"`
 		}{
 			SubjectUserId: subjectUserID,
 			CreatorUserId: creatorUserID,
 			Scopes:        scopes,
 			Note:          note,
+			ExpiresAt:     expiresAt,
 		})
 		if err != nil {
 			s.logger.Error("failed to marshall the access token log argument")
@@ -290,8 +297,14 @@ WHERE t.id IN (
 	SELECT t2.id FROM access_tokens t2
 	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
 	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
-	WHERE t2.value_sha256=$1 AND t2.deleted_at IS NULL AND
-	$2 = ANY (t2.scopes)
+	WHERE
+		t2.value_sha256=$1
+		AND
+		t2.deleted_at IS NULL
+		AND
+		(t2.expires_at IS NULL OR t2.expires_at > NOW())
+		AND
+		$2 = ANY (t2.scopes)
 	`
 
 	if o.OnlyAdmin {
@@ -329,6 +342,25 @@ func (s *accessTokenStore) Lookup(ctx context.Context, token string, opts TokenL
 	return subjectUserID, nil
 }
 
+const accessTokensLookupQueryFmtstr = `
+UPDATE access_tokens t
+SET last_used_at=now()
+WHERE t.id IN (
+	SELECT t2.id FROM access_tokens t2
+	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
+	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
+	WHERE
+		t2.value_sha256=%s
+		AND
+		t2.deleted_at IS NULL
+		AND
+		(t2.expires_at IS NULL OR t2.expires_at > NOW())
+		AND
+		%s = ANY (t2.scopes)
+	)
+RETURNING t.subject_user_id
+`
+
 func (s *accessTokenStore) GetByID(ctx context.Context, id int64) (*AccessToken, error) {
 	return s.get(ctx, []*sqlf.Query{sqlf.Sprintf("id=%d", id)})
 }
@@ -364,6 +396,7 @@ type AccessTokensListOptions struct {
 func (o AccessTokensListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{
 		sqlf.Sprintf("deleted_at IS NULL"),
+		sqlf.Sprintf("(expires_at IS NULL OR expires_at > NOW())"),
 		// We never want internal access tokens to show up in the UI.
 		sqlf.Sprintf("internal IS FALSE"),
 	}
@@ -385,7 +418,7 @@ func (s *accessTokenStore) List(ctx context.Context, opt AccessTokensListOptions
 
 func (s *accessTokenStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*AccessToken, error) {
 	q := sqlf.Sprintf(`
-SELECT id, subject_user_id, scopes, note, creator_user_id, internal, created_at, last_used_at FROM access_tokens
+SELECT id, subject_user_id, scopes, note, creator_user_id, internal, created_at, last_used_at, expires_at FROM access_tokens
 WHERE (%s)
 ORDER BY now() - created_at < interval '5 minutes' DESC, -- show recently created tokens first
 last_used_at DESC NULLS FIRST, -- ensure newly created tokens show first
@@ -404,7 +437,17 @@ created_at DESC
 	var results []*AccessToken
 	for rows.Next() {
 		var t AccessToken
-		if err := rows.Scan(&t.ID, &t.SubjectUserID, pq.Array(&t.Scopes), &t.Note, &t.CreatorUserID, &t.Internal, &t.CreatedAt, &t.LastUsedAt); err != nil {
+		if err := rows.Scan(
+			&t.ID,
+			&t.SubjectUserID,
+			pq.Array(&t.Scopes),
+			&t.Note,
+			&t.CreatorUserID,
+			&t.Internal,
+			&t.CreatedAt,
+			&t.LastUsedAt,
+			&dbutil.NullTime{Time: &t.ExpiresAt},
+		); err != nil {
 			return nil, err
 		}
 		results = append(results, &t)

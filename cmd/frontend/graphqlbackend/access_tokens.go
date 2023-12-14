@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -21,9 +22,10 @@ import (
 )
 
 type createAccessTokenInput struct {
-	User   graphql.ID
-	Scopes []string
-	Note   string
+	User      graphql.ID
+	Scopes    []string
+	Note      string
+	ExpiresAt *string
 }
 
 func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAccessTokenInput) (*createAccessTokenResult, error) {
@@ -87,8 +89,20 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		return nil, errors.Errorf("all access tokens must have scope %q", authz.ScopeUserAll)
 	}
 
+	var expiresAt time.Time
+	if args.ExpiresAt != nil {
+		expiresAt, err = time.Parse(time.RFC3339, *args.ExpiresAt)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse expires at as time")
+		}
+		dur := time.Until(expiresAt)
+		if dur < 0 {
+			return nil, errors.New("expiry must be in the future")
+		}
+	}
+
 	uid := actor.FromContext(ctx).UID
-	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, uid)
+	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, uid, expiresAt)
 	logger := r.logger.Scoped("CreateAccessToken").
 		With(log.Int32("userID", uid))
 

@@ -900,7 +900,8 @@ CREATE TABLE access_tokens (
     deleted_at timestamp with time zone,
     creator_user_id integer NOT NULL,
     scopes text[] NOT NULL,
-    internal boolean DEFAULT false
+    internal boolean DEFAULT false,
+    expires_at timestamp with time zone
 );
 
 CREATE SEQUENCE access_tokens_id_seq
