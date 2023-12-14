@@ -242,7 +242,7 @@ export function isSourcegraphDotCom(): boolean {
  * @param result The search result.
  */
 export function isExternalPrivateSymbol(
-    spec: LanguageSpec,
+    spec: LanguageSpec | undefined,
     path: string,
     { fileLocal, file, symbolKind }: Result
 ): boolean {
@@ -250,7 +250,7 @@ export function isExternalPrivateSymbol(
     // doesn't let us treat that way.
     // See https://github.com/universal-ctags/ctags/issues/1844
 
-    if (spec.languageID === 'java' && symbolKind === 'ENUMMEMBER') {
+    if (spec && spec.languageID === 'java' && symbolKind === 'ENUMMEMBER') {
         return false
     }
 
