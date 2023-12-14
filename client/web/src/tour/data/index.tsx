@@ -130,7 +130,7 @@ export const authenticatedTasks: TourTaskType[] = [
             },
             {
                 id: 'CodyJetbrains',
-                label: 'Install for Jetbrains',
+                label: 'Install for JetBrains',
                 action: {
                     type: 'new-tab-link',
                     value: 'https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph',

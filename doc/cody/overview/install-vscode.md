@@ -187,12 +187,12 @@ In addition, you can also select which files and symbols to add as additional co
 
 The file paths are relative to your workspace, and you can start with the root folder and type out the rest of the path, for example `src/util/<YOUR-FILE>`.
 
-### Custom Commands
+### Custom commands
 
-In addition, to support customization and advanced use cases, you can create **Custom Commands** tailored to your requirements. Custom Commands are currently supported by Cody for the VS Code extension version 0.8 and above.
+In addition, to support customization and advanced use cases, you can create **Custom commands** tailored to your requirements. Custom commands are currently supported by Cody for the VS Code extension version 0.8 and above.
 
 
-## Cody VS Code Actions
+## Cody VS Code actions
 
 Cody VS Code extension users can also use the **Code Actions** feature to `fix`, `explain`, and `edit` code. These Code Actions are triggered by the following:
 
@@ -237,7 +237,7 @@ You can view the [list of repositories with embeddings here](../embedded-repos.m
 
 To use Cody with code graph on private code, it's recommended to [enable Cody for Enterprise](enable-cody-enterprise.md).
 
-### Configure Code Graph Context
+### Configure code graph context
 
 The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension. Enter the repository's name with embeddings, and Cody can provide more accurate and relevant answers to your coding questions based on that repository's content. To configure this setting in VS Code:
 
