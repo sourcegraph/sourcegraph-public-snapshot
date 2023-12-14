@@ -249,15 +249,6 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 	if settings == nil {
 		return nil, nil
 	}
-	// event := &database.SecurityEvent{
-	// 	Name:      database.SecurityEventNameOrgSettingsViewed,
-	// 	URL:       "",
-	// 	UserID:    uint32(actor.FromContext(ctx).UID),
-	// 	Argument:  nil,
-	// 	Source:    "BACKEND",
-	// 	Timestamp: time.Now(),
-	// }
-	// o.db.SecurityEventLogs().LogEvent(ctx, event)
 
 	return &settingsResolver{o.db, &settingsSubjectResolver{org: o}, settings, nil}, nil
 }
