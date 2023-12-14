@@ -22,7 +22,7 @@ import (
 
 type Server struct {
 	logger      log.Logger
-	eventsTopic pubsub.TopicClient
+	eventsTopic pubsub.TopicPublisher
 
 	recordEventsMetrics recordEventsMetrics
 
@@ -32,7 +32,7 @@ type Server struct {
 
 var _ telemetrygatewayv1.TelemeteryGatewayServiceServer = (*Server)(nil)
 
-func New(logger log.Logger, eventsTopic pubsub.TopicClient) (*Server, error) {
+func New(logger log.Logger, eventsTopic pubsub.TopicPublisher) (*Server, error) {
 	m, err := newRecordEventsMetrics()
 	if err != nil {
 		return nil, err
