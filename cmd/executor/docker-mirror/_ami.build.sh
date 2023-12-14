@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eu
+
 ## Setting up tools
 gcloud="$1"
 packer="$2"
