@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { H2, Text, Button, ButtonLink, Link } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, H2, Link, Text } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
 
@@ -65,7 +65,7 @@ export function VSCodeInstructions({
                                 </div>
                                 <div>
                                     <Text className="mb-1" weight="bold">
-                                        Open Cody from the Sidebar on the Left
+                                        Open Cody from the sidebar on the left
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
                                         Typically Cody will be the last item in the sidebar
@@ -88,7 +88,7 @@ export function VSCodeInstructions({
                                 </div>
                                 <div>
                                     <Text className="mb-1" weight="bold">
-                                        Login
+                                        Log in
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
                                         Choose the same login method you used when you created your account
@@ -189,7 +189,7 @@ export function VSCodeInstructions({
                                     to="https://discord.gg/rDPqBejz93"
                                     className="d-flex w-100 justify-content-center "
                                 >
-                                    <strong>Join our Discord</strong>
+                                    <strong>Discord chat</strong>
                                 </Link>
                                 <Link
                                     to="https://github.com/sourcegraph/cody/discussions/new?category=product-feedback"
