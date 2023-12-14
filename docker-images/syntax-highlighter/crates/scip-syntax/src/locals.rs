@@ -24,6 +24,7 @@ use scip_treesitter::prelude::*;
 use std::collections::HashSet;
 use std::fmt;
 use std::slice::Iter;
+use string_interner::{DefaultSymbol, StringInterner};
 use tree_sitter::Node;
 
 // What needs to be documented?
@@ -62,7 +63,7 @@ struct Definition<'a> {
     ty: String,
     node: Node<'a>,
     id: usize,
-    text: &'a str,
+    name: Name,
 }
 
 impl fmt::Display for Definition<'_> {
@@ -80,10 +81,14 @@ impl fmt::Display for Definition<'_> {
 #[derive(Debug, Clone)]
 struct Reference<'a> {
     node: Node<'a>,
+    name: Name,
 }
 
 /// We use id_arena to allocate our scopes.
 type ScopeRef<'a> = Id<Scope<'a>>;
+
+/// We use string_interner to intern variable names
+type Name = DefaultSymbol;
 
 #[derive(Debug)]
 struct Scope<'a> {
@@ -121,8 +126,8 @@ impl<'a> Scope<'a> {
     }
 
     // TODO: Namespacing
-    fn find_def(&self, name: &str, start_byte: usize) -> Option<&Definition<'a>> {
-        if let Some(def) = self.hoisted_definitions.iter().find(|def| def.text == name) {
+    fn find_def(&self, name: Name, start_byte: usize) -> Option<&Definition<'a>> {
+        if let Some(def) = self.hoisted_definitions.iter().find(|def| def.name == name) {
             return Some(def);
         };
 
@@ -133,7 +138,7 @@ impl<'a> Scope<'a> {
                 break;
             }
 
-            if definition.text == name {
+            if definition.name == name {
                 return Some(definition);
             }
         }
@@ -181,6 +186,8 @@ struct CaptureRef<'a> {
 #[derive(Debug)]
 struct LocalResolver<'a> {
     arena: Arena<Scope<'a>>,
+    interner: StringInterner,
+
     source_bytes: &'a [u8],
     definition_id_supply: usize,
     // TODO: This is a hack to not record references that overlap with
@@ -194,6 +201,7 @@ impl<'a> LocalResolver<'a> {
     fn new(source_bytes: &'a [u8]) -> Self {
         LocalResolver {
             arena: Arena::new(),
+            interner: StringInterner::default(),
             source_bytes,
             definition_id_supply: 0,
             definition_start_bytes: HashSet::new(),
@@ -317,6 +325,10 @@ impl<'a> LocalResolver<'a> {
         }
     }
 
+    fn mk_name(&mut self, s: &str) -> Name {
+        self.interner.get_or_intern(s)
+    }
+
     fn add_refs_while<'b, F>(
         &mut self,
         scope: ScopeRef<'a>,
@@ -327,8 +339,15 @@ impl<'a> LocalResolver<'a> {
         'a: 'b,
     {
         for ref_capture in references_iter.take_while_ref(|ref_capture| f(ref_capture)) {
+            let name = self.mk_name(
+                ref_capture
+                    .node
+                    .utf8_text(self.source_bytes)
+                    .expect("non utf-8 variable name"),
+            );
             let reference = Reference {
                 node: ref_capture.node,
+                name,
             };
             self.add_reference(scope, reference)
         }
@@ -345,14 +364,17 @@ impl<'a> LocalResolver<'a> {
     {
         for def_capture in definitions_iter.take_while_ref(|def_capture| f(def_capture)) {
             self.definition_id_supply += 1;
+            let name = self.mk_name(
+                def_capture
+                    .node
+                    .utf8_text(self.source_bytes)
+                    .expect("non utf-8 variable name"),
+            );
             let definition = Definition {
                 id: self.definition_id_supply,
                 ty: def_capture.ty.to_string(),
                 node: def_capture.node,
-                text: def_capture
-                    .node
-                    .utf8_text(self.source_bytes)
-                    .expect("non utf-8 variable name"),
+                name,
             };
             self.add_definition(scope, definition, &def_capture.hoist)
         }
@@ -496,20 +518,17 @@ impl<'a> LocalResolver<'a> {
         let mut ref_occurrences = vec![];
 
         for (scope_ref, scope) in self.arena.iter() {
-            for Reference { node } in scope.references.iter() {
+            for Reference { name, node } in scope.references.iter() {
                 // See the comment on LocalResolver.definition_start_bytes
                 if self.definition_start_bytes.contains(&node.start_byte()) {
                     continue;
                 }
 
-                let reference_string = node
-                    .utf8_text(self.source_bytes)
-                    .expect("non utf8 reference");
                 let mut current_scope = scope_ref;
                 loop {
                     let scope = self.get_scope(current_scope);
 
-                    if let Some(def) = scope.find_def(reference_string, node.start_byte()) {
+                    if let Some(def) = scope.find_def(*name, node.start_byte()) {
                         let symbol = format_symbol(Symbol::new_local(def.id));
                         ref_occurrences.push(scip::types::Occurrence {
                             range: node.to_scip_range(),

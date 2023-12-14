@@ -1,5 +1,5 @@
 {
-  "checksum": "294bb055718d67315f253f7843f331b1d108f8dd5939bc1627666eb9b0b42f2f",
+  "checksum": "e11435d530c2beb254b3a6b14bc5c321686473c7a1c6708b7aaef4e0e13ab3b4",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -10510,6 +10510,10 @@
             {
               "id": "serde_json 1.0.99",
               "target": "serde_json"
+            },
+            {
+              "id": "string-interner 0.14.0",
+              "target": "string_interner"
             },
             {
               "id": "tree-sitter 0.20.10",
