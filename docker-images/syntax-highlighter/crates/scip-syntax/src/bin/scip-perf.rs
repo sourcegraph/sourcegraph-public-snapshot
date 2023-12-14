@@ -1,7 +1,8 @@
 use std::{path::Path, time::Instant};
 
 use clap::Parser;
-use scip_syntax::locals::parse_tree;
+use scip_syntax::locals;
+use scip_syntax::locals_prev;
 use scip_treesitter_languages::parsers::BundledParser;
 use walkdir::WalkDir;
 
@@ -34,13 +35,46 @@ fn parse_files(dir: &Path) -> Vec<ParseTiming> {
         }
 
         let start = Instant::now();
-
         let source = std::fs::read_to_string(entry).unwrap();
         let source_bytes = source.as_bytes();
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
-        parse_tree(config, &tree, source_bytes).unwrap();
 
+        locals::parse_tree(config, &tree, source_bytes).unwrap();
+        let finish = Instant::now();
+
+        timings.push(ParseTiming {
+            filepath: entry.file_stem().unwrap().to_string_lossy().to_string(),
+            filesize: source_bytes.len(),
+            duration: finish - start,
+        });
+    }
+
+    timings
+}
+
+fn parse_files_prev(dir: &Path) -> Vec<ParseTiming> {
+    let config = scip_syntax::languages::get_local_configuration(BundledParser::Go).unwrap();
+    let extension = "go";
+
+    let mut timings = vec![];
+
+    for entry in WalkDir::new(dir) {
+        let entry = entry.unwrap();
+        let entry = entry.path();
+
+        match entry.extension() {
+            Some(ext) if extension == ext => {}
+            _ => continue,
+        }
+
+        let start = Instant::now();
+        let source = std::fs::read_to_string(entry).unwrap();
+        let source_bytes = source.as_bytes();
+        let mut parser = config.get_parser();
+        let tree = parser.parse(source_bytes, None).unwrap();
+
+        locals_prev::parse_tree(config, &tree, source_bytes).unwrap();
         let finish = Instant::now();
 
         timings.push(ParseTiming {
@@ -64,7 +98,36 @@ fn measure_parsing() {
     timings.sort_by(|a, b| a.duration.cmp(&b.duration));
     println!("Slowest files:");
     for timing in timings.iter().rev().take(10) {
-        println!("{} ({}kb): {:?} ", timing.filepath, timing.filesize / 1000, timing.duration);
+        println!(
+            "{} ({}kb): {:?} ",
+            timing.filepath,
+            timing.filesize / 1000,
+            timing.duration
+        );
+    }
+
+    let finish = Instant::now();
+
+    println!("Done {:?}", finish - start);
+}
+
+fn measure_parsing_prev() {
+    let args = Arguments::parse();
+    println!("Measuring parsing");
+    let start = Instant::now();
+
+    let root = Path::new(&args.root_dir);
+
+    let mut timings = parse_files_prev(root);
+    timings.sort_by(|a, b| a.duration.cmp(&b.duration));
+    println!("Slowest files:");
+    for timing in timings.iter().rev().take(10) {
+        println!(
+            "{} ({}kb): {:?} ",
+            timing.filepath,
+            timing.filesize / 1000,
+            timing.duration
+        );
     }
 
     let finish = Instant::now();
@@ -77,7 +140,17 @@ fn main() {
     let measure = "parsing";
 
     match measure {
-        "parsing" => measure_parsing(),
+        "parsing" => {
+            println!("======");
+            println!("Previous");
+            println!("======");
+            measure_parsing_prev();
+
+            println!("======");
+            println!("New");
+            println!("======");
+            measure_parsing()
+        }
         _ => panic!("Unknown measure: {}", measure),
     }
 }
