@@ -182,7 +182,11 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		}
 
 		// Upload storybook to Chromatic
-		chromaticCommand := "pnpm chromatic --exit-zero-on-changes --exit-once-uploaded"
+		//
+		// We run chromatic through `run-chromatic` because the script detects whether a build is being retried
+		// and then adds the flag `--force-rebuild`. We need to do this because Chromatic fails when running on
+		// the same commit.
+		chromaticCommand := "./dev/ci/run-chromatic.sh --exit-zero-on-changes --exit-once-uploaded"
 		if opts.ChromaticShouldAutoAccept {
 			chromaticCommand += " --auto-accept-changes"
 		} else {
