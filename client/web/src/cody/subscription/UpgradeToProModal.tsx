@@ -2,7 +2,7 @@ import { mdiCalendarMonth, mdiClose, mdiCreditCardOff, mdiTag, mdiTrendingUp } f
 import classNames from 'classnames'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { Modal, Icon, Button, H1, H2, Text } from '@sourcegraph/wildcard'
+import { Button, H1, H2, Icon, Modal, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import type { ChangeCodyPlanResult, ChangeCodyPlanVariables } from '../../graphql-operations'
@@ -31,16 +31,16 @@ export function UpgradeToProModal({
                 <div className="d-flex flex-column justify-content-between align-items-center mby-4 py-4">
                     <CodyColorIcon width={40} height={40} className="mb-4" />
                     <H2>Upgraded to Cody Pro 🎉</H2>
-                    <Text>You now have unlimited autocomplete suggestions, chat messages and commands.</Text>
+                    <Text>You now have unlimited autocompletions, chat messages and commands.</Text>
 
                     <Button className="mt-4" variant="primary" onClick={onSuccess}>
-                        Get Started
+                        Get started
                     </Button>
                 </div>
             ) : (
                 <>
                     <div className="d-flex justify-content-between align-items-center mb-3 border-bottom pb-3">
-                        <H2 className="mb-0">Subscription Summary</H2>
+                        <H2 className="mb-0">Subscription summary</H2>
                         <Icon svgPath={mdiClose} aria-hidden={true} className="cursor-pointer" onClick={onClose} />
                     </div>
 
@@ -55,16 +55,16 @@ export function UpgradeToProModal({
                                 </div>
                                 <div className="mb-1">
                                     <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>$9</H2>
-                                    <Text className="mb-0 text-muted d-inline">/ month</Text>
+                                    <Text className="mb-0 text-muted d-inline">/month</Text>
                                 </div>
                                 <Text className="mb-4 text-muted" size="small">
                                     Free until Feb 2024, <strong>no credit card needed</strong>
                                 </Text>
                                 <Text className="mb-2">
-                                    <strong>Unlimited</strong> Autocompletes
+                                    <strong>Unlimited</strong> autocompletes
                                 </Text>
                                 <Text className="mb-2">
-                                    <strong>Unlimited</strong> Messages and Commands
+                                    <strong>Unlimited</strong> messages and commands
                                 </Text>
                                 <Text className="mb-2">Personalization for larger codebases</Text>
                                 <Text className="mb-2">Multiple LLM choices for chat</Text>
@@ -83,7 +83,7 @@ export function UpgradeToProModal({
                                 </div>
                                 <div>
                                     <Text weight="bold" className="mb-0">
-                                        All Limits Lifted:
+                                        All limits lifted:
                                     </Text>
                                     <Text className="mb-0" size="small">
                                         Enjoy unrestricted access right away.
@@ -101,7 +101,7 @@ export function UpgradeToProModal({
                                 </div>
                                 <div>
                                     <Text weight="bold" className="mb-0">
-                                        Trial Duration:
+                                        Trial duration:
                                     </Text>
                                     <Text className="mb-0" size="small">
                                         Your trial runs until <strong>February 14, 2024.</strong>
@@ -148,15 +148,21 @@ export function UpgradeToProModal({
                                 <Button
                                     variant="primary"
                                     onClick={() => {
-                                        eventLogger.log(EventName.CODY_SUBSCRIPTION_PLAN_CONFIRMED, {
-                                            tier: 'pro',
-                                        })
+                                        eventLogger.log(
+                                            EventName.CODY_SUBSCRIPTION_PLAN_CONFIRMED,
+                                            {
+                                                tier: 'pro',
+                                            },
+                                            {
+                                                tier: 'pro',
+                                            }
+                                        )
 
                                         changeCodyPlan({ variables: { pro: true, id: authenticatedUser.id } })
                                     }}
                                 >
                                     <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
-                                    Start Trial
+                                    Start trial
                                 </Button>
                             </div>
                         </div>

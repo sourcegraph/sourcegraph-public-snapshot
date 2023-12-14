@@ -891,3 +891,8 @@ func NewCodeHostBaseURL(baseURL string) (CodeHostBaseURL, error) {
 func (c CodeHostBaseURL) String() string {
 	return c.baseURL
 }
+
+// ServeGitExtSVCID is the external service ID used by sourcegraph's local code
+// syncing. We use a hardcoded ID to simplify finding and mutating the
+// external service.
+const ServeGitExtSVCID = 0xC0DE

@@ -5,8 +5,10 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 // TestEnsureExtSVC is a light integration test just to check we successfully
@@ -21,7 +23,7 @@ func TestEnsureExtSVC(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = store.GetByID(context.Background(), ExtSVCID)
+	_, err = store.GetByID(context.Background(), extsvc.ServeGitExtSVCID)
 	if err != nil {
 		t.Fatal(err)
 	}

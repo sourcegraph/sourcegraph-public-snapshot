@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { mdiInformationOutline, mdiTrendingUp } from '@mdi/js'
 import classNames from 'classnames'
@@ -7,16 +7,16 @@ import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import {
-    Icon,
-    PageHeader,
-    Button,
     Badge,
+    Button,
+    ButtonLink,
     H1,
     H2,
+    Icon,
+    PageHeader,
     Text,
-    ButtonLink,
-    useSearchParameters,
     Tooltip,
+    useSearchParameters,
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -49,7 +49,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     const utm_source = parameters.get('utm_source')
 
     useEffect(() => {
-        eventLogger.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source })
+        eventLogger.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
     }, [utm_source])
 
     const { data } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
@@ -86,7 +86,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                 >
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <div className="d-inline-flex align-items-center">
-                            <CodyColorIcon width={40} height={40} className="mr-2" /> Subscription Plans
+                            <CodyColorIcon width={40} height={40} className="mr-2" /> Subscription plans
                         </div>
                     </PageHeader.Heading>
                 </PageHeader>
@@ -107,16 +107,16 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 <Text weight="bold" className="d-inline">
                                     500
                                 </Text>{' '}
-                                <Text className="d-inline text-muted">Autocompletions per month</Text>
+                                <Text className="d-inline text-muted">autocompletions per month</Text>
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="d-inline">
                                     20
                                 </Text>{' '}
-                                <Text className="d-inline text-muted">Messages and Commands per month</Text>
+                                <Text className="d-inline text-muted">messages and commands per month</Text>
                             </div>
                             <div className="border-bottom py-4">
-                                <Text className="text-muted mb-0">Out-of-the-box and custom commands</Text>
+                                <Text className="text-muted mb-0">Built-in and custom commands</Text>
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="mb-3 d-inline-block">
@@ -126,19 +126,19 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="mb-3 d-inline-block">
-                                    LLM Support
+                                    LLM support
                                 </Text>
                                 <Text className="mb-0 text-muted">
-                                    Default LLMs for Chat, Commands, and Autocomplete
+                                    Default LLMs for chat, commands, and autocomplete
                                 </Text>
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="mb-3">
                                     Compatibility
                                 </Text>
-                                <Text className="text-muted mb-1">VS Code, JetBrains IDEs, and NeoVim</Text>
+                                <Text className="text-muted mb-1">VS Code, JetBrains IDEs, and Neovim</Text>
                                 <Text className="text-muted mb-1">
-                                    All major coding languages
+                                    All popular coding languages
                                     <Tooltip content="JavaScript, TypeScript, HTML/CSS, Python, Java, C/C++, C#, PHP, and more">
                                         <Icon
                                             className="ml-1 text-muted"
@@ -148,8 +148,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     </Tooltip>
                                 </Text>
                                 <Text className="text-muted mb-1">
-                                    Many human language support
-                                    <Tooltip content="Spanish, French, German, Italian, Chinese, Japanese, Korean, Latin, and Esperanto">
+                                    Many human languages
+                                    <Tooltip content="English, Spanish, French, German, Italian, Chinese, Japanese, Korean, and more">
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
@@ -159,7 +159,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 </Text>
                                 <Text className="text-muted mb-1">
                                     All major code hosts
-                                    <Tooltip content="GitHub, GitLab, BitBucket, Gerrit, Azure DevOps">
+                                    <Tooltip content="GitHub, GitLab, Bitbucket, Gerrit, Azure DevOps">
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
@@ -188,7 +188,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             <div className="d-flex flex-column border-bottom py-4">
                                 <div className="mb-1">
                                     <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>$9</H2>
-                                    <Text className="mb-0 text-muted d-inline">/ month</Text>
+                                    <Text className="mb-0 text-muted d-inline">/month</Text>
                                 </div>
                                 <Text className="mb-3 text-muted" size="small">
                                     Free until Feb 2024, <strong>no credit card needed</strong>
@@ -199,9 +199,15 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                             className="mb-0 text-muted d-inline cursor-pointer"
                                             size="small"
                                             onClick={() => {
-                                                eventLogger.log(EventName.CODY_SUBSCRIPTION_PLAN_CLICKED, {
-                                                    tier: 'free',
-                                                })
+                                                eventLogger.log(
+                                                    EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
+                                                    {
+                                                        tier: 'free',
+                                                    },
+                                                    {
+                                                        tier: 'free',
+                                                    }
+                                                )
                                                 setShowCancelPro(true)
                                             }}
                                         >
@@ -213,12 +219,16 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         className="flex-1"
                                         variant="primary"
                                         onClick={() => {
-                                            eventLogger.log(EventName.CODY_SUBSCRIPTION_PLAN_CLICKED, { tier: 'pro' })
+                                            eventLogger.log(
+                                                EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
+                                                { tier: 'pro' },
+                                                { tier: 'pro' }
+                                            )
                                             setShowUpgradeToPro(true)
                                         }}
                                     >
                                         <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
-                                        Get Pro Trial
+                                        Get Pro trial
                                     </Button>
                                 )}
                             </div>
@@ -226,16 +236,16 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 <Text weight="bold" className="d-inline">
                                     Unlimited
                                 </Text>{' '}
-                                <Text className="d-inline text-muted">Autocompletions per month</Text>
+                                <Text className="d-inline text-muted">autocompletions per month</Text>
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="d-inline">
                                     Unlimited
                                 </Text>{' '}
-                                <Text className="d-inline text-muted">Messages and Commands per month</Text>
+                                <Text className="d-inline text-muted">messages and commands per month</Text>
                             </div>
                             <div className="border-bottom py-4">
-                                <Text className="text-muted mb-0">Out-of-the-box and custom commands</Text>
+                                <Text className="text-muted mb-0">Built-in and custom commands</Text>
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="mb-3 d-inline-block">
@@ -245,7 +255,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="mb-3 d-inline-block">
-                                    LLM Support
+                                    LLM support
                                 </Text>
                                 <Text className="mb-1 text-muted">
                                     Multiple LLM choices for chat
@@ -257,15 +267,15 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         />
                                     </Tooltip>
                                 </Text>
-                                <Text className="mb-0 text-muted">Default LLMs for Commands, and Autocomplete</Text>
+                                <Text className="mb-0 text-muted">Default LLMs for commands and autocomplete</Text>
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="mb-3">
                                     Compatibility
                                 </Text>
-                                <Text className="text-muted mb-1">VS Code, JetBrains IDEs, and NeoVim</Text>
+                                <Text className="text-muted mb-1">VS Code, JetBrains IDEs, and Neovim</Text>
                                 <Text className="text-muted mb-1">
-                                    All major coding languages
+                                    All popular coding languages
                                     <Tooltip content="JavaScript, TypeScript, HTML/CSS, Python, Java, C/C++, C#, PHP, and more">
                                         <Icon
                                             className="ml-1 text-muted"
@@ -275,8 +285,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     </Tooltip>
                                 </Text>
                                 <Text className="text-muted mb-1">
-                                    Many human language support
-                                    <Tooltip content="Spanish, French, German, Italian, Chinese, Japanese, Korean, Latin, and Esperanto">
+                                    Many human languages
+                                    <Tooltip content="English, Spanish, French, German, Italian, Chinese, Japanese, Korean, and more">
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
@@ -286,7 +296,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 </Text>
                                 <Text className="text-muted mb-1">
                                     All major code hosts
-                                    <Tooltip content="GitHub, GitLab, BitBucket, Gerrit, Azure DevOps">
+                                    <Tooltip content="GitHub, GitLab, Bitbucket, Gerrit, Azure DevOps">
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
@@ -317,7 +327,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                         </div>
                         <div className="d-flex flex-column border-bottom py-4">
                             <div className="mb-1">
-                                <Text className="mb-0 text-muted d-inline">Up to $19 / user / month</Text>
+                                <Text className="mb-0 text-muted d-inline">Up to $19/user/month</Text>
                             </div>
                             <Text className="mb-3 text-muted" size="small">
                                 25 users minimum
@@ -329,26 +339,30 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 to="https://sourcegraph.com/contact/request-info?utm_source=cody_subscription_page"
                                 target="_blank"
                                 onClick={() => {
-                                    eventLogger.log(EventName.CODY_SUBSCRIPTION_PLAN_CLICKED, { tier: 'enterprise' })
+                                    eventLogger.log(
+                                        EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
+                                        { tier: 'enterprise' },
+                                        { tier: 'enterprise' }
+                                    )
                                 }}
                             >
-                                Contact Sales
+                                Contact sales
                             </ButtonLink>
                         </div>
                         <div className="border-bottom py-4">
                             <Text weight="bold" className="d-inline">
                                 Unlimited
                             </Text>{' '}
-                            <Text className="d-inline text-muted">Autocompletions per month</Text>
+                            <Text className="d-inline text-muted">autocompletions per month</Text>
                         </div>
                         <div className="border-bottom py-4">
                             <Text weight="bold" className="d-inline">
                                 Unlimited
                             </Text>{' '}
-                            <Text className="d-inline text-muted">Messages and Commands per month</Text>
+                            <Text className="d-inline text-muted">messages and commands per month</Text>
                         </div>
                         <div className="border-bottom py-4">
-                            <Text className="text-muted mb-0">Out-of-the-box and custom commands</Text>
+                            <Text className="text-muted mb-0">Built-in and custom commands</Text>
                         </div>
                         <div className="border-bottom py-4">
                             <Text weight="bold" className="mb-3 d-inline-block">
@@ -358,7 +372,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                         </div>
                         <div className="border-bottom py-4">
                             <Text weight="bold" className="mb-3 d-inline-block">
-                                LLM Support
+                                LLM support
                             </Text>
                             <Text className="mb-1 text-muted">
                                 Flexible LLM choices
@@ -371,7 +385,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 </Tooltip>
                             </Text>
                             <Text className="mb-1 text-muted">
-                                Bring your own LLM Key <Badge variant="secondary">experimental</Badge>
+                                Bring your own LLM key <Badge variant="secondary">experimental</Badge>
                             </Text>
                             <Text className="mb-0 text-muted">
                                 Bring your own LLM <Badge variant="secondary">coming soon</Badge>
@@ -379,16 +393,16 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                         </div>
                         <div className="border-bottom py-4">
                             <Text weight="bold" className="mb-3">
-                                Enterprise Features
+                                Enterprise features
                             </Text>
-                            <Text className="mb-1 text-muted">Everything in Pro plus...</Text>
+                            <Text className="mb-1 text-muted">Everything in Pro, plus:</Text>
                             <Text className="mb-1 text-muted">Enterprise support</Text>
                             <Text className="mb-1 text-muted">Flexible deployment options</Text>
                             <Text className="mb-1 text-muted">
-                                Enterprise admin and security features (SSO, SAML, SCIM, Audit Logs, etc.)
+                                Enterprise admin and security features (SSO, SAML, SCIM, audit logs, etc.)
                             </Text>
                             <Text className="mb-1 text-muted">
-                                Guardrails <Badge variant="secondary">Coming Soon</Badge>
+                                Guardrails <Badge variant="secondary">coming soon</Badge>
                             </Text>
                         </div>
                     </div>
