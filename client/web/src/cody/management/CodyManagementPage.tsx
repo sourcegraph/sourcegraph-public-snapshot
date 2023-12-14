@@ -141,7 +141,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                 <div className={classNames('p-4 border bg-1 mt-4', styles.container)}>
                     <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                         <div>
-                            <H2>My Subscription</H2>
+                            <H2>My subscription</H2>
                             <Text className="text-muted mb-0">
                                 You are on the {codyProEnabled ? 'Pro' : 'Free'} tier.
                             </Text>
