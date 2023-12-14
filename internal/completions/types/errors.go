@@ -25,7 +25,7 @@ type ErrStatusNotOK struct {
 	// might not.
 	SourceTraceContext *log.TraceContext
 
-	statusCode int
+	StatusCode int
 	// responseBody is a truncated copy of the response body, read on a best-effort basis.
 	responseBody   string
 	responseHeader http.Header
@@ -35,7 +35,7 @@ var _ error = &ErrStatusNotOK{}
 
 func (e *ErrStatusNotOK) Error() string {
 	return fmt.Sprintf("%s: unexpected status code %d: %s",
-		e.Source, e.statusCode, e.responseBody)
+		e.Source, e.StatusCode, e.responseBody)
 }
 
 // NewErrStatusNotOK parses reads resp body and closes it to return an ErrStatusNotOK
@@ -64,7 +64,7 @@ func NewErrStatusNotOK(source string, resp *http.Response) error {
 		Source:             source,
 		SourceTraceContext: tc,
 
-		statusCode:     resp.StatusCode,
+		StatusCode:     resp.StatusCode,
 		responseBody:   string(respBody),
 		responseHeader: resp.Header,
 	}
@@ -98,7 +98,7 @@ func (e *ErrStatusNotOK) WriteHeader(w http.ResponseWriter) {
 	}
 
 	// WriteHeader must come last, since it flushes the headers.
-	switch e.statusCode {
+	switch e.StatusCode {
 	// Only write back certain allow-listed status codes as-is - all other status
 	// codes are written back as 503 to avoid potential confusions with Sourcegraph
 	// status codes while indicating that the upstream service is unavailable.
@@ -106,7 +106,7 @@ func (e *ErrStatusNotOK) WriteHeader(w http.ResponseWriter) {
 	// Currently, we only write back status code 429 as-is to help support
 	// rate limit handling in clients, and 504 to indicate timeouts.
 	case http.StatusTooManyRequests, http.StatusGatewayTimeout:
-		w.WriteHeader(e.statusCode)
+		w.WriteHeader(e.StatusCode)
 	default:
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
