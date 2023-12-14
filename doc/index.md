@@ -19,6 +19,9 @@ Sourcegraph makes it easy to read, write, and fix code—even in big, complex co
 
 <br><br>
 
+<h1 class="test"><marquee>Cesar was here</marquee></h1>
+<h1><marquee>Cesar was here</marquee></h1>
+
 <div class="getting-started">
   <a href="getting-started" class="btn" alt="Run through the Quickstart guide">
     <span>Sourcegraph 101</span>
