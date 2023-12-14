@@ -18,7 +18,7 @@ const PLAINTEXT_MODE = 'plaintext'
  * getModeFromPath returns the LSP mode for the provided file path. If the file path does not correspond to any
  * known mode, 'plaintext' is returned.
  *
- * DO NOT introduce new usages of this API. See FIXME(id: language-detection).
+ * @deprecated See FIXME(id: language-detection).
  */
 export function getModeFromPath(path: string): string {
     const fileName = basename(path)
@@ -32,6 +32,8 @@ export function getModeFromPath(path: string): string {
  * provided file name (e.g. "dockerfile")
  *
  * Cherry picked from https://github.com/github/linguist/blob/master/lib/linguist/languages.yml
+ *
+ * @deprecated See FIXME(id: language-detection)
  */
 function getModeFromExactFilename(fileName: string): string | undefined {
     switch (fileName.toLowerCase()) {
@@ -56,6 +58,8 @@ function getModeFromExactFilename(fileName: string): string | undefined {
  *
  * Cherry picked from https://github.com/isagalaev/highlight.js/tree/master/src/languages
  * and https://github.com/github/linguist/blob/master/lib/linguist/languages.yml.
+ *
+ * @deprecated See FIXME(id: language-detection)
  */
 function getModeFromExtension(extension: string): string | undefined {
     switch (extension.toLowerCase()) {
