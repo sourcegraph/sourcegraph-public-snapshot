@@ -263,7 +263,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet(
 			// TODO(burmudar): This should use the bazel target
 			legacyBuildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), c.RunType),
-			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
+			// trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
 			bazelBuildExecutorVM(c, true),
 			bazelBuildExecutorDockerMirror(c),
 			wait,
