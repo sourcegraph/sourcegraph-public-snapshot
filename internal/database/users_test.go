@@ -1382,13 +1382,22 @@ func TestUsers_CreateCancelAccessRequest(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
-	accessRequest, err := db.AccessRequests().Create(ctx, &types.AccessRequest{Email: "test@example.com"})
-	assert.NoError(t, err)
-	assert.Equal(t, accessRequest.Status, types.AccessRequestStatusPending)
+	usersStore := db.Users()
+	accessRequestsStore := db.AccessRequests()
 
-	_, err = db.Users().Create(ctx, NewUser{Email: accessRequest.Email})
-	assert.NoError(t, err)
-	assert.Equal(t, accessRequest.Status, types.AccessRequestStatusCanceled)
+	_, err := accessRequestsStore.Create(ctx, &types.AccessRequest{
+		Email:          "a123@email.com",
+		Name:           "a123",
+		AdditionalInfo: "info1",
+	})
+	require.NoError(t, err)
+
+	_, err = usersStore.Create(ctx, NewUser{Username: "u1ted", Email: "a123@email.com", EmailIsVerified: true, EmailVerificationCode: "e"})
+	require.NoError(t, err)
+
+	updated, _ := accessRequestsStore.GetByEmail(ctx, "a123@email.com")
+
+	assert.Equal(t, updated.Status, types.AccessRequestStatusCanceled)
 }
 
 func normalizeUsers(users []*types.User) []*types.User {

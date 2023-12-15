@@ -210,7 +210,9 @@ func (s *accessRequestStore) GetByEmail(ctx context.Context, email string) (*typ
 }
 
 func (s *accessRequestStore) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
+
 	q := sqlf.Sprintf(accessRequestUpdateQuery, accessRequest.Status, *accessRequest.DecisionByUserID, accessRequest.ID, sqlf.Join(accessRequestColumns, ","))
+
 	updated, err := scanAccessRequest(s.QueryRow(ctx, q))
 
 	if err != nil {

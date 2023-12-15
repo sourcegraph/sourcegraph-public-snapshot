@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"hash/fnv"
 	"io"
 	"net/http"
@@ -402,21 +403,24 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		}
 	}
 
-	if info.Email != "" && !info.EmailIsVerified {
+	if info.Email != "" && info.EmailIsVerified {
 		accessRequestsStore := AccessRequestsWith(u, u.logger)
-
 		ar, err := accessRequestsStore.GetByEmail(ctx, info.Email)
-		if err != nil {
-			return nil, err
-		}
 
-		ar.Status = types.AccessRequestStatusCanceled
-		ar.UpdatedAt = time.Now()
-		_, err = accessRequestsStore.Update(ctx, ar)
-		if err != nil {
-			return nil, err
+		if errors.Is(err, &ErrAccessRequestNotFound{Email: info.Email}) {
+			// Skip further processing in this block and continue with the outer function
+		} else if err != nil {
+			return nil, err // Return for any other error
+		} else {
+			// Process when no error and ar is not nil
+			ar.Status = types.AccessRequestStatusCanceled
+			ar.UpdatedAt = time.Now()
+			ar.DecisionByUserID = pointers.Ptr(id)
+			_, err = accessRequestsStore.Update(ctx, ar)
+			if err != nil {
+				return nil, err
+			}
 		}
-
 	}
 
 	user := &types.User{
