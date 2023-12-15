@@ -34,6 +34,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		args.Query,
 		search.Precise,
 		search.Batch,
+		nil,
 	)
 	if err != nil {
 		var queryErr *client.QueryError

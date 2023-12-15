@@ -159,7 +159,7 @@ func (rg *readerGrep) matchString(s string) bool {
 // Find returns a LineMatch for each line that matches rg in reader.
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
-func (rg *readerGrep) Find(zf *zipFile, f *srcFile, limit int) (matches []protocol.ChunkMatch, err error) {
+func (rg *readerGrep) Find(zf *zipFile, f *srcFile, limit int, contextLines int32) (matches []protocol.ChunkMatch, err error) {
 	// fileMatchBuf is what we run match on, fileBuf is the original
 	// data (for Preview).
 	fileBuf := zf.DataFor(f)
@@ -195,8 +195,8 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile, limit int) (matches []protoc
 		return nil, nil // short-circuit if we have no matches
 	}
 	ranges := locsToRanges(fileBuf, locs)
-	chunks := chunkRanges(ranges, 0)
-	return chunksToMatches(fileBuf, chunks), nil
+	chunks := chunkRanges(ranges, contextLines*2)
+	return chunksToMatches(fileBuf, chunks, contextLines), nil
 }
 
 // locs must be sorted, non-overlapping, and must be valid slices of buf.
@@ -243,8 +243,8 @@ func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
 }
 
 // FindZip is a convenience function to run Find on f.
-func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile, limit int) (protocol.FileMatch, error) {
-	cms, err := rg.Find(zf, f, limit)
+func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile, limit int, contextLines int32) (protocol.FileMatch, error) {
+	cms, err := rg.Find(zf, f, limit, contextLines)
 	return protocol.FileMatch{
 		Path:         f.Name,
 		ChunkMatches: cms,
@@ -252,15 +252,31 @@ func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile, limit int) (protocol.File
 	}, err
 }
 
-func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *zipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
+func regexSearchBatch(
+	ctx context.Context,
+	rg *readerGrep,
+	zf *zipFile,
+	limit int,
+	patternMatchesContent, patternMatchesPaths bool,
+	isPatternNegated bool,
+	contextLines int32,
+) ([]protocol.FileMatch, bool, error) {
 	ctx, cancel, sender := newLimitedStreamCollector(ctx, limit)
 	defer cancel()
-	err := regexSearch(ctx, rg, zf, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
+	err := regexSearch(ctx, rg, zf, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender, contextLines)
 	return sender.collected, sender.LimitHit(), err
 }
 
 // regexSearch concurrently searches files in zr looking for matches using rg.
-func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (err error) {
+func regexSearch(
+	ctx context.Context,
+	rg *readerGrep,
+	zf *zipFile,
+	patternMatchesContent, patternMatchesPaths bool,
+	isPatternNegated bool,
+	sender matchSender,
+	contextLines int32,
+) (err error) {
 	tr, ctx := trace.New(ctx, "regexSearch")
 	defer tr.EndWithErr(&err)
 
@@ -341,7 +357,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 				filesSearched.Inc()
 
 				// process
-				fm, err := rg.FindZip(zf, f, sender.Remaining())
+				fm, err := rg.FindZip(zf, f, sender.Remaining(), contextLines)
 				if err != nil {
 					return err
 				}

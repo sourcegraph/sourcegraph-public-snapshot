@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func toComputeResult(ctx context.Context, gitserverClient gitserver.Client, cmd compute.Command, match result.Match) (out []compute.Result, _ error) {
@@ -76,6 +77,7 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, se
 		searchQuery,
 		search.Precise,
 		search.Streaming,
+		pointers.Ptr(int32(0)),
 	)
 	if err != nil {
 		close(eventsC)
