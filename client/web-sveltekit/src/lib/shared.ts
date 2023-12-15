@@ -60,7 +60,7 @@ export { type AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shar
 export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 export { getGlobalSearchContextFilter, findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
-export { omitFilter, appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
+export { omitFilter, appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 export {
     type SettingsCascade,
     type SettingsSubject,

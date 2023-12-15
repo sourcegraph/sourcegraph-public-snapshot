@@ -25,7 +25,7 @@ type Spec struct {
 	Service      ServiceSpec       `json:"service"`
 	Build        BuildSpec         `json:"build"`
 	Environments []EnvironmentSpec `json:"environments"`
-	Monitoring   MonitoringSpec    `json:"monitoring"`
+	Monitoring   *MonitoringSpec   `json:"monitoring,omitempty"`
 }
 
 // Open a specification file, validate it, unmarshal the data as a MSP spec,
@@ -59,6 +59,10 @@ func parse(data []byte) (*Spec, error) {
 	if err := yaml.Unmarshal(data, &s); err != nil {
 		return nil, err
 	}
+
+	// Assign zero value for top-level monitoring spec for covenience
+	s.Monitoring = &MonitoringSpec{}
+
 	if validationErrs := s.Validate(); len(validationErrs) > 0 {
 		return nil, errors.Append(nil, validationErrs...)
 	}

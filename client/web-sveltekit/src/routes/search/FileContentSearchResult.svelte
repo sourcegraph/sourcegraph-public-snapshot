@@ -20,14 +20,14 @@
     import { getFileMatchUrl, type ContentMatch, ZoektRanking, LineRanking } from '$lib/shared'
 
     import SearchResult from './SearchResult.svelte'
-    import { getSearchResultsContext } from './SearchResults.svelte'
+    import { getSearchResultsContext } from './searchResultsContext'
     import CodeHostIcon from './CodeHostIcon.svelte'
     import RepoStars from './RepoStars.svelte'
     import { settings } from '$lib/stores'
     import { rankContentMatch } from '$lib/search/results'
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
-    import CodeExcerpt from './CodeExcerpt.svelte'
+    import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
 
     export let result: ContentMatch
 
@@ -107,20 +107,20 @@
                 </a>
             </div>
         {/each}
+        {#if collapsible}
+            <button
+                type="button"
+                on:click={() => {
+                    expanded = !expanded
+                    userInteracted = true
+                }}
+                class:expanded
+            >
+                <Icon svgPath={expanded ? mdiChevronUp : mdiChevronDown} inline aria-hidden="true" />
+                <span>{expandButtonText}</span>
+            </button>
+        {/if}
     </div>
-    {#if collapsible}
-        <button
-            type="button"
-            on:click={() => {
-                expanded = !expanded
-                userInteracted = true
-            }}
-            class:expanded
-        >
-            <Icon svgPath={expanded ? mdiChevronUp : mdiChevronDown} inline aria-hidden="true" />
-            <span>{expandButtonText}</span>
-        </button>
-    {/if}
 </SearchResult>
 
 <style lang="scss">
@@ -129,8 +129,7 @@
         text-align: left;
         border: none;
         padding: 0.25rem 0.5rem;
-        background-color: var(--border-color);
-        border-radius: 0 0 var(--border-radius) var(--border-radius);
+        background-color: var(--code-bg);
         color: var(--collapse-results-color);
         cursor: pointer;
 
@@ -140,15 +139,11 @@
         }
     }
 
-    .matches {
-        border-radius: var(--border-radius);
-        border: 1px solid var(--border-color);
-        background-color: var(--code-bg);
-    }
-
     .code {
-        &:not(:first-child) {
-            border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+
+        &:last-child {
+            border-bottom: none;
         }
 
         a {
