@@ -16,7 +16,7 @@ echo $project_root
 echo $tmp_folder
 ls -lR $tmp_folder
 
-chmod 0777 $tmp_folder
+chmod -R 0777 $tmp_folder
 
 docker load --input="$tarball"
 docker run -v $tmp_folder:/sources "$image_name" -- ls -lR /sources
