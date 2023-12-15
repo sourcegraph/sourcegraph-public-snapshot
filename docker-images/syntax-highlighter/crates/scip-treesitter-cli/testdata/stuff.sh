@@ -10,13 +10,14 @@ out="$4"
 tmp_folder=$(pwd)/tmp
 mkdir "$tmp_folder"
 cp -R -L "$project_root"/* $tmp_folder/
-# trap "rm -Rf $tmp_folder" EXIT
+trap "rm -Rf $tmp_folder" EXIT
 
 echo $project_root
 echo $tmp_folder
 ls -lR $tmp_folder
 
-# @anton You'll need to fix your local env, we cannot merge an absolute path here
+chmod 0777 $tmp_folder
+
 docker load --input="$tarball"
 docker run -v $tmp_folder:/sources "$image_name" -- ls -lR /sources
 
