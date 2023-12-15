@@ -16,6 +16,9 @@ type MonitoringSpec struct {
 }
 
 func (s *MonitoringSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
 	var errs []error
 	errs = append(errs, s.Alerts.Validate()...)
 	return errs
