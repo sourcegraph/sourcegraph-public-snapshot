@@ -48,8 +48,6 @@ export function groupFilters(filters: Filter[] | null | undefined): FilterGroups
     return groupedFilters
 }
 
-}
-
 export function chunkToMatchGroup(chunk: ChunkMatch): MatchGroup {
     const matches = chunk.ranges.map(range => ({
         startLine: range.start.line,
