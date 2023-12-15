@@ -51,7 +51,7 @@
     $: expandButtonText = expanded
         ? 'Show less'
         : `Show ${hiddenMatchesCount} more ${pluralize('match', hiddenMatchesCount, 'matches')}`
-    $: matchesToShow = expanded ? expandedMatchGroups.grouped : collapsedMatchGroups.grouped
+    $: matchesToShow = expanded ? expandedMatchGroups : collapsedMatchGroups
     $: matchRanges = matchesToShow.map(group => ({
         startLine: group.startLine,
         endLine: group.endLine,
@@ -84,6 +84,13 @@
             matchesToShow.findIndex(group => group.startLine === startLine && group.endLine === endLine)
         ]
     }
+
+    let isVisible = false
+    function onIntersection(event: { detail: boolean }) {
+        // The component stays marked as "visible" if it was once to avoid
+        // refetching highlighted lines and matches
+        isVisible = isVisible || event.detail
+    }
 </script>
 
 <SearchResult>
@@ -95,7 +102,7 @@
         {/if}
     </svelte:fragment>
 
-    <div bind:this={root} class="matches">
+    <div bind:this={root} use:observeIntersection on:intersecting={onIntersection} class="matches">
         {#each matchesToShow as group}
             <div class="code">
                 <a href={getMatchURL(group.startLine + 1, group.endLine)}>
