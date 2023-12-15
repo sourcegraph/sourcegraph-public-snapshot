@@ -7,8 +7,9 @@ out="$4"
 
 # We can't directly mount $project_root, because those are symbolic links created by the sandboxing mechansim. So instead, we copy everything over.
 
-tmp_folder=$(pwd)/tmp
-mkdir "$tmp_folder"
+# tmp_folder=$(pwd)/tmp
+tmp_folder=$(mktemp -d)
+# mkdir "$tmp_folder"
 cp -R -L "$project_root"/* $tmp_folder/
 trap "rm -Rf $tmp_folder" EXIT
 
