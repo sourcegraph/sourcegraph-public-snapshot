@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -240,16 +239,13 @@ func categoryAdditionalSGConfiguration() category {
 					}
 					shell := usershell.ShellType(ctx)
 					autocompletePath := usershell.AutocompleteScriptPath(sgHome, shell)
-					completionScript, err := os.Open(autocompletePath)
+					completionScript, err := os.ReadFile(autocompletePath)
 					if err != nil {
 						return errors.Wrapf(err, "autocomplete script for shell %s not found", shell)
 					}
-					if completionScriptContents, err := io.ReadAll(completionScript); err != nil {
-						return errors.Wrapf(err, "could not check autocomplete script for shell %s", shell)
-					} else {
-						if string(completionScriptContents) != usershell.AutocompleteScripts[shell] {
-							return errors.Wrapf(err, "autocomplete script for shell %s is not up to date", shell)
-						}
+
+					if string(completionScript) != usershell.AutocompleteScripts[shell] {
+						return errors.Wrapf(err, "autocomplete script for shell %s is not up to date", shell)
 					}
 
 					shellConfig := usershell.ShellConfigPath(ctx)
