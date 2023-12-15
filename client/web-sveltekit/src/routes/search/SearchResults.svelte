@@ -51,10 +51,7 @@
     $: loading = !progress?.done
     $: results = $stream?.results
     $: filters = groupFilters($stream?.filters)
-    $: langFilters = filters.lang
-    $: repoFilters = filters.repo
-    $: fileFilters = filters.file
-    $: hasFilters = langFilters.length > 0 || repoFilters.length > 0 || fileFilters.length > 0
+    $: hasFilters = filters.lang.length > 0 || filters.repo.length > 0 || filters.file.length > 0
 
     // Logic for maintaining list state (scroll position, rendered items, open
     // items) for backwards navigation.
@@ -142,19 +139,19 @@
         {#if hasFilters}
             <div class="section">
                 <h4>Filter results</h4>
-                {#if langFilters.length > 0}
-                    <Section items={langFilters} title="By languages" {queryFilters} />
+                {#if filters.lang.length > 0}
+                    <Section items={filters.lang} title="By languages" {queryFilters} />
                 {/if}
-                {#if repoFilters.length > 0}
-                    <Section items={repoFilters} title="By repositories" {queryFilters}>
+                {#if filters.repo.length > 0}
+                    <Section items={filters.repo} title="By repositories" {queryFilters}>
                         <svelte:fragment slot="label" let:label>
                             <CodeHostIcon repository={label} />
                             {displayRepoName(label)}
                         </svelte:fragment>
                     </Section>
                 {/if}
-                {#if fileFilters.length > 0}
-                    <Section items={fileFilters} title="By paths" {queryFilters} />
+                {#if filters.file.length > 0}
+                    <Section items={filters.file} title="By paths" {queryFilters} />
                 {/if}
             </div>
         {/if}
@@ -164,7 +161,7 @@
             </span>
             <div>
                 <h4>Need more advanced filters?</h4>
-                <span>Explore the query syntx docs</span>
+                <span>Explore the query syntax docs</span>
             </div>
         </a>
     </aside>
