@@ -449,7 +449,7 @@ func TestRegexSearch(t *testing.T) {
 	}
 	type args struct {
 		ctx                   context.Context
-		rg                    *readerGrep
+		rg                    *regexMatcher
 		zf                    *zipFile
 		limit                 int
 		patternMatchesContent bool
@@ -466,7 +466,7 @@ func TestRegexSearch(t *testing.T) {
 			name: "nil re returns a FileMatch with no LineMatches",
 			args: args{
 				ctx: context.Background(),
-				rg: &readerGrep{
+				rg: &regexMatcher{
 					// Check this case specifically.
 					re:        nil,
 					matchPath: match,

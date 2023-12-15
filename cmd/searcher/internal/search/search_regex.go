@@ -14,14 +14,15 @@ import (
 	"go.uber.org/atomic"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/zoekt/query"
 )
 
-// readerGrep is responsible for finding LineMatches. It is not concurrency
+// regexMatcher is responsible for finding LineMatches. It is not concurrency
 // safe (it reuses buffers for performance).
 //
 // This code is base on reading the techniques detailed in
@@ -37,7 +38,7 @@ import (
 // consider using ripgrep directly (modify it to search zip archives).
 //
 // TODO(keegan) return search statistics
-type readerGrep struct {
+type regexMatcher struct {
 	// re is the regexp to match, or nil if empty ("match all files' content").
 	re *regexp.Regexp
 
@@ -61,8 +62,8 @@ type readerGrep struct {
 	literalSubstring []byte
 }
 
-// compile returns a readerGrep for matching p.
-func compile(p *protocol.PatternInfo) (*readerGrep, error) {
+// compile returns a regexMatcher for matching p.
+func compile(p *protocol.PatternInfo) (*regexMatcher, error) {
 	var (
 		re               *regexp.Regexp
 		literalSubstring []byte
@@ -125,7 +126,7 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 		return nil, err
 	}
 
-	return &readerGrep{
+	return &regexMatcher{
 		re:               re,
 		ignoreCase:       !p.IsCaseSensitive,
 		matchPath:        matchPath,
@@ -135,31 +136,31 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 
 // Copy returns a copied version of rg that is safe to use from another
 // goroutine.
-func (rg *readerGrep) Copy() *readerGrep {
-	return &readerGrep{
-		re:               rg.re,
-		ignoreCase:       rg.ignoreCase,
-		matchPath:        rg.matchPath,
-		literalSubstring: rg.literalSubstring,
+func (rm *regexMatcher) Copy() *regexMatcher {
+	return &regexMatcher{
+		re:               rm.re,
+		ignoreCase:       rm.ignoreCase,
+		matchPath:        rm.matchPath,
+		literalSubstring: rm.literalSubstring,
 	}
 }
 
 // matchString returns whether rg's regexp pattern matches s. It is intended to be
 // used to match file paths.
-func (rg *readerGrep) matchString(s string) bool {
-	if rg.re == nil {
+func (rm *regexMatcher) matchString(s string) bool {
+	if rm.re == nil {
 		return true
 	}
-	if rg.ignoreCase {
+	if rm.ignoreCase {
 		s = strings.ToLower(s)
 	}
-	return rg.re.MatchString(s)
+	return rm.re.MatchString(s)
 }
 
 // Find returns a LineMatch for each line that matches rg in reader.
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
-func (rg *readerGrep) Find(zf *zipFile, f *srcFile, limit int) (matches []protocol.ChunkMatch, err error) {
+func (rm *regexMatcher) Find(zf *zipFile, f *srcFile, limit int) (matches []protocol.ChunkMatch, err error) {
 	// fileMatchBuf is what we run match on, fileBuf is the original
 	// data (for Preview).
 	fileBuf := zf.DataFor(f)
@@ -170,11 +171,11 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile, limit int) (matches []protoc
 	// slow. compile has already lowercased the pattern. We also
 	// trade some correctness for perf by using a non-utf8 aware
 	// lowercase function.
-	if rg.ignoreCase {
-		if rg.transformBuf == nil {
-			rg.transformBuf = make([]byte, zf.MaxLen)
+	if rm.ignoreCase {
+		if rm.transformBuf == nil {
+			rm.transformBuf = make([]byte, zf.MaxLen)
 		}
-		fileMatchBuf = rg.transformBuf[:len(fileBuf)]
+		fileMatchBuf = rm.transformBuf[:len(fileBuf)]
 		casetransform.BytesToLowerASCII(fileMatchBuf, fileBuf)
 	}
 
@@ -185,12 +186,12 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile, limit int) (matches []protoc
 	// searching for results. We use the same approach when we search
 	// per-line. Additionally if we have a non-empty literalSubstring, we use
 	// that to prune out files since doing bytes.Index is very fast.
-	if !bytes.Contains(fileMatchBuf, rg.literalSubstring) {
+	if !bytes.Contains(fileMatchBuf, rm.literalSubstring) {
 		return nil, nil
 	}
 
 	// find limit+1 matches so we know whether we hit the limit
-	locs := rg.re.FindAllIndex(fileMatchBuf, limit+1)
+	locs := rm.re.FindAllIndex(fileMatchBuf, limit+1)
 	if len(locs) == 0 {
 		return nil, nil // short-circuit if we have no matches
 	}
@@ -243,8 +244,8 @@ func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
 }
 
 // FindZip is a convenience function to run Find on f.
-func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile, limit int) (protocol.FileMatch, error) {
-	cms, err := rg.Find(zf, f, limit)
+func (rm *regexMatcher) FindZip(zf *zipFile, f *srcFile, limit int) (protocol.FileMatch, error) {
+	cms, err := rm.Find(zf, f, limit)
 	return protocol.FileMatch{
 		Path:         f.Name,
 		ChunkMatches: cms,
@@ -252,22 +253,22 @@ func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile, limit int) (protocol.File
 	}, err
 }
 
-func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *zipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
+func regexSearchBatch(ctx context.Context, rm *regexMatcher, zf *zipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
 	ctx, cancel, sender := newLimitedStreamCollector(ctx, limit)
 	defer cancel()
-	err := regexSearch(ctx, rg, zf, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
+	err := regexSearch(ctx, rm, zf, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
 	return sender.collected, sender.LimitHit(), err
 }
 
 // regexSearch concurrently searches files in zr looking for matches using rg.
-func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (err error) {
+func regexSearch(ctx context.Context, rm *regexMatcher, zf *zipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (err error) {
 	tr, ctx := trace.New(ctx, "regexSearch")
 	defer tr.EndWithErr(&err)
 
-	if rg.re != nil {
-		tr.SetAttributes(attribute.Stringer("re", rg.re))
+	if rm.re != nil {
+		tr.SetAttributes(attribute.Stringer("re", rm.re))
 	}
-	tr.SetAttributes(attribute.Stringer("path", rg.matchPath))
+	tr.SetAttributes(attribute.Stringer("path", rm.matchPath))
 
 	if !patternMatchesContent && !patternMatchesPaths {
 		patternMatchesContent = true
@@ -289,11 +290,11 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 		files = zf.Files
 	)
 
-	if rg.re == nil || (patternMatchesPaths && !patternMatchesContent) {
+	if rm.re == nil || (patternMatchesPaths && !patternMatchesContent) {
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {
-			if match := rg.matchPath.MatchPath(f.Name) && rg.matchString(f.Name); match == !isPatternNegated {
+			if match := rm.matchPath.MatchPath(f.Name) && rm.matchString(f.Name); match == !isPatternNegated {
 				if ctx.Err() != nil {
 					return ctx.Err()
 				}
@@ -323,7 +324,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 
 	// Start workers. They read from files and write to matches.
 	for i := 0; i < numWorkers; i++ {
-		rg := rg.Copy()
+		rm := rm.Copy()
 		g.Go(func() error {
 			for !contextCanceled.Load() {
 				idx := int(lastFileIdx.Inc())
@@ -334,21 +335,21 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 				f := &files[idx]
 
 				// decide whether to process, record that decision
-				if !rg.matchPath.MatchPath(f.Name) {
+				if !rm.matchPath.MatchPath(f.Name) {
 					filesSkipped.Inc()
 					continue
 				}
 				filesSearched.Inc()
 
 				// process
-				fm, err := rg.FindZip(zf, f, sender.Remaining())
+				fm, err := rm.FindZip(zf, f, sender.Remaining())
 				if err != nil {
 					return err
 				}
 				match := len(fm.ChunkMatches) > 0
 				if !match && patternMatchesPaths {
 					// Try matching against the file path.
-					match = rg.matchString(f.Name)
+					match = rm.matchString(f.Name)
 					if match {
 						fm.Path = f.Name
 					}

@@ -217,7 +217,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	}
 
 	// Compile pattern before fetching from store in case it's invalid.
-	rg, err := compile(&p.PatternInfo)
+	rm, err := compile(&p.PatternInfo)
 	if err != nil {
 		return badRequestError{err.Error()}
 	}
@@ -251,7 +251,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	}
 	defer zf.Close()
 
-	return regexSearch(ctx, rg, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
+	return regexSearch(ctx, rm, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
 }
 
 func (s *Service) getZipFile(ctx context.Context, tr trace.Trace, p *protocol.Request, paths []string) (string, *zipFile, error) {

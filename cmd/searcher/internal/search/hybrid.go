@@ -254,19 +254,19 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 // zoektCompile builds a text search zoekt query for p.
 //
 // This function should support the same features as the "compile" function,
-// but return a zoektquery instead of a readerGrep.
+// but return a zoektquery instead of a regexMatcher.
 //
 // Note: This is used by hybrid search and not structural search.
 func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	var parts []zoektquery.Q
 	// we are redoing work here, but ensures we generate the same regex and it
-	// feels nicer than passing in a readerGrep since handle path directly.
-	if rg, err := compile(p); err != nil {
+	// feels nicer than passing in a regexMatcher since handle path directly.
+	if rm, err := compile(p); err != nil {
 		return nil, err
-	} else if rg.re == nil { // we are just matching paths
+	} else if rm.re == nil { // we are just matching paths
 		parts = append(parts, &zoektquery.Const{Value: true})
 	} else {
-		re, err := syntax.Parse(rg.re.String(), syntax.Perl)
+		re, err := syntax.Parse(rm.re.String(), syntax.Perl)
 		if err != nil {
 			return nil, err
 		}
@@ -276,12 +276,12 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 				&zoektquery.Regexp{
 					Regexp:        re,
 					Content:       true,
-					CaseSensitive: !rg.ignoreCase,
+					CaseSensitive: !rm.ignoreCase,
 				},
 				&zoektquery.Regexp{
 					Regexp:        re,
 					FileName:      true,
-					CaseSensitive: !rg.ignoreCase,
+					CaseSensitive: !rm.ignoreCase,
 				},
 			))
 		} else {
@@ -289,7 +289,7 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 				Regexp:        re,
 				Content:       p.PatternMatchesContent,
 				FileName:      p.PatternMatchesPath,
-				CaseSensitive: !rg.ignoreCase,
+				CaseSensitive: !rm.ignoreCase,
 			})
 		}
 	}
