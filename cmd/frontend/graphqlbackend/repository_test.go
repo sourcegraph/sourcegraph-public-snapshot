@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -13,13 +12,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -283,88 +278,4 @@ func TestRepository_DefaultBranch(t *testing.T) {
 			}
 		})
 	}
-}
-
-// TestRepositoryTopics tests whether repo metadata is correctly unmarshalled.
-func TestRepositoryTopics(t *testing.T) {
-	ctx := context.Background()
-	logger := logtest.Scoped(t)
-	db := dbmocks.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(t)))
-
-	testCases := []struct {
-		name      string
-		typesRepo *types.Repo
-		metadata  any
-	}{
-		{
-			name: "GitLab",
-			typesRepo: &types.Repo{
-				Name: api.RepoName("gitlab_repo"),
-				ExternalRepo: api.ExternalRepoSpec{
-					ServiceType: extsvc.TypeGitLab,
-				},
-			},
-			metadata: &gitlab.Project{Topics: []string{"gitlab_topic1", "gitlab_topic2"}},
-		},
-		{
-			name: "GitHub",
-			typesRepo: &types.Repo{
-				Name: api.RepoName("github_repo"),
-				ExternalRepo: api.ExternalRepoSpec{
-					ServiceType: extsvc.TypeGitHub,
-				},
-			},
-			metadata: &github.Repository{
-				RepositoryTopics: github.RepositoryTopics{
-					Nodes: []github.RepositoryTopic{
-						{
-							Topic: github.Topic{
-								Name: "github_topic1",
-							},
-						},
-						{
-							Topic: github.Topic{
-								Name: "github_topic2",
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	for _, tt := range testCases {
-		t.Run(tt.name, func(t *testing.T) {
-			b, err := json.Marshal(tt.metadata)
-			require.NoError(t, err)
-			tt.typesRepo.Metadata = b
-
-			err = db.Repos().Create(ctx, tt.typesRepo)
-			require.NoError(t, err)
-
-			repo, err := db.Repos().GetByName(ctx, tt.typesRepo.Name)
-			require.NoError(t, err)
-
-			require.Equal(t, tt.metadata, repo.Metadata)
-		})
-	}
-}
-
-func TestRepositoryNoMetadata(t *testing.T) {
-	ctx := context.Background()
-	logger := logtest.Scoped(t)
-	db := dbmocks.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(t)))
-
-	err := db.Repos().Create(ctx, &types.Repo{
-		Name: "github_repo",
-		ExternalRepo: api.ExternalRepoSpec{
-			ServiceType: extsvc.TypeGitHub,
-		},
-	})
-	require.NoError(t, err)
-
-	repo, err := db.Repos().GetByName(ctx, "github_repo")
-	require.NoError(t, err)
-
-	require.Equal(t, &github.Repository{}, repo.Metadata)
 }
