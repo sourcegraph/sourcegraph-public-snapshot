@@ -44,7 +44,7 @@ func (s *sessionIssuerHelper) GetServiceID() string {
 	return s.baseURL.String()
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, hubSpotProps *hubspot.ContactProperties) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
 	var client bitbucketcloud.Client
 	if s.client != nil {
 		client = s.client
@@ -108,11 +108,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			CreateIfNotExist:    attempt.createIfNotExist,
 		})
 		if err == nil {
-			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
-				AnonymousUserID: anonymousUserID,
-				FirstSourceURL:  firstSourceURL,
-				LastSourceURL:   lastSourceURL,
-			})
+			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, hubSpotProps)
 			return newUserCreated, actor.FromUser(userID), "", nil
 		}
 		if i == 0 {

@@ -2542,7 +2542,7 @@ func TestExternalServiceStore_recalculateFields(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			require.NoError(t, e.recalculateFields(es, rawConfig))
+			e.recalculateFields(es, rawConfig)
 
 			require.Equal(t, es.Unrestricted, tc.expectUnrestricted)
 		})

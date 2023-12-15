@@ -11,7 +11,8 @@
     "**/.cache": true,
     "**/.nyc_output": true,
     "doc/_resources/assets": true,
-    "**/.eslintcache": true
+    "**/.eslintcache": true,
+    "bazel*/**": true
   },
   "files.exclude": {
     "**/*.scss.d.ts": true
@@ -49,7 +50,9 @@
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "editor.codeActionsOnSave": {},
   "eslint.codeActionsOnSave.mode": "problems",
-  "eslint.options": { "cache": true },
+  "eslint.options": {
+    "cache": true
+  },
   "eslint.workingDirectories": ["./dev/release", "./client/*"],
   "go.lintTool": "golangci-lint",
   "shellformat.flag": "-i 2 -ci",

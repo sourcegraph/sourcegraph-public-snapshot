@@ -64,7 +64,7 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
 	// to be reported here - instead, use parseResponseAndUsage to extract usage,
 	// which for some providers we can only know after the fact based on what
 	// upstream tells us.
-	getRequestMetadata func(context.Context, log.Logger, *actor.Actor, ReqT) (model string, additionalMetadata map[string]any)
+	getRequestMetadata func(context.Context, log.Logger, *actor.Actor, codygateway.Feature, ReqT) (model string, additionalMetadata map[string]any)
 	// parseResponseAndUsage should extract details from the response we get back from
 	// upstream as well as overall usage for tracking purposes.
 	//
@@ -89,7 +89,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// provider names defined clientside, i.e. "anthropic" or "openai".
 	upstreamName string,
 
-	upstreamAPIURL string,
+	upstreamAPIURL func(feature codygateway.Feature) string,
 	allowedModels []string,
 
 	methods upstreamHandlerMethods[ReqT],
@@ -101,7 +101,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	autoFlushStreamingResponses bool,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped(upstreamName).
-		With(log.String("upstream.url", upstreamAPIURL))
+		// This URL is used only for logging reason so we default to the chat endpoint
+		With(log.String("upstream.url", upstreamAPIURL(codygateway.FeatureChatCompletions)))
 
 	// Convert allowedModels to the Cody Gateway configuration format with the
 	// provider as a prefix. This aligns with the models returned when we query
@@ -221,7 +222,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			}
 
 			// Create a new request to send upstream, making sure we retain the same context.
-			req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, upstreamAPIURL, bytes.NewReader(upstreamPayload))
+			req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, upstreamAPIURL(feature), bytes.NewReader(upstreamPayload))
 			if err != nil {
 				response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to create request"))
 				return
@@ -231,7 +232,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			methods.transformRequest(req)
 
 			// Retrieve metadata from the initial request.
-			model, requestMetadata := methods.getRequestMetadata(r.Context(), logger, act, body)
+			model, requestMetadata := methods.getRequestMetadata(r.Context(), logger, act, feature, body)
 
 			// Match the model against the allowlist of models, which are configured
 			// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models

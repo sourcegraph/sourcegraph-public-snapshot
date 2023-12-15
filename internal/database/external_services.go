@@ -592,9 +592,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	}
 
 	// Ensure the calculated fields in the external service are up to date.
-	if err := e.recalculateFields(es, string(normalized)); err != nil {
-		return err
-	}
+	e.recalculateFields(es, string(normalized))
 
 	encryptedConfig, keyID, err := es.Config.Encrypt(ctx, e.getEncryptionKey())
 	if err != nil {
@@ -691,9 +689,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			s.Config.Set(rawConfig)
 		}
 
-		if err := e.recalculateFields(s, string(normalized)); err != nil {
-			return err
-		}
+		e.recalculateFields(s, string(normalized))
 
 		chID, err := ensureCodeHost(ctx, tx, s.Kind, string(normalized))
 		if err != nil {
@@ -1737,7 +1733,7 @@ func calcUnrestricted(config string) bool {
 // recalculateFields updates the value of the external service fields that are
 // calculated depending on the external service configuration, namely
 // `Unrestricted` and `HasWebhooks`.
-func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) error {
+func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) {
 	es.Unrestricted = calcUnrestricted(rawConfig)
 
 	hasWebhooks := false
@@ -1750,8 +1746,6 @@ func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawC
 		e.logger.Warn("cannot parse external service configuration as JSON", log.Error(err), log.Int64("id", es.ID))
 	}
 	es.HasWebhooks = &hasWebhooks
-
-	return nil
 }
 
 func ensureCodeHost(ctx context.Context, tx *externalServiceStore, kind string, config string) (codeHostID int32, _ error) {

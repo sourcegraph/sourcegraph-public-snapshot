@@ -55,11 +55,22 @@ All notable changes to Sourcegraph are documented in this file.
 - The feature flag `search-ranking` is now completely removed. [#58156](https://github.com/sourcegraph/sourcegraph/pull/58156)
 - The notepad UI, notebook creation feature. [#58217](https://github.com/sourcegraph/sourcegraph/pull/58217)
 
-## Unreleased
+## Unreleased 5.2.6
+
+### Added
+
+### Fixed
+
+### Changed
+
+### Removed
+
+## 5.2.5
 
 ### Added
 
 - Added Cody providers data to pings. [#58848](https://github.com/sourcegraph/sourcegraph/pull/58848)
+- Added the ability to proxy authentication requests when using the Azure OpenAI Cody provider. [#58862](https://github.com/sourcegraph/sourcegraph/pull/58862)
 
 ### Fixed
 

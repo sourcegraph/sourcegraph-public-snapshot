@@ -197,90 +197,87 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			log.Error(err))
 	}(time.Now())
 
-	if p.IsStructuralPat && p.Indexed {
-		// Execute the new structural search path that directly calls Zoekt.
-		// TODO use limit in indexed structural search
-		return structuralSearchWithZoekt(ctx, s.Log, s.Indexed, p, sender)
-	}
-
-	// Compile pattern before fetching from store incase it is bad.
-	var rg *readerGrep
-	if !p.IsStructuralPat {
-		rg, err = compile(&p.PatternInfo)
-		if err != nil {
-			return badRequestError{err.Error()}
-		}
-	}
-
 	if p.FetchTimeout == time.Duration(0) {
 		p.FetchTimeout = 500 * time.Millisecond
 	}
-	prepareCtx, cancel := context.WithTimeout(ctx, p.FetchTimeout)
-	defer cancel()
 
-	getZf := func() (string, *zipFile, error) {
-		path, err := s.Store.PrepareZip(prepareCtx, p.Repo, p.Commit)
-		if err != nil {
-			return "", nil, err
+	if p.IsStructuralPat {
+		if p.Indexed {
+			// Execute the new structural search path that directly calls Zoekt.
+			// TODO use limit in indexed structural search
+			return structuralSearchWithZoekt(ctx, s.Log, s.Indexed, p, sender)
 		}
-		zf, err := s.Store.zipCache.Get(path)
-		return path, zf, err
+
+		zipPath, zf, err := s.getZipFile(ctx, tr, p, nil)
+		if err != nil {
+			return errors.Wrap(err, "failed to get archive")
+		}
+		defer zf.Close()
+		return filteredStructuralSearch(ctx, s.Log, zipPath, zf, &p.PatternInfo, p.Repo, sender)
 	}
 
-	// Hybrid search only works with our normal searcher code path, not
-	// structural search.
-	hybrid := !p.IsStructuralPat
-	if hybrid {
-		logger := logWithTrace(ctx, s.Log).Scoped("hybrid").With(
-			log.String("repo", string(p.Repo)),
-			log.String("commit", string(p.Commit)),
-		)
-
-		unsearched, ok, err := s.hybrid(ctx, logger, p, sender)
-		if err != nil {
-			// error logging is done inside of s.hybrid so we just return
-			// error here.
-			return errors.Wrap(err, "hybrid search failed")
-		}
-		if !ok {
-			logger.Debug("hybrid search is falling back to normal unindexed search")
-		} else {
-			// now we only need to search unsearched
-			if len(unsearched) == 0 {
-				// indexed search did it all
-				return nil
-			}
-
-			getZf = func() (string, *zipFile, error) {
-				path, err := s.Store.PrepareZipPaths(prepareCtx, p.Repo, p.Commit, unsearched)
-				if err != nil {
-					return "", nil, err
-				}
-				zf, err := s.Store.zipCache.Get(path)
-				return path, zf, err
-			}
-		}
+	// Compile pattern before fetching from store in case it's invalid.
+	rg, err := compile(&p.PatternInfo)
+	if err != nil {
+		return badRequestError{err.Error()}
 	}
 
-	zipPath, zf, err := getZipFileWithRetry(getZf)
+	logger := logWithTrace(ctx, s.Log).Scoped("hybrid").With(
+		log.String("repo", string(p.Repo)),
+		log.String("commit", string(p.Commit)),
+	)
+
+	var paths []string
+	unsearched, ok, err := s.hybrid(ctx, logger, p, sender)
+	if err != nil {
+		// error logging is done inside of s.hybrid so we just return
+		// error here.
+		return errors.Wrap(err, "hybrid search failed")
+	}
+	if !ok {
+		logger.Debug("hybrid search is falling back to normal unindexed search")
+	} else {
+		// now we only need to search unsearched
+		if len(unsearched) == 0 {
+			// indexed search did it all
+			return nil
+		}
+		paths = unsearched
+	}
+
+	_, zf, err := s.getZipFile(ctx, tr, p, paths)
 	if err != nil {
 		return errors.Wrap(err, "failed to get archive")
 	}
 	defer zf.Close()
 
-	nFiles := uint64(len(zf.Files))
-	bytes := int64(len(zf.Data))
-	tr.AddEvent("archive",
-		attribute.Int64("archive.files", int64(nFiles)),
-		attribute.Int64("archive.size", bytes))
-	metricArchiveFiles.Observe(float64(nFiles))
-	metricArchiveSize.Observe(float64(bytes))
+	return regexSearch(ctx, rg, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
+}
 
-	if p.IsStructuralPat {
-		return filteredStructuralSearch(ctx, s.Log, zipPath, zf, &p.PatternInfo, p.Repo, sender)
-	} else {
-		return regexSearch(ctx, rg, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
+func (s *Service) getZipFile(ctx context.Context, tr trace.Trace, p *protocol.Request, paths []string) (string, *zipFile, error) {
+	fetchCtx, cancel := context.WithTimeout(ctx, p.FetchTimeout)
+	defer cancel()
+
+	zipPath, zf, err := getZipFileWithRetry(func() (string, *zipFile, error) {
+		path, err := s.Store.PrepareZip(fetchCtx, p.Repo, p.Commit, paths)
+		if err != nil {
+			return "", nil, err
+		}
+		zf, err := s.Store.zipCache.Get(path)
+		return path, zf, err
+	})
+
+	if err == nil {
+		nFiles := uint64(len(zf.Files))
+		bytes := int64(len(zf.Data))
+		tr.AddEvent("archive",
+			attribute.Int64("archive.files", int64(nFiles)),
+			attribute.Int64("archive.size", bytes))
+		metricArchiveFiles.Observe(float64(nFiles))
+		metricArchiveSize.Observe(float64(bytes))
 	}
+
+	return zipPath, zf, err
 }
 
 func validateParams(p *protocol.Request) error {

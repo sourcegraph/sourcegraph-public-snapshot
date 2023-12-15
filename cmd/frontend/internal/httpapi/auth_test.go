@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -76,6 +77,18 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			checkHTTPResponse(t, db, req, http.StatusUnauthorized, "Invalid Authorization header.\n")
 		})
 	}
+
+	t.Run("license check bypasses handler in dotcom mode", func(t *testing.T) {
+		currMode := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		t.Cleanup(func() {
+			envvar.MockSourcegraphDotComMode(currMode)
+		})
+
+		req, _ := http.NewRequest("GET", "/.api/license/check", nil)
+		req.Header.Set("Authorization", "Bearer sometoken")
+		checkHTTPResponse(t, db, req, http.StatusOK, "no user")
+	})
 
 	t.Run("valid header with invalid token", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)

@@ -377,6 +377,8 @@ const zigSpec: LanguageSpec = {
  *
  * The set of languages come from https://madnight.github.io/githut/#/pull_requests/2018/4 (with additions)
  * The language names come from https://code.visualstudio.com/docs/languages/identifiers#_known-language-identifiers.
+ *
+ * @deprecated See FIXME(id: language-detection)
  */
 export const languageSpecs: LanguageSpec[] = [
     apexSpec,
@@ -425,6 +427,8 @@ export const languageSpecs: LanguageSpec[] = [
 /**
  * Returns the language spec with the given language identifier. If no language
  * matches is configured with the given identifier an error is thrown.
+ *
+ * @deprecated See FIXME(id: language-detection)
  */
 export function findLanguageSpec(languageID: string): LanguageSpec | undefined {
     return languageSpecs.find(spec => spec.languageID === languageID || spec.additionalLanguages?.includes(languageID))

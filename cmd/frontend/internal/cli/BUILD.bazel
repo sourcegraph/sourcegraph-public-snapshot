@@ -27,6 +27,7 @@ go_library(
         "//cmd/frontend/internal/app",
         "//cmd/frontend/internal/app/assetsutil",
         "//cmd/frontend/internal/app/ui",
+        "//cmd/frontend/internal/auth/ipallowlist",
         "//cmd/frontend/internal/bg",
         "//cmd/frontend/internal/cli/middleware",
         "//cmd/frontend/internal/httpapi",

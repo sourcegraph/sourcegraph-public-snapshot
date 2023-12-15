@@ -6,8 +6,9 @@ import type { Progress } from '@sourcegraph/shared/src/search/stream'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
 
-import { CountContent, getProgressText } from './StreamingProgressCount'
+import { CountContent } from './StreamingProgressCount'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
+import { getProgressText } from './utils'
 
 import styles from './StreamingProgressSkippedButton.module.scss'
 

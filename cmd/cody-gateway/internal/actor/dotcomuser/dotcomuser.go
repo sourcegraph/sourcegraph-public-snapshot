@@ -81,6 +81,8 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 			log.Error(err))
 	} else {
 		s.cache.Set(token, data)
+		// Also save to the key based on the actor ID.
+		s.cache.Set(act.ID, data)
 	}
 
 	if checkErr != nil {
@@ -144,6 +146,22 @@ func (s *Source) get(ctx context.Context, token string, bypassCache bool) (*acto
 	}
 
 	act.Source = s
+
+	// Try to get data again from the actorID-based key
+	dataWithLatestConfig, hit := s.cache.Get(act.ID)
+	if hit {
+		var actWithLatestConfig *actor.Actor
+		if err := json.Unmarshal(dataWithLatestConfig, &actWithLatestConfig); err != nil || actWithLatestConfig == nil {
+			trace.Logger(ctx, s.log).Error("failed to unmarshal actor", log.Error(err))
+
+			// Delete the corrupted record.
+			s.cache.Delete(act.ID)
+		} else {
+			for k, v := range actWithLatestConfig.RateLimits {
+				act.RateLimits[k] = v
+			}
+		}
+	}
 	return act, nil
 }
 
