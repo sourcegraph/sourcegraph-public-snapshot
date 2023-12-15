@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/urfave/cli/v2"
@@ -270,7 +271,7 @@ Supports completions on services and environments.`,
 							return errors.Wrap(err, "get TFC OAuth client ID")
 						}
 
-						tfcClient, err := terraformcloud.NewClient(tfcAccessToken, tfcOAuthClient,
+						tfcWorkspaces, err := terraformcloud.NewWorkspacesClient(tfcAccessToken, tfcOAuthClient,
 							terraformcloud.WorkspaceConfig{
 								RunMode: terraformcloud.WorkspaceRunMode(c.String("workspace-run-mode")),
 							})
@@ -278,13 +279,24 @@ Supports completions on services and environments.`,
 							return errors.Wrap(err, "init Terraform Cloud client")
 						}
 
+						getTFCRunsClient := sync.OnceValues(func() (*terraformcloud.RunsClient, error) {
+							tfcTeamSecret, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+								Name:    googlesecretsmanager.SecretTFCMSPTeamToken,
+								Project: googlesecretsmanager.ProjectID,
+							})
+							if err != nil {
+								return nil, errors.Wrap(err, "get TFC OAuth client ID")
+							}
+							return terraformcloud.NewRunsClient(tfcTeamSecret)
+						})
+
 						if targetEnv := c.Args().Get(1); targetEnv != "" {
 							env := service.GetEnvironment(targetEnv)
 							if env == nil {
 								return errors.Newf("environment %q not found in service spec", targetEnv)
 							}
 
-							if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, *env, *service.Monitoring); err != nil {
+							if err := syncEnvironmentWorkspaces(c, tfcWorkspaces, getTFCRunsClient, service.Service, service.Build, *env, *service.Monitoring); err != nil {
 								return errors.Wrapf(err, "sync env %q", env.ID)
 							}
 						} else {
@@ -292,7 +304,7 @@ Supports completions on services and environments.`,
 								return errors.New("second argument environment ID is required without the '-all' flag")
 							}
 							for _, env := range service.Environments {
-								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, env, *service.Monitoring); err != nil {
+								if err := syncEnvironmentWorkspaces(c, tfcWorkspaces, getTFCRunsClient, service.Service, service.Build, env, *service.Monitoring); err != nil {
 									return errors.Wrapf(err, "sync env %q", env.ID)
 								}
 							}
@@ -333,7 +345,17 @@ Supports completions on services and environments.`,
 	}
 }
 
-func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, build spec.BuildSpec, env spec.EnvironmentSpec, monitoring spec.MonitoringSpec) error {
+func syncEnvironmentWorkspaces(
+	c *cli.Context,
+	tfcWorkspaces *terraformcloud.WorkspacesClient,
+	// getTFCRunsClient is a sync.OnceValues that only creates a runs client on
+	// demand.
+	getTFCRunsClient func() (*terraformcloud.RunsClient, error),
+	service spec.ServiceSpec,
+	build spec.BuildSpec,
+	env spec.EnvironmentSpec,
+	monitoring spec.MonitoringSpec,
+) error {
 	if os.TempDir() == "" {
 		return errors.New("no temp dir available")
 	}
@@ -370,7 +392,7 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 
 		pending := std.Out.Pending(output.Styledf(output.StylePending,
 			"[%s] Deleting Terraform Cloud workspaces for environment %q", service.ID, env.ID))
-		if errs := tfc.DeleteWorkspaces(c.Context, service, env, cdktf.Stacks()); len(errs) > 0 {
+		if errs := tfcWorkspaces.DeleteWorkspaces(c.Context, service, env, cdktf.Stacks()); len(errs) > 0 {
 			for _, err := range errs {
 				std.Out.WriteWarningf(err.Error())
 			}
@@ -384,7 +406,7 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 
 	pending := std.Out.Pending(output.Styledf(output.StylePending,
 		"[%s] Synchronizing Terraform Cloud workspaces for environment %q", service.ID, env.ID))
-	workspaces, err := tfc.SyncWorkspaces(c.Context, service, env, cdktf.Stacks())
+	workspaces, err := tfcWorkspaces.SyncWorkspaces(c.Context, service, env, cdktf.Stacks())
 	if err != nil {
 		return errors.Wrap(err, "sync Terraform Cloud workspace")
 	}
@@ -396,7 +418,11 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 		summary.WriteString(fmt.Sprintf("- %s: %s", ws.Name(), ws.URL()))
 		if ws.Created {
 			if ws.RunMode == terraformcloud.WorkspaceRunModeVCS && c.Bool("apply-created") {
-				if err := tfc.ApplyWorkspace(c.Context, ws, "sg msp: apply newly created workspace"); err != nil {
+				runs, err := getTFCRunsClient()
+				if err == nil {
+					err = runs.ApplyWorkspace(c.Context, ws, "sg msp: apply newly created workspace")
+				}
+				if err != nil {
 					// not fatal, just add error to summary
 					summary.WriteString(fmt.Sprintf(" (created, failed to run: %s)",
 						err.Error()))
@@ -408,7 +434,11 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 			}
 		} else {
 			if ws.RunMode == terraformcloud.WorkspaceRunModeVCS && c.Bool("apply-updated") {
-				if err := tfc.ApplyWorkspace(c.Context, ws, "sg msp: apply updated workspace"); err != nil {
+				runs, err := getTFCRunsClient()
+				if err == nil {
+					err = runs.ApplyWorkspace(c.Context, ws, "sg msp: apply updated workspace")
+				}
+				if err != nil {
 					// not fatal, just add error to summary
 					summary.WriteString(fmt.Sprintf(" (updated, failed to run: %s)",
 						err.Error()))

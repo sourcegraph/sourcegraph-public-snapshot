@@ -5,8 +5,15 @@ package googlesecretsmanager
 const ProjectID = "sourcegraph-secrets"
 
 const (
-	SecretTFCAccessToken   = "TFC_ORGANIZATION_TOKEN"
+	/// SecretTFCAccessToken is used for managing TFC workspaces. It cannot
+	// be used for creating runs.
+	SecretTFCAccessToken = "TFC_ORGANIZATION_TOKEN"
+	// SecretTFCOAuthClientID is used for creating VCS-mode workspaces that sync
+	// with GitHub.
 	SecretTFCOAuthClientID = "TFC_OAUTH_CLIENT_ID"
+	// SecretTFCMSPTeamToken is used for creating runs on MSP TFC workspaces.
+	// It cannot be used for creating workspaces.
+	SecretTFCMSPTeamToken = "TFC_MSP_TEAM_TOKEN"
 
 	SecretCloudflareAPIToken = "CLOUDFLARE_API_TOKEN"
 

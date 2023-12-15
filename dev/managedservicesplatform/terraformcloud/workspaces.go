@@ -36,7 +36,7 @@ const (
 	VCSRepo = "sourcegraph/managed-services"
 )
 
-type Client struct {
+type WorkspacesClient struct {
 	client           *tfe.Client
 	org              string
 	vcsOAuthClientID string
@@ -55,14 +55,14 @@ type WorkspaceConfig struct {
 	RunMode WorkspaceRunMode
 }
 
-func NewClient(accessToken, vcsOAuthClientID string, cfg WorkspaceConfig) (*Client, error) {
+func NewWorkspacesClient(accessToken, vcsOAuthClientID string, cfg WorkspaceConfig) (*WorkspacesClient, error) {
 	c, err := tfe.NewClient(&tfe.Config{
 		Token: accessToken,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &Client{
+	return &WorkspacesClient{
 		org:              Organization,
 		client:           c,
 		vcsOAuthClientID: vcsOAuthClientID,
@@ -143,7 +143,7 @@ func (w Workspace) URL() string {
 // this directly instead of using the provider to avoid the chicken-and-egg
 // problem of, if Terraform Cloud workspaces provision our resourcs, who provisions
 // our Terraform Cloud workspace?
-func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env spec.EnvironmentSpec, stacks []string) ([]Workspace, error) {
+func (c *WorkspacesClient) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env spec.EnvironmentSpec, stacks []string) ([]Workspace, error) {
 	// Load preconfigured OAuth to GitHub if we are using VCS mode
 	var oauthClient *tfe.OAuthClient
 	if c.workspaceConfig.RunMode == WorkspaceRunModeVCS {
@@ -307,7 +307,7 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 	return workspaces, nil
 }
 
-func (c *Client) DeleteWorkspaces(ctx context.Context, svc spec.ServiceSpec, env spec.EnvironmentSpec, stacks []string) []error {
+func (c *WorkspacesClient) DeleteWorkspaces(ctx context.Context, svc spec.ServiceSpec, env spec.EnvironmentSpec, stacks []string) []error {
 	var errs []error
 	for _, s := range stacks {
 		workspaceName := WorkspaceName(svc, env, s)
@@ -335,19 +335,7 @@ func (c *Client) DeleteWorkspaces(ctx context.Context, svc spec.ServiceSpec, env
 	return errs
 }
 
-func (c *Client) ApplyWorkspace(ctx context.Context, ws Workspace, message string) error {
-	_, err := c.client.Runs.Create(ctx, tfe.RunCreateOptions{
-		Workspace: ws.workspace,
-		AutoApply: pointers.Ptr(true),
-		Message:   &message,
-	})
-	if err != nil {
-		return errors.Wrapf(err, "Runs.Create")
-	}
-	return nil
-}
-
-func (c *Client) ensureAccessForTeam(ctx context.Context, project *tfe.Project, currentTeams *tfe.TeamProjectAccessList, teamID string) error {
+func (c *WorkspacesClient) ensureAccessForTeam(ctx context.Context, project *tfe.Project, currentTeams *tfe.TeamProjectAccessList, teamID string) error {
 	var existingAccessID string
 	for _, a := range currentTeams.Items {
 		if a.Team.ID == teamID {
