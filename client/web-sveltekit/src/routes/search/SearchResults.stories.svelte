@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Meta, Story, Template } from '@storybook/addon-svelte-csf'
-    import SearchResults, { setSearchResultsContext } from './SearchResults.svelte'
+    import SearchResults from './SearchResults.svelte'
     import {
         createCommitMatch,
         createContentMatch,
@@ -24,6 +24,7 @@
     import FilePathSearchResult from './FilePathSearchResult.svelte'
     import SymbolSearchResult from './SymbolSearchResult.svelte'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
+    import { setSearchResultsContext } from './searchResultsContext'
 
     setContext<SourcegraphContext>(KEY, {
         user: readable(null),
