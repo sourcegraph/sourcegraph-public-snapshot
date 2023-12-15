@@ -24,10 +24,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/cmd/tracking-issue",
     visibility = ["//visibility:private"],
     deps = [
-        "//vendor/github.com/grafana/regexp",
-        "//vendor/github.com/machinebox/graphql",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/golang.org/x/oauth2",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_machinebox_graphql//:graphql",
+        "@org_golang_x_oauth2//:oauth2",
     ],
 )
 
@@ -45,8 +45,8 @@ go_test(
     embed = [":tracking-issue_lib"],
     deps = [
         "//internal/testutil",
-        "//vendor/github.com/machinebox/graphql",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/golang.org/x/oauth2",
+        "//lib/errors",
+        "@com_github_machinebox_graphql//:graphql",
+        "@org_golang_x_oauth2//:oauth2",
     ],
 )

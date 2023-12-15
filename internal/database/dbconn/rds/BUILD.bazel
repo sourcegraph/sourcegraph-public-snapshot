@@ -7,11 +7,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/database/dbconn/rds",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//vendor/github.com/aws/aws-sdk-go/aws/session",
-        "//vendor/github.com/aws/aws-sdk-go/service/rds/rdsutils",
-        "//vendor/github.com/jackc/pgx/v4:pgx",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_aws_aws_sdk_go//aws/session",
+        "@com_github_aws_aws_sdk_go//service/rds/rdsutils",
+        "@com_github_jackc_pgx_v4//:pgx",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -21,7 +21,7 @@ go_test(
     srcs = ["rds_test.go"],
     embed = [":rds"],
     deps = [
-        "//vendor/github.com/hexops/autogold/v2:autogold",
-        "//vendor/github.com/stretchr/testify/require",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//require",
     ],
 )

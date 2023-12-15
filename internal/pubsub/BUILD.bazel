@@ -8,9 +8,9 @@ go_library(
     deps = [
         "//internal/env",
         "//internal/trace",
-        "//vendor/cloud.google.com/go/pubsub",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/google.golang.org/api/option",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@com_google_cloud_go_pubsub//:pubsub",
+        "@org_golang_google_api//option",
     ],
 )

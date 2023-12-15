@@ -6,7 +6,7 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/perforce/anonymiser",
     visibility = ["//visibility:private"],
-    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
+    deps = ["//lib/errors"],
 )
 
 go_binary(
@@ -21,5 +21,5 @@ go_test(
     srcs = ["main_test.go"],
     data = glob(["testdata/**"]),
     embed = [":anonymiser_lib"],
-    deps = ["//vendor/github.com/hexops/autogold/v2:autogold"],
+    deps = ["@com_github_hexops_autogold_v2//:autogold"],
 )

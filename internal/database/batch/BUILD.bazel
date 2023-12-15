@@ -16,9 +16,9 @@ go_library(
         "//internal/honey",
         "//internal/metrics",
         "//internal/observation",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/go.opentelemetry.io/otel/attribute",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -34,6 +34,6 @@ go_test(
     deps = [
         "//internal/database/dbtest",
         "//internal/database/dbutil",
-        "//vendor/github.com/google/go-cmp/cmp",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

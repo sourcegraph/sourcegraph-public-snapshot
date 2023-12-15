@@ -11,19 +11,19 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/sysreq",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ] + select({
         "@io_bazel_rules_go//go/platform:android": [
-            "//vendor/golang.org/x/sys/unix",
+            "@org_golang_x_sys//unix",
         ],
         "@io_bazel_rules_go//go/platform:darwin": [
-            "//vendor/golang.org/x/sys/unix",
+            "@org_golang_x_sys//unix",
         ],
         "@io_bazel_rules_go//go/platform:ios": [
-            "//vendor/golang.org/x/sys/unix",
+            "@org_golang_x_sys//unix",
         ],
         "@io_bazel_rules_go//go/platform:linux": [
-            "//vendor/golang.org/x/sys/unix",
+            "@org_golang_x_sys//unix",
         ],
         "//conditions:default": [],
     }),
@@ -34,5 +34,5 @@ go_test(
     timeout = "short",
     srcs = ["sysreq_test.go"],
     embed = [":sysreq"],
-    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
+    deps = ["//lib/errors"],
 )

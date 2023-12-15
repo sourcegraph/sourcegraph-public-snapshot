@@ -22,6 +22,6 @@ go_test(
         "//cmd/frontend/internal/batches/resolvers/apitest",
         "//internal/actor",
         "//internal/licensing",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ],
 )

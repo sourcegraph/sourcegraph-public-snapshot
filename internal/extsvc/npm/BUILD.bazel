@@ -16,9 +16,9 @@ go_library(
         "//internal/observation",
         "//internal/ratelimit",
         "//internal/trace",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/go.opentelemetry.io/otel/attribute",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -34,9 +34,9 @@ go_test(
         "//internal/httptestutil",
         "//internal/ratelimit",
         "//internal/unpack",
-        "//vendor/github.com/inconshreveable/log15",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/stretchr/testify/require",
-        "//vendor/golang.org/x/time/rate",
+        "//lib/errors",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_x_time//rate",
     ],
 )

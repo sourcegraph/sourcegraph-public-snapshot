@@ -7,9 +7,9 @@ go_library(
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/internal/resourceid",
-        "//vendor/github.com/aws/constructs-go/constructs/v10:constructs",
-        "//vendor/github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember",
-        "//vendor/github.com/sourcegraph/managed-services-platform-cdktf/gen/google/serviceaccount",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
+        "//lib/pointers",
+        "@com_github_aws_constructs_go_constructs_v10//:constructs",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//projectiammember",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//serviceaccount",
     ],
 )

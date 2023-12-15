@@ -21,11 +21,11 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//internal/timeutil",
-        "//vendor/github.com/keegancsmith/sqlf",
-        "//vendor/github.com/lib/pq",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/go.opentelemetry.io/otel/attribute",
+        "//lib/errors",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_lib_pq//:pq",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -50,8 +50,8 @@ go_test(
         "//internal/database/dbtest",
         "//internal/observation",
         "//schema",
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/keegancsmith/sqlf",
-        "//vendor/github.com/sourcegraph/log/logtest",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )

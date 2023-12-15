@@ -29,8 +29,8 @@ go_library(
         "//internal/workerutil",
         "//internal/workerutil/dbworker",
         "//internal/workerutil/dbworker/store",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -54,9 +54,9 @@ go_test(
         "//internal/search/exhaustive/store",
         "//internal/search/exhaustive/types",
         "//internal/uploadstore/mocks",
+        "//lib/iterator",
         "//schema",
-        "//vendor/github.com/keegancsmith/sqlf",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/iterator",
-        "//vendor/github.com/stretchr/testify/require",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_stretchr_testify//require",
     ],
 )

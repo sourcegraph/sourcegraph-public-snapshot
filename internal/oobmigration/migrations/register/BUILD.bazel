@@ -22,7 +22,7 @@ go_library(
         "//internal/oobmigration/migrations/insights",
         "//internal/oobmigration/migrations/insights/backfillv2",
         "//internal/oobmigration/migrations/insights/recording_times",
-        "//vendor/github.com/derision-test/glock",
-        "//vendor/github.com/sourcegraph/log",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

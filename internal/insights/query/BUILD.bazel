@@ -21,7 +21,7 @@ go_library(
         "//internal/insights/query/streaming",
         "//internal/insights/timeseries",
         "//internal/types",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

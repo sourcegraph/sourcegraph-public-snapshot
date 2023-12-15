@@ -15,9 +15,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/trace",
-        "//vendor/github.com/google/uuid",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/golang.org/x/crypto/ssh",
+        "//lib/errors",
+        "@com_github_google_uuid//:uuid",
+        "@org_golang_x_crypto//ssh",
     ],
 )
 

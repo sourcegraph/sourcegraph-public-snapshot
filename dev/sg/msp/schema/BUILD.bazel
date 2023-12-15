@@ -8,7 +8,7 @@ go_library(
     deps = [
         "//dev/managedservicesplatform/spec",
         "//dev/sg/root",
-        "//vendor/github.com/invopop/jsonschema",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_invopop_jsonschema//:jsonschema",
     ],
 )

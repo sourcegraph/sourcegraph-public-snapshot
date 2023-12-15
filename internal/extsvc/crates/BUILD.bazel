@@ -8,6 +8,6 @@ go_library(
     deps = [
         "//internal/httpcli",
         "//internal/ratelimit",
-        "//vendor/github.com/sourcegraph/log",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

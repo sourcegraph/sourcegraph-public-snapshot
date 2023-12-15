@@ -15,7 +15,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/search/streaming/api",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ],
 )
 
@@ -29,7 +29,7 @@ go_test(
     embed = [":http"],
     deps = [
         "//internal/search/streaming/api",
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/stretchr/testify/require",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//require",
     ],
 )

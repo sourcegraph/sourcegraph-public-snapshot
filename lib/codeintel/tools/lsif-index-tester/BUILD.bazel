@@ -12,12 +12,12 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-index-tester",
     visibility = ["//visibility:private"],
     deps = [
+        "//lib/codeintel/lsif/conversion",
         "//lib/codeintel/lsif/validation",
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/precise",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/codeintel/precise",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -32,5 +32,5 @@ go_test(
     timeout = "short",
     srcs = ["range_differ_test.go"],
     embed = [":lsif-index-tester_lib"],
-    deps = ["//vendor/github.com/google/go-cmp/cmp"],
+    deps = ["@com_github_google_go_cmp//cmp"],
 )

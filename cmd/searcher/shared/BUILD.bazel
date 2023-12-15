@@ -27,9 +27,9 @@ go_library(
         "//internal/searcher/v1:searcher",
         "//internal/service",
         "//internal/trace",
-        "//vendor/github.com/keegancsmith/tmpfriend",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/golang.org/x/sync/errgroup",
+        "//lib/errors",
+        "@com_github_keegancsmith_tmpfriend//:tmpfriend",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_sync//errgroup",
     ],
 )

@@ -18,9 +18,9 @@ go_library(
         "//internal/licensing",
         "//internal/trace",
         "//internal/types",
+        "//lib/errors",
         "//schema",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/go.opentelemetry.io/otel/attribute",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -41,7 +41,7 @@ go_test(
         "//internal/extsvc/auth",
         "//internal/extsvc/bitbucketserver",
         "//internal/types",
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/inconshreveable/log15",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_inconshreveable_log15//:log15",
     ],
 )

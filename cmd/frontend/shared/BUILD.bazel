@@ -52,6 +52,6 @@ go_library(
         "//internal/ratelimit",
         "//internal/service",
         "//schema",
-        "//vendor/github.com/sourcegraph/log",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

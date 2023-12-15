@@ -17,9 +17,9 @@ go_library(
         "//internal/gqlutil",
         "//internal/search/searchcontexts",
         "//internal/types",
-        "//vendor/github.com/graph-gophers/graphql-go",
-        "//vendor/github.com/graph-gophers/graphql-go/relay",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
     ],
 )
 
@@ -36,8 +36,8 @@ go_test(
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/types",
-        "//vendor/github.com/derision-test/go-mockgen/testutil/require",
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/graph-gophers/graphql-go",
+        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
     ],
 )

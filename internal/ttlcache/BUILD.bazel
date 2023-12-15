@@ -6,7 +6,7 @@ go_library(
     srcs = ["cache.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/ttlcache",
     visibility = ["//:__subpackages__"],
-    deps = ["//vendor/github.com/sourcegraph/log"],
+    deps = ["@com_github_sourcegraph_log//:log"],
 )
 
 go_test(
@@ -14,5 +14,5 @@ go_test(
     timeout = "short",
     srcs = ["cache_test.go"],
     embed = [":ttlcache"],
-    deps = ["//vendor/github.com/google/go-cmp/cmp"],
+    deps = ["@com_github_google_go_cmp//cmp"],
 )

@@ -8,11 +8,11 @@ go_library(
     deps = [
         "//dev/managedservicesplatform/internal/resource/cloudsql",
         "//dev/managedservicesplatform/internal/resourceid",
-        "//vendor/github.com/aws/constructs-go/constructs/v10:constructs",
-        "//vendor/github.com/aws/jsii-runtime-go",
-        "//vendor/github.com/hashicorp/terraform-cdk-go/cdktf",
-        "//vendor/github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/grantrole",
-        "//vendor/github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/provider",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
+        "//lib/pointers",
+        "@com_github_aws_constructs_go_constructs_v10//:constructs",
+        "@com_github_aws_jsii_runtime_go//:jsii-runtime-go",
+        "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_postgresql//grantrole",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_postgresql//provider",
     ],
 )

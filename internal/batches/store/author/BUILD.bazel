@@ -9,8 +9,8 @@ go_library(
     deps = [
         "//internal/database",
         "//internal/errcode",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/batches",
+        "//lib/errors",
     ],
 )
 
@@ -26,7 +26,7 @@ go_test(
     deps = [
         "//internal/database",
         "//internal/database/dbtest",
-        "//vendor/github.com/sourcegraph/log/logtest",
-        "//vendor/github.com/stretchr/testify/assert",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
     ],
 )

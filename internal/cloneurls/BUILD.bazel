@@ -14,9 +14,9 @@ go_library(
         "//internal/extsvc",
         "//internal/trace",
         "//internal/types",
+        "//lib/errors",
         "//schema",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/go.opentelemetry.io/otel/attribute",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -30,6 +30,6 @@ go_test(
         "//internal/database/dbmocks",
         "//internal/extsvc",
         "//internal/types",
-        "//vendor/github.com/google/go-cmp/cmp",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

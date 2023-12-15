@@ -11,9 +11,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/redispool",
-        "//vendor/github.com/gomodule/redigo/redis",
-        "//vendor/github.com/inconshreveable/log15",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_inconshreveable_log15//:log15",
     ],
 )
 
@@ -31,7 +31,7 @@ go_test(
     ],
     deps = [
         "//internal/redispool",
-        "//vendor/github.com/stretchr/testify/assert",
-        "//vendor/github.com/stretchr/testify/require",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

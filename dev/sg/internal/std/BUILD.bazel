@@ -5,5 +5,5 @@ go_library(
     srcs = ["output.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/std",
     visibility = ["//dev/sg:__subpackages__"],
-    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/output"],
+    deps = ["//lib/output"],
 )

@@ -18,11 +18,11 @@ go_library(
         "//internal/repoupdater/protocol",
         "//internal/repoupdater/v1:repoupdater",
         "//internal/trace",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/go.opentelemetry.io/otel/attribute",
-        "//vendor/google.golang.org/grpc/codes",
-        "//vendor/google.golang.org/grpc/status",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
     ],
 )
 

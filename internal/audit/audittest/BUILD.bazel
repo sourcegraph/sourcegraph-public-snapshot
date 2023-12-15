@@ -6,7 +6,7 @@ go_library(
     srcs = ["audittest.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/audit/audittest",
     visibility = ["//:__subpackages__"],
-    deps = ["//vendor/github.com/sourcegraph/log/logtest"],
+    deps = ["@com_github_sourcegraph_log//logtest"],
 )
 
 go_test(
@@ -16,7 +16,7 @@ go_test(
     deps = [
         "//internal/actor",
         "//internal/audit",
-        "//vendor/github.com/sourcegraph/log/logtest",
-        "//vendor/github.com/stretchr/testify/assert",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
     ],
 )

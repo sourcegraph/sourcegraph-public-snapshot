@@ -22,8 +22,8 @@ go_library(
         "//internal/env",
         "//internal/lazyregexp",
         "//internal/sysreq",
-        "//vendor/github.com/gomodule/redigo/redis",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_gomodule_redigo//redis",
     ],
 )
 
@@ -43,9 +43,9 @@ go_test(
     deps = [
         "//internal/database",
         "//internal/database/dbtest",
-        "//vendor/github.com/gomodule/redigo/redis",
-        "//vendor/github.com/sourcegraph/log/logtest",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/stretchr/testify/assert",
+        "//lib/errors",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
     ],
 )

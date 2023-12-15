@@ -13,6 +13,6 @@ go_library(
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/registry/client",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ],
 )

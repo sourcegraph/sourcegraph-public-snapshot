@@ -8,6 +8,6 @@ go_library(
     deps = [
         "//internal/conf/reposource",
         "//internal/extsvc/npm",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ],
 )

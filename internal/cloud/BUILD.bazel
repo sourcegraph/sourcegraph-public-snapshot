@@ -8,8 +8,8 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/env",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/golang.org/x/crypto/ssh",
+        "//lib/errors",
+        "@org_golang_x_crypto//ssh",
     ],
 )
 
@@ -19,7 +19,7 @@ go_test(
     srcs = ["site_config_test.go"],
     embed = [":cloud"],
     deps = [
-        "//vendor/github.com/stretchr/testify/assert",
-        "//vendor/github.com/stretchr/testify/require",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

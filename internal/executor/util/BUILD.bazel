@@ -18,5 +18,5 @@ go_test(
         "multiqueue_test.go",
     ],
     embed = [":util"],
-    deps = ["//vendor/github.com/stretchr/testify/assert"],
+    deps = ["@com_github_stretchr_testify//assert"],
 )

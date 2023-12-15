@@ -5,7 +5,7 @@ go_library(
     srcs = ["yamldata.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/rbac/gen",
     visibility = ["//visibility:private"],
-    deps = ["//vendor/gopkg.in/yaml.v3:yaml_v3"],
+    deps = ["@in_gopkg_yaml_v3//:yaml_v3"],
 )
 
 go_binary(

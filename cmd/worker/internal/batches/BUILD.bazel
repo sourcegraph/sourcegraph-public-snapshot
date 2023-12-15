@@ -32,7 +32,7 @@ go_library(
         "//internal/memo",
         "//internal/observation",
         "//internal/workerutil/dbworker/store",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

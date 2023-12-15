@@ -11,8 +11,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/batches/overridable",
     visibility = ["//visibility:public"],
     deps = [
-        "//vendor/github.com/gobwas/glob",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_gobwas_glob//:glob",
     ],
 )
 
@@ -26,7 +26,7 @@ go_test(
     ],
     embed = [":overridable"],
     deps = [
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/gopkg.in/yaml.v2:yaml_v2",
+        "@com_github_google_go_cmp//cmp",
+        "@in_gopkg_yaml_v2//:yaml_v2",
     ],
 )

@@ -11,9 +11,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/inventory",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//vendor/github.com/go-enry/go-enry/v2:go-enry",
-        "//vendor/github.com/go-enry/go-enry/v2/data",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_go_enry_go_enry_v2//:go-enry",
+        "@com_github_go_enry_go_enry_v2//data",
     ],
 )
 
@@ -27,8 +27,8 @@ go_test(
     embed = [":inventory"],
     deps = [
         "//internal/fileutil",
-        "//vendor/github.com/go-enry/go-enry/v2:go-enry",
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_go_enry_go_enry_v2//:go-enry",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

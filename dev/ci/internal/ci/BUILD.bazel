@@ -15,6 +15,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/ci/internal/ci",
     visibility = ["//dev/ci:__subpackages__"],
     deps = [
+        "//dev/ci/images",
         "//dev/ci/internal/buildkite",
         "//dev/ci/internal/ci/changed",
         "//dev/ci/internal/ci/operations",
@@ -22,12 +23,11 @@ go_library(
         "//dev/sg/root",
         "//internal/lazyregexp",
         "//internal/oobmigration",
-        "//vendor/github.com/Masterminds/semver",
-        "//vendor/github.com/grafana/regexp",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/dev/ci/images",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/gopkg.in/yaml.v2:yaml_v2",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_masterminds_semver//:semver",
+        "@com_github_sourcegraph_log//:log",
+        "@in_gopkg_yaml_v2//:yaml_v2",
     ],
 )
 

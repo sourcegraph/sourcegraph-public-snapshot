@@ -11,8 +11,8 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//lib/codeintel/lsif/validation",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/output",
+        "//lib/errors",
+        "//lib/output",
     ],
 )
 

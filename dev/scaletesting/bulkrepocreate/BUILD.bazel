@@ -10,12 +10,12 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//dev/scaletesting/internal/store",
-        "//vendor/github.com/google/go-github/v55/github",
-        "//vendor/github.com/mattn/go-sqlite3",
-        "//vendor/github.com/sourcegraph/conc/pool",
-        "//vendor/github.com/sourcegraph/run",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/output",
-        "//vendor/golang.org/x/oauth2",
+        "//lib/output",
+        "@com_github_google_go_github_v55//github",
+        "@com_github_mattn_go_sqlite3//:go-sqlite3",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_run//:run",
+        "@org_golang_x_oauth2//:oauth2",
     ],
 )
 

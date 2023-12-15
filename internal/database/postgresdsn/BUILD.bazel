@@ -9,7 +9,7 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/database/postgresdsn",
     visibility = ["//:__subpackages__"],
-    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
+    deps = ["//lib/errors"],
 )
 
 go_test(

@@ -18,8 +18,8 @@ go_library(
         "//internal/logging",
         "//internal/sanitycheck",
         "//internal/version",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/urfave/cli/v2:cli",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_urfave_cli_v2//:cli",
     ],
 )
 

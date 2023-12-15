@@ -11,6 +11,6 @@ go_library(
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//internal/notebooks",
-        "//vendor/github.com/graph-gophers/graphql-go",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
     ],
 )

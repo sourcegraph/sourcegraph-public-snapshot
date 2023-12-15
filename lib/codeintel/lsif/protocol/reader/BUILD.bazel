@@ -13,8 +13,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader",
     visibility = ["//visibility:public"],
     deps = [
-        "//vendor/github.com/json-iterator/go",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol",
+        "//lib/codeintel/lsif/protocol",
+        "@com_github_json_iterator_go//:go",
     ],
 )
 
@@ -28,7 +28,7 @@ go_test(
     ],
     embed = [":reader"],
     deps = [
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol",
+        "//lib/codeintel/lsif/protocol",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

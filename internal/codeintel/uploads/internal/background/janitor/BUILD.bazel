@@ -22,7 +22,7 @@ go_library(
         "//internal/gitserver/gitdomain",
         "//internal/goroutine",
         "//internal/observation",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ],
 )
 

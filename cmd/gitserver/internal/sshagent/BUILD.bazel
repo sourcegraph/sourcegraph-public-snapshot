@@ -7,10 +7,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/sshagent",
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/golang.org/x/crypto/ssh",
-        "//vendor/golang.org/x/crypto/ssh/agent",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_crypto//ssh",
+        "@org_golang_x_crypto//ssh/agent",
     ],
 )
 
@@ -20,9 +20,9 @@ go_test(
     embed = [":sshagent"],
     deps = [
         "//internal/encryption",
-        "//vendor/github.com/sourcegraph/log/logtest",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/golang.org/x/crypto/ssh",
-        "//vendor/golang.org/x/crypto/ssh/agent",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//logtest",
+        "@org_golang_x_crypto//ssh",
+        "@org_golang_x_crypto//ssh/agent",
     ],
 )

@@ -39,7 +39,7 @@ go_library(
         "//internal/search",
         "//internal/search/result",
         "//internal/types",
-        "//vendor/google.golang.org/protobuf/types/known/durationpb",
+        "@org_golang_google_protobuf//types/known/durationpb",
     ],
 )
 
@@ -59,8 +59,8 @@ go_test(
         "//internal/search",
         "//internal/search/result",
         "//internal/types",
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/google/go-cmp/cmp/cmpopts",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
     ],
 )
 

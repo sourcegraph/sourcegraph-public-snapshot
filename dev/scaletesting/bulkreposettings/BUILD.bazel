@@ -7,13 +7,13 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//dev/scaletesting/internal/store",
-        "//vendor/github.com/google/go-github/v55/github",
-        "//vendor/github.com/sourcegraph/conc/pool",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/output",
-        "//vendor/github.com/urfave/cli/v2:cli",
-        "//vendor/golang.org/x/oauth2",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_google_go_github_v55//github",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_urfave_cli_v2//:cli",
+        "@org_golang_x_oauth2//:oauth2",
     ],
 )
 

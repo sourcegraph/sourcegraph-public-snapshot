@@ -35,12 +35,12 @@ go_library(
         "//internal/gitserver",
         "//internal/metrics",
         "//internal/observation",
-        "//vendor/github.com/graph-gophers/graphql-go",
-        "//vendor/github.com/sourcegraph/go-lsp",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
-        "//vendor/go.opentelemetry.io/otel/attribute",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_sourcegraph_go_lsp//:go-lsp",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -64,6 +64,6 @@ go_test(
         "//internal/gitserver/gitdomain",
         "//internal/observation",
         "//internal/types",
-        "//vendor/github.com/derision-test/go-mockgen/testutil/require",
+        "@com_github_derision_test_go_mockgen//testutil/require",
     ],
 )

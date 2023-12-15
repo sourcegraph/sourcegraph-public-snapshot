@@ -13,7 +13,7 @@ go_library(
         "//internal/encryption/cache",
         "//internal/encryption/cloudkms",
         "//internal/encryption/mounted",
+        "//lib/errors",
         "//schema",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

@@ -14,5 +14,5 @@ go_test(
     timeout = "short",
     srcs = ["list_test.go"],
     embed = [":ignite"],
-    deps = ["//vendor/github.com/google/go-cmp/cmp"],
+    deps = ["@com_github_google_go_cmp//cmp"],
 )

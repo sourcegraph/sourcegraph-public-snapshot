@@ -14,7 +14,7 @@ go_library(
     visibility = ["//cmd/server:__subpackages__"],
     deps = [
         "//internal/lazyregexp",
-        "//vendor/github.com/daviddengcn/go-colortext",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_daviddengcn_go_colortext//:go-colortext",
     ],
 )

@@ -8,8 +8,8 @@ go_library(
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/bk",
-        "//vendor/github.com/grafana/regexp",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
     ],
 )
 
@@ -21,6 +21,6 @@ go_test(
     deps = [
         "//dev/sg/internal/bk",
         "//internal/randstring",
-        "//vendor/github.com/google/go-cmp/cmp",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

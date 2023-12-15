@@ -10,10 +10,10 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/redispool",
-        "//vendor/github.com/gomodule/redigo/redis",
-        "//vendor/github.com/prometheus/client_golang/prometheus",
-        "//vendor/github.com/prometheus/client_model/go",
-        "//vendor/github.com/prometheus/common/expfmt",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_model//go",
+        "@com_github_prometheus_common//expfmt",
     ],
 )

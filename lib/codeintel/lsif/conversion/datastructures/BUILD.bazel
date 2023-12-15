@@ -11,7 +11,7 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures",
     visibility = ["//visibility:public"],
-    deps = ["//vendor/github.com/google/go-cmp/cmp"],
+    deps = ["@com_github_google_go_cmp//cmp"],
 )
 
 go_test(
@@ -24,7 +24,7 @@ go_test(
     ],
     embed = [":datastructures"],
     deps = [
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/stretchr/testify/require",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//require",
     ],
 )

@@ -17,9 +17,9 @@ go_library(
         "//internal/search",
         "//internal/search/streaming",
         "//internal/trace",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/zoekt",
-        "//vendor/go.opentelemetry.io/otel/attribute",
-        "//vendor/go.uber.org/atomic",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_zoekt//:zoekt",
+        "@io_opentelemetry_go_otel//attribute",
+        "@org_uber_go_atomic//:atomic",
     ],
 )

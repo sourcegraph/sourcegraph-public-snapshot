@@ -10,10 +10,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/batches/execution/cache",
     visibility = ["//visibility:public"],
     deps = [
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches/execution",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches/template",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/batches",
+        "//lib/batches/execution",
+        "//lib/batches/template",
+        "//lib/errors",
     ],
 )
 
@@ -23,10 +23,10 @@ go_test(
     srcs = ["cache_test.go"],
     embed = [":cache"],
     deps = [
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches/env",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/stretchr/testify/assert",
-        "//vendor/github.com/stretchr/testify/require",
+        "//lib/batches",
+        "//lib/batches/env",
+        "//lib/errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

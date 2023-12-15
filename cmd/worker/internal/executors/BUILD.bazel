@@ -22,11 +22,11 @@ go_library(
         "//internal/metrics/store",
         "//internal/observation",
         "//internal/rcache",
-        "//vendor/github.com/gomodule/redigo/redis",
-        "//vendor/github.com/prometheus/client_golang/prometheus",
-        "//vendor/github.com/prometheus/client_golang/prometheus/promhttp",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promhttp",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 

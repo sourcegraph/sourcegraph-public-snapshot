@@ -18,7 +18,7 @@ go_library(
         "//internal/env",
         "//internal/goroutine",
         "//internal/observation",
-        "//vendor/github.com/inconshreveable/log15",
+        "@com_github_inconshreveable_log15//:log15",
     ],
 )
 
@@ -29,8 +29,8 @@ go_test(
     embed = [":webhooks"],
     deps = [
         "//internal/database/dbmocks",
-        "//vendor/github.com/derision-test/go-mockgen/testutil/assert",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/stretchr/testify/assert",
+        "//lib/errors",
+        "@com_github_derision_test_go_mockgen//testutil/assert",
+        "@com_github_stretchr_testify//assert",
     ],
 )

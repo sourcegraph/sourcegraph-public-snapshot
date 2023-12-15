@@ -5,7 +5,7 @@ go_test(
     timeout = "short",
     srcs = ["integration_test.go"],
     deps = [
-        "//vendor/github.com/sourcegraph/run",
-        "//vendor/github.com/stretchr/testify/assert",
+        "@com_github_sourcegraph_run//:run",
+        "@com_github_stretchr_testify//assert",
     ],
 )

@@ -62,6 +62,6 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/telemetry-gateway/service",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime",
+        "//lib/managedservicesplatform/runtime",
     ],
 )

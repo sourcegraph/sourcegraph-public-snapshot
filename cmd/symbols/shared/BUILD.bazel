@@ -40,9 +40,9 @@ go_library(
         "//internal/search/result",
         "//internal/service",
         "//internal/trace",
-        "//vendor/github.com/sourcegraph/go-ctags",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/golang.org/x/sync/semaphore",
+        "//lib/errors",
+        "@com_github_sourcegraph_go_ctags//:go-ctags",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_sync//semaphore",
     ],
 )

@@ -23,10 +23,10 @@ go_library(
         "//internal/observation",
         "//internal/rcache",
         "//internal/types",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/tomnomnom/linkheader",
-        "//vendor/go.opentelemetry.io/otel/attribute",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_tomnomnom_linkheader//:linkheader",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -41,7 +41,7 @@ go_test(
     embed = [":auth"],
     deps = [
         "//internal/extsvc/github",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/tomnomnom/linkheader",
+        "//lib/errors",
+        "@com_github_tomnomnom_linkheader//:linkheader",
     ],
 )

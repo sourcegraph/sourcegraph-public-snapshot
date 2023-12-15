@@ -15,7 +15,7 @@ go_library(
         "//internal/extsvc/gitolite",
         "//internal/timeutil",
         "//internal/types",
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/google/go-cmp/cmp/cmpopts",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
     ],
 )

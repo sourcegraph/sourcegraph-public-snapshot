@@ -5,5 +5,5 @@ go_library(
     srcs = ["slack.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/slack",
     visibility = ["//:__subpackages__"],
-    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
+    deps = ["//lib/errors"],
 )

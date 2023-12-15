@@ -15,7 +15,7 @@ go_library(
         "//internal/oobmigration/migrations/register",
         "//internal/sanitycheck",
         "//internal/version",
-        "//vendor/github.com/sourcegraph/log",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 

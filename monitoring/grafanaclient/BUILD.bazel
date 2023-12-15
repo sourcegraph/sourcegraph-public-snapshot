@@ -6,8 +6,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/monitoring/grafanaclient",
     visibility = ["//visibility:public"],
     deps = [
-        "//vendor/github.com/grafana-tools/sdk",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/sourcegraph/sourcegraph/monitoring/grafanaclient/headertransport",
+        "//lib/errors",
+        "//monitoring/grafanaclient/headertransport",
+        "@com_github_grafana_tools_sdk//:sdk",
     ],
 )

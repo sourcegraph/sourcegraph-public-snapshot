@@ -16,9 +16,9 @@ go_library(
         "//dev/depgraph/internal/graph",
         "//dev/depgraph/internal/lints",
         "//dev/depgraph/internal/visualization",
-        "//vendor/github.com/peterbourgon/ff/v3/ffcli",
-        "//vendor/github.com/sourcegraph/run",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_peterbourgon_ff_v3//ffcli",
+        "@com_github_sourcegraph_run//:run",
     ],
 )
 

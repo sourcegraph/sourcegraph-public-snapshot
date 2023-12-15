@@ -26,8 +26,8 @@ go_library(
         "//internal/httpcli",
         "//internal/paths",
         "//internal/types",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -50,8 +50,8 @@ go_test(
         "//internal/embeddings/embed/client",
         "//internal/paths",
         "//internal/types",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/stretchr/testify/require",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_stretchr_testify//require",
     ],
 )

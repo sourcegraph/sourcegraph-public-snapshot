@@ -10,7 +10,7 @@ go_library(
         "//internal/conf/deploy",
         "//internal/env",
         "//internal/version",
-        "//vendor/cloud.google.com/go/profiler",
-        "//vendor/github.com/inconshreveable/log15",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_google_cloud_go_profiler//:profiler",
     ],
 )

@@ -9,8 +9,8 @@ go_library(
     deps = [
         "//internal/database",
         "//internal/types",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -22,6 +22,6 @@ go_test(
     deps = [
         "//internal/database",
         "//internal/database/dbtest",
-        "//vendor/github.com/sourcegraph/log/logtest",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )

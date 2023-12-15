@@ -14,9 +14,9 @@ go_library(
         "//internal/api",
         "//internal/metrics",
         "//internal/observation",
-        "//vendor/github.com/prometheus/client_golang/prometheus",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/go.opentelemetry.io/otel/attribute",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -35,6 +35,6 @@ go_test(
         "//internal/observation",
         "//internal/search",
         "//internal/types",
-        "//vendor/github.com/google/go-cmp/cmp",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

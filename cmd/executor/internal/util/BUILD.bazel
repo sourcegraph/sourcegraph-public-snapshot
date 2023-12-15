@@ -17,8 +17,8 @@ go_library(
         "//cmd/executor/internal/apiclient",
         "//cmd/executor/internal/config",
         "//internal/version",
-        "//vendor/github.com/Masterminds/semver",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_masterminds_semver//:semver",
     ],
 )
 
@@ -34,10 +34,10 @@ go_test(
     deps = [
         ":util",
         "//cmd/executor/internal/apiclient",
-        "//vendor/github.com/sourcegraph/log/logtest",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/stretchr/testify/assert",
-        "//vendor/github.com/stretchr/testify/mock",
-        "//vendor/github.com/stretchr/testify/require",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//mock",
+        "@com_github_stretchr_testify//require",
     ],
 )

@@ -14,7 +14,7 @@ go_library(
         "//cmd/frontend/codyapp",
         "//cmd/frontend/internal/routevar",
         "//internal/api",
-        "//vendor/github.com/gorilla/mux",
+        "@com_github_gorilla_mux//:mux",
     ],
 )
 

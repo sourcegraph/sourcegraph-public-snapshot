@@ -30,19 +30,19 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/output",
     visibility = ["//visibility:public"],
     deps = [
-        "//vendor/github.com/charmbracelet/glamour",
-        "//vendor/github.com/charmbracelet/glamour/ansi",
-        "//vendor/github.com/grafana/regexp",
-        "//vendor/github.com/mattn/go-isatty",
-        "//vendor/github.com/mattn/go-runewidth",
-        "//vendor/github.com/moby/term",
-        "//vendor/github.com/muesli/termenv",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/golang.org/x/term",
+        "//lib/errors",
+        "@com_github_charmbracelet_glamour//:glamour",
+        "@com_github_charmbracelet_glamour//ansi",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_mattn_go_isatty//:go-isatty",
+        "@com_github_mattn_go_runewidth//:go-runewidth",
+        "@com_github_moby_term//:term",
+        "@com_github_muesli_termenv//:termenv",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_term//:term",
     ] + select({
         "@io_bazel_rules_go//go/platform:windows": [
-            "//vendor/golang.org/x/sys/windows",
+            "@org_golang_x_sys//windows",
         ],
         "//conditions:default": [],
     }),
@@ -55,34 +55,34 @@ go_test(
     embed = [":output"],
     deps = select({
         "@io_bazel_rules_go//go/platform:aix": [
-            "//vendor/github.com/google/go-cmp/cmp",
+            "@com_github_google_go_cmp//cmp",
         ],
         "@io_bazel_rules_go//go/platform:android": [
-            "//vendor/github.com/google/go-cmp/cmp",
+            "@com_github_google_go_cmp//cmp",
         ],
         "@io_bazel_rules_go//go/platform:darwin": [
-            "//vendor/github.com/google/go-cmp/cmp",
+            "@com_github_google_go_cmp//cmp",
         ],
         "@io_bazel_rules_go//go/platform:dragonfly": [
-            "//vendor/github.com/google/go-cmp/cmp",
+            "@com_github_google_go_cmp//cmp",
         ],
         "@io_bazel_rules_go//go/platform:freebsd": [
-            "//vendor/github.com/google/go-cmp/cmp",
+            "@com_github_google_go_cmp//cmp",
         ],
         "@io_bazel_rules_go//go/platform:ios": [
-            "//vendor/github.com/google/go-cmp/cmp",
+            "@com_github_google_go_cmp//cmp",
         ],
         "@io_bazel_rules_go//go/platform:linux": [
-            "//vendor/github.com/google/go-cmp/cmp",
+            "@com_github_google_go_cmp//cmp",
         ],
         "@io_bazel_rules_go//go/platform:netbsd": [
-            "//vendor/github.com/google/go-cmp/cmp",
+            "@com_github_google_go_cmp//cmp",
         ],
         "@io_bazel_rules_go//go/platform:openbsd": [
-            "//vendor/github.com/google/go-cmp/cmp",
+            "@com_github_google_go_cmp//cmp",
         ],
         "@io_bazel_rules_go//go/platform:solaris": [
-            "//vendor/github.com/google/go-cmp/cmp",
+            "@com_github_google_go_cmp//cmp",
         ],
         "//conditions:default": [],
     }),

@@ -39,7 +39,7 @@ go_library(
         "//internal/uploadstore",
         "//internal/workerutil/dbworker",
         "//internal/workerutil/dbworker/store",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

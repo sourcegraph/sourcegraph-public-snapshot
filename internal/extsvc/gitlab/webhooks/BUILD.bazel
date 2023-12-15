@@ -11,7 +11,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/extsvc/gitlab",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ],
 )
 
@@ -25,7 +25,7 @@ go_test(
     embed = [":webhooks"],
     deps = [
         "//internal/extsvc/gitlab",
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

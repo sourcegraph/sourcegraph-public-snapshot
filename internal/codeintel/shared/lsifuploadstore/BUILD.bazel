@@ -14,7 +14,7 @@ go_library(
         "//internal/env",
         "//internal/observation",
         "//internal/uploadstore",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ],
 )
 

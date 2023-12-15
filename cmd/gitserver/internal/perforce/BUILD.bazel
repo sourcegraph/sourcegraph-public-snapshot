@@ -31,8 +31,8 @@ go_library(
         "//internal/types",
         "//internal/vcs",
         "//internal/wrexec",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -60,9 +60,9 @@ go_test(
         "//internal/types",
         "//internal/vcs",
         "//schema",
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/sourcegraph/log/logtest",
-        "//vendor/github.com/stretchr/testify/assert",
-        "//vendor/github.com/stretchr/testify/require",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

@@ -6,7 +6,7 @@ go_library(
     srcs = ["version.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/version",
     visibility = ["//:__subpackages__"],
-    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
+    deps = ["//lib/errors"],
 )
 
 go_test(

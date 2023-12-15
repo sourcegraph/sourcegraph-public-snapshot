@@ -13,7 +13,7 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/search/syntax",
     visibility = ["//:__subpackages__"],
-    deps = ["//vendor/github.com/grafana/regexp"],
+    deps = ["@com_github_grafana_regexp//:regexp"],
 )
 
 go_stringer(
@@ -31,5 +31,5 @@ go_test(
         "scanner_test.go",
     ],
     embed = [":syntax"],
-    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
+    deps = ["//lib/errors"],
 )

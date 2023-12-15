@@ -9,7 +9,7 @@ go_library(
         "//dev/managedservicesplatform/internal/resource/gsmsecret",
         "//dev/managedservicesplatform/internal/resourceid",
         "//dev/managedservicesplatform/internal/stack",
-        "//vendor/github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare/provider",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
+        "//lib/pointers",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_cloudflare//provider",
     ],
 )

@@ -22,9 +22,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database/migration/schemas",
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/grafana/regexp",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/output",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_grafana_regexp//:regexp",
     ],
 )

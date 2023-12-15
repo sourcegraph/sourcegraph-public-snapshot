@@ -13,7 +13,7 @@ go_library(
         "//internal/api",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ],
 )
 
@@ -23,7 +23,7 @@ go_test(
     srcs = ["first_commit_test.go"],
     embed = [":gitserver"],
     deps = [
-        "//vendor/github.com/hexops/autogold/v2:autogold",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_hexops_autogold_v2//:autogold",
     ],
 )

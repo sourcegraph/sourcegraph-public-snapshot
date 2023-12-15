@@ -12,9 +12,9 @@ go_library(
     deps = [
         "//dev/build-tracker/notify",
         "//dev/build-tracker/util",
-        "//vendor/github.com/buildkite/go-buildkite/v3/buildkite",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_buildkite_go_buildkite_v3//buildkite",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -24,9 +24,9 @@ go_test(
     srcs = ["build_test.go"],
     embed = [":build"],
     deps = [
-        "//vendor/github.com/buildkite/go-buildkite/v3/buildkite",
-        "//vendor/github.com/sourcegraph/log/logtest",
-        "//vendor/github.com/stretchr/testify/assert",
-        "//vendor/github.com/stretchr/testify/require",
+        "@com_github_buildkite_go_buildkite_v3//buildkite",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

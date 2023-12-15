@@ -8,6 +8,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/internal/auth/ipallowlist/checker",
-        "//vendor/github.com/sourcegraph/log",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

@@ -16,12 +16,12 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/upload",
     visibility = ["//visibility:public"],
     deps = [
-        "//vendor/github.com/klauspost/pgzip",
-        "//vendor/github.com/sourcegraph/conc/pool",
-        "//vendor/github.com/sourcegraph/scip/bindings/go/scip",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/output",
-        "//vendor/google.golang.org/protobuf/proto",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_klauspost_pgzip//:pgzip",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+        "@org_golang_google_protobuf//proto",
     ],
 )
 
@@ -33,5 +33,5 @@ go_test(
         "upload_test.go",
     ],
     embed = [":upload"],
-    deps = ["//vendor/github.com/google/go-cmp/cmp"],
+    deps = ["@com_github_google_go_cmp//cmp"],
 )

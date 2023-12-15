@@ -16,8 +16,8 @@ go_library(
         "//internal/database",
         "//internal/featureflag",
         "//internal/licensing",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -31,7 +31,7 @@ go_test(
         "//internal/conf/deploy",
         "//internal/featureflag",
         "//internal/licensing",
+        "//lib/errors",
         "//schema",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )

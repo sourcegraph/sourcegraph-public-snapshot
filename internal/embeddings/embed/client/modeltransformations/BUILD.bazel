@@ -12,5 +12,5 @@ go_test(
     name = "modeltransformations_test",
     srcs = ["model_transformations_test.go"],
     embed = [":modeltransformations"],
-    deps = ["//vendor/github.com/stretchr/testify/require"],
+    deps = ["@com_github_stretchr_testify//require"],
 )

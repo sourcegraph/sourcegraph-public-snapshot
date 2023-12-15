@@ -11,9 +11,9 @@ go_library(
     deps = [
         "//dev/sg/internal/secrets",
         "//dev/sg/internal/std",
-        "//vendor/github.com/buildkite/go-buildkite/v3/buildkite",
-        "//vendor/github.com/grafana/regexp",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/output",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_buildkite_go_buildkite_v3//buildkite",
+        "@com_github_grafana_regexp//:regexp",
     ],
 )

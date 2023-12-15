@@ -15,12 +15,12 @@ go_library(
         "//internal/goroutine/recorder",
         "//internal/metrics",
         "//internal/observation",
-        "//vendor/github.com/derision-test/glock",
-        "//vendor/github.com/sourcegraph/conc",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/background",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/go.opentelemetry.io/otel/trace",
+        "//lib/background",
+        "//lib/errors",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_sourcegraph_conc//:conc",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel_trace//:trace",
     ],
 )
 
@@ -34,7 +34,7 @@ go_test(
     ],
     embed = [":goroutine"],
     deps = [
-        "//vendor/github.com/derision-test/glock",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_derision_test_glock//:glock",
     ],
 )

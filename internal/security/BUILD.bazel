@@ -12,7 +12,7 @@ go_library(
         "//internal/conf",
         "//internal/errcode",
         "//internal/lazyregexp",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ],
 )
 
@@ -51,7 +51,7 @@ go_test(
     deps = [
         "//internal/conf",
         "//schema",
-        "//vendor/github.com/stretchr/testify/assert",
-        "//vendor/github.com/stretchr/testify/require",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

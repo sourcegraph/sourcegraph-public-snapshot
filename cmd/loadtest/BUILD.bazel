@@ -12,8 +12,8 @@ go_library(
     deps = [
         "//internal/env",
         "//internal/sanitycheck",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 

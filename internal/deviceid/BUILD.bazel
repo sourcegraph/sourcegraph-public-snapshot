@@ -8,6 +8,6 @@ go_library(
     deps = [
         "//cmd/frontend/globals",
         "//internal/cookie",
-        "//vendor/github.com/google/uuid",
+        "@com_github_google_uuid//:uuid",
     ],
 )

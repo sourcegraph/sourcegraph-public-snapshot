@@ -26,12 +26,12 @@ go_library(
     deps = [
         "//internal/search/streaming/api",
         "//internal/search/streaming/http",
-        "//vendor/github.com/inconshreveable/log15",
-        "//vendor/github.com/prometheus/client_golang/prometheus",
-        "//vendor/github.com/prometheus/client_golang/prometheus/promauto",
-        "//vendor/github.com/prometheus/client_golang/prometheus/promhttp",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/gopkg.in/natefinch/lumberjack.v2:lumberjack_v2",
+        "//lib/errors",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_prometheus_client_golang//prometheus/promhttp",
+        "@in_gopkg_natefinch_lumberjack_v2//:lumberjack_v2",
     ],
 )
 

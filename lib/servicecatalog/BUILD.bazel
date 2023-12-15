@@ -8,8 +8,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/servicecatalog",
     visibility = ["//visibility:public"],
     deps = [
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/gopkg.in/yaml.v3:yaml_v3",
+        "//lib/errors",
+        "@in_gopkg_yaml_v3//:yaml_v3",
     ],
 )
 
@@ -19,7 +19,7 @@ go_test(
     srcs = ["servicecatalog_test.go"],
     embed = [":servicecatalog"],
     deps = [
-        "//vendor/github.com/stretchr/testify/assert",
-        "//vendor/github.com/stretchr/testify/require",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

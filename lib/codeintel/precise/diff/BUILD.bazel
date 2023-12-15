@@ -9,8 +9,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff",
     visibility = ["//visibility:public"],
     deps = [
-        "//vendor/github.com/fatih/color",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/precise",
+        "//lib/codeintel/precise",
+        "@com_github_fatih_color//:color",
     ],
 )
 
@@ -21,8 +21,8 @@ go_test(
     data = ["//lib/codeintel/precise/diff/testdata:data"],
     embed = [":diff"],
     deps = [
-        "//vendor/github.com/hexops/autogold/v2:autogold",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/codeintel/precise",
+        "//lib/codeintel/lsif/conversion",
+        "//lib/codeintel/precise",
+        "@com_github_hexops_autogold_v2//:autogold",
     ],
 )

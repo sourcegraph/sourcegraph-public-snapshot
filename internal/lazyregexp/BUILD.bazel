@@ -5,5 +5,5 @@ go_library(
     srcs = ["lazyre.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/lazyregexp",
     visibility = ["//:__subpackages__"],
-    deps = ["//vendor/github.com/grafana/regexp"],
+    deps = ["@com_github_grafana_regexp//:regexp"],
 )

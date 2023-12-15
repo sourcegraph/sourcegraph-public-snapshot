@@ -14,10 +14,10 @@ go_library(
         "//internal/env",
         "//internal/grpc/defaults",
         "//internal/httpcli",
-        "//vendor/github.com/prometheus/client_golang/prometheus",
-        "//vendor/github.com/prometheus/client_golang/prometheus/promauto",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -25,5 +25,5 @@ go_test(
     name = "internalapi_test",
     srcs = ["client_test.go"],
     embed = [":internalapi"],
-    deps = ["//vendor/github.com/google/go-cmp/cmp"],
+    deps = ["@com_github_google_go_cmp//cmp"],
 )

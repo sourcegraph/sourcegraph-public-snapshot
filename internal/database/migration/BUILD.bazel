@@ -13,6 +13,6 @@ go_library(
         "//internal/database/postgresdsn",
         "//internal/env",
         "//internal/observation",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/output",
+        "//lib/output",
     ],
 )

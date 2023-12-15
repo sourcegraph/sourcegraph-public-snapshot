@@ -8,6 +8,6 @@ go_library(
     deps = [
         "//internal/fileutil",
         "//internal/unpack",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ],
 )

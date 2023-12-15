@@ -5,5 +5,5 @@ go_library(
     srcs = ["select.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/filter",
     visibility = ["//:__subpackages__"],
-    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
+    deps = ["//lib/errors"],
 )

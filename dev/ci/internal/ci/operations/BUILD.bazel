@@ -7,6 +7,6 @@ go_library(
     visibility = ["//dev/ci:__subpackages__"],
     deps = [
         "//dev/ci/internal/buildkite",
-        "//vendor/github.com/grafana/regexp",
+        "@com_github_grafana_regexp//:regexp",
     ],
 )

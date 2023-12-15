@@ -28,8 +28,8 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//internal/timeutil",
-        "//vendor/github.com/gobwas/glob",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_gobwas_glob//:glob",
     ],
 )
 
@@ -56,8 +56,8 @@ go_test(
         "//internal/observation",
         "//internal/timeutil",
         "//internal/types",
-        "//vendor/github.com/derision-test/glock",
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
+        "//lib/pointers",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

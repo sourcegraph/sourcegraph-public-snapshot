@@ -5,5 +5,5 @@ go_library(
     srcs = ["results.go"],
     importpath = "github.com/sourcegraph/sourcegraph/lib/batches/execution",
     visibility = ["//visibility:public"],
-    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/batches/git"],
+    deps = ["//lib/batches/git"],
 )

@@ -17,11 +17,11 @@ go_library(
         "//internal/grpc/defaults",
         "//internal/telemetrygateway/v1:telemetrygateway",
         "//internal/trace",
-        "//vendor/github.com/google/uuid",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/go.opentelemetry.io/otel/attribute",
-        "//vendor/google.golang.org/grpc",
+        "//lib/errors",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_google_grpc//:go_default_library",
     ],
 )
 
@@ -35,8 +35,8 @@ go_test(
         "//internal/database",
         "//internal/database/dbmocks",
         "//schema",
-        "//vendor/github.com/hexops/autogold/v2:autogold",
-        "//vendor/github.com/stretchr/testify/require",
-        "//vendor/google.golang.org/protobuf/encoding/protojson",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_protobuf//encoding/protojson",
     ],
 )

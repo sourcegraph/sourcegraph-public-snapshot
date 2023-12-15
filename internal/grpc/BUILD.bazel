@@ -10,12 +10,12 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/golang.org/x/net/http2",
-        "//vendor/golang.org/x/net/http2/h2c",
-        "//vendor/google.golang.org/grpc",
-        "//vendor/google.golang.org/grpc/codes",
-        "//vendor/google.golang.org/grpc/status",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+        "@org_golang_x_net//http2",
+        "@org_golang_x_net//http2/h2c",
     ],
 )
 
@@ -28,11 +28,11 @@ go_test(
     ],
     embed = [":grpc"],
     deps = [
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/log/logtest",
-        "//vendor/github.com/stretchr/testify/require",
-        "//vendor/google.golang.org/grpc",
-        "//vendor/google.golang.org/grpc/codes",
-        "//vendor/google.golang.org/grpc/status",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
     ],
 )

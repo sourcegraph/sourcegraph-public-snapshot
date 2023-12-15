@@ -20,7 +20,7 @@ go_library(
         "//internal/gitserver",
         "//internal/metrics",
         "//internal/observation",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/go.opentelemetry.io/otel/attribute",
+        "//lib/errors",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )

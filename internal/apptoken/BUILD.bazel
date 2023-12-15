@@ -10,6 +10,6 @@ go_library(
         "//internal/database",
         "//internal/singleprogram",
         "//internal/version",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ],
 )

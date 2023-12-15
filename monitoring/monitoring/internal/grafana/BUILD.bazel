@@ -13,9 +13,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana",
     visibility = ["//monitoring/monitoring:__subpackages__"],
     deps = [
-        "//vendor/github.com/grafana-tools/sdk",
-        "//vendor/github.com/prometheus/prometheus/model/labels",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/promql",
+        "//lib/errors",
+        "//monitoring/monitoring/internal/promql",
+        "@com_github_grafana_tools_sdk//:sdk",
+        "@com_github_prometheus_prometheus//model/labels",
     ],
 )

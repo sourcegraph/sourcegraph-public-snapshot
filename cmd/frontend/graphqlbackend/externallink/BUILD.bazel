@@ -19,7 +19,7 @@ go_library(
         "//internal/repoupdater/protocol",
         "//internal/trace",
         "//internal/types",
-        "//vendor/go.opentelemetry.io/otel/attribute",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -36,7 +36,7 @@ go_test(
         "//internal/extsvc/gitlab",
         "//internal/gitserver",
         "//internal/types",
-        "//vendor/github.com/derision-test/go-mockgen/testutil/require",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_derision_test_go_mockgen//testutil/require",
     ],
 )

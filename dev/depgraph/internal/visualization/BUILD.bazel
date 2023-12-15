@@ -5,5 +5,5 @@ go_library(
     srcs = ["dot.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/depgraph/internal/visualization",
     visibility = ["//dev/depgraph:__subpackages__"],
-    deps = ["//vendor/github.com/grafana/regexp"],
+    deps = ["@com_github_grafana_regexp//:regexp"],
 )

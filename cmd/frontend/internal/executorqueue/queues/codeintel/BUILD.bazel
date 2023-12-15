@@ -19,9 +19,9 @@ go_library(
         "//internal/executor/types",
         "//internal/observation",
         "//internal/workerutil/dbworker/store",
-        "//vendor/github.com/c2h5oh/datasize",
-        "//vendor/github.com/kballard/go-shellquote",
-        "//vendor/golang.org/x/exp/maps",
+        "@com_github_c2h5oh_datasize//:datasize",
+        "@com_github_kballard_go_shellquote//:go-shellquote",
+        "@org_golang_x_exp//maps",
     ],
 )
 
@@ -39,6 +39,6 @@ go_test(
         "//internal/executor/types",
         "//internal/src-cli",
         "//schema",
-        "//vendor/github.com/google/go-cmp/cmp",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

@@ -8,8 +8,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/client/web/dist",
     visibility = ["//visibility:public"],
     deps = [
+        "//lib/errors",
         "//ui/assets",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
     ],
 )
 

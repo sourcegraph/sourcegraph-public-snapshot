@@ -7,6 +7,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/uploadstore",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/iterator",
+        "//lib/iterator",
     ],
 )

@@ -15,9 +15,9 @@ go_library(
         "//cmd/executor/internal/util",
         "//internal/goroutine",
         "//internal/observation",
-        "//vendor/github.com/prometheus/client_golang/prometheus",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -26,5 +26,5 @@ go_test(
     timeout = "short",
     srcs = ["orphaned_vms_test.go"],
     embed = [":janitor"],
-    deps = ["//vendor/github.com/google/go-cmp/cmp"],
+    deps = ["@com_github_google_go_cmp//cmp"],
 )

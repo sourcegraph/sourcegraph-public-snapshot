@@ -8,10 +8,10 @@ go_library(
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/internal/resourceid",
-        "//vendor/github.com/aws/constructs-go/constructs/v10:constructs",
-        "//vendor/github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringalertpolicy",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_aws_constructs_go_constructs_v10//:constructs",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//monitoringalertpolicy",
     ],
 )
 
@@ -20,7 +20,7 @@ go_test(
     srcs = ["monitoringalertpolicy_test.go"],
     embed = [":monitoringalertpolicy"],
     deps = [
-        "//vendor/github.com/hexops/autogold/v2:autogold",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
+        "//lib/pointers",
+        "@com_github_hexops_autogold_v2//:autogold",
     ],
 )

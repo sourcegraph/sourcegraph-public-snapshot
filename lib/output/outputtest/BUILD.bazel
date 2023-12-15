@@ -14,7 +14,7 @@ go_test(
     srcs = ["buffer_test.go"],
     embed = [":outputtest"],
     deps = [
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/output",
+        "//lib/output",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

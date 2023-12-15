@@ -6,7 +6,7 @@ go_library(
     srcs = ["datetime.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/gqlutil",
     visibility = ["//:__subpackages__"],
-    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
+    deps = ["//lib/errors"],
 )
 
 go_test(
@@ -14,5 +14,5 @@ go_test(
     timeout = "short",
     srcs = ["datetime_test.go"],
     embed = [":gqlutil"],
-    deps = ["//vendor/github.com/stretchr/testify/require"],
+    deps = ["@com_github_stretchr_testify//require"],
 )

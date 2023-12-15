@@ -13,6 +13,6 @@ go_library(
         "//internal/goroutine",
         "//internal/metrics",
         "//internal/observation",
-        "//vendor/github.com/prometheus/client_golang/prometheus",
+        "@com_github_prometheus_client_golang//prometheus",
     ],
 )

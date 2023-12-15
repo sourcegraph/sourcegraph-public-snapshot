@@ -20,8 +20,8 @@ go_library(
         "//internal/extsvc",
         "//internal/licensing",
         "//schema",
-        "//vendor/github.com/inconshreveable/log15",
-        "//vendor/github.com/sourcegraph/log",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -45,8 +45,8 @@ go_test(
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/licensing",
+        "//lib/errors",
         "//schema",
-        "//vendor/github.com/sourcegraph/log/logtest",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )

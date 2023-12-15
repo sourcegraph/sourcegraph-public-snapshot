@@ -6,12 +6,12 @@ go_library(
     srcs = ["aeshelper.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/encryption/aeshelper",
     visibility = ["//:__subpackages__"],
-    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
+    deps = ["//lib/errors"],
 )
 
 go_test(
     name = "aeshelper_test",
     srcs = ["aeshelper_test.go"],
     embed = [":aeshelper"],
-    deps = ["//vendor/github.com/stretchr/testify/require"],
+    deps = ["@com_github_stretchr_testify//require"],
 )

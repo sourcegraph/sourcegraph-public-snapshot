@@ -10,6 +10,6 @@ go_library(
         "//cmd/cody-gateway/internal/response",
         "//internal/requestclient",
         "//internal/trace",
-        "//vendor/github.com/sourcegraph/log",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

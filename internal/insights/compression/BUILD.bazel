@@ -12,7 +12,7 @@ go_library(
         "//internal/gitserver/gitdomain",
         "//internal/insights/gitserver",
         "//internal/insights/store",
-        "//vendor/github.com/sourcegraph/log",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -25,8 +25,8 @@ go_test(
     deps = [
         "//internal/api",
         "//internal/gitserver/gitdomain",
-        "//vendor/github.com/hexops/autogold/v2:autogold",
-        "//vendor/github.com/sourcegraph/log/logtest",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )

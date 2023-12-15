@@ -7,7 +7,7 @@ go_library(
     visibility = ["//cmd/executor:__subpackages__"],
     deps = [
         "//internal/httpcli",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/golang.org/x/net/context/ctxhttp",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_net//context/ctxhttp",
     ],
 )

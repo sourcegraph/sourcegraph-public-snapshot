@@ -12,7 +12,7 @@ go_library(
         "//internal/gqlutil",
         "//internal/jsonc",
         "//internal/rbac/types",
-        "//vendor/github.com/graph-gophers/graphql-go",
-        "//vendor/github.com/graph-gophers/graphql-go/errors",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//errors",
     ],
 )

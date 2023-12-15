@@ -15,9 +15,9 @@ go_library(
         "//cmd/batcheshelper/run",
         "//cmd/batcheshelper/util",
         "//internal/sanitycheck",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches/execution",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/batches",
+        "//lib/batches/execution",
+        "//lib/errors",
     ],
 )
 
@@ -36,10 +36,10 @@ go_test(
     srcs = ["main_test.go"],
     embed = [":batcheshelper_lib"],
     deps = [
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/batches/execution",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/stretchr/testify/assert",
-        "//vendor/github.com/stretchr/testify/require",
+        "//lib/batches/execution",
+        "//lib/errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )
 

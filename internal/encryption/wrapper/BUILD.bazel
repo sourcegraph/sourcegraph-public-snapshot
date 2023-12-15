@@ -6,12 +6,12 @@ go_library(
     srcs = ["encryptedvalue.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/encryption/wrapper",
     visibility = ["//:__subpackages__"],
-    deps = ["//vendor/github.com/sourcegraph/sourcegraph/lib/errors"],
+    deps = ["//lib/errors"],
 )
 
 go_test(
     name = "wrapper_test",
     srcs = ["encryptedvalue_test.go"],
     embed = [":wrapper"],
-    deps = ["//vendor/github.com/stretchr/testify/require"],
+    deps = ["@com_github_stretchr_testify//require"],
 )

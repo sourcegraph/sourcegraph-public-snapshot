@@ -22,8 +22,8 @@ go_library(
         "//cmd/executor/internal/worker/command",
         "//cmd/executor/internal/worker/files",
         "//internal/executor/types",
-        "//vendor/github.com/c2h5oh/datasize",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_c2h5oh_datasize//:datasize",
     ],
 )
 
@@ -44,8 +44,8 @@ go_test(
         "//internal/executor",
         "//internal/executor/types",
         "//internal/observation",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/stretchr/testify/assert",
-        "//vendor/github.com/stretchr/testify/require",
+        "//lib/errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

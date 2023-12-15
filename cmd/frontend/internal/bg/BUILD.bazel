@@ -25,11 +25,11 @@ go_library(
         "//internal/rcache",
         "//internal/redispool",
         "//internal/types",
-        "//vendor/github.com/fatih/color",
-        "//vendor/github.com/gomodule/redigo/redis",
-        "//vendor/github.com/inconshreveable/log15",
-        "//vendor/github.com/sourcegraph/log",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_fatih_color//:color",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -47,8 +47,8 @@ go_test(
         "//internal/database/dbtest",
         "//internal/rbac/types",
         "//internal/types",
-        "//vendor/github.com/sourcegraph/log/logtest",
-        "//vendor/github.com/stretchr/testify/assert",
-        "//vendor/github.com/stretchr/testify/require",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

@@ -18,6 +18,6 @@ go_test(
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbmocks",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ],
 )

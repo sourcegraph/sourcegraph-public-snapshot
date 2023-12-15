@@ -8,7 +8,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//internal/lazyregexp",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ],
 )
 
@@ -17,5 +17,5 @@ go_test(
     timeout = "short",
     srcs = ["runtype_test.go"],
     embed = [":runtype"],
-    deps = ["//vendor/github.com/stretchr/testify/assert"],
+    deps = ["@com_github_stretchr_testify//assert"],
 )

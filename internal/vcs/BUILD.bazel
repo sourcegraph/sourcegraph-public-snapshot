@@ -11,8 +11,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/vcs",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//vendor/github.com/grafana/regexp",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
     ],
 )
 

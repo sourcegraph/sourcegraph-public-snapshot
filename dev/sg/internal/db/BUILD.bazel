@@ -7,6 +7,6 @@ go_library(
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/root",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ],
 )

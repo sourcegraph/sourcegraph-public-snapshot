@@ -16,8 +16,8 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//internal/database",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/pointers",
+        "//lib/errors",
+        "//lib/pointers",
     ],
 )
 
@@ -31,7 +31,7 @@ go_test(
     embed = [":graphqlutil"],
     deps = [
         "//internal/database",
-        "//vendor/github.com/google/go-cmp/cmp",
-        "//vendor/github.com/graph-gophers/graphql-go",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
     ],
 )

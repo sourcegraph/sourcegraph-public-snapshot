@@ -8,7 +8,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/encryption/aeshelper",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
     ],
 )
 
@@ -16,5 +16,5 @@ go_test(
     name = "envelope_test",
     srcs = ["envelope_test.go"],
     embed = [":envelope"],
-    deps = ["//vendor/github.com/stretchr/testify/require"],
+    deps = ["@com_github_stretchr_testify//require"],
 )

@@ -12,11 +12,11 @@ go_library(
     deps = [
         "//internal/codeintel/dependencies/shared",
         "//internal/conf/reposource",
-        "//vendor/github.com/gobwas/glob",
-        "//vendor/github.com/gobwas/glob/syntax",
-        "//vendor/github.com/gobwas/glob/syntax/ast",
-        "//vendor/github.com/grafana/regexp",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
+        "//lib/errors",
+        "@com_github_gobwas_glob//:glob",
+        "@com_github_gobwas_glob//syntax",
+        "@com_github_gobwas_glob//syntax/ast",
+        "@com_github_grafana_regexp//:regexp",
     ],
 )
 
@@ -25,7 +25,7 @@ go_test(
     srcs = ["glob_test.go"],
     embed = [":packagefilters"],
     deps = [
-        "//vendor/github.com/gobwas/glob",
-        "//vendor/github.com/grafana/regexp",
+        "@com_github_gobwas_glob//:glob",
+        "@com_github_grafana_regexp//:regexp",
     ],
 )

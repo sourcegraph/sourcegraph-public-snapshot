@@ -8,10 +8,10 @@ go_library(
     deps = [
         "//dev/codeintel-qa/internal",
         "//dev/sg/root",
-        "//vendor/cloud.google.com/go/storage",
-        "//vendor/github.com/sourcegraph/conc/pool",
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/errors",
-        "//vendor/google.golang.org/api/iterator",
+        "//lib/errors",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_google_cloud_go_storage//:storage",
+        "@org_golang_google_api//iterator",
     ],
 )
 

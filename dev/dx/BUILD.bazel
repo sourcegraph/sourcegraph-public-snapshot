@@ -6,8 +6,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/dx",
     visibility = ["//visibility:private"],
     deps = [
-        "//vendor/github.com/sourcegraph/sourcegraph/lib/output",
-        "//vendor/github.com/urfave/cli/v2:cli",
+        "//lib/output",
+        "@com_github_urfave_cli_v2//:cli",
     ],
 )
 

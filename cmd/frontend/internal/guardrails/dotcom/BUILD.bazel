@@ -12,7 +12,7 @@ go_library(
     deps = [
         "//internal/httpcli",
         "//internal/trace",
-        "//vendor/github.com/Khan/genqlient/graphql",
+        "@com_github_khan_genqlient//graphql",
     ],
 )
 
