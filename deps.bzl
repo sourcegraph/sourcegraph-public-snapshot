@@ -3180,8 +3180,8 @@ def go_dependencies():
         name = "com_github_hashicorp_go_retryablehttp",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/hashicorp/go-retryablehttp",
-        sum = "h1:ZQgVdpTdAL7WpMIwLzCfbalOcSUdkDZnpUv3/+BxzFA=",
-        version = "v0.7.4",
+        sum = "h1:bJj+Pj19UZMIweq/iie+1u5YCdGrnxCT9yvm0e+Nd5M=",
+        version = "v0.7.5",
     )
     go_repository(
         name = "com_github_hashicorp_go_rootcerts",
@@ -3194,8 +3194,8 @@ def go_dependencies():
         name = "com_github_hashicorp_go_slug",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/hashicorp/go-slug",
-        sum = "h1:lYhmKXXonP4KGSz3JBmks6YpDRjP1cMA/yvcoPxoNw8=",
-        version = "v0.12.1",
+        sum = "h1:JiYNpOkD0HmMWw/lNYiBAUD6+WIBIV7UftKiqIbpNqM=",
+        version = "v0.13.3",
     )
     go_repository(
         name = "com_github_hashicorp_go_sockaddr",
@@ -3215,8 +3215,8 @@ def go_dependencies():
         name = "com_github_hashicorp_go_tfe",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/hashicorp/go-tfe",
-        sum = "h1:5G84t70g70xWK5U0WaYb8wLfbC5fR6dvawqCkmMN5X0=",
-        version = "v1.32.1",
+        sum = "h1:ieQrbFwH4KITMxqyBni7v5jTBkcvQqCbnPNsV2eh4TY=",
+        version = "v1.41.0",
     )
     go_repository(
         name = "com_github_hashicorp_go_uuid",
@@ -8239,8 +8239,8 @@ def go_dependencies():
         name = "org_golang_x_time",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/time",
-        sum = "h1:Z81tqI5ddIoXDPvVQ7/7CC9TnLM7ubaFG2qXYd5BbYY=",
-        version = "v0.4.0",
+        sum = "h1:o7cqy6amK/52YcAKIPlM3a+Fpj35zvRj2TP+e1xFSfk=",
+        version = "v0.5.0",
     )
     go_repository(
         name = "org_golang_x_tools",
