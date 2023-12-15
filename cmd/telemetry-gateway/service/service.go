@@ -51,9 +51,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	}
 
 	// Initialize our gRPC server
-	// TODO(@bobheadxi): Maybe don't use defaults.NewServer, which is geared
-	// towards in-Sourcegraph services.
-	grpcServer := defaults.NewServer(logger)
+	grpcServer := defaults.NewPublicServer(logger)
 	telemetryGatewayServer, err := server.New(
 		logger,
 		eventsTopic,
