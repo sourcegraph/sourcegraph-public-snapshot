@@ -20,3 +20,4 @@ yarn.lock
 *.gql.d.ts
 src/lib/graphql-operations.ts
 src/lib/graphql-types.ts
+static/mockServiceWorker.js

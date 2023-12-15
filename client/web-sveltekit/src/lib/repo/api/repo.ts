@@ -83,7 +83,6 @@ export interface ResolvedRevision extends ResolvedRevisionSpec {
 
 /**
  * When `revision` is undefined, the default branch is resolved.
- *
  * @returns Promise that emits the commit ID. Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
 export async function resolveRepoRevision({

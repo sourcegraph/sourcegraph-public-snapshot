@@ -77,7 +77,7 @@ func sendSlackMessage(logger log.Logger, license *dbLicense, siteID string) {
 		return
 	}
 
-	client := slack.New(dotcom.SlackLicenseExpirationWebhook)
+	client := slack.New(dotcom.SlackLicenseAnomallyWebhook)
 	err = client.Post(context.Background(), &slack.Payload{
 		Text: fmt.Sprintf(multipleInstancesSameKeySlackFmt, externalURL.String(), url.QueryEscape(license.ProductSubscriptionID), url.QueryEscape(license.ID), license.ID, *license.SiteID, siteID),
 	})

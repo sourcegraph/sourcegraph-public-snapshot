@@ -19,15 +19,15 @@
     import Icon from '$lib/Icon.svelte'
     import { getFileMatchUrl, type ContentMatch, ZoektRanking, LineRanking } from '$lib/shared'
 
-    import FileMatchChildren from './FileMatchChildren.svelte'
     import SearchResult from './SearchResult.svelte'
-    import { getSearchResultsContext } from './SearchResults.svelte'
+    import { getSearchResultsContext } from './searchResultsContext'
     import CodeHostIcon from './CodeHostIcon.svelte'
     import RepoStars from './RepoStars.svelte'
     import { settings } from '$lib/stores'
     import { rankContentMatch } from '$lib/search/results'
-    import { goto } from '$app/navigation'
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
+    import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
+    import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
 
     export let result: ContentMatch
 
@@ -49,6 +49,11 @@
     $: expandButtonText = expanded
         ? 'Show less'
         : `Show ${hiddenMatchesCount} more ${pluralize('match', hiddenMatchesCount, 'matches')}`
+    $: matchesToShow = expanded ? expandedMatchGroups.grouped : collapsedMatchGroups.grouped
+    $: matchRanges = matchesToShow.map(group => ({
+        startLine: group.startLine,
+        endLine: group.endLine,
+    }))
 
     let root: HTMLElement
     let userInteracted = false
@@ -59,19 +64,23 @@
         }, 0)
     }
 
-    function handleLineClick(event: MouseEvent) {
-        const target = event.target as HTMLElement
-        if (target.dataset.line) {
-            const searchParams = formatSearchParameters(
-                addLineRangeQueryParameter(
-                    // We don't want to preserve the 'q' query parameter.
-                    // We might have to adjust this if we want to preserver other query parameters.
-                    new URLSearchParams(),
-                    toPositionOrRangeQueryParameter({ position: { line: +target.dataset.line } })
-                )
+    function getMatchURL(startLine: number, endLine: number): string {
+        const searchParams = formatSearchParameters(
+            addLineRangeQueryParameter(
+                // We don't want to preserve the 'q' query parameter.
+                // We might have to adjust this if we want to preserve other query parameters.
+                new URLSearchParams(),
+                toPositionOrRangeQueryParameter({ range: { start: { line: startLine }, end: { line: endLine } } })
             )
-            goto(`${fileURL}?${searchParams}`)
-        }
+        )
+        return `${fileURL}?${searchParams}`
+    }
+
+    async function fetchHighlightedFileMatchLineRanges(startLine: number, endLine: number) {
+        const highlightedGroups = await fetchFileRangeMatches({ result, ranges: matchRanges })
+        return highlightedGroups[
+            matchesToShow.findIndex(group => group.startLine === startLine && group.endLine === endLine)
+        ]
     }
 </script>
 
@@ -84,22 +93,34 @@
         {/if}
     </svelte:fragment>
 
-    <div bind:this={root} class="matches" on:click={handleLineClick}>
-        <FileMatchChildren {result} grouped={expanded ? expandedMatchGroups.grouped : collapsedMatchGroups.grouped} />
+    <div bind:this={root} class="matches">
+        {#each matchesToShow as group}
+            <div class="code">
+                <a href={getMatchURL(group.startLine + 1, group.endLine)}>
+                    <CodeExcerpt
+                        startLine={group.startLine}
+                        endLine={group.endLine}
+                        fetchHighlightedFileRangeLines={async (...args) =>
+                            group.blobLines ? group.blobLines : fetchHighlightedFileMatchLineRanges(...args)}
+                        matches={group.matches}
+                    />
+                </a>
+            </div>
+        {/each}
+        {#if collapsible}
+            <button
+                type="button"
+                on:click={() => {
+                    expanded = !expanded
+                    userInteracted = true
+                }}
+                class:expanded
+            >
+                <Icon svgPath={expanded ? mdiChevronUp : mdiChevronDown} inline aria-hidden="true" />
+                <span>{expandButtonText}</span>
+            </button>
+        {/if}
     </div>
-    {#if collapsible}
-        <button
-            type="button"
-            on:click={() => {
-                expanded = !expanded
-                userInteracted = true
-            }}
-            class:expanded
-        >
-            <Icon svgPath={expanded ? mdiChevronUp : mdiChevronDown} inline aria-hidden="true" />
-            <span>{expandButtonText}</span>
-        </button>
-    {/if}
 </SearchResult>
 
 <style lang="scss">
@@ -108,8 +129,7 @@
         text-align: left;
         border: none;
         padding: 0.25rem 0.5rem;
-        background-color: var(--border-color);
-        border-radius: 0 0 var(--border-radius) var(--border-radius);
+        background-color: var(--code-bg);
         color: var(--collapse-results-color);
         cursor: pointer;
 
@@ -119,13 +139,16 @@
         }
     }
 
-    .matches {
-        // TODO: Evaluate whether (and how) these should/can be convertd to links
-        :global(td[data-line]) {
-            cursor: pointer;
-            &:hover {
-                text-decoration: underline;
-            }
+    .code {
+        border-bottom: 1px solid var(--border-color);
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
         }
     }
 </style>
