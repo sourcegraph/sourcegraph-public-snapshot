@@ -52,13 +52,13 @@ func serveSignOutHandler(logger log.Logger, db database.DB) http.HandlerFunc {
 		var err error
 		if err = session.InvalidateSessionCurrentUser(w, r, db); err != nil {
 			recordSecurityEvent(r, db, database.SecurityEventNameSignOutFailed, err)
-			recorder.Record(ctx, telemetry.FeatureSignOut, telemetry.ActionFailed, nil)
+			recorder.Record(ctx, "signOut", telemetry.ActionFailed, nil)
 			logger.Error("serveSignOutHandler", log.Error(err))
 		}
 
 		if err = session.SetActor(w, r, nil, 0, time.Time{}); err != nil {
 			recordSecurityEvent(r, db, database.SecurityEventNameSignOutFailed, err)
-			recorder.Record(ctx, telemetry.FeatureSignOut, telemetry.ActionFailed, nil)
+			recorder.Record(ctx, "signOut", telemetry.ActionFailed, nil)
 			logger.Error("serveSignOutHandler", log.Error(err))
 		}
 
@@ -70,7 +70,7 @@ func serveSignOutHandler(logger log.Logger, db database.DB) http.HandlerFunc {
 
 		if err == nil {
 			recordSecurityEvent(r, db, database.SecurityEventNameSignOutSucceeded, nil)
-			recorder.Record(ctx, telemetry.FeatureSignOut, telemetry.ActionSucceeded, nil)
+			recorder.Record(ctx, "signOut", telemetry.ActionSucceeded, nil)
 		}
 
 		http.Redirect(w, r, "/search", http.StatusSeeOther)

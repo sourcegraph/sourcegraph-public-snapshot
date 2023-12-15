@@ -9,13 +9,13 @@ import "strings"
 // and preventing strings from being cast to this type.
 type eventFeature string
 
-// All event names in Sourcegraph's Go services.
+// Shared event names in Sourcegraph's backend services.
 const (
 	FeatureExample eventFeature = "exampleFeature"
 
-	FeatureSignIn  eventFeature = "signIn"
-	FeatureSignOut eventFeature = "signOut"
-	FeatureSignUp  eventFeature = "signUp"
+	// FeatureSourcegraphOperator collects all events related to Sourcegraph
+	// Operatores.
+	FeatureSourcegraphOperator eventFeature = "sourcegraphOperator"
 )
 
 // eventAction defines the action associated with an event. Values should

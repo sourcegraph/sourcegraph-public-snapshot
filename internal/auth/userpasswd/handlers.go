@@ -161,7 +161,7 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 	// New event - we record legacy event manually for now, hence teestore.WithoutV1
 	// TODO: Remove in 5.3
 	events := telemetry.NewBestEffortEventRecorder(logger, eventRecorder)
-	events.Record(teestore.WithoutV1(r.Context()), telemetry.FeatureSignUp, telemetry.ActionSucceeded, &telemetry.EventParameters{
+	events.Record(teestore.WithoutV1(r.Context()), "signUp", telemetry.ActionSucceeded, &telemetry.EventParameters{
 		Metadata: telemetry.EventMetadata{
 			"failIfNewUserIsNotInitialSiteAdmin": telemetry.MetadataBool(failIfNewUserIsNotInitialSiteAdmin),
 		},
@@ -341,7 +341,7 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore, recorde
 		telemetrySignInResult := telemetry.ActionFailed
 		defer func() {
 			recordSignInSecurityEvent(r, db, &user, &signInResult)
-			events.Record(ctx, telemetry.FeatureSignIn, telemetrySignInResult, nil)
+			events.Record(ctx, "signIn", telemetrySignInResult, nil)
 			checkAccountLockout(store, &user, &signInResult)
 		}()
 

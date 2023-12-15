@@ -31,9 +31,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -77,51 +79,6 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 		currentUserID = a.UID
 	}
 
-	// 🚨 SECURITY: We want to log every single operation the Sourcegraph operator
-	// has done on the instance, so we need to do additional logging here. Sometimes
-	// we would end up having logging twice for the same operation (here and the web
-	// app), but we would not want to risk missing logging operations. Also in the
-	// future, we expect audit logging of Sourcegraph operators to live outside the
-	// instance, which makes this pattern less of a concern in terms of redundancy.
-	if a.SourcegraphOperator {
-		const eventName = "SourcegraphOperatorGraphQLRequest"
-		args, err := json.Marshal(map[string]any{
-			"queryString": queryString,
-			"variables":   variables,
-		})
-		if err != nil {
-			t.logger.Error(
-				"failed to marshal JSON for event log argument",
-				log.String("eventName", eventName),
-				log.Error(err),
-			)
-		}
-
-		// NOTE: It is important to propagate the correct context that carries the
-		// information of the actor, especially whether the actor is a Sourcegraph
-		// operator or not.
-		//
-		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
-		//lint:ignore SA1019 existing usage of deprecated functionality.
-		err = usagestats.LogEvent(
-			ctx,
-			t.db,
-			usagestats.Event{
-				EventName: eventName,
-				UserID:    a.UID,
-				Argument:  args,
-				Source:    "BACKEND",
-			},
-		)
-		if err != nil {
-			t.logger.Error(
-				"failed to log event",
-				log.String("eventName", eventName),
-				log.Error(err),
-			)
-		}
-	}
-
 	// Requests made by our JS frontend and other internal things will have a concrete name attached to the
 	// request which allows us to (softly) differentiate it from end-user API requests. For example,
 	// /.api/graphql?Foobar where Foobar is the name of the request we make. If there is not a request name,
@@ -130,13 +87,34 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 	requestName := sgtrace.GraphQLRequestName(ctx)
 	requestSource := sgtrace.RequestSource(ctx)
 
+	// 🚨 SECURITY: We want to log every single operation the Sourcegraph operator
+	// has done on the instance, so we need to do additional logging here. Sometimes
+	// we would end up having logging twice for the same operation (here and the web
+	// app), but we would not want to risk missing logging operations. Also in the
+	// future, we expect audit logging of Sourcegraph operators to live outside the
+	// instance, which makes this pattern less of a concern in terms of redundancy.
+	if a.SourcegraphOperator {
+		telemetryrecorder.NewBestEffort(t.logger, t.db).
+			Record(ctx, telemetry.FeatureSourcegraphOperator, "graphQLRequest", &telemetry.EventParameters{
+				PrivateMetadata: map[string]any{
+					"requestName":   requestName,
+					"requestSource": requestSource,
+					"queryString":   queryString,
+					"variables":     variables,
+				},
+			})
+	}
+
 	return ctx, func(err []*gqlerrors.QueryError) {
 		finish(err) // always non-nil
 
 		d := time.Since(start)
 		if v := conf.Get().ObservabilityLogSlowGraphQLRequests; v != 0 && d.Milliseconds() > int64(v) {
+			// Get a logger with trace details attached
+			logger := trace.Logger(ctx, t.logger)
+
 			enc, _ := json.Marshal(variables)
-			t.logger.Warn(
+			logger.Warn(
 				"slow GraphQL request",
 				log.Duration("duration", d),
 				log.Int32("user_id", currentUserID),
@@ -149,7 +127,7 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 				for _, e := range err {
 					errFields = append(errFields, e.Error())
 				}
-				t.logger.Info(
+				logger.Info(
 					"slow unknown GraphQL request",
 					log.Duration("duration", d),
 					log.Int32("user_id", currentUserID),
@@ -173,7 +151,7 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 				Errors:    errFields,
 				Query:     queryString,
 			}
-			captureSlowRequest(t.logger, req)
+			captureSlowRequest(logger, req)
 		}
 	}
 }
