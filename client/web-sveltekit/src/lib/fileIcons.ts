@@ -44,7 +44,7 @@ const YELLOW = 'var(--yellow)'
 const RED = 'var(--red)'
 const GREEN = 'var(--green)'
 const CYAN = 'var(--blue)'
-const DEFAULT_ICON = 'var(--gray-05)'
+const GRAY = 'var(--gray-05)'
 
 enum FileExtension {
     ASSEMBLY = 'asm',
@@ -61,7 +61,6 @@ enum FileExtension {
     CSHARP = 'cs',
     CSS = 'css',
     DART = 'dart',
-    DEFAULT = 'default',
     DOCKERFILE = 'Dockerfile',
     DOCKERIGNORE = 'dockerignore',
     FORTRAN_F = 'f',
@@ -135,7 +134,7 @@ interface FileInfo {
     isTest: boolean
 }
 
-const getColor = (extension: FileExtension) => {
+function getColor(extension: FileExtension) {
     switch (extension) {
         case FileExtension.DOCKERFILE:
         case FileExtension.DOCKERIGNORE:
@@ -175,7 +174,7 @@ const getColor = (extension: FileExtension) => {
             return CYAN
         }
         default: {
-            return DEFAULT_ICON
+            return GRAY
         }
     }
 }
@@ -184,8 +183,7 @@ const getColor = (extension: FileExtension) => {
 // Most programming language Material Design icons will be
 // deprecated very soon, and will not be included in the next release.
 // Additionally, it doesn't have all the icons we need anyway.
-const getIconAttributes = (extension: FileExtension): IconInfo => {
-    const color = getColor(extension)
+function getIcon(extension: FileExtension): string {
     switch (extension) {
         // TODO: Ideally, we would switch to a new icon library
         // so we don't have to default to a general icon
@@ -198,7 +196,6 @@ const getIconAttributes = (extension: FileExtension): IconInfo => {
         case FileExtension.CLOJURE_EDN:
         case FileExtension.CLOJURE_CLJS:
         case FileExtension.DART:
-        case FileExtension.DEFAULT:
         case FileExtension.FORTRAN_F:
         case FileExtension.FORTRAN_FOR:
         case FileExtension.FORTRAN_FTN:
@@ -215,143 +212,135 @@ const getIconAttributes = (extension: FileExtension): IconInfo => {
         case FileExtension.SQL:
         case FileExtension.TEST:
         case FileExtension.ZIG: {
-            return { svgPath: mdiFileCodeOutline, color }
+            return mdiFileCodeOutline
         }
         case FileExtension.BASH:
         case FileExtension.POWERSHELL_PS1:
         case FileExtension.POWERSHELL_PSM1: {
-            return { svgPath: mdiConsole, color }
+            return mdiConsole
         }
         case FileExtension.C: {
-            return { svgPath: mdiLanguageC, color }
+            return mdiLanguageC
         }
         case FileExtension.RUST:
         case FileExtension.TOML: {
-            return { svgPath: mdiLanguageRust, color }
+            return mdiLanguageRust
         }
         case FileExtension.CPP: {
-            return { svgPath: mdiLanguageCpp, color }
+            return mdiLanguageCpp
         }
         case FileExtension.CSHARP: {
-            return { svgPath: mdiLanguageCsharp, color }
+            return mdiLanguageCsharp
         }
         case FileExtension.CSS: {
-            return { svgPath: mdiLanguageCss3, color }
+            return mdiLanguageCss3
         }
         case FileExtension.DOCKERFILE:
         case FileExtension.DOCKERIGNORE: {
-            return { svgPath: mdiDocker, color }
+            return mdiDocker
         }
         case FileExtension.GIF:
         case FileExtension.GIFF: {
-            return { svgPath: mdiFileGifBox, color }
+            return mdiFileGifBox
         }
         case FileExtension.GITIGNORE:
         case FileExtension.GITATTRIBUTES: {
-            return { svgPath: mdiGit, color }
+            return mdiGit
         }
         case FileExtension.GO:
         case FileExtension.GOMOD:
         case FileExtension.GOSUM: {
-            return { svgPath: mdiLanguageGo, color }
+            return mdiLanguageGo
         }
         case FileExtension.GRAPHQL: {
-            return { svgPath: mdiGraphql, color }
+            return mdiGraphql
         }
         case FileExtension.HASKELL: {
-            return { svgPath: mdiLanguageHaskell, color }
+            return mdiLanguageHaskell
         }
         case FileExtension.HTML: {
-            return { svgPath: mdiLanguageHtml5, color }
+            return mdiLanguageHtml5
         }
         case FileExtension.JAVA: {
-            return { svgPath: mdiLanguageJava, color }
+            return mdiLanguageJava
         }
         case FileExtension.JAVASCRIPT: {
-            return { svgPath: mdiLanguageJavascript, color }
+            return mdiLanguageJavascript
         }
         case FileExtension.JPG:
         case FileExtension.JPEG: {
-            return { svgPath: mdiFileJpgBox, color }
+            return mdiFileJpgBox
         }
         case FileExtension.JSON:
         case FileExtension.LOCKFILE: {
-            return { svgPath: mdiCodeJson, color }
+            return mdiCodeJson
         }
         case FileExtension.JSX:
         case FileExtension.TSX: {
-            return { svgPath: mdiReact, color }
+            return mdiReact
         }
         case FileExtension.KOTLIN: {
-            return { svgPath: mdiLanguageKotlin, color }
+            return mdiLanguageKotlin
         }
         case FileExtension.LUA: {
-            return { svgPath: mdiLanguageLua, color }
+            return mdiLanguageLua
         }
         case FileExtension.MARKDOWN:
         case FileExtension.MDX: {
-            return { svgPath: mdiLanguageMarkdown, color }
+            return mdiLanguageMarkdown
         }
         case FileExtension.NCL:
         case FileExtension.NIX: {
-            return { svgPath: mdiNix, color }
+            return mdiNix
         }
         case FileExtension.NPM: {
-            return { svgPath: mdiNpm, color }
+            return mdiNpm
         }
         case FileExtension.PHP: {
-            return { svgPath: mdiLanguagePhp, color }
+            return mdiLanguagePhp
         }
         case FileExtension.PNG: {
-            return { svgPath: mdiFilePngBox, color }
+            return mdiFilePngBox
         }
         case FileExtension.PYTHON: {
-            return { svgPath: mdiLanguagePython, color }
+            return mdiLanguagePython
         }
         case FileExtension.R:
         case FileExtension.R_CAP: {
-            return { svgPath: mdiLanguageR, color }
+            return mdiLanguageR
         }
         case FileExtension.RUBY:
         case FileExtension.GEMFILE: {
-            return { svgPath: mdiLanguageRuby, color }
+            return mdiLanguageRuby
         }
         case FileExtension.SASS: {
-            return { svgPath: mdiSass, color }
+            return mdiSass
         }
         case FileExtension.SVG: {
-            return { svgPath: mdiSvg, color }
+            return mdiSvg
         }
         case FileExtension.SWIFT: {
-            return { svgPath: mdiLanguageSwift, color }
+            return mdiLanguageSwift
         }
         case FileExtension.TYPESCRIPT: {
-            return { svgPath: mdiLanguageTypescript, color }
+            return mdiLanguageTypescript
         }
         case FileExtension.TEXT: {
-            return { svgPath: mdiText, color }
+            return mdiText
         }
         case FileExtension.YAML:
         case FileExtension.YML: {
-            return { svgPath: mdiCog, color }
+            return mdiCog
         }
         default: {
-            return { svgPath: mdiConsole, color }
+            return mdiFileCodeOutline
         }
     }
 }
 
-const getExtension = (file: string): FileExtension => {
-    const ext = file.split('.').at(-1) as FileExtension
-    if (Object.values(FileExtension).includes(ext)) {
-        return ext
-    }
-    return 'default' as FileExtension
-}
-
-export const getFileInfo = (file: string): FileInfo => {
-    const extension = getExtension(file)
-    const icon = FILE_ICONS.get(extension)
+export function getFileInfo(file: string): FileInfo {
+    const extension = file.split('.').at(-1)
+    const icon = FILE_ICONS.get(extension as FileExtension)
 
     if (icon) {
         return {
@@ -363,10 +352,15 @@ export const getFileInfo = (file: string): FileInfo => {
     return {
         icon: {
             svgPath: mdiFileCodeOutline,
-            color: DEFAULT_ICON,
+            color: GRAY,
         },
         isTest: false,
     }
 }
 
-const FILE_ICONS = new Map(Object.values(FileExtension).map(extension => [extension, getIconAttributes(extension)]))
+const FILE_ICONS = new Map(
+    Object.values(FileExtension).map(extension => [
+        extension,
+        { svgPath: getIcon(extension), color: getColor(extension) },
+    ])
+)
