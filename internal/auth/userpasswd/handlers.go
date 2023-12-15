@@ -163,7 +163,7 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 	events := telemetry.NewBestEffortEventRecorder(logger, eventRecorder)
 	events.Record(teestore.WithoutV1(r.Context()), telemetry.FeatureSignUp, telemetry.ActionSucceeded, &telemetry.EventParameters{
 		Metadata: telemetry.EventMetadata{
-			"failIfNewUserIsNotInitialSiteAdmin": telemetry.MetadataBool(failIfNewUserIsNotInitialSiteAdmin),
+			"failIfNewUserIsNotInitialSiteAdmin": telemetry.Bool(failIfNewUserIsNotInitialSiteAdmin),
 		},
 	})
 	//lint:ignore SA1019 existing usage of deprecated functionality. TODO: Use only the new V2 event instead.
