@@ -21,6 +21,6 @@ chmod -R 0777 $tmp_folder
 
 docker load --input="$tarball"
 # docker run -v "$tmp_folder":/sources "$image_name" -- ls -lR /sources
-docker run --mount type=bind,source="$tmp_folder",target=/sources "$image_name" -- ls -lR /sources
+docker run --privileged --mount type=bind,source="$tmp_folder",target=/sources "$image_name" -- ls -lR /sources
 
 cp "$tmp_folder"/index.scip "$out"
