@@ -2,7 +2,6 @@ package terraformcloud
 
 import (
 	"context"
-
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -127,12 +126,17 @@ func (c workspaceOptions) AsUpdate() tfe.WorkspaceUpdateOptions {
 }
 
 type Workspace struct {
-	Name    string
-	Created bool
+	workspace *tfe.Workspace
+	RunMode   WorkspaceRunMode
+	Created   bool
 }
 
+func (w Workspace) Name() string { return w.workspace.Name }
+
+func (w Workspace) ID() string { return w.workspace.ID }
+
 func (w Workspace) URL() string {
-	return fmt.Sprintf("https://app.terraform.io/app/sourcegraph/workspaces/%s", w.Name)
+	return fmt.Sprintf("https://app.terraform.io/app/sourcegraph/workspaces/%s", w.Name())
 }
 
 // SyncWorkspaces is a bit like the Terraform Cloud Terraform provider. We do
@@ -253,12 +257,15 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 			}
 
 			workspaces = append(workspaces, Workspace{
-				Name:    createdWorkspace.Name,
-				Created: true,
+				workspace: createdWorkspace,
+				RunMode:   c.workspaceConfig.RunMode,
+				Created:   true,
 			})
 		} else {
 			workspaces = append(workspaces, Workspace{
-				Name: existingWorkspace.Name,
+				workspace: existingWorkspace,
+				RunMode:   c.workspaceConfig.RunMode,
+				Created:   false,
 			})
 
 			// VCSRepo must be removed by explicitly using the API - update
@@ -326,6 +333,18 @@ func (c *Client) DeleteWorkspaces(ctx context.Context, svc spec.ServiceSpec, env
 	}
 
 	return errs
+}
+
+func (c *Client) ApplyWorkspace(ctx context.Context, ws Workspace, message string) error {
+	_, err := c.client.Runs.Create(ctx, tfe.RunCreateOptions{
+		Workspace: ws.workspace,
+		AutoApply: pointers.Ptr(true),
+		Message:   &message,
+	})
+	if err != nil {
+		return errors.Wrapf(err, "Runs.Create")
+	}
+	return nil
 }
 
 func (c *Client) ensureAccessForTeam(ctx context.Context, project *tfe.Project, currentTeams *tfe.TeamProjectAccessList, teamID string) error {

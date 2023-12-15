@@ -227,6 +227,16 @@ Supports completions on services and environments.`,
 							Usage: "Delete workspaces and projects - does NOT apply a teardown run",
 							Value: false,
 						},
+						&cli.BoolFlag{
+							Name:  "apply-created",
+							Usage: "Apply newly created workspaces - only valid in 'vcs' mode",
+							Value: true,
+						},
+						&cli.BoolFlag{
+							Name:  "apply-updated",
+							Usage: "Apply updated workspaces - only valid in 'vcs' mode",
+							Value: false,
+						},
 					},
 					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
@@ -383,11 +393,31 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 
 	var summary strings.Builder
 	for _, ws := range workspaces {
-		summary.WriteString(fmt.Sprintf("- %s: %s", ws.Name, ws.URL()))
+		summary.WriteString(fmt.Sprintf("- %s: %s", ws.Name(), ws.URL()))
 		if ws.Created {
-			summary.WriteString(" (created)")
+			if ws.RunMode == terraformcloud.WorkspaceRunModeVCS && c.Bool("apply-created") {
+				if err := tfc.ApplyWorkspace(c.Context, ws, "sg msp: apply newly created workspace"); err != nil {
+					// not fatal, just add error to summary
+					summary.WriteString(fmt.Sprintf(" (created, failed to run: %s)",
+						err.Error()))
+				} else {
+					summary.WriteString(" (created, running)")
+				}
+			} else {
+				summary.WriteString(" (created)")
+			}
 		} else {
-			summary.WriteString(" (updated)")
+			if ws.RunMode == terraformcloud.WorkspaceRunModeVCS && c.Bool("apply-updated") {
+				if err := tfc.ApplyWorkspace(c.Context, ws, "sg msp: apply updated workspace"); err != nil {
+					// not fatal, just add error to summary
+					summary.WriteString(fmt.Sprintf(" (updated, failed to run: %s)",
+						err.Error()))
+				} else {
+					summary.WriteString(" (updated, running)")
+				}
+			} else {
+				summary.WriteString(" (updated)")
+			}
 		}
 		summary.WriteString("\n")
 	}
