@@ -203,7 +203,7 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 		b.Fatal(err)
 	}
 
-	m, err := compile(&p.PatternInfo)
+	m, err := compilePattern(&p.PatternInfo)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -320,7 +320,7 @@ func TestMaxMatches(t *testing.T) {
 	}
 
 	p := &protocol.PatternInfo{Pattern: pattern}
-	m, err := compile(p)
+	m, err := compilePattern(p)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -375,7 +375,7 @@ func TestPathMatches(t *testing.T) {
 		Pattern:         "",
 		IncludePatterns: []string{"a", "b"},
 	}
-	m, err := compile(patternInfo)
+	m, err := compilePattern(patternInfo)
 	if err != nil {
 		t.Fatal(err)
 	}

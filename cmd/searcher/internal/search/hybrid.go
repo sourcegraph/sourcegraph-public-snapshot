@@ -261,7 +261,7 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	var parts []zoektquery.Q
 	// we are redoing work here, but ensures we generate the same regex and it
 	// feels nicer than passing in a regexMatcher since handle path directly.
-	if m, err := compile(p); err != nil {
+	if m, err := compilePattern(p); err != nil {
 		return nil, err
 	} else if m.MatchesAllContent() { // we are just matching paths
 		parts = append(parts, &zoektquery.Const{Value: true})

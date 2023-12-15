@@ -38,10 +38,10 @@ func (pm *pathMatcher) String() string {
 // * all of the includePatterns match the path; AND
 // * the excludePattern does NOT match the path.
 func compilePathPatterns(p *protocol.PatternInfo) (*pathMatcher, error) {
-	// set err once if non-nil. This simplifies our many calls to compile.
+	// set err once if non-nil. This simplifies our many calls to compilePattern.
 	var err error
 	compile := func(pattern string) *regexp.Regexp {
-		if !p.PathPatternsAreCaseSensitive{
+		if !p.PathPatternsAreCaseSensitive {
 			// Respect the CaseSensitive option. However, if the pattern already contains
 			// (?i:...), then don't clear that 'i' flag (because we assume that behavior
 			// is desirable in more cases).

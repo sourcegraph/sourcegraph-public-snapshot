@@ -26,6 +26,19 @@ func regexSearchBatch(ctx context.Context, m matcher, pm *pathMatcher, zf *zipFi
 }
 
 // regexSearch concurrently searches files in zr looking for matches using m.
+//
+// This code is base on reading the techniques detailed in
+// http://blog.burntsushi.net/ripgrep/
+//
+// The stdlib regexp is pretty powerful and in fact implements many of the
+// features in ripgrep. Our implementation gives high performance via pruning
+// aggressively which files to consider (non-binary under a limit) and
+// optimizing for assuming most lines will not contain a match.
+//
+// If there is no more low-hanging fruit and perf is not acceptable, we could
+// consider using ripgrep directly (modify it to search zip archives).
+//
+// TODO(keegan) return search statistics
 func regexSearch(ctx context.Context, m matcher, pm *pathMatcher, zf *zipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (err error) {
 	tr, ctx := trace.New(ctx, "regexSearch")
 	defer tr.EndWithErr(&err)
@@ -57,7 +70,7 @@ func regexSearch(ctx context.Context, m matcher, pm *pathMatcher, zf *zipFile, p
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {
-			if match := pm.Matches(f.Name) && m.MatchesString(f.Name); match == !isPatternNegated {
+			if match := pm.Matches(f.Name) && m.MatchesPath(f.Name); match == !isPatternNegated {
 				if ctx.Err() != nil {
 					return ctx.Err()
 				}
@@ -115,7 +128,7 @@ func regexSearch(ctx context.Context, m matcher, pm *pathMatcher, zf *zipFile, p
 				if m.IgnoreCase() {
 					// If we are ignoring case, we transform the input instead of
 					// relying on the regular expression engine which can be
-					// slow. compile has already lowercased the pattern. We also
+					// slow. compilePattern has already lowercased the pattern. We also
 					// trade some correctness for perf by using a non-utf8 aware
 					// lowercase function.
 					if transformBuf == nil {
@@ -131,7 +144,7 @@ func regexSearch(ctx context.Context, m matcher, pm *pathMatcher, zf *zipFile, p
 				match := len(fm.ChunkMatches) > 0
 				if !match && patternMatchesPaths {
 					// Try matching against the file path.
-					match = m.MatchesString(f.Name)
+					match = m.MatchesPath(f.Name)
 					if match {
 						fm.Path = f.Name
 					}
@@ -192,7 +205,7 @@ func readAll(r io.Reader, b []byte) (int, error) {
 func locsToFileMatch(fileBuf []byte, name string, locs [][]int) protocol.FileMatch {
 	if len(locs) == 0 {
 		return protocol.FileMatch{
-			Path: name,
+			Path:     name,
 			LimitHit: false,
 		}
 	}

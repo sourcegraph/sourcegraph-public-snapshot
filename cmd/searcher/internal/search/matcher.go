@@ -17,33 +17,26 @@ import (
 )
 
 type matcher interface {
+	// AddAttributes adds attributes to the trace
 	AddAttributes(tr trace.Trace)
 
+	// MatchesAllContent returns whether the pattern will match all content
 	MatchesAllContent() bool
+
+	// IgnoreCase returns whether matches will ignore case
 	IgnoreCase() bool
 
-	MatchesString(file string) bool
+	// MatchesPath returns whether the pattern matches the given file path
+	MatchesPath(path string) bool
+
+	// MatchesFile returns a LineMatch for each line that matches rm in reader.
+	// LimitHit is true if some matches may not have been included in the result.
 	MatchesFile(fileBuf []byte, limit int) [][]int
 
+	// ToZoektQuery returns a zoekt query representing the same rules as as this matcher
 	ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error)
 }
 
-// regexMatcher is responsible for finding LineMatches. It is not concurrency
-// safe (it reuses buffers for performance).
-//
-// This code is base on reading the techniques detailed in
-// http://blog.burntsushi.net/ripgrep/
-//
-// The stdlib regexp is pretty powerful and in fact implements many of the
-// features in ripgrep. Our implementation gives high performance via pruning
-// aggressively which files to consider (non-binary under a limit) and
-// optimizing for assuming most lines will not contain a match. The pruning of
-// files is done by the
-//
-// If there is no more low-hanging fruit and perf is not acceptable, we could
-// consider using ripgrep directly (modify it to search zip archives).
-//
-// TODO(keegan) return search statistics
 type regexMatcher struct {
 	// re is the regexp to match, or nil if empty ("match all files' content").
 	re *regexp.Regexp
@@ -58,8 +51,8 @@ type regexMatcher struct {
 	literalSubstring []byte
 }
 
-// compile returns a regexMatcher for matching p.
-func compile(p *protocol.PatternInfo) (matcher, error) {
+// compilePattern returns a matcher for matching p.
+func compilePattern(p *protocol.PatternInfo) (matcher, error) {
 	var (
 		re               *regexp.Regexp
 		literalSubstring []byte
@@ -159,7 +152,6 @@ func (rm *regexMatcher) AddAttributes(tr trace.Trace) {
 	}
 }
 
-// MatchesAllContent returns whether the regexp pattern will match all content
 func (rm *regexMatcher) MatchesAllContent() bool {
 	return rm.re == nil
 }
@@ -168,9 +160,7 @@ func (rm *regexMatcher) IgnoreCase() bool {
 	return rm.ignoreCase
 }
 
-// MatchesString returns whether the regexp pattern matches s. It is intended to be
-// used to match file paths.
-func (rm *regexMatcher) MatchesString(s string) bool {
+func (rm *regexMatcher) MatchesPath(s string) bool {
 	if rm.re == nil {
 		return true
 	}
@@ -180,9 +170,6 @@ func (rm *regexMatcher) MatchesString(s string) bool {
 	return rm.re.MatchString(s)
 }
 
-// MatchesFile returns a LineMatch for each line that matches rm in reader.
-// LimitHit is true if some matches may not have been included in the result.
-// NOTE: This is not safe to use concurrently.
 func (rm *regexMatcher) MatchesFile(fileBuf []byte, limit int) [][]int {
 	// Most files will not have a match and we bound the number of matched
 	// files we return. So we can avoid the overhead of parsing out new lines
