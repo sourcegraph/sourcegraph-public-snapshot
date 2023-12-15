@@ -15,8 +15,9 @@ import (
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -341,9 +342,8 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 			"repo.private",
 			"repo.stars",
 			"gr.last_fetched",
-			"repo.external_service_type",
-			"repo.metadata",
 			"(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id)",
+			"repo.topics",
 		},
 		// Required so gr.last_fetched is select-able
 		joinGitserverRepos: true,
@@ -352,8 +352,6 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 	res := make([]*types.SearchedRepo, 0, len(ids))
 	scanMetadata := func(rows *sql.Rows) error {
 		var r types.SearchedRepo
-		var metadataBytes json.RawMessage
-		var typ string
 		var kvps repoKVPs
 		if err := rows.Scan(
 			&r.ID,
@@ -364,22 +362,13 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 			&r.Private,
 			&dbutil.NullInt{N: &r.Stars},
 			&r.LastFetched,
-			&dbutil.NullString{S: &typ},
-			&metadataBytes,
 			&kvps,
+			pq.Array(&r.Topics),
 		); err != nil {
 			return err
 		}
 
 		r.KeyValuePairs = kvps.kvps
-
-		metadata, ok, err := unmarshalMetadata(s.logger, typ, metadataBytes)
-		if err != nil {
-			return err
-		} else if ok {
-			r.Topics = GetTopics(metadata)
-		}
-
 		res = append(res, &r)
 		return nil
 	}
@@ -458,6 +447,7 @@ var repoColumns = []string{
 	"repo.metadata",
 	"repo.blocked",
 	"(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id)",
+	"repo.topics",
 }
 
 func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
@@ -484,6 +474,7 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		&metadata,
 		&blocked,
 		&kvps,
+		pq.Array(&r.Topics),
 		&sources,
 	)
 	if err != nil {
@@ -496,6 +487,8 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 			return err
 		}
 	}
+
+	r.KeyValuePairs = kvps.kvps
 
 	type sourceInfo struct {
 		ID       int64
@@ -518,95 +511,60 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		}
 	}
 
-	r.KeyValuePairs = kvps.kvps
-
-	var ok bool
-	r.Metadata, ok, err = unmarshalMetadata(logger, r.ExternalRepo.ServiceType, metadata)
-	if err != nil {
-		return err
-	} else if !ok {
-		return nil
-	}
-
-	return nil
-}
-
-func GetTopics(metadata any) (topics []string) {
-	if metadata == nil {
-		return nil
-	}
-
-	switch m := metadata.(type) {
-	case *github.Repository:
-		for _, node := range m.RepositoryTopics.Nodes {
-			topics = append(topics, node.Topic.Name)
-		}
-	case *gitlab.Project:
-		topics = m.Topics
-	}
-
-	return
-}
-
-// unmarshalMetadata returns the unmarshalled metadata, or false if the data
-// could not be unmarshalled.
-func unmarshalMetadata(logger log.Logger, typ string, metadata json.RawMessage) (any, bool, error) {
-	var m any
-
-	typ, ok := extsvc.ParseServiceType(typ)
+	typ, ok := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
 	if !ok {
-		logger.Warn("failed to parse service type", log.String("r.ExternalRepo.ServiceType", typ))
-		return nil, false, nil
+		logger.Warn("failed to parse service type", log.String("r.ExternalRepo.ServiceType", r.ExternalRepo.ServiceType))
+		return nil
 	}
 	switch typ {
 	case extsvc.TypeGitHub:
-		m = new(github.Repository)
+		r.Metadata = new(github.Repository)
 	case extsvc.TypeGitLab:
-		m = new(gitlab.Project)
+		r.Metadata = new(gitlab.Project)
 	case extsvc.TypeAzureDevOps:
-		m = new(azuredevops.Repository)
+		r.Metadata = new(azuredevops.Repository)
 	case extsvc.TypeGerrit:
-		m = new(gerrit.Project)
+		r.Metadata = new(gerrit.Project)
 	case extsvc.TypeBitbucketServer:
-		m = new(bitbucketserver.Repo)
+		r.Metadata = new(bitbucketserver.Repo)
 	case extsvc.TypeBitbucketCloud:
-		m = new(bitbucketcloud.Repo)
+		r.Metadata = new(bitbucketcloud.Repo)
 	case extsvc.TypeAWSCodeCommit:
-		m = new(awscodecommit.Repository)
+		r.Metadata = new(awscodecommit.Repository)
 	case extsvc.TypeGitolite:
-		m = new(gitolite.Repo)
+		r.Metadata = new(gitolite.Repo)
 	case extsvc.TypePerforce:
-		m = new(perforce.Depot)
+		r.Metadata = new(perforce.Depot)
 	case extsvc.TypePhabricator:
-		m = new(phabricator.Repo)
+		r.Metadata = new(phabricator.Repo)
 	case extsvc.TypePagure:
-		m = new(pagure.Project)
+		r.Metadata = new(pagure.Project)
 	case extsvc.TypeOther:
-		m = new(extsvc.OtherRepoMetadata)
+		r.Metadata = new(extsvc.OtherRepoMetadata)
 	case extsvc.TypeJVMPackages:
-		m = new(reposource.MavenMetadata)
+		r.Metadata = new(reposource.MavenMetadata)
 	case extsvc.TypeNpmPackages:
-		m = new(reposource.NpmMetadata)
+		r.Metadata = new(reposource.NpmMetadata)
 	case extsvc.TypeGoModules:
-		m = &struct{}{}
+		r.Metadata = &struct{}{}
 	case extsvc.TypePythonPackages:
-		m = &struct{}{}
+		r.Metadata = &struct{}{}
 	case extsvc.TypeRustPackages:
-		m = &struct{}{}
+		r.Metadata = &struct{}{}
 	case extsvc.TypeRubyPackages:
-		m = &struct{}{}
+		r.Metadata = &struct{}{}
 	case extsvc.VariantLocalGit.AsType():
-		m = new(extsvc.LocalGitMetadata)
+		r.Metadata = new(extsvc.LocalGitMetadata)
 	default:
 		logger.Warn("unknown service type", log.String("type", typ))
-		return nil, false, nil
+		return nil
 	}
 
-	if err := json.Unmarshal(metadata, m); err != nil {
-		return nil, false, errors.Wrapf(err, "scanRepo: failed to unmarshal %q metadata", typ)
+	if err = json.Unmarshal(metadata, r.Metadata); err != nil {
+		return errors.Wrapf(err, "scanRepo: failed to unmarshal %q metadata", typ)
 	}
 
-	return m, true, nil
+	return nil
 }
 
 // ReposListOptions specifies the options for listing repositories.

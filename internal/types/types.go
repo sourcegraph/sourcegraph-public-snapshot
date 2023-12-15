@@ -5,11 +5,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"reflect"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 
 	"github.com/google/uuid"
 
@@ -83,6 +84,8 @@ type Repo struct {
 	Blocked *RepoBlock `json:",omitempty"`
 	// KeyValuePairs is the set of key-value pairs associated with the repo
 	KeyValuePairs map[string]*string `json:",omitempty"`
+	// Topics synced from GitHub or GitLab
+	Topics []string
 }
 
 func (r *Repo) IDName() RepoIDName {
@@ -132,7 +135,7 @@ type SearchedRepo struct {
 	LastFetched *time.Time
 	// A set of key-value pairs associated with the repo
 	KeyValuePairs map[string]*string
-	// Topics contains the topics synced from GitHub or GitLab.
+	// Topics synced from GitHub or GitLab
 	Topics []string
 }
 

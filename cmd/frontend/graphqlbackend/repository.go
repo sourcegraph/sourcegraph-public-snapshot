@@ -489,7 +489,7 @@ func (r *RepositoryResolver) Topics(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	return database.GetTopics(repo.Metadata), nil
+	return repo.Topics, nil
 }
 
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {
