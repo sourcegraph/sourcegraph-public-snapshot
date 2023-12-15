@@ -252,9 +252,8 @@ async function searchBasedDefinitionsViaSearchQueries(options: UseSearchBasedCod
     const { searchToken, path, repo, isFork, fileContent, isArchived, commit, languages, filter } = options
     // Construct base definition query without scoping terms
     const queryTerms = definitionQuery({ searchToken, path, languages })
-    const filterDefinitions = (results: Location[]): Location[] => {
-        return filter ? results.filter(location => location.file.includes(filter)) : results
-    }
+    const filterDefinitions = (results: Location[]): Location[] =>
+        filter ? results.filter(location => location.file.includes(filter)) : results
 
     const doSearch = (repoFilter: RepoFilter): Promise<Location[]> =>
         searchWithFallback(
