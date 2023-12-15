@@ -1980,6 +1980,7 @@ ts_project(
         "src/repo/blob/codemirror/utils.test.ts",
         "src/repo/commit/CommitMessageWithLinks.test.tsx",
         "src/repo/commits/GitCommitNodeByline.test.tsx",
+        "src/repo/fileIcons.test.ts",
         "src/repo/linkifiy/get-links.test.ts",
         "src/repo/releases/RepositoryReleasesTagsPage.test.tsx",
         "src/repo/tree/TreePage.test.tsx",
