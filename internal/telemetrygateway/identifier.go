@@ -32,7 +32,7 @@ func newIdentifier(ctx context.Context, c conftypes.SiteConfigQuerier, g databas
 	if globalState.SiteID != "" {
 		return &telemetrygatewayv1.Identifier{
 			Identifier: &telemetrygatewayv1.Identifier_UnlicensedInstance{
-				UnlicensedInstance: &telemetrygatewayv1.Identifier_UnlicensedInstanceIdentifier{
+				UnlicensedInstance: &telemetrygatewayv1.Identifier_UnlicensedInstanceIdenfitier{
 					InstanceId:  globalState.SiteID,
 					ExternalUrl: c.SiteConfig().ExternalURL,
 				},
