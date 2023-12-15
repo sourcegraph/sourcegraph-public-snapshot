@@ -1,16 +1,19 @@
 package search
 
 import (
+	"bytes"
 	"context"
 	"io"
 	//nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"time"
+	"unicode/utf8"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/atomic"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -84,7 +87,11 @@ func regexSearch(ctx context.Context, m matcher, pm *pathMatcher, zf *zipFile, p
 
 	// Start workers. They read from files and write to matches.
 	for i := 0; i < numWorkers; i++ {
-		m := m.Copy()
+		// transformBuf is reused between file searches to avoid
+		// re-allocating. It is only used if we need to transform the input
+		// before matching. For example we lower case the input in the case of
+		// ignoreCase.
+		var transformBuf []byte
 		g.Go(func() error {
 			for !contextCanceled.Load() {
 				idx := int(lastFileIdx.Inc())
@@ -101,11 +108,26 @@ func regexSearch(ctx context.Context, m matcher, pm *pathMatcher, zf *zipFile, p
 				}
 				filesSearched.Inc()
 
-				// process
-				fm, err := m.MatchesZip(zf, f, sender.Remaining())
-				if err != nil {
-					return err
+				// fileMatchBuf is what we run match on, fileBuf is the original
+				// data (for Preview).
+				fileBuf := zf.DataFor(f)
+				fileMatchBuf := fileBuf
+				if m.IgnoreCase() {
+					// If we are ignoring case, we transform the input instead of
+					// relying on the regular expression engine which can be
+					// slow. compile has already lowercased the pattern. We also
+					// trade some correctness for perf by using a non-utf8 aware
+					// lowercase function.
+					if transformBuf == nil {
+						transformBuf = make([]byte, zf.MaxLen)
+					}
+					fileMatchBuf = transformBuf[:len(fileBuf)]
+					casetransform.BytesToLowerASCII(fileMatchBuf, fileBuf)
 				}
+
+				locs := m.MatchesFile(fileMatchBuf, sender.Remaining())
+				fm := locsToFileMatch(fileBuf, f.Name, locs)
+
 				match := len(fm.ChunkMatches) > 0
 				if !match && patternMatchesPaths {
 					// Try matching against the file path.
@@ -165,4 +187,64 @@ func readAll(r io.Reader, b []byte) (int, error) {
 			return n, err
 		}
 	}
+}
+
+func locsToFileMatch(fileBuf []byte, name string, locs [][]int) protocol.FileMatch {
+	if len(locs) == 0 {
+		return protocol.FileMatch{
+			Path: name,
+			LimitHit: false,
+		}
+	}
+	ranges := locsToRanges(fileBuf, locs)
+	chunks := chunkRanges(ranges, 0)
+	cms := chunksToMatches(fileBuf, chunks)
+	return protocol.FileMatch{
+		Path:         name,
+		ChunkMatches: cms,
+		LimitHit:     false,
+	}
+}
+
+// locs must be sorted, non-overlapping, and must be valid slices of buf.
+func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
+	ranges := make([]protocol.Range, 0, len(locs))
+
+	prevEnd := 0
+	prevEndLine := 0
+
+	for _, loc := range locs {
+		start, end := loc[0], loc[1]
+
+		startLine := prevEndLine + bytes.Count(buf[prevEnd:start], []byte{'\n'})
+		endLine := startLine + bytes.Count(buf[start:end], []byte{'\n'})
+
+		firstLineStart := 0
+		if off := bytes.LastIndexByte(buf[:start], '\n'); off >= 0 {
+			firstLineStart = off + 1
+		}
+
+		lastLineStart := firstLineStart
+		if off := bytes.LastIndexByte(buf[:end], '\n'); off >= 0 {
+			lastLineStart = off + 1
+		}
+
+		ranges = append(ranges, protocol.Range{
+			Start: protocol.Location{
+				Offset: int32(start),
+				Line:   int32(startLine),
+				Column: int32(utf8.RuneCount(buf[firstLineStart:start])),
+			},
+			End: protocol.Location{
+				Offset: int32(end),
+				Line:   int32(endLine),
+				Column: int32(utf8.RuneCount(buf[lastLineStart:end])),
+			},
+		})
+
+		prevEnd = end
+		prevEndLine = endLine
+	}
+
+	return ranges
 }

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"regexp/syntax"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/zoekt/query"
@@ -19,11 +18,12 @@ import (
 
 type matcher interface {
 	AddAttributes(tr trace.Trace)
-	Copy() matcher
 
 	MatchesAllContent() bool
+	IgnoreCase() bool
+
 	MatchesString(file string) bool
-	MatchesZip(zf *zipFile, f *srcFile, limit int) (protocol.FileMatch, error)
+	MatchesFile(fileBuf []byte, limit int) [][]int
 
 	ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error)
 }
@@ -50,12 +50,6 @@ type regexMatcher struct {
 
 	// ignoreCase if true means we need to do case insensitive matching.
 	ignoreCase bool
-
-	// transformBuf is reused between file searches to avoid
-	// re-allocating. It is only used if we need to transform the input
-	// before matching. For example we lower case the input in the case of
-	// ignoreCase.
-	transformBuf []byte
 
 	// literalSubstring is used to test if a file is worth considering for
 	// matches. literalSubstring is guaranteed to appear in any match found by
@@ -165,19 +159,13 @@ func (rm *regexMatcher) AddAttributes(tr trace.Trace) {
 	}
 }
 
-// Copy returns a copied version of rm that is safe to use from another
-// goroutine.
-func (rm *regexMatcher) Copy() matcher {
-	return &regexMatcher{
-		re:               rm.re,
-		ignoreCase:       rm.ignoreCase,
-		literalSubstring: rm.literalSubstring,
-	}
-}
-
 // MatchesAllContent returns whether the regexp pattern will match all content
 func (rm *regexMatcher) MatchesAllContent() bool {
 	return rm.re == nil
+}
+
+func (rm *regexMatcher) IgnoreCase() bool {
+	return rm.ignoreCase
 }
 
 // MatchesString returns whether the regexp pattern matches s. It is intended to be
@@ -192,37 +180,10 @@ func (rm *regexMatcher) MatchesString(s string) bool {
 	return rm.re.MatchString(s)
 }
 
-// MatchesZip returns a LineMatch for each line that matches rm in reader.
+// MatchesFile returns a LineMatch for each line that matches rm in reader.
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
-func (rm *regexMatcher) MatchesZip(zf *zipFile, f *srcFile, limit int) (protocol.FileMatch, error) {
-	cms, err := rm.find(zf, f, limit)
-	return protocol.FileMatch{
-		Path:         f.Name,
-		ChunkMatches: cms,
-		LimitHit:     false,
-	}, err
-}
-
-func (rm *regexMatcher) find(zf *zipFile, f *srcFile, limit int) (matches []protocol.ChunkMatch, err error) {
-	// fileMatchBuf is what we run match on, fileBuf is the original
-	// data (for Preview).
-	fileBuf := zf.DataFor(f)
-	fileMatchBuf := fileBuf
-
-	// If we are ignoring case, we transform the input instead of
-	// relying on the regular expression engine which can be
-	// slow. compile has already lowercased the pattern. We also
-	// trade some correctness for perf by using a non-utf8 aware
-	// lowercase function.
-	if rm.ignoreCase {
-		if rm.transformBuf == nil {
-			rm.transformBuf = make([]byte, zf.MaxLen)
-		}
-		fileMatchBuf = rm.transformBuf[:len(fileBuf)]
-		casetransform.BytesToLowerASCII(fileMatchBuf, fileBuf)
-	}
-
+func (rm *regexMatcher) MatchesFile(fileBuf []byte, limit int) [][]int {
 	// Most files will not have a match and we bound the number of matched
 	// files we return. So we can avoid the overhead of parsing out new lines
 	// and repeatedly running the regex engine by running a single match over
@@ -230,61 +191,12 @@ func (rm *regexMatcher) find(zf *zipFile, f *srcFile, limit int) (matches []prot
 	// searching for results. We use the same approach when we search
 	// per-line. Additionally if we have a non-empty literalSubstring, we use
 	// that to prune out files since doing bytes.Index is very fast.
-	if !bytes.Contains(fileMatchBuf, rm.literalSubstring) {
-		return nil, nil
+	if !bytes.Contains(fileBuf, rm.literalSubstring) {
+		return nil
 	}
 
 	// find limit+1 matches so we know whether we hit the limit
-	locs := rm.re.FindAllIndex(fileMatchBuf, limit+1)
-	if len(locs) == 0 {
-		return nil, nil // short-circuit if we have no matches
-	}
-	ranges := locsToRanges(fileBuf, locs)
-	chunks := chunkRanges(ranges, 0)
-	return chunksToMatches(fileBuf, chunks), nil
-}
-
-// locs must be sorted, non-overlapping, and must be valid slices of buf.
-func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
-	ranges := make([]protocol.Range, 0, len(locs))
-
-	prevEnd := 0
-	prevEndLine := 0
-
-	for _, loc := range locs {
-		start, end := loc[0], loc[1]
-
-		startLine := prevEndLine + bytes.Count(buf[prevEnd:start], []byte{'\n'})
-		endLine := startLine + bytes.Count(buf[start:end], []byte{'\n'})
-
-		firstLineStart := 0
-		if off := bytes.LastIndexByte(buf[:start], '\n'); off >= 0 {
-			firstLineStart = off + 1
-		}
-
-		lastLineStart := firstLineStart
-		if off := bytes.LastIndexByte(buf[:end], '\n'); off >= 0 {
-			lastLineStart = off + 1
-		}
-
-		ranges = append(ranges, protocol.Range{
-			Start: protocol.Location{
-				Offset: int32(start),
-				Line:   int32(startLine),
-				Column: int32(utf8.RuneCount(buf[firstLineStart:start])),
-			},
-			End: protocol.Location{
-				Offset: int32(end),
-				Line:   int32(endLine),
-				Column: int32(utf8.RuneCount(buf[lastLineStart:end])),
-			},
-		})
-
-		prevEnd = end
-		prevEndLine = endLine
-	}
-
-	return ranges
+	return rm.re.FindAllIndex(fileBuf, limit+1)
 }
 
 func (rm *regexMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
