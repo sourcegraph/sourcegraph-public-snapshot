@@ -169,9 +169,15 @@ fn compare_range(a: Range<usize>, b: Range<usize>) -> Ordering {
 
 #[derive(Debug)]
 struct Captures<'a> {
-    scopes: Vec<(&'a str, Node<'a>)>,
+    scopes: Vec<ScopeCapture<'a>>,
     definitions: Vec<DefCapture<'a>>,
     references: Vec<RefCapture<'a>>,
+}
+
+#[derive(Debug)]
+struct ScopeCapture<'a> {
+    ty: &'a str,
+    node: Node<'a>,
 }
 
 #[derive(Debug)]
@@ -392,7 +398,7 @@ impl<'a> LocalResolver<'a> {
         let mut cursor = tree_sitter::QueryCursor::new();
         let capture_names = config.query.capture_names();
 
-        let mut scopes: Vec<(&str, Node<'a>)> = vec![];
+        let mut scopes: Vec<ScopeCapture> = vec![];
         let mut definitions: Vec<DefCapture> = vec![];
         let mut references: Vec<RefCapture<'a>> = vec![];
 
@@ -404,7 +410,10 @@ impl<'a> LocalResolver<'a> {
                 };
                 if capture_name.starts_with("scope") {
                     let ty = capture_name.strip_prefix("scope.").unwrap_or(capture_name);
-                    scopes.push((ty, capture.node))
+                    scopes.push(ScopeCapture {
+                        ty,
+                        node: capture.node,
+                    })
                 } else if capture_name.starts_with("definition") {
                     let mut hoist_scope = None;
                     if let Some(prop) = properties.iter().find(|p| p.key == "hoist".into()) {
@@ -445,16 +454,15 @@ impl<'a> LocalResolver<'a> {
     /// sure to add all definitions and references to their narrowest
     /// enclosing scope, or to hoist them to the closest matching
     /// scope.
-    fn build_tree(
-        &mut self,
-        top_scope: ScopeRef<'a>,
-        mut scopes: Vec<(&'a str, Node<'a>)>,
-        mut definitions: Vec<DefCapture<'a>>,
-        mut references: Vec<RefCapture<'a>>,
-    ) {
+    fn build_tree(&mut self, top_scope: ScopeRef<'a>, captures: Captures<'a>) {
+        let Captures {
+            mut scopes,
+            mut definitions,
+            mut references,
+        } = captures;
         // In order to do a pre-order traversal we need to sort scopes and definitions
         // TODO: (perf) Do a pass to check if they're already sorted first?
-        scopes.sort_by(|(_, a), (_, b)| compare_range(a.byte_range(), b.byte_range()));
+        scopes.sort_by(|a, b| compare_range(a.node.byte_range(), b.node.byte_range()));
         definitions.sort_by_key(|a| a.node.start_byte());
         references.sort_by_key(|a| a.node.start_byte());
 
@@ -462,7 +470,11 @@ impl<'a> LocalResolver<'a> {
         let mut references_iter = references.iter();
 
         let mut current_scope = top_scope;
-        for (scope_ty, scope) in scopes {
+        for ScopeCapture {
+            ty: scope_ty,
+            node: scope,
+        } in scopes
+        {
             let new_scope_end = scope.end_byte();
             while new_scope_end > self.end_byte(current_scope) {
                 // Add all remaining definitions before end of current
@@ -564,12 +576,7 @@ impl<'a> LocalResolver<'a> {
         let top_scope = self
             .arena
             .alloc(Scope::new("global".to_string(), tree.root_node(), None));
-        self.build_tree(
-            top_scope,
-            captures.scopes,
-            captures.definitions,
-            captures.references,
-        );
+        self.build_tree(top_scope, captures);
         // TODO: Maybe write a couple snapshot tests that assert on
         // the structure of this tree?
         // self.print_scope(top_scope, 0); // Just for debugging
