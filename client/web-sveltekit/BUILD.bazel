@@ -16,6 +16,7 @@ SRCS = [
     ".prettierignore",
     ".env",
     ".env.dotcom",
+    "static/react-logo.svg",
     "//client/wildcard:sass-breakpoints",
     "//client/wildcard:global-style-sources",
     "//client/web/dist/img:copy",
