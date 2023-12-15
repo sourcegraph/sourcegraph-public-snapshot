@@ -32,6 +32,7 @@
 
     .icon {
         flex-shrink: 0;
+        --color: var(--text-muted);
     }
 
     .title {

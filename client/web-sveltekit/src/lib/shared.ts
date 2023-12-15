@@ -46,6 +46,7 @@ export {
     type CommitMatch,
     type Progress,
     type Range,
+    type Filter,
 } from '@sourcegraph/shared/src/search/stream'
 export type {
     MatchItem,
