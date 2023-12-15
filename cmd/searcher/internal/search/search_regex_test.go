@@ -7,13 +7,12 @@ import (
 	"io"
 	"os"
 	"reflect"
-	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
+	//nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"sort"
 	"strconv"
 	"testing"
 	"testing/iotest"
 
-	"github.com/grafana/regexp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -204,7 +203,12 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 		b.Fatal(err)
 	}
 
-	rg, err := compile(&p.PatternInfo)
+	m, err := compile(&p.PatternInfo)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	pm, err := compilePathPatterns(&p.PatternInfo)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -225,49 +229,9 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		_, _, err := regexSearchBatch(ctx, rg, zf, 99999999, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated)
+		_, _, err := regexSearchBatch(ctx, m, pm, zf, 99999999, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated)
 		if err != nil {
 			b.Fatal(err)
-		}
-	}
-}
-
-func TestLongestLiteral(t *testing.T) {
-	cases := map[string]string{
-		"foo":       "foo",
-		"FoO":       "FoO",
-		"(?m:^foo)": "foo",
-		"(?m:^FoO)": "FoO",
-		"[Z]":       "Z",
-
-		`\wddSuballocation\(dump`:    "ddSuballocation(dump",
-		`\wfoo(\dlongest\wbam)\dbar`: "longest",
-
-		`(foo\dlongest\dbar)`:  "longest",
-		`(foo\dlongest\dbar)+`: "longest",
-		`(foo\dlongest\dbar)*`: "",
-
-		"(foo|bar)":     "",
-		"[A-Z]":         "",
-		"[^A-Z]":        "",
-		"[abB-Z]":       "",
-		"([abB-Z]|FoO)": "",
-		`[@-\[]`:        "",
-		`\S`:            "",
-	}
-
-	metaLiteral := "AddSuballocation(dump->guid(), system_allocator_name)"
-	cases[regexp.QuoteMeta(metaLiteral)] = metaLiteral
-
-	for expr, want := range cases {
-		re, err := syntax.Parse(expr, syntax.Perl)
-		if err != nil {
-			t.Fatal(expr, err)
-		}
-		re = re.Simplify()
-		got := longestLiteral(re)
-		if want != got {
-			t.Errorf("longestLiteral(%q) == %q != %q", expr, got, want)
 		}
 	}
 }
@@ -355,11 +319,18 @@ func TestMaxMatches(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rg, err := compile(&protocol.PatternInfo{Pattern: pattern})
+	p := &protocol.PatternInfo{Pattern: pattern}
+	m, err := compile(p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, limitHit, err := regexSearchBatch(context.Background(), rg, zf, maxMatches, true, false, false)
+
+	pm, err := compilePathPatterns(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fileMatches, limitHit, err := regexSearchBatch(context.Background(), m, pm, zf, maxMatches, true, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -400,14 +371,20 @@ func TestPathMatches(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rg, err := compile(&protocol.PatternInfo{
+	patternInfo := &protocol.PatternInfo{
 		Pattern:         "",
 		IncludePatterns: []string{"a", "b"},
-	})
+	}
+	m, err := compile(patternInfo)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, _, err := regexSearchBatch(context.Background(), rg, zf, 10, true, true, false)
+	pm, err := compilePathPatterns(patternInfo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fileMatches, _, err := regexSearchBatch(context.Background(), m, pm, zf, 10, true, true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -443,13 +420,19 @@ func init() {
 }
 
 func TestRegexSearch(t *testing.T) {
-	match, err := compilePathPatterns([]string{`a\.go`}, `README\.md`, false)
+	match, err := compilePathPatterns(&protocol.PatternInfo{
+		IncludePatterns: []string{`a\.go`},
+		ExcludePattern:  `README\.md`,
+		IsCaseSensitive: false,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	type args struct {
 		ctx                   context.Context
-		rg                    *regexMatcher
+		m                     matcher
+		pm                    *pathMatcher
 		zf                    *zipFile
 		limit                 int
 		patternMatchesContent bool
@@ -466,11 +449,11 @@ func TestRegexSearch(t *testing.T) {
 			name: "nil re returns a FileMatch with no LineMatches",
 			args: args{
 				ctx: context.Background(),
-				rg: &regexMatcher{
+				m: &regexMatcher{
 					// Check this case specifically.
-					re:        nil,
-					matchPath: match,
+					re: nil,
 				},
+				pm: match,
 				zf: &zipFile{
 					Files: []srcFile{
 						{
@@ -487,7 +470,7 @@ func TestRegexSearch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, err := regexSearchBatch(tt.args.ctx, tt.args.rg, tt.args.zf, tt.args.limit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false)
+			gotFm, gotLimitHit, err := regexSearchBatch(tt.args.ctx, tt.args.m, tt.args.pm, tt.args.zf, tt.args.limit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("regexSearch() error = %v, wantErr %v", err, tt.wantErr)
 				return

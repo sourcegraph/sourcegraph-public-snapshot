@@ -4,6 +4,8 @@ import (
 	"strings"
 
 	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 )
 
 type pathMatcher struct {
@@ -11,7 +13,7 @@ type pathMatcher struct {
 	Exclude *regexp.Regexp
 }
 
-func (pm *pathMatcher) MatchPath(path string) bool {
+func (pm *pathMatcher) Matches(path string) bool {
 	for _, re := range pm.Include {
 		if !re.MatchString(path) {
 			return false
@@ -35,17 +37,17 @@ func (pm *pathMatcher) String() string {
 //
 // * all of the includePatterns match the path; AND
 // * the excludePattern does NOT match the path.
-func compilePathPatterns(includePatterns []string, excludePattern string, caseSensitive bool) (*pathMatcher, error) {
+func compilePathPatterns(p *protocol.PatternInfo) (*pathMatcher, error) {
 	// set err once if non-nil. This simplifies our many calls to compile.
 	var err error
-	compile := func(p string) *regexp.Regexp {
-		if !caseSensitive {
+	compile := func(pattern string) *regexp.Regexp {
+		if !p.PathPatternsAreCaseSensitive{
 			// Respect the CaseSensitive option. However, if the pattern already contains
 			// (?i:...), then don't clear that 'i' flag (because we assume that behavior
 			// is desirable in more cases).
-			p = "(?i:" + p + ")"
+			pattern = "(?i:" + pattern + ")"
 		}
-		re, innerErr := regexp.Compile(p)
+		re, innerErr := regexp.Compile(pattern)
 		if innerErr != nil {
 			err = innerErr
 		}
@@ -53,13 +55,13 @@ func compilePathPatterns(includePatterns []string, excludePattern string, caseSe
 	}
 
 	var include []*regexp.Regexp
-	for _, p := range includePatterns {
+	for _, p := range p.IncludePatterns {
 		include = append(include, compile(p))
 	}
 
 	var exclude *regexp.Regexp
-	if excludePattern != "" {
-		exclude = compile(excludePattern)
+	if p.ExcludePattern != "" {
+		exclude = compile(p.ExcludePattern)
 	}
 
 	return &pathMatcher{

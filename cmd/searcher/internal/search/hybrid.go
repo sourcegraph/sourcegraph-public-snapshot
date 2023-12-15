@@ -261,37 +261,16 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	var parts []zoektquery.Q
 	// we are redoing work here, but ensures we generate the same regex and it
 	// feels nicer than passing in a regexMatcher since handle path directly.
-	if rm, err := compile(p); err != nil {
+	if m, err := compile(p); err != nil {
 		return nil, err
-	} else if rm.re == nil { // we are just matching paths
+	} else if m.MatchesAllContent() { // we are just matching paths
 		parts = append(parts, &zoektquery.Const{Value: true})
 	} else {
-		re, err := syntax.Parse(rm.re.String(), syntax.Perl)
+		q, err := m.ToZoektQuery(p.PatternMatchesContent, p.PatternMatchesPath)
 		if err != nil {
 			return nil, err
 		}
-		re = zoektquery.OptimizeRegexp(re, syntax.Perl)
-		if p.PatternMatchesContent && p.PatternMatchesPath {
-			parts = append(parts, zoektquery.NewOr(
-				&zoektquery.Regexp{
-					Regexp:        re,
-					Content:       true,
-					CaseSensitive: !rm.ignoreCase,
-				},
-				&zoektquery.Regexp{
-					Regexp:        re,
-					FileName:      true,
-					CaseSensitive: !rm.ignoreCase,
-				},
-			))
-		} else {
-			parts = append(parts, &zoektquery.Regexp{
-				Regexp:        re,
-				Content:       p.PatternMatchesContent,
-				FileName:      p.PatternMatchesPath,
-				CaseSensitive: !rm.ignoreCase,
-			})
-		}
+		parts = append(parts, q)
 	}
 
 	for _, pat := range p.IncludePatterns {

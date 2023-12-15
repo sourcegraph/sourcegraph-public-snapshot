@@ -222,6 +222,11 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		return badRequestError{err.Error()}
 	}
 
+	pm, err := compilePathPatterns(&p.PatternInfo)
+	if err != nil {
+		return badRequestError{err.Error()}
+	}
+
 	logger := logWithTrace(ctx, s.Log).Scoped("hybrid").With(
 		log.String("repo", string(p.Repo)),
 		log.String("commit", string(p.Commit)),
@@ -251,7 +256,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	}
 	defer zf.Close()
 
-	return regexSearch(ctx, rm, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
+	return regexSearch(ctx, rm, pm, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
 }
 
 func (s *Service) getZipFile(ctx context.Context, tr trace.Trace, p *protocol.Request, paths []string) (string, *zipFile, error) {

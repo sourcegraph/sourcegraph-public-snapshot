@@ -1,274 +1,34 @@
 package search
 
 import (
-	"bytes"
 	"context"
 	"io"
-	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
-	"strings"
+	//nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"time"
-	"unicode/utf8"
 
-	"github.com/grafana/regexp"
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/atomic"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/zoekt/query"
-
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// regexMatcher is responsible for finding LineMatches. It is not concurrency
-// safe (it reuses buffers for performance).
-//
-// This code is base on reading the techniques detailed in
-// http://blog.burntsushi.net/ripgrep/
-//
-// The stdlib regexp is pretty powerful and in fact implements many of the
-// features in ripgrep. Our implementation gives high performance via pruning
-// aggressively which files to consider (non-binary under a limit) and
-// optimizing for assuming most lines will not contain a match. The pruning of
-// files is done by the
-//
-// If there is no more low-hanging fruit and perf is not acceptable, we could
-// consider using ripgrep directly (modify it to search zip archives).
-//
-// TODO(keegan) return search statistics
-type regexMatcher struct {
-	// re is the regexp to match, or nil if empty ("match all files' content").
-	re *regexp.Regexp
-
-	// ignoreCase if true means we need to do case insensitive matching.
-	ignoreCase bool
-
-	// transformBuf is reused between file searches to avoid
-	// re-allocating. It is only used if we need to transform the input
-	// before matching. For example we lower case the input in the case of
-	// ignoreCase.
-	transformBuf []byte
-
-	// matchPath is compiled from the include/exclude path patterns and reports
-	// whether a file path matches (and should be searched).
-	matchPath *pathMatcher
-
-	// literalSubstring is used to test if a file is worth considering for
-	// matches. literalSubstring is guaranteed to appear in any match found by
-	// re. It is the output of the longestLiteral function. It is only set if
-	// the regex has an empty LiteralPrefix.
-	literalSubstring []byte
-}
-
-// compile returns a regexMatcher for matching p.
-func compile(p *protocol.PatternInfo) (*regexMatcher, error) {
-	var (
-		re               *regexp.Regexp
-		literalSubstring []byte
-	)
-	if p.Pattern != "" {
-		expr := p.Pattern
-		if !p.IsRegExp {
-			expr = regexp.QuoteMeta(expr)
-		}
-		if p.IsWordMatch {
-			expr = `\b` + expr + `\b`
-		}
-		if p.IsRegExp {
-			// We don't do the search line by line, therefore we want the
-			// regex engine to consider newlines for anchors (^$).
-			expr = "(?m:" + expr + ")"
-		}
-
-		// Transforms on the parsed regex
-		{
-			re, err := syntax.Parse(expr, syntax.Perl)
-			if err != nil {
-				return nil, err
-			}
-
-			if !p.IsCaseSensitive {
-				// We don't just use (?i) because regexp library doesn't seem
-				// to contain good optimizations for case insensitive
-				// search. Instead we lowercase the input and pattern.
-				casetransform.LowerRegexpASCII(re)
-			}
-
-			// OptimizeRegexp currently only converts capture groups into
-			// non-capture groups (faster for stdlib regexp to execute).
-			re = query.OptimizeRegexp(re, syntax.Perl)
-
-			expr = re.String()
-		}
-
-		var err error
-		re, err = regexp.Compile(expr)
-		if err != nil {
-			return nil, err
-		}
-
-		// Only use literalSubstring optimization if the regex engine doesn't
-		// have a prefix to use.
-		if pre, _ := re.LiteralPrefix(); pre == "" {
-			ast, err := syntax.Parse(expr, syntax.Perl)
-			if err != nil {
-				return nil, err
-			}
-			ast = ast.Simplify()
-			literalSubstring = []byte(longestLiteral(ast))
-		}
-	}
-
-	matchPath, err := compilePathPatterns(p.IncludePatterns, p.ExcludePattern, p.PathPatternsAreCaseSensitive)
-	if err != nil {
-		return nil, err
-	}
-
-	return &regexMatcher{
-		re:               re,
-		ignoreCase:       !p.IsCaseSensitive,
-		matchPath:        matchPath,
-		literalSubstring: literalSubstring,
-	}, nil
-}
-
-// Copy returns a copied version of rg that is safe to use from another
-// goroutine.
-func (rm *regexMatcher) Copy() *regexMatcher {
-	return &regexMatcher{
-		re:               rm.re,
-		ignoreCase:       rm.ignoreCase,
-		matchPath:        rm.matchPath,
-		literalSubstring: rm.literalSubstring,
-	}
-}
-
-// matchString returns whether rg's regexp pattern matches s. It is intended to be
-// used to match file paths.
-func (rm *regexMatcher) matchString(s string) bool {
-	if rm.re == nil {
-		return true
-	}
-	if rm.ignoreCase {
-		s = strings.ToLower(s)
-	}
-	return rm.re.MatchString(s)
-}
-
-// Find returns a LineMatch for each line that matches rg in reader.
-// LimitHit is true if some matches may not have been included in the result.
-// NOTE: This is not safe to use concurrently.
-func (rm *regexMatcher) Find(zf *zipFile, f *srcFile, limit int) (matches []protocol.ChunkMatch, err error) {
-	// fileMatchBuf is what we run match on, fileBuf is the original
-	// data (for Preview).
-	fileBuf := zf.DataFor(f)
-	fileMatchBuf := fileBuf
-
-	// If we are ignoring case, we transform the input instead of
-	// relying on the regular expression engine which can be
-	// slow. compile has already lowercased the pattern. We also
-	// trade some correctness for perf by using a non-utf8 aware
-	// lowercase function.
-	if rm.ignoreCase {
-		if rm.transformBuf == nil {
-			rm.transformBuf = make([]byte, zf.MaxLen)
-		}
-		fileMatchBuf = rm.transformBuf[:len(fileBuf)]
-		casetransform.BytesToLowerASCII(fileMatchBuf, fileBuf)
-	}
-
-	// Most files will not have a match and we bound the number of matched
-	// files we return. So we can avoid the overhead of parsing out new lines
-	// and repeatedly running the regex engine by running a single match over
-	// the whole file. This does mean we duplicate work when actually
-	// searching for results. We use the same approach when we search
-	// per-line. Additionally if we have a non-empty literalSubstring, we use
-	// that to prune out files since doing bytes.Index is very fast.
-	if !bytes.Contains(fileMatchBuf, rm.literalSubstring) {
-		return nil, nil
-	}
-
-	// find limit+1 matches so we know whether we hit the limit
-	locs := rm.re.FindAllIndex(fileMatchBuf, limit+1)
-	if len(locs) == 0 {
-		return nil, nil // short-circuit if we have no matches
-	}
-	ranges := locsToRanges(fileBuf, locs)
-	chunks := chunkRanges(ranges, 0)
-	return chunksToMatches(fileBuf, chunks), nil
-}
-
-// locs must be sorted, non-overlapping, and must be valid slices of buf.
-func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
-	ranges := make([]protocol.Range, 0, len(locs))
-
-	prevEnd := 0
-	prevEndLine := 0
-
-	for _, loc := range locs {
-		start, end := loc[0], loc[1]
-
-		startLine := prevEndLine + bytes.Count(buf[prevEnd:start], []byte{'\n'})
-		endLine := startLine + bytes.Count(buf[start:end], []byte{'\n'})
-
-		firstLineStart := 0
-		if off := bytes.LastIndexByte(buf[:start], '\n'); off >= 0 {
-			firstLineStart = off + 1
-		}
-
-		lastLineStart := firstLineStart
-		if off := bytes.LastIndexByte(buf[:end], '\n'); off >= 0 {
-			lastLineStart = off + 1
-		}
-
-		ranges = append(ranges, protocol.Range{
-			Start: protocol.Location{
-				Offset: int32(start),
-				Line:   int32(startLine),
-				Column: int32(utf8.RuneCount(buf[firstLineStart:start])),
-			},
-			End: protocol.Location{
-				Offset: int32(end),
-				Line:   int32(endLine),
-				Column: int32(utf8.RuneCount(buf[lastLineStart:end])),
-			},
-		})
-
-		prevEnd = end
-		prevEndLine = endLine
-	}
-
-	return ranges
-}
-
-// FindZip is a convenience function to run Find on f.
-func (rm *regexMatcher) FindZip(zf *zipFile, f *srcFile, limit int) (protocol.FileMatch, error) {
-	cms, err := rm.Find(zf, f, limit)
-	return protocol.FileMatch{
-		Path:         f.Name,
-		ChunkMatches: cms,
-		LimitHit:     false,
-	}, err
-}
-
-func regexSearchBatch(ctx context.Context, rm *regexMatcher, zf *zipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
+func regexSearchBatch(ctx context.Context, m matcher, pm *pathMatcher, zf *zipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
 	ctx, cancel, sender := newLimitedStreamCollector(ctx, limit)
 	defer cancel()
-	err := regexSearch(ctx, rm, zf, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
+	err := regexSearch(ctx, m, pm, zf, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
 	return sender.collected, sender.LimitHit(), err
 }
 
-// regexSearch concurrently searches files in zr looking for matches using rg.
-func regexSearch(ctx context.Context, rm *regexMatcher, zf *zipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (err error) {
+// regexSearch concurrently searches files in zr looking for matches using m.
+func regexSearch(ctx context.Context, m matcher, pm *pathMatcher, zf *zipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (err error) {
 	tr, ctx := trace.New(ctx, "regexSearch")
 	defer tr.EndWithErr(&err)
 
-	if rm.re != nil {
-		tr.SetAttributes(attribute.Stringer("re", rm.re))
-	}
-	tr.SetAttributes(attribute.Stringer("path", rm.matchPath))
+	m.AddAttributes(tr)
+	tr.SetAttributes(attribute.Stringer("path", pm))
 
 	if !patternMatchesContent && !patternMatchesPaths {
 		patternMatchesContent = true
@@ -290,11 +50,11 @@ func regexSearch(ctx context.Context, rm *regexMatcher, zf *zipFile, patternMatc
 		files = zf.Files
 	)
 
-	if rm.re == nil || (patternMatchesPaths && !patternMatchesContent) {
+	if m.MatchesAllContent() || (patternMatchesPaths && !patternMatchesContent) {
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {
-			if match := rm.matchPath.MatchPath(f.Name) && rm.matchString(f.Name); match == !isPatternNegated {
+			if match := pm.Matches(f.Name) && m.MatchesString(f.Name); match == !isPatternNegated {
 				if ctx.Err() != nil {
 					return ctx.Err()
 				}
@@ -324,7 +84,7 @@ func regexSearch(ctx context.Context, rm *regexMatcher, zf *zipFile, patternMatc
 
 	// Start workers. They read from files and write to matches.
 	for i := 0; i < numWorkers; i++ {
-		rm := rm.Copy()
+		m := m.Copy()
 		g.Go(func() error {
 			for !contextCanceled.Load() {
 				idx := int(lastFileIdx.Inc())
@@ -335,21 +95,21 @@ func regexSearch(ctx context.Context, rm *regexMatcher, zf *zipFile, patternMatc
 				f := &files[idx]
 
 				// decide whether to process, record that decision
-				if !rm.matchPath.MatchPath(f.Name) {
+				if !pm.Matches(f.Name) {
 					filesSkipped.Inc()
 					continue
 				}
 				filesSearched.Inc()
 
 				// process
-				fm, err := rm.FindZip(zf, f, sender.Remaining())
+				fm, err := m.MatchesZip(zf, f, sender.Remaining())
 				if err != nil {
 					return err
 				}
 				match := len(fm.ChunkMatches) > 0
 				if !match && patternMatchesPaths {
 					// Try matching against the file path.
-					match = rm.matchString(f.Name)
+					match = m.MatchesString(f.Name)
 					if match {
 						fm.Path = f.Name
 					}
@@ -375,35 +135,6 @@ func regexSearch(ctx context.Context, rm *regexMatcher, zf *zipFile, patternMatc
 	)
 
 	return err
-}
-
-// longestLiteral finds the longest substring that is guaranteed to appear in
-// a match of re.
-//
-// Note: There may be a longer substring that is guaranteed to appear. For
-// example we do not find the longest common substring in alternating
-// group. Nor do we handle concatting simple capturing groups.
-func longestLiteral(re *syntax.Regexp) string {
-	switch re.Op {
-	case syntax.OpLiteral:
-		return string(re.Rune)
-	case syntax.OpCapture, syntax.OpPlus:
-		return longestLiteral(re.Sub[0])
-	case syntax.OpRepeat:
-		if re.Min >= 1 {
-			return longestLiteral(re.Sub[0])
-		}
-	case syntax.OpConcat:
-		longest := ""
-		for _, sub := range re.Sub {
-			l := longestLiteral(sub)
-			if len(l) > len(longest) {
-				longest = l
-			}
-		}
-		return longest
-	}
-	return ""
 }
 
 // readAll will read r until EOF into b. It returns the number of bytes

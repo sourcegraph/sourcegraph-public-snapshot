@@ -330,12 +330,17 @@ func filteredStructuralSearch(ctx context.Context, logger log.Logger, zipPath st
 	rp.Pattern = comby.StructuralPatToRegexpQuery(p.Pattern, false)
 	rp.IsStructuralPat = false
 	rp.IsRegExp = true
-	rm, err := compile(&rp)
+	m, err := compile(&rp)
 	if err != nil {
 		return err
 	}
 
-	fileMatches, _, err := regexSearchBatch(ctx, rm, zf, p.Limit, true, false, false)
+	pm, err := compilePathPatterns(&rp)
+	if err != nil {
+		return err
+	}
+
+	fileMatches, _, err := regexSearchBatch(ctx, m, pm, zf, p.Limit, true, false, false)
 	if err != nil {
 		return err
 	}
