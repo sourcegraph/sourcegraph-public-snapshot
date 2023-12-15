@@ -27,6 +27,7 @@ import (
 	store "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	types1 "github.com/sourcegraph/sourcegraph/internal/own/types"
 	result "github.com/sourcegraph/sourcegraph/internal/search/result"
+	v1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	temporarysettings "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 	schema "github.com/sourcegraph/sourcegraph/schema"
@@ -75753,6 +75754,1044 @@ func (c TeamStoreUpdateTeamFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c TeamStoreUpdateTeamFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockTelemetryEventsExportQueueStore is a mock implementation of the
+// TelemetryEventsExportQueueStore interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/database) used for unit
+// testing.
+type MockTelemetryEventsExportQueueStore struct {
+	// CountRecentlyExportedFunc is an instance of a mock function object
+	// controlling the behavior of the method CountRecentlyExported.
+	CountRecentlyExportedFunc *TelemetryEventsExportQueueStoreCountRecentlyExportedFunc
+	// CountUnexportedFunc is an instance of a mock function object
+	// controlling the behavior of the method CountUnexported.
+	CountUnexportedFunc *TelemetryEventsExportQueueStoreCountUnexportedFunc
+	// DeletedExportedFunc is an instance of a mock function object
+	// controlling the behavior of the method DeletedExported.
+	DeletedExportedFunc *TelemetryEventsExportQueueStoreDeletedExportedFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *TelemetryEventsExportQueueStoreHandleFunc
+	// ListForExportFunc is an instance of a mock function object
+	// controlling the behavior of the method ListForExport.
+	ListForExportFunc *TelemetryEventsExportQueueStoreListForExportFunc
+	// ListRecentlyExportedFunc is an instance of a mock function object
+	// controlling the behavior of the method ListRecentlyExported.
+	ListRecentlyExportedFunc *TelemetryEventsExportQueueStoreListRecentlyExportedFunc
+	// MarkAsExportedFunc is an instance of a mock function object
+	// controlling the behavior of the method MarkAsExported.
+	MarkAsExportedFunc *TelemetryEventsExportQueueStoreMarkAsExportedFunc
+	// QueueForExportFunc is an instance of a mock function object
+	// controlling the behavior of the method QueueForExport.
+	QueueForExportFunc *TelemetryEventsExportQueueStoreQueueForExportFunc
+}
+
+// NewMockTelemetryEventsExportQueueStore creates a new mock of the
+// TelemetryEventsExportQueueStore interface. All methods return zero values
+// for all results, unless overwritten.
+func NewMockTelemetryEventsExportQueueStore() *MockTelemetryEventsExportQueueStore {
+	return &MockTelemetryEventsExportQueueStore{
+		CountRecentlyExportedFunc: &TelemetryEventsExportQueueStoreCountRecentlyExportedFunc{
+			defaultHook: func(context.Context) (r0 int64, r1 error) {
+				return
+			},
+		},
+		CountUnexportedFunc: &TelemetryEventsExportQueueStoreCountUnexportedFunc{
+			defaultHook: func(context.Context) (r0 int64, r1 error) {
+				return
+			},
+		},
+		DeletedExportedFunc: &TelemetryEventsExportQueueStoreDeletedExportedFunc{
+			defaultHook: func(context.Context, time.Time) (r0 int64, r1 error) {
+				return
+			},
+		},
+		HandleFunc: &TelemetryEventsExportQueueStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		ListForExportFunc: &TelemetryEventsExportQueueStoreListForExportFunc{
+			defaultHook: func(context.Context, int) (r0 []*v1.Event, r1 error) {
+				return
+			},
+		},
+		ListRecentlyExportedFunc: &TelemetryEventsExportQueueStoreListRecentlyExportedFunc{
+			defaultHook: func(context.Context, int, *time.Time) (r0 []database.ExportedTelemetryEvent, r1 error) {
+				return
+			},
+		},
+		MarkAsExportedFunc: &TelemetryEventsExportQueueStoreMarkAsExportedFunc{
+			defaultHook: func(context.Context, []string) (r0 error) {
+				return
+			},
+		},
+		QueueForExportFunc: &TelemetryEventsExportQueueStoreQueueForExportFunc{
+			defaultHook: func(context.Context, []*v1.Event) (r0 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockTelemetryEventsExportQueueStore creates a new mock of the
+// TelemetryEventsExportQueueStore interface. All methods panic on
+// invocation, unless overwritten.
+func NewStrictMockTelemetryEventsExportQueueStore() *MockTelemetryEventsExportQueueStore {
+	return &MockTelemetryEventsExportQueueStore{
+		CountRecentlyExportedFunc: &TelemetryEventsExportQueueStoreCountRecentlyExportedFunc{
+			defaultHook: func(context.Context) (int64, error) {
+				panic("unexpected invocation of MockTelemetryEventsExportQueueStore.CountRecentlyExported")
+			},
+		},
+		CountUnexportedFunc: &TelemetryEventsExportQueueStoreCountUnexportedFunc{
+			defaultHook: func(context.Context) (int64, error) {
+				panic("unexpected invocation of MockTelemetryEventsExportQueueStore.CountUnexported")
+			},
+		},
+		DeletedExportedFunc: &TelemetryEventsExportQueueStoreDeletedExportedFunc{
+			defaultHook: func(context.Context, time.Time) (int64, error) {
+				panic("unexpected invocation of MockTelemetryEventsExportQueueStore.DeletedExported")
+			},
+		},
+		HandleFunc: &TelemetryEventsExportQueueStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockTelemetryEventsExportQueueStore.Handle")
+			},
+		},
+		ListForExportFunc: &TelemetryEventsExportQueueStoreListForExportFunc{
+			defaultHook: func(context.Context, int) ([]*v1.Event, error) {
+				panic("unexpected invocation of MockTelemetryEventsExportQueueStore.ListForExport")
+			},
+		},
+		ListRecentlyExportedFunc: &TelemetryEventsExportQueueStoreListRecentlyExportedFunc{
+			defaultHook: func(context.Context, int, *time.Time) ([]database.ExportedTelemetryEvent, error) {
+				panic("unexpected invocation of MockTelemetryEventsExportQueueStore.ListRecentlyExported")
+			},
+		},
+		MarkAsExportedFunc: &TelemetryEventsExportQueueStoreMarkAsExportedFunc{
+			defaultHook: func(context.Context, []string) error {
+				panic("unexpected invocation of MockTelemetryEventsExportQueueStore.MarkAsExported")
+			},
+		},
+		QueueForExportFunc: &TelemetryEventsExportQueueStoreQueueForExportFunc{
+			defaultHook: func(context.Context, []*v1.Event) error {
+				panic("unexpected invocation of MockTelemetryEventsExportQueueStore.QueueForExport")
+			},
+		},
+	}
+}
+
+// NewMockTelemetryEventsExportQueueStoreFrom creates a new mock of the
+// MockTelemetryEventsExportQueueStore interface. All methods delegate to
+// the given implementation, unless overwritten.
+func NewMockTelemetryEventsExportQueueStoreFrom(i database.TelemetryEventsExportQueueStore) *MockTelemetryEventsExportQueueStore {
+	return &MockTelemetryEventsExportQueueStore{
+		CountRecentlyExportedFunc: &TelemetryEventsExportQueueStoreCountRecentlyExportedFunc{
+			defaultHook: i.CountRecentlyExported,
+		},
+		CountUnexportedFunc: &TelemetryEventsExportQueueStoreCountUnexportedFunc{
+			defaultHook: i.CountUnexported,
+		},
+		DeletedExportedFunc: &TelemetryEventsExportQueueStoreDeletedExportedFunc{
+			defaultHook: i.DeletedExported,
+		},
+		HandleFunc: &TelemetryEventsExportQueueStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		ListForExportFunc: &TelemetryEventsExportQueueStoreListForExportFunc{
+			defaultHook: i.ListForExport,
+		},
+		ListRecentlyExportedFunc: &TelemetryEventsExportQueueStoreListRecentlyExportedFunc{
+			defaultHook: i.ListRecentlyExported,
+		},
+		MarkAsExportedFunc: &TelemetryEventsExportQueueStoreMarkAsExportedFunc{
+			defaultHook: i.MarkAsExported,
+		},
+		QueueForExportFunc: &TelemetryEventsExportQueueStoreQueueForExportFunc{
+			defaultHook: i.QueueForExport,
+		},
+	}
+}
+
+// TelemetryEventsExportQueueStoreCountRecentlyExportedFunc describes the
+// behavior when the CountRecentlyExported method of the parent
+// MockTelemetryEventsExportQueueStore instance is invoked.
+type TelemetryEventsExportQueueStoreCountRecentlyExportedFunc struct {
+	defaultHook func(context.Context) (int64, error)
+	hooks       []func(context.Context) (int64, error)
+	history     []TelemetryEventsExportQueueStoreCountRecentlyExportedFuncCall
+	mutex       sync.Mutex
+}
+
+// CountRecentlyExported delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockTelemetryEventsExportQueueStore) CountRecentlyExported(v0 context.Context) (int64, error) {
+	r0, r1 := m.CountRecentlyExportedFunc.nextHook()(v0)
+	m.CountRecentlyExportedFunc.appendCall(TelemetryEventsExportQueueStoreCountRecentlyExportedFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CountRecentlyExported method of the parent
+// MockTelemetryEventsExportQueueStore instance is invoked and the hook
+// queue is empty.
+func (f *TelemetryEventsExportQueueStoreCountRecentlyExportedFunc) SetDefaultHook(hook func(context.Context) (int64, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountRecentlyExported method of the parent
+// MockTelemetryEventsExportQueueStore instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *TelemetryEventsExportQueueStoreCountRecentlyExportedFunc) PushHook(hook func(context.Context) (int64, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TelemetryEventsExportQueueStoreCountRecentlyExportedFunc) SetDefaultReturn(r0 int64, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int64, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TelemetryEventsExportQueueStoreCountRecentlyExportedFunc) PushReturn(r0 int64, r1 error) {
+	f.PushHook(func(context.Context) (int64, error) {
+		return r0, r1
+	})
+}
+
+func (f *TelemetryEventsExportQueueStoreCountRecentlyExportedFunc) nextHook() func(context.Context) (int64, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TelemetryEventsExportQueueStoreCountRecentlyExportedFunc) appendCall(r0 TelemetryEventsExportQueueStoreCountRecentlyExportedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// TelemetryEventsExportQueueStoreCountRecentlyExportedFuncCall objects
+// describing the invocations of this function.
+func (f *TelemetryEventsExportQueueStoreCountRecentlyExportedFunc) History() []TelemetryEventsExportQueueStoreCountRecentlyExportedFuncCall {
+	f.mutex.Lock()
+	history := make([]TelemetryEventsExportQueueStoreCountRecentlyExportedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TelemetryEventsExportQueueStoreCountRecentlyExportedFuncCall is an object
+// that describes an invocation of method CountRecentlyExported on an
+// instance of MockTelemetryEventsExportQueueStore.
+type TelemetryEventsExportQueueStoreCountRecentlyExportedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int64
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreCountRecentlyExportedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreCountRecentlyExportedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// TelemetryEventsExportQueueStoreCountUnexportedFunc describes the behavior
+// when the CountUnexported method of the parent
+// MockTelemetryEventsExportQueueStore instance is invoked.
+type TelemetryEventsExportQueueStoreCountUnexportedFunc struct {
+	defaultHook func(context.Context) (int64, error)
+	hooks       []func(context.Context) (int64, error)
+	history     []TelemetryEventsExportQueueStoreCountUnexportedFuncCall
+	mutex       sync.Mutex
+}
+
+// CountUnexported delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockTelemetryEventsExportQueueStore) CountUnexported(v0 context.Context) (int64, error) {
+	r0, r1 := m.CountUnexportedFunc.nextHook()(v0)
+	m.CountUnexportedFunc.appendCall(TelemetryEventsExportQueueStoreCountUnexportedFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CountUnexported
+// method of the parent MockTelemetryEventsExportQueueStore instance is
+// invoked and the hook queue is empty.
+func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) SetDefaultHook(hook func(context.Context) (int64, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountUnexported method of the parent MockTelemetryEventsExportQueueStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) PushHook(hook func(context.Context) (int64, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) SetDefaultReturn(r0 int64, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int64, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) PushReturn(r0 int64, r1 error) {
+	f.PushHook(func(context.Context) (int64, error) {
+		return r0, r1
+	})
+}
+
+func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) nextHook() func(context.Context) (int64, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) appendCall(r0 TelemetryEventsExportQueueStoreCountUnexportedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// TelemetryEventsExportQueueStoreCountUnexportedFuncCall objects describing
+// the invocations of this function.
+func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) History() []TelemetryEventsExportQueueStoreCountUnexportedFuncCall {
+	f.mutex.Lock()
+	history := make([]TelemetryEventsExportQueueStoreCountUnexportedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TelemetryEventsExportQueueStoreCountUnexportedFuncCall is an object that
+// describes an invocation of method CountUnexported on an instance of
+// MockTelemetryEventsExportQueueStore.
+type TelemetryEventsExportQueueStoreCountUnexportedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int64
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreCountUnexportedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreCountUnexportedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// TelemetryEventsExportQueueStoreDeletedExportedFunc describes the behavior
+// when the DeletedExported method of the parent
+// MockTelemetryEventsExportQueueStore instance is invoked.
+type TelemetryEventsExportQueueStoreDeletedExportedFunc struct {
+	defaultHook func(context.Context, time.Time) (int64, error)
+	hooks       []func(context.Context, time.Time) (int64, error)
+	history     []TelemetryEventsExportQueueStoreDeletedExportedFuncCall
+	mutex       sync.Mutex
+}
+
+// DeletedExported delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockTelemetryEventsExportQueueStore) DeletedExported(v0 context.Context, v1 time.Time) (int64, error) {
+	r0, r1 := m.DeletedExportedFunc.nextHook()(v0, v1)
+	m.DeletedExportedFunc.appendCall(TelemetryEventsExportQueueStoreDeletedExportedFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the DeletedExported
+// method of the parent MockTelemetryEventsExportQueueStore instance is
+// invoked and the hook queue is empty.
+func (f *TelemetryEventsExportQueueStoreDeletedExportedFunc) SetDefaultHook(hook func(context.Context, time.Time) (int64, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeletedExported method of the parent MockTelemetryEventsExportQueueStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *TelemetryEventsExportQueueStoreDeletedExportedFunc) PushHook(hook func(context.Context, time.Time) (int64, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TelemetryEventsExportQueueStoreDeletedExportedFunc) SetDefaultReturn(r0 int64, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) (int64, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TelemetryEventsExportQueueStoreDeletedExportedFunc) PushReturn(r0 int64, r1 error) {
+	f.PushHook(func(context.Context, time.Time) (int64, error) {
+		return r0, r1
+	})
+}
+
+func (f *TelemetryEventsExportQueueStoreDeletedExportedFunc) nextHook() func(context.Context, time.Time) (int64, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TelemetryEventsExportQueueStoreDeletedExportedFunc) appendCall(r0 TelemetryEventsExportQueueStoreDeletedExportedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// TelemetryEventsExportQueueStoreDeletedExportedFuncCall objects describing
+// the invocations of this function.
+func (f *TelemetryEventsExportQueueStoreDeletedExportedFunc) History() []TelemetryEventsExportQueueStoreDeletedExportedFuncCall {
+	f.mutex.Lock()
+	history := make([]TelemetryEventsExportQueueStoreDeletedExportedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TelemetryEventsExportQueueStoreDeletedExportedFuncCall is an object that
+// describes an invocation of method DeletedExported on an instance of
+// MockTelemetryEventsExportQueueStore.
+type TelemetryEventsExportQueueStoreDeletedExportedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int64
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreDeletedExportedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreDeletedExportedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// TelemetryEventsExportQueueStoreHandleFunc describes the behavior when the
+// Handle method of the parent MockTelemetryEventsExportQueueStore instance
+// is invoked.
+type TelemetryEventsExportQueueStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []TelemetryEventsExportQueueStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockTelemetryEventsExportQueueStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(TelemetryEventsExportQueueStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockTelemetryEventsExportQueueStore instance is invoked and the
+// hook queue is empty.
+func (f *TelemetryEventsExportQueueStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockTelemetryEventsExportQueueStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *TelemetryEventsExportQueueStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TelemetryEventsExportQueueStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TelemetryEventsExportQueueStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *TelemetryEventsExportQueueStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TelemetryEventsExportQueueStoreHandleFunc) appendCall(r0 TelemetryEventsExportQueueStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// TelemetryEventsExportQueueStoreHandleFuncCall objects describing the
+// invocations of this function.
+func (f *TelemetryEventsExportQueueStoreHandleFunc) History() []TelemetryEventsExportQueueStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]TelemetryEventsExportQueueStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TelemetryEventsExportQueueStoreHandleFuncCall is an object that describes
+// an invocation of method Handle on an instance of
+// MockTelemetryEventsExportQueueStore.
+type TelemetryEventsExportQueueStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// TelemetryEventsExportQueueStoreListForExportFunc describes the behavior
+// when the ListForExport method of the parent
+// MockTelemetryEventsExportQueueStore instance is invoked.
+type TelemetryEventsExportQueueStoreListForExportFunc struct {
+	defaultHook func(context.Context, int) ([]*v1.Event, error)
+	hooks       []func(context.Context, int) ([]*v1.Event, error)
+	history     []TelemetryEventsExportQueueStoreListForExportFuncCall
+	mutex       sync.Mutex
+}
+
+// ListForExport delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockTelemetryEventsExportQueueStore) ListForExport(v0 context.Context, v1 int) ([]*v1.Event, error) {
+	r0, r1 := m.ListForExportFunc.nextHook()(v0, v1)
+	m.ListForExportFunc.appendCall(TelemetryEventsExportQueueStoreListForExportFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListForExport method
+// of the parent MockTelemetryEventsExportQueueStore instance is invoked and
+// the hook queue is empty.
+func (f *TelemetryEventsExportQueueStoreListForExportFunc) SetDefaultHook(hook func(context.Context, int) ([]*v1.Event, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListForExport method of the parent MockTelemetryEventsExportQueueStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *TelemetryEventsExportQueueStoreListForExportFunc) PushHook(hook func(context.Context, int) ([]*v1.Event, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TelemetryEventsExportQueueStoreListForExportFunc) SetDefaultReturn(r0 []*v1.Event, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]*v1.Event, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TelemetryEventsExportQueueStoreListForExportFunc) PushReturn(r0 []*v1.Event, r1 error) {
+	f.PushHook(func(context.Context, int) ([]*v1.Event, error) {
+		return r0, r1
+	})
+}
+
+func (f *TelemetryEventsExportQueueStoreListForExportFunc) nextHook() func(context.Context, int) ([]*v1.Event, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TelemetryEventsExportQueueStoreListForExportFunc) appendCall(r0 TelemetryEventsExportQueueStoreListForExportFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// TelemetryEventsExportQueueStoreListForExportFuncCall objects describing
+// the invocations of this function.
+func (f *TelemetryEventsExportQueueStoreListForExportFunc) History() []TelemetryEventsExportQueueStoreListForExportFuncCall {
+	f.mutex.Lock()
+	history := make([]TelemetryEventsExportQueueStoreListForExportFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TelemetryEventsExportQueueStoreListForExportFuncCall is an object that
+// describes an invocation of method ListForExport on an instance of
+// MockTelemetryEventsExportQueueStore.
+type TelemetryEventsExportQueueStoreListForExportFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*v1.Event
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreListForExportFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreListForExportFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// TelemetryEventsExportQueueStoreListRecentlyExportedFunc describes the
+// behavior when the ListRecentlyExported method of the parent
+// MockTelemetryEventsExportQueueStore instance is invoked.
+type TelemetryEventsExportQueueStoreListRecentlyExportedFunc struct {
+	defaultHook func(context.Context, int, *time.Time) ([]database.ExportedTelemetryEvent, error)
+	hooks       []func(context.Context, int, *time.Time) ([]database.ExportedTelemetryEvent, error)
+	history     []TelemetryEventsExportQueueStoreListRecentlyExportedFuncCall
+	mutex       sync.Mutex
+}
+
+// ListRecentlyExported delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockTelemetryEventsExportQueueStore) ListRecentlyExported(v0 context.Context, v1 int, v2 *time.Time) ([]database.ExportedTelemetryEvent, error) {
+	r0, r1 := m.ListRecentlyExportedFunc.nextHook()(v0, v1, v2)
+	m.ListRecentlyExportedFunc.appendCall(TelemetryEventsExportQueueStoreListRecentlyExportedFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListRecentlyExported
+// method of the parent MockTelemetryEventsExportQueueStore instance is
+// invoked and the hook queue is empty.
+func (f *TelemetryEventsExportQueueStoreListRecentlyExportedFunc) SetDefaultHook(hook func(context.Context, int, *time.Time) ([]database.ExportedTelemetryEvent, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListRecentlyExported method of the parent
+// MockTelemetryEventsExportQueueStore instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *TelemetryEventsExportQueueStoreListRecentlyExportedFunc) PushHook(hook func(context.Context, int, *time.Time) ([]database.ExportedTelemetryEvent, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TelemetryEventsExportQueueStoreListRecentlyExportedFunc) SetDefaultReturn(r0 []database.ExportedTelemetryEvent, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, *time.Time) ([]database.ExportedTelemetryEvent, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TelemetryEventsExportQueueStoreListRecentlyExportedFunc) PushReturn(r0 []database.ExportedTelemetryEvent, r1 error) {
+	f.PushHook(func(context.Context, int, *time.Time) ([]database.ExportedTelemetryEvent, error) {
+		return r0, r1
+	})
+}
+
+func (f *TelemetryEventsExportQueueStoreListRecentlyExportedFunc) nextHook() func(context.Context, int, *time.Time) ([]database.ExportedTelemetryEvent, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TelemetryEventsExportQueueStoreListRecentlyExportedFunc) appendCall(r0 TelemetryEventsExportQueueStoreListRecentlyExportedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// TelemetryEventsExportQueueStoreListRecentlyExportedFuncCall objects
+// describing the invocations of this function.
+func (f *TelemetryEventsExportQueueStoreListRecentlyExportedFunc) History() []TelemetryEventsExportQueueStoreListRecentlyExportedFuncCall {
+	f.mutex.Lock()
+	history := make([]TelemetryEventsExportQueueStoreListRecentlyExportedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TelemetryEventsExportQueueStoreListRecentlyExportedFuncCall is an object
+// that describes an invocation of method ListRecentlyExported on an
+// instance of MockTelemetryEventsExportQueueStore.
+type TelemetryEventsExportQueueStoreListRecentlyExportedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []database.ExportedTelemetryEvent
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreListRecentlyExportedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreListRecentlyExportedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// TelemetryEventsExportQueueStoreMarkAsExportedFunc describes the behavior
+// when the MarkAsExported method of the parent
+// MockTelemetryEventsExportQueueStore instance is invoked.
+type TelemetryEventsExportQueueStoreMarkAsExportedFunc struct {
+	defaultHook func(context.Context, []string) error
+	hooks       []func(context.Context, []string) error
+	history     []TelemetryEventsExportQueueStoreMarkAsExportedFuncCall
+	mutex       sync.Mutex
+}
+
+// MarkAsExported delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockTelemetryEventsExportQueueStore) MarkAsExported(v0 context.Context, v1 []string) error {
+	r0 := m.MarkAsExportedFunc.nextHook()(v0, v1)
+	m.MarkAsExportedFunc.appendCall(TelemetryEventsExportQueueStoreMarkAsExportedFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the MarkAsExported
+// method of the parent MockTelemetryEventsExportQueueStore instance is
+// invoked and the hook queue is empty.
+func (f *TelemetryEventsExportQueueStoreMarkAsExportedFunc) SetDefaultHook(hook func(context.Context, []string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MarkAsExported method of the parent MockTelemetryEventsExportQueueStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *TelemetryEventsExportQueueStoreMarkAsExportedFunc) PushHook(hook func(context.Context, []string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TelemetryEventsExportQueueStoreMarkAsExportedFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TelemetryEventsExportQueueStoreMarkAsExportedFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []string) error {
+		return r0
+	})
+}
+
+func (f *TelemetryEventsExportQueueStoreMarkAsExportedFunc) nextHook() func(context.Context, []string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TelemetryEventsExportQueueStoreMarkAsExportedFunc) appendCall(r0 TelemetryEventsExportQueueStoreMarkAsExportedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// TelemetryEventsExportQueueStoreMarkAsExportedFuncCall objects describing
+// the invocations of this function.
+func (f *TelemetryEventsExportQueueStoreMarkAsExportedFunc) History() []TelemetryEventsExportQueueStoreMarkAsExportedFuncCall {
+	f.mutex.Lock()
+	history := make([]TelemetryEventsExportQueueStoreMarkAsExportedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TelemetryEventsExportQueueStoreMarkAsExportedFuncCall is an object that
+// describes an invocation of method MarkAsExported on an instance of
+// MockTelemetryEventsExportQueueStore.
+type TelemetryEventsExportQueueStoreMarkAsExportedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreMarkAsExportedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreMarkAsExportedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// TelemetryEventsExportQueueStoreQueueForExportFunc describes the behavior
+// when the QueueForExport method of the parent
+// MockTelemetryEventsExportQueueStore instance is invoked.
+type TelemetryEventsExportQueueStoreQueueForExportFunc struct {
+	defaultHook func(context.Context, []*v1.Event) error
+	hooks       []func(context.Context, []*v1.Event) error
+	history     []TelemetryEventsExportQueueStoreQueueForExportFuncCall
+	mutex       sync.Mutex
+}
+
+// QueueForExport delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockTelemetryEventsExportQueueStore) QueueForExport(v0 context.Context, v1 []*v1.Event) error {
+	r0 := m.QueueForExportFunc.nextHook()(v0, v1)
+	m.QueueForExportFunc.appendCall(TelemetryEventsExportQueueStoreQueueForExportFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the QueueForExport
+// method of the parent MockTelemetryEventsExportQueueStore instance is
+// invoked and the hook queue is empty.
+func (f *TelemetryEventsExportQueueStoreQueueForExportFunc) SetDefaultHook(hook func(context.Context, []*v1.Event) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// QueueForExport method of the parent MockTelemetryEventsExportQueueStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *TelemetryEventsExportQueueStoreQueueForExportFunc) PushHook(hook func(context.Context, []*v1.Event) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TelemetryEventsExportQueueStoreQueueForExportFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []*v1.Event) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TelemetryEventsExportQueueStoreQueueForExportFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []*v1.Event) error {
+		return r0
+	})
+}
+
+func (f *TelemetryEventsExportQueueStoreQueueForExportFunc) nextHook() func(context.Context, []*v1.Event) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TelemetryEventsExportQueueStoreQueueForExportFunc) appendCall(r0 TelemetryEventsExportQueueStoreQueueForExportFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// TelemetryEventsExportQueueStoreQueueForExportFuncCall objects describing
+// the invocations of this function.
+func (f *TelemetryEventsExportQueueStoreQueueForExportFunc) History() []TelemetryEventsExportQueueStoreQueueForExportFuncCall {
+	f.mutex.Lock()
+	history := make([]TelemetryEventsExportQueueStoreQueueForExportFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TelemetryEventsExportQueueStoreQueueForExportFuncCall is an object that
+// describes an invocation of method QueueForExport on an instance of
+// MockTelemetryEventsExportQueueStore.
+type TelemetryEventsExportQueueStoreQueueForExportFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []*v1.Event
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreQueueForExportFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TelemetryEventsExportQueueStoreQueueForExportFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

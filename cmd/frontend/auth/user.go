@@ -4,7 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 
 	sglog "github.com/sourcegraph/log"
 
@@ -66,9 +70,11 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		return MockGetAndSaveUser(ctx, op)
 	}
 
+	logger := sglog.Scoped("authGetAndSaveUser")
+	recorder := telemetryrecorder.NewBestEffort(logger, db)
+
 	externalAccountsStore := db.UserExternalAccounts()
 	users := db.Users()
-	logger := sglog.Scoped("authGetAndSaveUser")
 
 	acct := &extsvc.Account{
 		AccountSpec: op.ExternalAccount,
@@ -164,8 +170,18 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 			// OK to continue, since this is a best-effort to improve the UX with some initial permissions available.
 		}
 
-		const eventName = "ExternalAuthSignupSucceeded"
+		// Retain legacy event logging format since there are references to it
+		ctx = teestore.WithoutV1(ctx)
 
+		// New event - most external services have an exstvc.Variant, so add that as safe metadata
+		serviceVariant, _ := extsvc.VariantValueOf(acct.AccountSpec.ServiceType)
+		recorder.Record(ctx, "externalAuthSignup", telemetry.ActionSucceeded, &telemetry.EventParameters{
+			Metadata:        telemetry.EventMetadata{"serviceVariant": telemetry.Number(serviceVariant)},
+			PrivateMetadata: map[string]any{"serviceType": acct.AccountSpec.ServiceType},
+		})
+
+		// Legacy event
+		const eventName = "ExternalAuthSignupSucceeded"
 		// SECURITY: This args map is treated as a public argument in the LogEvent call below, so it must not contain
 		// any sensitive data.
 		args, err := json.Marshal(map[string]any{
@@ -210,6 +226,17 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		return user.ID, true, true, "", nil
 	}()
 	if err != nil {
+		// Retain legacy event logging format since there are references to it
+		ctx = teestore.WithoutV1(ctx)
+
+		// New event - most external services have an exstvc.Variant, so add that as safe metadata
+		serviceVariant, _ := extsvc.VariantValueOf(acct.AccountSpec.ServiceType)
+		recorder.Record(ctx, "externalAuthSignup", telemetry.ActionFailed, &telemetry.EventParameters{
+			Metadata:        telemetry.EventMetadata{"serviceVariant": telemetry.Number(serviceVariant)},
+			PrivateMetadata: map[string]any{"serviceType": acct.AccountSpec.ServiceType},
+		})
+
+		// Legacy event
 		const eventName = "ExternalAuthSignupFailed"
 		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, acct.AccountSpec.ServiceType))
 		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
