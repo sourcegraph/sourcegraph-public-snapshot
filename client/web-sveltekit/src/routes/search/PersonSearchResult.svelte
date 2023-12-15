@@ -5,7 +5,7 @@
     import { mdiAccount } from '@mdi/js'
 
     import SearchResult from './SearchResult.svelte'
-    import { getSearchResultsContext } from './SearchResults.svelte'
+    import { getSearchResultsContext } from './searchResultsContext'
     import { getOwnerDisplayName, getOwnerMatchURL, buildSearchURLQueryForOwner } from '$lib/search/results'
     import UserAvatar from '$lib/UserAvatar.svelte'
     import type { PersonMatch } from '$lib/shared'

@@ -9,7 +9,7 @@
 
     import SearchResult from './SearchResult.svelte'
     import { Badge } from '$lib/wildcard'
-    import { getSearchResultsContext } from './SearchResults.svelte'
+    import { getSearchResultsContext } from './searchResultsContext'
     import { limitDescription, getMetadata, buildSearchURLQueryForMeta, simplifyLineRange } from '$lib/search/results'
     import { highlightRanges } from '$lib/dom'
 

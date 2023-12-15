@@ -10,6 +10,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 
 	"github.com/keegancsmith/sqlf"
@@ -515,6 +516,13 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	if err := r.db.Users().Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log an event when a user account is modified/updated
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameAccountModified, "", uint32(userID), "", "BACKEND", args); err != nil {
+			r.logger.Error("Error logging security event", log.Error(err))
+		}
+	}
 	return UserByIDInt32(ctx, r.db, userID)
 }
 
@@ -946,7 +954,13 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 	if err := r.db.Users().SetChatCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
+		// Log an event when a user's Completions quota is updated
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameUserCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", args); err != nil {
+			r.logger.Error("Error logging security event", log.Error(err))
+		}
+	}
 	return UserByIDInt32(ctx, r.db, user.ID)
 }
 
@@ -984,6 +998,12 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 	if err := r.db.Users().SetCodeCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
+		// Log an event when user's code completions quota is updated
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameUserCodeCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", args); err != nil {
+			r.logger.Error("Error logging security event", log.Error(err))
+		}
+	}
 	return UserByIDInt32(ctx, r.db, user.ID)
 }

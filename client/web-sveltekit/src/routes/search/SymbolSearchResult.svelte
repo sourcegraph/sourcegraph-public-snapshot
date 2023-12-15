@@ -7,7 +7,7 @@
     import type { SymbolMatch } from '$lib/shared'
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
 
-    import CodeExcerpt from './CodeExcerpt.svelte'
+    import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
     import CodeHostIcon from './CodeHostIcon.svelte'
     import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
@@ -56,12 +56,11 @@
     @import '@sourcegraph/shared/src/symbols/SymbolIcon.module.scss';
 
     .result {
-        margin-bottom: 0.5rem;
         display: flex;
         align-items: center;
         width: 100%;
-        background-color: var(--color-bg-2);
+        background-color: var(--code-bg);
         padding: 0.25rem;
-        border-radius: var(--border-radius);
+        border-bottom: 1px solid var(--border-color);
     }
 </style>
