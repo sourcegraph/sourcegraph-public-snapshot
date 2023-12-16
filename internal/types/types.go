@@ -85,7 +85,7 @@ type Repo struct {
 	// KeyValuePairs is the set of key-value pairs associated with the repo
 	KeyValuePairs map[string]*string `json:",omitempty"`
 	// Topics synced from GitHub or GitLab
-	Topics []string
+	Topics []string `json:",omitempty"`
 }
 
 func (r *Repo) IDName() RepoIDName {
