@@ -20,8 +20,9 @@ func newIdentifier(ctx context.Context, c conftypes.SiteConfigQuerier, g databas
 		return &telemetrygatewayv1.Identifier{
 			Identifier: &telemetrygatewayv1.Identifier_LicensedInstance{
 				LicensedInstance: &telemetrygatewayv1.Identifier_LicensedInstanceIdentifier{
-					LicenseKey: lk,
-					InstanceId: globalState.SiteID,
+					LicenseKey:  lk,
+					InstanceId:  globalState.SiteID,
+					ExternalUrl: c.SiteConfig().ExternalURL,
 				},
 			},
 		}, nil
@@ -32,7 +33,8 @@ func newIdentifier(ctx context.Context, c conftypes.SiteConfigQuerier, g databas
 		return &telemetrygatewayv1.Identifier{
 			Identifier: &telemetrygatewayv1.Identifier_UnlicensedInstance{
 				UnlicensedInstance: &telemetrygatewayv1.Identifier_UnlicensedInstanceIdenfitier{
-					InstanceId: globalState.SiteID,
+					InstanceId:  globalState.SiteID,
+					ExternalUrl: c.SiteConfig().ExternalURL,
 				},
 			},
 		}, nil
