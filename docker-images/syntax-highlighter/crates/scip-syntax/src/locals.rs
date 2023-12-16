@@ -45,16 +45,17 @@ pub fn parse_tree<'a>(
     source_bytes: &'a [u8],
 ) -> Result<Vec<Occurrence>> {
     let resolver = LocalResolver::new(source_bytes);
-    Ok(resolver.process(config, tree))
+    Ok(resolver.process(config, tree, None::<&mut String>))
 }
 
 pub fn parse_tree_test<'a>(
     config: &LocalConfiguration,
     tree: &'a tree_sitter::Tree,
     source_bytes: &'a [u8],
-) -> Vec<Occurrence> {
+) -> (Vec<Occurrence>, String) {
     let resolver = LocalResolver::new(source_bytes);
-    resolver.process(config, tree)
+    let mut tree_output = String::new();
+    (resolver.process(config, tree, Some(&mut tree_output)), tree_output)
 }
 
 #[derive(Debug, Clone)]
@@ -367,10 +368,9 @@ impl<'a> LocalResolver<'a> {
                 )
                 .unwrap();
                 continue;
-            } else {
-                let child = children_iter.next().unwrap();
-                self._print_scope(w, *child, depth + 2)
             }
+            let child = children_iter.next().unwrap();
+            self._print_scope(w, *child, depth + 2)
         }
     }
 
@@ -602,6 +602,7 @@ impl<'a> LocalResolver<'a> {
         mut self,
         config: &'a LocalConfiguration,
         tree: &'a tree_sitter::Tree,
+        test_writer: Option<&mut impl Write>
     ) -> Vec<Occurrence> {
         // First we collect all captures from the tree-sitter locals query
         let captures = Self::collect_captures(config, tree, self.source_bytes);
@@ -611,12 +612,10 @@ impl<'a> LocalResolver<'a> {
             .arena
             .alloc(Scope::new("global".to_string(), tree.root_node(), None));
         self.build_tree(top_scope, captures);
-        // TODO: Maybe write a couple snapshot tests that assert on
-        // the structure of this tree?
-        // let mut out = String::new();
-        // self._print_scope(&mut out, top_scope, 0); // Just for debugging
-        // print!("{out}");
-
+        match test_writer {
+            None => {},
+            Some(w) => self._print_scope(w, top_scope, 0)
+        }
         // Finally we resolve all references against that tree structure
         self.resolve_references();
 
@@ -645,12 +644,12 @@ mod test {
         .expect("dump document")
     }
 
-    fn parse_file_for_lang(config: &LocalConfiguration, source_code: &str) -> Document {
+    fn parse_file_for_lang(config: &LocalConfiguration, source_code: &str) -> (Document, String) {
         let source_bytes = source_code.as_bytes();
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
 
-        let occ = parse_tree_test(config, &tree, source_bytes);
+        let (occ, tree) = parse_tree_test(config, &tree, source_bytes);
         let mut doc = Document::new();
         doc.occurrences = occ;
         doc.symbols = doc
@@ -662,66 +661,66 @@ mod test {
             })
             .collect();
 
-        doc
+        (doc, tree)
     }
 
     #[test]
     fn test_can_do_go() {
         let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals.go");
-        let doc = parse_file_for_lang(config, source_code);
-
+        let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
+        insta::assert_snapshot!(scope_tree);
     }
 
     #[test]
     fn test_can_do_nested_locals() {
         let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals-nested.go");
-        let doc = parse_file_for_lang(config, source_code);
-
+        let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
+        insta::assert_snapshot!(scope_tree);
     }
 
     #[test]
     fn test_can_do_functions() {
         let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/funcs.go");
-        let doc = parse_file_for_lang(config, source_code);
-
+        let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
+        insta::assert_snapshot!(scope_tree);
     }
 
     #[test]
     fn test_can_do_perl() {
         let config = crate::languages::get_local_configuration(BundledParser::Perl).unwrap();
         let source_code = include_str!("../testdata/perl.pm");
-        let doc = parse_file_for_lang(config, source_code);
-
+        let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
+        insta::assert_snapshot!(scope_tree);
     }
 
     #[test]
     fn test_can_do_matlab() {
         let config = crate::languages::get_local_configuration(BundledParser::Matlab).unwrap();
         let source_code = include_str!("../testdata/locals.m");
-        let doc = parse_file_for_lang(config, source_code);
-
+        let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
+        insta::assert_snapshot!(scope_tree);
     }
 
     #[test]
     fn test_can_do_java() {
         let config = crate::languages::get_local_configuration(BundledParser::Java).unwrap();
         let source_code = include_str!("../testdata/locals.java");
-        let doc = parse_file_for_lang(config, source_code);
-
+        let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
+        insta::assert_snapshot!(scope_tree);
     }
 }
