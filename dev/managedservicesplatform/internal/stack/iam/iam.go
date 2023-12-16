@@ -154,7 +154,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 					Project:  &p.projectID,
 					SecretId: &p.secretID,
 					Role:     pointers.Ptr("roles/secretmanager.secretAccessor"),
-					Member:   identityMember,
+					Member:   &workloadServiceAccount.Member,
 				})
 		}
 
