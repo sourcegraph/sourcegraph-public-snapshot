@@ -1,44 +1,61 @@
 <script lang="ts">
     import '$lib/highlight.scss'
 
-    import range from 'lodash/range'
-
     import { highlightNodeMultiline } from '$lib/common'
-    import { observeIntersection } from '$lib/intersection-observer'
     import type { MatchGroupMatch } from '$lib/shared'
 
     export let startLine: number
-    export let endLine: number
     export let plaintextLines: string[]
     export let highlightedHTMLRows: string[] | undefined = undefined
-
-    /**
-     * Gets called when the code excerpt is visible in the viewport, to delay potentially expensive
-     * highlighting operations until necessary.
-     */
     export let matches: MatchGroupMatch[] = []
+
+    function highlightMatches(node: HTMLElement, matches: MatchGroupMatch[]) {
+        const visibleRows = node.querySelectorAll<HTMLTableRowElement>('tr')
+        for (const highlight of matches) {
+            // Select the HTML rows in the excerpt that correspond to the first and last line to be highlighted.
+            // highlight.startLine is the 0-indexed line number in the code file, and startLine is the 0-indexed
+            // line number of the first visible line in the excerpt. So, subtract startLine
+            // from highlight.startLine to get the correct 0-based index in visibleRows that holds the HTML row
+            // where highlighting should begin. Subtract startLine from highlight.endLine to get the correct 0-based
+            // index in visibleRows that holds the HTML row where highlighting should end.
+            const startRowIndex = highlight.startLine - startLine
+            const endRowIndex = highlight.endLine - startLine
+            const startRow = visibleRows[startRowIndex]
+            const endRow = visibleRows[endRowIndex]
+            if (startRow && endRow) {
+                highlightNodeMultiline(
+                    visibleRows,
+                    startRow,
+                    endRow,
+                    startRowIndex,
+                    endRowIndex,
+                    highlight.startCharacter,
+                    highlight.endCharacter
+                )
+            }
+        }
+    }
 </script>
 
 <code>
-    {#await fetchHighlightedFileRangeLines(startLine, endLine)}
-        <!--create empty space to fill viewport to avoid layout shifts -->
-        <table>
+    {#if highlightedHTMLRows === undefined}
+        <table use:highlightMatches={matches}>
             <tbody>
-                {#each range(startLine, endLine) as index}
+                {#each plaintextLines as line, index}
                     <tr>
-                        <td class="line" data-line={index + 1} />
-                        <td class="code" />
+                        <td class="line" data-line={startLine + index + 1} />
+                        <td class="code">{line}</td>
                     </tr>
                 {/each}
             </tbody>
         </table>
-    {:then blobLines}
-        {#key matches}
-            <table use:highlightMatches={matches}>
-                {@html blobLines.join('')}
-            </table>
-        {/key}
-    {/await}
+    {:else}
+        <table use:highlightMatches={matches}>
+            <tbody>
+                {@html highlightedHTMLRows.join('')}
+            </tbody>
+        </table>
+    {/if}
 </code>
 
 <style lang="scss">

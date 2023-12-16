@@ -80,4 +80,3 @@ export function lineToMatchGroup(match: LineMatch): MatchGroup {
         endLine: match.lineNumber,
     }
 }
-

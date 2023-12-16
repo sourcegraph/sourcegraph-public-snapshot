@@ -9,6 +9,7 @@
 
 <script lang="ts">
     import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
+    import { observeIntersection } from '$lib/intersection-observer'
 
     import {
         addLineRangeQueryParameter,
@@ -17,7 +18,7 @@
         toPositionOrRangeQueryParameter,
     } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import { getFileMatchUrl, type ContentMatch } from '$lib/shared'
+    import { getFileMatchUrl, type ContentMatch, rankByLine, rankPassthrough } from '$lib/shared'
 
     import SearchResult from './SearchResult.svelte'
     import { getSearchResultsContext } from './searchResultsContext'
@@ -78,18 +79,14 @@
         return `${fileURL}?${searchParams}`
     }
 
-    async function fetchHighlightedFileMatchLineRanges(startLine: number, endLine: number) {
-        const highlightedGroups = await fetchFileRangeMatches({ result, ranges: matchRanges })
-        return highlightedGroups[
-            matchesToShow.findIndex(group => group.startLine === startLine && group.endLine === endLine)
-        ]
-    }
-
-    let isVisible = false
-    function onIntersection(event: { detail: boolean }) {
-        // The component stays marked as "visible" if it was once to avoid
-        // refetching highlighted lines and matches
-        isVisible = isVisible || event.detail
+    let hasBeenVisible = false
+    let highlightedHTMLRows: string[][] = undefined
+    async function onIntersection(event: { detail: boolean }) {
+        if (hasBeenVisible) {
+            return
+        }
+        hasBeenVisible = true
+        highlightedHTMLRows = await fetchFileRangeMatches({ result, ranges: matchRanges })
     }
 </script>
 
@@ -103,15 +100,14 @@
     </svelte:fragment>
 
     <div bind:this={root} use:observeIntersection on:intersecting={onIntersection} class="matches">
-        {#each matchesToShow as group}
+        {#each matchesToShow as group, index}
             <div class="code">
                 <a href={getMatchURL(group.startLine + 1, group.endLine)}>
                     <CodeExcerpt
                         startLine={group.startLine}
-                        endLine={group.endLine}
-                        fetchHighlightedFileRangeLines={async (...args) =>
-                            group.blobLines ? group.blobLines : fetchHighlightedFileMatchLineRanges(...args)}
                         matches={group.matches}
+                        plaintextLines={group.plaintextLines}
+                        highlightedHTMLRows={highlightedHTMLRows?.[index]}
                     />
                 </a>
             </div>

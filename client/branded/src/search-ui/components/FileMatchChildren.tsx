@@ -36,7 +36,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     line: group.matches[0].endLine + 1,
                     character: group.matches[0].endCharacter + 1,
                 },
-            }
+            },
         })
         return appendLineRangeQueryParameter(getFileMatchUrl(result), positionOrRangeQueryParameter)
     }
