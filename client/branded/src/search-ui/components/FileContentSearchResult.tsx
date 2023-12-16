@@ -290,8 +290,9 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
     )
 }
 
-const countHighlightRanges = (groups: MatchGroup[]): number =>
-    groups.reduce((count, group) => count + group.matches.length, 0)
+function countHighlightRanges(groups: MatchGroup[]): number {
+    return groups.reduce((count, group) => count + group.matches.length, 0)
+}
 
 function chunkToMatchGroup(chunk: ChunkMatch): MatchGroup {
     const matches = chunk.ranges.map(range => ({
