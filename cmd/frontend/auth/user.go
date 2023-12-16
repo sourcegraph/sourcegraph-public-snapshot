@@ -170,18 +170,10 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 			// OK to continue, since this is a best-effort to improve the UX with some initial permissions available.
 		}
 
-		// Retain legacy event logging format since there are references to it
-		ctx = teestore.WithoutV1(ctx)
-
-		// New event - most external services have an exstvc.Variant, so add that as safe metadata
-		serviceVariant, _ := extsvc.VariantValueOf(acct.AccountSpec.ServiceType)
-		recorder.Record(ctx, "externalAuthSignup", telemetry.ActionSucceeded, &telemetry.EventParameters{
-			Metadata:        telemetry.EventMetadata{"serviceVariant": telemetry.Number(serviceVariant)},
-			PrivateMetadata: map[string]any{"serviceType": acct.AccountSpec.ServiceType},
-		})
-
-		// Legacy event
-		const eventName = "ExternalAuthSignupSucceeded"
+		// Legacy event - new event is recorded outside this closure to cover
+		// more scenarios. We retain the legacy event because it is still
+		// exported by the legacy Cloud exporter, remove in future release.
+		const legacyEventName = "ExternalAuthSignupSucceeded"
 		// SECURITY: This args map is treated as a public argument in the LogEvent call below, so it must not contain
 		// any sensitive data.
 		args, err := json.Marshal(map[string]any{
@@ -192,7 +184,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		if err != nil {
 			logger.Error(
 				"failed to marshal JSON for event log argument",
-				sglog.String("eventName", eventName),
+				sglog.String("eventName", legacyEventName),
 				sglog.Error(err),
 			)
 			// OK to continue, we still want the event log to be created
@@ -208,7 +200,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 			ctx,
 			db,
 			usagestats.Event{
-				EventName:      eventName,
+				EventName:      legacyEventName,
 				UserID:         act.UID,
 				Argument:       args,
 				PublicArgument: args,
@@ -218,7 +210,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		if err != nil {
 			logger.Error(
 				"failed to log event",
-				sglog.String("eventName", eventName),
+				sglog.String("eventName", legacyEventName),
 				sglog.Error(err),
 			)
 		}
@@ -236,20 +228,39 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 			PrivateMetadata: map[string]any{"serviceType": acct.AccountSpec.ServiceType},
 		})
 
-		// Legacy event
-		const eventName = "ExternalAuthSignupFailed"
+		// Legacy event - retain because it is still exported by the legacy
+		// Cloud exporter, remove in future release.
+		const legacyEventName = "ExternalAuthSignupFailed"
 		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, acct.AccountSpec.ServiceType))
 		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
 		//lint:ignore SA1019 existing usage of deprecated functionality.
-		if logErr := usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), eventName, serviceTypeArg, serviceTypeArg, featureflag.GetEvaluatedFlagSet(ctx), nil); logErr != nil {
+		if logErr := usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), legacyEventName, serviceTypeArg, serviceTypeArg, featureflag.GetEvaluatedFlagSet(ctx), nil); logErr != nil {
 			logger.Error(
 				"failed to log event",
-				sglog.String("eventName", eventName),
+				sglog.String("eventName", legacyEventName),
 				sglog.Error(err),
 			)
 		}
 		return newUserSaved, 0, safeErrMsg, err
 	}
+
+	// There is a legacy event instrumented earlier in this function that covers
+	// the new-user case only, that we are retaining because it might still be
+	// in use. Since this event is quite rare, we DON'T use teestore.WithoutV1
+	// here on the new event even though the legacy event still exists so that
+	// we can consistently capture all the cases.
+	serviceVariant, _ := extsvc.VariantValueOf(acct.AccountSpec.ServiceType)
+	recorder.Record(ctx, "externalAuthSignup", telemetry.ActionSucceeded, &telemetry.EventParameters{
+		Metadata: telemetry.EventMetadata{
+			// Most auth providers services have an exstvc.Variant, so add that
+			// as safe metadata.
+			"serviceVariant": telemetry.Number(serviceVariant),
+			// Track the various outcomes of the massive signup closer above.
+			"newUserSaved": telemetry.Bool(newUserSaved),
+			"extAcctSaved": telemetry.Bool(extAcctSaved),
+		},
+		PrivateMetadata: map[string]any{"serviceType": acct.AccountSpec.ServiceType},
+	})
 
 	// Update user properties, if they've changed
 	if !newUserSaved {
