@@ -22,7 +22,7 @@ use scip::{
 };
 use scip_treesitter::prelude::*;
 use std::collections::HashSet;
-use std::fmt;
+use std::fmt::Write;
 use std::slice::Iter;
 use string_interner::{DefaultSymbol, StringInterner};
 use tree_sitter::Node;
@@ -59,22 +59,9 @@ pub fn parse_tree_test<'a>(
 
 #[derive(Debug, Clone)]
 struct Definition<'a> {
-    ty: String,
     node: Node<'a>,
     id: usize,
     name: Name,
-}
-
-impl fmt::Display for Definition<'_> {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            fmt,
-            "def {} {}-{}",
-            self.ty,
-            self.node.start_position(),
-            self.node.end_position()
-        )
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -157,14 +144,13 @@ impl<'a> Scope<'a> {
 // B.cmp(C) = Less
 // Because C is contained within B we want to make sure to visit B first.
 fn compare_range(a: Range<usize>, b: Range<usize>) -> Ordering {
-    let result = (a.start, b.end).cmp(&(b.start, a.end));
     // TODO: This assert fails for Java, ideally we'd fix the query to
     // not report duplicate scopes
     // assert!(
     //     result != Ordering::Equal,
     //     "Two scopes must never span the exact same range: {a:?}"
     // );
-    result
+    (a.start, b.end).cmp(&(b.start, a.end))
 }
 
 #[derive(Debug)]
@@ -182,7 +168,6 @@ struct ScopeCapture<'a> {
 
 #[derive(Debug)]
 struct DefCapture<'a> {
-    ty: String,
     hoist: Option<String>,
     node: Node<'a>,
 }
@@ -205,10 +190,10 @@ impl<'arena, 'a> Iterator for Ancestors<'arena, 'a> {
     fn next(&mut self) -> Option<ScopeRef<'a>> {
         let scope = self.arena.get(self.current_scope).unwrap();
         match scope.parent {
-            None => return None,
+            None => None,
             Some(parent) => {
                 self.current_scope = parent;
-                return Some(parent);
+                Some(parent)
             }
         }
     }
@@ -311,44 +296,81 @@ impl<'a> LocalResolver<'a> {
             .expect("Tried to get the root node's parent")
     }
 
-    fn _print_scope(&self, id: ScopeRef<'a>, depth: usize) {
+    fn _print_scope(&self, w: &mut impl Write, id: ScopeRef<'a>, depth: usize) {
         let scope = self.get_scope(id);
-        println!(
+        writeln!(
+            w,
             "{}scope {} {}-{}",
             str::repeat(" ", depth),
             scope.ty,
             scope.node.start_position(),
             scope.node.end_position()
-        );
+        )
+        .unwrap();
 
         let mut definitions_iter = scope.definitions.iter().peekable();
+        let mut references_iter = scope.references.iter().peekable();
         let mut children_iter = scope.children.iter().peekable();
+
+        fn is_before(v1: Option<usize>, v2: Option<usize>) -> bool {
+            match (v1, v2) {
+                (Some(v1), Some(v2)) => v1 <= v2,
+                (None, _) => false,
+                (_, None) => true,
+            }
+        }
+
+        // Hoisted definitions always get printed first
         for definition in scope.hoisted_definitions.iter() {
-            println!("{}h:{}", str::repeat(" ", depth + 2), definition);
+            writeln!(
+                w,
+                "{}hoisted_def {} {}-{}",
+                str::repeat(" ", depth + 2),
+                self.interner.resolve(definition.name).unwrap(),
+                definition.node.start_position(),
+                definition.node.end_position()
+            )
+            .unwrap();
         }
         loop {
-            // TODO: Can we deduplicate this nicely? Pattern Guards
-            // are not a thing in Rust
-            match (definitions_iter.peek(), children_iter.peek()) {
-                (Some(d), Some(c)) => {
-                    if d.node.start_byte() < self._start_byte(**c) {
-                        let definition = definitions_iter.next().unwrap();
-                        println!("{}{}", str::repeat(" ", depth + 2), definition);
-                    } else {
-                        let child = children_iter.next().unwrap();
-                        self._print_scope(*child, depth + 2)
-                    }
-                }
-                (Some(_), None) => {
+            let next_def = definitions_iter.peek().map(|d| d.node.start_byte());
+            let next_ref = references_iter.peek().map(|r| r.node.start_byte());
+            let next_scope = children_iter.peek().map(|s| self._start_byte(**s));
+
+            if next_def.is_none() && next_ref.is_none() && next_scope.is_none() {
+                break;
+            }
+
+            if is_before(next_def, next_ref) {
+                if is_before(next_def, next_scope) {
                     let definition = definitions_iter.next().unwrap();
-                    println!("{}{}", str::repeat(" ", depth + 2), definition);
+                    writeln!(
+                        w,
+                        "{}def {} {}-{}",
+                        str::repeat(" ", depth + 2),
+                        self.interner.resolve(definition.name).unwrap(),
+                        definition.node.start_position(),
+                        definition.node.end_position()
+                    )
+                    .unwrap();
+                    continue;
                 }
-                (None, Some(_)) => {
-                    let child = children_iter.next().unwrap();
-                    self._print_scope(*child, depth + 2)
-                }
-                (None, None) => break,
-            };
+            } else if is_before(next_ref, next_scope) {
+                let reference = references_iter.next().unwrap();
+                writeln!(
+                    w,
+                    "{}ref {} {}-{}",
+                    str::repeat(" ", depth + 2),
+                    self.interner.resolve(reference.name).unwrap(),
+                    reference.node.start_position(),
+                    reference.node.end_position()
+                )
+                .unwrap();
+                continue;
+            } else {
+                let child = children_iter.next().unwrap();
+                self._print_scope(w, *child, depth + 2)
+            }
         }
     }
 
@@ -399,7 +421,6 @@ impl<'a> LocalResolver<'a> {
             );
             let definition = Definition {
                 id: self.definition_id_supply,
-                ty: def_capture.ty.to_string(),
                 node: def_capture.node,
                 name,
             };
@@ -436,11 +457,7 @@ impl<'a> LocalResolver<'a> {
                     if let Some(prop) = properties.iter().find(|p| p.key == "hoist".into()) {
                         hoist_scope = Some(prop.value.as_ref().unwrap().to_string());
                     }
-                    let ty = capture_name
-                        .strip_prefix("definition.")
-                        .unwrap_or(capture_name);
                     definitions.push(DefCapture {
-                        ty: ty.to_string(),
                         hoist: hoist_scope,
                         node: capture.node,
                     })
@@ -453,7 +470,7 @@ impl<'a> LocalResolver<'a> {
                         node: capture.node,
                     })
                 } else {
-                    eprintln!("Discarded capture: {}", capture_name)
+                    debug_assert!(false, "Discarded capture: {capture_name}")
                 }
             }
         }
@@ -596,7 +613,9 @@ impl<'a> LocalResolver<'a> {
         self.build_tree(top_scope, captures);
         // TODO: Maybe write a couple snapshot tests that assert on
         // the structure of this tree?
-        // self.print_scope(top_scope, 0); // Just for debugging
+        // let mut out = String::new();
+        // self._print_scope(&mut out, top_scope, 0); // Just for debugging
+        // print!("{out}");
 
         // Finally we resolve all references against that tree structure
         self.resolve_references();
