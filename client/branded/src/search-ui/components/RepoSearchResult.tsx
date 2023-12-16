@@ -75,17 +75,16 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
 
     const showExtraInfo = result.archived || result.fork || result.private
 
-    const metadataTags = !metadata
-        ? []
-        : Object.entries(metadata).map(([key, value]) =>
-              metadataToTag({ key, value }, queryState, false, buildSearchURLQueryFromQueryState)
-          )
+    const tags = [
+        ...(metadata
+            ? Object.entries(metadata).map(([key, value]) =>
+                  metadataToTag({ key, value }, queryState, false, buildSearchURLQueryFromQueryState)
+              )
+            : []),
+        ...(topics ? topics.map(topic => topicToTag(topic, queryState, false, buildSearchURLQueryFromQueryState)) : []),
+    ]
 
-    const topicTags = !topics
-        ? []
-        : topics.map(topic => topicToTag(topic, queryState, false, buildSearchURLQueryFromQueryState))
-
-    const showRepoMetadata = enableRepositoryMetadata && (metadataTags.length > 0 || topicTags.length > 0)
+    const showRepoMetadata = enableRepositoryMetadata && tags.length > 0
 
     return (
         <ResultContainer
@@ -147,7 +146,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                     )}
                     {showRepoMetadata && (
                         <div className="d-flex">
-                            <TagList tags={[...metadataTags, ...topicTags]} />
+                            <TagList tags={tags} />
                         </div>
                     )}
                 </div>
