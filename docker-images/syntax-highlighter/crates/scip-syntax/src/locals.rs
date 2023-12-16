@@ -193,6 +193,27 @@ struct RefCapture<'a> {
     node: Node<'a>,
 }
 
+/// Created by LocalResolver::ancestors()
+#[derive(Debug)]
+struct Ancestors<'arena, 'a> {
+    arena: &'arena Arena<Scope<'a>>,
+    current_scope: ScopeRef<'a>,
+}
+
+impl<'arena, 'a> Iterator for Ancestors<'arena, 'a> {
+    type Item = ScopeRef<'a>;
+    fn next(&mut self) -> Option<ScopeRef<'a>> {
+        let scope = self.arena.get(self.current_scope).unwrap();
+        match scope.parent {
+            None => return None,
+            Some(parent) => {
+                self.current_scope = parent;
+                return Some(parent);
+            }
+        }
+    }
+}
+
 #[derive(Debug)]
 struct LocalResolver<'a> {
     arena: Arena<Scope<'a>>,
@@ -277,15 +298,11 @@ impl<'a> LocalResolver<'a> {
         self.arena.get_mut(id).unwrap()
     }
 
-    // TODO: This should be an Iterator
-    fn ancestors(&self, id: ScopeRef<'a>) -> Vec<ScopeRef<'a>> {
-        let mut current = id;
-        let mut results = vec![];
-        while let Some(next) = self.get_scope(current).parent {
-            current = next;
-            results.push(current)
+    fn ancestors(&self, id: ScopeRef<'a>) -> Ancestors<'_, 'a> {
+        Ancestors {
+            arena: &self.arena,
+            current_scope: id,
         }
-        results
     }
 
     fn parent(&self, id: ScopeRef<'a>) -> ScopeRef<'a> {
