@@ -100,7 +100,7 @@ const ExtraInfoSection: React.FC<{
                 <ExtraInfoSectionItemHeader title="Description" tooltip="Synchronized from the code host" />
                 {repo.description && <Text>{repo.description}</Text>}
             </ExtraInfoSectionItem>
-            {/*Not all code hosts support the concept of "topics", hence we only show topics if we have them*/}
+            {/* Not all code hosts support the concept of "topics", hence we only show topics if we have them */}
             {topicTags.length > 0 && (
                 <ExtraInfoSectionItem>
                     <ExtraInfoSectionItemHeader title="Topics" tooltip={<>Topics synced from the code host</>} />
