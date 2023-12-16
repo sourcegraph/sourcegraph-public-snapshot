@@ -3,8 +3,7 @@
 <script lang="ts" context="module">
     const BY_LINE_RANKING = 'by-line-number'
     const DEFAULT_CONTEXT_LINES = 1
-    const MAX_LINE_MATCHES = 5
-    const MAX_ZOEKT_RESULTS = 3
+    const DEFAULT_EXPANDED_MATCHES = 3
 </script>
 
 <script lang="ts">
@@ -40,7 +39,7 @@
     $: ({ expandedMatchGroups, collapsedMatchGroups, hiddenMatchesCount } = rankContentMatch(
         result,
         ranking,
-        MAX_ZOEKT_RESULTS, // TODO: rename this to be sensical
+        DEFAULT_EXPANDED_MATCHES,
         contextLines
     ))
     $: collapsible = hiddenMatchesCount > 0
