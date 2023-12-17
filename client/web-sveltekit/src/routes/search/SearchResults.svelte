@@ -226,7 +226,7 @@
             border-top: 1px solid var(--border-color);
 
             &:first-child {
-                border-bottom: none;
+                border-top: none;
             }
 
             &:last-child {
