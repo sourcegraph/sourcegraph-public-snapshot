@@ -166,8 +166,17 @@ func (s *Server) handleHealthz(w http.ResponseWriter, req *http.Request) {
 
 // notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful no notifcation is sent
 func (s *Server) notifyIfFailed(b *build.Build) error {
+	if !b.IsFinished() {
+		s.logger.Info("build not finished yet, skipping notification", log.Int("buildNumber", b.GetNumber()))
+	}
 	// This determines the final build status
-	info := determineBuildStatusNotification(b)
+	info := determineBuildStatusNotification(s.logger, b)
+	s.logger.Debug("build status notification",
+		log.Int("buildNumber", info.BuildNumber),
+		log.Int("Passed", len(info.Passed)),
+		log.Int("Failed", len(info.Failed)),
+		log.Int("Fixed", len(info.Fixed)),
+	)
 
 	if info.BuildStatus == string(build.BuildFailed) || info.BuildStatus == string(build.BuildFixed) {
 		s.logger.Info("sending notification for build", log.Int("buildNumber", b.GetNumber()), log.String("status", string(info.BuildStatus)))
@@ -231,7 +240,7 @@ func (s *Server) processEvent(event *build.Event) {
 	}
 }
 
-func determineBuildStatusNotification(b *build.Build) *notify.BuildNotification {
+func determineBuildStatusNotification(logger log.Logger, b *build.Build) *notify.BuildNotification {
 	info := notify.BuildNotification{
 		BuildNumber:        b.GetNumber(),
 		ConsecutiveFailure: b.ConsecutiveFailure,
@@ -243,6 +252,8 @@ func determineBuildStatusNotification(b *build.Build) *notify.BuildNotification 
 		BuildURL:           b.GetWebURL(),
 		Fixed:              []notify.JobLine{},
 		Failed:             []notify.JobLine{},
+		Passed:             []notify.JobLine{},
+		TotalSteps:         len(b.Steps),
 	}
 
 	// You may notice we do not check if the build is Failed and exit early, this is because of the following scenario
@@ -257,12 +268,16 @@ func determineBuildStatusNotification(b *build.Build) *notify.BuildNotification 
 	for _, j := range groups[build.JobFailed] {
 		info.Failed = append(info.Failed, j)
 	}
+	for _, j := range groups[build.JobPassed] {
+		info.Passed = append(info.Passed, j)
+	}
+	for _, j := range groups[build.JobUnknown] {
+		logger.Debug("unknown job status", log.Int("buildNumber", b.GetNumber()), log.Object("job", log.String("name", j.Name), log.String("state", j.LastJob().GetState())))
+	}
 
-	if len(groups[build.JobInProgress]) > 0 {
-		info.BuildStatus = string(build.BuildInProgress)
-	} else if len(groups[build.JobFailed]) > 0 {
+	if len(info.Failed) > 0 {
 		info.BuildStatus = string(build.BuildFailed)
-	} else if len(groups[build.JobFixed]) > 0 {
+	} else if len(info.Fixed) > 0 {
 		info.BuildStatus = string(build.BuildFixed)
 	} else {
 		info.BuildStatus = string(build.BuildPassed)

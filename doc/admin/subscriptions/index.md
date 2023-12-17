@@ -1,18 +1,18 @@
 # Paid subscriptions for Sourcegraph Enterprise
 
-> NOTE: Pricing documentation below applies to [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing).
+> NOTE: Pricing documentation below applies to [Sourcegraph Enterprise](https://sourcegraph.com/pricing).
 
-Organizations using Sourcegraph can [upgrade to Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) to get the features that large organizations need (single sign-on, backups and recovery, cluster deployment, access to code navigation and intelligence, etc.). These additional features in Sourcegraph Enterprise are paid and not open source.
+Organizations using Sourcegraph can [upgrade to Sourcegraph Enterprise](https://sourcegraph.com/pricing) to get the features that large organizations need (single sign-on, backups and recovery, cluster deployment, access to code navigation and intelligence, etc.). These additional features in Sourcegraph Enterprise are paid and not open source.
 
-You can [contact Sourcegraph](https://about.sourcegraph.com/contact/sales) to purchase a subscription. This entitles you to a license key (provided immediately after your purchase), which activates Enterprise features on your Sourcegraph instance.
+You can [contact Sourcegraph](https://sourcegraph.com/contact/sales) to purchase a subscription. This entitles you to a license key (provided immediately after your purchase), which activates Enterprise features on your Sourcegraph instance.
 
 ## Volume discounts
 
-[Contact us](https://about.sourcegraph.com/contact) to ask about volume discounts for Sourcegraph Enterprise. 
+[Contact us](https://sourcegraph.com/contact) to ask about volume discounts for Sourcegraph Enterprise. 
 
 ## Pricing model
 
-[Sourcegraph's pricing](https://about.sourcegraph.com/pricing) is based primarily on [total active user accounts](#how-user-accounts-are-counted). In certain situations, it is also a combination of the [number of lines of code indexed](#how-lines-of-code-are-counted). Please [contact Sourcegraph](https://about.sourcegraph.com/contact/sales) to answer specific questions about our pricing model for your use. 
+[Sourcegraph's pricing](https://sourcegraph.com/pricing) is based primarily on [total active user accounts](#how-user-accounts-are-counted). In certain situations, it is also a combination of the [number of lines of code indexed](#how-lines-of-code-are-counted). Please [contact Sourcegraph](https://sourcegraph.com/contact/sales) to answer specific questions about our pricing model for your use. 
 
 ## How user accounts are counted
 

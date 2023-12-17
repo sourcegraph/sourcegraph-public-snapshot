@@ -21,6 +21,8 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureCode)
 	return newCompletionsHandler(
 		logger,
+		db.Users(),
+		db.AccessTokens(),
 		telemetryrecorder.New(db),
 		types.CompletionsFeatureCode,
 		rl,
@@ -31,7 +33,7 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 				return customModel, nil
 			}
 			if requestParams.Model != "" {
-				return "", errors.New("Unsupported chat model")
+				return "", errors.Newf("Unsupported code completion model %q", requestParams.Model)
 			}
 			return c.CompletionModel, nil
 		},
@@ -72,8 +74,10 @@ func allowedCustomModel(ctx context.Context, model string) string {
 		"fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct",
 		"fireworks/accounts/fireworks/models/llama-v2-34b-code-instruct",
 		"fireworks/accounts/fireworks/models/mistral-7b-instruct-4k",
-		"fireworks/accounts/fireworks/models/wizardcoder-15b",
-		"anthropic/claude-instant-1.2-cyan":
+		"anthropic/claude-instant-1.2-cyan",
+		"anthropic/claude-instant-1.2",
+		"anthropic/claude-instant-v1",
+		"anthropic/claude-instant-1":
 		return model
 	}
 

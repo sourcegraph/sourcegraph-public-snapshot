@@ -14,6 +14,10 @@
     $: total = $tags?.totalCount
 </script>
 
+<svelte:head>
+    <title>Tags - {data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
+
 <section>
     <div>
         {#if $pending}

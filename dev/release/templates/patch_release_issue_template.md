@@ -27,6 +27,12 @@ This release is scheduled for **$RELEASE_DATE**.
 pnpm run release release:activate-release
 ```
 
+- [ ] Create the release tracking issue
+
+```shell
+pnpm release tracking:issues
+```
+
 ## Prepare release
 
 - [ ] Ensure that all [backported PRs](https://github.com/sourcegraph/sourcegraph/pulls?q=is%3Apr+is%3Aopen+base%3A$MAJOR.MINOR) have been merged.

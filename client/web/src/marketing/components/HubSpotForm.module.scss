@@ -8,8 +8,8 @@
         position: relative;
         text-align: center;
         transition: all 0.15s linear;
-        background-color: var(--violet-04) !important;
-        border-color: var(--violet-04) !important;
+        background-color: #0b70db !important;
+        border-color: #0b70db !important;
         color: var(--white);
         border-radius: 0.3125rem;
         border-style: solid;
@@ -19,13 +19,13 @@
 
         &:hover,
         &:focus {
-            background-color: var(--violet-05) !important;
-            border-color: var(--violet-05) !important;
+            background-color: #0864c6 !important;
+            border-color: #0864c6 !important;
         }
 
         &:active {
-            background-color: var(--violet-05) !important;
-            border-color: var(--violet-05) !important;
+            background-color: #0864c6 !important;
+            border-color: #0864c6 !important;
         }
     }
 
@@ -44,6 +44,9 @@
         padding-top: 0;
         margin-bottom: 0.25rem;
         margin-top: 0.25rem;
+        :global(.theme-dark) & {
+            color: var(--body-color);
+        }
     }
 
     input:global(.hs-input):global(.error),
@@ -98,7 +101,16 @@
 
         &:focus {
             outline: none;
-            border-color: var(--violet-04);
+            border-color: #0b70db;
+        }
+
+        :global(.theme-dark) & {
+            color: var(--body-color);
+            border-color: var(--border-color);
+
+            &:not([type='file']) {
+                background-color: var(--bg-color);
+            }
         }
     }
 
@@ -115,7 +127,7 @@
 
     :global(.hs-input)[type='checkbox']:checked,
     :global(.hs-input)[type='radio']:checked {
-        accent-color: var(--violet-04);
+        accent-color: #0b70db;
     }
 
     :global(.actions) {

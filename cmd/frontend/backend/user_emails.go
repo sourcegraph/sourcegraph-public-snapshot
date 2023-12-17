@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -92,6 +93,14 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 		return err
 	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log action of new email being added to user profile
+		if err := e.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailAdded, "", uint32(userID), "", "BACKEND", email); err != nil {
+			logger.Warn("Error logging security event", log.Error(err))
+		}
+	}
+
 	if conf.EmailVerificationRequired() {
 		usr, err := e.db.Users().GetByID(ctx, userID)
 		if err != nil {
@@ -132,7 +141,13 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) err
 		if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
 			return errors.Wrap(err, "removing user e-mail")
 		}
+		if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
+			// Log action of email being removed from user profile
+			if err := e.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailRemoved, "", uint32(userID), "", "BACKEND", email); err != nil {
+				logger.Warn("Error logging security event", log.Error(err))
+			}
+		}
 		// 🚨 SECURITY: If an email is removed, invalidate any existing password reset
 		// tokens that may have been sent to that email.
 		if err := tx.Users().DeletePasswordResetCode(ctx, userID); err != nil {
@@ -227,6 +242,20 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 		return err
 	}
 
+	arguments := struct {
+		Email    string `json:"email"`
+		Verified bool   `json:"verified"`
+	}{
+		Email:    email,
+		Verified: verified,
+	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log action of email being verified/unverified
+		if err := e.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailVerifiedToggle, "", uint32(userID), "", "BACKEND", arguments); err != nil {
+			logger.Warn("Error logging security event", log.Error(err))
+		}
+	}
 	// Eagerly attempt to sync permissions again. This needs to happen _after_ the
 	// transaction has committed so that it takes into account any changes triggered
 	// by changes in the verification status of the e-mail.

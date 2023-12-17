@@ -287,6 +287,8 @@
     "@mdi/js": "7.1.96",
     "@microsoft/fast-web-utilities": "^6.0.0",
     "@microsoft/fetch-event-source": "^2.0.1",
+    "@opencodegraph/client": "^0.0.1",
+    "@opencodegraph/codemirror-extension": "^0.0.1",
     "@opentelemetry/api": "^1.4.0",
     "@opentelemetry/context-zone": "^1.9.1",
     "@opentelemetry/core": "1.9.1",
@@ -438,6 +440,13 @@
       "@percy/sdk-utils": {
         "dependencies": {
           "ws": "*"
+        }
+      },
+      "@graphql-codegen/cli@5": {
+        "peerDependencies": {
+          "@graphql-codegen/typescript": "*",
+          "@graphql-codegen/typescript-operations": "*",
+          "@graphql-codegen/near-operation-file-preset": "*"
         }
       }
     }

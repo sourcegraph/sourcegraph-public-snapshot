@@ -373,6 +373,17 @@ func getAndMarshalCodyUsageJSON(ctx context.Context, db database.DB) (_ json.Raw
 	return json.Marshal(codyUsage)
 }
 
+func getAndMarshalCodyProvidersJSON() (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodyProvidersJSON")(&err)
+
+	codyProviders, err := usagestats.GetCodyProviders()
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(codyProviders)
+}
+
 func getAndMarshalRepoMetadataUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalRepoMetadataUsageJSON")(&err)
 
@@ -486,6 +497,7 @@ func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (
 		return nil, err
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	err = db.EventLogs().Insert(ctx, &database.Event{
 		UserID:          0,
 		Name:            "ping",
@@ -541,6 +553,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		IDEExtensionsUsage:            []byte("{}"),
 		MigratedExtensionsUsage:       []byte("{}"),
 		CodyUsage:                     []byte("{}"),
+		CodyProviders:                 []byte("{}"),
 		RepoMetadataUsage:             []byte("{}"),
 	}
 
@@ -701,6 +714,11 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc("codyUsage failed", log.Error(err))
 	}
 
+	r.CodyProviders, err = getAndMarshalCodyProvidersJSON()
+	if err != nil {
+		logFunc("codyProviders failed", log.Error(err))
+	}
+
 	r.RepoMetadataUsage, err = getAndMarshalRepoMetadataUsageJSON(ctx, db)
 	if err != nil {
 		logFunc("repoMetadataUsage failed", log.Error(err))
@@ -753,6 +771,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		return nil, err
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	err = db.EventLogs().Insert(ctx, &database.Event{
 		UserID:          0,
 		Name:            "ping",

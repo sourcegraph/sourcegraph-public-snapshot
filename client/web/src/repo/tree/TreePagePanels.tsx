@@ -25,8 +25,7 @@ import type { BlobFileFields, TreeHistoryFields } from '../../graphql-operations
 import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
-import { FILE_ICONS, FileExtension } from '../constants'
-import { getFileInfo } from '../utils'
+import { FILE_ICONS, FileExtension, getFileInfo } from '../fileIcons'
 
 import styles from './TreePagePanels.module.scss'
 
@@ -179,7 +178,7 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
             </thead>
             <tbody>
                 {entries.map(entry => {
-                    const fileInfo = getFileInfo(entry.name)
+                    const fileInfo = getFileInfo(entry.name, entry.isDirectory)
                     const fileIcon = FILE_ICONS.get(fileInfo.extension)
 
                     return (

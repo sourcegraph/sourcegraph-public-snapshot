@@ -40,12 +40,12 @@ export const AboutTab: React.FC<AboutTabProps> = ({ version = window.context.ver
             <div className={classNames(styles.panel)}>
                 <H3>Terms and Conditions</H3>
                 <div>
-                    <Link to="https://about.sourcegraph.com/terms/cody-notice">
+                    <Link to="https://sourcegraph.com/terms/cody-notice">
                         Usage and Privacy Notice <Icon role="img" aria-hidden={true} svgPath={mdiLaunch} />
                     </Link>
                 </div>
                 <div>
-                    <Link to="https://about.sourcegraph.com/terms/cloud">
+                    <Link to="https://sourcegraph.com/terms/cloud">
                         Terms of Service for Sourcegraph Cloud{' '}
                         <Icon role="img" aria-hidden={true} svgPath={mdiLaunch} />
                     </Link>

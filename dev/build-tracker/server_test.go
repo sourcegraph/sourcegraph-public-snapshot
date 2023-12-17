@@ -214,7 +214,10 @@ func TestProcessEvent(t *testing.T) {
 			ID:   &pipelineID,
 			Name: &pipelineID,
 		}
-		jobState := build.JobFinishedState
+		jobState := build.JobPassedState
+		if jobExitCode != 0 {
+			jobState = build.JobFailedState
+		}
 		job := buildkite.Job{Name: &name, ExitStatus: &jobExitCode, State: &jobState}
 		return &build.Event{Name: build.EventJobFinished, Build: buildkite.Build{State: &state, Number: &buildNumber, Pipeline: pipeline}, Job: job}
 	}

@@ -37,7 +37,7 @@ go_test(
         "//internal/database/dbtest",
         "//internal/types",
         "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
-        "@tools_gotest//assert",
     ],
 )

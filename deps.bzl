@@ -2836,8 +2836,8 @@ def go_dependencies():
         name = "com_github_google_uuid",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/google/uuid",
-        sum = "h1:MtMxsa51/r9yyhkyLsVeVt0B+BGQZzpQiTQ4eHZ8bc4=",
-        version = "v1.4.0",
+        sum = "h1:1p67kYwdtXjb0gL0BPiP1Av9wiZPo5A8z2cWkTZ+eyU=",
+        version = "v1.5.0",
     )
     go_repository(
         name = "com_github_googleapis_enterprise_certificate_proxy",
@@ -5722,8 +5722,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:2xAotLrNXGdj1x8I5yPh89qsesICseLEfEdKpmY3V90=",
-        version = "v0.0.0-20231122214222-d982320abe7b",
+        sum = "h1:WhN5CjTjPc4cdv5LD0umuudb6ffvb3cFSo7VGIPvxGc=",
+        version = "v0.0.0-20231211160200-e92f6c764b56",
     )
     go_repository(
         name = "com_github_spaolacci_murmur3",

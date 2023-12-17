@@ -204,9 +204,6 @@ var sg = &cli.App{
 		liblog := log.Init(log.Resource{Name: "sg", Version: BuildCommit})
 		interrupt.Register(liblog.Sync)
 
-		// Add autosuggestion hooks to commands with subcommands but no action
-		addSuggestionHooks(cmd.App.Commands)
-
 		// Validate configuration flags, which is required for sgconf.Get to work everywhere else.
 		if configFile == "" {
 			return errors.Newf("--config must not be empty")
@@ -296,13 +293,14 @@ var sg = &cli.App{
 		msp.Command,
 
 		// Util
-		helpCommand,
-		versionCommand,
-		updateCommand,
-		installCommand,
-		funkyLogoCommand,
 		analyticsCommand,
+		doctorCommand,
+		funkyLogoCommand,
+		helpCommand,
+		installCommand,
 		releaseCommand,
+		updateCommand,
+		versionCommand,
 	},
 	ExitErrHandler: func(cmd *cli.Context, err error) {
 		if err == nil {
@@ -328,7 +326,7 @@ var sg = &cli.App{
 		os.Exit(1)
 	},
 
-	CommandNotFound: suggestCommands,
+	Suggest: true,
 
 	EnableBashCompletion:   true,
 	UseShortOptionHandling: true,

@@ -6,6 +6,7 @@
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createPromiseStore } from '$lib/utils'
+    import type { TreeWithCommitInfo } from './page.gql'
 
     import FileDiff from '../../../../-/commit/[...revspec]/FileDiff.svelte'
 
@@ -15,12 +16,19 @@
     export let data: PageData
 
     const { value: tree, set: setTree } = createPromiseStore<PageData['deferred']['treeEntries']>()
+    const { value: commitInfo, set: setCommitInfo } = createPromiseStore<Promise<TreeWithCommitInfo | null>>()
     const { value: readme, set: setReadme } = createPromiseStore<PageData['deferred']['readme']>()
 
     $: setTree(data.deferred.treeEntries)
+    $: setCommitInfo(data.deferred.commitInfo)
     $: setReadme(data.deferred.readme)
     $: entries = $tree?.entries ?? []
+    $: entriesWithCommitInfo = $commitInfo?.entries ?? []
 </script>
+
+<svelte:head>
+    <title>{data.filePath} - {data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
 
 <FileHeader>
     <Icon slot="icon" svgPath={mdiFolderOutline} />
@@ -39,7 +47,7 @@
             {/each}
         {/await}
     {:else}
-        <FileTable revision={data.revision ?? ''} {entries} />
+        <FileTable revision={data.revision ?? ''} {entries} commitInfo={entriesWithCommitInfo} />
     {/if}
     {#if $readme}
         <h4 class="header">

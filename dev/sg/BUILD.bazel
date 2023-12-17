@@ -17,6 +17,7 @@ go_library(
         "sg_cloud.go",
         "sg_db.go",
         "sg_deploy.go",
+        "sg_doctor.go",
         "sg_embeddings_qa.go",
         "sg_generate.go",
         "sg_help.go",
@@ -41,7 +42,6 @@ go_library(
         "sg_update.go",
         "sg_version.go",
         "sg_wolfi.go",
-        "suggest.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg",
     visibility = ["//visibility:private"],
@@ -100,7 +100,6 @@ go_library(
         "//monitoring/command",
         "//monitoring/definitions",
         "//monitoring/monitoring",
-        "@com_github_agext_levenshtein//:levenshtein",
         "@com_github_buildkite_go_buildkite_v3//buildkite",
         "@com_github_gomodule_redigo//redis",
         "@com_github_google_go_github_v55//github",
@@ -121,6 +120,8 @@ go_library(
         "@io_opentelemetry_go_otel_trace//:trace",
         "@org_golang_x_mod//semver",
         "@org_golang_x_oauth2//:oauth2",
+        "@org_golang_x_text//cases",
+        "@org_golang_x_text//language",
     ],
 )
 
@@ -146,7 +147,6 @@ go_test(
         "main_test.go",
         "release_test.go",
         "sg_start_test.go",
-        "suggest_test.go",
     ],
     # Required by func findRoot() to check if sg is running in sourcegraph/sourcegraph
     data = ["//:go.mod"],

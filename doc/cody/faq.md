@@ -119,6 +119,9 @@ JavaScript, TypeScript, PHP, Python, Java, C/C++, C#, Ruby, Go, SQL, Swift, Obje
 
 Cody is an expert in answering a wide range of coding-related questions on topics including questions about your codebase, general programming concepts, test cases, debugging, and more. Cody Chat is not designed to answer non-coding questions or provide general information on topics outside of coding or your codebase.
 
+### What happened to the Cody App?
+
+We’ve deprecated the Cody App to streamline the experience for our Cody Free and Cody Pro users. Now, anyone with a Sourcegraph.com account can generate local embeddings for their personal projects within the VS Code extension without downloading and connecting the Cody App. Local embeddings are only supported for VS Code, but we’re working on adding the same functionality to JetBrains IDEs.
 
 ## Embeddings
 
@@ -179,7 +182,7 @@ It's worth noting that these dependencies remain consistent when utilizing the [
 
 ### What is the retention policy for Anthropic and OpenAI?
 
-Please refer to this [terms and conditions](https://about.sourcegraph.com/terms/cody-notice) for details regarding the retention policy for data managed by Anthropic and OpenAI.
+Please refer to this [terms and conditions](https://sourcegraph.com/terms/cody-notice) for details regarding the retention policy for data managed by Anthropic and OpenAI.
 
 ### Can I use my own API keys?
 

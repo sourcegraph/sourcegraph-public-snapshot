@@ -2,13 +2,16 @@ package iam
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/grafana/regexp"
+	"golang.org/x/exp/maps"
 
 	"github.com/aws/jsii-runtime-go"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiamcustomrole"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/secretmanagersecretiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta/googleprojectserviceidentity"
 	google_beta "github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta/provider"
 
@@ -17,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -28,6 +32,9 @@ type Variables struct {
 	ProjectID string
 	Image     string
 	Service   spec.ServiceSpec
+
+	// SecretEnv should be the environment config that sources from secrets.
+	SecretEnv map[string]string
 }
 
 const StackName = "iam"
@@ -94,15 +101,11 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			AccountID: fmt.Sprintf("%s-sa", vars.Service.ID),
 			DisplayName: fmt.Sprintf("%s Service Account",
 				pointers.Deref(vars.Service.Name, vars.Service.ID)),
-			Roles: func() []serviceaccount.Role {
-
-				return serviceAccountRoles
-			}(),
+			Roles: serviceAccountRoles,
 		})
 
-	// If the service image is published to a private image repository, grant
-	// the Cloud Run robot account access to the target project to pull the
-	// image.
+	// Provision the default Cloud Run robot account so that we can grant it
+	// access to prerequisite resources.
 	cloudRunIdentity := googleprojectserviceidentity.NewGoogleProjectServiceIdentity(stack,
 		id.TerraformID("cloudrun-identity"),
 		&googleprojectserviceidentity.GoogleProjectServiceIdentityConfig{
@@ -114,6 +117,11 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				Project: &vars.ProjectID,
 			}),
 		})
+	identityMember := pointers.Ptr(fmt.Sprintf("serviceAccount:%s", *cloudRunIdentity.Email()))
+
+	// If the service image is published to a private image repository, grant
+	// the Cloud Run robot account access to the target project to pull the
+	// image.
 	if imageProject := extractImageGoogleProject(vars.Image); imageProject != nil {
 		imageAccessID := id.Group("image_access")
 		for _, r := range []serviceaccount.Role{{
@@ -128,10 +136,28 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				&projectiammember.ProjectIamMemberConfig{
 					Project: imageProject,
 					Role:    pointers.Ptr(r.Role),
-					Member: pointers.Ptr(fmt.Sprintf("serviceAccount:%s",
-						*cloudRunIdentity.Email())),
+					Member:  identityMember,
 				})
 		}
+	}
+
+	// If any secret env secrets are external to this project, grant access to
+	// the referenced secrets.
+	if externalSecrets, err := extractExternalSecrets(vars.SecretEnv); err != nil {
+		return nil, errors.Wrap(err, "extracting secret projects")
+	} else {
+		secretAccessID := id.Group("external_secret_access")
+		for _, p := range externalSecrets {
+			secretmanagersecretiammember.NewSecretManagerSecretIamMember(stack,
+				secretAccessID.Group(p.key).TerraformID("member"),
+				&secretmanagersecretiammember.SecretManagerSecretIamMemberConfig{
+					Project:  &p.projectID,
+					SecretId: &p.secretID,
+					Role:     pointers.Ptr("roles/secretmanager.secretAccessor"),
+					Member:   &workloadServiceAccount.Member,
+				})
+		}
+
 	}
 
 	// Collect outputs
@@ -160,4 +186,53 @@ func extractImageGoogleProject(image string) *string {
 		return &imageRepoParts[1]
 	}
 	return nil
+}
+
+type externalSecret struct {
+	key string // original configuration key, lowercased
+
+	projectID string
+	secretID  string
+}
+
+func extractExternalSecrets(secrets map[string]string) ([]externalSecret, error) {
+	var externalSecrets []externalSecret
+
+	// Sort for stability
+	secretKeys := maps.Keys(secrets)
+	sort.Strings(secretKeys)
+	for _, k := range secretKeys {
+		secretName := secrets[k]
+		// Error on easy-to-make oopsies
+		if strings.HasPrefix(secretName, "project/") {
+			return nil, errors.Newf("invalid secret name %q: 'project/'-prefixed name provided, did you mean 'projects/'?",
+				secretName)
+		}
+		// Crude check to tell users that they shouldn't include versions in their secrets
+		if strings.Contains(secretName, "/versions/") {
+			return nil, errors.Newf("invalid secret name %q: secrets should not be versioned with '/version/'",
+				secretName)
+		}
+		// Check for 'projects/{project}/secrets/{secretName}'
+		if strings.HasPrefix(secretName, "projects/") {
+			secretNameParts := strings.SplitN(secretName, "/", 4)
+			if len(secretNameParts) != 4 {
+				return nil, errors.Newf("invalid secret name %q: expected 'projects/'-prefixed name to have 4 '/'-delimited parts",
+					secretName)
+			}
+			// Error on easy-to-make oopsies
+			if secretNameParts[2] != "secrets" {
+				return nil, errors.Newf("invalid secret name %q: found '/secret/' segment, did you mean '/secrets/'?",
+					secretName)
+			}
+
+			externalSecrets = append(externalSecrets, externalSecret{
+				key:       strings.ToLower(k),
+				projectID: secretNameParts[1],
+				secretID:  secretNameParts[3],
+			})
+		}
+	}
+
+	return externalSecrets, nil
 }

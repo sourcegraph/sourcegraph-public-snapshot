@@ -22,7 +22,8 @@ import (
 
 type Server struct {
 	logger      log.Logger
-	eventsTopic pubsub.TopicClient
+	eventsTopic pubsub.TopicPublisher
+	publishOpts events.PublishStreamOptions
 
 	recordEventsMetrics recordEventsMetrics
 
@@ -32,7 +33,7 @@ type Server struct {
 
 var _ telemetrygatewayv1.TelemeteryGatewayServiceServer = (*Server)(nil)
 
-func New(logger log.Logger, eventsTopic pubsub.TopicClient) (*Server, error) {
+func New(logger log.Logger, eventsTopic pubsub.TopicPublisher, publishOpts events.PublishStreamOptions) (*Server, error) {
 	m, err := newRecordEventsMetrics()
 	if err != nil {
 		return nil, err
@@ -41,6 +42,7 @@ func New(logger log.Logger, eventsTopic pubsub.TopicClient) (*Server, error) {
 	return &Server{
 		logger:      logger.Scoped("server"),
 		eventsTopic: eventsTopic,
+		publishOpts: publishOpts,
 
 		recordEventsMetrics: m,
 	}, nil
@@ -107,7 +109,7 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 			}
 
 			// Set up a publisher with the provided metadata
-			publisher, err = events.NewPublisherForStream(s.eventsTopic, metadata)
+			publisher, err = events.NewPublisherForStream(s.eventsTopic, metadata, s.publishOpts)
 			if err != nil {
 				return status.Errorf(codes.Internal, "failed to create publisher: %v", err)
 			}
@@ -117,6 +119,9 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 			if publisher == nil {
 				return status.Error(codes.InvalidArgument, "got events when metadata not yet received")
 			}
+
+			// Handle legacy exporters
+			migrateEvents(events)
 
 			// Publish events
 			resp := handlePublishEvents(

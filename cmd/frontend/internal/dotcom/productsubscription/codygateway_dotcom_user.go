@@ -3,10 +3,10 @@ package productsubscription
 import (
 	"context"
 	"fmt"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"math"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"math"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -177,7 +177,7 @@ func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) 
 		return nil, nil
 	}
 
-	rateLimit, err := getEmbeddingsRateLimit(ctx, r.db)
+	rateLimit, err := getEmbeddingsRateLimit(ctx, r.db, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +190,7 @@ func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) 
 	}, nil
 }
 
-func getEmbeddingsRateLimit(ctx context.Context, db database.DB) (licensing.CodyGatewayRateLimit, error) {
+func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (licensing.CodyGatewayRateLimit, error) {
 	// Hard-coded defaults: 200M tokens for life
 	limit := int64(20 * tokensPerDollar)
 	intervalSeconds := int32(math.MaxInt32)
@@ -198,8 +198,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB) (licensing.Cody
 	// Apply self-serve limits if available
 	cfg := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
 	if cfg != nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
-		actor := sgactor.FromContext(ctx)
-		user, err := actor.User(ctx, db.Users())
+		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, err
 		}
@@ -216,6 +215,11 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB) (licensing.Cody
 		}
 	}
 
+	// Apply override for testing if set
+	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
+		limit = 1
+	}
+
 	return licensing.CodyGatewayRateLimit{
 		AllowedModels:   []string{"openai/text-embedding-ada-002"},
 		Limit:           limit,
@@ -223,9 +227,22 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB) (licensing.Cody
 	}, nil
 }
 
+// getCompletionsRateLimit returns a rate limit for the given user and feature.
 func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, scope types.CompletionsFeature) (licensing.CodyGatewayRateLimit, graphqlbackend.CodyGatewayRateLimitSource, error) {
 	var limit *int
 	var err error
+
+	isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
+
+	// Apply override for testing if set.
+	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
+		return licensing.CodyGatewayRateLimit{
+			// For this special tester user, just allow all models a Pro user can get.
+			AllowedModels:   allowedModels(scope, true, true),
+			Limit:           1,
+			IntervalSeconds: math.MaxInt32,
+		}, graphqlbackend.CodyGatewayRateLimitSourceOverride, nil
+	}
 
 	// Apply overrides first.
 	source := graphqlbackend.CodyGatewayRateLimitSourceOverride
@@ -244,14 +261,22 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	// If there's no override, check the self-serve limits.
 	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 	intervalSeconds := oneDayInSeconds
-	if limit == nil && cfg != nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
+	// We may not update the limit, but we should check the models
+	user, err := db.Users().GetByID(ctx, userID)
+	if err != nil {
+		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
+	}
+	isProUser := user.CodyProEnabledAt != nil
+	models := allowedModels(scope, isCodyProEnabled, isProUser)
+	if limit == nil && cfg != nil && isCodyProEnabled {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
-		actor := sgactor.FromContext(ctx)
-		user, err := actor.User(ctx, db.Users())
+		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
 		}
 		isProUser := user.CodyProEnabledAt != nil
+		// Update the allowed models based on the user's plan.
+		models = allowedModels(scope, isCodyProEnabled, isProUser)
 		intervalSeconds, limit, err = getSelfServeUsageLimits(scope, isProUser, *cfg)
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
@@ -278,7 +303,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 		limit = pointers.Ptr(0)
 	}
 	return licensing.CodyGatewayRateLimit{
-		AllowedModels:   allowedModels(scope),
+		AllowedModels:   models,
 		Limit:           int64(*limit),
 		IntervalSeconds: intervalSeconds, // Daily limit TODO(davejrt)
 	}, source, nil
@@ -306,16 +331,63 @@ func getSelfServeUsageLimits(scope types.CompletionsFeature, isProUser bool, cfg
 				return oneMonthInSeconds, pointers.Ptr(cfg.PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit), nil
 			}
 		}
+	default:
+		return 0, nil, errors.Newf("unknown scope (self-serve limiting): %s", scope)
 	}
-	return 0, nil, errors.Newf("unknown scope (self-serve limiting): %s", scope)
+	return oneDayInSeconds, nil, nil
 }
 
-func allowedModels(scope types.CompletionsFeature) []string {
+func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser bool) []string {
 	switch scope {
 	case types.CompletionsFeatureChat:
-		return []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
+		if !isCodyProEnabled {
+			return []string{
+				"anthropic/claude-v1",
+				"anthropic/claude-2",
+				"anthropic/claude-2.0",
+				"anthropic/claude-2.1",
+				"anthropic/claude-instant-v1",
+				"anthropic/claude-instant-1.2",
+				"anthropic/claude-instant-1",
+				"openai/gpt-4-1106-preview",
+				"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct",
+			}
+		}
+
+		// When updating the below lists, make sure you also update `isAllowedCustomChatModel` in `chat.go`
+
+		if !isProUser {
+			return []string{
+				"anthropic/claude-2.0",
+				"anthropic/claude-instant-v1",
+				"anthropic/claude-instant-1.2",
+				"anthropic/claude-instant-1",
+			}
+		}
+
+		return []string{
+			"anthropic/claude-2",
+			"anthropic/claude-2.0",
+			"anthropic/claude-2.1",
+			"anthropic/claude-instant-1.2-cyan",
+			"anthropic/claude-instant-1.2",
+			"anthropic/claude-instant-v1",
+			"anthropic/claude-instant-1",
+			"openai/gpt-3.5-turbo",
+			"openai/gpt-4-1106-preview",
+			"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct",
+		}
 	case types.CompletionsFeatureCode:
-		return []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1", "fireworks/accounts/fireworks/models/starcoder-7b-w8a16", "fireworks/accounts/sourcegraph/models/starcoder-7b", "fireworks/accounts/fireworks/models/starcoder-16b-w8a16", "fireworks/accounts/sourcegraph/models/starcoder-16b"}
+		return []string{
+			"anthropic/claude-instant-v1",
+			"anthropic/claude-instant-1",
+			"anthropic/claude-instant-1.2-cyan",
+			"anthropic/claude-instant-1.2",
+			"fireworks/accounts/fireworks/models/starcoder-7b-w8a16",
+			"fireworks/accounts/sourcegraph/models/starcoder-7b",
+			"fireworks/accounts/fireworks/models/starcoder-16b-w8a16",
+			"fireworks/accounts/sourcegraph/models/starcoder-16b",
+		}
 	default:
 		return []string{}
 	}

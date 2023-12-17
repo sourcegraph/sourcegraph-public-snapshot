@@ -54,7 +54,7 @@ func logEvent(ctx context.Context, db database.DB, name string, siteID string) {
 		Timestamp:       time.Now(),
 	}
 
-	// this is best effort, so ignore errors
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().Insert(ctx, e)
 }
 
@@ -77,7 +77,7 @@ func sendSlackMessage(logger log.Logger, license *dbLicense, siteID string) {
 		return
 	}
 
-	client := slack.New(dotcom.SlackLicenseExpirationWebhook)
+	client := slack.New(dotcom.SlackLicenseAnomallyWebhook)
 	err = client.Post(context.Background(), &slack.Payload{
 		Text: fmt.Sprintf(multipleInstancesSameKeySlackFmt, externalURL.String(), url.QueryEscape(license.ProductSubscriptionID), url.QueryEscape(license.ID), license.ID, *license.SiteID, siteID),
 	})

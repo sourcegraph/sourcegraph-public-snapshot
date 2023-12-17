@@ -14,7 +14,12 @@
 </script>
 
 {#if data.stream}
-    <SearchResults stream={data.stream} queryFromURL={data.queryOptions.query} {queryState} />
+    <SearchResults
+        stream={data.stream}
+        queryFromURL={data.queryOptions.query}
+        {queryState}
+        queryFilters={data.queryFilters}
+    />
 {:else}
     <SearchHome {queryState} />
 {/if}

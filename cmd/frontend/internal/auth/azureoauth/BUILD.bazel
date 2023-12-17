@@ -13,6 +13,8 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
+        "//cmd/frontend/external/session",
+        "//cmd/frontend/hubspot",
         "//cmd/frontend/internal/auth/oauth",
         "//internal/actor",
         "//internal/auth/providers",

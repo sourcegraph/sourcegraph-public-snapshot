@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"io"
 	"net/http"
 
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
@@ -16,10 +17,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const fireworksAPIURL = "https://api.fireworks.ai/inference/v1/completions"
+const fireworksChatAPIURL = "https://api.fireworks.ai/inference/v1/chat/completions"
 
 func NewFireworksHandler(
 	baseLogger log.Logger,
@@ -30,6 +31,8 @@ func NewFireworksHandler(
 	accessToken string,
 	allowedModels []string,
 	logSelfServeCodeCompletionRequests bool,
+	disableSingleTenant bool,
+	autoFlushStreamingResponses bool,
 ) http.Handler {
 	return makeUpstreamHandler(
 		baseLogger,
@@ -38,15 +41,16 @@ func NewFireworksHandler(
 		rateLimitNotifier,
 		httpClient,
 		string(conftypes.CompletionsProviderNameFireworks),
-		fireworksAPIURL,
+		func(feature codygateway.Feature) string {
+			if feature == codygateway.FeatureChatCompletions {
+				return fireworksChatAPIURL
+			} else {
+				return fireworksAPIURL
+			}
+		},
 		allowedModels,
 		upstreamHandlerMethods[fireworksRequest]{
 			validateRequest: func(_ context.Context, _ log.Logger, feature codygateway.Feature, fr fireworksRequest) (int, *flaggingResult, error) {
-				if feature != codygateway.FeatureCodeCompletions {
-					return http.StatusNotImplemented, nil,
-						errors.Newf("feature %q is currently not supported for Fireworks",
-							feature)
-				}
 				return 0, nil, nil
 			},
 			transformBody: func(body *fireworksRequest, identifier string) {
@@ -55,11 +59,21 @@ func NewFireworksHandler(
 				if body.N > 1 {
 					body.N = 1
 				}
+				if disableSingleTenant {
+					oldModel := body.Model
+					if body.Model == "accounts/sourcegraph/models/starcoder-16b" {
+						body.Model = "accounts/fireworks/models/starcoder-16b-w8a16"
+					} else if body.Model == "accounts/sourcegraph/models/starcoder-7b" {
+						body.Model = "accounts/fireworks/models/starcoder-7b-w8a16"
+					}
+					if oldModel != body.Model {
+						baseLogger.Debug("rewriting model", log.String("old-model", oldModel), log.String("new-model", body.Model))
+					}
+				}
 			},
-			getRequestMetadata: func(ctx context.Context, logger log.Logger, act *actor.Actor, body fireworksRequest) (model string, additionalMetadata map[string]any) {
-				// we checked this is a code completion request in validateRequest
-				// check that actor is a PLG user
-				if logSelfServeCodeCompletionRequests && act.IsDotComActor() {
+			getRequestMetadata: func(ctx context.Context, logger log.Logger, act *actor.Actor, feature codygateway.Feature, body fireworksRequest) (model string, additionalMetadata map[string]any) {
+				// Check that this is a code completion request and that the actor is a PLG user
+				if feature == codygateway.FeatureCodeCompletions && logSelfServeCodeCompletionRequests && act.IsDotComActor() {
 					// LogEvent is a channel send (not an external request), so should be ok here
 					if err := eventLogger.LogEvent(
 						ctx,
@@ -152,24 +166,36 @@ func NewFireworksHandler(
 		// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
 		// do any retries
 		30, // seconds
+		autoFlushStreamingResponses,
 	)
 }
 
-// fireworksRequest captures all known fields from https://fireworksai.readme.io/reference/createcompletion.
+// fireworksRequest captures fields from https://readme.fireworks.ai/reference/createcompletion and
+// https://readme.fireworks.ai/reference/createchatcompletion.
 type fireworksRequest struct {
-	Prompt      string   `json:"prompt"`
-	Model       string   `json:"model"`
-	MaxTokens   int32    `json:"max_tokens,omitempty"`
-	Temperature float32  `json:"temperature,omitempty"`
-	TopP        int32    `json:"top_p,omitempty"`
-	N           int32    `json:"n,omitempty"`
-	Stream      bool     `json:"stream,omitempty"`
-	Echo        bool     `json:"echo,omitempty"`
-	Stop        []string `json:"stop,omitempty"`
+	Prompt      string    `json:"prompt,omitempty"`
+	Messages    []message `json:"messages,omitempty"`
+	Model       string    `json:"model"`
+	MaxTokens   int32     `json:"max_tokens,omitempty"`
+	Temperature float32   `json:"temperature,omitempty"`
+	TopP        float32   `json:"top_p,omitempty"`
+	N           int32     `json:"n,omitempty"`
+	Stream      bool      `json:"stream,omitempty"`
+	Echo        bool      `json:"echo,omitempty"`
+	Stop        []string  `json:"stop,omitempty"`
+}
+
+func (fr fireworksRequest) ShouldStream() bool {
+	return fr.Stream
 }
 
 func (fr fireworksRequest) GetModel() string {
 	return fr.Model
+}
+
+type message struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
 }
 
 type fireworksResponse struct {

@@ -276,7 +276,6 @@ go_test(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
-        "//internal/collections",
         "//internal/conf",
         "//internal/database/basestore",
         "//internal/database/batch",
@@ -337,7 +336,6 @@ go_test(
         "@org_golang_x_exp//maps",
         "@org_golang_x_exp//slices",
         "@org_golang_x_sync//errgroup",
-        "@tools_gotest//assert",
     ],
 )
 

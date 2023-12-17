@@ -1,4 +1,4 @@
-import type { ContentMatch, MatchItem } from '$lib/shared'
+import type { ContentMatch, MatchItem, Filter } from '$lib/shared'
 
 export interface SidebarFilter {
     value: string
@@ -28,8 +28,7 @@ export function resultToMatchItems(result: ContentMatch): MatchItem[] {
               })),
               content: match.content,
               startLine: match.contentStart.line,
-              endLine: match.ranges.at(-1).end.line,
-              aggregableBadges: match.aggregableBadges,
+              endLine: match.ranges.at(-1)?.end.line ?? match.contentStart.line,
           })) ||
               result.lineMatches?.map(match => ({
                   highlightRanges: match.offsetAndLengths.map(offsetAndLength => ({
@@ -41,8 +40,34 @@ export function resultToMatchItems(result: ContentMatch): MatchItem[] {
                   content: match.line,
                   startLine: match.lineNumber,
                   endLine: match.lineNumber,
-                  aggregableBadges: match.aggregableBadges,
               })) ||
               []
         : []
+}
+
+interface FilterGroups {
+    repo: Filter[]
+    file: Filter[]
+    lang: Filter[]
+}
+
+export function groupFilters(filters: Filter[] | null | undefined): FilterGroups {
+    const groupedFilters: FilterGroups = {
+        file: [],
+        repo: [],
+        lang: [],
+    }
+    if (filters) {
+        for (const filter of filters) {
+            switch (filter.kind) {
+                case 'repo':
+                case 'file':
+                case 'lang': {
+                    groupedFilters[filter.kind].push(filter)
+                    break
+                }
+            }
+        }
+    }
+    return groupedFilters
 }

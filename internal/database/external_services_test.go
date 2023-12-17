@@ -127,7 +127,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
@@ -306,6 +306,10 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
+	user, err := db.Users().Create(ctx, NewUser{Username: "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	now := timeutil.Now()
 	codeHostURL := "https://github.com/"
@@ -318,11 +322,12 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		return &conf.Unified{}
 	}
 	es := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
+		Kind:          extsvc.KindGitHub,
+		DisplayName:   "GITHUB #1",
+		Config:        extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
+		LastUpdaterID: &user.ID,
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err = db.ExternalServices().Create(ctx, confGet, es)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -337,9 +342,41 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Set permissions user mapping and create an "Other" external service
+	pmu := globals.PermissionsUserMapping()
+	t.Cleanup(func() {
+		globals.SetPermissionsUserMapping(pmu)
+	})
+
+	globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{
+		BindID:  "email",
+		Enabled: true,
+	})
+
+	esOther := &types.ExternalService{
+		Kind:          extsvc.KindOther,
+		DisplayName:   "Other",
+		Config:        extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repos": [ "sourcegraph/sourcegraph" ] }`),
+		LastUpdaterID: &user.ID,
+	}
+	err = db.ExternalServices().Create(ctx, confGet, esOther)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	esOther, err = db.ExternalServices().GetByID(ctx, esOther.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if esOther.Unrestricted {
+		t.Fatal("Expected external services to not be unrestricted")
+	}
+
 	// NOTE: The order of tests matters
 	tests := []struct {
 		name               string
+		esID               int64
 		update             *ExternalServiceUpdate
 		wantUnrestricted   bool
 		wantCloudDefault   bool
@@ -351,6 +388,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	}{
 		{
 			name: "update with authorization",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				DisplayName: pointers.Ptr("GITHUB (updated) #1"),
 				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}, "webhooks": [{"org": "org", "secret": "secret"}]}`),
@@ -361,6 +399,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "update without authorization",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				DisplayName: pointers.Ptr("GITHUB (updated) #2"),
 				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
@@ -371,6 +410,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "update with authorization in comments",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				DisplayName: pointers.Ptr("GITHUB (updated) #3"),
 				Config: pointers.Ptr(`
@@ -387,6 +427,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "set cloud_default true",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				DisplayName:  pointers.Ptr("GITHUB (updated) #4"),
 				CloudDefault: pointers.Ptr(true),
@@ -405,6 +446,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "update token_expires_at",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				DisplayName:    pointers.Ptr("GITHUB (updated) #5"),
 				Config:         pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
@@ -415,6 +457,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "update with empty config",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				Config: pointers.Ptr(``),
 			},
@@ -422,6 +465,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "update with comment config",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				Config: pointers.Ptr(`// {}`),
 			},
@@ -429,6 +473,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "update last_sync_at",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				DisplayName: pointers.Ptr("GITHUB (updated) #6"),
 				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
@@ -440,6 +485,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "update next_sync_at",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				DisplayName: pointers.Ptr("GITHUB (updated) #7"),
 				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
@@ -450,10 +496,21 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			wantTokenExpiresAt: true,
 			wantNextSyncAt:     now,
 		},
+		{
+			name: "update keeps unrestricted state",
+			esID: esOther.ID,
+			update: &ExternalServiceUpdate{
+				DisplayName: pointers.Ptr("Other (updated)"),
+				Config:      pointers.Ptr(`{"url": "https://github.com", "repos": [ "sourcegraph/sourcegraph", "sourcegraph/cody" ]}`),
+				LastSyncAt:  pointers.Ptr(now),
+				NextSyncAt:  pointers.Ptr(now),
+			},
+			wantUnrestricted: false,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err = db.ExternalServices().Update(ctx, nil, es.ID, test.update)
+			err = db.ExternalServices().Update(ctx, nil, test.esID, test.update)
 			if test.wantError {
 				if err == nil {
 					t.Fatal("Wanted an error")
@@ -465,7 +522,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			}
 
 			// Get and verify update
-			got, err := db.ExternalServices().GetByID(ctx, es.ID)
+			got, err := db.ExternalServices().GetByID(ctx, test.esID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -634,6 +691,10 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
+	user, err := db.Users().Create(ctx, NewUser{Username: "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
@@ -649,7 +710,7 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 		DisplayName: "GITHUB #1",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 	}
-	err := externalServices.Create(ctx, confGet, es)
+	err = externalServices.Create(ctx, confGet, es)
 	require.NoError(t, err)
 
 	got, err := externalServices.GetByID(ctx, es.ID)
@@ -681,7 +742,8 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 		conf.Get().AuthProviders,
 		es.ID,
 		&ExternalServiceUpdate{
-			Config: &cfg,
+			Config:        &cfg,
+			LastUpdaterID: &user.ID,
 		},
 	)
 	require.NoError(t, err)
@@ -2480,7 +2542,7 @@ func TestExternalServiceStore_recalculateFields(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			require.NoError(t, e.recalculateFields(es, rawConfig))
+			e.recalculateFields(es, rawConfig)
 
 			require.Equal(t, es.Unrestricted, tc.expectUnrestricted)
 		})

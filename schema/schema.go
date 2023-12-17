@@ -53,6 +53,18 @@ type AWSKMSEncryptionKey struct {
 	Region          string `json:"region,omitempty"`
 	Type            string `json:"type"`
 }
+type AnnotationsParams struct {
+	// Content description: The file's content.
+	Content string `json:"content"`
+	// File description: The file's URI.
+	File string `json:"file"`
+}
+type AnnotationsResult struct {
+	// Annotations description: Annotations that attach items to specific ranges in the file.
+	Annotations []*OpenCodeGraphAnnotation `json:"annotations"`
+	// Items description: Items that contain information relevant to the file.
+	Items []*OpenCodeGraphItem `json:"items"`
+}
 
 // App description: Configuration options for App only.
 type App struct {
@@ -92,6 +104,22 @@ type AuthAccessRequest struct {
 type AuthAccessTokens struct {
 	// Allow description: Allow or restrict the use of access tokens. The default is "all-users-create", which enables all users to create access tokens. Use "none" to disable access tokens entirely. Use "site-admin-create" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).
 	Allow string `json:"allow,omitempty"`
+}
+
+// AuthAllowedIpAddress description: IP allowlist for access to the Sourcegraph instance. If set, only requests from these IP addresses will be allowed. By default client IP is infered connected client IP address, and you may configure to use a request header to determine the user IP.
+type AuthAllowedIpAddress struct {
+	// ClientIpAddress description: List of client IP addresses to allow. If empty, all IP addresses are allowed. This is useful to restrict who can open connection with the Sorcegraph instance, e.g., the request source range of the upsteam application load balancer.
+	ClientIpAddress []string `json:"clientIpAddress,omitempty"`
+	// Enabled description: Whether to enable the IP allowlist.
+	Enabled bool `json:"enabled,omitempty"`
+	// ErrorMessageTemplate description: A template to customize the error message display to users on unauthorized access.  Available template variables: `{{.Error}}`, `{{.UserIP}}`
+	ErrorMessageTemplate string `json:"errorMessageTemplate,omitempty"`
+	// TrustedClientIpAddress description: List of trusted client IP addresses that will bypass user IP address check. If empty, nothing can be bypass. This is useful to support access from trusted internal services. It will always permit connection from `127.0.0.1`. You must include the IP range allocated for the Sourcegraph deployment services to allow inter-service communication, e.g., kubernetes pod ip range.
+	TrustedClientIpAddress []string `json:"trustedClientIpAddress,omitempty"`
+	// UserIpAddress description: List of user IP addresses to allow. If empty, all IP addresses are allowed.
+	UserIpAddress []string `json:"userIpAddress,omitempty"`
+	// UserIpRequestHeaders description: An optional list of case-insensitive request header names to use for resolving the callers user IP address. You must ensure that the header is coming from a trusted source. If the header contains multiple IP addresses, the right-most is used. If no IP is found from provided headers, the connected client IP address is used.
+	UserIpRequestHeaders []string `json:"userIpRequestHeaders,omitempty"`
 }
 
 // AuthLockout description: The config options for account lockout
@@ -224,6 +252,12 @@ type AzureDevOpsConnection struct {
 	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
 	// Exclude description: A list of repositories to never mirror from Azure DevOps Services.
 	Exclude []*ExcludedAzureDevOpsServerRepo `json:"exclude,omitempty"`
+	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories.
+	//
+	// If "http", Sourcegraph will access repositories using Git URLs of the form http(s)://dev.azure.com/myrepo.git.
+	//
+	// If "ssh", Sourcegraph will access repositories using Git URLs of the form git@ssh.dev.azure.com:v3/myrepo. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
+	GitURLType string `json:"gitURLType,omitempty"`
 	// Orgs description: An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.
 	Orgs []string `json:"orgs,omitempty"`
 	// Projects description: An array of projects "org/project" strings specifying which Azure DevOps projects' repositories should be mirrored on Sourcegraph.
@@ -501,8 +535,6 @@ type BrandAssets struct {
 }
 
 // Branding description: Customize Sourcegraph homepage logo and search icon.
-//
-// Only available in Sourcegraph Enterprise.
 type Branding struct {
 	// BrandName description: String to display everywhere the brand name should be displayed. Defaults to "Sourcegraph"
 	BrandName string       `json:"brandName,omitempty"`
@@ -521,6 +553,14 @@ type BuiltinAuthProvider struct {
 	// SECURITY: If the site has no users (i.e., during initial setup), it will always allow the first user to sign up and become site admin **without any approval** (first user to sign up becomes the admin).
 	AllowSignup bool   `json:"allowSignup,omitempty"`
 	Type        string `json:"type"`
+}
+type CapabilitiesParams struct {
+}
+type CapabilitiesResult struct {
+	// Selector description: Selects the scope (repositories, files, and languages) in which this provider should be called.
+	//
+	// At least 1 must be satisfied for the provider to be called. If empty, the provider is never called. If undefined, the provider is called on all files.
+	Selector []*Selector `json:"selector,omitempty"`
 }
 
 // ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
@@ -648,6 +688,8 @@ type Dotcom struct {
 	CodyGateway *CodyGateway `json:"codyGateway,omitempty"`
 	// MinimumExternalAccountAge description: The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.
 	MinimumExternalAccountAge int `json:"minimumExternalAccountAge,omitempty"`
+	// MinimumExternalAccountAgeExemptList description: A list of email addresses that are allowed to be exempted from the minimumExternalAccountAge requirement.
+	MinimumExternalAccountAgeExemptList []string `json:"minimumExternalAccountAgeExemptList,omitempty"`
 	// SlackLicenseAnomallyWebhook description: Slack webhook for when there is an anomaly detected with license key usage.
 	SlackLicenseAnomallyWebhook string `json:"slackLicenseAnomallyWebhook,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
@@ -1764,6 +1806,45 @@ type OnboardingTourConfiguration struct {
 	DefaultSnippets map[string]any    `json:"defaultSnippets,omitempty"`
 	Tasks           []*OnboardingTask `json:"tasks"`
 }
+type OpenCodeGraphAnnotation struct {
+	Item  OpenCodeGraphItemRef `json:"item"`
+	Range OpenCodeGraphRange   `json:"range"`
+}
+
+// OpenCodeGraphData description: Metadata about code
+type OpenCodeGraphData struct {
+	Annotations []*OpenCodeGraphAnnotation `json:"annotations"`
+	Items       []*OpenCodeGraphItem       `json:"items"`
+}
+type OpenCodeGraphImage struct {
+	Alt    string  `json:"alt,omitempty"`
+	Height float64 `json:"height,omitempty"`
+	Url    string  `json:"url"`
+	Width  float64 `json:"width,omitempty"`
+}
+type OpenCodeGraphItem struct {
+	Detail string              `json:"detail,omitempty"`
+	Id     string              `json:"id"`
+	Image  *OpenCodeGraphImage `json:"image,omitempty"`
+	// Preview description: Show a preview of the link.
+	Preview bool `json:"preview,omitempty"`
+	// PreviewUrl description: If `preview` is set, show this URL as the preview instead of `url`.
+	PreviewUrl string `json:"previewUrl,omitempty"`
+	Title      string `json:"title"`
+	// Url description: An external URL with more information.
+	Url string `json:"url,omitempty"`
+}
+type OpenCodeGraphItemRef struct {
+	Id string `json:"id"`
+}
+type OpenCodeGraphPosition struct {
+	Character int `json:"character"`
+	Line      int `json:"line"`
+}
+type OpenCodeGraphRange struct {
+	End   OpenCodeGraphPosition `json:"end"`
+	Start OpenCodeGraphPosition `json:"start"`
+}
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
 type OpenIDConnectAuthProvider struct {
@@ -2039,11 +2120,25 @@ type Repository struct {
 	// Owner description: The repository namespace.
 	Owner string `json:"owner,omitempty"`
 }
+type RequestMessage struct {
+	Method   string         `json:"method"`
+	Params   any            `json:"params,omitempty"`
+	Settings map[string]any `json:"settings,omitempty"`
+}
 type Responders struct {
 	Id       string `json:"id,omitempty"`
 	Name     string `json:"name,omitempty"`
 	Type     string `json:"type,omitempty"`
 	Username string `json:"username,omitempty"`
+}
+type ResponseError struct {
+	Code    int    `json:"code"`
+	Data    any    `json:"data,omitempty"`
+	Message string `json:"message"`
+}
+type ResponseMessage struct {
+	Error  *ResponseError `json:"error,omitempty"`
+	Result any            `json:"result,omitempty"`
 }
 
 // RestartStep description: Restart step
@@ -2205,6 +2300,18 @@ type SecurityEventLog struct {
 	Location string `json:"location,omitempty"`
 }
 
+// Selector description: Defines a scope in which a provider is called, as a subset of languages, repositories, and/or files.
+//
+// To satisfy a selector, all of the selector's conditions must be met. For example, if both `path` and `content` are specified, the file must satisfy both conditions.
+type Selector struct {
+	// ContentContains description: A literal string that must be present in the file's content.
+	ContentContains string `json:"contentContains,omitempty"`
+	// Path description: A glob that must match the file path. If the file's location is represented as a URI, the URI's scheme is stripped before being matched against this glob.
+	//
+	// Use `**/` before the glob to match in any parent directory. Use `/**` after the glob to match any files under a directory. Leading slashes are stripped from the path before being matched against the glob.
+	Path string `json:"path,omitempty"`
+}
+
 // Sentry description: Configuration for Sentry
 type Sentry struct {
 	// BackendDSN description: Sentry Data Source Name (DSN) for backend errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
@@ -2274,7 +2381,7 @@ type Settings struct {
 	// Quicklinks description: DEPRECATED: This setting will be removed in a future version of Sourcegraph.
 	Quicklinks []*QuickLink `json:"quicklinks,omitempty"`
 	// SearchContextLines description: The default number of lines to show as context below and above search results. Default is 1.
-	SearchContextLines int `json:"search.contextLines,omitempty"`
+	SearchContextLines *int `json:"search.contextLines,omitempty"`
 	// SearchDefaultCaseSensitive description: Whether query patterns are treated case sensitively. Patterns are case insensitive by default.
 	SearchDefaultCaseSensitive bool `json:"search.defaultCaseSensitive,omitempty"`
 	// SearchDefaultMode description: Defines default properties for search behavior. The default is `smart`, which provides query assistance that automatically runs alternative queries when appropriate. When `precise`, search behavior strictly searches for the precise meaning of the query.
@@ -2403,6 +2510,8 @@ type SettingsExperimentalFeatures struct {
 	GoCodeCheckerTemplates *bool `json:"goCodeCheckerTemplates,omitempty"`
 	// NewSearchNavigationUI description: Enables new experimental search UI navigation
 	NewSearchNavigationUI *bool `json:"newSearchNavigationUI,omitempty"`
+	// NewSearchResultsUI description: Enables new experimental search results UI, such as preview panel feature and updated search and filter layouts.
+	NewSearchResultsUI *bool `json:"newSearchResultsUI,omitempty"`
 	// ProactiveSearchResultsAggregations description: Search results aggregations are triggered automatically with a search.
 	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
@@ -2468,6 +2577,7 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "fuzzyFinderSymbols")
 	delete(m, "goCodeCheckerTemplates")
 	delete(m, "newSearchNavigationUI")
+	delete(m, "newSearchResultsUI")
 	delete(m, "proactiveSearchResultsAggregations")
 	delete(m, "searchContextsQuery")
 	delete(m, "searchQueryInput")
@@ -2522,6 +2632,8 @@ type SiteConfiguration struct {
 	AuthAccessRequest *AuthAccessRequest `json:"auth.accessRequest,omitempty"`
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 	AuthAccessTokens *AuthAccessTokens `json:"auth.accessTokens,omitempty"`
+	// AuthAllowedIpAddress description: IP allowlist for access to the Sourcegraph instance. If set, only requests from these IP addresses will be allowed. By default client IP is infered connected client IP address, and you may configure to use a request header to determine the user IP.
+	AuthAllowedIpAddress *AuthAllowedIpAddress `json:"auth.allowedIpAddress,omitempty"`
 	// AuthEnableUsernameChanges description: Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.
 	AuthEnableUsernameChanges bool `json:"auth.enableUsernameChanges,omitempty"`
 	// AuthLockout description: The config options for account lockout
@@ -2579,8 +2691,6 @@ type SiteConfiguration struct {
 	// BatchChangesRolloutWindows description: Specifies specific windows, which can have associated rate limits, to be used when reconciling published changesets (creating or updating). All days and times are handled in UTC.
 	BatchChangesRolloutWindows *[]*BatchChangeRolloutWindow `json:"batchChanges.rolloutWindows,omitempty"`
 	// Branding description: Customize Sourcegraph homepage logo and search icon.
-	//
-	// Only available in Sourcegraph Enterprise.
 	Branding *Branding `json:"branding,omitempty"`
 	// CloneProgressLog description: Whether clone progress should be logged to a file. If enabled, logs are written to files in the OS default path for temporary files.
 	CloneProgressLog bool `json:"cloneProgress.log,omitempty"`
@@ -2829,6 +2939,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "app")
 	delete(m, "auth.accessRequest")
 	delete(m, "auth.accessTokens")
+	delete(m, "auth.allowedIpAddress")
 	delete(m, "auth.enableUsernameChanges")
 	delete(m, "auth.lockout")
 	delete(m, "auth.minPasswordLength")

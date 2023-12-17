@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -1124,31 +1123,6 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 		assertUnrestricted(t, 3, false)
 		assertUnrestricted(t, 4, false)
 		checkUserRepoPermissions(t, s, sqlf.Sprintf("repo_id = 4"), []authz.Permission{{UserID: 2, RepoID: 4, Source: authz.SourceRepoSync}})
-	})
-
-	t.Run("Check parameter limit", func(t *testing.T) {
-		t.Cleanup(cleanupTables)
-
-		// Also checking that more than 65535 IDs can be processed without an error
-		var ids [66000]int32
-		p := make([]authz.Permission, len(ids))
-		for i := range ids {
-			ids[i] = int32(i + 1)
-			p[i] = authz.Permission{RepoID: ids[i], Source: authz.SourceAPI}
-		}
-
-		chunks, err := collections.SplitIntoChunks(p, 15000)
-		require.NoError(t, err)
-
-		for _, chunk := range chunks {
-			setupPermsRelatedEntities(t, s, chunk)
-		}
-		if err := s.SetRepoPermissionsUnrestricted(ctx, ids[:], true); err != nil {
-			t.Fatal(err)
-		}
-		assertUnrestricted(t, 1, true)
-		assertUnrestricted(t, 500, true)
-		assertUnrestricted(t, 66000, true)
 	})
 }
 
@@ -3994,7 +3968,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 			Name:   "TestPagination",
 			UserID: 555,
 			Args: &ListUserPermissionsArgs{
-				PaginationArgs: &PaginationArgs{First: pointers.Ptr(2), After: pointers.Ptr("'public_repo_5'"), OrderBy: OrderBy{{Field: "name"}}},
+				PaginationArgs: &PaginationArgs{First: pointers.Ptr(2), After: []any{"public_repo_5"}, OrderBy: OrderBy{{Field: "name"}}},
 			},
 			WantResults: []*listUserPermissionsResult{
 				{
@@ -4191,7 +4165,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			Name:   "TestPaginationWithPrivateRepo",
 			RepoID: 1,
 			Args: &ListRepoPermissionsArgs{
-				PaginationArgs: &PaginationArgs{First: pointers.Ptr(1), After: pointers.Ptr("555"), OrderBy: OrderBy{{Field: "users.id"}}, Ascending: true},
+				PaginationArgs: &PaginationArgs{First: pointers.Ptr(1), After: []any{555}, OrderBy: OrderBy{{Field: "users.id"}}, Ascending: true},
 			},
 			WantResults: []*listRepoPermissionsResult{
 				{
