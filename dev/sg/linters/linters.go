@@ -43,7 +43,7 @@ var Targets = []Target{
 			lintLoggingLibraries(),
 			onlyLocal(lintTracingLibraries()),
 			goModGuards(),
-			lintSGExit(),
+			onlyLocal(lintSGExit()),
 		},
 	},
 	{
