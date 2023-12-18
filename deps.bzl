@@ -8248,10 +8248,6 @@ def go_dependencies():
         importpath = "golang.org/x/tools",
         sum = "h1:zdAyfUGbYmuVokhzVmghFl2ZJh5QhcfebBgmVPFYA+8=",
         version = "v0.15.0",
-        patch_args = ["-p1"],
-        patches = [
-            "//third_party/org_golang_x_tools:set-imports.patch",
-        ],
     )
     go_repository(
         name = "org_golang_x_xerrors",
