@@ -1,7 +1,7 @@
 <script lang="ts">
     import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 
-    import { limitHit, sortBySeverity } from '$lib/branded'
+    import { getProgressText, limitHit, sortBySeverity } from '$lib/branded'
     import { renderMarkdown, pluralize } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
@@ -25,7 +25,6 @@
         )
     }
 
-    $: matchCount = progress.matchCount + (progress.skipped.length > 0 ? '+' : '')
     $: severity = progress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error')
         ? 'error'
         : 'info'
@@ -38,9 +37,15 @@
 
 <Popover let:registerTrigger let:toggle placement="bottom-start">
     <Button variant="secondary" size="sm" outline>
-        <button slot="custom" let:className use:registerTrigger class={className} on:click={() => toggle()}>
+        <button
+            slot="custom"
+            let:className
+            use:registerTrigger
+            class="{className} progress-button"
+            on:click={() => toggle()}
+        >
             <Icon svgPath={icons[severity]} inline />
-            {matchCount} results in {(progress.durationMs / 1000).toFixed(2)}s
+            {getProgressText(progress).visibleText}
             <Icon svgPath={mdiChevronDown} inline />
         </button>
     </Button>
@@ -134,5 +139,9 @@
 
     label {
         display: block;
+    }
+
+    .progress-button {
+        border: none;
     }
 </style>

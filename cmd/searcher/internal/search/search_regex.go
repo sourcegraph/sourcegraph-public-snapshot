@@ -18,10 +18,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func regexSearchBatch(ctx context.Context, m matcher, pm *pathMatcher, zf *zipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
+func regexSearchBatch(
+	ctx context.Context,
+	m matcher,
+	pm *pathMatcher,
+	zf *zipFile,
+	limit int,
+	patternMatchesContent, patternMatchesPaths bool,
+	isPatternNegated bool,
+	contextLines int32,
+) ([]protocol.FileMatch, bool, error) {
 	ctx, cancel, sender := newLimitedStreamCollector(ctx, limit)
 	defer cancel()
-	err := regexSearch(ctx, m, pm, zf, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
+	err := regexSearch(ctx, m, pm, zf, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender, contextLines)
 	return sender.collected, sender.LimitHit(), err
 }
 
@@ -39,7 +48,16 @@ func regexSearchBatch(ctx context.Context, m matcher, pm *pathMatcher, zf *zipFi
 // consider using ripgrep directly (modify it to search zip archives).
 //
 // TODO(keegan) return search statistics
-func regexSearch(ctx context.Context, m matcher, pm *pathMatcher, zf *zipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (err error) {
+func regexSearch(
+	ctx context.Context,
+	m matcher,
+	pm *pathMatcher,
+	zf *zipFile,
+	patternMatchesContent, patternMatchesPaths bool,
+	isPatternNegated bool,
+	sender matchSender,
+	contextLines int32,
+) (err error) {
 	tr, ctx := trace.New(ctx, "regexSearch")
 	defer tr.EndWithErr(&err)
 
@@ -139,8 +157,7 @@ func regexSearch(ctx context.Context, m matcher, pm *pathMatcher, zf *zipFile, p
 				}
 
 				locs := m.MatchesFile(fileMatchBuf, sender.Remaining())
-				fm := locsToFileMatch(fileBuf, f.Name, locs)
-
+				fm := locsToFileMatch(fileBuf, f.Name, locs, contextLines)
 				match := len(fm.ChunkMatches) > 0
 				if !match && patternMatchesPaths {
 					// Try matching against the file path.
@@ -202,7 +219,7 @@ func readAll(r io.Reader, b []byte) (int, error) {
 	}
 }
 
-func locsToFileMatch(fileBuf []byte, name string, locs [][]int) protocol.FileMatch {
+func locsToFileMatch(fileBuf []byte, name string, locs [][]int, contextLines int32) protocol.FileMatch {
 	if len(locs) == 0 {
 		return protocol.FileMatch{
 			Path:     name,
@@ -210,8 +227,8 @@ func locsToFileMatch(fileBuf []byte, name string, locs [][]int) protocol.FileMat
 		}
 	}
 	ranges := locsToRanges(fileBuf, locs)
-	chunks := chunkRanges(ranges, 0)
-	cms := chunksToMatches(fileBuf, chunks)
+	chunks := chunkRanges(ranges, contextLines*2)
+	cms := chunksToMatches(fileBuf, chunks, contextLines)
 	return protocol.FileMatch{
 		Path:         name,
 		ChunkMatches: cms,

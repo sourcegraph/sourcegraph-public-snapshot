@@ -139,9 +139,9 @@ export function queryStateStore(initial: Partial<Options> = {}, settings: QueryS
     }
 }
 
-export function submitSearch(
+export function getQueryURL(
     queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>
-): void {
+): string {
     const searchQueryParameter = buildSearchURLQuery(
         queryState.query,
         queryState.patternType,
@@ -150,7 +150,11 @@ export function submitSearch(
         queryState.searchMode
     )
 
-    // no-void conflicts with no-floating-promises
-    // eslint-disable-next-line no-void
-    void goto('/search?' + searchQueryParameter)
+    return 'search?' + searchQueryParameter
+}
+
+export function submitSearch(
+    queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>
+): void {
+    void goto(getQueryURL(queryState))
 }

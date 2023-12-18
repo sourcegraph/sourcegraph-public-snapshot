@@ -382,7 +382,10 @@
       "description": "The default number of lines to show as context below and above search results. Default is 1.",
       "type": "integer",
       "minimum": 0,
-      "default": 1
+      "default": 1,
+      "!go": {
+        "pointer": true
+      }
     },
     "search.defaultMode": {
       "description": "Defines default properties for search behavior. The default is `smart`, which provides query assistance that automatically runs alternative queries when appropriate. When `precise`, search behavior strictly searches for the precise meaning of the query.",
