@@ -8,6 +8,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -866,7 +868,7 @@ func (p *parser) ParsePattern(label labels) Pattern {
 // (-?)field:<string> where : matches the first encountered colon, and field
 // must match ^[a-zA-Z]+ and be allowed by allFields. Field may optionally
 // be preceded by '-' which means the parameter is negated.
-func (p *parser) ParseParameter() (Parameter, bool, error) {
+func (p *parser) ParseParameter(label labels) (Parameter, bool, error) {
 	start := p.pos
 	field, negated, advance := ScanField(p.buf[p.pos:])
 	if field == "" {
@@ -874,16 +876,55 @@ func (p *parser) ParseParameter() (Parameter, bool, error) {
 	}
 
 	p.pos += advance
-	value, labels, err := p.ParseFieldValue(field)
+	value, parsedLabels, err := p.ParseFieldValue(field)
 	if err != nil {
 		return Parameter{}, false, err
 	}
+
+	if label.IsSet(GlobFilters) {
+		switch field {
+		case "r", "repo", "f", "file":
+			value = globToRegex(value)
+		}
+	}
+
 	return Parameter{
 		Field:      field,
 		Value:      value,
 		Negated:    negated,
-		Annotation: Annotation{Range: newRange(start, p.pos), Labels: labels},
+		Annotation: Annotation{Range: newRange(start, p.pos), Labels: parsedLabels},
 	}, true, nil
+}
+
+func globToRegex(gob string) string {
+	// First, we escape all the regex special characters.
+	re := regexp.MustCompile(`[\$\(\)\*\+\.\?\[\\\]\^\{\|\}]`)
+	r := re.ReplaceAllStringFunc(gob, func(match string) string {
+		if match == "*" {
+			return ".*"
+		}
+		return "\\" + match
+	})
+
+	// Special case for ".*" as it behaves differently with anchoring logic.
+	if r == ".*" {
+		return r
+	}
+
+	// Adjust the regex to account for implicit .* on either end.
+	if strings.HasPrefix(r, ".*") {
+		r = strings.TrimPrefix(r, ".*")
+	} else {
+		r = "^" + r
+	}
+
+	if strings.HasSuffix(r, ".*") {
+		r = strings.TrimSuffix(r, ".*")
+	} else {
+		r = r + "$"
+	}
+
+	return r
 }
 
 // partitionParameters constructs a parse tree to distinguish terms where
@@ -984,7 +1025,7 @@ loop:
 			if p.match(LPAREN) {
 				return nil, errors.New("it looks like you tried to use an expression after NOT. The NOT operator can only be used with simple search patterns or filters, and is not supported for expressions or subqueries")
 			}
-			if parameter, ok, _ := p.ParseParameter(); ok {
+			if parameter, ok, _ := p.ParseParameter(label); ok {
 				// we don't support NOT -field:value
 				if parameter.Negated {
 					return nil, errors.Errorf("unexpected NOT before \"-%s:%s\". Remove NOT and try again",
@@ -1000,7 +1041,7 @@ loop:
 			pattern.Annotation.Range = newRange(start, p.pos)
 			nodes = append(nodes, pattern)
 		default:
-			parameter, ok, err := p.ParseParameter()
+			parameter, ok, err := p.ParseParameter(label)
 			if err != nil {
 				return nil, err
 			}
@@ -1097,7 +1138,7 @@ func (p *parser) parseAnd() ([]Node, error) {
 	case SearchTypeStandard, SearchTypeLucky:
 		left, err = p.parseLeaves(Literal | Standard)
 	case SearchTypeNewStandardRC1:
-		left, err = p.parseLeaves(Literal | Standard | QuotesAsLiterals)
+		left, err = p.parseLeaves(Literal | Standard | QuotesAsLiterals | GlobFilters)
 	default:
 		left, err = p.parseLeaves(Literal | Standard)
 	}
