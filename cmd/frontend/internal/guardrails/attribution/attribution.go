@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // ServiceOpts configures Service.
@@ -185,6 +186,7 @@ func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, l
 		searchQuery,
 		searchMode,
 		protocol,
+		pointers.Ptr(int32(0)),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create search plan")

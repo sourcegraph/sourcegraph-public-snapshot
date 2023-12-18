@@ -99,6 +99,7 @@ go_test(
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/enterprise",
+        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//internal/actor",
         "//internal/api",

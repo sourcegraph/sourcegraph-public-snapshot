@@ -15,6 +15,7 @@ import (
 )
 
 type Output struct {
+	ID          *string
 	Endpoint    string
 	Certificate gsmsecret.Output
 }
@@ -64,5 +65,6 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		Endpoint: fmt.Sprintf("rediss://:%s@%s:%v",
 			*redis.AuthString(), *redis.Host(), *redis.Port()),
 		Certificate: *redisCACert,
+		ID:          redis.Id(),
 	}, nil
 }

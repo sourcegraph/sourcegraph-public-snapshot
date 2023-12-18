@@ -23,14 +23,16 @@
     .header {
         display: flex;
         align-items: center;
-        padding: 0.5rem 0.5rem 0.5rem 0;
+        padding: 0.5rem;
         position: sticky;
         top: 0;
         background-color: var(--body-bg);
+        border-bottom: 1px solid var(--border-color);
     }
 
     .icon {
         flex-shrink: 0;
+        --color: var(--text-muted);
     }
 
     .title {
@@ -58,11 +60,12 @@
         margin-left: auto;
         display: flex;
         flex-wrap: wrap;
+        color: var(--text-muted);
+        flex-shrink: 0;
     }
 
     .body {
-        border-radius: var(--border-radius);
-        border: 1px solid var(--border-color);
         background-color: var(--code-bg);
+        border-bottom: 1px solid var(--border-color);
     }
 </style>

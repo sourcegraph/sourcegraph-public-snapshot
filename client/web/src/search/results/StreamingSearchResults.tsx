@@ -63,11 +63,11 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const location = useLocation()
     const navigate = useNavigate()
     const { addRecentSearch } = useRecentSearches()
-    const featureOverrides = useFeatureFlagOverrides()
 
     // Feature flags
+    const featureOverrides = useFeatureFlagOverrides()
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
-    const newSearchNavigation = useExperimentalFeatures(features => features.newSearchNavigationUI ?? false)
+    const newSearchResultsUI = useExperimentalFeatures(features => features.newSearchResultsUI)
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
@@ -210,7 +210,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const hasResultsToAggregate = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
     const showAggregationPanel = searchAggregationEnabled && hasResultsToAggregate
 
-    return !newSearchNavigation ? (
+    return !newSearchResultsUI ? (
         <SearchContent
             submittedURLQuery={submittedURLQuery}
             queryState={queryState}

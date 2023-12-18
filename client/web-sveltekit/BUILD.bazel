@@ -6,30 +6,6 @@ load("@npm//:vite/package_json.bzl", vite_bin = "bin")
 
 # gazelle:ignore
 
-js_library(
-    name = "graphql_operations_files",
-    # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
-    srcs = glob(
-        ["src/**/*.ts"],
-        [
-            # TODO: Ignore legacy build generated file as it conflicts with the Bazel
-            # build. This can be removed after the migration.
-            "src/lib/graphql-operations.ts",
-        ],
-    ),
-    visibility = ["//visibility:private"],
-)
-
-generate_graphql_operations(
-    name = "graphql_operations_ts",
-    srcs = [
-        ":graphql_operations_files",
-    ],
-    out = "src/lib/graphql-operations.ts",
-    interface_name = "SvelteKitGraphQlOperations",
-    visibility = ["//visibility:private"],
-)
-
 SRCS = [
     "package.json",
     "vite.config.ts",
@@ -40,6 +16,7 @@ SRCS = [
     ".prettierignore",
     ".env",
     ".env.dotcom",
+    "static/react-logo.svg",
     "//client/wildcard:sass-breakpoints",
     "//client/wildcard:global-style-sources",
     "//client/web/dist/img:copy",
@@ -51,18 +28,26 @@ SRCS = [
         "**/*.svelte",
         "**/*.html",
         "**/*.tsx",
+        "**/*.gql",
     ]],
     [
         "src/lib/graphql-operations.ts",
+        "src/lib/graphql-types.ts",
+        "src/**/*.gql.d.ts",
     ],
-)
+) + glob(["dev/**/*.cjs"])
 
 BUILD_DEPS = [
-    ":graphql_operations_ts",
     ":node_modules/@faker-js/faker",
+    ":node_modules/@graphql-codegen/cli",
+    ":node_modules/@graphql-codegen/typescript",
+    ":node_modules/@graphql-codegen/typescript-operations",
+    ":node_modules/@graphql-codegen/near-operation-file-preset",
+    ":node_modules/@graphql-tools/utils",
     ":node_modules/@melt-ui/svelte",
     ":node_modules/@popperjs/core",
     ":node_modules/@remix-run/router",
+    ":node_modules/@rollup/plugin-graphql",
     ":node_modules/@sourcegraph/branded",
     ":node_modules/@sourcegraph/common",
     ":node_modules/@sourcegraph/http-client",
@@ -74,6 +59,7 @@ BUILD_DEPS = [
     ":node_modules/@sveltejs/kit",
     ":node_modules/@types/prismjs",
     ":node_modules/lodash-es",
+    ":node_modules/graphql",
     ":node_modules/prismjs",
     ":node_modules/react",
     ":node_modules/svelte",
@@ -102,6 +88,7 @@ BUILD_DEPS = [
     "//:node_modules/react-router-dom",
     "//:node_modules/rxjs",
     "//:node_modules/uuid",
+    "//cmd/frontend/graphqlbackend:graphql_schema",
 ]
 
 CONFIGS = [

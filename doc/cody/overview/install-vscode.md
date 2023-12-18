@@ -90,7 +90,7 @@ The Cody extension by Sourcegraph enhances your coding experience in VS Code by 
 ## Prerequisites
 
 - You have the latest version of [VS Code](https://code.visualstudio.com/) installed
-- You have enabled an instance for [Cody from your Sourcegraph.com](cody-with-sourcegraph.md) account
+- You have a Free or Pro account through Sourcegraph.com or a Sourcegraph Enterprise account
 
 ## Install the VS Code extension
 
@@ -107,17 +107,17 @@ Alternatively, you can also [download and install the extension from the VS Code
 
 ## Connect the extension to Sourcegraph
 
-After a successful installation, the Cody icon appears in the [Activity sidebar](https://code.visualstudio.com/api/ux-guidelines/activity-bar). Users on free Cody tier can sign in to their Sourcegraph.com accounts through GitHub, GitLab, or Google.
+After a successful installation, the Cody icon appears in the [Activity sidebar](https://code.visualstudio.com/api/ux-guidelines/activity-bar). Cody Free and Cody Pro users can sign in to their Sourcegraph.com accounts through GitHub, GitLab, or Google.
 
 ![cody-sign-flow](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-new-ui.png)
 
-You can use Sourcegraph Enterprise with the Cody VS Code extension. Click the **Sign In to Your Enterprise Instance**, and it connects to your enterprise environment. For Enterprise users, please sign in with your custom Sourcegraph instance URL and access token. Enterprise accounts are not compatible with community accounts.
+You can use Sourcegraph Enterprise with the Cody VS Code extension. Click the **Sign In to Your Enterprise Instance**, and it connects to your enterprise environment. For Enterprise users, please sign in with your custom Sourcegraph instance URL and access token.
 
 ## Verifying the installation
 
 Once connected, click the Cody icon from the sidebar again. The Cody extension will open in a configurable side panel.
 
-![code-panel](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-new-panel.png)
+![code-panel](https://storage.googleapis.com/sourcegraph-assets/Docs/NLS-Beta.png)
 
 Let's create an autocomplete suggestion to verify that the Cody extension has been successfully installed and is working as expected.
 
@@ -145,9 +145,9 @@ All previous and existing chats are stored under the chats panel on the left. Yo
 
 ### Enhanced Context Selector
 
-Cody's Enhanced Context enables Cody to leverage search and embeddings-based context. Community users can generate local embeddings for their projects by clicking the icon next to the chat input. Users can also disable Enhanced Context to have more granular control of Cody's context by including `@-files` or `@#-symbols` in the chat input.
+Cody's Enhanced Context enables Cody to leverage search and embeddings-based context. Community users can generate local embeddings for their projects by clicking the icon next to the chat input. Users can also disable Enhanced Context or configure more granular control of Cody’s context by including `@-files` or `@#-symbols` in the chat input. This feature only supports local files and paths relative to your workspace. Start typing `@`, and Cody will suggest files for you to include.
 
-**Note: Embeddings for Enterprise users are controlled by their administrators.**
+> Note: Embeddings for Enterprise users are controlled by their administrators.
 
 ![](https://storage.googleapis.com/sourcegraph-assets/Docs/CleanShot%202023-12-07%20at%2018.58.40%402x.png)
 
@@ -158,10 +158,9 @@ The following tables shows what happens when Enhanced Context Selection is enabl
 | Enhanced Context Enabled  | ✅                           | ✅                          | ✅                          | ✅                          |
 | Enhanced Context Disabled | ❌                           | ❌                          | ❌                          | ❌                          |
 
-
 ### LLM Selection
 
-Cody Community users can choose the LLM they'd like Cody to use for chats right within the chat panel. The default LLM is set to Claude 2.0 by Anthropic, but the drop-down allows you to experiment with different LLMs and choose the one that's best for you. For Enterprise users, the LLM is determined by the administrator and cannot be changed within the editor.
+Cody Free users get chat responses supported by Claude 2.0. Cody Pro users can choose the LLM from a drop-down list they'd like Cody to use for chats. For Enterprise users, the administrator determines the LLM, and cannot be changed within the editor.
 
 ![](https://storage.googleapis.com/sourcegraph-assets/Docs/llm-select.png)
 
@@ -183,16 +182,21 @@ Let's understand how the `/doc` command generates code documentation for a funct
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/code-comments-cody.mp4" type="video/mp4">
 </video>
 
-In addition, you can also select which files and symbols to add as additional context. Type `@` to include files of your choice. Currently, only local files are available for this feature to work.
-
-The file paths are relative to your workspace, and you can start with the root folder and type out the rest of the path, for example `src/util/<YOUR-FILE>`.
 
 ### Custom Commands
 
-In addition, to support customization and advanced use cases, you can create **Custom Commands** tailored to your requirements. Custom Commands are currently supported by Cody for the VS Code extension version 0.8 and above.
+<aside class="beta">
+<p>
+<span class="badge badge-beta">Beta</span>
+Custom Commands are currently available in Beta for all users.
+</p>
+</aside>
 
+For customization and advanced use cases, you can create **Custom Commands** tailored to your requirements. Custom Commands are currently supported by Cody for the VS Code extension version 0.8 and above.
 
-## Cody VS Code Actions
+Learn more about [Custom Commands here →](./../capabilities/commands.md#custom-commands)
+
+## Cody VS Code actions
 
 Cody VS Code extension users can also use the **Code Actions** feature to `fix`, `explain`, and `edit` code. These Code Actions are triggered by the following:
 
@@ -200,13 +204,11 @@ Cody VS Code extension users can also use the **Code Actions** feature to `fix`,
 - Ask Cody to Explain
 - Ask Cody to Edit
 
-These Code Actions can be initiated by clicking the **lightbulb** icon in your code file. For example, whenever there's an error in code syntax, and you make a mistake while writing code, Cody's Code Actions come into play, and a red warning triggers. Along this appears the lightbulb icon. Click this lightbulb icon in the project file.
+These **Code Actions** can be initiated by clicking the **lightbulb** icon in your code file. Highlight a selection of code or click on the red error warnings that indicate a syntax error and use the lightbulb icon to open **Cody QuickFix** options.
 
 - Select **Ask Cody to fix** option
-- **Cody is working** notice will appear and provide a quick fix with options for **Edits Applied**, **Retry**, **Undo**, and **Done**
-- If you are satisfied with the fix, click **Edits Applied**
-- To verify the applied changes, you can see a diff view of the fix in a new tab
-- If you are not satisfied with the fix, you can **Retry** or **Undo** the changes
+- A **Cody is working** notice will appear
+- Once the fix has been applied, the Code Lens will display options to view the diff (**Edits Applied**), **Retry**, **Undo**, or accept the fix (**Done**)
 
 Here's a demo that shows how Code Actions work to fix an error:
 
@@ -220,36 +222,14 @@ A similar process applies to explain and edit Code Actions.
 
 <aside class="beta">
 <p>
-<span class="badge badge-beta">Experimental</span>
-Cody Natural Language Search is currently available in Experimental for all users on VS Code extension.
+<span class="badge badge-beta">Beta</span>
+Cody Natural Language Search is currently available in Beta for all users on VS Code extension.
 </p>
 </aside>
 
-The **Natural Language Search** is an AI-powered code search that allows users to input a natural language search query and look for it within their project. For example, "password hashing" or "connection retries".
+Cody's **Natural Language Search** is an AI-powered code search that allows users to input a natural language search query and look for it within their project. For example, "password hashing" or "connection retries".
 
 In the left-hand panel, type your queries in the **Search** field, and the search results are displayed. You can select one of the search results and verify that the correct file opens in a new tab. Natural Language Search works for all Cody users with the ability to search across your entire local codebase from within the IDE.
-
-## Enable code graph context for context-aware answers (Optional)
-
-After connecting Cody's extension to Sourcegraph.com, you can optionally use [Code Graph Context](./../core-concepts/code-graph.md) to improve Cody's context of existing code. Code Graph Context is only available for public repositories on Sourcegraph.com, which have embeddings.
-
-You can view the [list of repositories with embeddings here](../embedded-repos.md). To add any of these to your dev environment, contact a Sourcegraph team member via [Discord](https://discord.gg/8wJF5EdAyA) to get help with the access and setup.
-
-To use Cody with code graph on private code, it's recommended to [enable Cody for Enterprise](enable-cody-enterprise.md).
-
-### Configure Code Graph Context
-
-The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension. Enter the repository's name with embeddings, and Cody can provide more accurate and relevant answers to your coding questions based on that repository's content. To configure this setting in VS Code:
-
-- Open the **Cody Extension Settings**
-- Search for the `Cody: Codebase`
-- Enter the repository name
-- For example: `github.com/sourcegraph/sourcegraph` without the `https` protocol
-
-Learn more about how to:
-
-- [Configure code graph context for Sourcegraph.com][cody-with-sourcegraph-config-graph]
-- [Configure code graph context for Sourcegraph Enterprise][enable-cody-enterprise-config-graph]
 
 ## Updating the extension
 
@@ -261,7 +241,7 @@ For more information on what to do next, we recommend the following resources:
 
 <div class="cards">
   <a class="card text-left" href="./../quickstart"><b>Cody Quickstart</b><p>This guide recommends how to use Cody once you have installed the extension in your VS Code editor.</p></a>
-  <a class="card text-left" href="https://docs.sourcegraph.com/cody/capabilities#commands"><b>Commands in VS Code</b><p>Explore how Cody supports reusable prompts called Commands from within the VS Code extension.</p></a>
+  <a class="card text-left" href="./../capabilities/commands"><b>Commands in VS Code</b><p>Explore how Cody supports reusable prompts called Commands from within the VS Code extension.</p></a>
 </div>
 
 [cody-with-sourcegraph]: cody-with-sourcegraph.md

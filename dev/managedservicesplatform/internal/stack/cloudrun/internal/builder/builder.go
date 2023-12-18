@@ -40,7 +40,10 @@ type SecretRef struct {
 type Resource interface {
 	cdktf.TerraformResource
 
+	// Name of the Cloud Run resource
 	Name() *string
+	// Location of the Cloud Run resource
+	Location() *string
 }
 
 // Builder configures and creates Cloud Run Services or Jobs.

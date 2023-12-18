@@ -44,6 +44,7 @@ go_library(
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
         "//internal/extsvc/gitolite",
+        "//internal/featureflag",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/httpcli",

@@ -1,32 +1,6 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "shared",
-    srcs = [
-        "config.go",
-        "service.go",
-    ],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/shared",
-    visibility = ["//visibility:public"],
-    deps = [
-        "//cmd/telemetry-gateway/internal/server",
-        "//internal/debugserver",
-        "//internal/grpc",
-        "//internal/grpc/defaults",
-        "//internal/httpserver",
-        "//internal/pubsub",
-        "//internal/telemetrygateway/v1:telemetrygateway",
-        "//internal/trace/policy",
-        "//internal/version",
-        "//lib/background",
-        "//lib/errors",
-        "//lib/managedservicesplatform/runtime",
-        "@com_github_sourcegraph_log//:log",
-        "@org_golang_google_grpc//:go_default_library",
-    ],
-)
-
-go_library(
     name = "service",
     srcs = [
         "config.go",
@@ -35,6 +9,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/service",
     visibility = ["//visibility:public"],
     deps = [
+        "//cmd/telemetry-gateway/internal/events",
         "//cmd/telemetry-gateway/internal/server",
         "//internal/debugserver",
         "//internal/grpc",

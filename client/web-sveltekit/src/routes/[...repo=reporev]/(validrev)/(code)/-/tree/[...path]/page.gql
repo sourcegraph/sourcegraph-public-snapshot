@@ -1,0 +1,23 @@
+#import "$lib/repo/FileTable.gql"
+
+fragment TreeWithCommitInfo on GitTree {
+    canonicalURL
+    entries(first: $first) {
+        ...TreeEntryWithCommitInfo
+    }
+}
+
+query TreeEntriesCommitInfo($repoID: ID!, $commitID: String!, $filePath: String!, $first: Int) {
+    node(id: $repoID) {
+        __typename
+        id
+        ... on Repository {
+            commit(rev: $commitID) {
+                id
+                tree(path: $filePath) {
+                    ...TreeWithCommitInfo
+                }
+            }
+        }
+    }
+}

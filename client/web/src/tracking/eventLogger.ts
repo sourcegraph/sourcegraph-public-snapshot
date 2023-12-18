@@ -166,6 +166,17 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         if (window.context?.userAgentIsBot || !eventLabel) {
             return
         }
+
+        this.logInternal(eventLabel, eventProperties, publicArgument)
+
+        // Use flag to ensure URL query params are only stripped once
+        if (!this.hasStrippedQueryParameters) {
+            handleQueryEvents(window.location.href)
+            this.hasStrippedQueryParameters = true
+        }
+    }
+
+    public logInternal(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
         this.logToConsole(eventLabel, eventProperties, publicArgument)
     }
@@ -242,12 +253,12 @@ function handleQueryEvents(url: string): void {
     const parsedUrl = new URL(url)
     if (parsedUrl.searchParams.has('signup')) {
         const args = { serviceType: parsedUrl.searchParams.get('signup') || '' }
-        eventLogger.log(EventName.SIGNUP_COMPLETED, args, args)
+        eventLogger.logInternal(EventName.SIGNUP_COMPLETED, args, args)
     }
 
     if (parsedUrl.searchParams.has('signin')) {
         const args = { serviceType: parsedUrl.searchParams.get('signin') || '' }
-        eventLogger.log(EventName.SINGIN_COMPLETED, args, args)
+        eventLogger.logInternal(EventName.SINGIN_COMPLETED, args, args)
     }
 
     stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'signup', 'signin'])
