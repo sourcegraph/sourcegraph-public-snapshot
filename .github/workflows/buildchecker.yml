@@ -27,11 +27,11 @@ jobs:
           SLACK_ANNOUNCE_WEBHOOK: ${{ secrets.AUTOBUILDSHERRIF_SLACK_WEBHOOK }}
           SLACK_DEBUG_WEBHOOK: ${{ secrets.AUTOBUILDSHERRIF_SLACK_DEBUG_WEBHOOK }}
           SLACK_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_SLACK_TOKEN }}
-      - name: report failure to sentry
+      - name: Report failure to sentry
         if: ${{ failure() }}
         run: |
           npm i -g @sentry/cli
-          sentry-cli send-event -m 'buildchecker action failure - see run for exact failure' \
+          sentry-cli send-event -m "Job '$GITHUB_JOB' in the $GITHUB_WORKFLOW action has failed - see run for exact failure" \
             -t "github-action:$GITHUB_WORKFLOW" \
             -t "branch:$GITHUB_REF_NAME" \
             -t "repository:$GITHUB_REPOSITORY" \
