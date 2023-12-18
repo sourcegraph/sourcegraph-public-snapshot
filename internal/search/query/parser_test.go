@@ -844,11 +844,11 @@ func TestParseNewStandard(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test(`"foo bar"`)))
 	})
 
-	t.Run("literal quotes 1: double quotes within single quotes", func(t *testing.T) {
+	t.Run("literal quotes 1. Double quotes within single quotes", func(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test(`'foo "bar"'`)))
 	})
 
-	t.Run("literal quotes 2: double quotes within double quotes", func(t *testing.T) {
+	t.Run("literal quotes 2. Double quotes within double quotes", func(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test(`"foo \"bar\""`)))
 	})
 }
