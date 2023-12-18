@@ -49,3 +49,8 @@ common --test_env=DOCKER_HOST
 
 # Used by migration rules
 common --action_env=PGUSER=postgres
+
+# This overrides the same flag set in ci.bazelrc. Note that if for some reason this bazelrc is loaded before ci.bazelrc,
+# then the ci.bazelrc will override this one.
+test --flaky_test_attempts=2
+
