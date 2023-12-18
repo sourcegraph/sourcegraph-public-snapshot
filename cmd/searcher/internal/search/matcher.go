@@ -26,8 +26,8 @@ type matcher interface {
 	// IgnoreCase returns whether matches will ignore case
 	IgnoreCase() bool
 
-	// MatchesPath returns whether the pattern matches the given file path
-	MatchesPath(path string) bool
+	// MatchesString returns whether the pattern matches the given string
+	MatchesString(s string) bool
 
 	// MatchesFile returns a LineMatch for each line that matches rm in reader.
 	// LimitHit is true if some matches may not have been included in the result.
@@ -160,7 +160,7 @@ func (rm *regexMatcher) IgnoreCase() bool {
 	return rm.ignoreCase
 }
 
-func (rm *regexMatcher) MatchesPath(s string) bool {
+func (rm *regexMatcher) MatchesString(s string) bool {
 	if rm.re == nil {
 		return true
 	}

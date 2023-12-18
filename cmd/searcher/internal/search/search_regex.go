@@ -87,7 +87,7 @@ func regexSearch(
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {
-			if match := pm.Matches(f.Name) && m.MatchesPath(f.Name); match == !isPatternNegated {
+			if match := pm.Matches(f.Name) && m.MatchesString(f.Name); match == !isPatternNegated {
 				if ctx.Err() != nil {
 					return ctx.Err()
 				}
@@ -160,7 +160,7 @@ func regexSearch(
 				match := len(fm.ChunkMatches) > 0
 				if !match && patternMatchesPaths {
 					// Try matching against the file path.
-					match = m.MatchesPath(f.Name)
+					match = m.MatchesString(f.Name)
 					if match {
 						fm.Path = f.Name
 					}
