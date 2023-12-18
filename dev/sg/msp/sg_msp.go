@@ -113,7 +113,7 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 			Name:      "generate",
 			Aliases:   []string{"gen"},
 			ArgsUsage: "<service ID>",
-			Usage:     "Generate Terraform assets for a Managed Services Platform service spec.",
+			Usage:     "Generate Terraform assets for a Managed Services Platform service spec",
 			Description: `Optionally use '-all' to sync all environments for a service.
 
 Supports completions on services and environments.`,
