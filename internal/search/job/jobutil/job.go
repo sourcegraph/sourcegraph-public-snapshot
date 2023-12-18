@@ -841,10 +841,11 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 	}
 
 	zoektParams := &search.ZoektParameters{
-		FileMatchLimit: b.fileMatchLimit,
-		Select:         b.selector,
-		Features:       *b.features,
-		PatternType:    b.patternType,
+		FileMatchLimit:  b.fileMatchLimit,
+		Select:          b.selector,
+		Features:        *b.features,
+		PatternType:     b.patternType,
+		NumContextLines: b.numContextLines,
 	}
 
 	switch typ {

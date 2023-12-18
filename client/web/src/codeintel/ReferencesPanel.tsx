@@ -5,8 +5,8 @@ import classNames from 'classnames'
 import type * as H from 'history'
 import { capitalize } from 'lodash'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { type Observable, of } from 'rxjs'
-import { map } from 'rxjs/operators'
+import VisibilitySensor from 'react-visibility-sensor'
+import type { Observable } from 'rxjs'
 
 import { CodeExcerpt } from '@sourcegraph/branded'
 import { type ErrorLike, logger, pluralize } from '@sourcegraph/common'
@@ -797,37 +797,26 @@ const CollapsibleLocationGroup: React.FunctionComponent<
         [group.locations]
     )
 
-    const fetchHighlightedFileRangeLines = useCallback(
-        (startLine: number, endLine: number): Observable<string[]> =>
-            fetchHighlightedFileLineRanges(
-                {
-                    repoName: repo,
-                    commitID,
-                    filePath: file,
-                    disableTimeout: false,
-                    format: HighlightResponseFormat.HTML_HIGHLIGHT,
-                    ranges,
-                },
-                false
-            ).pipe(
-                map(
-                    lines =>
-                        lines[ranges.findIndex(group => group.startLine === startLine && group.endLine === endLine + 1)]
-                )
-            ),
-        [fetchHighlightedFileLineRanges, repo, commitID, file, ranges]
-    )
-
-    const fetchPlainTextFileRangeLines = (location: Location): Observable<string[]> => {
-        const range = location.range
-        if (range !== undefined) {
-            const lineNumber = range.start.line + 1
-            const lineContent = location.lines[range.start.line]
-            const tableLine = `<tr><td class="line" data-line="${lineNumber}"></td><td class="code">${lineContent}</td></tr>`
-            return of([tableLine])
+    const [highlightedRanges, setHighlightedRanges] = useState<string[][] | undefined>(undefined)
+    const [hasBeenVisible, setHasBeenVisible] = useState(false)
+    const onVisible = useCallback(() => {
+        if (hasBeenVisible) {
+            return
         }
-        return of([])
-    }
+        setHasBeenVisible(true)
+        const subscription = fetchHighlightedFileLineRanges(
+            {
+                repoName: repo,
+                commitID,
+                filePath: file,
+                disableTimeout: false,
+                format: HighlightResponseFormat.HTML_HIGHLIGHT,
+                ranges,
+            },
+            false
+        ).subscribe(setHighlightedRanges)
+        return () => subscription.unsubscribe()
+    }, [fetchHighlightedFileLineRanges, repo, commitID, file, ranges, hasBeenVisible])
 
     const open = isOpen(group.path) ?? true
     const navigate = useNavigate()
@@ -877,94 +866,101 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                 </CollapseHeader>
 
                 <CollapsePanel id={repoName + group.path} className="ml-0">
-                    <div className={styles.locationContainer}>
-                        <ul className="list-unstyled mb-0">
-                            {group.locations.map((reference, index) => {
-                                const isActive = isActiveLocation(reference)
-                                const isFirstInActive =
-                                    isActive && !(index > 0 && isActiveLocation(group.locations[index - 1]))
-                                const locationActive = isActive ? styles.locationActive : ''
-                                const clickReference = (event: MouseEvent<HTMLElement>): void => {
-                                    // If anything other than a normal primary click is detected,
-                                    // treat this as a normal link click and let the browser handle
-                                    // it.
-                                    if (
-                                        event.button !== 0 ||
-                                        event.altKey ||
-                                        event.ctrlKey ||
-                                        event.metaKey ||
-                                        event.shiftKey
-                                    ) {
-                                        return
-                                    }
+                    <VisibilitySensor
+                        onChange={(visible: boolean) => visible && onVisible()}
+                        partialVisibility={true}
+                        offset={{ bottom: -500 }}
+                    >
+                        <div className={styles.locationContainer}>
+                            <ul className="list-unstyled mb-0">
+                                {group.locations.map((reference, index) => {
+                                    const isActive = isActiveLocation(reference)
+                                    const isFirstInActive =
+                                        isActive && !(index > 0 && isActiveLocation(group.locations[index - 1]))
+                                    const locationActive = isActive ? styles.locationActive : ''
+                                    const clickReference = (event: MouseEvent<HTMLElement>): void => {
+                                        // If anything other than a normal primary click is detected,
+                                        // treat this as a normal link click and let the browser handle
+                                        // it.
+                                        if (
+                                            event.button !== 0 ||
+                                            event.altKey ||
+                                            event.ctrlKey ||
+                                            event.metaKey ||
+                                            event.shiftKey
+                                        ) {
+                                            return
+                                        }
 
-                                    event.preventDefault()
-                                    if (isActive) {
+                                        event.preventDefault()
+                                        if (isActive) {
+                                            navigate(locationToUrl(reference))
+                                        } else {
+                                            setActiveLocation(reference)
+                                        }
+                                    }
+                                    const doubleClickReference = (event: MouseEvent<HTMLElement>): void => {
+                                        event.preventDefault()
                                         navigate(locationToUrl(reference))
-                                    } else {
-                                        setActiveLocation(reference)
                                     }
-                                }
-                                const doubleClickReference = (event: MouseEvent<HTMLElement>): void => {
-                                    event.preventDefault()
-                                    navigate(locationToUrl(reference))
-                                }
 
-                                return (
-                                    <li
-                                        key={reference.url}
-                                        className={classNames('border-0 rounded-0 mb-0', styles.location)}
-                                    >
-                                        {/* eslint-disable-next-line react/forbid-elements */}
-                                        <a
-                                            data-testid={`reference-item-${group.path}-${index}`}
-                                            tabIndex={0}
-                                            onClick={clickReference}
-                                            onDoubleClick={doubleClickReference}
-                                            href={reference.url}
-                                            className={classNames(styles.locationLink, locationActive)}
+                                    const plaintextLines = reference.range
+                                        ? [reference.lines[reference.range.start.line]]
+                                        : []
+
+                                    return (
+                                        <li
+                                            key={reference.url}
+                                            className={classNames('border-0 rounded-0 mb-0', styles.location)}
                                         >
-                                            <CodeExcerpt
-                                                className={styles.locationLinkCodeExcerpt}
-                                                commitID={reference.commitID}
-                                                filePath={reference.file}
-                                                repoName={reference.repo}
-                                                highlightRanges={[
-                                                    {
-                                                        startLine: reference.range?.start.line ?? 0,
-                                                        startCharacter: reference.range?.start.character ?? 0,
-                                                        endLine: reference.range?.end.line ?? 0,
-                                                        endCharacter: reference.range?.end.character ?? 0,
-                                                    },
-                                                ]}
-                                                startLine={reference.range?.start.line ?? 0}
-                                                endLine={reference.range?.end.line ?? 0}
-                                                fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
-                                                visibilityOffset={{ bottom: 0 }}
-                                                fetchPlainTextFileRangeLines={(): Observable<string[]> =>
-                                                    fetchPlainTextFileRangeLines(reference)
-                                                }
-                                            />
-                                            {isFirstInActive ? (
-                                                <span className={classNames('ml-2', styles.locationActiveIcon)}>
-                                                    <Tooltip
-                                                        content="Click again to open line in full view"
-                                                        placement="left"
-                                                    >
-                                                        <Icon
-                                                            aria-label="Open line in full view"
-                                                            size="sm"
-                                                            svgPath={mdiOpenInNew}
-                                                        />
-                                                    </Tooltip>
-                                                </span>
-                                            ) : null}
-                                        </a>
-                                    </li>
-                                )
-                            })}
-                        </ul>
-                    </div>
+                                            {/* eslint-disable-next-line react/forbid-elements */}
+                                            <a
+                                                data-testid={`reference-item-${group.path}-${index}`}
+                                                tabIndex={0}
+                                                onClick={clickReference}
+                                                onDoubleClick={doubleClickReference}
+                                                href={reference.url}
+                                                className={classNames(styles.locationLink, locationActive)}
+                                            >
+                                                <CodeExcerpt
+                                                    className={styles.locationLinkCodeExcerpt}
+                                                    commitID={reference.commitID}
+                                                    filePath={reference.file}
+                                                    repoName={reference.repo}
+                                                    highlightRanges={[
+                                                        {
+                                                            startLine: reference.range?.start.line ?? 0,
+                                                            startCharacter: reference.range?.start.character ?? 0,
+                                                            endLine: reference.range?.end.line ?? 0,
+                                                            endCharacter: reference.range?.end.character ?? 0,
+                                                        },
+                                                    ]}
+                                                    startLine={reference.range?.start.line ?? 0}
+                                                    endLine={reference.range?.end.line ?? 0}
+                                                    plaintextLines={plaintextLines}
+                                                    highlightedLines={highlightedRanges?.[index]}
+                                                />
+                                                {isFirstInActive ? (
+                                                    <span className={classNames('ml-2', styles.locationActiveIcon)}>
+                                                        <Tooltip
+                                                            content="Click again to open line in full view"
+                                                            placement="left"
+                                                        >
+                                                            <Icon
+                                                                aria-label="Open line in full view"
+                                                                size="sm"
+                                                                svgPath={mdiOpenInNew}
+                                                            />
+                                                        </Tooltip>
+                                                    </span>
+                                                ) : null}
+                                            </a>
+                                        </li>
+                                    )
+                                })}
+                            </ul>
+                        </div>
+                    </VisibilitySensor>
                 </CollapsePanel>
             </div>
         </Collapse>
