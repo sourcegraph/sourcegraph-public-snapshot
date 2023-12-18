@@ -102,6 +102,7 @@ jobs:
       - id: nix-build
         name: Run `nix build`
         run: |
+          exit 1
           nix build .#ctags
       - id: 'rename-and-upload'
         name: Rename an prepare for upload

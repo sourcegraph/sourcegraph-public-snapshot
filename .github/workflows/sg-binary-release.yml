@@ -118,6 +118,7 @@ jobs:
 
       - name: Upload release asset
         run: |
+          exit 1
           cd dev/sg
           release_name="${{ needs.create_release.outputs.release_name }}"
           gh release upload -R="${repo}" ${release_name} "sg_$(go env GOOS)_${{ matrix.arch }}"
