@@ -67,8 +67,9 @@ jobs:
           echo "" >> /tmp/release-notes.md
           echo "Commit: https://github.com/sourcegraph/sourcegraph/commit/${{github.sha}}" >> /tmp/release-notes.md
 
-          gh release delete -R="${repo}" ${release_name} || true
-          gh release create -R="${repo}" ${release_name} --notes-file /tmp/release-notes.md
+          echo "SKIPPING"
+          # gh release delete -R="${repo}" ${release_name} || true
+          # gh release create -R="${repo}" ${release_name} --notes-file /tmp/release-notes.md
 
           echo "::set-output name=release_name::${release_name}"
         env:
@@ -105,6 +106,7 @@ jobs:
       - name: Build and upload macOS
         if: startsWith(matrix.os, 'macos-') == true
         run: |
+          exit 1
           cd dev/sg
           GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}" -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
           GOARCH=${{ matrix.arch }} go build -o "sg-msp_$(go env GOOS)_${{ matrix.arch }}" -tags=msp -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
@@ -112,6 +114,7 @@ jobs:
       - name: Build and upload Linux
         if: startsWith(matrix.os, 'ubuntu-') == true
         run: |
+          exit 1
           cd dev/sg
           GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}" -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
           GOARCH=${{ matrix.arch }} go build -o "sg-msp_$(go env GOOS)_${{ matrix.arch }}" -tags=msp -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
