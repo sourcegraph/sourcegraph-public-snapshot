@@ -22,7 +22,7 @@ import {
     getRepositoryUrl,
     getRevision,
 } from '@sourcegraph/shared/src/search/stream'
-import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useSettings, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -100,29 +100,16 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
 
+    const settings = useSettings()
     const reranker = useMemo(() => {
-        const settings = settingsCascade.final
-        if (!isErrorLike(settings) && settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING) {
+        if (settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING) {
             return rankByLine
         }
         return rankPassthrough
-    }, [settingsCascade])
+    }, [settings])
 
-    const newSearchUIEnabled = useMemo(() => {
-        const settings = settingsCascade.final
-        if (!isErrorLike(settings)) {
-            return settings?.experimentalFeatures?.newSearchResultsUI
-        }
-        return false
-    }, [settingsCascade])
-
-    const contextLines = useMemo(() => {
-        const settings = settingsCascade.final
-        if (!isErrorLike(settings)) {
-            return settings?.['search.contextLines'] || 1
-        }
-        return 1
-    }, [settingsCascade])
+    const newSearchUIEnabled = useMemo(() => settings?.experimentalFeatures?.newSearchResultsUI ?? false, [settings])
+    const contextLines = useMemo(() => settings?.['search.contextLines'] ?? 1, [settings])
 
     const unhighlightedGroups: MatchGroup[] = useMemo(
         () => reranker(result.chunkMatches?.map(chunkToMatchGroup) ?? []),
