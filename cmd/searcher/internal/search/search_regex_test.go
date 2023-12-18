@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"reflect"
-	//nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"sort"
 	"strconv"
 	"testing"
