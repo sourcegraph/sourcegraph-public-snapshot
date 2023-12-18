@@ -8,6 +8,7 @@ require (
 	github.com/ashanbrown/forbidigo v1.5.1
 	github.com/go-critic/go-critic v0.6.7
 	github.com/gordonklaus/ineffassign v0.0.0-20230107090616-13ace0543b28
+	github.com/grafana/regexp v0.0.0-20221123153739-15dc172cd2db
 	github.com/kyoh86/exportloopref v0.1.11
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20231122233253-1f857814717c
 	github.com/timakin/bodyclose v0.0.0-20221125081123-e39cf3fc478e
@@ -28,7 +29,6 @@ require (
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/gostaticanalysis/analysisutil v0.7.1 // indirect
 	github.com/gostaticanalysis/comment v1.4.2 // indirect
-	github.com/grafana/regexp v0.0.0-20221123153739-15dc172cd2db // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.0 // indirect

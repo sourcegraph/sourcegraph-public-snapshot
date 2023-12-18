@@ -1,7 +1,6 @@
 package dbconn
 
 import (
-	"fmt"
 	"slices"
 	"strings"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/dev/linters/nolint"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var Analyzer = nolint.Wrap(&analysis.Analyzer{
@@ -80,7 +80,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		// "The driver program ensures that facts for a pass’s dependencies are generated before analyzing the package"
 		// from https://pkg.go.dev/golang.org/x/tools/go/analysis#hdr-Modular_analysis_with_Facts.
 		if pass.ImportPackageFact(i, fact) && bool(*fact) {
-			return nil, fmt.Errorf("package %q is not allowed to import %q (directly or transitively)", pass.Pkg.Path(), dbconnPath)
+			return nil, errors.Newf("package %q is not allowed to import %q (directly or transitively)", pass.Pkg.Path(), dbconnPath)
 		}
 	}
 
