@@ -20,7 +20,6 @@ go_library(
         "//internal/gitserver/v1:gitserver",
         "//internal/grpc",
         "//internal/grpc/defaults",
-        "//internal/httpcli",
         "//internal/observation",
         "//internal/ratelimit",
         "//internal/types",

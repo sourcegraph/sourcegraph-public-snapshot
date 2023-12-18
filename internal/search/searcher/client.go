@@ -3,33 +3,34 @@
 package searcher
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"io"
-	"net/http"
+	"net/url"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
-	searchDoer, _ = httpcli.NewInternalClientFactory("search").Doer()
-	MockSearch    func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error)
+	// TODO: Not used.
+	MockSearch func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error)
 )
 
 // Search searches repo@commit with p.
 func Search(
 	ctx context.Context,
 	searcherURLs *endpoint.Map,
+	connectionCache *defaults.ConnectionCache,
 	repo api.RepoName,
 	repoID api.RepoID,
 	branch string,
@@ -39,16 +40,9 @@ func Search(
 	fetchTimeout time.Duration,
 	features search.Features,
 	contextLines int,
-	onMatches func([]*protocol.FileMatch),
+	onMatch func(*proto.FileMatch),
 ) (limitHit bool, err error) {
-	if MockSearch != nil {
-		return MockSearch(ctx, repo, repoID, commit, p, fetchTimeout, onMatches)
-	}
-
-	tr, ctx := trace.New(ctx, "searcher.client", repo.Attr(), commit.Attr())
-	defer tr.EndWithErr(&err)
-
-	r := protocol.Request{
+	r := (&protocol.Request{
 		Repo:   repo,
 		RepoID: repoID,
 		Commit: commit,
@@ -73,18 +67,12 @@ func Search(
 		Indexed:         indexed,
 		FetchTimeout:    fetchTimeout,
 		NumContextLines: int32(contextLines),
-	}
-
-	body, err := json.Marshal(r)
-	if err != nil {
-		return false, err
-	}
+	}).ToProto()
 
 	// Searcher caches the file contents for repo@commit since it is
 	// relatively expensive to fetch from gitserver. So we use consistent
 	// hashing to increase cache hits.
 	consistentHashKey := string(repo) + "@" + string(commit)
-	tr.AddEvent("calculated hash", attribute.String("consistentHashKey", consistentHashKey))
 
 	nodes, err := searcherURLs.Endpoints()
 	if err != nil {
@@ -96,90 +84,48 @@ func Search(
 		return false, err
 	}
 
-	for attempt := 0; attempt < 2; attempt++ {
-		url := urls[attempt%len(urls)]
-
-		tr.AddEvent("attempting text search", attribute.String("url", url), attribute.Int("attempt", attempt))
-		limitHit, err = textSearchStream(ctx, url, body, onMatches)
-		if err == nil || errcode.IsTimeout(err) {
-			return limitHit, err
+	trySearch := func(attempt int) (bool, error) {
+		parsed, err := url.Parse(urls[attempt%len(urls)])
+		if err != nil {
+			return false, errors.Wrap(err, "failed to parse URL")
 		}
 
-		// If we are canceled, return that error.
-		if err = ctx.Err(); err != nil {
-			return false, err
-		}
-
-		// If not temporary or our last attempt then don't try again.
-		if !errcode.IsTemporary(err) {
-			return false, err
-		}
-
-		tr.AddEvent("transient error", trace.Error(err))
-	}
-
-	return false, err
-}
-
-func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*protocol.FileMatch)) (_ bool, err error) {
-	tr, ctx := trace.New(ctx, "searcher.textSearchStream")
-	defer tr.EndWithErr(&err)
-
-	req, err := http.NewRequestWithContext(ctx, "GET", url, bytes.NewReader(body))
-	if err != nil {
-		return false, err
-	}
-
-	resp, err := searchDoer.Do(req)
-	if err != nil {
-		// If we failed due to cancellation or timeout (with no partial results in the response
-		// body), return just that.
-		if ctx.Err() != nil {
-			err = ctx.Err()
-		}
-		return false, errors.Wrap(err, "streaming searcher request failed")
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		body, err := io.ReadAll(resp.Body)
+		conn, err := connectionCache.GetConnection(parsed.Host)
 		if err != nil {
 			return false, err
 		}
-		return false, errors.WithStack(&searcherError{StatusCode: resp.StatusCode, Message: string(body)})
+
+		client := proto.NewSearcherServiceClient(conn)
+		resp, err := client.Search(ctx, r)
+		if err != nil {
+			return false, err
+		}
+
+		for {
+			msg, err := resp.Recv()
+			if errors.Is(err, io.EOF) {
+				return false, nil
+			} else if status.Code(err) == codes.Canceled {
+				return false, context.Canceled
+			} else if err != nil {
+				return false, err
+			}
+
+			switch v := msg.Message.(type) {
+			case *proto.SearchResponse_FileMatch:
+				onMatch(v.FileMatch)
+			case *proto.SearchResponse_DoneMessage:
+				return v.DoneMessage.LimitHit, nil
+			default:
+				return false, errors.Newf("unknown SearchResponse message %T", v)
+			}
+		}
 	}
 
-	var ed EventDone
-	dec := StreamDecoder{
-		OnMatches: cb,
-		OnDone: func(e EventDone) {
-			ed = e
-		},
-		OnUnknown: func(event []byte, _ []byte) {
-			err = errors.Errorf("unknown event %q", event)
-		},
+	limitHit, err = trySearch(0)
+	if err != nil && errcode.IsTemporary(err) {
+		// Retry once if we get a temporary error back
+		limitHit, err = trySearch(1)
 	}
-	if err := dec.ReadAll(resp.Body); err != nil {
-		return false, err
-	}
-	if ed.Error != "" {
-		return false, errors.New(ed.Error)
-	}
-	return ed.LimitHit, err
-}
-
-type searcherError struct {
-	StatusCode int
-	Message    string
-}
-
-func (e *searcherError) BadRequest() bool {
-	return e.StatusCode == http.StatusBadRequest
-}
-
-func (e *searcherError) Temporary() bool {
-	return e.StatusCode == http.StatusServiceUnavailable
-}
-
-func (e *searcherError) Error() string {
-	return e.Message
+	return limitHit, err
 }

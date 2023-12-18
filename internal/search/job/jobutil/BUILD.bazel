@@ -22,7 +22,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/job/jobutil",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/searcher/protocol",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
@@ -33,6 +32,7 @@ go_library(
         "//internal/featureflag",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
+        "//internal/grpc/defaults",
         "//internal/own/search",
         "//internal/search",
         "//internal/search/alert",
@@ -50,6 +50,7 @@ go_library(
         "//internal/search/streaming",
         "//internal/search/structural",
         "//internal/search/zoekt",
+        "//internal/searcher/v1:searcher",
         "//internal/telemetry",
         "//internal/telemetry/teestore",
         "//internal/telemetry/telemetryrecorder",

@@ -140,10 +140,6 @@ func TestSources_ListRepos_Excluded(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		ServiceConnectionConfig: conftypes.ServiceConnections{
 			GitServers: []string{"127.0.0.1:3178"},
-		}, SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableGRPC: boolPointer(false),
-			},
 		},
 	})
 	defer conf.Mock(nil)
@@ -297,10 +293,6 @@ func TestSources_ListRepos_RepositoryPathPattern(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		ServiceConnectionConfig: conftypes.ServiceConnections{
 			GitServers: []string{"127.0.0.1:3178"},
-		}, SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableGRPC: boolPointer(false),
-			},
 		},
 	})
 	defer conf.Mock(nil)

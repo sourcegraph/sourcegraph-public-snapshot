@@ -9,8 +9,9 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/conc/pool"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -24,6 +25,7 @@ func defaultEndpoints() *endpoint.Map {
 	})
 }
 
+// TODO: Add gRPC support to the embeddings server.
 var defaultDoer = func() httpcli.Doer {
 	d, err := httpcli.NewInternalClientFactory("embeddings").Doer()
 	if err != nil {

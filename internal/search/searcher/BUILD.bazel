@@ -5,7 +5,6 @@ go_library(
     name = "searcher",
     srcs = [
         "client.go",
-        "client_grpc.go",
         "search.go",
         "stream.go",
         "symbol_search_job.go",
@@ -20,7 +19,6 @@ go_library(
         "//internal/errcode",
         "//internal/gitserver",
         "//internal/grpc/defaults",
-        "//internal/httpcli",
         "//internal/limiter",
         "//internal/search",
         "//internal/search/job",

@@ -5,11 +5,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
-	"net/http"
 	"net/mail"
 	"os"
 	stdlibpath "path"
@@ -32,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -2725,120 +2722,81 @@ func (c *clientImplementor) ArchiveReader(
 		return nil, err
 	}
 
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
-		if err != nil {
-			return nil, err
-		}
+	client, err := c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
+	if err != nil {
+		return nil, err
+	}
 
-		req := options.ToProto(string(repo)) // HACK: ArchiveOptions doesn't have a repository here, so we have to add it ourselves.
+	req := options.ToProto(string(repo)) // HACK: ArchiveOptions doesn't have a repository here, so we have to add it ourselves.
 
-		ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
 
-		stream, err := client.Archive(ctx, req)
-		if err != nil {
-			cancel()
-			return nil, err
-		}
+	stream, err := client.Archive(ctx, req)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
 
-		// first message from the gRPC stream needs to be read to check for errors before continuing
-		// to read the rest of the stream. If the first message is an error, we cancel the stream
-		// and return the error.
+	// first message from the gRPC stream needs to be read to check for errors before continuing
+	// to read the rest of the stream. If the first message is an error, we cancel the stream
+	// and return the error.
+	//
+	// This is necessary to provide parity between the REST and gRPC implementations of
+	// ArchiveReader. Users of cli.ArchiveReader may assume error handling occurs immediately,
+	// as is the case with the HTTP implementation where errors are returned as soon as the
+	// function returns. gRPC is asynchronous, so we have to start consuming messages from
+	// the stream to see any errors from the server. Reading the first message ensures we
+	// handle any errors synchronously, similar to the HTTP implementation.
+
+	firstMessage, firstError := stream.Recv()
+	if firstError != nil {
+		// Hack: The ArchiveReader.Read() implementation handles surfacing the
+		// any "revision not found" errors returned from the invoked git binary.
 		//
-		// This is necessary to provide parity between the REST and gRPC implementations of
-		// ArchiveReader. Users of cli.ArchiveReader may assume error handling occurs immediately,
-		// as is the case with the HTTP implementation where errors are returned as soon as the
-		// function returns. gRPC is asynchronous, so we have to start consuming messages from
-		// the stream to see any errors from the server. Reading the first message ensures we
-		// handle any errors synchronously, similar to the HTTP implementation.
+		// In order to maintainparity with the HTTP API, we return this error in the ArchiveReader.Read() method
+		// instead of returning it immediately.
 
-		firstMessage, firstError := stream.Recv()
-		if firstError != nil {
-			// Hack: The ArchiveReader.Read() implementation handles surfacing the
-			// any "revision not found" errors returned from the invoked git binary.
-			//
-			// In order to maintainparity with the HTTP API, we return this error in the ArchiveReader.Read() method
-			// instead of returning it immediately.
+		// We return early only if this isn't a revision not found error.
 
-			// We return early only if this isn't a revision not found error.
+		err := convertGRPCErrorToGitDomainError(firstError)
 
-			err := convertGRPCErrorToGitDomainError(firstError)
-
-			var cse *CommandStatusError
-			if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
-				cancel()
-				return nil, convertGRPCErrorToGitDomainError(err)
-			}
-		}
-
-		firstMessageRead := false
-
-		// Create a reader to read from the gRPC stream.
-		r := streamio.NewReader(func() ([]byte, error) {
-			// Check if we've read the first message yet. If not, read it and return.
-			if !firstMessageRead {
-				firstMessageRead = true
-
-				if firstError != nil {
-					return nil, firstError
-				}
-
-				return firstMessage.GetData(), nil
-			}
-
-			// Receive the next message from the stream.
-			msg, err := stream.Recv()
-			if err != nil {
-				return nil, convertGRPCErrorToGitDomainError(err)
-			}
-
-			// Return the data from the received message.
-			return msg.GetData(), nil
-		})
-
-		return &archiveReader{
-			base: &readCloseWrapper{r: r, closeFn: cancel},
-			repo: repo,
-			spec: options.Treeish,
-		}, nil
-
-	} else {
-		// Fall back to http request
-		u := c.archiveURL(ctx, repo, options)
-		resp, err := c.do(ctx, repo, u.String(), nil)
-		if err != nil {
-			return nil, err
-		}
-
-		switch resp.StatusCode {
-		case http.StatusOK:
-			return &archiveReader{
-				base: &cmdReader{
-					rc:      resp.Body,
-					trailer: resp.Trailer,
-				},
-				repo: repo,
-				spec: options.Treeish,
-			}, nil
-		case http.StatusNotFound:
-			var payload protocol.NotFoundPayload
-			if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-				resp.Body.Close()
-				return nil, err
-			}
-			resp.Body.Close()
-			return nil, &badRequestError{
-				error: &gitdomain.RepoNotExistError{
-					Repo:            repo,
-					CloneInProgress: payload.CloneInProgress,
-					CloneProgress:   payload.CloneProgress,
-				},
-			}
-		default:
-			resp.Body.Close()
-			return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+		var cse *CommandStatusError
+		if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
+			cancel()
+			return nil, convertGRPCErrorToGitDomainError(err)
 		}
 	}
+
+	firstMessageRead := false
+
+	// Create a reader to read from the gRPC stream.
+	r := streamio.NewReader(func() ([]byte, error) {
+		// Check if we've read the first message yet. If not, read it and return.
+		if !firstMessageRead {
+			firstMessageRead = true
+
+			if firstError != nil {
+				return nil, firstError
+			}
+
+			return firstMessage.GetData(), nil
+		}
+
+		// Receive the next message from the stream.
+		msg, err := stream.Recv()
+		if err != nil {
+			return nil, convertGRPCErrorToGitDomainError(err)
+		}
+
+		// Return the data from the received message.
+		return msg.GetData(), nil
+	})
+
+	return &archiveReader{
+		base: &readCloseWrapper{r: r, closeFn: cancel},
+		repo: repo,
+		spec: options.Treeish,
+	}, nil
 }
 
 func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) CommitsOptions {

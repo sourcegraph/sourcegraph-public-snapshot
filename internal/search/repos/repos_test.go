@@ -147,7 +147,7 @@ func TestRevisionValidation(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			op := search.RepoOptions{RepoFilters: toParsedRepoFilters(tt.repoFilters...)}
-			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, nil)
+			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, nil, nil)
 			repositoryResolver.gitserver = mockGitserver
 			resolved, _, err := repositoryResolver.resolve(context.Background(), op)
 			if diff := cmp.Diff(tt.wantErr, errors.UnwrapAll(err)); diff != "" {
@@ -297,7 +297,7 @@ func TestResolverIterator(t *testing.T) {
 		return "", nil
 	})
 
-	resolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
+	resolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil, nil)
 	all, _, err := resolver.resolve(ctx, search.RepoOptions{})
 	if err != nil {
 		t.Fatal(err)
@@ -401,7 +401,7 @@ func TestResolverIterator(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
+			r := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil, nil)
 			it := r.Iterator(ctx, tc.opts)
 
 			var pages []Resolved
@@ -517,7 +517,7 @@ func TestResolverIterateRepoRevs(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := NewResolver(logger, db, gsClient, nil, nil)
+			r := NewResolver(logger, db, gsClient, nil, nil, nil)
 			got, err := iterator.Collect(r.IterateRepoRevs(ctx, tc.opts))
 
 			var gotErr string
@@ -588,7 +588,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	op := search.RepoOptions{
 		SearchContextSpec: "searchcontext",
 	}
-	repositoryResolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
+	repositoryResolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil, nil)
 	resolved, _, err := repositoryResolver.resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
@@ -760,7 +760,7 @@ func TestRepoHasFileContent(t *testing.T) {
 				ReposMap: tc.matchingRepos,
 			}, nil)
 
-			res := NewResolver(logtest.Scoped(t), db, mockGitserver, endpoint.Static("test"), mockZoekt)
+			res := NewResolver(logtest.Scoped(t), db, mockGitserver, endpoint.Static("test"), nil, mockZoekt)
 			resolved, _, err := res.resolve(context.Background(), search.RepoOptions{
 				RepoFilters:    toParsedRepoFilters(".*"),
 				HasFileContent: tc.filters,
@@ -863,7 +863,7 @@ func TestRepoHasCommitAfter(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			res := NewResolver(logtest.Scoped(t), db, nil, endpoint.Static("test"), nil)
+			res := NewResolver(logtest.Scoped(t), db, nil, endpoint.Static("test"), nil, nil)
 			res.gitserver = mockGitserver
 			resolved, _, err := res.resolve(context.Background(), search.RepoOptions{
 				RepoFilters: toParsedRepoFilters(tc.nameFilter),

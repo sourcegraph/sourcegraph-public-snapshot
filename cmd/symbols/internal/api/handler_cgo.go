@@ -4,27 +4,16 @@ package api
 
 import (
 	"context"
-	"net/http"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/squirrel"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/chunk"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
-
-// addHandlers adds handlers that require cgo.
-func addHandlers(
-	mux *http.ServeMux,
-	searchFunc types.SearchFunc,
-	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error),
-) {
-	mux.HandleFunc("/localCodeIntel", squirrel.LocalCodeIntelHandler(readFileFunc))
-	mux.HandleFunc("/symbolInfo", squirrel.NewSymbolInfoHandler(searchFunc, readFileFunc))
-}
 
 func convertSquirrelErrorToGrpcError(err error) *status.Status {
 	if errors.Is(err, squirrel.UnrecognizedFileExtensionError) {

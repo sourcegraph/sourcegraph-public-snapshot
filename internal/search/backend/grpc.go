@@ -9,48 +9,7 @@ import (
 	"github.com/sourcegraph/zoekt/query"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
-
-// switchableZoektGRPCClient is a zoekt.Streamer that can switch between
-// gRPC and HTTP backends.
-type switchableZoektGRPCClient struct {
-	httpClient zoekt.Streamer
-	grpcClient zoekt.Streamer
-}
-
-func (c *switchableZoektGRPCClient) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, sender zoekt.Sender) error {
-	if conf.IsGRPCEnabled(ctx) {
-		return c.grpcClient.StreamSearch(ctx, q, opts, sender)
-	} else {
-		return c.httpClient.StreamSearch(ctx, q, opts, sender)
-	}
-}
-
-func (c *switchableZoektGRPCClient) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	if conf.IsGRPCEnabled(ctx) {
-		return c.grpcClient.Search(ctx, q, opts)
-	} else {
-		return c.httpClient.Search(ctx, q, opts)
-	}
-}
-
-func (c *switchableZoektGRPCClient) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
-	if conf.IsGRPCEnabled(ctx) {
-		return c.grpcClient.List(ctx, q, opts)
-	} else {
-		return c.httpClient.List(ctx, q, opts)
-	}
-}
-
-func (c *switchableZoektGRPCClient) Close() {
-	c.httpClient.Close()
-}
-
-func (c *switchableZoektGRPCClient) String() string {
-	return c.httpClient.String()
-}
 
 // zoektGRPCClient is a zoekt.Streamer that uses gRPC for its RPC layer
 type zoektGRPCClient struct {

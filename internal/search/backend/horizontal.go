@@ -60,13 +60,6 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	var mu sync.Mutex
 	dedupper := dedupper{}
 
-	// GobCache exists, so we only pay the cost of marshalling a query once
-	// when we aggregate it out over all the replicas. Zoekt's RPC layers
-	// unwrap this before passing it on to the Zoekt evaluation layers.
-	if !conf.IsGRPCEnabled(ctx) {
-		q = &query.GobCache{Q: q}
-	}
-
 	ch := make(chan error, len(clients))
 	for endpoint, c := range clients {
 		go func(endpoint string, c zoekt.Streamer) {

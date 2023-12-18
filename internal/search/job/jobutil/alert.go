@@ -41,12 +41,13 @@ func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream s
 	jobAlert, err := j.child.Run(ctx, clients, statsObserver)
 
 	ao := searchalert.Observer{
-		Logger:     clients.Logger,
-		Db:         clients.DB,
-		Zoekt:      clients.Zoekt,
-		Searcher:   clients.SearcherURLs,
-		Inputs:     j.inputs,
-		HasResults: countingStream.Count() > 0,
+		Logger:                      clients.Logger,
+		Db:                          clients.DB,
+		Zoekt:                       clients.Zoekt,
+		Searcher:                    clients.SearcherURLs,
+		SearcherGRPCConnectionCache: clients.SearcherGRPCConnectionCache,
+		Inputs:                      j.inputs,
+		HasResults:                  countingStream.Count() > 0,
 	}
 	if err != nil {
 		ao.Error(ctx, err)

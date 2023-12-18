@@ -418,14 +418,6 @@
           "type": "boolean",
           "default": false
         },
-        "enableGRPC": {
-          "description": "Enables gRPC for communication between internal services",
-          "type": "boolean",
-          "default": true,
-          "!go": {
-            "pointer": true
-          }
-        },
         "enablePermissionsWebhooks": {
           "description": "DEPRECATED: No longer has any effect.",
           "type": "boolean",

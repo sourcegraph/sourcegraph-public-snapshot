@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"sort"
 	"strings"
@@ -11,12 +12,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/zoekt"
 	zoektgrpc "github.com/sourcegraph/zoekt/cmd/zoekt-webserver/grpc/server"
 	"google.golang.org/grpc"
+
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 
 	webproto "github.com/sourcegraph/zoekt/grpc/protos/zoekt/webserver/v1"
 	"github.com/sourcegraph/zoekt/query"
@@ -134,7 +136,7 @@ Hello world example in go`, typeFile},
 		Service: service,
 	})
 
-	handler := internalgrpc.MultiplexHandlers(grpcServer, service)
+	handler := internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(http.NotFound))
 
 	ts := httptest.NewServer(handler)
 

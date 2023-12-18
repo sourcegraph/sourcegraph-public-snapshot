@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// TODO: Use gRPC. This will fail right now as the HTTP API has been removed.
 func getDocumentRanks(ctx context.Context, repoName string) (types.RepoPathRanks, error) {
 	root, err := url.Parse(internalapi.Client.URL)
 	if err != nil {

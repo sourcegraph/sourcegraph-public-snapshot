@@ -6,8 +6,6 @@ import (
 	"bytes"
 	"container/list"
 	"context"
-	"encoding/gob"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,7 +16,6 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -28,7 +25,6 @@ import (
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
@@ -55,7 +51,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -279,40 +274,7 @@ func (s *Server) Handler() http.Handler {
 	})
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/archive", trace.WithRouteName("archive", accesslog.HTTPMiddleware(
-		s.Logger.Scoped("archive.accesslog"),
-		conf.DefaultClient(),
-		s.handleArchive,
-	)))
-	mux.HandleFunc("/exec", trace.WithRouteName("exec", accesslog.HTTPMiddleware(
-		s.Logger.Scoped("exec.accesslog"),
-		conf.DefaultClient(),
-		s.handleExec,
-	)))
-	mux.HandleFunc("/search", trace.WithRouteName("search", s.handleSearch))
-	mux.HandleFunc("/batch-log", trace.WithRouteName("batch-log", s.handleBatchLog))
-	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", accesslog.HTTPMiddleware(
-		s.Logger.Scoped("p4-exec.accesslog"),
-		conf.DefaultClient(),
-		s.handleP4Exec,
-	)))
-	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", s.handleListGitolite))
-	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
-	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", s.handleRepoCloneProgress))
-	mux.HandleFunc("/delete", trace.WithRouteName("delete", s.handleRepoDelete))
-	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", s.handleRepoUpdate))
-	mux.HandleFunc("/repo-clone", trace.WithRouteName("repo-clone", s.handleRepoClone))
-	mux.HandleFunc("/create-commit-from-patch-binary", trace.WithRouteName("create-commit-from-patch-binary", s.handleCreateCommitFromPatchBinary))
-	mux.HandleFunc("/disk-info", trace.WithRouteName("disk-info", s.handleDiskInfo))
-	mux.HandleFunc("/is-perforce-path-cloneable", trace.WithRouteName("is-perforce-path-cloneable", s.handleIsPerforcePathCloneable))
-	mux.HandleFunc("/check-perforce-credentials", trace.WithRouteName("check-perforce-credentials", s.handleCheckPerforceCredentials))
-	mux.HandleFunc("/commands/get-object", trace.WithRouteName("commands/get-object", s.handleGetObject))
-	mux.HandleFunc("/perforce-users", trace.WithRouteName("perforce-users", s.handlePerforceUsers))
-	mux.HandleFunc("/perforce-protects-for-user", trace.WithRouteName("perforce-protects-for-user", s.handlePerforceProtectsForUser))
-	mux.HandleFunc("/perforce-protects-for-depot", trace.WithRouteName("perforce-protects-for-depot", s.handlePerforceProtectsForDepot))
-	mux.HandleFunc("/perforce-group-members", trace.WithRouteName("perforce-group-members", s.handlePerforceGroupMembers))
-	mux.HandleFunc("/is-perforce-super-user", trace.WithRouteName("is-perforce-super-user", s.handleIsPerforceSuperUser))
-	mux.HandleFunc("/perforce-get-changelist", trace.WithRouteName("perforce-get-changelist", s.handlePerforceGetChangelist))
+
 	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -511,29 +473,6 @@ func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, 
 	return s.cloneableLimiter.Acquire(ctx)
 }
 
-func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
-	var req protocol.IsRepoCloneableRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if req.Repo == "" {
-		http.Error(w, "no Repo given", http.StatusBadRequest)
-		return
-	}
-	resp, err := s.isRepoCloneable(r.Context(), req.Repo)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
 func (s *Server) isRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error) {
 	// We use an internal actor here as the repo may be private. It is safe since all
 	// we return is a bool indicating whether the repo is cloneable or not. Perhaps
@@ -559,25 +498,6 @@ func (s *Server) isRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 	resp.Cloneable = err == nil
 
 	return resp, nil
-}
-
-// handleRepoUpdate is a synchronous (waits for update to complete or
-// time out) method so it can yield errors. Updates are not
-// unconditional; we debounce them based on the provided
-// interval, to avoid spam.
-func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
-	var req protocol.RepoUpdateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	resp := s.repoUpdate(&req)
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 }
 
 func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
@@ -638,169 +558,6 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 	}
 
 	return resp
-}
-
-// handleRepoClone is an asynchronous (does not wait for update to complete or
-// time out) call to clone a repository.
-// Asynchronous errors will have to be checked in the gitserver_repos table under last_error.
-func (s *Server) handleRepoClone(w http.ResponseWriter, r *http.Request) {
-	logger := s.Logger.Scoped("handleRepoClone")
-	var req protocol.RepoCloneRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	var resp protocol.RepoCloneResponse
-	req.Repo = protocol.NormalizeRepo(req.Repo)
-
-	_, err := s.CloneRepo(context.Background(), req.Repo, CloneOptions{Block: false})
-	if err != nil {
-		logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
-		resp.Error = err.Error()
-	}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
-	var (
-		logger    = s.Logger.Scoped("handleArchive")
-		q         = r.URL.Query()
-		treeish   = q.Get("treeish")
-		repo      = q.Get("repo")
-		format    = q.Get("format")
-		pathspecs = q["path"]
-	)
-
-	// Log which which actor is accessing the repo.
-	accesslog.Record(r.Context(), repo,
-		log.String("treeish", treeish),
-		log.String("format", format),
-		log.Strings("path", pathspecs),
-	)
-
-	if err := git.CheckSpecArgSafety(treeish); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		s.Logger.Error("gitserver.archive.CheckSpecArgSafety", log.Error(err))
-		return
-	}
-
-	if repo == "" || format == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		logger.Error("gitserver.archive", log.String("error", "empty repo or format"))
-		return
-	}
-
-	req := &protocol.ExecRequest{
-		Repo: api.RepoName(repo),
-		Args: []string{
-			"archive",
-
-			// Suppresses fatal error when the repo contains paths matching **/.git/** and instead
-			// includes those files (to allow archiving invalid such repos). This is unexpected
-			// behavior; the --worktree-attributes flag should merely let us specify a gitattributes
-			// file that contains `**/.git/** export-ignore`, but it actually makes everything work as
-			// desired. Tested by the "repo with .git dir" test case.
-			"--worktree-attributes",
-
-			"--format=" + format,
-		},
-	}
-
-	if format == string(gitserver.ArchiveFormatZip) {
-		// Compression level of 0 (no compression) seems to perform the
-		// best overall on fast network links, but this has not been tuned
-		// thoroughly.
-		req.Args = append(req.Args, "-0")
-	}
-
-	req.Args = append(req.Args, treeish, "--")
-	req.Args = append(req.Args, pathspecs...)
-
-	s.execHTTP(w, r, req)
-}
-
-func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
-	logger := s.Logger.Scoped("handleSearch")
-	tr, ctx := trace.New(r.Context(), "handleSearch")
-	defer tr.End()
-
-	// Decode the request
-	protocol.RegisterGob()
-	var args protocol.SearchRequest
-	if err := gob.NewDecoder(r.Body).Decode(&args); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	eventWriter, err := streamhttp.NewWriter(w)
-	if err != nil {
-		tr.SetError(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	var matchesBufMux sync.Mutex
-	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
-		tr.AddEvent("flushing data", attribute.Int("data.len", len(data)))
-		return eventWriter.EventBytes("matches", data)
-	})
-
-	// Start a goroutine that periodically flushes the buffer
-	var flusherWg conc.WaitGroup
-	flusherCtx, flusherCancel := context.WithCancel(context.Background())
-	defer flusherCancel()
-	flusherWg.Go(func() {
-		flushTicker := time.NewTicker(50 * time.Millisecond)
-		defer flushTicker.Stop()
-
-		for {
-			select {
-			case <-flushTicker.C:
-				matchesBufMux.Lock()
-				matchesBuf.Flush()
-				matchesBufMux.Unlock()
-			case <-flusherCtx.Done():
-				return
-			}
-		}
-	})
-
-	// Create a callback that appends the match to the buffer
-	var haveFlushed atomic.Bool
-	onMatch := func(match *protocol.CommitMatch) error {
-		matchesBufMux.Lock()
-		defer matchesBufMux.Unlock()
-
-		err := matchesBuf.Append(match)
-		if err != nil {
-			return err
-		}
-
-		// If we haven't sent any results yet, flush immediately
-		if !haveFlushed.Load() {
-			haveFlushed.Store(true)
-			return matchesBuf.Flush()
-		}
-
-		return nil
-	}
-
-	// Run the search
-	limitHit, searchErr := s.searchWithObservability(ctx, tr, &args, onMatch)
-	if writeErr := eventWriter.Event("done", protocol.NewSearchEventDone(limitHit, searchErr)); writeErr != nil {
-		if !errors.Is(writeErr, syscall.EPIPE) {
-			logger.Error("failed to send done event", log.Error(writeErr))
-		}
-	}
-
-	// Clean up the flusher goroutine, then do one final flush
-	flusherCancel()
-	flusherWg.Wait()
-	matchesBuf.Flush()
 }
 
 func (s *Server) performGitLogCommand(ctx context.Context, repoCommit api.RepoCommit, format string) (output string, isRepoCloned bool, err error) {
@@ -903,44 +660,6 @@ func (s *Server) batchGitLogInstrumentedHandler(ctx context.Context, req protoco
 	return protocol.BatchLogResponse{Results: results}, nil
 }
 
-func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
-	// 🚨 SECURITY: Only allow POST requests.
-	if strings.ToUpper(r.Method) != http.MethodPost {
-		http.Error(w, "", http.StatusMethodNotAllowed)
-		return
-	}
-
-	s.operations = s.ensureOperations()
-
-	// Read request body
-	var req protocol.BatchLogRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Validate request parameters
-	if len(req.RepoCommits) == 0 {
-		// Early exit: implicitly writes 200 OK
-		_ = json.NewEncoder(w).Encode(protocol.BatchLogResponse{Results: []protocol.BatchLogResult{}})
-		return
-	}
-	if !strings.HasPrefix(req.Format, "--format=") {
-		http.Error(w, "format parameter expected to be of the form `--format=<git log format>`", http.StatusUnprocessableEntity)
-		return
-	}
-
-	// Handle unexpected error conditions
-	resp, err := s.batchGitLogInstrumentedHandler(r.Context(), req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Write payload to client: implicitly writes 200 OK
-	_ = json.NewEncoder(w).Encode(resp)
-}
-
 // ensureOperations returns the non-nil operations value supplied to this server
 // via RegisterMetrics (when constructed as part of the gitserver binary), or
 // constructs and memoizes a no-op operations value (for use in tests).
@@ -950,35 +669,6 @@ func (s *Server) ensureOperations() *operations {
 	}
 
 	return s.operations
-}
-
-func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
-	// 🚨 SECURITY: Only allow POST requests.
-	// See https://github.com/sourcegraph/security-issues/issues/213.
-	if strings.ToUpper(r.Method) != http.MethodPost {
-		http.Error(w, "", http.StatusMethodNotAllowed)
-		return
-	}
-
-	var req protocol.ExecRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Log which actor is accessing the repo.
-	args := req.Args
-	cmd := ""
-	if len(req.Args) > 0 {
-		cmd = req.Args[0]
-		args = args[1:]
-	}
-	accesslog.Record(r.Context(), string(req.Repo),
-		log.String("cmd", cmd),
-		log.Strings("args", args),
-	)
-
-	s.execHTTP(w, r, &req)
 }
 
 var blockedCommandExecutedCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -1000,6 +690,7 @@ type execStatus struct {
 	Err        error
 }
 
+// TODO: eseliger
 // exec runs a git command. After the first write to w, it must not return an error.
 // TODO(@camdencheek): once gRPC is the only consumer of this, do everything with errors
 // because gRPC can handle trailing errors on a stream.
@@ -1180,48 +871,6 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		Stderr:     stderr,
 		ExitStatus: exitStatus,
 	}, nil
-}
-
-// execHTTP translates the results of an exec into the expected HTTP statuses and payloads
-func (s *Server) execHTTP(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
-	logger := s.Logger.Scoped("exec").With(log.Strings("req.Args", req.Args))
-
-	// Flush writes more aggressively than standard net/http so that clients
-	// with a context deadline see as much partial response body as possible.
-	if fw := newFlushingResponseWriter(logger, w); fw != nil {
-		w = fw
-		defer fw.Close()
-	}
-
-	ctx := r.Context()
-
-	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-
-	w.Header().Set("Trailer", "X-Exec-Error")
-	w.Header().Add("Trailer", "X-Exec-Exit-Status")
-	w.Header().Add("Trailer", "X-Exec-Stderr")
-
-	execStatus, err := s.exec(ctx, logger, req, r.UserAgent(), w)
-	w.Header().Set("X-Exec-Error", errorString(execStatus.Err))
-	w.Header().Set("X-Exec-Exit-Status", strconv.Itoa(execStatus.ExitStatus))
-	w.Header().Set("X-Exec-Stderr", execStatus.Stderr)
-	if err != nil {
-		if v := (&NotFoundError{}); errors.As(err, &v) {
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(v.Payload)
-
-		} else if errors.Is(err, ErrInvalidCommand) {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("invalid command"))
-
-		} else {
-			// If it's not a well-known error, send the error text
-			// and a generic error code.
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-		}
-	}
 }
 
 func setLastFetched(ctx context.Context, db database.DB, shardID string, dir common.GitDir, name api.RepoName) error {
@@ -2035,379 +1684,4 @@ func errorString(err error) string {
 		return ""
 	}
 	return err.Error()
-}
-
-func (s *Server) handleIsPerforcePathCloneable(w http.ResponseWriter, r *http.Request) {
-	var req protocol.IsPerforcePathCloneableRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if req.DepotPath == "" {
-		http.Error(w, "no DepotPath given", http.StatusBadRequest)
-		return
-	}
-
-	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = perforce.IsDepotPathCloneable(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd, req.DepotPath)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err := json.NewEncoder(w).Encode(protocol.IsPerforcePathCloneableResponse{}); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (s *Server) handleCheckPerforceCredentials(w http.ResponseWriter, r *http.Request) {
-	var req protocol.CheckPerforceCredentialsRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err := json.NewEncoder(w).Encode(protocol.CheckPerforceCredentialsResponse{}); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (s *Server) handleGetObject(w http.ResponseWriter, r *http.Request) {
-	var req protocol.GetObjectRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, errors.Wrap(err, "decoding body").Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Log which actor is accessing the repo.
-	accesslog.Record(r.Context(), string(req.Repo), log.String("objectname", req.ObjectName))
-
-	obj, err := git.GetObject(r.Context(), s.RecordingCommandFactory, s.ReposDir, req.Repo, req.ObjectName)
-	if err != nil {
-		http.Error(w, errors.Wrap(err, "getting object").Error(), http.StatusInternalServerError)
-		return
-	}
-
-	resp := protocol.GetObjectResponse{
-		Object: *obj,
-	}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (s *Server) handlePerforceUsers(w http.ResponseWriter, r *http.Request) {
-	var req protocol.PerforceUsersRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	accesslog.Record(
-		r.Context(),
-		"<no-repo>",
-		log.String("p4user", req.P4User),
-		log.String("p4port", req.P4Port),
-	)
-
-	users, err := perforce.P4Users(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	resp := &protocol.PerforceUsersResponse{
-		Users: make([]protocol.PerforceUser, 0, len(users)),
-	}
-
-	for _, user := range users {
-		resp.Users = append(resp.Users, protocol.PerforceUser{
-			Username: user.Username,
-			Email:    user.Email,
-		})
-	}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (s *Server) handlePerforceProtectsForUser(w http.ResponseWriter, r *http.Request) {
-	var req protocol.PerforceProtectsForUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	accesslog.Record(
-		r.Context(),
-		"<no-repo>",
-		log.String("p4user", req.P4User),
-		log.String("p4port", req.P4Port),
-	)
-
-	protects, err := perforce.P4ProtectsForUser(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd, req.Username)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	jsonProtects := make([]protocol.PerforceProtect, len(protects))
-	for i, p := range protects {
-		jsonProtects[i] = protocol.PerforceProtect{
-			Level:       p.Level,
-			EntityType:  p.EntityType,
-			EntityName:  p.EntityName,
-			Match:       p.Match,
-			IsExclusion: p.IsExclusion,
-			Host:        p.Host,
-		}
-	}
-
-	resp := &protocol.PerforceProtectsForUserResponse{
-		Protects: jsonProtects,
-	}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (s *Server) handlePerforceProtectsForDepot(w http.ResponseWriter, r *http.Request) {
-	var req protocol.PerforceProtectsForDepotRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	accesslog.Record(
-		r.Context(),
-		"<no-repo>",
-		log.String("p4user", req.P4User),
-		log.String("p4port", req.P4Port),
-	)
-
-	protects, err := perforce.P4ProtectsForDepot(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd, req.Depot)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	jsonProtects := make([]protocol.PerforceProtect, len(protects))
-	for i, p := range protects {
-		jsonProtects[i] = protocol.PerforceProtect{
-			Level:       p.Level,
-			EntityType:  p.EntityType,
-			EntityName:  p.EntityName,
-			Match:       p.Match,
-			IsExclusion: p.IsExclusion,
-			Host:        p.Host,
-		}
-	}
-
-	resp := &protocol.PerforceProtectsForDepotResponse{
-		Protects: jsonProtects,
-	}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-}
-
-func (s *Server) handlePerforceGroupMembers(w http.ResponseWriter, r *http.Request) {
-	var req protocol.PerforceGroupMembersRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	accesslog.Record(
-		r.Context(),
-		"<no-repo>",
-		log.String("p4user", req.P4User),
-		log.String("p4port", req.P4Port),
-	)
-
-	members, err := perforce.P4GroupMembers(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd, req.Group)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	resp := &protocol.PerforceGroupMembersResponse{
-		Usernames: members,
-	}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (s *Server) handleIsPerforceSuperUser(w http.ResponseWriter, r *http.Request) {
-	var req protocol.IsPerforceSuperUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	accesslog.Record(
-		r.Context(),
-		"<no-repo>",
-		log.String("p4user", req.P4User),
-		log.String("p4port", req.P4Port),
-	)
-
-	err = perforce.P4UserIsSuperUser(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
-	if err != nil {
-		if err == perforce.ErrIsNotSuperUser {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	resp := &protocol.IsPerforceSuperUserResponse{}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (s *Server) handlePerforceGetChangelist(w http.ResponseWriter, r *http.Request) {
-	var req protocol.PerforceGetChangelistRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	accesslog.Record(
-		r.Context(),
-		"<no-repo>",
-		log.String("p4user", req.P4User),
-		log.String("p4port", req.P4Port),
-	)
-
-	changelist, err := perforce.GetChangelistByID(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd, req.ChangelistID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	resp := &protocol.PerforceGetChangelistResponse{
-		Changelist: protocol.PerforceChangelist{
-			ID:           changelist.ID,
-			CreationDate: changelist.CreationDate,
-			State:        string(changelist.State),
-			Author:       changelist.Author,
-			Title:        changelist.Title,
-			Message:      changelist.Message,
-		},
-	}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 }

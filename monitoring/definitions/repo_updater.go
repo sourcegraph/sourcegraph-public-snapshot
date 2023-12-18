@@ -601,7 +601,6 @@ func RepoUpdater() *monitoring.Dashboard {
 				InstanceFilterRegex: `${instance:regex}`,
 			}, monitoring.ObservableOwnerDevOps),
 			shared.HTTP.NewHandlersGroup(containerName),
-			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerSource, nil),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerSource),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSource, containerMonitoringOptions),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSource, nil),

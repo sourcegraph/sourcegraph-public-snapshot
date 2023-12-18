@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -15,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const maxNumSymbolResults = 500
@@ -62,7 +60,6 @@ func NewHandler(
 	handleStatus func(http.ResponseWriter, *http.Request),
 	ctagsBinary string,
 ) http.Handler {
-
 	searchFuncWrapper := func(ctx context.Context, args search.SymbolsParameters) (result.Symbols, error) {
 		// Massage the arguments to ensure that First is set to a reasonable value.
 		if args.First < 0 || args.First > maxNumSymbolResults {
@@ -87,49 +84,14 @@ func NewHandler(
 
 	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()
-	mux.HandleFunc("/search", handleSearchWith(jsonLogger, searchFuncWrapper))
 	mux.HandleFunc("/healthz", handleHealthCheck(jsonLogger))
 
-	addHandlers(mux, searchFunc, readFileFunc)
 	if handleStatus != nil {
+		// TODO: Can we remove this endpoint or move it to the debug handlers?
 		mux.HandleFunc("/status", handleStatus)
 	}
 
 	return internalgrpc.MultiplexHandlers(grpcServer, mux)
-}
-
-func handleSearchWith(l logger.Logger, searchFunc types.SearchFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var args search.SymbolsParameters
-		if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		resultSymbols, err := searchFunc(r.Context(), args)
-		if err != nil {
-			// Ignore reporting errors where client disconnected
-			if r.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {
-				return
-			}
-
-			argsStr := fmt.Sprintf("%+v", args)
-
-			l.Error("symbol search failed",
-				logger.String("arguments", argsStr),
-				logger.Error(err),
-			)
-
-			if err := json.NewEncoder(w).Encode(search.SymbolsResponse{Err: err.Error()}); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-			return
-		}
-
-		if err := json.NewEncoder(w).Encode(search.SymbolsResponse{Symbols: resultSymbols}); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	}
 }
 
 func handleHealthCheck(l logger.Logger) http.HandlerFunc {

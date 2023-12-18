@@ -105,5 +105,5 @@ func (e Exhaustive) ResolveRepositoryRevSpec(ctx context.Context, clients job.Ru
 }
 
 func reposNewResolver(clients job.RuntimeClients) *repos.Resolver {
-	return repos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
+	return repos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, clients.Zoekt)
 }

@@ -21,19 +21,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
 	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -175,11 +172,6 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	}
 	sService.Store.Start()
 
-	// Set up handler middleware
-	handler := actor.HTTPMiddleware(logger, sService)
-	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
-	handler = instrumentation.HTTPMiddleware("", handler)
-
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -203,7 +195,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 				_, _ = w.Write([]byte("ok"))
 				return
 			}
-			handler.ServeHTTP(w, r)
+			w.WriteHeader(404)
 		})),
 	}
 

@@ -10,14 +10,15 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/exp/slices"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -93,14 +94,14 @@ func (j *fileContainsFilterJob) Run(ctx context.Context, clients job.RuntimeClie
 	defer func() { finish(alert, err) }()
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		event = j.filterEvent(ctx, clients.SearcherURLs, event)
+		event = j.filterEvent(ctx, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, event)
 		stream.Send(event)
 	})
 
 	return j.child.Run(ctx, clients, filteredStream)
 }
 
-func (j *fileContainsFilterJob) filterEvent(ctx context.Context, searcherURLs *endpoint.Map, event streaming.SearchEvent) streaming.SearchEvent {
+func (j *fileContainsFilterJob) filterEvent(ctx context.Context, searcherURLs *endpoint.Map, searcherGRPCConnectionCache *defaults.ConnectionCache, event streaming.SearchEvent) streaming.SearchEvent {
 	// Don't filter out files with zero chunks because if the file contained
 	// a result, we still want to return a match for the file even if it
 	// has no matched ranges left.
@@ -110,7 +111,7 @@ func (j *fileContainsFilterJob) filterEvent(ctx context.Context, searcherURLs *e
 		case *result.FileMatch:
 			filtered = append(filtered, j.filterFileMatch(v))
 		case *result.CommitMatch:
-			cm := j.filterCommitMatch(ctx, searcherURLs, v)
+			cm := j.filterCommitMatch(ctx, searcherURLs, searcherGRPCConnectionCache, v)
 			if cm != nil {
 				filtered = append(filtered, cm)
 			}
@@ -159,7 +160,7 @@ func matchesAny(val string, matchers []*regexp.Regexp) bool {
 	return false
 }
 
-func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherURLs *endpoint.Map, cm *result.CommitMatch) result.Match {
+func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherURLs *endpoint.Map, searcherGRPCConnectionCache *defaults.ConnectionCache, cm *result.CommitMatch) result.Match {
 	// Skip any commit matches -- we only handle diff matches
 	if cm.DiffPreview == nil {
 		return nil
@@ -187,15 +188,14 @@ func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherU
 			PatternMatchesContent: true,
 		}
 
-		onMatch := func(fms []*protocol.FileMatch) {
-			for _, fm := range fms {
-				matchedFileCounts[fm.Path] += 1
-			}
+		onMatch := func(fm *proto.FileMatch) {
+			matchedFileCounts[string(fm.GetPath())] += 1
 		}
 
 		_, err := searcher.Search(
 			ctx,
 			searcherURLs,
+			searcherGRPCConnectionCache,
 			cm.Repo.Name,
 			cm.Repo.ID,
 			"",

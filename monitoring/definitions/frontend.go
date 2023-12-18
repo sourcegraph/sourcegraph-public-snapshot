@@ -468,17 +468,6 @@ func Frontend() *monitoring.Dashboard {
 								- Check the Searcher dashboard for indications it might be unhealthy.
 							`,
 						},
-						{
-							Name:        "internalapi_error_responses",
-							Description: "internal API error responses every 5m by route",
-							Query:       `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100`,
-							Warning:     monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps: `
-								- May not be a substantial issue, check the 'frontend' logs for potential causes.
-							`,
-						},
 					},
 					{
 						{

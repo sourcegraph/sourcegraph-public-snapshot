@@ -15,7 +15,6 @@ server_integration_test(
         "//cmd/server:image_tarball",
     ],
     env = {
-        "SG_FEATURE_FLAG_GRPC": "true",
         "TEST_USER_EMAIL": "test@sourcegraph.com",
         "TEST_USER_PASSWORD": "supersecurepassword",
         "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
@@ -54,9 +53,6 @@ server_integration_test(
         "//dev/authtest:authtest_test",
         "//dev/gqltest:gqltest_test",
     ],
-    env = {
-        "SG_FEATURE_FLAG_GRPC": "false",
-    },
     env_inherit = [
         "AWS_ACCESS_KEY_ID",
         "AWS_CODE_COMMIT_PASSWORD",
@@ -76,46 +72,6 @@ server_integration_test(
     ],
     port = "7081",
     runner_src = ":backend_integration_test.sh",
-)
-
-server_integration_test(
-    name = "grpc_backend_integration_test",
-    timeout = "long",
-    args = [
-        "$(location //dev/gqltest:gqltest_test)",  # actual test
-        "$(location //dev/authtest:authtest_test)",  # actual test
-    ],
-    data = [
-        "//cmd/server:image_tarball",
-        "//dev/authtest:authtest_test",
-        "//dev/gqltest:gqltest_test",
-    ],
-    env = {
-        "SG_FEATURE_FLAG_GRPC": "true",
-    },
-    env_inherit = [
-        "AWS_ACCESS_KEY_ID",
-        "AWS_CODE_COMMIT_PASSWORD",
-        "AWS_CODE_COMMIT_USERNAME",
-        "AWS_SECRET_ACCESS_KEY",
-        "AZURE_DEVOPS_TOKEN",
-        "AZURE_DEVOPS_USERNAME",
-        "BITBUCKET_SERVER_TOKEN",
-        "BITBUCKET_SERVER_URL",
-        "BITBUCKET_SERVER_USERNAME",
-        "GHE_GITHUB_TOKEN",
-        "PERFORCE_PASSWORD",
-        "PERFORCE_PORT",
-        "PERFORCE_USER",
-        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
-        "SOURCEGRAPH_LICENSE_KEY",
-    ],
-    port = "7082",
-    runner_src = ":backend_integration_test.sh",
-    tags = [
-        "exclusive",
-        "manual",
-    ],
 )
 
 server_integration_test(
@@ -140,7 +96,6 @@ server_integration_test(
         "//internal/cmd/init-sg",
     ],
     env = {
-        "SG_FEATURE_FLAG_GRPC": "true",
         "TEST_USER_EMAIL": "test@sourcegraph.com",
         "TEST_USER_PASSWORD": "supersecurepassword",
         "SOURCEGRAPH_SUDO_USER": "admin",
@@ -225,7 +180,6 @@ server_integration_test(
         ],
     }),
     env = {
-        "SG_FEATURE_FLAG_GRPC": "true",
         "TEST_USER_EMAIL": "test@sourcegraph.com",
         "TEST_USER_PASSWORD": "supersecurepassword",
         "SOURCEGRAPH_SUDO_USER": "admin",

@@ -3,7 +3,6 @@ package repoupdater
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -37,63 +36,14 @@ type Server struct {
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
+// TODO: Technically, we no longer need the HTTP server. Practically, some things
+// might rely on the /healthz endpoint.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", trace.WithRouteName("healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
-	mux.HandleFunc("/repo-update-scheduler-info", trace.WithRouteName("repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo))
-	mux.HandleFunc("/repo-lookup", trace.WithRouteName("repo-lookup", s.handleRepoLookup))
-	mux.HandleFunc("/enqueue-repo-update", trace.WithRouteName("enqueue-repo-update", s.handleEnqueueRepoUpdate))
-	mux.HandleFunc("/enqueue-changeset-sync", trace.WithRouteName("enqueue-changeset-sync", s.handleEnqueueChangesetSync))
 	return mux
-}
-
-func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Request) {
-	var args protocol.RepoUpdateSchedulerInfoArgs
-	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
-		s.respond(w, http.StatusBadRequest, err)
-		return
-	}
-
-	result := s.Scheduler.ScheduleInfo(args.ID)
-	s.respond(w, http.StatusOK, result)
-}
-
-func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
-	var args protocol.RepoLookupArgs
-	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	result, err := s.repoLookup(r.Context(), args.Repo)
-	if err != nil {
-		if r.Context().Err() != nil {
-			http.Error(w, "request canceled", http.StatusGatewayTimeout)
-			return
-		}
-		s.Logger.Error("repoLookup failed", log.String("name", string(args.Repo)), log.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	s.respond(w, http.StatusOK, result)
-}
-
-func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
-	var req protocol.RepoUpdateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		s.respond(w, http.StatusBadRequest, err)
-		return
-	}
-	result, status, err := s.enqueueRepoUpdate(r.Context(), &req)
-	if err != nil {
-		s.Logger.Warn("enqueueRepoUpdate failed", log.String("req", fmt.Sprint(req)), log.Error(err))
-		s.respond(w, status, err)
-		return
-	}
-	s.respond(w, status, result)
 }
 
 func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) (resp *protocol.RepoUpdateResponse, httpStatus int, err error) {
@@ -127,30 +77,6 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 		ID:   repo.ID,
 		Name: string(repo.Name),
 	}, http.StatusOK, nil
-}
-
-func (s *Server) respond(w http.ResponseWriter, code int, v any) {
-	switch val := v.(type) {
-	case error:
-		if val != nil {
-			s.Logger.Error("response value error", log.Error(val))
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(code)
-			fmt.Fprintf(w, "%v", val)
-		}
-	default:
-		w.Header().Set("Content-Type", "application/json")
-		bs, err := json.Marshal(v)
-		if err != nil {
-			s.respond(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		w.WriteHeader(code)
-		if _, err = w.Write(bs); err != nil {
-			s.Logger.Error("failed to write response", log.Error(err))
-		}
-	}
 }
 
 var mockRepoLookup func(api.RepoName) (*protocol.RepoLookupResult, error)
@@ -195,29 +121,4 @@ func (s *Server) repoLookup(ctx context.Context, repoName api.RepoName) (result 
 	}
 
 	return &protocol.RepoLookupResult{Repo: protocol.NewRepoInfo(repo)}, nil
-}
-
-func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {
-	if s.ChangesetSyncRegistry == nil {
-		s.Logger.Warn("ChangesetSyncer is nil")
-		s.respond(w, http.StatusForbidden, nil)
-		return
-	}
-
-	var req protocol.ChangesetSyncRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		s.respond(w, http.StatusBadRequest, err)
-		return
-	}
-	if len(req.IDs) == 0 {
-		s.respond(w, http.StatusBadRequest, errors.New("no ids provided"))
-		return
-	}
-	err := s.ChangesetSyncRegistry.EnqueueChangesetSyncs(r.Context(), req.IDs)
-	if err != nil {
-		resp := protocol.ChangesetSyncResponse{Error: err.Error()}
-		s.respond(w, http.StatusInternalServerError, resp)
-		return
-	}
-	s.respond(w, http.StatusOK, nil)
 }

@@ -22,7 +22,6 @@ import (
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -31,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestClient_ArchiveReader(t *testing.T) {
@@ -185,97 +183,41 @@ func TestClient_ArchiveReader(t *testing.T) {
 		})
 	}
 
-	t.Run("grpc", func(t *testing.T) {
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: boolPointer(true),
-				},
-			},
-		})
-		t.Cleanup(func() {
-			conf.Mock(nil)
-		})
-		for _, test := range tests {
-			repoName := api.RepoName(test.name)
-			called := false
+	for _, test := range tests {
+		repoName := api.RepoName(test.name)
+		called := false
 
-			mkClient := func(t *testing.T, addrs []string) gitserver.Client {
-				t.Helper()
+		mkClient := func(t *testing.T, addrs []string) gitserver.Client {
+			t.Helper()
 
-				source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
-					o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+			source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					base := proto.NewGitserverServiceClient(cc)
+
+					mockArchive := func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error) {
+						called = true
+						return base.Archive(ctx, in, opts...)
+					}
+					mockRepoUpdate := func(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error) {
 						base := proto.NewGitserverServiceClient(cc)
-
-						mockArchive := func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error) {
-							called = true
-							return base.Archive(ctx, in, opts...)
-						}
-						mockRepoUpdate := func(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error) {
-							base := proto.NewGitserverServiceClient(cc)
-							return base.RepoUpdate(ctx, in, opts...)
-						}
-						cli := gitserver.NewMockGitserverServiceClient()
-						cli.ArchiveFunc.SetDefaultHook(mockArchive)
-						cli.RepoUpdateFunc.SetDefaultHook(mockRepoUpdate)
-						return cli
+						return base.RepoUpdate(ctx, in, opts...)
 					}
-				})
+					cli := gitserver.NewMockGitserverServiceClient()
+					cli.ArchiveFunc.SetDefaultHook(mockArchive)
+					cli.RepoUpdateFunc.SetDefaultHook(mockRepoUpdate)
+					return cli
+				}
+			})
 
-				return gitserver.NewTestClient(t).WithClientSource(source)
-			}
-
-			runArchiveReaderTestfunc(t, mkClient, repoName, test)
-			if !called {
-				t.Error("archiveReader: GitserverServiceClient should have been called")
-			}
-
-		}
-	})
-
-	t.Run("http", func(t *testing.T) {
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: boolPointer(false),
-				},
-			},
-		})
-		t.Cleanup(func() {
-			conf.Mock(nil)
-		})
-
-		for _, test := range tests {
-			repoName := api.RepoName(test.name)
-			called := false
-
-			mkClient := func(t *testing.T, addrs []string) gitserver.Client {
-				t.Helper()
-
-				source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
-					o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
-						mockArchive := func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error) {
-							called = true
-							base := proto.NewGitserverServiceClient(cc)
-							return base.Archive(ctx, in, opts...)
-						}
-						cli := gitserver.NewMockGitserverServiceClient()
-						cli.ArchiveFunc.SetDefaultHook(mockArchive)
-						return cli
-					}
-				})
-
-				return gitserver.NewTestClient(t).WithClientSource(source)
-			}
-
-			runArchiveReaderTestfunc(t, mkClient, repoName, test)
-			if called {
-				t.Error("archiveReader: GitserverServiceClient should have been called")
-			}
-
+			return gitserver.NewTestClient(t).WithClientSource(source)
 		}
 
-	})
+		runArchiveReaderTestfunc(t, mkClient, repoName, test)
+		if !called {
+			t.Error("archiveReader: GitserverServiceClient should have been called")
+		}
+
+	}
 }
 
 func createSimpleGitRepo(t *testing.T, root string) string {

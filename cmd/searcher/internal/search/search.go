@@ -13,11 +13,6 @@ package search
 
 import (
 	"context"
-	"encoding/json"
-	"math"
-	"net"
-	"net/http"
-	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -30,8 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -62,81 +55,6 @@ type Service struct {
 	MaxTotalPathsLength int
 }
 
-// ServeHTTP handles HTTP based search requests
-func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	var p protocol.Request
-	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(&p); err != nil {
-		http.Error(w, "failed to decode form: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if !p.PatternMatchesContent && !p.PatternMatchesPath {
-		// BACKCOMPAT: Old frontends send neither of these fields, but we still want to
-		// search file content in that case.
-		p.PatternMatchesContent = true
-	}
-	if err := validateParams(&p); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	s.streamSearch(ctx, w, p)
-}
-
-// isNetOpError returns true if net.OpError is contained in err. This is
-// useful to ignore errors when the connection has gone away.
-func isNetOpError(err error) bool {
-	return errors.HasType(err, (*net.OpError)(nil))
-}
-
-func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p protocol.Request) {
-	if p.Limit == 0 {
-		// No limit for streaming search since upstream limits
-		// will either be sent in the request, or propagated by
-		// a cancelled context.
-		p.Limit = math.MaxInt32
-	}
-	eventWriter, err := streamhttp.NewWriter(w)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	var bufMux sync.Mutex
-	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
-		return eventWriter.EventBytes("matches", data)
-	})
-	onMatches := func(match protocol.FileMatch) {
-		bufMux.Lock()
-		if err := matchesBuf.Append(match); err != nil && !isNetOpError(err) {
-			s.Log.Warn("failed appending match to buffer", log.Error(err))
-		}
-		bufMux.Unlock()
-	}
-
-	ctx, cancel, stream := newLimitedStream(ctx, p.Limit, onMatches)
-	defer cancel()
-
-	err = s.search(ctx, &p, stream)
-	doneEvent := searcher.EventDone{
-		LimitHit: stream.LimitHit(),
-	}
-	if err != nil {
-		doneEvent.Error = err.Error()
-	}
-
-	// Flush remaining matches before sending a different event
-	if err := matchesBuf.Flush(); err != nil && !isNetOpError(err) {
-		s.Log.Warn("failed to flush matches", log.Error(err))
-	}
-	if err := eventWriter.Event("done", doneEvent); err != nil && !isNetOpError(err) {
-		s.Log.Warn("failed to send done event", log.Error(err))
-	}
-}
-
 func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
 	metricRunning.Inc()
 	defer metricRunning.Dec()
@@ -158,6 +76,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		attribute.String("select", p.Select))
 	defer tr.End()
 	defer func(start time.Time) {
+		// TODO: Does code tracking still make sense here?
 		code := "200"
 		// We often have canceled and timed out requests. We do not want to
 		// record them as errors to avoid noise

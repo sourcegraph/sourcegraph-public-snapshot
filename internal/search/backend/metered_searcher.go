@@ -91,6 +91,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		event.AddAttributes(fields)
 	}
 
+	// TODO: Does this still make sense in gRPC world?
 	// We wrap our queries in GobCache, this gives us a convenient way to find
 	// out the marshalled size of the query.
 	if gobCache, ok := q.(*query.GobCache); ok {

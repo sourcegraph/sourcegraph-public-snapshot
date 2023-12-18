@@ -3,13 +3,9 @@ package gitserver
 import (
 	"bytes"
 	"context"
-	"encoding/gob"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
-	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,7 +19,6 @@ import (
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/go-diff/diff"
@@ -33,27 +28,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const git = "git"
-
-var (
-	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
-	defaultDoer, _ = clientFactory.Doer()
-	// defaultLimiter limits concurrent HTTP requests per running process to gitserver.
-	defaultLimiter = limiter.New(500)
-)
 
 var ClientMocks, emptyClientMocks struct {
 	GetObject               func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
@@ -92,10 +77,8 @@ type ClientSource interface {
 func NewClient(scope string) Client {
 	logger := sglog.Scoped("GitserverClient")
 	return &clientImplementor{
-		logger:      logger,
-		scope:       scope,
-		httpClient:  defaultDoer,
-		HTTPLimiter: defaultLimiter,
+		logger: logger,
+		scope:  scope,
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
@@ -111,10 +94,8 @@ func NewTestClient(t testing.TB) TestClient {
 	logger := logtest.Scoped(t)
 
 	return &clientImplementor{
-		logger:      logger,
-		httpClient:  http.DefaultClient,
-		HTTPLimiter: limiter.New(500),
-		scope:       fmt.Sprintf("gitserver.test.%s", t.Name()),
+		logger: logger,
+		scope:  fmt.Sprintf("gitserver.test.%s", t.Name()),
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
@@ -128,17 +109,11 @@ func NewTestClient(t testing.TB) TestClient {
 type TestClient interface {
 	Client
 	WithChecker(authz.SubRepoPermissionChecker) TestClient
-	WithDoer(httpcli.Doer) TestClient
 	WithClientSource(ClientSource) TestClient
 }
 
 func (c *clientImplementor) WithChecker(checker authz.SubRepoPermissionChecker) TestClient {
 	c.subRepoPermsChecker = checker
-	return c
-}
-
-func (c *clientImplementor) WithDoer(doer httpcli.Doer) TestClient {
-	c.httpClient = doer
 	return c
 }
 
@@ -220,18 +195,12 @@ func NewMockClientWithExecReader(checker authz.SubRepoPermissionChecker, execRea
 
 // clientImplementor is a gitserver client.
 type clientImplementor struct {
-	// Limits concurrency of outstanding HTTP posts
-	HTTPLimiter limiter.Limiter
-
 	// userAgent is a string identifying who the client is. It will be logged in
 	// the telemetry in gitserver.
 	userAgent string
 
 	// the current scope of the client.
 	scope string
-
-	// HTTP client to use
-	httpClient httpcli.Doer
 
 	// logger is used for all logging and logger creation
 	logger sglog.Logger
@@ -251,8 +220,6 @@ func (c *clientImplementor) Scoped(scope string) Client {
 	return &clientImplementor{
 		logger:       c.logger,
 		scope:        appendScope(c.scope, scope),
-		httpClient:   c.httpClient,
-		HTTPLimiter:  c.HTTPLimiter,
 		userAgent:    c.userAgent,
 		operations:   c.operations,
 		clientSource: c.clientSource,
@@ -587,39 +554,15 @@ func (c *clientImplementor) SystemInfo(ctx context.Context, addr string) (_ prot
 }
 
 func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithClient) (*proto.DiskInfoResponse, error) {
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := addr.GRPCClient()
-		if err != nil {
-			return nil, err
-		}
-		resp, err := client.DiskInfo(ctx, &proto.DiskInfoRequest{})
-		if err != nil {
-			return nil, err
-		}
-		return resp, nil
-	}
-
-	uri := fmt.Sprintf("http://%s/disk-info", addr.Address())
-	rs, err := c.do(ctx, "", uri, nil)
+	client, err := addr.GRPCClient()
 	if err != nil {
 		return nil, err
 	}
-	defer rs.Body.Close()
-	if rs.StatusCode != http.StatusOK {
-		return nil, errors.Newf("http status %d: %s", rs.StatusCode, readResponseBody(io.LimitReader(rs.Body, 200)))
-	}
-
-	body, err := io.ReadAll(rs.Body)
+	resp, err := client.DiskInfo(ctx, &proto.DiskInfoRequest{})
 	if err != nil {
-		return nil, errors.Wrap(err, "reading read disk info response body")
+		return nil, err
 	}
-
-	var resp proto.DiskInfoResponse
-	if err := protojson.Unmarshal(body, &resp); err != nil {
-		return nil, errors.Wrap(err, "parsing disk info response body")
-	}
-
-	return &resp, nil
+	return resp, nil
 }
 
 func (c *clientImplementor) Addrs() []string {
@@ -723,32 +666,6 @@ func (a *archiveReader) Close() error {
 	return a.base.Close()
 }
 
-// archiveURL returns a URL from which an archive of the given Git repository can
-// be downloaded from.
-func (c *clientImplementor) archiveURL(ctx context.Context, repo api.RepoName, opt ArchiveOptions) *url.URL {
-	q := url.Values{
-		"repo":    {string(repo)},
-		"treeish": {opt.Treeish},
-		"format":  {string(opt.Format)},
-	}
-
-	for _, pathspec := range opt.Pathspecs {
-		q.Add("path", string(pathspec))
-	}
-
-	addrForRepo := c.AddrForRepo(ctx, repo)
-	return &url.URL{
-		Scheme:   "http",
-		Host:     addrForRepo,
-		Path:     "/archive",
-		RawQuery: q.Encode(),
-	}
-}
-
-type badRequestError struct{ error }
-
-func (e badRequestError) BadRequest() bool { return true }
-
 func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	ctx, _, endObservation := c.execOp.With(ctx, &err, observation.Args{
@@ -776,69 +693,36 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		return nil, err
 	}
 
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.execer.ClientForRepo(ctx, repoName)
-		if err != nil {
-			return nil, err
-		}
-
-		req := &proto.ExecRequest{
-			Repo:      string(repoName),
-			Args:      stringsToByteSlices(c.args[1:]),
-			Stdin:     c.stdin,
-			NoTimeout: c.noTimeout,
-
-			// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string.
-			EnsureRevision: []byte(c.EnsureRevision()),
-		}
-
-		stream, err := client.Exec(ctx, req)
-		if err != nil {
-			return nil, err
-		}
-		r := streamio.NewReader(func() ([]byte, error) {
-			msg, err := stream.Recv()
-			if status.Code(err) == codes.Canceled {
-				return nil, context.Canceled
-			} else if err != nil {
-				return nil, err
-			}
-			return msg.GetData(), nil
-		})
-
-		return &readCloseWrapper{r: r, closeFn: done}, nil
-
-	} else {
-		req := &protocol.ExecRequest{
-			Repo:           repoName,
-			EnsureRevision: c.EnsureRevision(),
-			Args:           c.args[1:],
-			Stdin:          c.stdin,
-			NoTimeout:      c.noTimeout,
-		}
-		resp, err := c.execer.httpPost(ctx, repoName, "exec", req)
-		if err != nil {
-			return nil, err
-		}
-
-		switch resp.StatusCode {
-		case http.StatusOK:
-			return &cmdReader{rc: &readCloseWrapper{r: resp.Body, closeFn: done}, trailer: resp.Trailer}, nil
-
-		case http.StatusNotFound:
-			var payload protocol.NotFoundPayload
-			if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-				resp.Body.Close()
-				return nil, err
-			}
-			resp.Body.Close()
-			return nil, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
-
-		default:
-			resp.Body.Close()
-			return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
-		}
+	client, err := c.execer.ClientForRepo(ctx, repoName)
+	if err != nil {
+		return nil, err
 	}
+
+	req := &proto.ExecRequest{
+		Repo:      string(repoName),
+		Args:      stringsToByteSlices(c.args[1:]),
+		Stdin:     c.stdin,
+		NoTimeout: c.noTimeout,
+
+		// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string.
+		EnsureRevision: []byte(c.EnsureRevision()),
+	}
+
+	stream, err := client.Exec(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	r := streamio.NewReader(func() ([]byte, error) {
+		msg, err := stream.Recv()
+		if status.Code(err) == codes.Canceled {
+			return nil, context.Canceled
+		} else if err != nil {
+			return nil, err
+		}
+		return msg.GetData(), nil
+	})
+
+	return &readCloseWrapper{r: r, closeFn: done}, nil
 }
 
 type readCloseWrapper struct {
@@ -924,7 +808,7 @@ func isRevisionNotFound(err string) bool {
 	return strings.Contains(loweredErr, "not a valid object")
 }
 
-func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
+func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (_ bool, err error) {
 	ctx, _, endObservation := c.operations.search.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
@@ -938,76 +822,32 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 
 	repoName := protocol.NormalizeRepo(args.Repo)
 
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, repoName)
-		if err != nil {
-			return false, err
-		}
-
-		cs, err := client.Search(ctx, args.ToProto())
-		if err != nil {
-			return false, convertGitserverError(err)
-		}
-
-		limitHit := false
-		for {
-			msg, err := cs.Recv()
-			if err != nil {
-				return limitHit, convertGitserverError(err)
-			}
-
-			switch m := msg.Message.(type) {
-			case *proto.SearchResponse_LimitHit:
-				limitHit = limitHit || m.LimitHit
-			case *proto.SearchResponse_Match:
-				onMatches([]protocol.CommitMatch{protocol.CommitMatchFromProto(m.Match)})
-			default:
-				return false, errors.Newf("unknown message type %T", m)
-			}
-		}
-	}
-
-	addrForRepo := c.AddrForRepo(ctx, repoName)
-
-	protocol.RegisterGob()
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(args); err != nil {
-		return false, err
-	}
-
-	uri := "http://" + addrForRepo + "/search"
-	resp, err := c.do(ctx, repoName, uri, buf.Bytes())
+	client, err := c.ClientForRepo(ctx, repoName)
 	if err != nil {
 		return false, err
 	}
-	defer resp.Body.Close()
 
-	var (
-		decodeErr error
-		eventDone protocol.SearchEventDone
-	)
-	dec := StreamSearchDecoder{
-		OnMatches: func(e protocol.SearchEventMatches) {
-			onMatches(e)
-		},
-		OnDone: func(e protocol.SearchEventDone) {
-			eventDone = e
-		},
-		OnUnknown: func(event, _ []byte) {
-			decodeErr = errors.Errorf("unknown event %s", event)
-		},
+	cs, err := client.Search(ctx, args.ToProto())
+	if err != nil {
+		return false, convertGitserverError(err)
 	}
 
-	if err := dec.ReadAll(resp.Body); err != nil {
-		return false, err
-	}
+	limitHit := false
+	for {
+		msg, err := cs.Recv()
+		if err != nil {
+			return limitHit, convertGitserverError(err)
+		}
 
-	if decodeErr != nil {
-		return false, decodeErr
+		switch m := msg.Message.(type) {
+		case *proto.SearchResponse_LimitHit:
+			limitHit = limitHit || m.LimitHit
+		case *proto.SearchResponse_Match:
+			onMatches([]protocol.CommitMatch{protocol.CommitMatchFromProto(m.Match)})
+		default:
+			return false, errors.Newf("unknown message type %T", m)
+		}
 	}
-
-	return eventDone.LimitHit, eventDone.Err()
 }
 
 func convertGitserverError(err error) error {
@@ -1088,42 +928,18 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 
 		var response protocol.BatchLogResponse
 
-		if conf.IsGRPCEnabled(ctx) {
-			client, err := grpcClient.client, grpcClient.dialErr
-			if err != nil {
-				return err
-			}
-
-			resp, err := client.BatchLog(ctx, request.ToProto())
-			if err != nil {
-				return err
-			}
-
-			response.FromProto(resp)
-			logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
-		} else {
-			var buf bytes.Buffer
-			if err := json.NewEncoder(&buf).Encode(request); err != nil {
-				return err
-			}
-
-			uri := "http://" + addr + "/batch-log"
-			resp, err := c.do(ctx, api.RepoName(strings.Join(repoNames, ",")), uri, buf.Bytes())
-			if err != nil {
-				return err
-			}
-			defer resp.Body.Close()
-			logger.AddEvent("POST", attribute.Int("resp.StatusCode", resp.StatusCode))
-
-			if resp.StatusCode != http.StatusOK {
-				return errors.Newf("http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200)))
-			}
-
-			if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-				return err
-			}
-			logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
+		client, err := grpcClient.client, grpcClient.dialErr
+		if err != nil {
+			return err
 		}
+
+		resp, err := client.BatchLog(ctx, request.ToProto())
+		if err != nil {
+			return err
+		}
+
+		response.FromProto(resp)
+		logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
 
 		for _, result := range response.Results {
 			var err error
@@ -1255,40 +1071,20 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 		Since: since,
 	}
 
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
-
-		resp, err := client.RepoUpdate(ctx, req.ToProto())
-		if err != nil {
-			return nil, err
-		}
-
-		var info protocol.RepoUpdateResponse
-		info.FromProto(resp)
-
-		return &info, nil
-
-	} else {
-		resp, err := c.httpPost(ctx, repo, "repo-update", req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			return nil, &url.Error{
-				URL: resp.Request.URL.String(),
-				Op:  "RepoUpdate",
-				Err: errors.Errorf("RepoUpdate: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
-			}
-		}
-
-		var info protocol.RepoUpdateResponse
-		err = json.NewDecoder(resp.Body).Decode(&info)
-		return &info, err
+	client, err := c.ClientForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
 	}
+
+	resp, err := client.RepoUpdate(ctx, req.ToProto())
+	if err != nil {
+		return nil, err
+	}
+
+	var info protocol.RepoUpdateResponse
+	info.FromProto(resp)
+
+	return &info, nil
 }
 
 // RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
@@ -1301,47 +1097,23 @@ func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoN
 	})
 	defer endObservation(1, observation.Args{})
 
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
-
-		req := proto.RepoCloneRequest{
-			Repo: string(repo),
-		}
-
-		resp, err := client.RepoClone(ctx, &req)
-		if err != nil {
-			return nil, err
-		}
-
-		var info protocol.RepoCloneResponse
-		info.FromProto(resp)
-		return &info, nil
-
-	} else {
-
-		req := &protocol.RepoCloneRequest{
-			Repo: repo,
-		}
-		resp, err := c.httpPost(ctx, repo, "repo-clone", req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			return nil, &url.Error{
-				URL: resp.Request.URL.String(),
-				Op:  "RepoInfo",
-				Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
-			}
-		}
-
-		var info *protocol.RepoCloneResponse
-		err = json.NewDecoder(resp.Body).Decode(&info)
-		return info, err
+	client, err := c.ClientForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
 	}
+
+	req := proto.RepoCloneRequest{
+		Repo: string(repo),
+	}
+
+	resp, err := client.RepoClone(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	var info protocol.RepoCloneResponse
+	info.FromProto(resp)
+	return &info, nil
 }
 
 // MockIsRepoCloneable mocks (*Client).IsRepoCloneable for tests.
@@ -1362,39 +1134,21 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 
 	var resp protocol.IsRepoCloneableResponse
 
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, repo)
-		if err != nil {
-			return err
-		}
-
-		req := &proto.IsRepoCloneableRequest{
-			Repo: string(repo),
-		}
-
-		r, err := client.IsRepoCloneable(ctx, req)
-		if err != nil {
-			return err
-		}
-
-		resp.FromProto(r)
-	} else {
-		req := &protocol.IsRepoCloneableRequest{
-			Repo: repo,
-		}
-		r, err := c.httpPost(ctx, repo, "is-repo-cloneable", req)
-		if err != nil {
-			return err
-		}
-		defer r.Body.Close()
-		if r.StatusCode != http.StatusOK {
-			return errors.Errorf("gitserver error (status code %d): %s", r.StatusCode, readResponseBody(r.Body))
-		}
-
-		if err := json.NewDecoder(r.Body).Decode(&resp); err != nil {
-			return err
-		}
+	client, err := c.ClientForRepo(ctx, repo)
+	if err != nil {
+		return err
 	}
+
+	req := &proto.IsRepoCloneableRequest{
+		Repo: string(repo),
+	}
+
+	r, err := client.IsRepoCloneable(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	resp.FromProto(r)
 
 	if resp.Cloneable {
 		return nil
@@ -1446,122 +1200,52 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 
 	numPossibleShards := len(c.Addrs())
 
-	if conf.IsGRPCEnabled(ctx) {
-		shards := make(map[proto.GitserverServiceClient]*proto.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
-		for _, r := range repos {
-			client, err := c.ClientForRepo(ctx, r)
-			if err != nil {
-				return nil, err
-			}
-
-			shard := shards[client]
-			if shard == nil {
-				shard = new(proto.RepoCloneProgressRequest)
-				shards[client] = shard
-			}
-
-			shard.Repos = append(shard.Repos, string(r))
-		}
-
-		p := pool.NewWithResults[*proto.RepoCloneProgressResponse]().WithContext(ctx)
-
-		for client, req := range shards {
-			client := client
-			req := req
-			p.Go(func(ctx context.Context) (*proto.RepoCloneProgressResponse, error) {
-				return client.RepoCloneProgress(ctx, req)
-
-			})
-		}
-
-		res, err := p.Wait()
+	shards := make(map[proto.GitserverServiceClient]*proto.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
+	for _, r := range repos {
+		client, err := c.ClientForRepo(ctx, r)
 		if err != nil {
 			return nil, err
 		}
 
-		result := &protocol.RepoCloneProgressResponse{
-			Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
-		}
-		for _, r := range res {
-
-			for repo, info := range r.Results {
-				var rp protocol.RepoCloneProgress
-				rp.FromProto(info)
-				result.Results[api.RepoName(repo)] = &rp
-			}
-
+		shard := shards[client]
+		if shard == nil {
+			shard = new(proto.RepoCloneProgressRequest)
+			shards[client] = shard
 		}
 
-		return result, nil
-
-	} else {
-
-		shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
-
-		for _, r := range repos {
-			addr := c.AddrForRepo(ctx, r)
-			shard := shards[addr]
-
-			if shard == nil {
-				shard = new(protocol.RepoCloneProgressRequest)
-				shards[addr] = shard
-			}
-
-			shard.Repos = append(shard.Repos, r)
-		}
-
-		type op struct {
-			req *protocol.RepoCloneProgressRequest
-			res *protocol.RepoCloneProgressResponse
-			err error
-		}
-
-		ch := make(chan op, len(shards))
-		for _, req := range shards {
-			go func(o op) {
-				var resp *http.Response
-				resp, o.err = c.httpPost(ctx, o.req.Repos[0], "repo-clone-progress", o.req)
-				if o.err != nil {
-					ch <- o
-					return
-				}
-
-				defer resp.Body.Close()
-				if resp.StatusCode != http.StatusOK {
-					o.err = &url.Error{
-						URL: resp.Request.URL.String(),
-						Op:  "RepoCloneProgress",
-						Err: errors.Errorf("RepoCloneProgress: http status %d", resp.StatusCode),
-					}
-					ch <- o
-					return // we never get an error status code AND result
-				}
-
-				o.res = new(protocol.RepoCloneProgressResponse)
-				o.err = json.NewDecoder(resp.Body).Decode(o.res)
-				ch <- o
-			}(op{req: req})
-		}
-
-		var err error
-		res := protocol.RepoCloneProgressResponse{
-			Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
-		}
-
-		for i := 0; i < cap(ch); i++ {
-			o := <-ch
-
-			if o.err != nil {
-				err = errors.Append(err, o.err)
-				continue
-			}
-
-			for repo, info := range o.res.Results {
-				res.Results[repo] = info
-			}
-		}
-		return &res, err
+		shard.Repos = append(shard.Repos, string(r))
 	}
+
+	p := pool.NewWithResults[*proto.RepoCloneProgressResponse]().WithContext(ctx)
+
+	for client, req := range shards {
+		client := client
+		req := req
+		p.Go(func(ctx context.Context) (*proto.RepoCloneProgressResponse, error) {
+			return client.RepoCloneProgress(ctx, req)
+
+		})
+	}
+
+	res, err := p.Wait()
+	if err != nil {
+		return nil, err
+	}
+
+	result := &protocol.RepoCloneProgressResponse{
+		Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
+	}
+	for _, r := range res {
+
+		for repo, info := range r.Results {
+			var rp protocol.RepoCloneProgress
+			rp.FromProto(info)
+			result.Results[api.RepoName(repo)] = &rp
+		}
+
+	}
+
+	return result, nil
 }
 
 func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) (err error) {
@@ -1577,44 +1261,14 @@ func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) (err 
 	// the old name in order to land on the correct gitserver instance
 	undeletedName := api.UndeletedRepoName(repo)
 
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, undeletedName)
-		if err != nil {
-			return err
-		}
-		_, err = client.RepoDelete(ctx, &proto.RepoDeleteRequest{
-			Repo: string(repo),
-		})
+	client, err := c.ClientForRepo(ctx, undeletedName)
+	if err != nil {
 		return err
 	}
-
-	addr := c.AddrForRepo(ctx, undeletedName)
-	return c.removeFrom(ctx, undeletedName, addr)
-}
-
-func (c *clientImplementor) removeFrom(ctx context.Context, repo api.RepoName, from string) error {
-	b, err := json.Marshal(&protocol.RepoDeleteRequest{
-		Repo: repo,
+	_, err = client.RepoDelete(ctx, &proto.RepoDeleteRequest{
+		Repo: string(repo),
 	})
-	if err != nil {
-		return err
-	}
-
-	uri := "http://" + from + "/delete"
-	resp, err := c.do(ctx, repo, uri, b)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "RepoRemove",
-			Err: errors.Errorf("RepoRemove: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
-		}
-	}
-	return nil
+	return err
 }
 
 func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, conn protocol.PerforceConnectionDetails, depotPath string) (err error) {
@@ -1623,53 +1277,23 @@ func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, conn pr
 	})
 	defer endObservation(1, observation.Args{})
 
-	if conf.IsGRPCEnabled(ctx) {
-		// depotPath is not actually a repo name, but it will spread the load of isPerforcePathCloneable
-		// a bit over the different gitserver instances. It's really just used as a consistent hashing
-		// key here.
-		client, err := c.ClientForRepo(ctx, api.RepoName(depotPath))
-		if err != nil {
-			return err
-		}
-		_, err = client.IsPerforcePathCloneable(ctx, &proto.IsPerforcePathCloneableRequest{
-			ConnectionDetails: conn.ToProto(),
-			DepotPath:         depotPath,
-		})
-		if err != nil {
-			// Unwrap proto errors for nicer error messages.
-			if s, ok := status.FromError(err); ok {
-				return errors.New(s.Message())
-			}
-			return err
-		}
-
-		return nil
+	// depotPath is not actually a repo name, but it will spread the load of isPerforcePathCloneable
+	// a bit over the different gitserver instances. It's really just used as a consistent hashing
+	// key here.
+	client, err := c.ClientForRepo(ctx, api.RepoName(depotPath))
+	if err != nil {
+		return err
 	}
-
-	addr := c.AddrForRepo(ctx, api.RepoName(depotPath))
-	b, err := json.Marshal(&protocol.IsPerforcePathCloneableRequest{
-		P4Port:    conn.P4Port,
-		P4User:    conn.P4User,
-		P4Passwd:  conn.P4Passwd,
-		DepotPath: depotPath,
+	_, err = client.IsPerforcePathCloneable(ctx, &proto.IsPerforcePathCloneableRequest{
+		ConnectionDetails: conn.ToProto(),
+		DepotPath:         depotPath,
 	})
 	if err != nil {
-		return err
-	}
-
-	uri := "http://" + addr + "/is-perforce-path-cloneable"
-	resp, err := c.do(ctx, "is-perforce-path-cloneable", uri, b)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "IsPerforcePathCloneable",
-			Err: errors.Errorf("IsPerforcePathCloneable: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		// Unwrap proto errors for nicer error messages.
+		if s, ok := status.FromError(err); ok {
+			return errors.New(s.Message())
 		}
+		return err
 	}
 
 	return nil
@@ -1681,51 +1305,22 @@ func (c *clientImplementor) CheckPerforceCredentials(ctx context.Context, conn p
 	})
 	defer endObservation(1, observation.Args{})
 
-	if conf.IsGRPCEnabled(ctx) {
-		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
-		// a bit over the different gitserver instances. It's really just used as a consistent hashing
-		// key here.
-		client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
-		if err != nil {
-			return err
-		}
-		_, err = client.CheckPerforceCredentials(ctx, &proto.CheckPerforceCredentialsRequest{
-			ConnectionDetails: conn.ToProto(),
-		})
-		if err != nil {
-			// Unwrap proto errors for nicer error messages.
-			if s, ok := status.FromError(err); ok {
-				return errors.New(s.Message())
-			}
-			return err
-		}
-
-		return nil
+	// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
+	// a bit over the different gitserver instances. It's really just used as a consistent hashing
+	// key here.
+	client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+	if err != nil {
+		return err
 	}
-
-	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
-	b, err := json.Marshal(&protocol.CheckPerforceCredentialsRequest{
-		P4Port:   conn.P4Port,
-		P4User:   conn.P4User,
-		P4Passwd: conn.P4Passwd,
+	_, err = client.CheckPerforceCredentials(ctx, &proto.CheckPerforceCredentialsRequest{
+		ConnectionDetails: conn.ToProto(),
 	})
 	if err != nil {
-		return err
-	}
-
-	uri := "http://" + addr + "/check-perforce-credentials"
-	resp, err := c.do(ctx, "check-perforce-credentials", uri, b)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "CheckPerforceCredentials",
-			Err: errors.Errorf("CheckPerforceCredentials: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		// Unwrap proto errors for nicer error messages.
+		if s, ok := status.FromError(err); ok {
+			return errors.New(s.Message())
 		}
+		return err
 	}
 
 	return nil
@@ -1737,66 +1332,24 @@ func (c *clientImplementor) PerforceUsers(ctx context.Context, conn protocol.Per
 	})
 	defer endObservation(1, observation.Args{})
 
-	if conf.IsGRPCEnabled(ctx) {
-		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
-		// a bit over the different gitserver instances. It's really just used as a consistent hashing
-		// key here.
-		client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
-		if err != nil {
-			return nil, err
-		}
-		resp, err := client.PerforceUsers(ctx, &proto.PerforceUsersRequest{
-			ConnectionDetails: conn.ToProto(),
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		users := make([]*perforce.User, len(resp.GetUsers()))
-		for i, u := range resp.GetUsers() {
-			users[i] = perforce.UserFromProto(u)
-		}
-		return users, nil
+	// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
+	// a bit over the different gitserver instances. It's really just used as a consistent hashing
+	// key here.
+	client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+	if err != nil {
+		return nil, err
 	}
-
-	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
-	b, err := json.Marshal(&protocol.PerforceUsersRequest{
-		P4Port:   conn.P4Port,
-		P4User:   conn.P4User,
-		P4Passwd: conn.P4Passwd,
+	resp, err := client.PerforceUsers(ctx, &proto.PerforceUsersRequest{
+		ConnectionDetails: conn.ToProto(),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	uri := "http://" + addr + "/perforce-users"
-	resp, err := c.do(ctx, "perforce-users", uri, b)
-	if err != nil {
-		return nil, err
+	users := make([]*perforce.User, len(resp.GetUsers()))
+	for i, u := range resp.GetUsers() {
+		users[i] = perforce.UserFromProto(u)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "PerforceUsers",
-			Err: errors.Errorf("PerforceUsers: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
-		}
-	}
-
-	var payload protocol.PerforceUsersResponse
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-		return nil, err
-	}
-
-	users := make([]*perforce.User, len(payload.Users))
-	for i, u := range payload.Users {
-		users[i] = &perforce.User{
-			Username: u.Username,
-			Email:    u.Email,
-		}
-	}
-
 	return users, nil
 }
 
@@ -1809,72 +1362,25 @@ func (c *clientImplementor) PerforceProtectsForUser(ctx context.Context, conn pr
 	})
 	defer endObservation(1, observation.Args{})
 
-	if conf.IsGRPCEnabled(ctx) {
-		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
-		// a bit over the different gitserver instances. It's really just used as a consistent hashing
-		// key here.
-		client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
-		if err != nil {
-			return nil, err
-		}
-		resp, err := client.PerforceProtectsForUser(ctx, &proto.PerforceProtectsForUserRequest{
-			ConnectionDetails: conn.ToProto(),
-			Username:          username,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		protects := make([]*perforce.Protect, len(resp.GetProtects()))
-		for i, p := range resp.GetProtects() {
-			protects[i] = perforce.ProtectFromProto(p)
-		}
-		return protects, nil
+	// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
+	// a bit over the different gitserver instances. It's really just used as a consistent hashing
+	// key here.
+	client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+	if err != nil {
+		return nil, err
 	}
-
-	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
-	b, err := json.Marshal(&protocol.PerforceProtectsForUserRequest{
-		P4Port:   conn.P4Port,
-		P4User:   conn.P4User,
-		P4Passwd: conn.P4Passwd,
-		Username: username,
+	resp, err := client.PerforceProtectsForUser(ctx, &proto.PerforceProtectsForUserRequest{
+		ConnectionDetails: conn.ToProto(),
+		Username:          username,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	uri := "http://" + addr + "/perforce-protects-for-user"
-	resp, err := c.do(ctx, "perforce-protects-for-user", uri, b)
-	if err != nil {
-		return nil, err
+	protects := make([]*perforce.Protect, len(resp.GetProtects()))
+	for i, p := range resp.GetProtects() {
+		protects[i] = perforce.ProtectFromProto(p)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "PerforceProtectsForUser",
-			Err: errors.Errorf("PerforceProtectsForUser: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
-		}
-	}
-
-	var payload protocol.PerforceProtectsForUserResponse
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-		return nil, err
-	}
-
-	protects := make([]*perforce.Protect, len(payload.Protects))
-	for i, p := range payload.Protects {
-		protects[i] = &perforce.Protect{
-			Level:       p.Level,
-			EntityType:  p.EntityType,
-			EntityName:  p.EntityName,
-			Match:       p.Match,
-			IsExclusion: p.IsExclusion,
-			Host:        p.Host,
-		}
-	}
-
 	return protects, nil
 }
 
@@ -1887,72 +1393,25 @@ func (c *clientImplementor) PerforceProtectsForDepot(ctx context.Context, conn p
 	})
 	defer endObservation(1, observation.Args{})
 
-	if conf.IsGRPCEnabled(ctx) {
-		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
-		// a bit over the different gitserver instances. It's really just used as a consistent hashing
-		// key here.
-		client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
-		if err != nil {
-			return nil, err
-		}
-		resp, err := client.PerforceProtectsForDepot(ctx, &proto.PerforceProtectsForDepotRequest{
-			ConnectionDetails: conn.ToProto(),
-			Depot:             depot,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		protects := make([]*perforce.Protect, len(resp.GetProtects()))
-		for i, p := range resp.GetProtects() {
-			protects[i] = perforce.ProtectFromProto(p)
-		}
-		return protects, nil
+	// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
+	// a bit over the different gitserver instances. It's really just used as a consistent hashing
+	// key here.
+	client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+	if err != nil {
+		return nil, err
 	}
-
-	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
-	b, err := json.Marshal(&protocol.PerforceProtectsForDepotRequest{
-		P4Port:   conn.P4Port,
-		P4User:   conn.P4User,
-		P4Passwd: conn.P4Passwd,
-		Depot:    depot,
+	resp, err := client.PerforceProtectsForDepot(ctx, &proto.PerforceProtectsForDepotRequest{
+		ConnectionDetails: conn.ToProto(),
+		Depot:             depot,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	uri := "http://" + addr + "/perforce-protects-for-depot"
-	resp, err := c.do(ctx, "perforce-protects-for-depot", uri, b)
-	if err != nil {
-		return nil, err
+	protects := make([]*perforce.Protect, len(resp.GetProtects()))
+	for i, p := range resp.GetProtects() {
+		protects[i] = perforce.ProtectFromProto(p)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "PerforceProtectsForDepot",
-			Err: errors.Errorf("PerforceProtectsForDepot: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
-		}
-	}
-
-	var payload protocol.PerforceProtectsForDepotResponse
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-		return nil, err
-	}
-
-	protects := make([]*perforce.Protect, len(payload.Protects))
-	for i, p := range payload.Protects {
-		protects[i] = &perforce.Protect{
-			Level:       p.Level,
-			EntityType:  p.EntityType,
-			EntityName:  p.EntityName,
-			Match:       p.Match,
-			IsExclusion: p.IsExclusion,
-			Host:        p.Host,
-		}
-	}
-
 	return protects, nil
 }
 
@@ -1965,57 +1424,22 @@ func (c *clientImplementor) PerforceGroupMembers(ctx context.Context, conn proto
 	})
 	defer endObservation(1, observation.Args{})
 
-	if conf.IsGRPCEnabled(ctx) {
-		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
-		// a bit over the different gitserver instances. It's really just used as a consistent hashing
-		// key here.
-		client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
-		if err != nil {
-			return nil, err
-		}
-		resp, err := client.PerforceGroupMembers(ctx, &proto.PerforceGroupMembersRequest{
-			ConnectionDetails: conn.ToProto(),
-			Group:             group,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		return resp.GetUsernames(), nil
+	// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
+	// a bit over the different gitserver instances. It's really just used as a consistent hashing
+	// key here.
+	client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+	if err != nil {
+		return nil, err
 	}
-
-	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
-	b, err := json.Marshal(&protocol.PerforceGroupMembersRequest{
-		P4Port:   conn.P4Port,
-		P4User:   conn.P4User,
-		P4Passwd: conn.P4Passwd,
-		Group:    group,
+	resp, err := client.PerforceGroupMembers(ctx, &proto.PerforceGroupMembersRequest{
+		ConnectionDetails: conn.ToProto(),
+		Group:             group,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	uri := "http://" + addr + "/perforce-group-members"
-	resp, err := c.do(ctx, "perforce-group-members", uri, b)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "PerforceGroupMembers",
-			Err: errors.Errorf("PerforceGroupMembers: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
-		}
-	}
-
-	var payload protocol.PerforceGroupMembersResponse
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-		return nil, err
-	}
-
-	return payload.Usernames, nil
+	return resp.GetUsernames(), nil
 }
 
 func (c *clientImplementor) IsPerforceSuperUser(ctx context.Context, conn protocol.PerforceConnectionDetails) (err error) {
@@ -2024,46 +1448,17 @@ func (c *clientImplementor) IsPerforceSuperUser(ctx context.Context, conn protoc
 	})
 	defer endObservation(1, observation.Args{})
 
-	if conf.IsGRPCEnabled(ctx) {
-		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
-		// a bit over the different gitserver instances. It's really just used as a consistent hashing
-		// key here.
-		client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
-		if err != nil {
-			return err
-		}
-		_, err = client.IsPerforceSuperUser(ctx, &proto.IsPerforceSuperUserRequest{
-			ConnectionDetails: conn.ToProto(),
-		})
+	// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
+	// a bit over the different gitserver instances. It's really just used as a consistent hashing
+	// key here.
+	client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+	if err != nil {
 		return err
 	}
-
-	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
-	b, err := json.Marshal(&protocol.IsPerforceSuperUserRequest{
-		P4Port:   conn.P4Port,
-		P4User:   conn.P4User,
-		P4Passwd: conn.P4Passwd,
+	_, err = client.IsPerforceSuperUser(ctx, &proto.IsPerforceSuperUserRequest{
+		ConnectionDetails: conn.ToProto(),
 	})
-	if err != nil {
-		return err
-	}
-
-	uri := "http://" + addr + "/is-perforce-super-user"
-	resp, err := c.do(ctx, "is-perforce-super-user", uri, b)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "IsPerforceSuperUser",
-			Err: errors.Errorf("IsPerforceSuperUser: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
-		}
-	}
-
-	return nil
+	return err
 }
 
 func (c *clientImplementor) PerforceGetChangelist(ctx context.Context, conn protocol.PerforceConnectionDetails, changelist string) (_ *perforce.Changelist, err error) {
@@ -2075,120 +1470,22 @@ func (c *clientImplementor) PerforceGetChangelist(ctx context.Context, conn prot
 	})
 	defer endObservation(1, observation.Args{})
 
-	if conf.IsGRPCEnabled(ctx) {
-		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
-		// a bit over the different gitserver instances. It's really just used as a consistent hashing
-		// key here.
-		client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
-		if err != nil {
-			return nil, err
-		}
-		resp, err := client.PerforceGetChangelist(ctx, &proto.PerforceGetChangelistRequest{
-			ConnectionDetails: conn.ToProto(),
-			ChangelistId:      changelist,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		return perforce.ChangelistFromProto(resp.GetChangelist()), nil
+	// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
+	// a bit over the different gitserver instances. It's really just used as a consistent hashing
+	// key here.
+	client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+	if err != nil {
+		return nil, err
 	}
-
-	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
-	b, err := json.Marshal(&protocol.PerforceGetChangelistRequest{
-		P4Port:       conn.P4Port,
-		P4User:       conn.P4User,
-		P4Passwd:     conn.P4Passwd,
-		ChangelistID: changelist,
+	resp, err := client.PerforceGetChangelist(ctx, &proto.PerforceGetChangelistRequest{
+		ConnectionDetails: conn.ToProto(),
+		ChangelistId:      changelist,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	uri := "http://" + addr + "/perforce-get-changelist"
-	resp, err := c.do(ctx, "perforce-get-changelist", uri, b)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "PerforceGetChangelist",
-			Err: errors.Errorf("PerforceGetChangelist: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
-		}
-	}
-
-	var payload protocol.PerforceGetChangelistResponse
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-		return nil, err
-	}
-
-	cl := &perforce.Changelist{
-		ID:           payload.Changelist.ID,
-		CreationDate: payload.Changelist.CreationDate,
-		State:        perforce.ChangelistState(payload.Changelist.State),
-		Author:       payload.Changelist.Author,
-		Title:        payload.Changelist.Title,
-		Message:      payload.Changelist.Message,
-	}
-
-	return cl, nil
-}
-
-// httpPost will apply the MD5 hashing scheme on the repo name to determine the gitserver instance
-// to which the HTTP POST request is sent.
-func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error) {
-	b, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-
-	addrForRepo := c.AddrForRepo(ctx, repo)
-	uri := "http://" + addrForRepo + "/" + op
-	return c.do(ctx, repo, uri, b)
-}
-
-// do performs a request to a gitserver instance based on the address in the uri
-// argument.
-//
-// repoForTracing parameter is optional. If it is provided, then "repo" attribute is added
-// to trace span.
-func (c *clientImplementor) do(ctx context.Context, repoForTracing api.RepoName, uri string, payload []byte) (resp *http.Response, err error) {
-	method := http.MethodPost
-	parsedURL, err := url.ParseRequestURI(uri)
-	if err != nil {
-		return nil, errors.Wrap(err, "do")
-	}
-
-	ctx, trLogger, endObservation := c.operations.do.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repoForTracing.Attr(),
-			attribute.String("method", method),
-			attribute.String("path", parsedURL.Path),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	req, err := http.NewRequestWithContext(ctx, method, uri, bytes.NewReader(payload))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", c.userAgent)
-
-	// Set header so that the server knows the request is from us.
-	req.Header.Set("X-Requested-With", "Sourcegraph")
-
-	c.HTTPLimiter.Acquire()
-	defer c.HTTPLimiter.Release()
-
-	trLogger.AddEvent("Acquired HTTP limiter")
-
-	return c.httpClient.Do(req)
+	return perforce.ChangelistFromProto(resp.GetChangelist()), nil
 }
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (_ *protocol.CreateCommitFromPatchResponse, err error) {
@@ -2200,59 +1497,15 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 	})
 	defer endObservation(1, observation.Args{})
 
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, req.Repo)
-		if err != nil {
-			return nil, err
-		}
+	client, err := c.ClientForRepo(ctx, req.Repo)
+	if err != nil {
+		return nil, err
+	}
 
-		cc, err := client.CreateCommitFromPatchBinary(ctx)
-		if err != nil {
-			st, ok := status.FromError(err)
-			if ok {
-				for _, detail := range st.Details() {
-					switch dt := detail.(type) {
-					case *proto.CreateCommitFromPatchError:
-						var e protocol.CreateCommitFromPatchError
-						e.FromProto(dt)
-						return nil, &e
-					}
-				}
-			}
-			return nil, err
-		}
-
-		// Send the metadata event first.
-		if err := cc.Send(&proto.CreateCommitFromPatchBinaryRequest{Payload: &proto.CreateCommitFromPatchBinaryRequest_Metadata_{
-			Metadata: req.ToMetadataProto(),
-		}}); err != nil {
-			return nil, errors.Wrap(err, "sending metadata")
-		}
-
-		// Then create a writer that sends data in chunks that won't exceed the maximum
-		// message size of gRPC of the patch in separate events.
-		w := streamio.NewWriter(func(p []byte) error {
-			req := &proto.CreateCommitFromPatchBinaryRequest{
-				Payload: &proto.CreateCommitFromPatchBinaryRequest_Patch_{
-					Patch: &proto.CreateCommitFromPatchBinaryRequest_Patch{
-						Data: p,
-					},
-				},
-			}
-			return cc.Send(req)
-		})
-
-		if _, err := w.Write(req.Patch); err != nil {
-			return nil, errors.Wrap(err, "writing chunk of patch")
-		}
-
-		resp, err := cc.CloseAndRecv()
-		if err != nil {
-			st, ok := status.FromError(err)
-			if !ok {
-				return nil, err
-			}
-
+	cc, err := client.CreateCommitFromPatchBinary(ctx)
+	if err != nil {
+		st, ok := status.FromError(err)
+		if ok {
 			for _, detail := range st.Details() {
 				switch dt := detail.(type) {
 				case *proto.CreateCommitFromPatchError:
@@ -2261,39 +1514,56 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 					return nil, &e
 				}
 			}
+		}
+		return nil, err
+	}
 
+	// Send the metadata event first.
+	if err := cc.Send(&proto.CreateCommitFromPatchBinaryRequest{Payload: &proto.CreateCommitFromPatchBinaryRequest_Metadata_{
+		Metadata: req.ToMetadataProto(),
+	}}); err != nil {
+		return nil, errors.Wrap(err, "sending metadata")
+	}
+
+	// Then create a writer that sends data in chunks that won't exceed the maximum
+	// message size of gRPC of the patch in separate events.
+	w := streamio.NewWriter(func(p []byte) error {
+		req := &proto.CreateCommitFromPatchBinaryRequest{
+			Payload: &proto.CreateCommitFromPatchBinaryRequest_Patch_{
+				Patch: &proto.CreateCommitFromPatchBinaryRequest_Patch{
+					Data: p,
+				},
+			},
+		}
+		return cc.Send(req)
+	})
+
+	if _, err := w.Write(req.Patch); err != nil {
+		return nil, errors.Wrap(err, "writing chunk of patch")
+	}
+
+	resp, err := cc.CloseAndRecv()
+	if err != nil {
+		st, ok := status.FromError(err)
+		if !ok {
 			return nil, err
 		}
 
-		var res protocol.CreateCommitFromPatchResponse
-		res.FromProto(resp, nil)
+		for _, detail := range st.Details() {
+			switch dt := detail.(type) {
+			case *proto.CreateCommitFromPatchError:
+				var e protocol.CreateCommitFromPatchError
+				e.FromProto(dt)
+				return nil, &e
+			}
+		}
 
-		return &res, nil
-	}
-
-	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
-	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read response body")
-	}
 	var res protocol.CreateCommitFromPatchResponse
-	if err := json.Unmarshal(body, &res); err != nil {
-		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
-		return nil, &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "CreateCommitFromPatch",
-			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
-		}
-	}
+	res.FromProto(resp, nil)
 
-	if res.Error != nil {
-		return &res, res.Error
-	}
 	return &res, nil
 }
 
@@ -2315,50 +1585,21 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 		Repo:       repo,
 		ObjectName: objectName,
 	}
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, req.Repo)
-		if err != nil {
-			return nil, err
-		}
-
-		grpcResp, err := client.GetObject(ctx, req.ToProto())
-		if err != nil {
-
-			return nil, err
-		}
-
-		var res protocol.GetObjectResponse
-		res.FromProto(grpcResp)
-
-		return &res.Object, nil
-
-	} else {
-		resp, err := c.httpPost(ctx, req.Repo, "commands/get-object", req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			c.logger.Warn("reading gitserver get-object response", sglog.Error(err))
-			return nil, &url.Error{
-				URL: resp.Request.URL.String(),
-				Op:  "GetObject",
-				Err: errors.Errorf("GetObject: http status %d, %s", resp.StatusCode, readResponseBody(resp.Body)),
-			}
-		}
-		var res protocol.GetObjectResponse
-		if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
-			c.logger.Warn("decoding gitserver get-object response", sglog.Error(err))
-			return nil, &url.Error{
-				URL: resp.Request.URL.String(),
-				Op:  "GetObject",
-				Err: errors.Errorf("GetObject: http status %d, failed to decode response body: %v", resp.StatusCode, err),
-			}
-		}
-
-		return &res.Object, nil
+	client, err := c.ClientForRepo(ctx, req.Repo)
+	if err != nil {
+		return nil, err
 	}
+
+	grpcResp, err := client.GetObject(ctx, req.ToProto())
+	if err != nil {
+
+		return nil, err
+	}
+
+	var res protocol.GetObjectResponse
+	res.FromProto(grpcResp)
+
+	return &res.Object, nil
 }
 
 var ambiguousArgPattern = lazyregexp.New(`ambiguous argument '([^']+)'`)

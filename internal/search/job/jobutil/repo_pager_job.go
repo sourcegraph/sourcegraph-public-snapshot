@@ -83,7 +83,7 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 
 	var maxAlerter search.MaxAlerter
 
-	repoResolver := repos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
+	repoResolver := repos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, clients.Zoekt)
 	it := repoResolver.Iterator(ctx, p.repoOpts)
 
 	for it.Next() {

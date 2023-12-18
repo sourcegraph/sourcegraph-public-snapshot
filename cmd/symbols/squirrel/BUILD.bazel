@@ -6,7 +6,6 @@ go_library(
     srcs = [
         "breadcrumbs.go",
         "hover.go",
-        "http_handlers.go",
         "lang_java.go",
         "lang_python.go",
         "lang_starlark.go",
@@ -28,7 +27,6 @@ go_library(
         "//lib/errors",
         "@com_github_fatih_color//:color",
         "@com_github_grafana_regexp//:regexp",
-        "@com_github_inconshreveable_log15//:log15",
         "@com_github_smacker_go_tree_sitter//:go-tree-sitter",
         "@com_github_smacker_go_tree_sitter//cpp",
         "@com_github_smacker_go_tree_sitter//csharp",
