@@ -484,6 +484,15 @@ func (r *RepositoryResolver) Metadata(ctx context.Context) ([]KeyValuePair, erro
 	return kvps, nil
 }
 
+func (r *RepositoryResolver) Topics(ctx context.Context) ([]string, error) {
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return repo.Topics, nil
+}
+
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	r.hydration.Do(func() {
 		// Repositories with an empty creation date were created using RepoName.ToRepo(),

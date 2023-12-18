@@ -7,7 +7,7 @@ import { capitalize, escapeRegExp } from 'lodash'
 import type { Observable } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 
-import { RepoMetadata } from '@sourcegraph/branded'
+import { metadataToTag, TagList, topicToTag } from '@sourcegraph/branded'
 import { encodeURIPathComponent, numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
@@ -212,8 +212,17 @@ const ExtraInfoSection: React.FC<{
 }> = ({ repo, className, hasWritePermissions }) => {
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
 
-    const metadataItems = useMemo(() => repo.metadata.map(({ key, value }) => ({ key, value })) || [], [repo.metadata])
     const queryState = useNavbarQueryState(state => state.queryState)
+
+    const metadataTags = useMemo(
+        () => repo.metadata.map(item => metadataToTag(item, queryState, true, buildSearchURLQueryFromQueryState)),
+        [repo.metadata, queryState]
+    )
+
+    const topicTags = useMemo(
+        () => repo.topics.map(topic => topicToTag(topic, queryState, true, buildSearchURLQueryFromQueryState)),
+        [repo.topics, queryState]
+    )
 
     return (
         <Card className={className}>
@@ -221,6 +230,13 @@ const ExtraInfoSection: React.FC<{
                 <ExtraInfoSectionItemHeader title="Description" tooltip="Synchronized from the code host" />
                 {repo.description && <Text>{repo.description}</Text>}
             </ExtraInfoSectionItem>
+            {/* Not all code hosts support the concept of "topics", hence we only show topics if we have them */}
+            {topicTags.length > 0 && (
+                <ExtraInfoSectionItem>
+                    <ExtraInfoSectionItemHeader title="Topics" tooltip={<>Topics synced from the code host</>} />
+                    <TagList tags={topicTags} />
+                </ExtraInfoSectionItem>
+            )}
             {enableRepositoryMetadata && (
                 <ExtraInfoSectionItem>
                     <ExtraInfoSectionItemHeader
@@ -251,16 +267,7 @@ const ExtraInfoSection: React.FC<{
                             </Tooltip>
                         )}
                     </ExtraInfoSectionItemHeader>
-                    {metadataItems.length ? (
-                        <RepoMetadata
-                            items={metadataItems}
-                            queryState={queryState}
-                            queryBuildOptions={{ omitRepoFilter: true }}
-                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-                        />
-                    ) : (
-                        <Text className="text-muted">None</Text>
-                    )}
+                    {metadataTags.length ? <TagList tags={metadataTags} /> : <Text className="text-muted">None</Text>}
                 </ExtraInfoSectionItem>
             )}
         </Card>

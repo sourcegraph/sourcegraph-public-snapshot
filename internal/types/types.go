@@ -5,11 +5,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"reflect"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 
 	"github.com/google/uuid"
 
@@ -83,6 +84,8 @@ type Repo struct {
 	Blocked *RepoBlock `json:",omitempty"`
 	// KeyValuePairs is the set of key-value pairs associated with the repo
 	KeyValuePairs map[string]*string `json:",omitempty"`
+	// Topics synced from GitHub or GitLab
+	Topics []string `json:",omitempty"`
 }
 
 func (r *Repo) IDName() RepoIDName {
@@ -132,6 +135,8 @@ type SearchedRepo struct {
 	LastFetched *time.Time
 	// A set of key-value pairs associated with the repo
 	KeyValuePairs map[string]*string
+	// Topics synced from GitHub or GitLab
+	Topics []string
 }
 
 // RepoBlock contains data about a repo that has been blocked. Blocked repos aren't returned by store methods by default.

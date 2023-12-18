@@ -57,6 +57,7 @@ export const repositoryFragment = gql`
             key
             value
         }
+        topics
     }
 `
 

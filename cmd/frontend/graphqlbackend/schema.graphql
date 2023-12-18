@@ -3990,6 +3990,11 @@ type Repository implements Node & GenericSearchResultInterface {
     metadata: [KeyValuePair!]!
 
     """
+    A list of GitHub or GitLab topics associated with the repo.
+    """
+    topics: [String!]!
+
+    """
     The size of repo when cloned on disk
     """
     diskSizeBytes: BigInt

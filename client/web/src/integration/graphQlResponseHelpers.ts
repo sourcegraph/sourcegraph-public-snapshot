@@ -104,6 +104,7 @@ export const createResolveRepoRevisionResult = (treeUrl: string, oid = '1'.repea
         changelist: null,
         isFork: false,
         metadata: [],
+        topics: [],
     },
 })
 
@@ -135,6 +136,7 @@ export const createResolveCloningRepoRevisionResult = (
         changelist: null,
         isFork: false,
         metadata: [],
+        topics: [],
     },
     errors: [
         {

@@ -12,10 +12,10 @@ import (
 	"net/url"
 	"os"
 	"reflect"
-	"strings"
 	"sync/atomic"
 	"testing"
 
+	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
@@ -212,11 +212,14 @@ func TestResolverTo(t *testing.T) {
 		&settingsSubjectResolver{},
 		&statusMessageResolver{db: db},
 	}
+
+	re := regexp.MustCompile("To[A-Z]")
+
 	for _, r := range resolvers {
 		typ := reflect.TypeOf(r)
 		t.Run(typ.Name(), func(t *testing.T) {
 			for i := 0; i < typ.NumMethod(); i++ {
-				if name := typ.Method(i).Name; strings.HasPrefix(name, "To") {
+				if name := typ.Method(i).Name; re.MatchString(name) {
 					reflect.ValueOf(r).MethodByName(name).Call(nil)
 				}
 			}

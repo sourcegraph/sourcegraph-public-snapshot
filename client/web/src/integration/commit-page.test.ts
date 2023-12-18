@@ -301,6 +301,7 @@ describe('RepositoryCommitPage', () => {
                 changelist: null,
                 isFork: false,
                 metadata: [],
+                topics: [],
             },
         }),
     }
