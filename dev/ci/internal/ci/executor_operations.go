@@ -16,8 +16,7 @@ func bazelBuildExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 		stepOpts := []bk.StepOpt{
 			bk.Agent("queue", "bazel"),
 			bk.Key(candidateImageStepKey("executor.vm-image")),
-			// bk.Env("VERSION", c.Version),
-			bk.Env("VERSION", "0.0.0+dev"),
+			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
@@ -41,8 +40,7 @@ func bazelPublishExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 		stepOpts := []bk.StepOpt{
 			bk.Agent("queue", "bazel"),
 			bk.DependsOn(candidateImageStepKey("executor.vm-image")),
-			// bk.Env("VERSION", c.Version),
-			bk.Env("VERSION", "0.0.0+dev"),
+			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
@@ -68,8 +66,7 @@ func bazelBuildExecutorDockerMirror(c Config) operations.Operation {
 		stepOpts := []bk.StepOpt{
 			bk.Agent("queue", "bazel"),
 			bk.Key(candidateImageStepKey("executor-docker-miror.vm-image")),
-			// bk.Env("VERSION", c.Version),
-			bk.Env("VERSION", "0.0.0+dev"),
+			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 			bk.Cmd(bazelStampedCmd("run //cmd/executor/docker-mirror:ami.build")),
@@ -85,8 +82,7 @@ func bazelPublishExecutorDockerMirror(c Config) operations.Operation {
 		stepOpts := []bk.StepOpt{
 			bk.Agent("queue", "bazel"),
 			bk.DependsOn(candidateBuildStep),
-			// bk.Env("VERSION", c.Version),
-			bk.Env("VERSION", "0.0.0+dev"),
+			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 			bk.Cmd(bazelStampedCmd("run //cmd/executor/docker-mirror:ami.push")),
@@ -99,8 +95,7 @@ func bazelPublishExecutorBinary(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
 			bk.Agent("queue", "bazel"),
-			// bk.Env("VERSION", c.Version),
-			bk.Env("VERSION", "0.0.0+dev"),
+			bk.Env("VERSION", c.Version),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 			bk.Cmd(bazelStampedCmd(`run //cmd/executor:binary.push`)),
 		}
