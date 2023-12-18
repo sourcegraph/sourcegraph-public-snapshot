@@ -37,17 +37,19 @@
     </svelte:fragment>
     <svelte:fragment slot="body">
         {#each result.symbols as symbol}
-            <div class="result">
-                <div class="symbol-icon--kind-{symbol.kind.toLowerCase()}">
-                    <Icon svgPath={getSymbolIconPath(symbol.kind)} inline />
+            <a href={symbol.url}>
+                <div class="result">
+                    <div class="symbol-icon--kind-{symbol.kind.toLowerCase()}">
+                        <Icon svgPath={getSymbolIconPath(symbol.kind)} inline />
+                    </div>
+                    <CodeExcerpt
+                        startLine={symbol.line - 1}
+                        endLine={symbol.line}
+                        fetchHighlightedFileRangeLines={fetchHighlightedSymbolMatchLineRanges}
+                        --background-color="transparent"
+                    />
                 </div>
-                <CodeExcerpt
-                    startLine={symbol.line - 1}
-                    endLine={symbol.line}
-                    fetchHighlightedFileRangeLines={fetchHighlightedSymbolMatchLineRanges}
-                    --background-color="transparent"
-                />
-            </div>
+            </a>
         {/each}
     </svelte:fragment>
 </SearchResult>
@@ -62,5 +64,9 @@
         background-color: var(--code-bg);
         padding: 0.25rem;
         border-bottom: 1px solid var(--border-color);
+    }
+
+    a {
+        text-decoration: none;
     }
 </style>

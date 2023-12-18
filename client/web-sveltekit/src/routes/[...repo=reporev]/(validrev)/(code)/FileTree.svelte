@@ -1,7 +1,7 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { mdiFileCodeOutline, mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
+    import { mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
     import { onMount } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
@@ -11,6 +11,7 @@
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
     import { createForwardStore } from '$lib/utils'
     import { replaceRevisionInURL } from '$lib/web'
+    import { getFileInfo } from '$lib/fileIcons'
 
     export let treeProvider: FileTreeProvider
     export let selectedPath: string
@@ -19,14 +20,11 @@
     /**
      * Returns the corresponding icon for `entry`
      */
-    function getIconPath(entry: TreeEntryFields, open: boolean) {
+    function getDirectoryIconPath(entry: TreeEntryFields, open: boolean) {
         if (entry === treeRoot) {
             return mdiFolderArrowUpOutline
         }
-        if (entry.isDirectory) {
-            return open ? mdiFolderOpenOutline : mdiFolderOutline
-        }
-        return mdiFileCodeOutline
+        return open ? mdiFolderOpenOutline : mdiFolderOutline
     }
 
     /**
@@ -125,7 +123,14 @@
                     tabindex={-1}
                     data-go-up={isRoot ? true : undefined}
                 >
-                    <Icon svgPath={getIconPath(entry, expanded)} inline />
+                    {#if entry.isDirectory}
+                        <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
+                    {:else}
+                        {@const {
+                            icon: { svgPath, color },
+                        } = getFileInfo(entry.name)}
+                        <Icon {svgPath} inline --color={color} />
+                    {/if}
                     {isRoot ? '..' : entry.name}
                 </a>
             {/if}
