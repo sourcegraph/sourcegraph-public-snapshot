@@ -10,11 +10,11 @@ jobs:
       - uses: docker://sourcegraph/tracking-issue:latest
         env:
           GITHUB_TOKEN: ${{ secrets.TRACKING_ISSUE_SYNCER_TOKEN_DEVX_BOT }}
-      - name: report failure to sentry
+      - name: Report failure to sentry
         if: ${{ failure() }}
         run: |
           npm i -g @sentry/cli
-          sentry-cli send-event -m "$GITHUB_WORKFLOW action failure - see run for exact failure" \
+          sentry-cli send-event -m "Job '$GITHUB_JOB' in the $GITHUB_WORKFLOW action has failed - see run for exact failure" \
             -t "github-action:$GITHUB_WORKFLOW" \
             -t "branch:$GITHUB_REF_NAME" \
             -t "repository:$GITHUB_REPOSITORY" \
