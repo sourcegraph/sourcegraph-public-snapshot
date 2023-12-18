@@ -1,6 +1,7 @@
 package actor
 
 import (
+	"context"
 	"encoding/json"
 	"sort"
 	"testing"
@@ -58,4 +59,49 @@ func TestActor_TraceAttributes(t *testing.T) {
 			tt.wantAttr.Equal(t, string(b))
 		})
 	}
+}
+
+type mockSource struct {
+	name codygateway.ActorSource
+}
+
+func (m mockSource) Name() string {
+	return string(m.name)
+}
+
+func (m mockSource) Get(_ context.Context, _ string) (*Actor, error) {
+	// TODO implement me
+	panic("implement me")
+}
+
+var _ Source = mockSource{}
+
+func TestIsDotComActor(t *testing.T) {
+	t.Run("true for dotcom subscription", func(t *testing.T) {
+		actor := &Actor{
+			ID:     "d3d2b638-d0a2-4539-a099-b36860b09819",
+			Source: mockSource{name: codygateway.ActorSourceProductSubscription},
+		}
+		require.True(t, actor.IsDotComActor())
+	})
+
+	t.Run("true for dotcom user", func(t *testing.T) {
+		actor := &Actor{
+			Source: mockSource{codygateway.ActorSourceDotcomUser},
+		}
+		require.True(t, actor.IsDotComActor())
+	})
+
+	t.Run("false for other subscription", func(t *testing.T) {
+		actor := &Actor{
+			ID:     "other-sub-id",
+			Source: mockSource{codygateway.ActorSourceProductSubscription},
+		}
+		require.False(t, actor.IsDotComActor())
+	})
+
+	t.Run("false for nil", func(t *testing.T) {
+		var actor *Actor = nil
+		require.False(t, actor.IsDotComActor())
+	})
 }
