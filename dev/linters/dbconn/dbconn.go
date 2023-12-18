@@ -2,11 +2,12 @@ package dbconn
 
 import (
 	"fmt"
-	"regexp"
 	"slices"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/dev/linters/nolint"
 )
