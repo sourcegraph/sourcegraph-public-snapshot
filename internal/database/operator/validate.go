@@ -1,67 +1,93 @@
 package operator
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
-	"net/url"
+	"os"
+	"strings"
 
 	"github.com/Masterminds/semver"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/migration"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
+
+// Validate cli code
+// - setup runner
+//   - takes a runncerFactory which is called to with schemaNames input to return a runner
+//     -
+// - usees runner validate
+// - prints line to container output
+// - checks for out of bound migrations
 
 // Create a readonly connection to the databases and check that they're schemas are in the expected state.
 // Validate that the expected definitions have been defined
-func Validate(version *semver.Version, dsn *url.URL) error {
-	db, err := dbconn.ConnectInternal(nil, dsn.String(), "operator", "pgsql")
+func Validate(version *semver.Version) error {
+	ctx := context.Background()
+	logger := log.Scoped("appliance")
+	observationCtx := observation.NewContext(logger)
+	fmt.Println(observationCtx)
+	fmt.Println(version)
+	fmt.Println(strings.Join(schemaNames, ""))
+
+	// FetchExpectedSchemas
+
+	// get dsn handles on database, handle for local development
+	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
+	dsns, err := postgresdsn.DSNsBySchema(schemaNames)
 	if err != nil {
 		return err
 	}
+	fmt.Println(dsns)
 
-	_, err = db.Exec("SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY;")
-	if err != nil {
-		return err
+	out := output.NewOutput(os.Stdout, output.OutputOpts{})
+	newRunnerWithSchemas := func(schemaNames []string, schemas []*schemas.Schema) (*runner.Runner, error) {
+		return migration.NewRunnerWithSchemas(observationCtx, out, "migrator", schemaNames, schemas)
 	}
-
-	_, err = db.Exec("CREATE TABLE op_readonly_check (id int);")
-	if err == nil {
-		db.Exec("DROP TABLE op_readonly_check;")
-		return fmt.Errorf("Validate requires the database to be in read-only mode for safety")
-	}
-
-	fmt.Println("connected to db")
-	err = db.Ping()
-	if err != nil {
-		return err
-	}
-
-	err = checkVersion(db, version)
-	if err != nil {
+	runner, err := newRunnerWithSchemas(schemaNames, schemas.Schemas)
+	if err = runner.Validate(ctx, schemaNames...); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func checkVersion(db *sql.DB, version *semver.Version) error {
-	if version != nil {
-		var dbVersion string
-		row, err := db.Query(`SELECT version FROM versions;`)
-		if err != nil {
-			return err
-		}
-		if !row.Next() {
-			return fmt.Errorf("no version found")
-		}
-		if err = row.Scan(&dbVersion); err != nil {
-			return err
-		}
-		fmt.Println("version", dbVersion)
-
-		if dbVersion != version.String() {
-			return fmt.Errorf("version mismatch: %s != %s", dbVersion, version.String())
-		}
-		fmt.Println("database version,", dbVersion, "is correct")
-	}
-	return nil
+var schemaNames = []string{
+	"frontend",
+	"codeintel",
+	"codeinsights",
 }
+
+// func CopyCat() error {
+// 	r, err := setupRunner(factory, schemaNames...)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	if err := r.Validate(ctx, schemaNames...); err != nil {
+// 		return err
+// 	}
+
+// 	out.WriteLine(output.Emoji(output.EmojiSuccess, "schema okay!"))
+
+// 	if !skipOutOfBandMigrationsFlag.Get(cmd) {
+// 		db, err := store.ExtractDatabase(ctx, r)
+// 		if err != nil {
+// 			return err
+// 		}
+
+// 		if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner(db)); err != nil {
+// 			return err
+// 		}
+
+// 		out.WriteLine(output.Emoji(output.EmojiSuccess, "oobmigrations okay!"))
+// 	}
+
+// 	return nil
+// }

@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"net/url"
 
 	"github.com/Masterminds/semver"
 
@@ -11,11 +9,7 @@ import (
 )
 
 func main() {
-	dsn, err := url.Parse("postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph?sslmode=disable")
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = operator.Validate(semver.MustParse("0.0.0+dev"), dsn)
+	err := operator.Validate(semver.MustParse("0.0.0+dev"))
 	if err != nil {
 		fmt.Println(err)
 	} else {

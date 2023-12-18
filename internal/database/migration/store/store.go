@@ -567,7 +567,7 @@ func scanFirstIndexStatus(rows *sql.Rows, queryErr error) (status shared.IndexSt
 }
 
 // humanizeSchemaName converts the golang-migrate/migration_logs.schema name into the name
-// defined by the definitions in the migrations/ directory. Hopefully we cna get rid of this
+// defined by the definitions in the migrations/ directory. Hopefully we can get rid of this
 // difference in the future, but that requires a bit of migratory work.
 func humanizeSchemaName(schemaName string) string {
 	if schemaName == "schema_migrations" {
