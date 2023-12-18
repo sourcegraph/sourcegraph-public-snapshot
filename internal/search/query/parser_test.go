@@ -829,14 +829,26 @@ func TestParseNewStandard(t *testing.T) {
 	}
 
 	t.Run("patterns are literal and slash-delimited patterns slash...slash are regexp", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("anjou /saumur/")))
+		autogold.ExpectFile(t, autogold.Raw(test(`anjou /saumur/`)))
 	})
 
-	t.Run("quoted patterns are still literal", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test(`"veneto"`)))
+	t.Run("quotes which are part of the pattern have to be escaped", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test(`\"veneto\"`)))
 	})
 
 	t.Run("parens around slash...slash", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("(sancerre and /pouilly-fume/)")))
+		autogold.ExpectFile(t, autogold.Raw(test(`(sancerre and /pouilly-fume/)`)))
+	})
+
+	t.Run("quoted patterns are interpreted literally", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test(`"foo bar"`)))
+	})
+
+	t.Run("literal quotes 1: double quotes within single quotes", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test(`'foo "bar"'`)))
+	})
+
+	t.Run("literal quotes 2: double quotes within double quotes", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test(`"foo \"bar\""`)))
 	})
 }
