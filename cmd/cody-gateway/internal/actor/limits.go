@@ -139,6 +139,7 @@ func (e ErrConcurrencyLimitExceeded) WriteResponse(w http.ResponseWriter) {
 // access errors.
 type updateOnErrorLimiter struct {
 	logger log.Logger
+	logger log.Logger
 	actor  *Actor
 
 	nextLimiter limiter.Limiter
@@ -154,7 +155,7 @@ func (u updateOnErrorLimiter) TryAcquire(ctx context.Context) (func(context.Cont
 		// Do update transiently, outside request hotpath
 		go func() {
 			if updateErr := u.actor.Update(context.WithoutCancel(ctx)); updateErr != nil &&
-				!IsErrActorRecentlyUpdated(updateErr) {
+				!errors.Is(updateErr, ErrActorRecentlyUpdated{}) {
 				u.logger.Warn("unexpected error updating actor",
 					log.Error(updateErr),
 					log.NamedError("originalError", err))
