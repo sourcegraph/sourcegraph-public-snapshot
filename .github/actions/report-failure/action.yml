@@ -1,0 +1,37 @@
+name: 'Report failure if action failed'
+description: 'Creates an error event and sends it to Sentry'
+# inputs:
+#   repo:
+#     description: "The repository that the failed workflow run belonged to."
+#     required: true
+#     type: string
+#   branch:
+#     description: "The branch on which the workflow run failed."
+#     required: true
+#     type: string
+#   workflow_name:
+#     description: "The name of the workflow that failed."
+#     required: true
+#     type: string
+#   run_id:
+#     description: "The run ID of the failed workflow run."
+#     required: true
+#     type: string
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-node@v4
+    - name: Send Sentry event for failed action
+      if: ${{ failure() }}
+      run: |
+        npm i -g @sentry/cli
+        sentry-cli send-event -m "A Job in the ${{ github.workflow }} action has failed - see run for exact failure" \
+          -t "github-action:${{ github.workflow }}" \
+          -t "branch:${{ github.ref_name }}" \
+          -t "repository:${{ github.repository }}" \
+          -t "workflow-run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+          --no-environ
+      env:
+        SENTRY_DSN: ${{ secrets.SENTRY_DEV_INFRA_DSN }}
+        SENTRY_ORG: sourcegraph
+        SENTRY_PROJECT: dev-infra
