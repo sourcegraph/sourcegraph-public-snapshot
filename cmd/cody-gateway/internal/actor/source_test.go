@@ -26,13 +26,7 @@ type mockSourceSyncer struct {
 	syncCount atomic.Int32
 }
 
-type mockSourceSingleSyncer struct {
-	mockSourceSyncer
-}
-
 var _ SourceSyncer = &mockSourceSyncer{}
-
-var _ SourceSingleSyncer = &mockSourceSingleSyncer{}
 
 func (m *mockSourceSyncer) Name() string { return "mock" }
 
@@ -45,9 +39,14 @@ func (m *mockSourceSyncer) Sync(context.Context) (int, error) {
 	return 10, nil
 }
 
-func (m *mockSourceSingleSyncer) SyncOne(_ context.Context, _ string) error {
+type mockSourceUpdater struct {
+	mockSourceSyncer
+}
+
+var _ SourceUpdater = &mockSourceUpdater{}
+
+func (m *mockSourceUpdater) Update(context.Context, *Actor) {
 	m.syncCount.Inc()
-	return nil
 }
 
 func TestSourcesWorkers(t *testing.T) {
@@ -144,21 +143,22 @@ func TestSourcesSyncAll(t *testing.T) {
 	assert.Equal(t, int32(2), s2.syncCount.Load())
 }
 
-func TestSourcesSyncOne(t *testing.T) {
+func TestSourcesUpdate(t *testing.T) {
 	t.Parallel()
 
 	var s1 mockSourceSyncer
-	var s2 mockSourceSingleSyncer
-	var s3 mockSourceSingleSyncer
-	sources := NewSources(&s1, &s2, &s3)
-	err := sources.SyncOne(context.Background(), "sgd_qweqweqw")
-	require.NoError(t, err)
+	var s2 mockSourceUpdater
+	var s3 mockSourceUpdater
+	act := Actor{
+		Key:    "sgd_qweqweqw",
+		Source: &s2, // belongs to s2 source only
+	}
+	act.Update(context.Background())
 	assert.Equal(t, int32(0), s1.syncCount.Load())
 	assert.Equal(t, int32(1), s2.syncCount.Load())
 	assert.Equal(t, int32(0), s3.syncCount.Load())
 
-	err = sources.SyncOne(context.Background(), "sgd_qweqweqw")
-	require.NoError(t, err)
+	act.Update(context.Background())
 	assert.Equal(t, int32(0), s1.syncCount.Load())
 	assert.Equal(t, int32(2), s2.syncCount.Load())
 	assert.Equal(t, int32(0), s3.syncCount.Load())

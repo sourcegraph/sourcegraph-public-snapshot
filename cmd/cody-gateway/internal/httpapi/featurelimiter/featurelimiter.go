@@ -3,7 +3,6 @@ package featurelimiter
 import (
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/internal/authbearer"
 	"net/http"
 	"strings"
 	"time"
@@ -213,17 +212,7 @@ func ListLimitsHandler(baseLogger log.Logger, redisStore limiter.RedisStore) htt
 func RefreshLimitsHandler(baseLogger log.Logger, sources *actor.Sources) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
-		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
-
-		token, err := authbearer.ExtractBearer(r.Header)
-		if err != nil {
-			response.JSONError(logger, w, http.StatusBadRequest, err)
-		}
-
-		err = sources.SyncOne(r.Context(), token)
-		if err != nil {
-			response.JSONError(logger, w, http.StatusBadRequest, err)
-		}
+		act.Update(r.Context())
 	})
 }
 
