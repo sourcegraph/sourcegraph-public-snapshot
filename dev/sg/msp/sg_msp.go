@@ -238,7 +238,7 @@ Supports completions on services and environments.`,
 							return err
 						}
 						tfcAccessToken, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
-							Name:    googlesecretsmanager.SecretTFCAccessToken,
+							Name:    googlesecretsmanager.SecretTFCOrgToken,
 							Project: googlesecretsmanager.ProjectID,
 						})
 						if err != nil {

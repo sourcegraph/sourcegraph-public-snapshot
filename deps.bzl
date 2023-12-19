@@ -5690,6 +5690,13 @@ def go_dependencies():
         version = "v0.0.0-20230822024612-edb48c530722",
     )
     go_repository(
+        name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe",
+        sum = "h1:sCs3+EDrM4pp7PI0/efZPZZK+u955+gwr0byWGg+AVg=",
+        version = "v0.0.0-20231218231056-4749baca142f",
+    )
+    go_repository(
         name = "com_github_sourcegraph_mountinfo",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/mountinfo",
