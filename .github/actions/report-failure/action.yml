@@ -38,6 +38,7 @@ runs:
           -t "repository:${{ inputs.repo }}" \
           -t "workflow-run: https://github.com/${{ inputs.repo }}/actions/runs/${{ inputs.run_id }}" \
           --no-environ
+      shell: bash
       env:
         SENTRY_DSN: ${{ inputs.dsn }}
         SENTRY_ORG: sourcegraph
