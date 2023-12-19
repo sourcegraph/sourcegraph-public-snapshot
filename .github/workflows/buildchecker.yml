@@ -36,3 +36,4 @@ jobs:
       branch: "${{ github.ref_name }}"
       workflow_name: "${{ github.workflow }}"
       run_id: ${{ github.run_id }}
+    secrets: inherit
