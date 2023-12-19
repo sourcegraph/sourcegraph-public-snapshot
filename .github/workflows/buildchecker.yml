@@ -29,4 +29,10 @@ jobs:
           SLACK_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_SLACK_TOKEN }}
       - name: Report failure to Sentry
         uses: ./.github/actions/report-failure
-        secrets: inherit
+        with:
+          dsn: "${{ secrets.SENTRY_DEV_INFRA_DSN}}"
+          repo: "${{ github.repository }}"
+          branch: "${{ github.ref_name }}"
+          run_id: "${{ github.run_id }}"
+          workflow_name: "${{ github.workflow }}"
+          job_name: "${{ job.job }}"
