@@ -36,10 +36,10 @@ const (
 	responseTokenBlockingLimit = 1000
 )
 
-func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, promptRegexps []*regexp.Regexp) (*flaggingResult, error) {
-	// Only usage of chat models us currently flagged, so if the request
-	// is using another model, we skip other checks.
-	if ar.Model != "claude-2" && ar.Model != "claude-2.0" && ar.Model != "claude-2.1" && ar.Model != "claude-v1" {
+func isFlaggedAnthropicRequest(feature codygateway.Feature, tk *tokenizer.Tokenizer, ar anthropicRequest, promptRegexps []*regexp.Regexp) (*flaggingResult, error) {
+	// Only usage of chat is currently flagged, so if the request is for another
+	// feature, we skip the flagging checks.
+	if feature != codygateway.FeatureChatCompletions {
 		return nil, nil
 	}
 	reasons := []string{}
@@ -132,12 +132,12 @@ func NewAnthropicHandler(
 		func(_ codygateway.Feature) string { return anthropicAPIURL },
 		allowedModels,
 		upstreamHandlerMethods[anthropicRequest]{
-			validateRequest: func(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, *flaggingResult, error) {
+			validateRequest: func(ctx context.Context, logger log.Logger, feature codygateway.Feature, ar anthropicRequest) (int, *flaggingResult, error) {
 				if ar.MaxTokensToSample > int32(maxTokensToSample) {
 					return http.StatusBadRequest, nil, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
 				}
 
-				if result, err := isFlaggedAnthropicRequest(anthropicTokenizer, ar, promptRegexps); err != nil {
+				if result, err := isFlaggedAnthropicRequest(feature, anthropicTokenizer, ar, promptRegexps); err != nil {
 					logger.Error("error checking anthropic request - treating as non-flagged",
 						log.Error(err))
 				} else if result.IsFlagged() {

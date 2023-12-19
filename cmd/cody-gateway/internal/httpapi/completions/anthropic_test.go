@@ -6,14 +6,13 @@ import (
 	"testing"
 
 	"github.com/grafana/regexp"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 )
 
 func TestIsFlaggedAnthropicRequest(t *testing.T) {
@@ -22,9 +21,16 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 	tk, err := tokenizer.NewAnthropicClaudeTokenizer()
 	require.NoError(t, err)
 
+	t.Run("not a chat request", func(t *testing.T) {
+		ar := anthropicRequest{Model: "claude-2", Prompt: "some prompt without known preamble"}
+		result, err := isFlaggedAnthropicRequest(codygateway.FeatureCodeCompletions, tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)})
+		assert.NoError(t, err)
+		assert.Nil(t, result)
+	})
+
 	t.Run("missing known preamble", func(t *testing.T) {
 		ar := anthropicRequest{Model: "claude-2", Prompt: "some prompt without known preamble"}
-		result, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)})
+		result, err := isFlaggedAnthropicRequest(codygateway.FeatureChatCompletions, tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)})
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.False(t, result.shouldBlock)
@@ -33,14 +39,14 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 
 	t.Run("preamble not configured ", func(t *testing.T) {
 		ar := anthropicRequest{Model: "claude-2", Prompt: "some prompt without known preamble"}
-		result, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{})
+		result, err := isFlaggedAnthropicRequest(codygateway.FeatureChatCompletions, tk, ar, []*regexp.Regexp{})
 		require.NoError(t, err)
 		require.False(t, result.IsFlagged())
 	})
 
 	t.Run("high max tokens to sample", func(t *testing.T) {
 		ar := anthropicRequest{Model: "claude-2", MaxTokensToSample: 10000, Prompt: validPreamble}
-		result, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{})
+		result, err := isFlaggedAnthropicRequest(codygateway.FeatureChatCompletions, tk, ar, []*regexp.Regexp{})
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.True(t, result.shouldBlock)
@@ -54,7 +60,7 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 		validPreambleTokens := len(tokenLengths)
 		longPrompt := strings.Repeat("word ", promptTokenFlaggingLimit+1)
 		ar := anthropicRequest{Model: "claude-2", Prompt: validPreamble + " " + longPrompt}
-		result, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)})
+		result, err := isFlaggedAnthropicRequest(codygateway.FeatureChatCompletions, tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)})
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.False(t, result.shouldBlock)
@@ -69,7 +75,7 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 		validPreambleTokens := len(tokenLengths)
 		longPrompt := strings.Repeat("word ", promptTokenBlockingLimit+1)
 		ar := anthropicRequest{Model: "claude-2", Prompt: validPreamble + " " + longPrompt}
-		result, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)})
+		result, err := isFlaggedAnthropicRequest(codygateway.FeatureChatCompletions, tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)})
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.True(t, result.shouldBlock)
@@ -121,8 +127,10 @@ func TestAnthropicRequestGetPromptTokenCount(t *testing.T) {
 func TestActor_IsDotComActor(t *testing.T) {
 	t.Run("with dotcom actor", func(t *testing.T) {
 		act := &actor.Actor{
-			ID:     "d3d2b638-d0a2-4539-a099-b36860b09819",
-			Source: actor.FakeSource{codygateway.ActorSourceProductSubscription},
+			ID: "d3d2b638-d0a2-4539-a099-b36860b09819",
+			Source: actor.FakeSource{
+				SourceName: codygateway.ActorSourceProductSubscription,
+			},
 		}
 
 		isDotCom := act.IsDotComActor()
