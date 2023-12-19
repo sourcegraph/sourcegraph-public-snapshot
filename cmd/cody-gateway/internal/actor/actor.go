@@ -198,7 +198,8 @@ func (a *Actor) Limiter(
 		concurrentInterval: limit.ConcurrentRequestsInterval,
 
 		nextLimiter: updateOnErrorLimiter{
-			actor: a,
+			logger: logger.Scoped("updateOnError"),
+			actor:  a,
 
 			nextLimiter: baseLimiter,
 		},
