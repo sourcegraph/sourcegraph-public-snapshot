@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "chatevaluation_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/chatevaluation",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "chatevaluation",
+    embed = [":chatevaluation_lib"],
+    visibility = ["//visibility:public"],
+)
