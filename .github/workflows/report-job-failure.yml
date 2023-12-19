@@ -12,7 +12,7 @@ on:
         type: string
       run_id:
         required: true
-        type: number
+        type: string
 
 jobs:
   send_sentry_event:
