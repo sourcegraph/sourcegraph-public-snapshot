@@ -1,9 +1,7 @@
 package repoupdater
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -14,7 +12,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/log/logtest"
@@ -42,108 +39,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func TestServer_handleRepoLookup(t *testing.T) {
-	logger := logtest.Scoped(t)
-	s := &Server{Logger: logger}
-
-	h := ObservedHandler(
-		logger,
-		NewHandlerMetrics(),
-		trace.NewNoopTracerProvider(),
-	)(s.Handler())
-
-	repoLookup := func(t *testing.T, repo api.RepoName) (resp *protocol.RepoLookupResult, statusCode int) {
-		t.Helper()
-		rr := httptest.NewRecorder()
-		body, err := json.Marshal(protocol.RepoLookupArgs{Repo: repo})
-		if err != nil {
-			t.Fatal(err)
-		}
-		req := httptest.NewRequest("GET", "/repo-lookup", bytes.NewReader(body))
-		fmt.Printf("h: %v rr: %v req: %v\n", h, rr, req)
-		h.ServeHTTP(rr, req)
-		if rr.Code == http.StatusOK {
-			if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
-				t.Fatal(err)
-			}
-		}
-		return resp, rr.Code
-	}
-	repoLookupResult := func(t *testing.T, repo api.RepoName) protocol.RepoLookupResult {
-		t.Helper()
-		resp, statusCode := repoLookup(t, repo)
-		if statusCode != http.StatusOK {
-			t.Fatalf("http non-200 status %d", statusCode)
-		}
-		return *resp
-	}
-
-	t.Run("args", func(t *testing.T) {
-		called := false
-		mockRepoLookup = func(repoName api.RepoName) (*protocol.RepoLookupResult, error) {
-			called = true
-			if want := api.RepoName("github.com/a/b"); repoName != want {
-				t.Errorf("got owner %q, want %q", repoName, want)
-			}
-			return &protocol.RepoLookupResult{Repo: nil}, nil
-		}
-		defer func() { mockRepoLookup = nil }()
-
-		repoLookupResult(t, "github.com/a/b")
-		if !called {
-			t.Error("!called")
-		}
-	})
-
-	t.Run("not found", func(t *testing.T) {
-		mockRepoLookup = func(api.RepoName) (*protocol.RepoLookupResult, error) {
-			return &protocol.RepoLookupResult{Repo: nil}, nil
-		}
-		defer func() { mockRepoLookup = nil }()
-
-		if got, want := repoLookupResult(t, "github.com/a/b"), (protocol.RepoLookupResult{}); !reflect.DeepEqual(got, want) {
-			t.Errorf("got %+v, want %+v", got, want)
-		}
-	})
-
-	t.Run("unexpected error", func(t *testing.T) {
-		mockRepoLookup = func(api.RepoName) (*protocol.RepoLookupResult, error) {
-			return nil, errors.New("x")
-		}
-		defer func() { mockRepoLookup = nil }()
-
-		result, statusCode := repoLookup(t, "github.com/a/b")
-		if result != nil {
-			t.Errorf("got result %+v, want nil", result)
-		}
-		if want := http.StatusInternalServerError; statusCode != want {
-			t.Errorf("got HTTP status code %d, want %d", statusCode, want)
-		}
-	})
-
-	t.Run("found", func(t *testing.T) {
-		want := protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "a",
-					ServiceType: extsvc.TypeGitHub,
-					ServiceID:   "https://github.com/",
-				},
-				Name:        "github.com/c/d",
-				Description: "b",
-				Fork:        true,
-			},
-		}
-		mockRepoLookup = func(api.RepoName) (*protocol.RepoLookupResult, error) {
-			return &want, nil
-		}
-		defer func() { mockRepoLookup = nil }()
-		if got := repoLookupResult(t, "github.com/c/d"); !reflect.DeepEqual(got, want) {
-			t.Errorf("got %+v, want %+v", got, want)
-		}
-	})
-}
 
 func TestServer_EnqueueRepoUpdate(t *testing.T) {
 	ctx := context.Background()

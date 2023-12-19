@@ -22,8 +22,7 @@ import (
 )
 
 var (
-	// TODO: Not used.
-	MockSearch func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error)
+	MockSearch func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func(*proto.FileMatch)) (limitHit bool, err error)
 )
 
 // Search searches repo@commit with p.
@@ -42,6 +41,10 @@ func Search(
 	contextLines int,
 	onMatch func(*proto.FileMatch),
 ) (limitHit bool, err error) {
+	if MockSearch != nil {
+		return MockSearch(ctx, repo, repoID, commit, p, fetchTimeout, onMatch)
+	}
+
 	r := (&protocol.Request{
 		Repo:   repo,
 		RepoID: repoID,

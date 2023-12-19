@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -496,6 +497,10 @@ type Client interface {
 
 	// PerforceGetChangelist gets the perforce changelist details for the given changelist ID.
 	PerforceGetChangelist(ctx context.Context, conn protocol.PerforceConnectionDetails, changelist string) (*perforce.Changelist, error)
+
+	// ListGitoliteRepos returns a list of Gitolite repositories. Gitserver owns the SSH keys
+	// so is the only service able to talk to gitolite.
+	ListGitoliteRepos(ctx context.Context, host string) ([]*gitolite.Repo, error)
 }
 
 func (c *clientImplementor) SystemsInfo(ctx context.Context) (_ []protocol.SystemInfo, err error) {
@@ -1684,4 +1689,30 @@ func stringsToByteSlices(in []string) [][]byte {
 		res[i] = []byte(s)
 	}
 	return res
+}
+
+func (c *clientImplementor) ListGitoliteRepos(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
+	client, err := c.ClientForRepo(ctx, api.RepoName(gitoliteHost))
+	if err != nil {
+		return nil, err
+	}
+
+	req := &proto.ListGitoliteRequest{
+		GitoliteHost: gitoliteHost,
+	}
+
+	grpcResp, err := client.ListGitolite(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	list = make([]*gitolite.Repo, len(grpcResp.Repos))
+	for i, r := range grpcResp.GetRepos() {
+		list[i] = &gitolite.Repo{
+			Name: r.GetName(),
+			URL:  r.GetUrl(),
+		}
+	}
+
+	return list, nil
 }

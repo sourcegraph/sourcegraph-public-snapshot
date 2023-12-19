@@ -208,7 +208,7 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 		return err
 	}
 
-	if execStatus.ExitStatus != 0 || execStatus.Err != nil {
+	if execStatus.Err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return status.FromContextError(ctxErr).Err()
 		}
@@ -228,6 +228,12 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 		}
 		return s.Err()
 	}
+
+	// Should not be reached.
+	if execStatus.ExitStatus != 0 {
+		return errors.Newf("exit code %d", execStatus.ExitStatus)
+	}
+
 	return nil
 
 }

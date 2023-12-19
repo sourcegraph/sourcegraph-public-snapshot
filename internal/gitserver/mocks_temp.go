@@ -15,6 +15,7 @@ import (
 
 	diff "github.com/sourcegraph/go-diff/diff"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
+	gitolite "github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	perforce "github.com/sourcegraph/sourcegraph/internal/perforce"
@@ -120,6 +121,9 @@ type MockClient struct {
 	// ListDirectoryChildrenFunc is an instance of a mock function object
 	// controlling the behavior of the method ListDirectoryChildren.
 	ListDirectoryChildrenFunc *ClientListDirectoryChildrenFunc
+	// ListGitoliteReposFunc is an instance of a mock function object
+	// controlling the behavior of the method ListGitoliteRepos.
+	ListGitoliteReposFunc *ClientListGitoliteReposFunc
 	// ListRefsFunc is an instance of a mock function object controlling the
 	// behavior of the method ListRefs.
 	ListRefsFunc *ClientListRefsFunc
@@ -364,6 +368,11 @@ func NewMockClient() *MockClient {
 		},
 		ListDirectoryChildrenFunc: &ClientListDirectoryChildrenFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, []string) (r0 map[string][]string, r1 error) {
+				return
+			},
+		},
+		ListGitoliteReposFunc: &ClientListGitoliteReposFunc{
+			defaultHook: func(context.Context, string) (r0 []*gitolite.Repo, r1 error) {
 				return
 			},
 		},
@@ -669,6 +678,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.ListDirectoryChildren")
 			},
 		},
+		ListGitoliteReposFunc: &ClientListGitoliteReposFunc{
+			defaultHook: func(context.Context, string) ([]*gitolite.Repo, error) {
+				panic("unexpected invocation of MockClient.ListGitoliteRepos")
+			},
+		},
 		ListRefsFunc: &ClientListRefsFunc{
 			defaultHook: func(context.Context, api.RepoName) ([]gitdomain.Ref, error) {
 				panic("unexpected invocation of MockClient.ListRefs")
@@ -906,6 +920,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		ListDirectoryChildrenFunc: &ClientListDirectoryChildrenFunc{
 			defaultHook: i.ListDirectoryChildren,
+		},
+		ListGitoliteReposFunc: &ClientListGitoliteReposFunc{
+			defaultHook: i.ListGitoliteRepos,
 		},
 		ListRefsFunc: &ClientListRefsFunc{
 			defaultHook: i.ListRefs,
@@ -4513,6 +4530,114 @@ func (c ClientListDirectoryChildrenFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientListDirectoryChildrenFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientListGitoliteReposFunc describes the behavior when the
+// ListGitoliteRepos method of the parent MockClient instance is invoked.
+type ClientListGitoliteReposFunc struct {
+	defaultHook func(context.Context, string) ([]*gitolite.Repo, error)
+	hooks       []func(context.Context, string) ([]*gitolite.Repo, error)
+	history     []ClientListGitoliteReposFuncCall
+	mutex       sync.Mutex
+}
+
+// ListGitoliteRepos delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockClient) ListGitoliteRepos(v0 context.Context, v1 string) ([]*gitolite.Repo, error) {
+	r0, r1 := m.ListGitoliteReposFunc.nextHook()(v0, v1)
+	m.ListGitoliteReposFunc.appendCall(ClientListGitoliteReposFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListGitoliteRepos
+// method of the parent MockClient instance is invoked and the hook queue is
+// empty.
+func (f *ClientListGitoliteReposFunc) SetDefaultHook(hook func(context.Context, string) ([]*gitolite.Repo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListGitoliteRepos method of the parent MockClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ClientListGitoliteReposFunc) PushHook(hook func(context.Context, string) ([]*gitolite.Repo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientListGitoliteReposFunc) SetDefaultReturn(r0 []*gitolite.Repo, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) ([]*gitolite.Repo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientListGitoliteReposFunc) PushReturn(r0 []*gitolite.Repo, r1 error) {
+	f.PushHook(func(context.Context, string) ([]*gitolite.Repo, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientListGitoliteReposFunc) nextHook() func(context.Context, string) ([]*gitolite.Repo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientListGitoliteReposFunc) appendCall(r0 ClientListGitoliteReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientListGitoliteReposFuncCall objects
+// describing the invocations of this function.
+func (f *ClientListGitoliteReposFunc) History() []ClientListGitoliteReposFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientListGitoliteReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientListGitoliteReposFuncCall is an object that describes an invocation
+// of method ListGitoliteRepos on an instance of MockClient.
+type ClientListGitoliteReposFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*gitolite.Repo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientListGitoliteReposFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientListGitoliteReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	internalrepos "github.com/sourcegraph/sourcegraph/internal/repos"
@@ -440,5 +441,5 @@ func newGenericSourcer(logger log.Logger, db database.DB) internalrepos.Sourcer 
 	db = database.NewDBWith(sourcerLogger.Scoped("db"), db)
 	dependenciesService := dependencies.NewService(observation.NewContext(logger), db)
 	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
-	return internalrepos.NewSourcer(sourcerLogger, db, cf, internalrepos.WithDependenciesService(dependenciesService))
+	return internalrepos.NewSourcer(sourcerLogger, db, cf, gitserver.NewClient("backend.external-services"), internalrepos.WithDependenciesService(dependenciesService))
 }

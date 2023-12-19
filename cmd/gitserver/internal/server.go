@@ -220,35 +220,6 @@ func shortGitCommandSlow(args []string) time.Duration {
 	}
 }
 
-// 🚨 SECURITY: headerXRequestedWithMiddleware will ensure that the X-Requested-With
-// header contains the correct value. See "What does X-Requested-With do, anyway?" in
-// https://github.com/sourcegraph/sourcegraph/pull/27931.
-func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		l := log.Scoped("gitserver")
-
-		// Do not apply the middleware to /ping and /git endpoints.
-		//
-		// 1. /ping is used by health check services who most likely don't set this header
-		// at all.
-		//
-		// 2. /git may be used to run "git fetch" from another gitserver instance over
-		// HTTP and the fetchCommand does not set this header yet.
-		if strings.HasPrefix(r.URL.Path, "/ping") || strings.HasPrefix(r.URL.Path, "/git") {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		if value := r.Header.Get("X-Requested-With"); value != "Sourcegraph" {
-			l.Error("header X-Requested-With is not set or is invalid", log.String("path", r.URL.Path))
-			http.Error(w, "header X-Requested-With is not set or is invalid", http.StatusBadRequest)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	}
-}
-
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
@@ -294,8 +265,7 @@ func (s *Server) Handler() http.Handler {
 		},
 	)))
 
-	// 🚨 SECURITY: This must be wrapped in headerXRequestedWithMiddleware.
-	return headerXRequestedWithMiddleware(mux)
+	return mux
 }
 
 func addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {

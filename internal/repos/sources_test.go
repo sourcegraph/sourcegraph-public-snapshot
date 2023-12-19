@@ -17,7 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -121,7 +123,7 @@ func TestSources_ListRepos_YieldExistingRepos(t *testing.T) {
 			cf, save := NewClientFactory(t, name)
 			defer save(t)
 
-			repos := listRepos(t, cf, tc.svc)
+			repos := listRepos(t, cf, nil, tc.svc)
 
 			var haveNames []string
 			for _, r := range repos {
@@ -147,9 +149,18 @@ func TestSources_ListRepos_Excluded(t *testing.T) {
 	rcache.SetupForTest(t)
 	ratelimit.SetupForTest(t)
 
+	gitoliteGs := gitserver.NewMockClient()
+	gitoliteGs.ScopedFunc.SetDefaultReturn(gitoliteGs)
+	gitoliteGs.ListGitoliteReposFunc.SetDefaultReturn([]*gitolite.Repo{
+		{Name: "baz", URL: "gitolite.mycorp.com/baz.git"},
+		{Name: "foo", URL: "gitolite.mycorp.com/foo.git"},
+		{Name: "testing", URL: "gitolite.mycorp.com/testing.git"},
+	}, nil)
+
 	tests := []struct {
 		svc       *types.ExternalService
 		wantNames []string
+		gc        gitserver.Client
 	}{
 		{
 			svc: typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
@@ -263,6 +274,7 @@ func TestSources_ListRepos_Excluded(t *testing.T) {
 				"gitolite.mycorp.com/foo",
 				"gitolite.mycorp.com/testing",
 			},
+			gc: gitoliteGs,
 		},
 	}
 
@@ -273,7 +285,7 @@ func TestSources_ListRepos_Excluded(t *testing.T) {
 			cf, save := NewClientFactory(t, name)
 			defer save(t)
 
-			repos := listRepos(t, cf, tc.svc)
+			repos := listRepos(t, cf, tc.gc, tc.svc)
 
 			var haveNames []string
 			for _, r := range repos {
@@ -300,10 +312,21 @@ func TestSources_ListRepos_RepositoryPathPattern(t *testing.T) {
 	ratelimit.SetupForTest(t)
 	rcache.SetupForTest(t)
 
+	gitoliteGs := gitserver.NewMockClient()
+	gitoliteGs.ScopedFunc.SetDefaultReturn(gitoliteGs)
+	gitoliteGs.ListGitoliteReposFunc.SetDefaultReturn([]*gitolite.Repo{
+		{Name: "bar", URL: "gitolite.mycorp.com/bar.git"},
+		{Name: "baz", URL: "gitolite.mycorp.com/baz.git"},
+		{Name: "foo", URL: "gitolite.mycorp.com/foo.git"},
+		{Name: "gitolite-admin", URL: "gitolite.mycorp.com/gitolite-admin.git"},
+		{Name: "testing", URL: "gitolite.mycorp.com/testing.git"},
+	}, nil)
+
 	tests := []struct {
 		svc       *types.ExternalService
 		wantNames []string
 		wantURIs  []string
+		gc        gitserver.Client
 	}{
 		{
 			svc: typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
@@ -386,6 +409,7 @@ func TestSources_ListRepos_RepositoryPathPattern(t *testing.T) {
 				"gitolite.mycorp.com/gitolite-admin",
 				"gitolite.mycorp.com/testing",
 			},
+			gc: gitoliteGs,
 		},
 	}
 
@@ -396,7 +420,7 @@ func TestSources_ListRepos_RepositoryPathPattern(t *testing.T) {
 			cf, save := NewClientFactory(t, name)
 			defer save(t)
 
-			repos := listRepos(t, cf, tc.svc)
+			repos := listRepos(t, cf, tc.gc, tc.svc)
 
 			var haveURIs, haveNames []string
 			for _, r := range repos {
@@ -423,7 +447,7 @@ func TestSources_Phabricator(t *testing.T) {
 		Token: os.Getenv("PHABRICATOR_TOKEN"),
 	})
 
-	repos := listRepos(t, cf, svc)
+	repos := listRepos(t, cf, nil, svc)
 
 	if len(repos) == 0 {
 		t.Fatalf("no repos yielded")
@@ -483,7 +507,7 @@ func TestSources_ListRepos_GitLab_NameTransformations(t *testing.T) {
 		},
 	})
 
-	repos := listRepos(t, cf, svc)
+	repos := listRepos(t, cf, nil, svc)
 	haveNames := types.Repos(repos).Names()
 	sort.Strings(haveNames)
 
@@ -512,7 +536,7 @@ func TestSources_ListRepos_BitbucketServer_Archived(t *testing.T) {
 		Repos:                 []string{"sour/vegeta", "PUBLIC/archived-repo"},
 	})
 
-	repos := listRepos(t, cf, svc)
+	repos := listRepos(t, cf, nil, svc)
 
 	wantArchived := map[string]bool{
 		"vegeta":        false,
@@ -529,13 +553,13 @@ func TestSources_ListRepos_BitbucketServer_Archived(t *testing.T) {
 	}
 }
 
-func listRepos(t *testing.T, cf *httpcli.Factory, svc *types.ExternalService) []*types.Repo {
+func listRepos(t *testing.T, cf *httpcli.Factory, gc gitserver.Client, svc *types.ExternalService) []*types.Repo {
 	t.Helper()
 
 	ctx := context.Background()
 
 	logger := logtest.NoOp(t)
-	sourcer := NewSourcer(logger, dbmocks.NewMockDB(), cf)
+	sourcer := NewSourcer(logger, dbmocks.NewMockDB(), cf, gc)
 
 	src, err := sourcer(ctx, svc)
 	if err != nil {

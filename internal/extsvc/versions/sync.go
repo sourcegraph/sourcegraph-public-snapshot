@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -50,7 +51,7 @@ func (j *syncingJob) Routines(_ context.Context, observationCtx *observation.Con
 	sourcerCF := httpcli.NewExternalClientFactory(
 		httpcli.NewLoggingMiddleware(sourcerLogger),
 	)
-	sourcer := repos.NewSourcer(sourcerLogger, db, sourcerCF)
+	sourcer := repos.NewSourcer(sourcerLogger, db, sourcerCF, gitserver.NewClient("extsvc.version-syncer"))
 
 	store := db.ExternalServices()
 	handler := goroutine.HandlerFunc(func(ctx context.Context) error {

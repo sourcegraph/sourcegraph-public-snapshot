@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -267,6 +268,7 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 		r.db,
 		r.externalService,
 		httpcli.ExternalClientFactory,
+		gitserver.NewClient("graphql.check-connection"),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create source")

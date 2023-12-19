@@ -233,7 +233,7 @@ Hello world example in go
 				FetchTimeout: fetchTimeoutForCI(t),
 			}
 
-			m, err := doSearch(ts.URL, &req)
+			m, err := doSearch(t, ts.URL, &req)
 			if err != nil {
 				t.Fatal(err)
 			}

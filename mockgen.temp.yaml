@@ -136,3 +136,4 @@
   path: github.com/sourcegraph/sourcegraph/internal/gitserver/v1
   interfaces:
     - GitserverServiceClient
+    - GitserverService_ExecServer

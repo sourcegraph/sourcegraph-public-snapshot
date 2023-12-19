@@ -109,7 +109,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	sourceMetrics := repos.NewSourceMetrics()
 	sourceMetrics.MustRegister(prometheus.DefaultRegisterer)
-	src := repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(observationCtx, db)), repos.ObservedSource(sourcerLogger, sourceMetrics))
+	src := repos.NewSourcer(sourcerLogger, db, cf, gitserver.NewClient("repo-updater.sourcer"), repos.WithDependenciesService(dependencies.NewService(observationCtx, db)), repos.ObservedSource(sourcerLogger, sourceMetrics))
 	syncer := repos.NewSyncer(observationCtx, store, src)
 	updateScheduler := scheduler.NewUpdateScheduler(logger, db, gitserver.NewClient("repos.updatescheduler"))
 	server := &repoupdater.Server{

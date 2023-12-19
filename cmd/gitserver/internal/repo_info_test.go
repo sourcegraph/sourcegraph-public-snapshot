@@ -1,10 +1,7 @@
 package internal
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -19,17 +16,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestHandleRepoDelete(t *testing.T) {
-	testHandleRepoDelete(t, false)
+func TestDeleteRepo(t *testing.T) {
+	testDeleteRepo(t, false)
 }
 
-func TestHandleRepoDeleteWhenDeleteInDB(t *testing.T) {
+func TestDeleteRepoWhenDeleteInDB(t *testing.T) {
 	// We also want to ensure that we can delete repo data on disk for a repo that
 	// has already been deleted in the DB.
-	testHandleRepoDelete(t, true)
+	testDeleteRepo(t, true)
 }
 
-func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
+func testDeleteRepo(t *testing.T, deletedInDB bool) {
 	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -57,19 +54,17 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 	// Add a bad tag
 	cmd("git", "tag", "HEAD")
 
-	rr := httptest.NewRecorder()
+	reposDir := t.TempDir()
 
-	updateReq := protocol.RepoUpdateRequest{
-		Repo: repoName,
-	}
-	body, err := json.Marshal(updateReq)
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := makeTestServer(ctx, t, reposDir, remote, db)
+
+	// We need some of the side effects here
+	_ = s.Handler()
 
 	// This will perform an initial clone
-	req := newRequest("GET", "/repo-update", bytes.NewReader(body))
-	s.handleRepoUpdate(rr, req)
+	s.repoUpdate(&protocol.RepoUpdateRequest{
+		Repo: repoName,
+	})
 
 	size := gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path("."))
 	want := &types.GitserverRepo{
@@ -102,12 +97,10 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 		dbRepo = repos[0]
 	}
 
-	reposDir := t.TempDir()
-
 	// Now we can delete it
-	require.NoError(t, deleteRepo(ctx, logger, db, "test-gitserver", reposDir, dbRepo.Name))
+	require.NoError(t, deleteRepo(ctx, logger, db, "", reposDir, dbRepo.Name))
 
-	size = gitserverfs.DirSize(gitserverfs.RepoDirFromName(reposDir, repoName).Path("."))
+	size = gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path("."))
 	if size != 0 {
 		t.Fatalf("Size should be 0, got %d", size)
 	}
