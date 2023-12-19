@@ -52,7 +52,7 @@
         ? 'Show less'
         : `Show ${hiddenMatchesCount} more ${pluralize('match', hiddenMatchesCount, 'matches')}`
     $: matchesToShow = expanded ? expandedMatchGroups : collapsedMatchGroups
-    $: matchRanges = matchesToShow.map(group => ({
+    $: matchRanges = expandedMatchGroups.map(group => ({
         startLine: group.startLine,
         endLine: group.endLine,
     }))
