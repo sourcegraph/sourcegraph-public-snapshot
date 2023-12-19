@@ -333,7 +333,6 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
     const { extensionsController, repoContainerRoutes, authenticatedUser, selectedSearchContextSpec } = props
 
     const location = useLocation()
-    const isLarge = useBreakpoint('sm')
 
     const { repoName, revision, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
