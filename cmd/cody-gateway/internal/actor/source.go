@@ -7,15 +7,13 @@ import (
 
 	"github.com/go-redsync/redsync/v4"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
