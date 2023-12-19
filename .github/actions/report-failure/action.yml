@@ -30,7 +30,6 @@ runs:
   steps:
     - uses: actions/setup-node@v4
     - name: Send Sentry event for failed action
-      if: ${{ failure() }}
       run: |
         npm i -g @sentry/cli
         sentry-cli send-event -m "The Job '${{ inputs.job_name }} in the ${{ inputs.workflow_name }} action has failed - see run for exact failure" \

@@ -28,6 +28,7 @@ jobs:
           SLACK_DEBUG_WEBHOOK: ${{ secrets.AUTOBUILDSHERRIF_SLACK_DEBUG_WEBHOOK }}
           SLACK_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_SLACK_TOKEN }}
       - name: Report failure to Sentry
+        if: ${{ failure() }}
         uses: ./.github/actions/report-failure
         with:
           dsn: "${{ secrets.SENTRY_DEV_INFRA_DSN}}"
