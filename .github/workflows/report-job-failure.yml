@@ -24,7 +24,6 @@ jobs:
       - uses: actions/setup-node@v4
       - name: Send Sentry event for failed action
         run: |
-          JOB_NAME="${{ inputs.job_name }}"
           MSG="A Job in the ${{ inputs.workflow_name }} action has failed - see run for exact failure"
           if [[ -z "${JOB_NAME}" ]]; then
             MSG="The Job '${JOB_NAME}' in the ${{ inputs.workflow_name }} action has failed - see run for exact failure"
@@ -37,6 +36,7 @@ jobs:
             -t "workflow-run: https://github.com/${{ inputs.repo }}/actions/runs/${{ inputs.run_id }}" \
             --no-environ
         env:
+          JOB_NAME: "${{ inputs.job_name }}"
           SENTRY_DSN: ${{ secrets.SENTRY_DEV_INFRA_DSN }}
           SENTRY_ORG: sourcegraph
           SENTRY_PROJECT: dev-infra
