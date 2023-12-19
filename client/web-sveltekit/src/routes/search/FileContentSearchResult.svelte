@@ -33,9 +33,7 @@
 
     $: contextLines = $settings?.['search.contextLines'] ?? DEFAULT_CONTEXT_LINES
     $: ranking =
-        $settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING
-            ? rankByLine
-            : rankPassthrough
+        $settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING ? rankByLine : rankPassthrough
     $: ({ expandedMatchGroups, collapsedMatchGroups, hiddenMatchesCount } = rankContentMatch(
         result,
         ranking,
@@ -52,10 +50,6 @@
         ? 'Show less'
         : `Show ${hiddenMatchesCount} more ${pluralize('match', hiddenMatchesCount, 'matches')}`
     $: matchesToShow = expanded ? expandedMatchGroups : collapsedMatchGroups
-    $: matchRanges = matchesToShow.map(group => ({
-        startLine: group.startLine,
-        endLine: group.endLine,
-    }))
 
     let root: HTMLElement
     let userInteracted = false
@@ -85,6 +79,10 @@
             return
         }
         hasBeenVisible = true
+        const matchRanges = expandedMatchGroups.map(group => ({
+            startLine: group.startLine,
+            endLine: group.endLine,
+        }))
         highlightedHTMLRows = await fetchFileRangeMatches({ result, ranges: matchRanges })
     }
 </script>
