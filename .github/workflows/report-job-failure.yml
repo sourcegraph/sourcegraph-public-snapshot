@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-node@v4
       - name: Send Sentry event for failed action
         run: |
-          JOB="${{ inputs.job_name }}"
+          JOB_NAME="${{ inputs.job_name }}"
           MSG="A Job in the ${{ inputs.workflow_name }} action has failed - see run for exact failure"
           if [[ -z "${JOB_NAME}" ]]; then
             MSG="The Job '${JOB_NAME}' in the ${{ inputs.workflow_name }} action has failed - see run for exact failure"
