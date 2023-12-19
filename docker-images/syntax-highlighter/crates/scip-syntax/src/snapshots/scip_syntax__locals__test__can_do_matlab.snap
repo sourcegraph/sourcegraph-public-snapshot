@@ -29,9 +29,9 @@ expression: dumped
 //       ^ definition local 9
 //         ^ definition local 10
   i = 9;
-//^ definition local 11
+//^ reference local 9
   j = 10;
-//^ definition local 12
+//^ reference local 10
   
   function myPersistFunc()
 //         ^^^^^^^^^^^^^ definition local 13
@@ -40,7 +40,7 @@ expression: dumped
       if isempty(k)
 //               ^ reference local 14
           k = 11;
-//        ^ definition local 15
+//        ^ reference local 14
       end
   end
   
@@ -52,12 +52,12 @@ expression: dumped
       n = 13;
 //    ^ definition local 18
       global n
-//           ^ definition local 19
+//           ^ reference local 18
       
       o = 14;
 //    ^ definition local 20
       persistent o
-//               ^ definition local 21
+//               ^ reference local 20
   end
   
   function [a, b] = myFunction()
@@ -65,9 +65,9 @@ expression: dumped
 //             ^ definition local 23
 //                  ^^^^^^^^^^ definition local 24
       a = 1;
-//    ^ definition local 25
+//    ^ reference local 22
       b = [2, 3];
-//    ^ definition local 26
+//    ^ reference local 23
   end
   
   classdef MyClass
@@ -91,7 +91,7 @@ expression: dumped
 //                          ^^^^^^^ definition local 32
 //                                  ^^^ definition local 33
               result = obj.Prop1;
-//            ^^^^^^ definition local 34
+//            ^^^^^^ reference local 31
 //                     ^^^ reference local 33
           end
       end
@@ -119,12 +119,12 @@ expression: dumped
 //^^^^ definition local 40
   clear slay
   slay = 10 % and now it's here!
-//^^^^ definition local 41
+//^^^^ reference local 40
   
   pog1 = 10
 //^^^^ definition local 42
   pog1 = 20
-//^^^^ definition local 43
+//^^^^ reference local 42
   
   function f()
 //         ^ definition local 44
@@ -134,7 +134,7 @@ expression: dumped
     else
       % TODO: this should also be marked as a definition
       pog2 = 2;
-//    ^^^^ definition local 46
+//    ^^^^ reference local 45
     end
     disp(pog2);
 //       ^^^^ reference local 45

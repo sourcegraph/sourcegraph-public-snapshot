@@ -4,9 +4,18 @@
  name: (identifier) @definition.type
  (#set! "hoist" "global")) @scope
 
-(assignment left: (identifier) @definition.var (#set! "reassignment_behavior" "oldest_is_definition"))
-(global_operator (identifier) @definition.var (#set! "reassignment_behavior" "oldest_is_definition"))
-(persistent_operator (identifier) @definition.var (#set! "reassignment_behavior" "oldest_is_definition"))
+(assignment
+ left: (identifier) @definition.var
+ (#set! "reassignment_behavior" "oldest_is_definition")
+ (#set! "is_def_ref"))
+(global_operator
+ (identifier) @definition.var
+ (#set! "reassignment_behavior" "oldest_is_definition")
+ (#set! "is_def_ref"))
+(persistent_operator
+ (identifier) @definition.var
+ (#set! "reassignment_behavior" "oldest_is_definition")
+ (#set! "is_def_ref"))
 
 (function_definition
  name: (identifier) @definition.function

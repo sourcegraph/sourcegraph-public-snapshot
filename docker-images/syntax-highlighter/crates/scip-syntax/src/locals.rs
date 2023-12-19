@@ -55,7 +55,10 @@ pub fn parse_tree_test<'a>(
 ) -> (Vec<Occurrence>, String) {
     let resolver = LocalResolver::new(source_bytes);
     let mut tree_output = String::new();
-    (resolver.process(config, tree, Some(&mut tree_output)), tree_output)
+    (
+        resolver.process(config, tree, Some(&mut tree_output)),
+        tree_output,
+    )
 }
 
 #[derive(Debug, Clone)]
@@ -170,6 +173,7 @@ struct ScopeCapture<'a> {
 #[derive(Debug)]
 struct DefCapture<'a> {
     hoist: Option<String>,
+    is_def_ref: bool,
     node: Node<'a>,
 }
 
@@ -243,21 +247,23 @@ impl<'a> LocalResolver<'a> {
         id: ScopeRef<'a>,
         definition: Definition<'a>,
         hoist: &Option<String>,
+        is_def_ref: bool,
     ) {
-        let symbol = format_symbol(Symbol::new_local(definition.id));
-        let symbol_roles = scip::types::SymbolRole::Definition.value();
+        // For Python and Matlab this could be where we add references
+        // in case we find overlapping definitions.
+        //
+        // Is it reasonable to only support this for hoisted definitions?
+        // Answer: No, Matlab does this with non-hoisted definitions
+        //         But for hoisted definitions we must stop at the hoisted scope
 
-        self.occurrences.push(scip::types::Occurrence {
-            range: definition.node.to_scip_range(),
-            symbol: symbol.clone(),
-            symbol_roles,
-            ..Default::default()
-        });
+        let definition_id = definition.id;
 
+        let range = definition.node.to_scip_range();
+        // Regardless of def_ref behavior, we never want to consider this reference twice
         self.definition_start_bytes
             .insert(definition.node.start_byte());
 
-        match hoist {
+        let match_definition = match hoist {
             Some(hoist_scope) => {
                 let mut target_scope = id;
                 // If we don't find any matching scope we hoist all
@@ -268,12 +274,62 @@ impl<'a> LocalResolver<'a> {
                         break;
                     }
                 }
-                self.get_scope_mut(target_scope)
-                    .hoisted_definitions
-                    .push(definition)
+                // NOTE: This becomes nicer with let-chains or if_chain!
+                if is_def_ref {
+                    if let Some(previous) = self
+                        .get_scope(target_scope)
+                        .hoisted_definitions
+                        .iter()
+                        .find(|def| def.name == definition.name)
+                    {
+                        Some(previous.id)
+                    } else {
+                        self.get_scope_mut(target_scope)
+                            .hoisted_definitions
+                            .push(definition);
+                        None
+                    }
+                } else {
+                    self.get_scope_mut(target_scope)
+                        .hoisted_definitions
+                        .push(definition);
+                    None
+                }
             }
-            None => self.get_scope_mut(id).definitions.push(definition),
+            None => {
+                // NOTE: This becomes nicer with let-chains or if_chain!
+                if is_def_ref {
+                    // NOTE: Perf?
+                    if let Some(previous) =
+                        self.find_def(id, definition.name, definition.node.start_byte())
+                    {
+                        Some(previous.id)
+                    } else {
+                        self.get_scope_mut(id).definitions.push(definition);
+                        None
+                    }
+                } else {
+                    self.get_scope_mut(id).definitions.push(definition);
+                    None
+                }
+            }
         };
+
+        let (symbol, symbol_roles) = match match_definition {
+            None => (
+                // TODO: compute fresh definition_id here
+                format_symbol(Symbol::new_local(definition_id)),
+                Some(scip::types::SymbolRole::Definition.value()),
+            ),
+            Some(definition_id) => (format_symbol(Symbol::new_local(definition_id)), None),
+        };
+
+        self.occurrences.push(scip::types::Occurrence {
+            range,
+            symbol,
+            symbol_roles: symbol_roles.unwrap_or_default(),
+            ..Default::default()
+        });
     }
 
     fn get_scope(&self, id: ScopeRef<'a>) -> &Scope<'a> {
@@ -412,6 +468,7 @@ impl<'a> LocalResolver<'a> {
         'a: 'b,
     {
         for def_capture in definitions_iter.take_while_ref(|def_capture| f(def_capture)) {
+            // TODO: Move id selection into add_definition to remove gaps for languages with defrefs
             self.definition_id_supply += 1;
             let name = self.mk_name(
                 def_capture
@@ -424,7 +481,7 @@ impl<'a> LocalResolver<'a> {
                 node: def_capture.node,
                 name,
             };
-            self.add_definition(scope, definition, &def_capture.hoist)
+            self.add_definition(scope, definition, &def_capture.hoist, def_capture.is_def_ref)
         }
     }
 
@@ -453,12 +510,14 @@ impl<'a> LocalResolver<'a> {
                         node: capture.node,
                     })
                 } else if capture_name.starts_with("definition") {
-                    let mut hoist_scope = None;
+                    let mut hoist = None;
+                    let is_def_ref = properties.iter().any(|p| p.key == "is_def_ref".into());
                     if let Some(prop) = properties.iter().find(|p| p.key == "hoist".into()) {
-                        hoist_scope = Some(prop.value.as_ref().unwrap().to_string());
+                        hoist = Some(prop.value.as_ref().unwrap().to_string());
                     }
                     definitions.push(DefCapture {
-                        hoist: hoist_scope,
+                        hoist,
+                        is_def_ref,
                         node: capture.node,
                     })
                 } else if capture_name.starts_with("reference") {
@@ -563,6 +622,26 @@ impl<'a> LocalResolver<'a> {
         );
     }
 
+    /// Walks up the scope tree and tries to find the definition for a given name
+    fn find_def(
+        &self,
+        scope: ScopeRef<'a>,
+        name: Name,
+        start_byte: usize,
+    ) -> Option<&Definition<'a>> {
+        let mut current_scope = scope;
+        loop {
+            let scope = self.get_scope(current_scope);
+            if let Some(def) = scope.find_def(name, start_byte) {
+                break Some(def);
+            } else if let Some(parent_scope) = scope.parent {
+                current_scope = parent_scope
+            } else {
+                break None;
+            }
+        }
+    }
+
     fn resolve_references(&mut self) {
         let mut ref_occurrences = vec![];
 
@@ -572,23 +651,15 @@ impl<'a> LocalResolver<'a> {
                 if self.definition_start_bytes.contains(&node.start_byte()) {
                     continue;
                 }
-
-                let mut current_scope = scope_ref;
-                loop {
-                    let scope = self.get_scope(current_scope);
-
-                    if let Some(def) = scope.find_def(*name, node.start_byte()) {
+                match self.find_def(scope_ref, *name, node.start_byte()) {
+                    None => {}
+                    Some(def) => {
                         let symbol = format_symbol(Symbol::new_local(def.id));
                         ref_occurrences.push(scip::types::Occurrence {
                             range: node.to_scip_range(),
                             symbol: symbol.clone(),
                             ..Default::default()
                         });
-                        break;
-                    } else if let Some(parent_scope) = scope.parent {
-                        current_scope = parent_scope
-                    } else {
-                        break;
                     }
                 }
             }
@@ -602,7 +673,7 @@ impl<'a> LocalResolver<'a> {
         mut self,
         config: &'a LocalConfiguration,
         tree: &'a tree_sitter::Tree,
-        test_writer: Option<&mut impl Write>
+        test_writer: Option<&mut impl Write>,
     ) -> Vec<Occurrence> {
         // First we collect all captures from the tree-sitter locals query
         let captures = Self::collect_captures(config, tree, self.source_bytes);
@@ -613,8 +684,8 @@ impl<'a> LocalResolver<'a> {
             .alloc(Scope::new("global".to_string(), tree.root_node(), None));
         self.build_tree(top_scope, captures);
         match test_writer {
-            None => {},
-            Some(w) => self._print_scope(w, top_scope, 0)
+            None => {}
+            Some(w) => self._print_scope(w, top_scope, 0),
         }
         // Finally we resolve all references against that tree structure
         self.resolve_references();
