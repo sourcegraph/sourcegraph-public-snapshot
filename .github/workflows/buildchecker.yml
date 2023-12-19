@@ -26,13 +26,15 @@ jobs:
           SLACK_ANNOUNCE_WEBHOOK: ${{ secrets.AUTOBUILDSHERRIF_SLACK_WEBHOOK }}
           SLACK_DEBUG_WEBHOOK: ${{ secrets.AUTOBUILDSHERRIF_SLACK_DEBUG_WEBHOOK }}
           SLACK_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_SLACK_TOKEN }}
-      - name: Report failure to Sentry
-        if: ${{ failure() }}
-        uses: ./.github/actions/report-failure
-        with:
-          dsn: "${{ secrets.SENTRY_DEV_INFRA_DSN}}"
-          repo: "${{ github.repository }}"
-          branch: "${{ github.ref_name }}"
-          run_id: "${{ github.run_id }}"
-          workflow_name: "${{ github.workflow }}"
-          job_name: "${{ github.action }}"
+
+  report_failure:
+    needs: run
+    if: ${{ failure() }}
+    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@wb/actions/reusable-sentry
+    with:
+      repo: "${{ github.repository }}"
+      branch: "${{ github.ref_name }}"
+      workflow_name: "${{ github.workflow }}"
+      job_name: "run"
+      run_id: ${{ github.run_id }}
+    secrets: inherit
