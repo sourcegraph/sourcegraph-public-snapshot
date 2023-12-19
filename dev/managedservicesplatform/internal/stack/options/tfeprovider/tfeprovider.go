@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-// With configures a stack to be able to use Cloudflare resources.
+// With configures a stack to be able to use Terraform Enterprise (TFC) resources.
 func With(tfeToken gsmsecret.DataConfig) stack.NewStackOption {
 	return func(s stack.Stack) error {
 		_ = tfe.NewTfeProvider(s.Stack, pointers.Ptr("tfe"),
