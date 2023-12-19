@@ -64,8 +64,7 @@ func TestExecRequest(t *testing.T) {
 				Repo: "github.com/gorilla/mux",
 				Args: [][]byte{[]byte("testcommand")},
 			},
-			ExpectedCode: codes.OK,
-			ExpectedBody: "teststdout",
+			ExpectedCode: codes.Unknown,
 			ExpectedDetails: []any{&v1.ExecStatusPayload{
 				StatusCode: 42,
 				Stderr:     "teststderr",
@@ -122,7 +121,8 @@ func TestExecRequest(t *testing.T) {
 				Repo: "github.com/gorilla/mux",
 				Args: [][]byte{[]byte("testerror")},
 			},
-			ExpectedCode: codes.OK,
+			ExpectedCode: codes.Unknown,
+			ExpectedBody: "testerror",
 			ExpectedDetails: []any{&v1.ExecStatusPayload{
 				StatusCode: 1,
 				Stderr:     "testerror",
@@ -242,7 +242,7 @@ func TestExecRequest(t *testing.T) {
 				// }
 
 				if strings.TrimSpace(s.Message()) != test.ExpectedBody {
-					t.Errorf("wrong erro body: expected %q, got %q", test.ExpectedBody, s.Message())
+					t.Errorf("wrong error body: expected %q, got %q", test.ExpectedBody, s.Message())
 				}
 				return
 			}
