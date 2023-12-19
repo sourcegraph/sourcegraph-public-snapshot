@@ -1646,12 +1646,3 @@ func setLastChanged(logger log.Logger, dir common.GitDir) error {
 
 	return nil
 }
-
-// errorString returns the error string. If err is nil it returns the empty
-// string.
-func errorString(err error) string {
-	if err == nil {
-		return ""
-	}
-	return err.Error()
-}
