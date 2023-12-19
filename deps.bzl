@@ -5679,8 +5679,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_postgresql",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql",
-        sum = "h1:7TTODwd/f0hhqmZhbQcKXSkoxSx9OczTWgWPBTxVOrA=",
-        version = "v0.0.0-20231121191755-214be625af21",
+        sum = "h1:YinyQmBBDqLW67QIqhvDpz8XcFSNPPWJugRuWrHDhbI=",
+        version = "v0.0.0-20231220215815-b87ebb3e8c47",
     )
     go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_random",

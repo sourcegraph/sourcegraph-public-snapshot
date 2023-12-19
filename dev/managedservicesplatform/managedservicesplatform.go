@@ -111,8 +111,8 @@ func (r *Renderer) RenderEnvironment(
 		return nil, errors.Wrap(err, "failed to create IAM stack")
 	}
 	cloudrunOutput, err := cloudrun.NewStack(stacks, cloudrun.Variables{
-		ProjectID:                      *projectOutput.Project.ProjectId(),
-		CloudRunWorkloadServiceAccount: iamOutput.CloudRunWorkloadServiceAccount,
+		ProjectID: *projectOutput.Project.ProjectId(),
+		IAM:       *iamOutput,
 
 		Service:     svc,
 		Image:       build.Image,
