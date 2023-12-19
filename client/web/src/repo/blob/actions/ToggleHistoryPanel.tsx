@@ -13,14 +13,13 @@ import {
     toViewStateHash,
 } from '@sourcegraph/common'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { Icon, Tooltip, Text } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
+import { RepoActionInfo } from '../../RepoActionInfo'
 import type { RepoHeaderContext } from '../../RepoHeader'
 import type { BlobPanelTabID } from '../panel/BlobPanel'
-
-import styles from './ToggleHistoryPanel.module.scss'
 
 /**
  * A repository header action that toggles the visibility of the history panel.
@@ -117,8 +116,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
                     disabled={disabled}
                     className="d-flex justify-content-center align-items-center"
                 >
-                    <Icon aria-hidden={true} svgPath={mdiHistory} className={styles.repoActionIcon} />
-                    <Text className={styles.repoActionLabel}>History</Text>
+                    <RepoActionInfo displayName="History" icon={mdiHistory} />
                 </RepoHeaderActionButtonLink>
             </Tooltip>
         )

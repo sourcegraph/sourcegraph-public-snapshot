@@ -26,6 +26,7 @@ import {
 
 import { replaceRevisionInURL } from '../../util/url'
 import { RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
+import { RepoActionInfo } from '../RepoActionInfo'
 import type { RepoHeaderContext } from '../RepoHeader'
 
 import styles from './actions.module.scss'
@@ -116,14 +117,21 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
         <Menu>
             <ButtonGroup>
                 <Button className={classNames('border', styles.permalinkBtn, 'pt-0 pb-0')} onClick={copyLink}>
-                    <Icon
+                    {/* <Icon
                         aria-hidden={true}
                         svgPath={copyLinkIcon}
                         className={classNames(styles.repoActionIcon, {
                             [styles.checkedIcon]: copiedLink,
                         })}
                     />
-                    <Text className={styles.repoActionLabel}>{copyLinkLabel}</Text>
+                    <Text className={styles.repoActionLabel}>{copyLinkLabel}</Text> */}
+                    <RepoActionInfo
+                        displayName={copyLinkLabel}
+                        iconClassName={classNames({
+                            [styles.checkedIcon]: copiedLink,
+                        })}
+                        icon={copyLinkIcon}
+                    />
                 </Button>
                 {!isRevisionTheSameAsCommitID && (
                     <MenuButton variant="secondary" className={styles.chevronBtn}>
@@ -142,7 +150,17 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
                             onSelect={copyPermalink}
                             className={classNames(styles.dropdownItem, 'justify-content-start')}
                         >
-                            <Icon
+                            <RepoActionInfo
+                                displayName={copiedPermalink ? 'Copied' : 'Copy permalink'}
+                                iconClassName={classNames(
+                                    {
+                                        [styles.checkedIcon]: copiedPermalink,
+                                    },
+                                    'mr-1'
+                                )}
+                                icon={copiedPermalink ? mdiCheckBold : mdiContentCopy}
+                            />
+                            {/* <Icon
                                 aria-hidden={true}
                                 svgPath={copiedPermalink ? mdiCheckBold : mdiContentCopy}
                                 className={classNames(
@@ -153,7 +171,7 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
                                     'mr-1'
                                 )}
                             />
-                            <Text className="mb-0 p-0">{copiedPermalink ? 'Copied' : 'Copy permalink'}</Text>
+                            <Text className="mb-0 p-0">{copiedPermalink ? 'Copied' : 'Copy permalink'}</Text> */}
                         </MenuItem>
                     </MenuList>
                 )}

@@ -15,15 +15,14 @@ import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionIt
 // TODO: Switch mdi icon
 import { HelixSwarmIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import type { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { type ButtonLinkProps, Icon, Link, Tooltip, useObservable, Text } from '@sourcegraph/wildcard'
+import { type ButtonLinkProps, Icon, Link, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
 import { type ExternalLinkFields, ExternalServiceKind, type RepositoryFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchCommitMessage, fetchFileExternalLinks } from '../backend'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
+import { RepoActionInfo } from '../RepoActionInfo'
 import type { RepoHeaderContext } from '../RepoHeader'
-
-import styles from './actions.module.scss'
 
 interface Props extends RevisionSpec, Partial<FileSpec> {
     repo?: Pick<RepositoryFields, 'name' | 'defaultBranch' | 'externalURLs' | 'externalRepository'> | null
@@ -180,6 +179,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
             >
                 <Icon as={exportIcon} aria-hidden={true} className={styles.repoActionIcon} />
                 <Text className={styles.repoActionLabel}>{displayName}</Text>
+                {/* <RepoActionInfo displayName={displayName} icon={exportIcon} /> */}
             </RepoHeaderActionAnchor>
         </Tooltip>
     )

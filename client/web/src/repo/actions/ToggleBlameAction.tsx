@@ -4,13 +4,12 @@ import { mdiGit } from '@mdi/js'
 
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 import type { RenderMode } from '@sourcegraph/shared/src/util/url'
-import { Button, Icon, Tooltip, Text } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
-
-import styles from './actions.module.scss'
+import { RepoActionInfo } from '../RepoActionInfo'
 
 interface Props {
     source?: 'repoHeader' | 'actionItemsBar'
@@ -40,7 +39,7 @@ export const ToggleBlameAction: React.FC<Props> = props => {
         }
     }, [isBlameVisible, setIsBlameVisible])
 
-    const icon = <Icon aria-hidden={true} svgPath={mdiGit} className={styles.repoActionIcon} />
+    const icon = <Icon aria-hidden={true} svgPath={mdiGit} />
 
     if (props.source === 'actionItemsBar') {
         return (
@@ -71,8 +70,7 @@ export const ToggleBlameAction: React.FC<Props> = props => {
                 disabled={disabled}
                 className="d-flex justify-content-center align-items-center"
             >
-                {icon}
-                <Text className={styles.repoActionLabel}>Blame</Text>
+                <RepoActionInfo displayName="Blame" icon={mdiGit} />
             </RepoHeaderActionAnchor>
         </Tooltip>
     )

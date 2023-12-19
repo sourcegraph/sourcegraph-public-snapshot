@@ -2,7 +2,6 @@ import * as React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiApplicationEditOutline } from '@mdi/js'
-import classNames from 'classnames'
 import { from } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
@@ -18,10 +17,10 @@ import {
     Position,
     Tooltip,
     useObservable,
-    Text,
 } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../repo/components/RepoHeaderActions'
+import { RepoActionInfo } from '../repo/RepoActionInfo'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { getEditorSettingsErrorMessage } from './build-url'
@@ -107,7 +106,8 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                                 <img
                                     src={`${assetsRoot}/img/editors/${editor.id}.svg`}
                                     alt={`Open file in ${editor?.name}`}
-                                    className={classNames(styles.icon, styles.repoActionIcon)}
+                                    className={styles.icon}
+                                    // className={classNames(styles.icon, styles.repoActionIcon)}
                                 />
                             }
                             onClick={() => {
@@ -141,16 +141,12 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                     isActive={popoverOpen}
                     icon={
                         props.source === 'repoHeader' ? (
-                            <Icon
-                                aria-hidden={true}
-                                className={classNames(styles.icon, styles.repoActionIcon)}
-                                svgPath={mdiApplicationEditOutline}
-                            />
+                            <Icon aria-hidden={true} className={styles.icon} svgPath={mdiApplicationEditOutline} />
                         ) : (
                             <img
                                 src={`${assetsRoot}/img/open-in-editor.svg`}
                                 alt="Set your preferred editor"
-                                className={classNames(styles.icon, styles.repoActionIcon)}
+                                className={styles.icon}
                             />
                         )
                     }
@@ -221,8 +217,7 @@ function EditorItem(props: EditorItemProps): JSX.Element {
     return (
         <Tooltip content={props.tooltip}>
             <RepoHeaderActionAnchor onSelect={props.onClick} className={styles.item}>
-                {props.icon}
-                {props.shouldShowEditorText && <Text className={styles.repoActionLabel}>Editor</Text>}
+                <RepoActionInfo icon={props.icon} displayName="Editor" hideActionLabel={!props.shouldShowEditorText} />
             </RepoHeaderActionAnchor>
         </Tooltip>
     )
