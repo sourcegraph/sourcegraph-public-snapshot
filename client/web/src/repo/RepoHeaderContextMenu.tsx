@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 
-import { Menu, MenuButton, MenuList } from '@sourcegraph/wildcard'
+import { Menu, MenuButton, MenuList, Position } from '@sourcegraph/wildcard'
 
 import type { RepoHeaderContribution } from './RepoHeader'
 
@@ -14,6 +14,6 @@ export const RepoHeaderContextMenu: FC<RepoHeaderContextMenuProps> = ({ actions 
             ...
         </MenuButton>
 
-        <MenuList>{actions.map(action => action.element)}</MenuList>
+        <MenuList position={Position.bottom}>{actions.map(action => action.element)}</MenuList>
     </Menu>
 )
