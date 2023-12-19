@@ -33,9 +33,7 @@
 
     $: contextLines = $settings?.['search.contextLines'] ?? DEFAULT_CONTEXT_LINES
     $: ranking =
-        $settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING
-            ? rankByLine
-            : rankPassthrough
+        $settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING ? rankByLine : rankPassthrough
     $: ({ expandedMatchGroups, collapsedMatchGroups, hiddenMatchesCount } = rankContentMatch(
         result,
         ranking,
