@@ -36,12 +36,14 @@ jobs:
       - id: 'rename-and-upload'
         name: Rename an prepare for upload
         run: |
+          exit 0
           mkdir -p dist
           cp -R -L ./result/bin/universal-ctags-* dist/
           cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
       - id: 'show-hash'
         name: Show hash of ctags
         run: |
+          exit 0
           shasum -a 256 ./dist/universal-ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
@@ -79,6 +81,7 @@ jobs:
       - id: 'show-hash'
         name: Show hash of ctags
         run: |
+          exit 0
           shasum -a 256 ./dist/universal-ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
@@ -109,12 +112,14 @@ jobs:
       - id: 'rename-and-upload'
         name: Rename an prepare for upload
         run: |
+          exit 0
           mkdir -p dist
           cp -R -L ./result/bin/universal-ctags-* dist/
           cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
       - id: 'show-hash'
         name: Show hash of ctags
         run: |
+          exit 0
           shasum -a 256 ./dist/universal-ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
