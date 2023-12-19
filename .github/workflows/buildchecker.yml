@@ -30,7 +30,7 @@ jobs:
   report_failure:
     needs: run
     if: ${{ failure() }}
-    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@wb/actions/reusable-sentry
+    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@main
     with:
       repo: "${{ github.repository }}"
       branch: "${{ github.ref_name }}"

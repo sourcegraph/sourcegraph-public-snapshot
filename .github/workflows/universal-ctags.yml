@@ -126,30 +126,10 @@ jobs:
   report_failure:
     needs: [aarch64-darwin, x86_64-darwin, x86_64-linux]
     if: ${{ failure() }}
-    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@wb/actions/reusable-sentry
+    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@main
     with:
       repo: "${{ github.repository }}"
       branch: "${{ github.ref_name }}"
       workflow_name: "${{ github.workflow }}"
       run_id: ${{ github.run_id }}
     secrets: inherit
-  # report_failure_x86_64_darwin:
-  #   needs:
-  #   if: ${{ failure() }}
-  #   uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@wb/actions/reusable-sentry
-  #   with:
-  #     repo: "${{ github.repository }}"
-  #     branch: "${{ github.ref_name }}"
-  #     workflow_name: "${{ github.workflow }}"
-  #     run_id: ${{ github.run_id }}
-  #   secrets: inherit
-  # report_failure_x86_64_linux:
-  #   needs: x86_64-darwin
-  #   if: ${{ failure() }}
-  #   uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@wb/actions/reusable-sentry
-  #   with:
-  #     repo: "${{ github.repository }}"
-  #     branch: "${{ github.ref_name }}"
-  #     workflow_name: "${{ github.workflow }}"
-  #     run_id: ${{ github.run_id }}
-  #   secrets: inherit
