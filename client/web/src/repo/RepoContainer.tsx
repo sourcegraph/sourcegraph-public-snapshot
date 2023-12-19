@@ -485,9 +485,6 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
 
             <RepoHeaderContributionPortal
                 position="right"
-                // We switch the priority based on the screen size because we want to change the order
-                // of arrangement on mobile view. The AskCody button should be the last item in the
-                // dropdown when on mobile.
                 priority={1}
                 id="cody"
                 {...repoHeaderContributionsLifecycleProps}
