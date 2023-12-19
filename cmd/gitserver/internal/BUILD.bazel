@@ -114,6 +114,7 @@ go_test(
         "//cmd/gitserver/internal/vcssyncer",
         "//internal/actor",
         "//internal/api",
+        "//internal/conf",
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",

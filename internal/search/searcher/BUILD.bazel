@@ -6,7 +6,6 @@ go_library(
     srcs = [
         "client.go",
         "search.go",
-        "stream.go",
         "symbol_search_job.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/searcher",
@@ -24,7 +23,6 @@ go_library(
         "//internal/search/job",
         "//internal/search/result",
         "//internal/search/streaming",
-        "//internal/search/streaming/http",
         "//internal/searcher/v1:searcher",
         "//internal/symbols",
         "//internal/trace",

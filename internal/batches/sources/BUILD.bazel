@@ -95,6 +95,7 @@ go_test(
         "//internal/extsvc/gerrit",
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
+        "//internal/extsvc/gitolite",
         "//internal/extsvc/versions",
         "//internal/github_apps/auth",
         "//internal/github_apps/store",

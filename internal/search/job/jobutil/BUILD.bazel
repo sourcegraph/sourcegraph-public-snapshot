@@ -90,7 +90,6 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":jobutil"],
     deps = [
-        "//cmd/searcher/protocol",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
@@ -112,6 +111,7 @@ go_test(
         "//internal/search/searcher",
         "//internal/search/streaming",
         "//internal/search/zoekt",
+        "//internal/searcher/v1:searcher",
         "//internal/telemetry/telemetrytest",
         "//internal/types",
         "//lib/errors",
