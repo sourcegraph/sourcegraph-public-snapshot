@@ -17,9 +17,9 @@ go_library(
         "//lib/errors",
         "//lib/pointers",
         "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe//datatfeworkspace:go_default_library",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe//notificationconfiguration:go_default_library",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe//provider:go_default_library",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe//workspacerun:go_default_library",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe//datatfeworkspace",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe//notificationconfiguration",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe//provider",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe//workspacerun",
     ],
 )

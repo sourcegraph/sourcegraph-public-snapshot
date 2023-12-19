@@ -11,6 +11,6 @@ go_library(
         "//dev/managedservicesplatform/internal/stack",
         "//dev/managedservicesplatform/terraformcloud",
         "//lib/pointers",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe//provider:go_default_library",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe//provider",
     ],
 )
