@@ -126,5 +126,4 @@ sh_binary(
         ":executor",
         "//dev/tools:gsutil",
     ],
-    tags = ["releasable"],
 )
