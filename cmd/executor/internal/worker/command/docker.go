@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files"
+	"github.com/sourcegraph/sourcegraph/internal/docker"
 	"github.com/sourcegraph/sourcegraph/internal/executor/types"
 )
 
@@ -15,6 +16,7 @@ type DockerOptions struct {
 	ConfigPath       string
 	AddHostGateway   bool
 	Resources        ResourceOptions
+	Mounts           []docker.MountOptions
 }
 
 // ResourceOptions are the resource limits that can be applied to a container or VM.
@@ -80,6 +82,7 @@ func formatDockerCommand(hostDir string, image string, scriptPath string, spec S
 		"--rm",
 		dockerHostGatewayFlag(options.AddHostGateway),
 		dockerResourceFlags(options.Resources),
+		dockerMountFlags(options.Mounts),
 		dockerVolumeFlags(hostDir),
 		dockerWorkingDirectoryFlags(spec.Dir),
 		dockerEnvFlags(spec.Env),
@@ -113,6 +116,17 @@ func dockerResourceFlags(options ResourceOptions) []string {
 	}
 
 	return flags
+}
+
+func dockerMountFlags(options []docker.MountOptions) []string {
+	mounts := make([]string, 0)
+
+	for _, option := range options {
+		mounts = append(mounts, "--mount")
+		mounts = append(mounts, option.String())
+	}
+
+	return mounts
 }
 
 func dockerVolumeFlags(wd string) []string {

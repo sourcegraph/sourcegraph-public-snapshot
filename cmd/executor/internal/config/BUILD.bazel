@@ -12,6 +12,7 @@ go_library(
     visibility = ["//cmd/executor:__subpackages__"],
     deps = [
         "//internal/conf/confdefaults",
+        "//internal/docker",
         "//internal/env",
         "//internal/executor/types",
         "//internal/hostname",
@@ -34,6 +35,7 @@ go_test(
     ],
     deps = [
         ":config",
+        "//internal/docker",
         "//internal/env",
         "//lib/errors",
         "@com_github_stretchr_testify//assert",

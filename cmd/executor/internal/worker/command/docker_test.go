@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/internal/docker"
 )
 
 func TestNewDockerSpec(t *testing.T) {
@@ -72,6 +73,175 @@ func TestNewDockerSpec(t *testing.T) {
 					"--rm",
 					"-v",
 					"/docker/host/mount/path/workingDirectory:/data",
+					"-w",
+					"/data/some/dir",
+					"-e",
+					"FOO=BAR",
+					"--entrypoint",
+					"/bin/sh",
+					"some-image",
+					"/data/.sourcegraph-executor/some/path",
+				},
+			},
+		},
+		{
+			name:       "Docker Bind Mount",
+			workingDir: "/workingDirectory",
+			image:      "some-image",
+			scriptPath: "some/path",
+			spec: command.Spec{
+				Key:     "some-key",
+				Command: []string{"some", "command"},
+				Dir:     "/some/dir",
+				Env:     []string{"FOO=BAR"},
+			},
+			options: command.DockerOptions{
+				Mounts: []docker.MountOptions{
+					{
+						Type:   docker.MountTypeBind,
+						Source: "/foo",
+						Target: "/bar",
+					},
+				},
+			},
+			expectedSpec: command.Spec{
+				Key: "some-key",
+				Command: []string{
+					"docker",
+					"run",
+					"--rm",
+					"--mount",
+					"type=bind,source=/foo,target=/bar",
+					"-v",
+					"/workingDirectory:/data",
+					"-w",
+					"/data/some/dir",
+					"-e",
+					"FOO=BAR",
+					"--entrypoint",
+					"/bin/sh",
+					"some-image",
+					"/data/.sourcegraph-executor/some/path",
+				},
+			},
+		},
+		{
+			name:       "Docker Volume Mount",
+			workingDir: "/workingDirectory",
+			image:      "some-image",
+			scriptPath: "some/path",
+			spec: command.Spec{
+				Key:     "some-key",
+				Command: []string{"some", "command"},
+				Dir:     "/some/dir",
+				Env:     []string{"FOO=BAR"},
+			},
+			options: command.DockerOptions{
+				Mounts: []docker.MountOptions{
+					{
+						Type:   docker.MountTypeVolume,
+						Source: "foo",
+						Target: "/bar",
+					},
+				},
+			},
+			expectedSpec: command.Spec{
+				Key: "some-key",
+				Command: []string{
+					"docker",
+					"run",
+					"--rm",
+					"--mount",
+					"type=volume,source=foo,target=/bar",
+					"-v",
+					"/workingDirectory:/data",
+					"-w",
+					"/data/some/dir",
+					"-e",
+					"FOO=BAR",
+					"--entrypoint",
+					"/bin/sh",
+					"some-image",
+					"/data/.sourcegraph-executor/some/path",
+				},
+			},
+		},
+		{
+			name:       "Docker Tmpfs Mount",
+			workingDir: "/workingDirectory",
+			image:      "some-image",
+			scriptPath: "some/path",
+			spec: command.Spec{
+				Key:     "some-key",
+				Command: []string{"some", "command"},
+				Dir:     "/some/dir",
+				Env:     []string{"FOO=BAR"},
+			},
+			options: command.DockerOptions{
+				Mounts: []docker.MountOptions{
+					{
+						Type:   docker.MountTypeTmpfs,
+						Target: "/tmp",
+					},
+				},
+			},
+			expectedSpec: command.Spec{
+				Key: "some-key",
+				Command: []string{
+					"docker",
+					"run",
+					"--rm",
+					"--mount",
+					"type=tmpfs,target=/tmp",
+					"-v",
+					"/workingDirectory:/data",
+					"-w",
+					"/data/some/dir",
+					"-e",
+					"FOO=BAR",
+					"--entrypoint",
+					"/bin/sh",
+					"some-image",
+					"/data/.sourcegraph-executor/some/path",
+				},
+			},
+		},
+		{
+			name:       "Docker Multiple Mount",
+			workingDir: "/workingDirectory",
+			image:      "some-image",
+			scriptPath: "some/path",
+			spec: command.Spec{
+				Key:     "some-key",
+				Command: []string{"some", "command"},
+				Dir:     "/some/dir",
+				Env:     []string{"FOO=BAR"},
+			},
+			options: command.DockerOptions{
+				Mounts: []docker.MountOptions{
+					{
+						Type:   docker.MountTypeVolume,
+						Source: "gomodcache",
+						Target: "/gomodcache",
+					},
+					{
+						Type:   docker.MountTypeTmpfs,
+						Target: "/tmp",
+					},
+				},
+			},
+			expectedSpec: command.Spec{
+				Key: "some-key",
+				Command: []string{
+					"docker",
+					"run",
+					"--rm",
+					"--mount",
+					"type=volume,source=gomodcache,target=/gomodcache",
+					"--mount",
+					"type=tmpfs,target=/tmp",
+					"-v",
+					"/workingDirectory:/data",
 					"-w",
 					"/data/some/dir",
 					"-e",

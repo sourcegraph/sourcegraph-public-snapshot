@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/docker"
 	executorutil "github.com/sourcegraph/sourcegraph/internal/executor/util"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -107,7 +108,21 @@ func dockerOptions(c *config.Config) command.DockerOptions {
 		DockerAuthConfig: c.DockerAuthConfig,
 		AddHostGateway:   c.DockerAddHostGateway,
 		Resources:        resourceOptions(c),
+		Mounts:           dockerAdditionalMounts(c),
 	}
+}
+
+func dockerAdditionalMounts(c *config.Config) []docker.MountOptions {
+	opts := make([]docker.MountOptions, 0)
+
+	for _, mount := range c.DockerAdditionalMounts {
+		// No need to check for parsing errors here. We're already doing that
+		// during the config validation phase.
+		m, _ := docker.ParseMount(mount)
+		opts = append(opts, *m)
+	}
+
+	return opts
 }
 
 func firecrackerOptions(c *config.Config) runner.FirecrackerOptions {

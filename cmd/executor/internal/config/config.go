@@ -16,6 +16,7 @@ import (
 	"k8s.io/utils/strings/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
+	"github.com/sourcegraph/sourcegraph/internal/docker"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -55,6 +56,8 @@ type Config struct {
 	DockerRegistryMirrorURL                        string
 	DockerAddHostGateway                           bool
 	DockerAuthConfig                               types.DockerAuthConfig
+	DockerAdditionalMounts                         []string
+	DockerAdditionalMountsStr                      string
 	KubernetesConfigPath                           string
 	KubernetesNodeName                             string
 	KubernetesNodeSelector                         string
@@ -142,6 +145,7 @@ func (c *Config) Load() {
 	c.NumTotalJobs = c.GetInt("EXECUTOR_NUM_TOTAL_JOBS", "0", "The maximum number of jobs that will be dequeued by the worker.")
 	c.NodeExporterURL = c.GetOptional("NODE_EXPORTER_URL", "The URL of the node_exporter instance, without the /metrics path.")
 	c.DockerRegistryNodeExporterURL = c.GetOptional("DOCKER_REGISTRY_NODE_EXPORTER_URL", "The URL of the Docker Registry instance's node_exporter, without the /metrics path.")
+	c.DockerAdditionalMountsStr = c.GetOptional("EXECUTOR_DOCKER_ADDITIONAL_MOUNTS", "Attach filesystem mounts to the container (e.g. type=bind,source=/foo,destination=/bar), semicolon-separated")
 	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
 	c.DockerRegistryMirrorURL = c.GetOptional("EXECUTOR_DOCKER_REGISTRY_MIRROR_URL", "The address of a docker registry mirror to use in firecracker VMs. Supports multiple values, separated with a comma.")
 	c.KubernetesConfigPath = c.GetOptional("EXECUTOR_KUBERNETES_CONFIG_PATH", "The path to the Kubernetes config file.")
@@ -182,6 +186,10 @@ func (c *Config) Load() {
 
 	if c.dockerAuthConfigStr != "" {
 		c.dockerAuthConfigUnmarshalError = json.Unmarshal([]byte(c.dockerAuthConfigStr), &c.DockerAuthConfig)
+	}
+
+	if c.DockerAdditionalMountsStr != "" {
+		c.DockerAdditionalMounts = strings.Split(c.DockerAdditionalMountsStr, ";")
 	}
 
 	if c.kubernetesNodeRequiredAffinityMatchExpressions != "" {
@@ -259,6 +267,29 @@ func (c *Config) Validate() error {
 
 	if c.dockerAuthConfigUnmarshalError != nil {
 		c.AddError(errors.Wrap(c.dockerAuthConfigUnmarshalError, "invalid EXECUTOR_DOCKER_AUTH_CONFIG, failed to parse"))
+	}
+
+	if c.DockerAdditionalMountsStr != "" {
+		// Target is a mandatory field so we can rely on it showing up if
+		// multiple mounts are present, but we need to check for all forms.
+		countTargets := func(text string, patterns ...string) int {
+			count := 0
+			for _, pattern := range patterns {
+				count += strings.Count(text, pattern)
+			}
+			return count
+		}
+
+		if len(c.DockerAdditionalMounts) == 1 && countTargets(c.DockerAdditionalMountsStr, "target", "dst", "destination") > 1 {
+			c.AddError(errors.New("invalid EXECUTOR_DOCKER_ADDITIONAL_MOUNTS, failed to parse due to incorrect separator"))
+		}
+
+		for _, mount := range c.DockerAdditionalMounts {
+			_, err := docker.ParseMount(mount)
+			if err != nil {
+				c.AddError(errors.Wrap(err, "invalid EXECUTOR_DOCKER_ADDITIONAL_MOUNTS, failed to parse mount spec"))
+			}
+		}
 	}
 
 	if c.kubernetesNodeRequiredAffinityMatchExpressionsUnmarshalError != nil {

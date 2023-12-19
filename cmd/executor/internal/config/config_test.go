@@ -94,6 +94,7 @@ func TestConfig_Load(t *testing.T) {
 	assert.Equal(t, "EXECUTOR_VM_PREFIX", cfg.VMPrefix)
 	assert.True(t, cfg.KeepWorkspaces)
 	assert.Equal(t, "EXECUTOR_DOCKER_HOST_MOUNT_PATH", cfg.DockerHostMountPath)
+	assert.Equal(t, "EXECUTOR_DOCKER_ADDITIONAL_MOUNTS", cfg.DockerAdditionalMountsStr)
 	assert.Equal(t, 8, cfg.JobNumCPUs)
 	assert.Equal(t, "EXECUTOR_JOB_MEMORY", cfg.JobMemory)
 	assert.Equal(t, "EXECUTOR_FIRECRACKER_DISK_SPACE", cfg.FirecrackerDiskSpace)
@@ -203,6 +204,7 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Equal(t, "executor", cfg.VMPrefix)
 	assert.False(t, cfg.KeepWorkspaces)
 	assert.Empty(t, cfg.DockerHostMountPath)
+	assert.Empty(t, cfg.DockerAdditionalMountsStr)
 	assert.Equal(t, 4, cfg.JobNumCPUs)
 	assert.Equal(t, "12G", cfg.JobMemory)
 	assert.Equal(t, "20G", cfg.FirecrackerDiskSpace)
@@ -253,6 +255,8 @@ func TestConfig_Validate(t *testing.T) {
 				switch name {
 				case "EXECUTOR_QUEUE_NAME":
 					return "batches"
+				case "EXECUTOR_DOCKER_ADDITIONAL_MOUNTS":
+					return "type=bind,source=/foo,target=/bar"
 				case "EXECUTOR_FRONTEND_URL":
 					return "http://some-url.com"
 				case "EXECUTOR_FRONTEND_PASSWORD":
@@ -347,6 +351,59 @@ func TestConfig_Validate(t *testing.T) {
 				}
 			},
 			expectedErr: errors.New("EXECUTOR_QUEUE_NAMES contains invalid queue name 'batches;codeintel', valid names are 'batches, codeintel' and should be comma-separated"),
+		},
+		{
+			name: "EXECUTOR_DOCKER_ADDITIONAL_MOUNTS using invalid separator",
+			getterFunc: func(name, defaultValue, description string) string {
+				switch name {
+				case "EXECUTOR_QUEUE_NAME":
+					return "batches"
+				case "EXECUTOR_DOCKER_ADDITIONAL_MOUNTS":
+					return "type=bind,source=/foo,target=/bar:type=volume,source=gomodcache,target=/gomodcache"
+				case "EXECUTOR_FRONTEND_URL":
+					return "http://some-url.com"
+				case "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-password"
+				default:
+					return defaultValue
+				}
+			},
+			expectedErr: errors.New("invalid EXECUTOR_DOCKER_ADDITIONAL_MOUNTS, failed to parse due to incorrect separator"),
+		},
+		{
+			name: "EXECUTOR_DOCKER_ADDITIONAL_MOUNTS using incorrect format",
+			getterFunc: func(name, defaultValue, description string) string {
+				switch name {
+				case "EXECUTOR_QUEUE_NAME":
+					return "batches"
+				case "EXECUTOR_DOCKER_ADDITIONAL_MOUNTS":
+					return "source=/foo;/bar"
+				case "EXECUTOR_FRONTEND_URL":
+					return "http://some-url.com"
+				case "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-password"
+				default:
+					return defaultValue
+				}
+			},
+			expectedErr: errors.New("2 errors occurred:\n\t* invalid EXECUTOR_DOCKER_ADDITIONAL_MOUNTS, failed to parse mount spec: target is required\n\t* invalid EXECUTOR_DOCKER_ADDITIONAL_MOUNTS, failed to parse mount spec: invalid field '/bar' must be a key=value pair"),
+		},
+		{
+			name: "EXECUTOR_DOCKER_ADDITIONAL_MOUNTS using volume options",
+			getterFunc: func(name, defaultValue, description string) string {
+				switch name {
+				case "EXECUTOR_QUEUE_NAME":
+					return "batches"
+				case "EXECUTOR_DOCKER_ADDITIONAL_MOUNTS":
+					return "type=volume,source=sshvolume,target=/app,volume-opt=sshcmd=test@node2:/home/test,volume-opt=password=testpassword"
+				case "EXECUTOR_FRONTEND_URL":
+					return "http://some-url.com"
+				case "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-password"
+				default:
+					return defaultValue
+				}
+			},
 		},
 	}
 	for _, test := range tests {
