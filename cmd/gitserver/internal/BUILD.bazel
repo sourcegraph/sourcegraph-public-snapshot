@@ -94,7 +94,6 @@ go_test(
         "p4exec_test.go",
         "repo_info_test.go",
         "server_test.go",
-        "serverutil_test.go",
     ],
     data = glob(["testdata/**"]),
     embed = [":internal"],
