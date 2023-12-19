@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -212,7 +213,18 @@ func ListLimitsHandler(baseLogger log.Logger, redisStore limiter.RedisStore) htt
 func RefreshLimitsHandler(baseLogger log.Logger, sources *actor.Sources) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
-		act.Update(r.Context())
+
+		if err := act.Update(r.Context()); err != nil {
+			logger := act.Logger(trace.Logger(r.Context(), baseLogger))
+			if errors.Is(err, actor.ErrActorRecentlyUpdated{}) {
+				response.JSONError(logger, w, http.StatusTooManyRequests, err)
+			} else {
+				response.JSONError(logger, w, http.StatusInternalServerError, err)
+			}
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 	})
 }
 

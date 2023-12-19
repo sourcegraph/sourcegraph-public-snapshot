@@ -46,15 +46,19 @@ type Source interface {
 	Get(ctx context.Context, token string) (*Actor, error)
 }
 
+type ErrActorRecentlyUpdated struct{}
+
+func (e ErrActorRecentlyUpdated) Error() string {
+	return "actor already updated recently - try again later"
+}
+
 type SourceUpdater interface {
 	Source
 	// Update updates the given actor's state, though the implementation may
 	// decide not to do so every time.
 	//
-	// We currently don't include an error return in the interface because the
-	// original use case for this was for transient updates when htiting rate
-	// limits - we may want to reconsider this.
-	Update(ctx context.Context, actor *Actor)
+	// Error can be ErrActorRecentlyUpdated if the actor was updated too recently.
+	Update(ctx context.Context, actor *Actor) error
 }
 
 type SourceSyncer interface {

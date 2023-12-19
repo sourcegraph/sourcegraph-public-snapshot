@@ -45,8 +45,9 @@ type mockSourceUpdater struct {
 
 var _ SourceUpdater = &mockSourceUpdater{}
 
-func (m *mockSourceUpdater) Update(context.Context, *Actor) {
+func (m *mockSourceUpdater) Update(context.Context, *Actor) error {
 	m.syncCount.Inc()
+	return nil
 }
 
 func TestSourcesWorkers(t *testing.T) {
@@ -153,12 +154,14 @@ func TestSourcesUpdate(t *testing.T) {
 		Key:    "sgd_qweqweqw",
 		Source: &s2, // belongs to s2 source only
 	}
-	act.Update(context.Background())
+	err := act.Update(context.Background())
+	assert.NoError(t, err)
 	assert.Equal(t, int32(0), s1.syncCount.Load())
 	assert.Equal(t, int32(1), s2.syncCount.Load())
 	assert.Equal(t, int32(0), s3.syncCount.Load())
 
-	act.Update(context.Background())
+	err = act.Update(context.Background())
+	assert.NoError(t, err)
 	assert.Equal(t, int32(0), s1.syncCount.Load())
 	assert.Equal(t, int32(2), s2.syncCount.Load())
 	assert.Equal(t, int32(0), s3.syncCount.Load())

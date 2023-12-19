@@ -60,21 +60,16 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	return s.get(ctx, token, false)
 }
 
-func (s *Source) Update(ctx context.Context, act *actor.Actor) {
-	logger := act.Logger(trace.Logger(ctx, s.log))
-
+func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
 	// Update is also called when a user's rate limit is hit, so we don't want
 	// to update every time. We use a shorter interval than the default in
 	// this case.
 	if act.LastUpdated != nil && time.Since(*act.LastUpdated) < 5*time.Minute {
-		logger.Debug("skipping actor update, last updated recently")
-		return
+		return actor.ErrActorRecentlyUpdated{}
 	}
 
 	_, err := s.get(ctx, act.Key, true)
-	if err != nil {
-		logger.Error("failed to update actor")
-	}
+	return err
 }
 
 // fetchAndCache fetches the dotcom user data for the given user token and caches it
