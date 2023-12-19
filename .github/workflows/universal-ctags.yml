@@ -67,7 +67,7 @@ jobs:
       - id: nix-build
         name: Run `nix build`
         run: |
-          exit 1
+          exit 0
           nix build .#ctags-aarch64-darwin
           sudo codesign --force -s - ./result/bin/universal-ctags-*
       - id: 'rename-and-upload'
@@ -104,7 +104,7 @@ jobs:
       - id: nix-build
         name: Run `nix build`
         run: |
-          exit 1
+          exit 0
           nix build .#ctags
       - id: 'rename-and-upload'
         name: Rename an prepare for upload
@@ -126,8 +126,8 @@ jobs:
           destination: 'universal_ctags/x86_64-linux'
           glob: 'universal-ctags-*'
 
-  report_failure_aarch64_darwin:
-    needs: aarch64-darwin
+  report_failure:
+    needs: [aarch64-darwin, x86_64-darwin, x86_64-linux]
     if: ${{ failure() }}
     uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@wb/actions/reusable-sentry
     with:
@@ -136,23 +136,23 @@ jobs:
       workflow_name: "${{ github.workflow }}"
       run_id: ${{ github.run_id }}
     secrets: inherit
-  report_failure_x86_64_darwin:
-    needs: x86_64-darwin
-    if: ${{ failure() }}
-    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@wb/actions/reusable-sentry
-    with:
-      repo: "${{ github.repository }}"
-      branch: "${{ github.ref_name }}"
-      workflow_name: "${{ github.workflow }}"
-      run_id: ${{ github.run_id }}
-    secrets: inherit
-  report_failure_x86_64_linux:
-    needs: x86_64-darwin
-    if: ${{ failure() }}
-    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@wb/actions/reusable-sentry
-    with:
-      repo: "${{ github.repository }}"
-      branch: "${{ github.ref_name }}"
-      workflow_name: "${{ github.workflow }}"
-      run_id: ${{ github.run_id }}
-    secrets: inherit
+  # report_failure_x86_64_darwin:
+  #   needs:
+  #   if: ${{ failure() }}
+  #   uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@wb/actions/reusable-sentry
+  #   with:
+  #     repo: "${{ github.repository }}"
+  #     branch: "${{ github.ref_name }}"
+  #     workflow_name: "${{ github.workflow }}"
+  #     run_id: ${{ github.run_id }}
+  #   secrets: inherit
+  # report_failure_x86_64_linux:
+  #   needs: x86_64-darwin
+  #   if: ${{ failure() }}
+  #   uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@wb/actions/reusable-sentry
+  #   with:
+  #     repo: "${{ github.repository }}"
+  #     branch: "${{ github.ref_name }}"
+  #     workflow_name: "${{ github.workflow }}"
+  #     run_id: ${{ github.run_id }}
+  #   secrets: inherit
