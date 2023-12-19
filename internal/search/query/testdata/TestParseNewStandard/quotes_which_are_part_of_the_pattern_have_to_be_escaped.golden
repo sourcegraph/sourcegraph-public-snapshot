@@ -1,6 +1,6 @@
 [
   {
-    "value": "\"veneto\"",
+    "value": "\\\"veneto\\\"",
     "negated": false,
     "labels": [
       "Literal"
@@ -12,7 +12,7 @@
       },
       "end": {
         "line": 0,
-        "column": 8
+        "column": 10
       }
     }
   }
