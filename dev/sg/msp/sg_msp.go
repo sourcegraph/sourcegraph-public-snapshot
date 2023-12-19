@@ -246,7 +246,7 @@ Supports completions on services and environments.`,
 							return err
 						}
 						tfcAccessToken, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
-							Name:    googlesecretsmanager.SecretTFCAccessToken,
+							Name:    googlesecretsmanager.SecretTFCOrgToken,
 							Project: googlesecretsmanager.ProjectID,
 						})
 						if err != nil {
@@ -334,7 +334,9 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 		OutputDir: filepath.Join(os.TempDir(), fmt.Sprintf("msp-tfc-%s-%s-%d",
 			service.ID, env.ID, time.Now().Unix())),
 		GCP: managedservicesplatform.GCPOptions{},
-		TFC: managedservicesplatform.TerraformCloudOptions{},
+		TFC: managedservicesplatform.TerraformCloudOptions{
+			Enabled: true, // required for all stacks to generate
+		},
 	}
 	defer os.RemoveAll(renderer.OutputDir)
 

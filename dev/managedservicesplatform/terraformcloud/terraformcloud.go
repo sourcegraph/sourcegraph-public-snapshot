@@ -30,6 +30,8 @@ func WorkspaceName(svc spec.ServiceSpec, env spec.EnvironmentSpec, stackName str
 }
 
 const (
+	// Hostname is the Terraform Cloud endpoint.
+	Hostname = "app.terraform.io"
 	// Organization is our default Terraform Cloud organization.
 	Organization = "sourcegraph"
 	// VCSRepo is the repository that is expected to house Managed Services
@@ -85,6 +87,8 @@ type workspaceOptions struct {
 	TerraformVersion  *string
 	AutoApply         *bool
 	GlobalRemoteState *bool
+
+	QueueAllRuns *bool
 }
 
 // AsCreate should be kept up to date with AsUpdate.
@@ -104,6 +108,8 @@ func (c workspaceOptions) AsCreate(tags []*tfe.Tag) tfe.WorkspaceCreateOptions {
 		TerraformVersion:  c.TerraformVersion,
 		AutoApply:         c.AutoApply,
 		GlobalRemoteState: c.GlobalRemoteState,
+
+		QueueAllRuns: c.QueueAllRuns,
 	}
 }
 
@@ -123,6 +129,8 @@ func (c workspaceOptions) AsUpdate() tfe.WorkspaceUpdateOptions {
 		TerraformVersion:  c.TerraformVersion,
 		AutoApply:         c.AutoApply,
 		GlobalRemoteState: c.GlobalRemoteState,
+
+		QueueAllRuns: c.QueueAllRuns,
 	}
 }
 
@@ -132,7 +140,7 @@ type Workspace struct {
 }
 
 func (w Workspace) URL() string {
-	return fmt.Sprintf("https://app.terraform.io/app/sourcegraph/workspaces/%s", w.Name)
+	return fmt.Sprintf("https://%s/app/sourcegraph/workspaces/%s", Hostname, w.Name)
 }
 
 // SyncWorkspaces is a bit like the Terraform Cloud Terraform provider. We do
@@ -226,6 +234,11 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 				Branch:       pointers.Ptr("main"),
 			}
 			wantWorkspaceOptions.TriggerPrefixes = []string{workspaceDir}
+			// Automatically apply the workspace that provisions runs for each
+			// workspace and applies any additional configuration.
+			if s == "tfcworkspaces" { // import cycle not allowed, just hand-copy
+				wantWorkspaceOptions.QueueAllRuns = pointers.Ptr(true)
+			}
 		case WorkspaceRunModeCLI:
 			// In CLI, `terraform` runs will upload the content of current working directory
 			// to TFC, hence we need to remove all VCS and working directory override

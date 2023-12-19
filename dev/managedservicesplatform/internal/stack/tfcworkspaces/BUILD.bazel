@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "tfcworkspaces",
+    srcs = ["tfcworkspaces.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/tfcworkspaces",
+    visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    deps = [
+        "//dev/managedservicesplatform/googlesecretsmanager",
+        "//dev/managedservicesplatform/internal/resource/gsmsecret",
+        "//dev/managedservicesplatform/internal/resourceid",
+        "//dev/managedservicesplatform/internal/stack",
+        "//dev/managedservicesplatform/internal/stack/options/googleprovider",
+        "//dev/managedservicesplatform/internal/stack/options/tfcbackend",
+        "//dev/managedservicesplatform/internal/stack/options/tfeprovider",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe//datatfeworkspace:go_default_library",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe//notificationconfiguration:go_default_library",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe//workspacerun:go_default_library",
+    ],
+)

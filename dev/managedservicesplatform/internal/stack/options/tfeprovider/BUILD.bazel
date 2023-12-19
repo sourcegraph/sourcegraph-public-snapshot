@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "tfeprovider",
+    srcs = ["tfeprovider.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/tfeprovider",
+    visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    deps = [
+        "//dev/managedservicesplatform/internal/resource/gsmsecret",
+        "//dev/managedservicesplatform/internal/resourceid",
+        "//dev/managedservicesplatform/internal/stack",
+        "//dev/managedservicesplatform/terraformcloud",
+        "//lib/pointers",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe//provider:go_default_library",
+    ],
+)

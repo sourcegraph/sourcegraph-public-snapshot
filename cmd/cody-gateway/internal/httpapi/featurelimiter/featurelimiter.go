@@ -3,10 +3,11 @@ package featurelimiter
 import (
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/internal/authbearer"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/authbearer"
 
 	"github.com/sourcegraph/log"
 

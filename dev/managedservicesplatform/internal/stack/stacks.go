@@ -125,3 +125,9 @@ func ExtractApp(set *Set) cdktf.App { return set.app }
 // It is intentionally not part of the stack.Set interface as it should not
 // generally be needed.
 func ExtractStacks(set *Set) []Stack { return set.stacks }
+
+// ExtractStacks returns the "current" (last) stack in this stack.Set.
+//
+// It is intentionally not part of the stack.Set interface as it should not
+// generally be needed.
+func ExtractCurrentStack(set *Set) Stack { return set.stacks[len(set.stacks)-1] }
