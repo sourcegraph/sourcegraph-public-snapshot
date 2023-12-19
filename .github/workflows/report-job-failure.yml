@@ -19,19 +19,19 @@ on:
 
 jobs:
   send_sentry_event:
-  steps:
-    - uses: actions/setup-node@v4
-    - name: Report failure to sentry
-      if: ${{ failure() }}
-      run: |
-        npm i -g @sentry/cli
-        sentry-cli send-event -m "Job ${{ inputs.job_name }} in the ${{ inputs.workflow_name }} action has failed - see run for exact failure" \
-          -t "github-action:${{ inputs.workflow_name }}" \
-          -t "branch:${{ inputs.branch }}" \
-          -t "repository:${{ inputs.repo }}" \
-          -t "workflow-run: https://github.com/${{ inputs.repo }}/actions/runs/${{ inputs.run_id }}" \
-          --no-environ
-      env:
-        SENTRY_DSN: ${{ secrets.SENTRY_DEV_INFRA_DSN }}
-        SENTRY_ORG: sourcegraph
-        SENTRY_PROJECT: dev-infra
+    steps:
+      - uses: actions/setup-node@v4
+      - name: Report failure to sentry
+        if: ${{ failure() }}
+        run: |
+          npm i -g @sentry/cli
+          sentry-cli send-event -m "Job ${{ inputs.job_name }} in the ${{ inputs.workflow_name }} action has failed - see run for exact failure" \
+            -t "github-action:${{ inputs.workflow_name }}" \
+            -t "branch:${{ inputs.branch }}" \
+            -t "repository:${{ inputs.repo }}" \
+            -t "workflow-run: https://github.com/${{ inputs.repo }}/actions/runs/${{ inputs.run_id }}" \
+            --no-environ
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DEV_INFRA_DSN }}
+          SENTRY_ORG: sourcegraph
+          SENTRY_PROJECT: dev-infra
