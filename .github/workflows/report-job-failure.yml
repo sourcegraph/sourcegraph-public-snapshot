@@ -19,6 +19,7 @@ on:
 
 jobs:
   send_sentry_event:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-node@v4
       - name: Report failure to sentry
