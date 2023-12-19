@@ -175,7 +175,7 @@ export default defineConfig(({ mode }) => {
                 {
                     find: /^react-icons\/(.+)$/,
                     replacement: 'react-icons/$1/index.js',
-                }
+                },
             ],
         },
 
