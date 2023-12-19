@@ -19,8 +19,8 @@ inputs:
     type: string
   job_name:
     description: "The name of the job that failed."
-    required: true
     type: string
+    default: ''
   run_id:
     description: "The run ID of the failed workflow run."
     required: true
@@ -29,10 +29,16 @@ runs:
   using: "composite"
   steps:
     - uses: actions/setup-node@v4
+    - run: echo "The Job '${{ inputs.job_name }}' in the ${{ inputs.workflow_name }} action has failed - see run for exact failure" > EVENT_MSG
+      if: ${{ inputs.job_name != '' }}
+      shell: bash
+    - run: echo "A Job in the ${{ inputs.workflow_name }} action has failed - see run for exact failure" > EVENT_MSG
+      if: ${{ inputs.job_name == '' }}
+      shell: bash
     - name: Send Sentry event for failed action
       run: |
         npm i -g @sentry/cli
-        sentry-cli send-event -m "The Job '${{ inputs.job_name }} in the ${{ inputs.workflow_name }} action has failed - see run for exact failure" \
+        sentry-cli send-event -m "$(cat EVENT_MSG)" \
           -t "github-action:${{ inputs.workflow_name }}" \
           -t "branch:${{ inputs.branch }}" \
           -t "repository:${{ inputs.repo }}" \
