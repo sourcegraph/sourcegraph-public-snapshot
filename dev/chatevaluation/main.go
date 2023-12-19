@@ -70,12 +70,22 @@ func sample(repo string, count int) ([]string, error) {
 }
 
 // Distort works on TypeScript files and changes a non-string type declaration it finds to : string.
+// Does not work that well, for instance will replace // TODO: foo with // TODO: string.
 func distort(contents string) string {
-	typeAnnotation := regexp.MustCompile(`:\s*([a-zA-Z\[\]<>]+)`)
+	typeAnnotation := regexp.MustCompile(`:\s*([a-zA-Z\[\]<>.]+)`)
 	matches := typeAnnotation.FindStringSubmatch(contents)
 	if len(matches) > 0 {
 		if matches[1] != ": string" {
-			return typeAnnotation.ReplaceAllString(contents, ": string")
+			var replaced bool
+			return typeAnnotation.ReplaceAllStringFunc(contents, func(typ string) string {
+				if replaced {
+					return typ
+				}
+				if typ != ": string" {
+					replaced = true
+				}
+				return ": string"
+			})
 		}
 	}
 	return contents
