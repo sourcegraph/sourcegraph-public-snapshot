@@ -35,4 +35,4 @@ jobs:
           branch: "${{ github.ref_name }}"
           run_id: "${{ github.run_id }}"
           workflow_name: "${{ github.workflow }}"
-          job_name: "${{ job.job }}"
+          job_name: "${{ github.action }}"
