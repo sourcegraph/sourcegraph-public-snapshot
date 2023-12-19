@@ -55,12 +55,6 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			}).Value,
 		})
 
-	// Apply each workspace in sequence, with each subsequent workspace depending
-	// on the previous. We should not have too many stacks, and a linear relationship
-	// is easier to reason with. As we create runs, keep assigning the previous
-	// run to this variable.
-	var previousWorkspaceRun workspacerun.WorkspaceRun
-
 	// First, let's prepare our own workspace.
 	{
 		self := stack.ExtractCurrentStack(stacks)
@@ -70,14 +64,15 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			return nil, errors.Wrapf(err, "stack %q missing tfcbackend.MetadataKeyWorkspace",
 				self.Name)
 		}
-		previousWorkspaceRun = configureWorkspace(scope, tfeOrgProvider, id, workspaceName, previousWorkspaceRun, workspaceConfiguration{
-			enableNotifications: true,
-			// We can't provision a run for ourselves.
-			provisionRun: false,
+		_ = getAndConfigureWorkspace(scope, tfeOrgProvider, id, workspaceName, workspaceConfiguration{
+			enableNotifications: vars.EnableNotifications,
 		})
 	}
 
-	// Then, apply configuration for all previous stacks.
+	// Then, apply configuration for all previous stacks. Each created workspace
+	// run should be assigned to previousWorkspaceRun for us to create a series
+	// of runs.
+	var previousWorkspaceRun workspacerun.WorkspaceRun
 	for _, s := range vars.PreviousStacks {
 		id := resourceid.New(s.Name)
 		workspaceName := s.Metadata[tfcbackend.MetadataKeyWorkspace]
@@ -85,28 +80,62 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			return nil, errors.Wrapf(err, "stack %q missing tfcbackend.MetadataKeyWorkspace",
 				s.Name)
 		}
-		previousWorkspaceRun = configureWorkspace(scope, tfeOrgProvider, id, workspaceName, previousWorkspaceRun, workspaceConfiguration{
-			provisionRun:        true,
-			enableNotifications: true,
+
+		workspace := getAndConfigureWorkspace(scope, tfeOrgProvider, id, workspaceName, workspaceConfiguration{
+			enableNotifications: vars.EnableNotifications,
 		})
+
+		// Now we want to provision a run for all our other stacks, and ensure
+		// the run in order. The next workspace should depend on this one, and
+		// we should depend on the previous workspace.
+		//
+		// We should not have too many stacks, and a linear relationship
+		// is easier to reason with. As we create runs, keep assigning the previous
+		// run to this variable.
+		var dependsOn *[]cdktf.ITerraformDependable
+		if previousWorkspaceRun != nil {
+			dependsOn = &[]cdktf.ITerraformDependable{previousWorkspaceRun}
+		}
+		previousWorkspaceRun = workspacerun.NewWorkspaceRun(scope,
+			id.TerraformID("workspace_run"),
+			&workspacerun.WorkspaceRunConfig{
+				WorkspaceId: workspace.Id(),
+				DependsOn:   dependsOn,
+
+				Apply: &workspacerun.WorkspaceRunApply{
+					// Automatically start the run
+					ManualConfirm: pointers.Ptr(false),
+					// Wait for run to complete before resource success
+					WaitForRun: pointers.Ptr(true),
+				},
+				Destroy: &workspacerun.WorkspaceRunDestroy{
+					// Automatically start the run
+					ManualConfirm: pointers.Ptr(false),
+					// Wait for run to complete before resource success
+					WaitForRun: pointers.Ptr(true),
+				},
+			})
 	}
 
 	return &CrossStackOutput{}, nil
 }
 
 type workspaceConfiguration struct {
-	provisionRun        bool
 	enableNotifications bool
 }
 
-func configureWorkspace(
+// getAndConfigureWorkspace retrieves the workspace and applies configuration
+// on top. The workspace must already exist.
+func getAndConfigureWorkspace(
 	scope cdktf.TerraformStack,
+	// orgProvider is required for workspace management, sicne only the org-level
+	// token can make these changes.
 	orgProvider tfe.TfeProvider,
 	id resourceid.ID,
+	// Name of workspace to get and configure
 	workspaceName string,
-	previousWorkspaceRun workspacerun.WorkspaceRun,
 	config workspaceConfiguration,
-) workspacerun.WorkspaceRun {
+) datatfeworkspace.DataTfeWorkspace {
 	// Workspace must be provisioned by `sg msp tfc`, as we don't want to use
 	// TFC itself to provision TFC workspaces (to avoid chicken-and-egg problems)
 	workspace := datatfeworkspace.NewDataTfeWorkspace(scope,
@@ -139,34 +168,5 @@ func configureWorkspace(
 			})),
 		})
 
-	// If no run is needed, we are done
-	if !config.provisionRun {
-		return nil
-	}
-
-	// The next workspace should depend on this one, and we should depend on
-	// the previous workspace.
-	var dependsOn *[]cdktf.ITerraformDependable
-	if previousWorkspaceRun != nil {
-		dependsOn = &[]cdktf.ITerraformDependable{previousWorkspaceRun}
-	}
-	return workspacerun.NewWorkspaceRun(scope,
-		id.TerraformID("workspace_run"),
-		&workspacerun.WorkspaceRunConfig{
-			WorkspaceId: workspace.Id(),
-			DependsOn:   dependsOn,
-
-			Apply: &workspacerun.WorkspaceRunApply{
-				// Automatically start the run
-				ManualConfirm: pointers.Ptr(false),
-				// Wait for run to complete before resource success
-				WaitForRun: pointers.Ptr(true),
-			},
-			Destroy: &workspacerun.WorkspaceRunDestroy{
-				// Automatically start the run
-				ManualConfirm: pointers.Ptr(false),
-				// Wait for run to complete before resource success
-				WaitForRun: pointers.Ptr(true),
-			},
-		})
+	return workspace
 }
