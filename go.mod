@@ -281,6 +281,7 @@ require (
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20230822024612-edb48c530722
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20231106184355-f739cf8e1d49
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20230822024612-edb48c530722
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20231218231056-4749baca142f
 	github.com/sourcegraph/sourcegraph/lib/managedservicesplatform v0.0.0-00010101000000-000000000000
 	github.com/vektah/gqlparser/v2 v2.4.5
 	go.opentelemetry.io/collector/config/confighttp v0.81.0
@@ -365,7 +366,6 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skeema/knownhosts v1.1.1 // indirect
 	github.com/smartystreets/assertions v1.13.0 // indirect
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20231218231056-4749baca142f // indirect
 	github.com/vbatts/tar-split v0.11.3 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
