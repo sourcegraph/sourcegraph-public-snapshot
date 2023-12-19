@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-go@v2
         with: { go-version: '1.21' }
       - uses: actions/setup-node@v4
-      - run: ./dev/buildchecker/run-check.sh
+      - run: exit 1 #./dev/buildchecker/run-check.sh
         env:
           GITHUB_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_GITHUB_TOKEN }}
           BUILDKITE_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_BUILDKITE_TOKEN }}
