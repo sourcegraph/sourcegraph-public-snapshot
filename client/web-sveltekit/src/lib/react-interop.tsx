@@ -190,7 +190,7 @@ function createURL(path: string | { pathname?: string; search?: string; hash?: s
     return url
 }
 
-function createLocation(target: URL | (typeof window)['location']): Location {
+function createLocation(target: URL | typeof window['location']): Location {
     return {
         pathname: target.pathname,
         search: target.search,
