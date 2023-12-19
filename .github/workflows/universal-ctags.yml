@@ -135,3 +135,34 @@ jobs:
           SENTRY_DSN: ${{ secrets.SENTRY_DEV_INFRA_DSN }}
           SENTRY_ORG: sourcegraph
           SENTRY_PROJECT: dev-infra
+
+  report_failure_aarch64_darwin:
+    needs: aarch64-darwin
+    if: ${{ failure() }}
+    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@wb/actions/reusable-sentry
+    with:
+      repo: "${{ github.repository }}"
+      branch: "${{ github.ref_name }}"
+      workflow_name: "${{ github.workflow }}"
+      run_id: ${{ github.run_id }}
+    secrets: inherit
+  report_failure_x86_64_darwin:
+    needs: x86_64-darwin
+    if: ${{ failure() }}
+    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@wb/actions/reusable-sentry
+    with:
+      repo: "${{ github.repository }}"
+      branch: "${{ github.ref_name }}"
+      workflow_name: "${{ github.workflow }}"
+      run_id: ${{ github.run_id }}
+    secrets: inherit
+  report_failure_x86_64_linux:
+    needs: x86_64-darwin
+    if: ${{ failure() }}
+    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@wb/actions/reusable-sentry
+    with:
+      repo: "${{ github.repository }}"
+      branch: "${{ github.ref_name }}"
+      workflow_name: "${{ github.workflow }}"
+      run_id: ${{ github.run_id }}
+    secrets: inherit

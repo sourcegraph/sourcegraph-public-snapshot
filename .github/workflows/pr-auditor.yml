@@ -20,16 +20,13 @@ jobs:
           GITHUB_EVENT_PATH: ${{ env.GITHUB_EVENT_PATH }}
           GITHUB_TOKEN: ${{ secrets.PR_AUDITOR_TOKEN }}
           GITHUB_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      - name: Report failure to sentry
-        if: ${{ failure() }}
-        run: |
-          npm i -g @sentry/cli
-          sentry-cli send-event -m "Job $GITHUB_JOB in the $GITHUB_WORKFLOW action has failed - see run for exact failure" \
-            -t "github-action:$GITHUB_WORKFLOW" \
-            -t "branch:$GITHUB_REF_NAME" \
-            -t "repository:$GITHUB_REPOSITORY" \
-            -t "workflow-run:$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-        env:
-          SENTRY_DSN: ${{ secrets.SENTRY_DEV_INFRA_DSN }}
-          SENTRY_ORG: sourcegraph
-          SENTRY_PROJECT: dev-infra
+  report_failure:
+    needs: check-pr
+    if: ${{ failure() }}
+    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@wb/actions/reusable-sentry
+    with:
+      repo: "${{ github.repository }}"
+      branch: "${{ github.ref_name }}"
+      workflow_name: "${{ github.workflow }}"
+      run_id: ${{ github.run_id }}
+    secrets: inherit
