@@ -1,0 +1,20 @@
+[
+  {
+    "value": "foo \"bar\"",
+    "negated": false,
+    "labels": [
+      "Literal",
+      "Quoted"
+    ],
+    "range": {
+      "start": {
+        "line": 0,
+        "column": 0
+      },
+      "end": {
+        "line": 0,
+        "column": 11
+      }
+    }
+  }
+]
