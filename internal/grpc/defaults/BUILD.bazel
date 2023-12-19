@@ -6,11 +6,13 @@ go_library(
     srcs = [
         "cache.go",
         "defaults.go",
+        "retry.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/defaults",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
+        "//internal/env",
         "//internal/grpc",
         "//internal/grpc/contextconv",
         "//internal/grpc/internalerrs",
@@ -22,11 +24,13 @@ go_library(
         "//internal/ttlcache",
         "//lib/errors",
         "@com_github_grpc_ecosystem_go_grpc_middleware_providers_prometheus//:prometheus",
+        "@com_github_grpc_ecosystem_go_grpc_middleware_v2//interceptors/retry",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_contrib_instrumentation_google_golang_org_grpc_otelgrpc//:otelgrpc",
         "@io_opentelemetry_go_otel_trace//:trace",
         "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//credentials",
         "@org_golang_google_grpc//credentials/insecure",
         "@org_golang_google_grpc//reflection",
@@ -35,9 +39,13 @@ go_library(
 
 go_test(
     name = "defaults_test",
-    srcs = ["cache_test.go"],
+    srcs = [
+        "cache_test.go",
+        "retry_test.go",
+    ],
     embed = [":defaults"],
     deps = [
+        "//lib/errors",
         "@com_github_google_go_cmp//cmp",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",
