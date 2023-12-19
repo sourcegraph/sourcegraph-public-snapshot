@@ -30,20 +30,17 @@ jobs:
       - id: nix-build
         name: Run `nix build`
         run: |
-          exit 1
           nix build .#ctags
           sudo codesign --force -s - ./result/bin/universal-ctags-*
       - id: 'rename-and-upload'
         name: Rename an prepare for upload
         run: |
-          exit 0
           mkdir -p dist
           cp -R -L ./result/bin/universal-ctags-* dist/
           cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
       - id: 'show-hash'
         name: Show hash of ctags
         run: |
-          exit 0
           shasum -a 256 ./dist/universal-ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
@@ -69,7 +66,6 @@ jobs:
       - id: nix-build
         name: Run `nix build`
         run: |
-          exit 0
           nix build .#ctags-aarch64-darwin
           sudo codesign --force -s - ./result/bin/universal-ctags-*
       - id: 'rename-and-upload'
@@ -81,7 +77,6 @@ jobs:
       - id: 'show-hash'
         name: Show hash of ctags
         run: |
-          exit 0
           shasum -a 256 ./dist/universal-ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
@@ -107,19 +102,16 @@ jobs:
       - id: nix-build
         name: Run `nix build`
         run: |
-          exit 0
           nix build .#ctags
       - id: 'rename-and-upload'
         name: Rename an prepare for upload
         run: |
-          exit 0
           mkdir -p dist
           cp -R -L ./result/bin/universal-ctags-* dist/
           cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
       - id: 'show-hash'
         name: Show hash of ctags
         run: |
-          exit 0
           shasum -a 256 ./dist/universal-ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
