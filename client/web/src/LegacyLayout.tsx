@@ -115,6 +115,8 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
 
     const newSearchNavigation = useExperimentalFeatures<boolean>(features => features.newSearchNavigationUI ?? false)
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
+    // Start with `true` to avoid redirecting before having a chance to check the real value of the flag.
+    const [isCodyProEnabled] = useFeatureFlag('cody-pro', true)
 
     const { theme } = useTheme()
     const showHelpShortcut = useKeyboardShortcut('keyboardShortcutsHelp')
@@ -205,6 +207,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
 
     if (
         props.isSourcegraphDotCom &&
+        !isCodyProEnabled &&
         props.authenticatedUser &&
         !props.authenticatedUser.completedPostSignup &&
         !isPostSignUpPage

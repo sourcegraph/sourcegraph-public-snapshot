@@ -29,8 +29,11 @@ type Actor struct {
 	UID int32 `json:",omitempty"`
 
 	// AnonymousUID is the user's semi-stable anonymousID from the request cookie
-	// or the 'X-Sourcegraph-Actor-Anonymous-UID' request header.
-	// Only set if the user is unauthenticated and the request contains an anonymousID.
+	// or the 'X-Sourcegraph-Actor-Anonymous-UID' request header. This may be
+	// set even if the actor is authenticated, to maintain a consistent mapping.
+	//
+	// 🚨 SECURITY:  When deciding how to handle anonymous vs authenticated users,
+	// ALWAYS check the UID field first.
 	AnonymousUID string `json:",omitempty"`
 
 	// Internal is true if the actor represents an internal Sourcegraph service (and is therefore
@@ -69,6 +72,9 @@ func FromAnonymousUser(anonymousUID string) *Actor { return &Actor{AnonymousUID:
 
 // FromMockUser returns an actor corresponding to a test user. Do not use outside of tests.
 func FromMockUser(uid int32) *Actor { return &Actor{UID: uid, mockUser: true} }
+
+// Internal returns an internal actor.
+func Internal() *Actor { return &Actor{Internal: true} }
 
 // UIDString is a helper method that returns the UID as a string.
 func (a *Actor) UIDString() string { return strconv.Itoa(int(a.UID)) }
@@ -135,5 +141,5 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 // 🚨 SECURITY: The caller MUST ensure that it performs its own access controls
 // or removal of sensitive data.
 func WithInternalActor(ctx context.Context) context.Context {
-	return context.WithValue(ctx, actorKey, &Actor{Internal: true})
+	return context.WithValue(ctx, actorKey, Internal())
 }

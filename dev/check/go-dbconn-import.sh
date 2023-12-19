@@ -11,22 +11,21 @@ set -euf -o pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 allowed_prefix=(
+  github.com/sourcegraph/sourcegraph/cmd/embeddings
   github.com/sourcegraph/sourcegraph/cmd/frontend
   github.com/sourcegraph/sourcegraph/cmd/gitserver
-  github.com/sourcegraph/sourcegraph/cmd/worker
-  github.com/sourcegraph/sourcegraph/cmd/repo-updater
   github.com/sourcegraph/sourcegraph/cmd/migrator
-  github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker
-  github.com/sourcegraph/sourcegraph/cmd/symbols
-  github.com/sourcegraph/sourcegraph/cmd/embeddings
-  # Doesn't connect but uses db internals for use with sqlite
-  github.com/sourcegraph/sourcegraph/cmd/symbols
-  # Transitively depends on zoekt package which imports but does not use DB
-  github.com/sourcegraph/sourcegraph/cmd/searcher
   # Transitively depends on updatecheck package which imports but does not use DB
   github.com/sourcegraph/sourcegraph/cmd/pings
+  github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker
+  github.com/sourcegraph/sourcegraph/cmd/repo-updater
+  # Transitively depends on zoekt package which imports but does not use DB
+  github.com/sourcegraph/sourcegraph/cmd/searcher
+  # Doesn't connect but uses db internals for use with sqlite
   # Main entrypoint for running all services, so it must be allowed to import it.
   github.com/sourcegraph/sourcegraph/cmd/sourcegraph
+  github.com/sourcegraph/sourcegraph/cmd/symbols
+  github.com/sourcegraph/sourcegraph/cmd/worker
 )
 
 # Create regex ^(a|b|c)

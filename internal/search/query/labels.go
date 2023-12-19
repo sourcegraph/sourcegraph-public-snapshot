@@ -19,6 +19,7 @@ const (
 	// than canonical form (r: instead of repo:)
 	IsAlias
 	Standard
+	QuotesAsLiterals
 )
 
 var allLabels = map[labels]string{

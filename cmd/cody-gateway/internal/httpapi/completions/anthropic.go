@@ -129,7 +129,7 @@ func NewAnthropicHandler(
 		rateLimitNotifier,
 		httpClient,
 		string(conftypes.CompletionsProviderNameAnthropic),
-		anthropicAPIURL,
+		func(_ codygateway.Feature) string { return anthropicAPIURL },
 		allowedModels,
 		upstreamHandlerMethods[anthropicRequest]{
 			validateRequest: func(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, *flaggingResult, error) {
@@ -160,7 +160,7 @@ func NewAnthropicHandler(
 					UserID: identifier,
 				}
 			},
-			getRequestMetadata: func(_ context.Context, _ log.Logger, _ *actor.Actor, body anthropicRequest) (model string, additionalMetadata map[string]any) {
+			getRequestMetadata: func(_ context.Context, _ log.Logger, _ *actor.Actor, _ codygateway.Feature, body anthropicRequest) (model string, additionalMetadata map[string]any) {
 				return body.Model, map[string]any{
 					"stream":               body.Stream,
 					"max_tokens_to_sample": body.MaxTokensToSample,

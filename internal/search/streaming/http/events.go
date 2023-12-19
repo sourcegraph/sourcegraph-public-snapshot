@@ -109,6 +109,7 @@ type EventRepoMatch struct {
 	Archived           bool               `json:"archived,omitempty"`
 	Private            bool               `json:"private,omitempty"`
 	Metadata           map[string]*string `json:"metadata,omitempty"`
+	Topics             []string           `json:"topics,omitempty"`
 }
 
 func (e *EventRepoMatch) eventMatch() {}

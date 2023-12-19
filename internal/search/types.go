@@ -37,6 +37,7 @@ type Inputs struct {
 	OnSourcegraphDotCom    bool
 	Features               *Features
 	Protocol               Protocol
+	ContextLines           int32
 	SanitizeSearchPatterns []*regexp.Regexp
 }
 
@@ -189,10 +190,11 @@ const (
 
 // ZoektParameters contains all the inputs to run a Zoekt indexed search.
 type ZoektParameters struct {
-	Query          zoektquery.Q
-	Typ            IndexedRequestType
-	FileMatchLimit int32
-	Select         filter.SelectPath
+	Query           zoektquery.Q
+	Typ             IndexedRequestType
+	FileMatchLimit  int32
+	Select          filter.SelectPath
+	NumContextLines int
 
 	// Features are feature flags that can affect behaviour of searcher.
 	Features Features
@@ -218,6 +220,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoek
 		MaxWallTime:       defaultTimeout,
 		ChunkMatches:      true,
 		UseKeywordScoring: o.PatternType == query.SearchTypeKeyword,
+		NumContextLines:   o.NumContextLines,
 	}
 
 	// These are reasonable default amounts of work to do per shard and
@@ -287,6 +290,8 @@ type SearcherParameters struct {
 
 	// Features are feature flags that can affect behaviour of searcher.
 	Features Features
+
+	NumContextLines int
 }
 
 // TextPatternInfo is the struct used by vscode pass on search queries. Keep it in

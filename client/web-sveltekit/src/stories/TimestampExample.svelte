@@ -6,11 +6,11 @@
     const date = faker.date.recent()
     const cases: [string, Partial<ComponentProps<Timestamp>>][] = [
         ['default', {}],
-        ['no ago', { addSuffix: false }],
+        ['with ago', { hideSuffix: true }],
         ['strict', { strict: true }],
         ['utc', { utc: true }],
         ['absolute', { showAbsolute: true }],
-        ['no ago, strict', { addSuffix: false, strict: true }],
+        ['with ago, strict', { hideSuffix: true, strict: true }],
         ['absolute, utc', { showAbsolute: true, utc: true }],
     ]
 </script>

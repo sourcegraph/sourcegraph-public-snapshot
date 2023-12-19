@@ -90,10 +90,21 @@ const REQUESTERS: Record<string, TokenRequester> = {
             'Please make sure you still have your IDE (IntelliJ, GoLand, PyCharm, etc.) running on your machine when clicking this link.',
         callbackType: 'open',
     },
+    NEOVIM: {
+        name: 'Neovim',
+        redirectURL: 'http://localhost:$PORT/api/sourcegraph/token?token=$TOKEN',
+        successMessage: 'Restart Neovim and your credentials will be saved.',
+        infoMessage: 'Please make sure you still have Neovim running on your machine when clicking this link.',
+        callbackType: 'open',
+    },
 }
 
 export function isAccessTokenCallbackPage(): boolean {
     return location.pathname.endsWith('/settings/tokens/new/callback')
+}
+
+function isRedirectable(name: string | null): boolean {
+    return name !== null && (name === 'JETBRAINS' || name === 'NEOVIM')
 }
 
 /**
@@ -164,7 +175,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
         }
 
         // SECURITY: If the request is coming from JetBrains, verify if the port is valid
-        if (requestFrom === 'JETBRAINS' && (!port || !Number.isInteger(Number(port)))) {
+        if (isRedirectable(requestFrom) && (!port || !Number.isInteger(Number(port)))) {
             navigate('../..', { relative: 'path' })
             return
         }
@@ -209,7 +220,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                     onDidCreateAccessToken(result)
                                     setNewToken(result.token)
                                     let uri = replacePlaceholder(requester?.redirectURL, 'TOKEN', result.token)
-                                    if (requestFrom === 'JETBRAINS' && port) {
+                                    if (isRedirectable(requestFrom) && port) {
                                         uri = replacePlaceholder(uri, 'PORT', port)
                                     }
 

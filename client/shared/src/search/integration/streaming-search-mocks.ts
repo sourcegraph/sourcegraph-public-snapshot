@@ -104,10 +104,11 @@ export const mixedSearchStreamEvents: SearchEvent[] = [
                 commit: '2e3569cf60646c9ce4e37a43e5cf698a00cbd41a',
                 chunkMatches: [
                     {
-                        content: "test('does not emit items with duplicate IDs', async () => {",
+                        content:
+                            "\ntest('does not emit items with duplicate IDs', async () => {\n\tconst output = await indexExample('five')",
                         contentStart: {
-                            offset: 939,
-                            line: 38,
+                            offset: 938,
+                            line: 37,
                             column: 0,
                         },
                         ranges: [
@@ -126,10 +127,11 @@ export const mixedSearchStreamEvents: SearchEvent[] = [
                         ],
                     },
                     {
-                        content: "test('five', async () => {",
+                        content:
+                            "\ntest('five', async () => {\n\tconst output = (await indexExample('five')).map(v => JSON.stringify(v))",
                         contentStart: {
-                            offset: 1658,
-                            line: 63,
+                            offset: 1657,
+                            line: 62,
                             column: 0,
                         },
                         ranges: [

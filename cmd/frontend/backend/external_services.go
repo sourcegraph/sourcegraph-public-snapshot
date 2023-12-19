@@ -72,10 +72,10 @@ func (e *externalServices) ValidateConnection(ctx context.Context, svc *types.Ex
 		return err
 	}
 
-	return externalServiceValidate(ctx, svc, genericSrc)
+	return externalServiceValidate(ctx, genericSrc)
 }
 
-func externalServiceValidate(ctx context.Context, es *types.ExternalService, src internalrepos.Source) error {
+func externalServiceValidate(ctx context.Context, src internalrepos.Source) error {
 	if v, ok := src.(internalrepos.UserSource); ok {
 		return v.ValidateAuthenticator(ctx)
 	}

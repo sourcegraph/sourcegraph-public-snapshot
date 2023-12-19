@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type FileChunkContext struct {
@@ -272,6 +273,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 			query,
 			search.Precise,
 			search.Streaming,
+			pointers.Ptr(int32(0)),
 		)
 		if err != nil {
 			return nil, err

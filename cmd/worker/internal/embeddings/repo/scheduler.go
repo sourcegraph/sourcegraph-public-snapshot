@@ -73,6 +73,6 @@ func newRepoEmbeddingScheduler(
 		enqueueActive,
 		goroutine.WithName("repoEmbeddingSchedulerJob"),
 		goroutine.WithDescription("resolves embedding policies and schedules jobs to embed repos"),
-		goroutine.WithInterval(5*time.Minute),
+		goroutine.WithInterval(15*time.Minute),
 	)
 }

@@ -55,6 +55,7 @@ func run(w io.Writer, args []string) error {
 		query,
 		mode,
 		search.Streaming,
+		nil,
 	)
 	if err != nil {
 		return errors.Wrap(err, "failed to plan")

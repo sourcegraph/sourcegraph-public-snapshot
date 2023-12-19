@@ -32,10 +32,12 @@ export const FEATURE_FLAGS = [
     'search-content-based-lang-detection',
     'search-new-keyword',
     'search-debug',
+    'search-simple',
     'cody-chat-mock-test',
     'signup-survey-enabled',
     'cody-pro',
     'opencodegraph',
+    'auditlog-expansion',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

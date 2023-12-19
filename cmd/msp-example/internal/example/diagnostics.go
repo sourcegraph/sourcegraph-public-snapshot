@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
@@ -12,7 +13,7 @@ type serviceState struct {
 	contract      runtime.Contract
 }
 
-func (s serviceState) Healthy(ctx context.Context) error {
+func (s serviceState) Healthy(ctx context.Context, _ url.Values) error {
 	if s.statelessMode {
 		return nil
 	}

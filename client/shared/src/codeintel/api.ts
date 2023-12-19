@@ -14,7 +14,7 @@ import { isDefined } from '@sourcegraph/common/src/types'
 import type * as clientType from '@sourcegraph/extension-api-types'
 
 import { match } from '../api/client/types/textDocument'
-import type { FlatExtensionHostAPI, ScipParameters } from '../api/contract'
+import type { CodeIntelExtensionHostAPI, FlatExtensionHostAPI, ScipParameters } from '../api/contract'
 import { proxySubscribable } from '../api/extension/api/common'
 import { toPosition } from '../api/extension/api/types'
 import { getModeFromPath } from '../languages'
@@ -230,11 +230,18 @@ function newSettingsGetter(settingsCascade: SettingsCascade<Settings>): sourcegr
 // extensions, we monkey patch the old implementation with new implementations.
 // The benefit of monkey patching is that we can optionally disable if for
 // customers that choose to enable the legacy extensions.
+//
+// TODO(camdencheek): USE THIS to patch code intel into extensions
 export function injectNewCodeintel(
     old: FlatExtensionHostAPI,
     codeintelContext: sourcegraph.CodeIntelContext
 ): FlatExtensionHostAPI {
-    const codeintel = createCodeIntelAPI(codeintelContext)
+    const api = createCodeIntelAPI(codeintelContext)
+    const codeintelOverrides = newCodeIntelExtensionHostAPI(api)
+    return { ...old, ...codeintelOverrides }
+}
+
+export function newCodeIntelExtensionHostAPI(codeintel: CodeIntelAPI): CodeIntelExtensionHostAPI {
     function thenMaybeLoadingResult<T>(promise: Observable<T>): Observable<MaybeLoadingResult<T>> {
         return promise.pipe(
             map(result => {
@@ -244,15 +251,7 @@ export function injectNewCodeintel(
         )
     }
 
-    const codeintelOverrides: Pick<
-        FlatExtensionHostAPI,
-        | 'getHover'
-        | 'getDocumentHighlights'
-        | 'getReferences'
-        | 'getDefinition'
-        | 'getLocations'
-        | 'hasReferenceProvidersForDocument'
-    > = {
+    return {
         hasReferenceProvidersForDocument(textParameters) {
             return proxySubscribable(from(codeintel.hasReferenceProvidersForDocument(textParameters)))
         },
@@ -275,18 +274,6 @@ export function injectNewCodeintel(
         getHover: (textParameters: TextDocumentPositionParameters) =>
             proxySubscribable(thenMaybeLoadingResult(from(codeintel.getHover(textParameters)))),
     }
-
-    return new Proxy(old, {
-        get(target, prop) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-            const codeintelFunction = (codeintelOverrides as any)[prop]
-            if (codeintelFunction) {
-                return codeintelFunction
-            }
-            // eslint-disable-next-line prefer-rest-params
-            return Reflect.get(target, prop, ...arguments)
-        },
-    })
 }
 
 export function localReferences(params: ScipParameters): Occurrence[] {

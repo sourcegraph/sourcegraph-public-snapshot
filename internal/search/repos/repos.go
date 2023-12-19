@@ -868,6 +868,7 @@ func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.Mi
 		&patternInfo,
 		time.Hour,         // depend on context for timeout
 		search.Features{}, // not using any search features
+		0,                 // don't care about the actual content, so don't fetch extra context
 		onMatches,
 	)
 	return foundMatches, err

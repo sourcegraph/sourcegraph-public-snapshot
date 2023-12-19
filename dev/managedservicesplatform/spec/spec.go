@@ -1,6 +1,7 @@
 package spec
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -9,6 +10,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Spec is a Managed Services Platform (MSP) service.
@@ -25,6 +27,7 @@ type Spec struct {
 	Service      ServiceSpec       `json:"service"`
 	Build        BuildSpec         `json:"build"`
 	Environments []EnvironmentSpec `json:"environments"`
+	Monitoring   *MonitoringSpec   `json:"monitoring,omitempty"`
 }
 
 // Open a specification file, validate it, unmarshal the data as a MSP spec,
@@ -58,6 +61,10 @@ func parse(data []byte) (*Spec, error) {
 	if err := yaml.Unmarshal(data, &s); err != nil {
 		return nil, err
 	}
+
+	// Assign zero value for top-level monitoring spec for covenience
+	s.Monitoring = &MonitoringSpec{}
+
 	if validationErrs := s.Validate(); len(validationErrs) > 0 {
 		return nil, errors.Append(nil, validationErrs...)
 	}
@@ -78,11 +85,23 @@ func (s Spec) Validate() []error {
 		}
 	}
 
+	for _, env := range s.ListEnvironmentIDs() {
+		projectName := fmt.Sprintf("%s - %s",
+			pointers.Deref(s.Service.Name, s.Service.ID), env)
+		if len(projectName) > 30 {
+			errs = append(errs, errors.Newf(
+				"full environment name %q exceeds 30 characters limit - try a shorter service name or environment ID",
+				projectName,
+			))
+		}
+	}
+
 	errs = append(errs, s.Service.Validate()...)
 	errs = append(errs, s.Build.Validate()...)
 	for _, env := range s.Environments {
 		errs = append(errs, env.Validate()...)
 	}
+	errs = append(errs, s.Monitoring.Validate()...)
 	return errs
 }
 

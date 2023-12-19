@@ -21,6 +21,7 @@ go_library(
         "//internal/search/result",
         "//internal/search/streaming",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_sourcegraph_log//:log",
     ],
 )

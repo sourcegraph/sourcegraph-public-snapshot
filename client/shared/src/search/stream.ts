@@ -12,10 +12,10 @@ import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operator
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 
-import type { AggregableBadge } from '../codeintel/legacy-extensions/api'
 import type { SearchPatternType, SymbolKind } from '../graphql-operations'
 
 import { SearchMode } from './searchQueryState'
+import { hacksGobQueriesToRegex } from './searchSimple'
 
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance.
@@ -93,14 +93,12 @@ export interface LineMatch {
     line: string
     lineNumber: number
     offsetAndLengths: number[][]
-    aggregableBadges?: AggregableBadge[]
 }
 
-interface ChunkMatch {
+export interface ChunkMatch {
     content: string
     contentStart: Location
     ranges: Range[]
-    aggregableBadges?: AggregableBadge[]
 }
 
 export interface SymbolMatch {
@@ -128,7 +126,6 @@ type MarkdownText = string
 /**
  * Our batch based client requests generic fields from GraphQL to represent repo and commit/diff matches.
  * We currently are only using it for commit. To simplify the PoC we are keeping this interface for commits.
- *
  * @see GQL.IGenericSearchResultInterface
  */
 export interface CommitMatch {
@@ -162,6 +159,7 @@ export interface RepositoryMatch {
     branches?: string[]
     descriptionMatches?: Range[]
     metadata?: Record<string, string | undefined>
+    topics?: string[]
 }
 
 export type OwnerMatch = PersonMatch | TeamMatch
@@ -512,8 +510,25 @@ function initiateSearchStream(
     return new Observable<SearchEvent>(observer => {
         const subscriptions = new Subscription()
 
+        // HACK(keegan) forgive me for this hack, but this is for rapid
+        // prototyping of a new query language. We should fast follow on
+        // something more robust once we get some internal validation. This
+        // feature flag is purely so we can demonstrate it more easily.
+        //
+        // If you still see this code after February 2024 delete it (or me).
+        let queryParam = `${query} ${caseSensitive ? 'case:yes' : ''}`
+        if (featureOverrides?.includes('search-simple')) {
+            const queryRegex = hacksGobQueriesToRegex(queryParam)
+            // eslint-disable-next-line no-console
+            console.log('query rewritten due to search-simple feature flag being set', {
+                old: queryParam,
+                new: queryRegex,
+            })
+            queryParam = queryRegex
+        }
+
         const parameters = [
-            ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
+            ['q', queryParam],
             ['v', version],
             ['t', patternType as string],
             ['sm', searchMode.toString()],
@@ -550,7 +565,6 @@ function initiateSearchStream(
 /**
  * Initiates a streaming search.
  * This is a type safe wrapper around Sourcegraph's streaming search API (using Server Sent Events). The observable will emit each event returned from the backend.
- *
  * @param queryObservable is an observables that resolves to a query string
  * @param options contains the search query and the necessary context to perform the search (version, patternType, caseSensitive, etc.)
  * @param messageHandlers provide handler functions for each possible `SearchEvent` type

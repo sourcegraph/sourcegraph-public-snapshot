@@ -834,7 +834,7 @@ func (p *parser) ParsePattern(label labels) Pattern {
 		}
 	}
 
-	if label.IsSet(Regexp) {
+	if label.IsSet(Regexp | QuotesAsLiterals) {
 		if pattern, ok := p.parseStringQuotes(); ok {
 			return pattern
 		}
@@ -1094,8 +1094,10 @@ func (p *parser) parseAnd() ([]Node, error) {
 		left, err = p.parseLeaves(Regexp)
 	case SearchTypeLiteral, SearchTypeStructural:
 		left, err = p.parseLeaves(Literal)
-	case SearchTypeStandard, SearchTypeLucky, SearchTypeNewStandardRC1:
+	case SearchTypeStandard, SearchTypeLucky:
 		left, err = p.parseLeaves(Literal | Standard)
+	case SearchTypeNewStandardRC1:
+		left, err = p.parseLeaves(Literal | Standard | QuotesAsLiterals)
 	default:
 		left, err = p.parseLeaves(Literal | Standard)
 	}

@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { H2, Text, Button, ButtonLink, Link } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, H2, Link, Text } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
 
@@ -65,7 +65,7 @@ export function VSCodeInstructions({
                                 </div>
                                 <div>
                                     <Text className="mb-1" weight="bold">
-                                        Open Cody from the Sidebar on the Left
+                                        Open Cody from the sidebar on the left
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
                                         Typically Cody will be the last item in the sidebar
@@ -88,7 +88,7 @@ export function VSCodeInstructions({
                                 </div>
                                 <div>
                                     <Text className="mb-1" weight="bold">
-                                        Login
+                                        Log in
                                     </Text>
                                     <Text className="text-muted mb-0" size="small">
                                         Choose the same login method you used when you created your account
@@ -127,7 +127,7 @@ export function VSCodeInstructions({
             {step === 1 && (
                 <>
                     <div className="mb-3 pb-3 border-bottom">
-                        <H2>Cody Features</H2>
+                        <H2>Cody features</H2>
                     </div>
                     <div className="d-flex">
                         <div className="flex-1 p-3 border-right d-flex flex-column justify-content-center align-items-center">
@@ -135,13 +135,14 @@ export function VSCodeInstructions({
                                 Autocomplete
                             </Text>
                             <Text className="mb-0 w-100 text-muted" size="small">
-                                Cody will autocomplete your code as you type
+                                Let Cody automatically write code for you. Start writing a comment or a line of code and
+                                Cody will suggest the next few lines.
                             </Text>
                             <img
                                 alt="Cody Autocomplete"
-                                width="90%"
+                                width="100%"
                                 className="mt-4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/autoCompleteIllustration.svg"
+                                src="https://storage.googleapis.com/sourcegraph-assets/codyFeaturesImgs/featureAutoCompletions.png"
                             />
                         </div>
                         <div className="flex-1 p-3 d-flex flex-column justify-content-center align-items-center">
@@ -149,13 +150,14 @@ export function VSCodeInstructions({
                                 Chat
                             </Text>
                             <Text className="mb-0 text-muted  w-100" size="small">
-                                Cody will autocomplete your code as you type
+                                Answer questions about programming topics generally or your codebase specifically with
+                                Cody chat.
                             </Text>
                             <img
                                 alt="Cody Chat"
-                                width="80%"
+                                width="100%"
                                 className="mt-4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/chatIllustration.svg"
+                                src="https://storage.googleapis.com/sourcegraph-assets/codyFeaturesImgs/featureChat.png"
                             />
                         </div>
                     </div>
@@ -165,13 +167,14 @@ export function VSCodeInstructions({
                                 Commands
                             </Text>
                             <Text className="mb-0 text-muted  w-100" size="small">
-                                Cody will autocomplete your code as you type
+                                Streamline your development process by using Cody commands to understand, improve, fix,
+                                document, and generate unit tests for your code.
                             </Text>
                             <img
                                 alt="Cody Commands"
-                                width="80%"
+                                width="100%"
                                 className="mt-4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/commandsIllustration.svg"
+                                src="https://storage.googleapis.com/sourcegraph-assets/codyFeaturesImgs/featureCommands.png"
                             />
                         </div>
                         <div className="flex-1 p-3 d-flex flex-column justify-content-center align-items-center">
@@ -179,27 +182,22 @@ export function VSCodeInstructions({
                                 Feedback
                             </Text>
                             <Text className="mb-0 text-muted w-100" size="small">
-                                Cody will autocomplete your code as you type
+                                Feel free to join our Discord to leave feedback or ask questions about Cody.
                             </Text>
-                            <Link to="https://discord.gg/rDPqBejz93" className="d-flex w-100 justify-content-center">
-                                <img
-                                    alt="Discord Feedback"
-                                    width="50%"
-                                    className="mt-4"
-                                    src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/discordCTA.svg"
-                                />
-                            </Link>
-                            <Link
-                                to="https://github.com/sourcegraph/cody/discussions/new?category=product-feedback"
-                                className="d-flex w-100 justify-content-center"
-                            >
-                                <img
-                                    alt="GitHub Feedback"
-                                    width="50%"
-                                    className="mt-4"
-                                    src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/feedbackCTA.svg"
-                                />
-                            </Link>
+                            <div className="mt-4 d-flex flex-column justify-content-center h-100">
+                                <Link
+                                    to="https://discord.gg/rDPqBejz93"
+                                    className="d-flex w-100 justify-content-center "
+                                >
+                                    <strong>Discord chat</strong>
+                                </Link>
+                                <Link
+                                    to="https://github.com/sourcegraph/cody/discussions/new?category=product-feedback"
+                                    className="d-flex w-100 justify-content-center mt-4"
+                                >
+                                    <strong>GitHub Discussions</strong>
+                                </Link>
+                            </div>
                         </div>
                     </div>
                     {showStep === undefined ? (

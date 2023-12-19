@@ -74,9 +74,10 @@ func allowedCustomModel(ctx context.Context, model string) string {
 		"fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct",
 		"fireworks/accounts/fireworks/models/llama-v2-34b-code-instruct",
 		"fireworks/accounts/fireworks/models/mistral-7b-instruct-4k",
-		"fireworks/accounts/fireworks/models/wizardcoder-15b",
 		"anthropic/claude-instant-1.2-cyan",
-		"anthropic/claude-instant-1.2":
+		"anthropic/claude-instant-1.2",
+		"anthropic/claude-instant-v1",
+		"anthropic/claude-instant-1":
 		return model
 	}
 

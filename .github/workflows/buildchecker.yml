@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v2
         with: { go-version: '1.21' }
-
+      - uses: actions/setup-node@v4
       - run: ./dev/buildchecker/run-check.sh
         env:
           GITHUB_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_GITHUB_TOKEN }}
@@ -27,3 +27,16 @@ jobs:
           SLACK_ANNOUNCE_WEBHOOK: ${{ secrets.AUTOBUILDSHERRIF_SLACK_WEBHOOK }}
           SLACK_DEBUG_WEBHOOK: ${{ secrets.AUTOBUILDSHERRIF_SLACK_DEBUG_WEBHOOK }}
           SLACK_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_SLACK_TOKEN }}
+      - name: Report failure to sentry
+        if: ${{ failure() }}
+        run: |
+          npm i -g @sentry/cli
+          sentry-cli send-event -m "Job '$GITHUB_JOB' in the $GITHUB_WORKFLOW action has failed - see run for exact failure" \
+            -t "github-action:$GITHUB_WORKFLOW" \
+            -t "branch:$GITHUB_REF_NAME" \
+            -t "repository:$GITHUB_REPOSITORY" \
+            -t "workflow-run:$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DEV_INFRA_DSN }}
+          SENTRY_ORG: sourcegraph
+          SENTRY_PROJECT: dev-infra
