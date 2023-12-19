@@ -142,3 +142,10 @@ def tool_deps():
         sha256 = "5cc53abbc345fc5f714c8ebe46fd79d5f503f29375981bee6c77f89e5ced92d3",
         url = "https://releases.hashicorp.com/packer/{0}/packer_{0}_darwin_arm64.zip".format(PACKER_VERSION),
     )
+
+    http_archive(
+        name = "packer-darwin-amd64",
+        build_file_content = PACKER_BUILDFILE.format("darwin-amd64"),
+        sha256 = "ef1ceaaafcdada65bdbb45793ad6eedbc7c368d415864776b9d3fa26fb30b896",
+        url = "https://releases.hashicorp.com/packer/{0}/packer_{0}_darwin_amd64.zip".format(PACKER_VERSION),
+    )
