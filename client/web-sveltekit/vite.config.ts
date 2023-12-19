@@ -164,6 +164,21 @@ export default defineConfig(({ mode }) => {
             },
         },
 
+        resolve: {
+            alias: [
+                // Unclear why Vite fails. It claims that index.esm.js doesn't have this export (it does).
+                // Rewriting this to index.js fixes the issue. Error:
+                // import { CiWarning, CiSettings, CiTextAlignLeft } from "react-icons/ci/index.esm.js";
+                //                     ^^^^^^^^^^
+                // SyntaxError: Named export 'CiSettings' not found. The requested module 'react-icons/ci/index.esm.js'
+                // is a CommonJS module, which may not support all module.exports as named exports.
+                {
+                    find: /^react-icons\/(.+)$/,
+                    replacement: 'react-icons/$1/index.js',
+                }
+            ],
+        },
+
         optimizeDeps: {
             exclude: [
                 // Without addings this Vite throws an error
