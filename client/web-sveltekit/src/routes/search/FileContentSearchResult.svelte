@@ -52,10 +52,6 @@
         ? 'Show less'
         : `Show ${hiddenMatchesCount} more ${pluralize('match', hiddenMatchesCount, 'matches')}`
     $: matchesToShow = expanded ? expandedMatchGroups : collapsedMatchGroups
-    $: matchRanges = expandedMatchGroups.map(group => ({
-        startLine: group.startLine,
-        endLine: group.endLine,
-    }))
 
     let root: HTMLElement
     let userInteracted = false
@@ -85,6 +81,10 @@
             return
         }
         hasBeenVisible = true
+        const matchRanges = expandedMatchGroups.map(group => ({
+            startLine: group.startLine,
+            endLine: group.endLine,
+        }))
         highlightedHTMLRows = await fetchFileRangeMatches({ result, ranges: matchRanges })
     }
 </script>
