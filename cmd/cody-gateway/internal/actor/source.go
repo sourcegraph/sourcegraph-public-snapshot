@@ -14,6 +14,9 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
