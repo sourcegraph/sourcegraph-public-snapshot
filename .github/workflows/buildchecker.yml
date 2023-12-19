@@ -33,6 +33,5 @@ jobs:
     with:
       repo: "sourcegraph/sourcegraph"
       branch: "${{ github.ref_name }}"
-      job_name: "${{ job.job }}"
       workflow_name: "${{ github.workflow }}"
       run_id: "${{ github.run_id }}"
