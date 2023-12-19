@@ -10,6 +10,9 @@ on:
       workflow_name:
         required: true
         type: string
+      job_name:
+        required: false
+        type: string
       run_id:
         required: true
         type: string
