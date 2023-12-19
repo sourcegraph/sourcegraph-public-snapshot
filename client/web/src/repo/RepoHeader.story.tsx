@@ -3,12 +3,13 @@ import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { CopyPathAction } from '@sourcegraph/branded'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H1, H2, Icon, Link } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import type { AuthenticatedUser } from '../auth'
 
-import { GoToPermalinkAction } from './actions/CopyPermalinkAction'
+import { CopyPermalinkAction } from './actions/CopyPermalinkAction'
 import { FilePathBreadcrumbs } from './FilePathBreadcrumbs'
 import { RepoHeader, type RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoRevisionContainerBreadcrumb } from './RepoRevisionContainer'
@@ -75,12 +76,12 @@ const onLifecyclePropsChange = (lifecycleProps: RepoHeaderContributionsLifecycle
         id: 'go-to-permalink',
         position: 'right',
         children: () => (
-            <GoToPermalinkAction
-                telemetryService={NOOP_TELEMETRY_SERVICE}
+            <CopyPermalinkAction
                 revision="main"
                 commitID="123"
                 repoName="sourcegraph/sourcegraph"
                 actionType="nav"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         ),
     })
