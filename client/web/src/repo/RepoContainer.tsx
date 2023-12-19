@@ -57,7 +57,6 @@ import { useV2QueryInput } from '../search/useV2QueryInput'
 import { useNavbarQueryState } from '../stores'
 import { EventName } from '../util/constants'
 import type { RouteV6Descriptor } from '../util/contributions'
-import { useBreakpoint } from '../util/dom'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
