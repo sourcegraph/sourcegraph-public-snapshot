@@ -1,6 +1,6 @@
-import { FC, useCallback, useMemo } from 'react'
+import { FC, ReactNode, useCallback, useMemo } from 'react'
 
-import { mdiClose } from '@mdi/js'
+import { mdiClose, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
@@ -9,7 +9,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { succeedScan } from '@sourcegraph/shared/src/search/query/transformer'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
-import { Badge, Button, Icon, H4 } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, H4, LanguageIcon } from '@sourcegraph/wildcard'
 
 import styles from './SearchDynamicFilter.module.scss'
 
@@ -39,6 +39,8 @@ interface SearchDynamicFilterProps {
      */
     filters?: Filter[]
 
+    renderItem?: (filter: Filter) => ReactNode
+
     /**
      * It's called whenever user changes (pick/reset) any filters in the filter panel.
      * @param nextQuery
@@ -51,7 +53,7 @@ interface SearchDynamicFilterProps {
  * come from the search stream API.
  */
 export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
-    const { filters, filterType, filterAlias, filterQuery, onFilterQueryChange } = props
+    const { filters, filterType, filterAlias, filterQuery, renderItem, onFilterQueryChange } = props
 
     // Scan the filter query (which comes from URL param) and extract
     // all appearances of a filter type that we're looking for in the
@@ -126,7 +128,9 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
                                 className={classNames(styles.item, { [styles.itemSelected]: isSelectedFilter })}
                                 onClick={() => handleFilterClick(filter.value, isSelectedFilter)}
                             >
-                                <span className={styles.itemText}>{filter.label}</span>
+                                <span className={styles.itemText}>
+                                    {renderItem ? renderItem(filter) : filter.label}
+                                </span>
                                 {filter.count !== 0 && (
                                     <Badge variant="secondary" className="ml-2">
                                         {filter.count}
@@ -141,5 +145,25 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
                 })}
             </ul>
         </div>
+    )
+}
+
+export const languageFilter = (filter: Filter) => {
+    const languageExtension = filter.value.split(':')[1] ?? ''
+
+    return (
+        <>
+            <LanguageIcon language={languageExtension} className={styles.icon} />
+            {filter.label}
+        </>
+    )
+}
+
+export const repoFilter = (filter: Filter) => {
+    return (
+        <>
+            <Icon svgPath={mdiSourceRepository} className={styles.icon} aria-hidden={true} />
+            {filter.label}
+        </>
     )
 }

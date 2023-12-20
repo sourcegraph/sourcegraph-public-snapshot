@@ -23,6 +23,13 @@
     align-items: center;
     border: none;
     width: 100%;
+    padding: 0.25rem 0.25rem 0.25rem 0.5rem;
+
+    &-selected {
+        .icon {
+            fill: var(--white) !important;
+        }
+    }
 
     &:not(&-selected):hover {
         background-color: var(--color-bg-2) !important;
@@ -36,4 +43,8 @@
         word-wrap: break-word;
         margin-right: auto;
     }
+}
+
+.icon {
+    margin-right: 0.5rem;
 }
