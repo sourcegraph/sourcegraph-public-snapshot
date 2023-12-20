@@ -11,7 +11,7 @@ interface RepoHeaderContextMenuProps {
 export const RepoHeaderContextMenu: FC<RepoHeaderContextMenuProps> = ({ actions }) => (
     <Menu>
         <MenuButton variant="secondary" outline={true} className="py-0">
-            ...
+            &hellip;
         </MenuButton>
 
         <MenuList position={Position.bottom}>{actions.map(action => action.element)}</MenuList>
