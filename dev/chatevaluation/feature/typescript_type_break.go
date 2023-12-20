@@ -1,6 +1,6 @@
 package feature
 
-import "regexp"
+import "github.com/grafana/regexp"
 
 type TypeScriptTypeBreak struct{}
 

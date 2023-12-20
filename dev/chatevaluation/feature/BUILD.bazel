@@ -5,4 +5,5 @@ go_library(
     srcs = ["typescript_type_break.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/chatevaluation/feature",
     visibility = ["//visibility:public"],
+    deps = ["@com_github_grafana_regexp//:regexp"],
 )
