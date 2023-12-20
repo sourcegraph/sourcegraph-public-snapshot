@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/Masterminds/semver"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -32,19 +30,17 @@ func Validate(version *semver.Version) error {
 	ctx := context.Background()
 	logger := log.Scoped("appliance")
 	observationCtx := observation.NewContext(logger)
-	fmt.Println(observationCtx)
 	fmt.Println(version)
-	fmt.Println(strings.Join(schemaNames, ""))
 
 	// FetchExpectedSchemas
 
 	// get dsn handles on database, handle for local development
 	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
-	dsns, err := postgresdsn.DSNsBySchema(schemaNames)
-	if err != nil {
-		return err
-	}
-	fmt.Println(dsns)
+	// dsns, err := postgresdsn.DSNsBySchema(schemaNames)
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Println(dsns)
 
 	out := output.NewOutput(os.Stdout, output.OutputOpts{})
 	newRunnerWithSchemas := func(schemaNames []string, schemas []*schemas.Schema) (*runner.Runner, error) {
