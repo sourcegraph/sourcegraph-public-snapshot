@@ -81,8 +81,8 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         useDeveloperSettings(state => state.showDialog) &&
         (process.env.NODE_ENV === 'development' || isSourcegraphDev(props.authenticatedUser))
     const { fuzzyFinder } = useExperimentalFeatures(features => ({
-        // enable fuzzy finder by default unless it's explicitly disabled in settings, or it's the Cody app
-        fuzzyFinder: features.fuzzyFinder ?? false,
+        // enable fuzzy finder by default unless it's explicitly disabled in settings.
+        fuzzyFinder: features.fuzzyFinder ?? true,
     }))
     const isSetupWizardPage = location.pathname.startsWith(PageRoutes.SetupWizard)
 
