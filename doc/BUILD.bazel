@@ -30,3 +30,11 @@ sh_binary(
         ["test.sh"],
     ),
 )
+
+sh_test(
+    name = "changed",
+    size = "small",
+    srcs = ["diff.sh"],
+    data = glob(['**/*.md']) + ["docs.sum"],
+
+)

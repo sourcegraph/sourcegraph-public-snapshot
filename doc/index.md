@@ -35,6 +35,7 @@ Sourcegraph is a Code AI platform that deeply understands your code, no matter h
 - **Fix & refactor:** Roll out and track large-scale changes and migrations across repos at once
 - **AI code assistant**: Use Cody to read, write, and understand your entire codebase faster
 
+TET
 ## Quickstart
 
 <div class="cards">
