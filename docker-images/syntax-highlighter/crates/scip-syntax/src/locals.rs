@@ -14,6 +14,7 @@ use anyhow::Result;
 use core::cmp::Ordering;
 use core::ops::Range;
 use id_arena::{Arena, Id};
+use if_chain::if_chain;
 use itertools::Itertools;
 use protobuf::Enum;
 use scip::{
@@ -30,9 +31,9 @@ use tree_sitter::Node;
 // What needs to be documented?
 //
 // 1. Missing features at this point
-//   a) Python's definition vs reference
-//   b) Namespacing (Need to figure out what the DSL should be)
-//   c) Marking globals to avoid emitting them into occurrences
+//   a) Namespacing (Need to figure out what the DSL should be)
+//   b) Marking globals to avoid emitting them into occurrences
+// 2. def_refs (hoisted vs non-hoisted)
 
 // What needs to be documented for a PR
 //
@@ -208,6 +209,13 @@ impl<'arena, 'a> Iterator for Ancestors<'arena, 'a> {
     }
 }
 
+// Can we make these usize's NonZeroUsize to make this enum smaller?
+#[derive(Debug, Clone, Copy)]
+enum DefRef {
+    PreviousDefinition(usize),
+    NewDefinition(usize),
+}
+
 #[derive(Debug)]
 struct LocalResolver<'a> {
     arena: Arena<Scope<'a>>,
@@ -215,9 +223,9 @@ struct LocalResolver<'a> {
 
     source_bytes: &'a [u8],
     definition_id_supply: usize,
-    // TODO: This is a hack to not record references that overlap with
-    // definitions. We should either fix our queries so this doesn't
-    // happen, or do it in a more performant manner.
+    // This is a hack to not record references that overlap with
+    // definitions. Ideally we'd fix our queries to prevent these
+    // overlaps.
     definition_start_bytes: HashSet<usize>,
     occurrences: Vec<Occurrence>,
 }
@@ -249,20 +257,28 @@ impl<'a> LocalResolver<'a> {
     fn add_definition(
         &mut self,
         id: ScopeRef<'a>,
-        definition: Definition<'a>,
+        name: Name,
+        node: Node<'a>,
         hoist: &Option<String>,
         is_def_ref: bool,
     ) {
-        // For Python and Matlab this could be where we add references
-        // in case we find overlapping definitions.
-        //
-        // Is it reasonable to only support this for hoisted definitions?
-        // Answer: No, Matlab does this with non-hoisted definitions
-        //         But for hoisted definitions we must stop at the hoisted scope
+        self.definition_start_bytes.insert(node.start_byte());
 
-        self.definition_start_bytes
-            .insert(definition.node.start_byte());
-        let match_definition = match hoist {
+        // We delay creation of this definition behind a closure, so
+        // we don't generate fresh definition_id's for def_ref's that
+        // turn out to be references rather than definitions
+        let mk_def = |this: &mut Self| {
+            this.definition_id_supply += 1;
+            let def_id = this.definition_id_supply;
+            let definition = Definition {
+                id: def_id,
+                name,
+                node,
+            };
+            (def_id, definition)
+        };
+
+        let is_new_definition = match hoist {
             Some(hoist_scope) => {
                 let mut target_scope = id;
                 // If we don't find any matching scope we hoist all
@@ -273,62 +289,55 @@ impl<'a> LocalResolver<'a> {
                         break;
                     }
                 }
-                // NOTE: This becomes nicer with let-chains or if_chain!
-                if is_def_ref {
+                if_chain! {
+                    if is_def_ref;
                     if let Some(previous) = self
                         .get_scope(target_scope)
                         .hoisted_definitions
                         .iter()
-                        .find(|def| def.name == definition.name)
-                    {
-                        Some(previous.id)
+                        .find(|def| def.name == name);
+                    then {
+                        DefRef::PreviousDefinition(previous.id)
                     } else {
+                        let (def_id, definition) = mk_def(self);
                         self.get_scope_mut(target_scope)
                             .hoisted_definitions
-                            .push(definition.clone());
-                        None
+                            .push(definition);
+                        DefRef::NewDefinition(def_id)
                     }
-                } else {
-                    self.get_scope_mut(target_scope)
-                        .hoisted_definitions
-                        .push(definition.clone());
-                    None
                 }
             }
             None => {
-                // NOTE: This becomes nicer with let-chains or if_chain!
-                if is_def_ref {
-                    // NOTE: Perf?
-                    if let Some(previous) =
-                        self.find_def(id, definition.name, definition.node.start_byte())
-                    {
-                        Some(previous.id)
+                if_chain! {
+                    if is_def_ref;
+                    if let Some(previous) = self.find_def(id, name, node.start_byte());
+                    then {
+                        DefRef::PreviousDefinition(previous.id)
                     } else {
-                        self.get_scope_mut(id).definitions.push(definition.clone());
-                        None
+                        let (def_id, definition) = mk_def(self);
+                        self.get_scope_mut(id).definitions.push(definition);
+                        DefRef::NewDefinition(def_id)
                     }
-                } else {
-                    self.get_scope_mut(id).definitions.push(definition.clone());
-                    None
                 }
             }
         };
 
-        match match_definition {
-            None => {
-                // TODO: compute fresh definition_id here
+        match is_new_definition {
+            DefRef::NewDefinition(definition_id) => {
                 self.occurrences.push(scip::types::Occurrence {
-                    range: definition.node.to_scip_range(),
-                    symbol: format_symbol(Symbol::new_local(definition.id)),
+                    range: node.to_scip_range(),
+                    symbol: format_symbol(Symbol::new_local(definition_id)),
                     symbol_roles: scip::types::SymbolRole::Definition.value(),
                     ..Default::default()
                 });
             }
-            Some(definition_id) => self.get_scope_mut(id).references.push(Reference {
-                name: definition.name,
-                node: definition.node,
-                resolves_to: Some(definition_id),
-            }),
+            DefRef::PreviousDefinition(definition_id) => {
+                self.get_scope_mut(id).references.push(Reference {
+                    name,
+                    node,
+                    resolves_to: Some(definition_id),
+                })
+            }
         };
     }
 
@@ -469,22 +478,16 @@ impl<'a> LocalResolver<'a> {
         'a: 'b,
     {
         for def_capture in definitions_iter.take_while_ref(|def_capture| f(def_capture)) {
-            // TODO: Move id selection into add_definition to remove gaps for languages with defrefs
-            self.definition_id_supply += 1;
             let name = self.mk_name(
                 def_capture
                     .node
                     .utf8_text(self.source_bytes)
                     .expect("non utf-8 variable name"),
             );
-            let definition = Definition {
-                id: self.definition_id_supply,
-                node: def_capture.node,
-                name,
-            };
             self.add_definition(
                 scope,
-                definition,
+                name,
+                def_capture.node,
                 &def_capture.hoist,
                 def_capture.is_def_ref,
             )

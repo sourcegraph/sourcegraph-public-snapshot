@@ -1,5 +1,5 @@
 {
-  "checksum": "e11435d530c2beb254b3a6b14bc5c321686473c7a1c6708b7aaef4e0e13ab3b4",
+  "checksum": "f167ad9ef78fe19a1b605ef87ab0329d0e765ac28ac79b9d599ab24583f5078e",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -5080,6 +5080,36 @@
         },
         "edition": "2015",
         "version": "2.2.1"
+      },
+      "license": "MIT/Apache-2.0"
+    },
+    "if_chain 1.0.2": {
+      "name": "if_chain",
+      "version": "1.0.2",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/if_chain/1.0.2/download",
+          "sha256": "cb56e1aa765b4b4f3aadfab769793b7087bb03a4ea4920644a6d238e2df5b9ed"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "if_chain",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "if_chain",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "edition": "2015",
+        "version": "1.0.2"
       },
       "license": "MIT/Apache-2.0"
     },
@@ -10474,6 +10504,10 @@
             {
               "id": "id-arena 2.2.1",
               "target": "id_arena"
+            },
+            {
+              "id": "if_chain 1.0.2",
+              "target": "if_chain"
             },
             {
               "id": "insta 1.34.0",
@@ -17805,6 +17839,7 @@
     "futures-task 0.3.28",
     "futures-util 0.3.28",
     "id-arena 2.2.1",
+    "if_chain 1.0.2",
     "indicatif 0.17.7",
     "insta 1.34.0",
     "itertools 0.10.5",
