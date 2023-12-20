@@ -231,14 +231,7 @@ export const useCodyChat = ({
         } else {
             setTranscriptHistoryState([])
         }
-    }, [
-        client.config.needsEmailVerification,
-        initializeNewChatInternal,
-        setTranscriptHistoryState,
-        scope,
-        setScopeInternal,
-        updateTranscriptInHistory,
-    ])
+    }, [client.config.needsEmailVerification, initializeNewChatInternal, setTranscriptHistoryState])
 
     const deleteHistoryItem = useCallback(
         (id: string): void => {

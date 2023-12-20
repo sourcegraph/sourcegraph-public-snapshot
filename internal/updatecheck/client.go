@@ -123,11 +123,6 @@ func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
 	return db.Orgs().Count(ctx, database.OrgsListOptions{})
 }
 
-func getTotalReposCount(ctx context.Context, db database.DB) (_ int, err error) {
-	defer recordOperation("getTotalReposCount")(&err)
-	return db.Repos().Count(ctx, database.ReposListOptions{})
-}
-
 // hasRepo returns true when the instance has at least one repository that isn't
 // soft-deleted nor blocked.
 func hasRepos(ctx context.Context, db database.DB) (_ bool, err error) {

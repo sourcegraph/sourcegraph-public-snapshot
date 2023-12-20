@@ -110,9 +110,9 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
         [scope, setScope, logTranscriptEvent]
     )
 
-    const resetScope = useCallback(async (): Promise<void> => {
+    const resetScope = useCallback((): void => {
         logTranscriptEvent(EventName.CODY_CHAT_SCOPE_RESET)
-        return setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
+        setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
     }, [scope, setScope, logTranscriptEvent])
 
     return (

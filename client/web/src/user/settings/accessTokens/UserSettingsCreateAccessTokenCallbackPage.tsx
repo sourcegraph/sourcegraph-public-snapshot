@@ -225,7 +225,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                         )
                     )
                 ),
-            [requester, user.id, note, onDidCreateAccessToken, requestFrom, port, navigate]
+            [requester, user.id, note, onDidCreateAccessToken, requestFrom, port]
         )
     )
 

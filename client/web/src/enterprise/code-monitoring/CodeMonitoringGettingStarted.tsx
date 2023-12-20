@@ -74,7 +74,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
         eventLogger.log('CodeMonitoringExampleMonitorClicked')
     }, [])
 
-    let ctaBannerUrl = 'https://sourcegraph.com/get-started?t=enterprise'
+    const ctaBannerUrl = 'https://sourcegraph.com/get-started?t=enterprise'
 
     return (
         <div>

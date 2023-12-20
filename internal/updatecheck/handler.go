@@ -21,15 +21,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
-var pubSubPingsTopicID = env.Get("PUBSUB_TOPIC_ID", "", "Pub/sub pings topic ID is the pub/sub topic id where pings are published.")
 
 var (
 	// latestReleaseDockerServerImageBuild is only used by sourcegraph.com to tell existing
@@ -114,7 +110,7 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter,
 	}
 
 	pingResponse := getLatestRelease(pr.DeployType)
-	hasUpdate, err := canUpdate(pr.ClientVersionString, pingResponse, pr.DeployType)
+	hasUpdate, err := canUpdate(pr.ClientVersionString, pingResponse)
 
 	// Always log, even on malformed version strings
 	logPing(logger, pubsubClient, meter, r, pr, hasUpdate)
@@ -141,7 +137,7 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter,
 }
 
 // canUpdate returns true if the latestReleaseBuild is newer than the clientVersionString.
-func canUpdate(clientVersionString string, latestReleaseBuild pingResponse, deployType string) (bool, error) {
+func canUpdate(clientVersionString string, latestReleaseBuild pingResponse) (bool, error) {
 	// Check for a date in the version string to handle developer builds that don't have a semver.
 	// If there is an error parsing a date out of the version string, then we ignore the error
 	// and parse it as a semver.
