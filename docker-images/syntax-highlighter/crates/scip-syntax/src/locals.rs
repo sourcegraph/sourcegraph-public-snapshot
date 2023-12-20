@@ -72,6 +72,10 @@ struct Definition<'a> {
 struct Reference<'a> {
     node: Node<'a>,
     name: Name,
+    /// When dealing with def_refs there are references that we've
+    /// already resolved to their definitions. Because we don't want
+    /// to duplicate that work we store the definition's id here.
+    resolves_to: Option<usize>,
 }
 
 /// We use id_arena to allocate our scopes.
@@ -256,13 +260,8 @@ impl<'a> LocalResolver<'a> {
         // Answer: No, Matlab does this with non-hoisted definitions
         //         But for hoisted definitions we must stop at the hoisted scope
 
-        let definition_id = definition.id;
-
-        let range = definition.node.to_scip_range();
-        // Regardless of def_ref behavior, we never want to consider this reference twice
         self.definition_start_bytes
             .insert(definition.node.start_byte());
-
         let match_definition = match hoist {
             Some(hoist_scope) => {
                 let mut target_scope = id;
@@ -286,13 +285,13 @@ impl<'a> LocalResolver<'a> {
                     } else {
                         self.get_scope_mut(target_scope)
                             .hoisted_definitions
-                            .push(definition);
+                            .push(definition.clone());
                         None
                     }
                 } else {
                     self.get_scope_mut(target_scope)
                         .hoisted_definitions
-                        .push(definition);
+                        .push(definition.clone());
                     None
                 }
             }
@@ -305,31 +304,32 @@ impl<'a> LocalResolver<'a> {
                     {
                         Some(previous.id)
                     } else {
-                        self.get_scope_mut(id).definitions.push(definition);
+                        self.get_scope_mut(id).definitions.push(definition.clone());
                         None
                     }
                 } else {
-                    self.get_scope_mut(id).definitions.push(definition);
+                    self.get_scope_mut(id).definitions.push(definition.clone());
                     None
                 }
             }
         };
 
-        let (symbol, symbol_roles) = match match_definition {
-            None => (
+        match match_definition {
+            None => {
                 // TODO: compute fresh definition_id here
-                format_symbol(Symbol::new_local(definition_id)),
-                Some(scip::types::SymbolRole::Definition.value()),
-            ),
-            Some(definition_id) => (format_symbol(Symbol::new_local(definition_id)), None),
+                self.occurrences.push(scip::types::Occurrence {
+                    range: definition.node.to_scip_range(),
+                    symbol: format_symbol(Symbol::new_local(definition.id)),
+                    symbol_roles: scip::types::SymbolRole::Definition.value(),
+                    ..Default::default()
+                });
+            }
+            Some(definition_id) => self.get_scope_mut(id).references.push(Reference {
+                name: definition.name,
+                node: definition.node,
+                resolves_to: Some(definition_id),
+            }),
         };
-
-        self.occurrences.push(scip::types::Occurrence {
-            range,
-            symbol,
-            symbol_roles: symbol_roles.unwrap_or_default(),
-            ..Default::default()
-        });
     }
 
     fn get_scope(&self, id: ScopeRef<'a>) -> &Scope<'a> {
@@ -453,6 +453,7 @@ impl<'a> LocalResolver<'a> {
             let reference = Reference {
                 node: ref_capture.node,
                 name,
+                resolves_to: None,
             };
             self.add_reference(scope, reference)
         }
@@ -481,7 +482,12 @@ impl<'a> LocalResolver<'a> {
                 node: def_capture.node,
                 name,
             };
-            self.add_definition(scope, definition, &def_capture.hoist, def_capture.is_def_ref)
+            self.add_definition(
+                scope,
+                definition,
+                &def_capture.hoist,
+                def_capture.is_def_ref,
+            )
         }
     }
 
@@ -510,8 +516,8 @@ impl<'a> LocalResolver<'a> {
                         node: capture.node,
                     })
                 } else if capture_name.starts_with("definition") {
+                    let is_def_ref = properties.iter().any(|p| p.key == "def_ref".into());
                     let mut hoist = None;
-                    let is_def_ref = properties.iter().any(|p| p.key == "is_def_ref".into());
                     if let Some(prop) = properties.iter().find(|p| p.key == "hoist".into()) {
                         hoist = Some(prop.value.as_ref().unwrap().to_string());
                     }
@@ -646,22 +652,29 @@ impl<'a> LocalResolver<'a> {
         let mut ref_occurrences = vec![];
 
         for (scope_ref, scope) in self.arena.iter() {
-            for Reference { name, node } in scope.references.iter() {
-                // See the comment on LocalResolver.definition_start_bytes
-                if self.definition_start_bytes.contains(&node.start_byte()) {
+            for Reference {
+                name,
+                node,
+                resolves_to,
+            } in scope.references.iter()
+            {
+                let def_id = if let Some(resolved) = resolves_to {
+                    *resolved
+                } else if self.definition_start_bytes.contains(&node.start_byte()) {
+                    // See the comment on LocalResolver.definition_start_bytes
                     continue;
-                }
-                match self.find_def(scope_ref, *name, node.start_byte()) {
-                    None => {}
-                    Some(def) => {
-                        let symbol = format_symbol(Symbol::new_local(def.id));
-                        ref_occurrences.push(scip::types::Occurrence {
-                            range: node.to_scip_range(),
-                            symbol: symbol.clone(),
-                            ..Default::default()
-                        });
-                    }
-                }
+                } else if let Some(def) = self.find_def(scope_ref, *name, node.start_byte()) {
+                    def.id
+                } else {
+                    continue;
+                };
+
+                let symbol = format_symbol(Symbol::new_local(def_id));
+                ref_occurrences.push(scip::types::Occurrence {
+                    range: node.to_scip_range(),
+                    symbol: symbol.clone(),
+                    ..Default::default()
+                });
             }
         }
 
