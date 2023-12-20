@@ -137,6 +137,19 @@ build {
         destination = "/tmp/executor-vm.tar"
     }
 
+    # TODO?
+    # It seems that this packer file is outdated, we reference
+    # src-cli version in the args, yet the install.sh script does use
+    # it in any way.
+    #
+    # So right now, the buildfile does copy over src-cli in the workdir to
+    # build the AMI, but it's unused.
+    #
+    # provisioner "file" {
+    #     sources     = ["src"]
+    #     destination = "WHERE THIS SHOULD GO?"
+    # }
+
     provisioner "shell" {
         execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E bash {{ .Path }}"
         script          = "install.sh"
@@ -158,12 +171,12 @@ build {
         }
     }
 
-    post-processor "amazon-ami-management" {
-        only       = ["amazon-ebs.aws"]
-        access_key = var.aws_access_key
-        secret_key = var.aws_secret_key
-        regions    = ["us-west-2"]
-        identifier = var.image_family
-        keep_days  = 60
-    }
+   post-processor "amazon-ami-management" {
+       only       = ["amazon-ebs.aws"]
+       access_key = var.aws_access_key
+       secret_key = var.aws_secret_key
+       regions    = ["us-west-2"]
+       identifier = var.image_family
+       keep_days  = 60
+   }
 }

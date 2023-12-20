@@ -1,25 +1,23 @@
 #!/usr/bin/env bash
 
-# This script builds the executor image as a GCP boot disk image and as an AWS AMI.
-
-cd "$(dirname "${BASH_SOURCE[0]}")"
 set -eu
 
-TMR_WORKDIR=$(mktemp -d -t sgdockerbuild_XXXXXXX)
-cleanup() {
-  rm -rf "$TMR_WORKDIR"
-}
-trap cleanup EXIT
+## Setting up tools
+gcloud="$(pwd)/$1" # used in workdir folder, so need an absolute path
+packer="$(pwd)/$2"
+base="cmd/executor/docker-mirror/"
 
-echo "--- gcp secret"
-gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"$TMR_WORKDIR/builder-sa-key.json"
+## Setting up the folder we're going to use with packer
+mkdir workdir
+trap "rm -Rf workdir" EXIT
 
-echo "--- packer build"
+cp "${base}/docker-mirror.pkr.hcl" workdir/
+cp "${base}/aws_regions.json" workdir/
+cp "${base}/install.sh" workdir/
 
-# Copy files into workspace.
-cp -R ./* "$TMR_WORKDIR"
-cp ../../../.tool-versions "$TMR_WORKDIR"
+"$gcloud" secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"workdir/builder-sa-key.json"
 
+## Setting up packer
 export PKR_VAR_name
 PKR_VAR_name="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"
 export PKR_VAR_image_family="${IMAGE_FAMILY}"
@@ -31,7 +29,7 @@ export PKR_VAR_aws_secret_key=${AWS_EXECUTOR_AMI_SECRET_KEY}
 export PKR_VAR_aws_max_attempts=480
 export PKR_VAR_aws_poll_delay_seconds=5
 
-pushd "$TMR_WORKDIR" 1>/dev/null
+cd workdir
 
 export PKR_VAR_aws_regions
 if [ "${EXECUTOR_IS_TAGGED_RELEASE}" = "true" ]; then
@@ -40,7 +38,5 @@ else
   PKR_VAR_aws_regions='["us-west-2"]'
 fi
 
-packer init docker-mirror.pkr.hcl
-packer build -force docker-mirror.pkr.hcl
-
-popd 1>/dev/null
+"$packer" init docker-mirror.pkr.hcl
+"$packer" build -force docker-mirror.pkr.hcl
