@@ -1,6 +1,5 @@
 # `src`
 
-# ignored because is auto generated
 ## Subcommands
 
 
@@ -25,3 +24,4 @@
 * [`users`](users/index.md)
 * [`validate`](validate.md)
 * [`version`](version.md)
+	
