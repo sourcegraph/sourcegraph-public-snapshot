@@ -10,53 +10,16 @@ import { omitFilter, succeedScan, updateFilter } from '@sourcegraph/shared/src/s
 import type { Filter as ResultFilter } from '@sourcegraph/shared/src/search/stream'
 import { Panel } from '@sourcegraph/wildcard'
 
+import { SearchDynamicFilter } from './components/dynamic-filter/SearchDynamicFilter'
 import {
     FilterTypeList,
     resolveFilterTypeValue,
     toSearchSyntaxTypeFilter,
 } from './components/filter-type-list/FilterTypeList'
-import { SearchLangFilters } from './components/lang-filter/SearchLangFilters'
 import { useFilterQuery } from './hooks'
-import { SearchFilterType, SearchResultFilters } from './types'
+import { SearchFilterType } from './types'
 
 import styles from './NewSearchFilters.module.scss'
-
-const TYPES_TO_FILTERS = {
-    [SearchFilterType.Code]: [
-        SearchResultFilters.ByLanguage,
-        SearchResultFilters.ByRepository,
-        SearchResultFilters.ByPath,
-        SearchResultFilters.Recipes,
-        SearchResultFilters.ArchivedAndForked,
-    ],
-    [SearchFilterType.Repositories]: [
-        SearchResultFilters.ByLanguage,
-        SearchResultFilters.ByMetadata,
-        SearchResultFilters.ArchivedAndForked,
-    ],
-    [SearchFilterType.Paths]: [
-        SearchResultFilters.ByLanguage,
-        SearchResultFilters.ByRepository,
-        SearchResultFilters.ArchivedAndForked,
-    ],
-    [SearchFilterType.Symbols]: [
-        SearchResultFilters.BySymbolKind,
-        SearchResultFilters.ByRepository,
-        SearchResultFilters.ByPath,
-    ],
-    [SearchFilterType.Commits]: [
-        SearchResultFilters.ByAuthor,
-        SearchResultFilters.ByRepository,
-        SearchResultFilters.ByCommitDate,
-        SearchResultFilters.ArchivedAndForked,
-    ],
-    [SearchFilterType.Diffs]: [
-        SearchResultFilters.ByDiffType,
-        SearchResultFilters.ByAuthor,
-        SearchResultFilters.ByRepository,
-        SearchResultFilters.ArchivedAndForked,
-    ],
-}
 
 interface NewSearchFiltersProps {
     query: string
@@ -117,21 +80,21 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
             <aside className={styles.scrollWrapper}>
                 <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
 
-                <SearchLangFilters
+                <SearchDynamicFilter
                     filterType={FilterType.lang}
                     filters={filters}
                     filterQuery={filterQuery}
                     onFilterQueryChange={setFilterQuery}
                 />
 
-                <SearchLangFilters
+                <SearchDynamicFilter
                     filterType={FilterType.repo}
                     filters={filters}
                     filterQuery={filterQuery}
                     onFilterQueryChange={setFilterQuery}
                 />
 
-                <SearchLangFilters
+                <SearchDynamicFilter
                     filterType={FilterType.file}
                     filterAlias={NegatedFilters.file}
                     filters={filters}

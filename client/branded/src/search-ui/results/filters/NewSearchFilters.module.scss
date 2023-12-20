@@ -5,9 +5,9 @@
 .scroll-wrapper {
     height: 100%;
     overflow: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 
     &::-webkit-scrollbar {
         width: 0.5rem;

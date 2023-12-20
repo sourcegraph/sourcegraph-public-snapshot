@@ -24,29 +24,46 @@ interface CachedResults {
     query: string
     options: StreamSearchOptions
     cache: {
+        // Preserve collection of results by filter query sub-key,
+        // means that when filter change we don't run additional
+        // request if we had results for the set of filters before.
         [filterQuery: string]: AggregateStreamingSearchResults | undefined
     }
 }
 
 const SearchResultsCacheContext = createContext<MutableRefObject<CachedResults | null>>(createRef())
 
+interface CachedSearchResultsInput {
+    /** Search query */
+    query: string
+
+    /**
+     * Filter query, different from the search query since new filters
+     * don't modify the main search query
+     */
+    filterQuery: string
+
+    /**
+     * Options to pass on to `streamSeach`.
+     * MUST be wrapped in `useMemo` for this to work.
+     */
+    options: StreamSearchOptions
+
+    /** Search function to call the backend with. */
+    streamSearch: SearchStreamingProps['streamSearch']
+    telemetryService: TelemetryService
+}
+
 /**
  * Returns the cached value if the options have not changed.
  * Otherwise, executes a new search and caches the value once
  * the search completes.
  *
- * @param streamSearch Search function to call the backend with.
- * @param query Search query.
- * @param options Options to pass on to `streamSeach`. MUST be wrapped in `useMemo` for this to work.
- * @returns Search results, either from cache or from running a new search (updated as new streaming results come in).
+ * @returns Search results, either from cache or from running a new search
+ * (updated as new streaming results come in).
  */
-export function useCachedSearchResults(
-    streamSearch: SearchStreamingProps['streamSearch'],
-    query: string,
-    filterQuery: string,
-    options: StreamSearchOptions,
-    telemetryService: TelemetryService
-): AggregateStreamingSearchResults | undefined {
+export function useCachedSearchResults(props: CachedSearchResultsInput): AggregateStreamingSearchResults | undefined {
+    const { query, filterQuery, options, streamSearch, telemetryService } = props
     const cachedResults = useContext(SearchResultsCacheContext)
 
     const location = useLocation()
