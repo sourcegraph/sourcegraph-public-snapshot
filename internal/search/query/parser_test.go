@@ -963,4 +963,23 @@ func TestGlobToRegex(t *testing.T) {
 	}).Equal(t, test(`file:src/*`))
 	autogold.Expect(value{Result: `{"Kind":1,"Operands":[{"field":"context","value":"global","negated":false},{"field":"repo","value":"/sourcegraph$","negated":false},{"field":"f","value":"\\.md$","negated":false},{"value":"zoekt","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`}).Equal(t, test(`context:global repo:*/sourcegraph zoekt f:*.md`))
 	autogold.Expect(value{Result: `{"Kind":1,"Operands":[{"field":"f","value":"_test\\.go$","negated":true},{"field":"f","value":"search.*\\.go$","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`}).Equal(t, test(`-f:*_test.go f:*search*.go`))
+	// Make sure we don't convert predicates to regex patterns
+	autogold.Expect(value{
+		Result:      `{"field":"r","value":"has.meta(language)","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":20}}`,
+	}).Equal(t, test(`r:has.meta(language)`))
+	autogold.Expect(value{
+		Result:      `{"field":"r","value":"has.file(go.mod)","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":18}}`,
+	}).Equal(t, test(`r:has.file(go.mod)`))
+	autogold.Expect(value{
+		Result:      `{"field":"r","value":"has.content(apple)","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":20}}`,
+	}).Equal(t, test(`r:has.content(apple)`))
+	autogold.Expect(value{
+		Result:      `{"field":"f","value":"has.content(apple)","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":20}}`,
+	}).Equal(t, test(`f:has.content(apple)`))
+	autogold.Expect(value{
+		Result: `{"Kind":1,"Operands":[{"field":"r","value":"go$","negated":false},{"field":"r","value":"has.topic(language)","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`}).Equal(t, test(`r:*go r:has.topic(language)`))
 }
