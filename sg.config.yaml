@@ -29,6 +29,8 @@ env:
 
   DEPLOY_TYPE: dev
 
+  SRC_HTTP_ADDR: ':3082'
+
   # I don't think we even need to set these?
   SEARCHER_URL: http://127.0.0.1:3181
   REPO_UPDATER_URL: http://127.0.0.1:3182
@@ -404,7 +406,7 @@ commands:
 
   web:
     description: Enterprise version of the web app
-    cmd: pnpm --filter @sourcegraph/web run dev --clearScreen=false
+    cmd: pnpm --filter @sourcegraph/web dev
     install: |
       pnpm install
       pnpm run generate
@@ -420,6 +422,15 @@ commands:
     env:
       WEB_BUILDER_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
+
+  web-standalone-http-prod:
+    description: Standalone web frontend (production) with API proxy to a configurable URL
+    cmd: pnpm --filter @sourcegraph/web serve:prod
+    install: pnpm --filter @sourcegraph/web run build
+    env:
+      NODE_ENV: production
+      WEB_BUILDER_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-integration-build:
     description: Build development web application for integration tests
@@ -1505,6 +1516,11 @@ commandsets:
     env:
       SK_PORT: 3080
 
+  web-standalone-prod:
+    commands:
+      - web-standalone-http-prod
+      - caddy
+
   # For testing our OpenTelemetry stack
   otel:
     checks:
@@ -1631,14 +1647,6 @@ tests:
       export GH_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN --quiet --project=sourcegraph-ci)
       export PERCY_TOKEN=$(gcloud secrets versions access latest --secret=PERCY_TOKEN --quiet --project=sourcegraph-ci)
       bazel test //client/web/src/integration:integration-tests --define=E2E_HEADLESS=false --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080" --define=GH_TOKEN=$GH_TOKEN --define=DISPLAY=$DISPLAY --define=PERCY_TOKEN=$PERCY_TOKEN
-
-  bazel-backend-integration:
-    cmd: |
-      export GHE_GITHUB_TOKEN=$(gcloud secrets versions access latest --secret=GHE_GITHUB_TOKEN --quiet --project=sourcegraph-ci)
-      export GH_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN --quiet --project=sourcegraph-ci)
-      export SOURCEGRAPH_LICENSE_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_KEY --quiet --project=sourcegraph-ci)
-      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_GENERATION_KEY --quiet --project=sourcegraph-ci)
-      bazel test //testing:backend_integration_test --define=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN
 
   backend-integration:
     cmd: cd dev/gqltest && go test -long -base-url $BASE_URL -email $EMAIL -username $USERNAME -password $PASSWORD ./gqltest
