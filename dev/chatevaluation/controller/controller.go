@@ -5,32 +5,28 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"regexp"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func Run(repo string) error {
-
 	filePaths, err := sample(repo, 5)
 	if err != nil {
 		return err
 	}
-
 	fmt.Println("Got 5 files:")
 	for _, path := range filePaths {
-		fmt.Println(path)
-		contents, err := os.ReadFile(path)
+		contents, err := readFile(path)
 		if err != nil {
 			return err
 		}
 		distorted := distort(string(contents))
-		diff := cmp.Diff(string(contents), distorted)
-		if diff == "" {
-			fmt.Println("No distortion")
-			continue
+		if err := updateFile(path, distorted); err != nil {
+			return err
 		}
-		fmt.Println(diff)
 		// TODO: Apply diff to repo
 		if err := runCody(path); err != nil {
 			return err
@@ -44,6 +40,7 @@ func Run(repo string) error {
 	return nil
 }
 
+// Samples only TypeScript files.
 func sample(repo string, count int) ([]string, error) {
 	filePaths := make([]string, 0)
 	err := filepath.Walk(repo, func(path string, info os.FileInfo, err error) error {
@@ -58,14 +55,11 @@ func sample(repo string, count int) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	rand.Shuffle(len(filePaths), func(i, j int) { filePaths[i], filePaths[j] = filePaths[j], filePaths[i] })
-
 	if len(filePaths) < count {
-		return nil, fmt.Errorf("Fewer than %d TypeScript files found", count)
+		return nil, errors.Newf("Fewer than %d TypeScript files found", count)
 	}
 	filePaths = filePaths[:count]
-
 	return filePaths, nil
 }
 
@@ -89,6 +83,24 @@ func distort(contents string) string {
 		}
 	}
 	return contents
+}
+
+func readFile(filePath string) (string, error) {
+	contents, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", err
+	}
+	return string(contents), nil
+}
+
+func updateFile(filePath string, distorted string) error {
+	contents, err := readFile(filePath)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Pretending to apply diff to %q\n", filePath)
+	fmt.Printf("Diff:\n%s\n", cmp.Diff(distorted, contents))
+	return nil
 }
 
 func runCody(filePath string) error {

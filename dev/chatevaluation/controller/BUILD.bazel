@@ -5,5 +5,9 @@ go_library(
     srcs = ["controller.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/chatevaluation/controller",
     visibility = ["//visibility:public"],
-    deps = ["@com_github_google_go_cmp//cmp"],
+    deps = [
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_grafana_regexp//:regexp",
+    ],
 )
