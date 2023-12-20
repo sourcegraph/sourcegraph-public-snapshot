@@ -232,7 +232,7 @@ function toRepoCompletion(
         kind: 'repo',
         action: {
             type: 'completion',
-            insertValue: valuePrefix + (config.valueType == 'regex' ? regexInsertText(item.name) : item.name) + ' ',
+            insertValue: valuePrefix + (config.valueType === 'regex' ? regexInsertText(item.name) : item.name) + ' ',
             from,
             to,
         },
@@ -311,7 +311,7 @@ function toFileCompletion(
         action: {
             type: 'completion',
             insertValue:
-                valuePrefix + (config.valueType == 'regex' ? regexInsertText(item.path) + ' ' : item.path) + ' ',
+                valuePrefix + (config.valueType === 'regex' ? regexInsertText(item.path) + ' ' : item.path) + ' ',
             from,
             to,
         },

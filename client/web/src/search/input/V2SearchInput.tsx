@@ -141,7 +141,7 @@ export const V2SearchInput: FC<PropsWithChildren<V2SearchInputProps>> = ({
     const suggestionSource = useMemo(
         () =>
             createSuggestionsSource({
-                valueType: inputProps.patternType == SearchPatternType.newStandardRC1 ? 'glob' : 'regex',
+                valueType: inputProps.patternType === SearchPatternType.newStandardRC1 ? 'glob' : 'regex',
                 graphqlQuery<T, V extends Record<string, any>>(query: string, variables: V): Promise<T> {
                     return client.query<T, V>({ query: getDocumentNode(query), variables }).then(result => result.data)
                 },
