@@ -68,7 +68,7 @@ export const codeIntelAreaRoutes: readonly CodeIntelAreaRoute[] = [
     {
         path: '/dashboard',
         render: props => <RepoDashboardPage {...props} />,
-        condition: context => context.authenticatedUser !== null,
+        condition: context => Boolean(context.authenticatedUser?.siteAdmin),
     },
 
     // Precise index routes
