@@ -58,12 +58,6 @@ var Targets = []Target{
 		Description: "Documentation checks",
 		Checks: []*linter{
 			onlyLocal(bazelExec("Docsite lint (bazel)", "test //doc:test")),
-		},
-	},
-	{
-		Name:        "doc-changes",
-		Description: "Ensures that no manual changes have been made to the docs folder (new changes should be made at https://github.com/sourcegraph/docs)",
-		Checks: []*linter{
 			docChangesLint(),
 		},
 	},
