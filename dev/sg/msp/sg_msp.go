@@ -201,7 +201,19 @@ sg msp generate -all <service>
 			Subcommands: []*cli.Command{
 				{
 					Name:  "connect",
-					Usage: "Connect to the PostgreSQL instance using psql",
+					Usage: "Connect to the PostgreSQL instance",
+					Description: `
+This command runs 'cloud-sql-proxy' authenticated against the specified MSP
+service environment, and provides 'psql' commands for interacting with the
+database through the proxy.
+
+If this is your first time using this command, include the '-download' flag to
+install 'cloud-sql-proxy'.
+
+By default, you will only have 'SELECT' privileges through the connection - for
+full access, use the '-write-access' flag.
+`,
+					ArgsUsage: "<service ID> <environment ID>",
 					Flags: []cli.Flag{
 						&cli.IntFlag{
 							Name:  "port",
@@ -214,7 +226,7 @@ sg msp generate -all <service>
 						},
 						&cli.BoolFlag{
 							Name:  "write-access",
-							Usage: "Connect to the database with write access",
+							Usage: "Connect to the database with write access - by default, only select access is granted.",
 						},
 						// db proxy provides privileged access to the database,
 						// so we want to avoid having it dangling around for too long unattended
