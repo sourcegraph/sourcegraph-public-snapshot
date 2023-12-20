@@ -217,7 +217,12 @@ function EditorItem(props: EditorItemProps): JSX.Element {
     return (
         <Tooltip content={props.tooltip}>
             <RepoHeaderActionAnchor onSelect={props.onClick} className={styles.item}>
-                <RepoActionInfo icon={props.icon} displayName="Editor" hideActionLabel={!props.shouldShowEditorText} />
+                <RepoActionInfo
+                    icon={props.icon}
+                    displayName="Editor"
+                    hideActionLabel={!props.shouldShowEditorText}
+                    iconClassName="mr-2"
+                />
             </RepoHeaderActionAnchor>
         </Tooltip>
     )

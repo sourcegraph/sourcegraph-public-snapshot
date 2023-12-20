@@ -34,7 +34,7 @@ export class GoToRawAction extends React.PureComponent<Props> {
                 file={true}
                 onSelect={this.onClick.bind(this)}
                 download={true}
-                className="py-2"
+                className={styles.menuLink}
             >
                 <Icon aria-hidden={true} svgPath={mdiFileDownloadOutline} className={styles.repoActionIcon} />
                 <span>Raw download</span>
