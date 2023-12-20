@@ -273,7 +273,6 @@ export const useCodyChat = ({
             transcript?.id,
             setTranscriptHistoryState,
             scope,
-            updateTranscriptInHistory,
             logTranscriptEvent,
         ]
     )
@@ -323,15 +322,7 @@ export const useCodyChat = ({
 
         logTranscriptEvent(EventName.CODY_CHAT_INITIALIZED)
         return newTranscript
-    }, [
-        initializeNewChatInternal,
-        pushTranscriptToHistory,
-        scope,
-        setScopeInternal,
-        updateTranscriptInHistory,
-        transcript,
-        logTranscriptEvent,
-    ])
+    }, [initializeNewChatInternal, pushTranscriptToHistory, scope, transcript, logTranscriptEvent])
 
     const executeRecipe = useCallback<typeof executeRecipeInternal>(
         async (recipeId, options): Promise<Transcript | null> => {
