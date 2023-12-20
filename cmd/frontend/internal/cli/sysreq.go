@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/kr/text"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"

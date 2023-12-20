@@ -58,10 +58,10 @@ func (o *Options) SetDefaults() {
 
 // Combine opens the git repository at path and transforms commits from all
 // non-origin remotes into commits onto HEAD.
-func Combine(path string, opt Options) error {
-	opt.SetDefaults()
+func Combine(path string, opts Options) error {
+	opts.SetDefaults()
 
-	logger := opt.Logger
+	logger := opts.Logger
 
 	r, err := git.PlainOpen(path)
 	if err != nil {
@@ -82,7 +82,7 @@ func Combine(path string, opt Options) error {
 		}
 	}
 
-	logger.Info("Determining the tree hashes of subdirectories...")
+	logger.Debug("Determining the tree hashes of subdirectories...")
 	remoteToTree := map[string]plumbing.Hash{}
 	if head != nil {
 		tree, err := head.Tree()
@@ -94,7 +94,7 @@ func Combine(path string, opt Options) error {
 		}
 	}
 
-	logger.Info("Collecting new commits...")
+	logger.Debug("Collecting new commits...")
 	lastLog := time.Now()
 	remoteToCommits := map[string][]*object.Commit{}
 	for remote := range conf.Remotes {
@@ -102,7 +102,7 @@ func Combine(path string, opt Options) error {
 			continue
 		}
 
-		commit, err := remoteHead(r, remote, opt)
+		commit, err := remoteHead(r, remote, opts)
 		if err != nil {
 			return err
 		}
@@ -111,9 +111,9 @@ func Combine(path string, opt Options) error {
 			continue
 		}
 
-		for depth := 0; depth < opt.LimitRemote; depth++ {
+		for depth := 0; depth < opts.LimitRemote; depth++ {
 			if time.Since(lastLog) > time.Second {
-				logger.Info(fmt.Sprintf("Collecting new commits... (remotes %s, commit depth %d)", remote, depth))
+				logger.Debug("Collecting new commits", log.String("remotes", remote), log.Int("commit_depth", depth))
 				lastLog = time.Now()
 			}
 
@@ -203,7 +203,7 @@ func Combine(path string, opt Options) error {
 		return nil
 	}
 
-	logger.Info("Applying new commits...")
+	logger.Debug("Applying new commits...")
 	total := 0
 	for _, commits := range remoteToCommits {
 		total += len(commits)
@@ -235,7 +235,7 @@ func Combine(path string, opt Options) error {
 
 			if time.Since(lastLog) > time.Second {
 				progress := float64(height) / float64(total)
-				logger.Info(fmt.Sprintf("%.2f%% done (applied %d commits out of %d total)", progress*100, height+1, total))
+				logger.Debug(fmt.Sprintf("%.2f%% done (applied %d commits out of %d total)", progress*100, height+1, total))
 				lastLog = time.Now()
 			}
 		}
@@ -346,21 +346,21 @@ func getGitDir() (string, error) {
 	return dir, nil
 }
 
-func runCommand(opts Options, dir, command string, args ...string) error {
+func runCommand(logger log.Logger, dir, command string, args ...string) error {
 	cmd := exec.Command(command, args...)
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	start := time.Now()
-	opts.Logger.Info(fmt.Sprintf("starting %q %s", command, strings.Join(args, " ")))
+	logger.Debug(fmt.Sprintf("starting %q %s", command, strings.Join(args, " ")))
 	err := cmd.Run()
-	opts.Logger.Info(fmt.Sprintf("finished %q in %s", command, time.Since(start)))
+	logger.Debug(fmt.Sprintf("finished %q in %s", command, time.Since(start)))
 
 	return err
 }
 
-func doDaemon(dir string, done <-chan struct{}, opt Options) error {
+func doDaemon(dir string, done <-chan struct{}, opts Options) error {
 	isDone := func() bool {
 		select {
 		case <-done:
@@ -370,14 +370,14 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 		}
 	}
 
-	opt.SetDefaults()
+	opts.SetDefaults()
 
-	err := cleanupStaleLockFiles(dir, opt)
+	err := cleanupStaleLockFiles(dir, opts)
 	if err != nil {
 		return errors.Wrap(err, "removing stale git lock files")
 	}
 
-	err = trackDefaultBranches(dir, opt)
+	err = trackDefaultBranches(dir, opts)
 	if err != nil {
 		return errors.Wrap(err, "ensuring that remote refspecs point to default branches")
 	}
@@ -386,7 +386,7 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 		// convenient way to stop the daemon to do manual operations like add
 		// more upstreams.
 		if b, err := os.ReadFile(filepath.Join(dir, "PAUSE")); err == nil {
-			opt.Logger.Info(fmt.Sprintf("PAUSE file present: %s", string(b)))
+			opts.Logger.Debug(fmt.Sprintf("PAUSE file present: %s", string(b)))
 			select {
 			case <-time.After(time.Minute):
 			case <-done:
@@ -395,14 +395,14 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 			continue
 		}
 
-		if opt.GCRatio > 0 && rand.Intn(int(opt.GCRatio)) == 0 {
-			opt.Logger.Info("running garbage collection to maintain optimum repository health")
-			if err := runCommand(opt, dir, "git", "gc", "--aggressive"); err != nil {
+		if opts.GCRatio > 0 && rand.Intn(int(opts.GCRatio)) == 0 {
+			opts.Logger.Debug("running garbage collection to maintain optimum repository health")
+			if err := runCommand(opts.Logger, dir, "git", "gc", "--aggressive"); err != nil {
 				return err
 			}
 		}
 
-		if err := runCommand(opt, dir, "git", "fetch", "--all", "--no-tags"); err != nil {
+		if err := runCommand(opts.Logger, dir, "git", "fetch", "--all", "--no-tags"); err != nil {
 			return err
 		}
 
@@ -410,7 +410,7 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 			return nil
 		}
 
-		if err := Combine(dir, opt); err != nil {
+		if err := Combine(dir, opts); err != nil {
 			return err
 		}
 
@@ -421,8 +421,8 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 		if hasOrigin, err := hasRemote(dir, "origin"); err != nil {
 			return err
 		} else if !hasOrigin {
-			opt.Logger.Info("skipping push since remote origin is missing")
-		} else if err := runCommand(opt, dir, "git", "push", "origin"); err != nil {
+			opts.Logger.Debug("skipping push since remote origin is missing")
+		} else if err := runCommand(opts.Logger, dir, "git", "push", "origin"); err != nil {
 			return err
 		}
 
@@ -441,15 +441,15 @@ func main() {
 
 	flag.Parse()
 
-	opt := Options{
+	opts := Options{
 		LimitRemote: *limitRemote,
 		GCRatio:     *gcRatio,
 	}
-	opt.SetDefaults()
+	opts.SetDefaults()
 
 	gitDir, err := getGitDir()
 	if err != nil {
-		opt.Logger.Fatal(err.Error())
+		opts.Logger.Fatal(err.Error())
 	}
 
 	if *daemon {
@@ -462,22 +462,22 @@ func main() {
 			done <- struct{}{}
 		}()
 
-		err := doDaemon(gitDir, done, opt)
+		err := doDaemon(gitDir, done, opts)
 		if err != nil {
-			opt.Logger.Fatal(err.Error())
+			opts.Logger.Fatal(err.Error())
 		}
 		return
 	}
 
-	err = Combine(gitDir, opt)
+	err = Combine(gitDir, opts)
 	if err != nil {
-		opt.Logger.Fatal(err.Error())
+		opts.Logger.Fatal(err.Error())
 	}
 }
 
 // cleanupStaleLockFiles removes any "stale" Git lock files inside gitDir that might have been left behind
 // by a crashed git-combine process.
-func cleanupStaleLockFiles(gitDir string, opt Options) error {
+func cleanupStaleLockFiles(gitDir string, opts Options) error {
 	var lockFiles []string
 
 	// add "well-known" lock files
@@ -528,14 +528,14 @@ func cleanupStaleLockFiles(gitDir string, opt Options) error {
 			return errors.Wrapf(err, "removing stale lock file %q", f)
 		}
 
-		opt.Logger.Info(fmt.Sprintf("removed stale lock file %q", f))
+		opts.Logger.Debug("removed stale lock file", log.String("lock-file", f))
 	}
 
 	return nil
 }
 
 // remoteHead returns the HEAD commit for the given remote.
-func remoteHead(r *git.Repository, remote string, opt Options) (*object.Commit, error) {
+func remoteHead(r *git.Repository, remote string, opts Options) (*object.Commit, error) {
 	// We don't know what the remote HEAD is, so we hardcode the usual options and test if they exist.
 	commonDefaultBranches := []string{"main", "master", "trunk", "development"}
 	for _, name := range commonDefaultBranches {
@@ -545,7 +545,7 @@ func remoteHead(r *git.Repository, remote string, opt Options) (*object.Commit, 
 		}
 	}
 
-	opt.Logger.Info(fmt.Sprintf("ignoring remote %q because it doesn't have any of the common default branches %v", remote, commonDefaultBranches))
+	opts.Logger.Debug("ignoring remote because it doesn't have any of the common default branches ", log.String("remote", remote), log.Strings("branches", commonDefaultBranches))
 	return nil, nil
 }
 
@@ -554,7 +554,7 @@ var defaultBranchScript string
 
 // trackDefaultBranches ensures that the refspec for each remote points to
 // the current default branch.
-func trackDefaultBranches(dir string, opt Options) error {
+func trackDefaultBranches(dir string, opts Options) error {
 	f, err := os.CreateTemp("", "default-branch-*.sh")
 	if err != nil {
 		return errors.Wrap(err, "creating temp file")
@@ -573,7 +573,7 @@ func trackDefaultBranches(dir string, opt Options) error {
 		return errors.Wrap(err, "closing temp file")
 	}
 
-	err = runCommand(opt, dir, "bash", f.Name())
+	err = runCommand(opts.Logger, dir, "bash", f.Name())
 	if err != nil {
 		return errors.Wrap(err, "while running bash script")
 	}

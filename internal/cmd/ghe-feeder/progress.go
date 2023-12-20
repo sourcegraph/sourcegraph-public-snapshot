@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"sync"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
