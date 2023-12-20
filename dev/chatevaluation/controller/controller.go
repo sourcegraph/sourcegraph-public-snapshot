@@ -90,7 +90,7 @@ func Run(r Repo, c Config) error {
 			if diff == "" {
 				return true, nil
 			}
-			diagnosef("Diff:\n%s", diff)
+			diagnosef("File distorted:\n%s", diff)
 			if err := r.Update(path, distorted); err != nil {
 				return false, err
 			}
