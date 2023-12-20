@@ -1651,8 +1651,8 @@ github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-2023082
 github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20230822024612-edb48c530722/go.mod h1:P1liUcPEczidOp1kyPvi2eqil4243IuPJ+tCOASCHEk=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20231106184355-f739cf8e1d49 h1:3rJiF4VGyStWXrqJtVlXBJnpe82Q1k9k74dElVPolR8=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20231106184355-f739cf8e1d49/go.mod h1:/z34dv4NLXti+0VQsUoRTXBeH6n7OWtPv/iWFX6z5dg=
-github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20231121191755-214be625af21 h1:7TTODwd/f0hhqmZhbQcKXSkoxSx9OczTWgWPBTxVOrA=
-github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20231121191755-214be625af21/go.mod h1:lQ1E8rSHgTmL8GmtcQFXS75rqQrCmuQRXZWh7A+Fp6s=
+github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20231220215815-b87ebb3e8c47 h1:YinyQmBBDqLW67QIqhvDpz8XcFSNPPWJugRuWrHDhbI=
+github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20231220215815-b87ebb3e8c47/go.mod h1:lQ1E8rSHgTmL8GmtcQFXS75rqQrCmuQRXZWh7A+Fp6s=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20230822024612-edb48c530722 h1:N0OxHqeujHxvVU666KQY9whauLyw4s3BJGBLxx6gKR0=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20230822024612-edb48c530722/go.mod h1:TiUqRvYs/Gah8bGw/toyVWCaP3dnCB4tBh3jf5HGdo0=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20231218231056-4749baca142f h1:sCs3+EDrM4pp7PI0/efZPZZK+u955+gwr0byWGg+AVg=
