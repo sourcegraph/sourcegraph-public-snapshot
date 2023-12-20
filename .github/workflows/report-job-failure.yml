@@ -1,18 +1,24 @@
 on:
+  # When a reusable workflow is triggered by a caller workflow,
+  # the github context is always associated with the caller workflow.
   workflow_call:
     inputs:
       repo:
         required: true
         type: string
+        default: ${{ github.repository }}
       branch:
         required: true
         type: string
+        default: ${{ github.ref_name }}
       workflow_name:
         required: true
         type: string
+        default: ${{ github.workflow }}
       run_id:
         required: true
         type: string
+        default: ${{ github.run_id }}
 
 jobs:
   send_failure_event:
