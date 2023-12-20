@@ -51,7 +51,6 @@
   "include": ["src", "scripts", "__mocks__", "./src/**/*.json"],
   "exclude": [
     "vitest.config.ts",
-    "vite.config.ts",
     "dev",
     "../../node_modules",
     "./node_modules",

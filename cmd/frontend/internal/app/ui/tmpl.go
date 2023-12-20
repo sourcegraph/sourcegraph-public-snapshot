@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
@@ -39,9 +38,6 @@ var (
 // Functions that are exposed to templates.
 var funcMap = template.FuncMap{
 	"assetURL": func(filePath string) string {
-		if strings.HasPrefix(filePath, "http://") {
-			return filePath
-		}
 		return assetsutil.URL(filePath).String()
 	},
 	"version": func(fp string) (string, error) {

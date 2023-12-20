@@ -1,4 +1,5 @@
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:defs.bzl", "ts_project", "vitest_test")
 
@@ -18,67 +19,104 @@ ts_config(
 ts_project(
     name = "dev",
     srcs = [
-        "server/apiProxySettings.ts",
-        "server/devProxyServer.ts",
+        "esbuild/build.ts",
+        "esbuild/config.ts",
+        "esbuild/manifest.ts",
+        "esbuild/manifestPlugin.ts",
+        "esbuild/server.ts",
+        "server/development.server.ts",
+        "server/production.server.ts",
         "utils/constants.ts",
         "utils/create-js-context.ts",
         "utils/environment-config.ts",
+        "utils/get-api-proxy-settings.ts",
         "utils/get-index-html.ts",
         "utils/get-site-config.ts",
+        "utils/index.ts",
         "utils/should-compress-response.ts",
         "utils/success-banner.ts",
-        "utils/webBuildManifest.ts",
-        "vite/manifestPlugin.ts",
-        "vite/vite.config.ts",
     ],
     tsconfig = ":tsconfig",
     visibility = ["//client/web:__subpackages__"],
     deps = [
+        "//:node_modules/@sentry/esbuild-plugin",
         "//:node_modules/@types/compression",
+        "//:node_modules/@types/connect-history-api-fallback",
         "//:node_modules/@types/express",
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
         "//:node_modules/@types/signale",
-        "//:node_modules/@vitejs/plugin-react",
         "//:node_modules/chalk",
         "//:node_modules/compression",
+        "//:node_modules/connect-history-api-fallback",
+        "//:node_modules/esbuild",
         "//:node_modules/express",
+        "//:node_modules/express-static-gzip",
         "//:node_modules/http-proxy-middleware",
         "//:node_modules/jsonc-parser",
         "//:node_modules/lodash",
         "//:node_modules/signale",
-        "//:node_modules/vite",
         "//client/web:node_modules/@sourcegraph/build-config",
         "//client/web:web_lib",
     ],
 )
 
-esbuild(
-    name = "vite-config",
-    srcs = [
-        ":dev",
+js_library(
+    name = "esbuild-config-production",
+    srcs = ["esbuild/bazel/esbuild.bazel.production.js"],
+    deps = [
+        "//client/build-config:build-config_lib",
+        "//client/web:node_modules/@sourcegraph/build-config",
+        "//client/web/dev",
     ],
-    entry_point = "vite/vite.config.js",
+)
+
+esbuild(
+    name = "esbuild-config-production_bundle",
+    srcs = [
+        ":esbuild-config-production",
+    ],
+    entry_point = "esbuild/bazel/esbuild.bazel.production.js",
     external = [
-        # suppress vite require-resolve-not-external warnings
-        "lightningcss",
         "fsevents",
+        "pnpapi",
+        "../../../../postcss.config",
+
+        # suppress esbuild require-resolve-not-external warnings
         "esbuild",
-        "@vitejs/plugin-react",
-        "vite",
         "path-browserify",
+        "monaco-yaml/lib/esm/monaco.contribution",
+        "monaco-yaml/lib/esm/yaml.worker",
+        "rxjs/_esm5/internal/OuterSubscriber",
+        "rxjs/_esm5/internal/util/subscribeToResult",
+        "rxjs/_esm5/internal/util/subscribeToArray",
+        "rxjs/_esm5/internal/Observable",
     ],
     format = "cjs",
     platform = "node",
     sourcemap = False,
     splitting = False,
     target = "es2022",
-    visibility = ["//client/web:__subpackages__"],
+    visibility = ["//client:__subpackages__"],
     deps = [
-        "//:node_modules/@vitejs/plugin-react",
-        "//:node_modules/esbuild",
-        "//:node_modules/path-browserify",
-        "//:node_modules/vite",
         "//:postcss_config_js",
+    ],
+)
+
+ts_project(
+    name = "dev_tests",
+    testonly = True,
+    srcs = ["esbuild/manifest.test.ts"],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":dev",
+        "//:node_modules/vitest",
+    ],
+)
+
+vitest_test(
+    name = "test",
+    data = [
+        ":dev_tests",
     ],
 )

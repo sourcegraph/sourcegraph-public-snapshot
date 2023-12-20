@@ -28,7 +28,7 @@
 		{{end}}
 	{{end}}
 	<title>{{.Title}}</title>
-    {{if .Manifest.Assets.Main.CSS}}<link rel="stylesheet" href="{{assetURL (printf "%s%s" .Manifest.URL .Manifest.Assets.Main.CSS)}}">{{end}}
+	{{if .Manifest.MainCSSBundlePath}}<link rel="stylesheet" href="{{assetURL .Manifest.MainCSSBundlePath}}">{{end}}
 	<link id='sourcegraph-chrome-webstore-item' rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
 	<link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Sourcegraph Search">
 	{{if .PreloadedAssets}}
@@ -86,7 +86,6 @@
 
 	{{ end }}
 	{{.Injected.BodyTop}}
-    {{.ManifestDevInjectHTML}}
 	<div id="root">
 		{{ if .Context.RedirectUnsupportedBrowser }}
 			 <script ignore-csp>
@@ -108,7 +107,7 @@
 		<br>
 		You need to enable JavaScript to run this app.
 	</noscript>
-	<script src="{{assetURL (printf "%s%s" .Manifest.URL .Manifest.Assets.Main.JS)}}" type="module"></script>
+	<script src="{{assetURL .Manifest.MainJSBundlePath}}" type="module"></script>
 	{{.Injected.BodyBottom}}
 </body>
 

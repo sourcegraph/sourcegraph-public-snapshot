@@ -1,11 +1,20 @@
 {
+	http_port 3081
 	auto_https disable_redirects
 }
 
-# Caddy (tls :3443) -> sourcegraph-frontend (:3080)
+# A bit of monstrosity, since we need to reverse proxy via the web builder dev server which then
+# reverse proxies to us on HTTP.
+#
+# Caddy (tls :3443) -> web builder dev server (:3080) -> Caddy (:3081) -> sourcegraph-frontend (:3082)
 {$SOURCEGRAPH_HTTPS_DOMAIN}:{$SOURCEGRAPH_HTTPS_PORT} {
 	tls internal
 	reverse_proxy 127.0.0.1:3080 {
 		lb_try_duration 60s
 	}
+}
+
+# Caddy (:3081) -> sourcegraph-frontend (:3082)
+:3081 {
+	reverse_proxy 127.0.0.1:3082
 }
