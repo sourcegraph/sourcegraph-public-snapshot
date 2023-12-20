@@ -2,7 +2,7 @@ import { FC, useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { FilterType, NegatedFilters, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import type { Filter } from '@sourcegraph/shared/src/search/query/token'
@@ -16,7 +16,6 @@ import {
     toSearchSyntaxTypeFilter,
 } from './components/filter-type-list/FilterTypeList'
 import { SearchLangFilters } from './components/lang-filter/SearchLangFilters'
-import { CodeFilterRecipes, UtilitiesFilterRecipes } from './components/recipes-lists/RecipesLists'
 import { useFilterQuery } from './hooks'
 import { SearchFilterType, SearchResultFilters } from './types'
 
@@ -134,13 +133,11 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
 
                 <SearchLangFilters
                     filterType={FilterType.file}
+                    filterAlias={NegatedFilters.file}
                     filters={filters}
                     filterQuery={filterQuery}
                     onFilterQueryChange={setFilterQuery}
                 />
-
-                <CodeFilterRecipes values={[]} onChange={console.log} />
-                <UtilitiesFilterRecipes filters={[]} filtersQuery="" onFilterChange={console.log} />
             </aside>
         </Panel>
     )

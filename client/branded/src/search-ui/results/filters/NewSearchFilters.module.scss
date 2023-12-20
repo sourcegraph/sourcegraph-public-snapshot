@@ -1,13 +1,13 @@
 .root {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
     background-color: var(--white);
 }
 
 .scroll-wrapper {
     height: 100%;
     overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 
     &::-webkit-scrollbar {
         width: 0.5rem;

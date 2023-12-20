@@ -4,6 +4,7 @@ import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
+import { stringHuman } from '@sourcegraph/shared/out/src/search/query/printer'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { succeedScan } from '@sourcegraph/shared/src/search/query/transformer'
@@ -14,22 +15,52 @@ import styles from './SearchLangFilters.module.scss'
 
 interface SearchLangFiltersProps {
     filterType: FilterType
-    filters?: Filter[]
     filterQuery: string
+    filterAlias?: string
+    filters?: Filter[]
     onFilterQueryChange: (nextQuery: string) => void
 }
 
 export const SearchLangFilters: FC<SearchLangFiltersProps> = props => {
-    const { filters, filterType, filterQuery, onFilterQueryChange } = props
+    const { filters, filterType, filterAlias, filterQuery, onFilterQueryChange } = props
 
-    const selectedLangFilter = useMemo(() => {
-        const langFilters = findFilters(succeedScan(filterQuery), filterType)
+    const filterQueryFilters = useMemo(() => {
+        const typedFilters = findFilters(succeedScan(filterQuery), filterType)
+        const aliasedFilters = filterAlias ? findFilters(succeedScan(filterQuery), filterAlias) : []
 
-        return langFilters.length > 0 ? langFilters[0] : null
-    }, [filterQuery])
+        return [...typedFilters, ...aliasedFilters]
+    }, [filterQuery, filterAlias, filterType])
 
-    const isSelected = (filterValue: string): boolean =>
-        filterValue === `${selectedLangFilter?.field?.value}:${selectedLangFilter?.value?.value}`
+    const isSelected = (filterValue: string): boolean => {
+        const filteredFilter = filterQueryFilters.find(selectedFilter => {
+            const constructedFilterValue = stringHuman([selectedFilter])
+
+            return filterValue === constructedFilterValue
+        })
+
+        return filteredFilter !== undefined
+    }
+
+    const langFilters = useMemo<Filter[]>(() => {
+        if (filterQueryFilters.length > 0) {
+            const mappedSelectedFilters = filterQueryFilters.map(selectedFilter => {
+                const mappedSelectedFilter = filters?.find(filter => isSelected(filter.value))
+
+                return {
+                    count: mappedSelectedFilter?.count ?? 0,
+                    label: mappedSelectedFilter?.label ?? upperFirst(selectedFilter?.value?.value),
+                    value: stringHuman([selectedFilter]),
+                } as Filter
+            })
+
+            const otherFilters =
+                filters?.filter(filter => filter.kind === filterType && !isSelected(filter.value)) ?? []
+
+            return [...mappedSelectedFilters, ...otherFilters]
+        }
+
+        return filters?.filter(filter => filter.kind === filterType) ?? []
+    }, [filters, filterQueryFilters])
 
     const handleFilterClick = (langFilter: string, remove?: boolean) => {
         const updatedQuery = remove ? filterQuery.replace(langFilter, '').trim() : `${filterQuery} ${langFilter}`
@@ -37,29 +68,13 @@ export const SearchLangFilters: FC<SearchLangFiltersProps> = props => {
         onFilterQueryChange(updatedQuery)
     }
 
-    const langFilters = useMemo<Filter[]>(() => {
-        if (selectedLangFilter) {
-            const selectedLang = filters?.find(filter => isSelected(filter.value))
-
-            return [
-                {
-                    count: selectedLang?.count ?? 0,
-                    label: selectedLang?.label ?? upperFirst(selectedLangFilter?.value?.value),
-                    value: `${selectedLangFilter?.field?.value}:${selectedLangFilter?.value?.value}`,
-                } as Filter,
-            ]
-        }
-
-        return filters?.filter(filter => filter.kind === filterType) ?? []
-    }, [filters, selectedLangFilter])
-
     if (langFilters.length === 0) {
         return null
     }
 
     return (
         <div className={styles.root}>
-            <H4 className="mb-0">By {filterType}</H4>
+            <H4 className="mb-0 ml-1">By {filterType}</H4>
             <ul className={styles.rootList}>
                 {langFilters.map(filter => {
                     const isSelectedFilter = isSelected(filter.value)
@@ -74,12 +89,12 @@ export const SearchLangFilters: FC<SearchLangFiltersProps> = props => {
                             >
                                 <span className={styles.itemText}>{filter.label}</span>
                                 {filter.count !== 0 && (
-                                    <Badge variant="secondary" className="ml-2 mr-1">
+                                    <Badge variant="secondary" className="ml-2">
                                         {filter.count}
                                     </Badge>
                                 )}
                                 {isSelectedFilter && (
-                                    <Icon svgPath={mdiClose} aria-hidden={true} className="flex-shrink-0" />
+                                    <Icon svgPath={mdiClose} aria-hidden={true} className="ml-1 flex-shrink-0" />
                                 )}
                             </Button>
                         </li>

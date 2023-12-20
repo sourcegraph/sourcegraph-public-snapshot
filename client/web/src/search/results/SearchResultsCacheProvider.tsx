@@ -21,9 +21,11 @@ import { useObservable } from '@sourcegraph/wildcard'
 import type { SearchStreamingProps } from '..'
 
 interface CachedResults {
-    results: AggregateStreamingSearchResults | undefined
     query: string
     options: StreamSearchOptions
+    cache: {
+        [filterQuery: string]: AggregateStreamingSearchResults | undefined
+    }
 }
 
 const SearchResultsCacheContext = createContext<MutableRefObject<CachedResults | null>>(createRef())
@@ -41,6 +43,7 @@ const SearchResultsCacheContext = createContext<MutableRefObject<CachedResults |
 export function useCachedSearchResults(
     streamSearch: SearchStreamingProps['streamSearch'],
     query: string,
+    filterQuery: string,
     options: StreamSearchOptions,
     telemetryService: TelemetryService
 ): AggregateStreamingSearchResults | undefined {
@@ -52,15 +55,15 @@ export function useCachedSearchResults(
 
     const results = useObservable(
         useMemo(() => {
-            console.log('cached store', cachedResults.current)
-            console.log('current query and options', query, options)
+            const isCachedQuery = query === cachedResults.current?.query
+            const isCachedOptions = isEqual(options, cachedResults.current?.options)
 
             // If query and options have not changed, return cached value
-            if (query === cachedResults.current?.query && isEqual(options, cachedResults.current?.options)) {
-                return of(cachedResults.current.results)
+            if (isCachedQuery && isCachedOptions && cachedResults.current?.cache[filterQuery]) {
+                return of(cachedResults.current?.cache[filterQuery])
             }
 
-            const stream = streamSearch(of(query), options).pipe(share())
+            const stream = streamSearch(of(`${query} ${filterQuery}`), options).pipe(share())
 
             // If the throttleTime option `trailing` is set, we will return the
             // final value, but it also removes the guarantee that the output events
@@ -71,14 +74,15 @@ export function useCachedSearchResults(
             // See: https://github.com/ReactiveX/rxjs/issues/5732
             return merge(stream.pipe(throttleTime(500)), stream.pipe(last())).pipe(
                 tap(results => {
-                    cachedResults.current = { results, query, options }
+                    const previosCache = cachedResults.current?.cache ?? {}
+                    cachedResults.current = { query, options, cache: { ...previosCache, [filterQuery]: results } }
                 })
             )
             // We also need to pass `queryTimestamp` to the dependency array, because
             // it's used in the `useEffect` below to reset the cache if a new search
             // is made with the same query. Otherwise the new search will not be executed.
             // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [query, options, streamSearch, cachedResults, queryTimestamp])
+        }, [query, filterQuery, options, streamSearch, cachedResults, queryTimestamp])
     )
 
     // Reset cached results if a new search is made with the same query
@@ -97,8 +101,6 @@ export function useCachedSearchResults(
     // In case of back/forward navigation, log if the cache is being used.
     useEffect(() => {
         const cacheExists = query === cachedResults.current?.query && isEqual(options, cachedResults.current?.options)
-
-        console.log({ cacheExists })
 
         if (navigationType === 'POP') {
             telemetryService.log('SearchResultsCacheRetrieved', { cacheHit: cacheExists }, { cacheHit: cacheExists })
