@@ -22,6 +22,7 @@ func (f TypeScriptTypeBreak) String() string {
 	return "TypeScriptTypeBreak"
 }
 
+// Distort changes file contents to replace a type annotation with `: string`
 // Does not work that well, for instance will replace // TODO: foo with // TODO: string.
 func (f TypeScriptTypeBreak) Distort(contents string) string {
 	typeAnnotation := regexp.MustCompile(`:\s*([a-zA-Z\[\]<>.]+)`)

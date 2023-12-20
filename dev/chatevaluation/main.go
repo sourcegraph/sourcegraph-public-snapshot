@@ -11,14 +11,19 @@ import (
 func main() {
 	repo := flag.String("repo", "", "repository root")
 	verbose := flag.Bool("v", false, "verbose")
+	numFilesPerTest := flag.Int("numFilesPerTest", 10, "number of files per test")
 	flag.Parse()
 	if *repo == "" {
 		fmt.Println("Please specify a repository root")
 		return
 	}
+	if *numFilesPerTest < 1 {
+		fmt.Println("Need at least one file to test")
+		return
+	}
 	r := controller.LocalRepo(*repo)
 	c := controller.Config{
-		NumFilesPerTest: 10,
+		NumFilesPerTest: *numFilesPerTest,
 		Features: []controller.Feature{
 			feature.TypeScriptTypeBreak{},
 		},
