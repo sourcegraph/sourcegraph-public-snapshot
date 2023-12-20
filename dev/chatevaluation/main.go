@@ -10,6 +10,7 @@ import (
 
 func main() {
 	repo := flag.String("repo", "", "repository root")
+	verbose := flag.Bool("v", false, "verbose")
 	flag.Parse()
 	if *repo == "" {
 		fmt.Println("Please specify a repository root")
@@ -21,6 +22,11 @@ func main() {
 		Features: []controller.Feature{
 			feature.TypeScriptTypeBreak{},
 		},
+	}
+	if *verbose {
+		controller.Diagnosef = func(line string, args ...any) {
+			fmt.Printf(line+"\n", args...)
+		}
 	}
 	if err := controller.Run(r, c); err != nil {
 		fmt.Println(err.Error())

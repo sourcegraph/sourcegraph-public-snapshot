@@ -1,47 +1,16 @@
 package controller
 
 import (
-	"fmt"
-	"math/rand"
 	"os"
 	"path/filepath"
 
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/dev/chatevaluation/feature"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Dependencies of evaluation run universal across languages.
-var (
-	// TODO: Extract as sampling implementation is actually determined for TypeScript.
-	// TODO: We should keep sampling in case we can't distort files.
-	sample = func(repo Repo, count int) ([]string, error) {
-		filePaths := make([]string, 0)
-		err := repo.Walk(func(isDir bool, path string) error {
-			if !isDir && filepath.Ext(path) == ".ts" {
-				filePaths = append(filePaths, path)
-			}
-			if isDir && filepath.Base(path) == "node_modules" {
-				return filepath.SkipDir
-			}
-			return nil
-
-		})
-		if err != nil {
-			return nil, err
-		}
-		rand.Shuffle(len(filePaths), func(i, j int) { filePaths[i], filePaths[j] = filePaths[j], filePaths[i] })
-		if len(filePaths) < count {
-			return nil, errors.Newf("Fewer than %d TypeScript files found", count)
-		}
-		filePaths = filePaths[:count]
-		return filePaths, nil
-	}
-	diagnosef = func(line string, args ...any) {
-		fmt.Printf(line+"\n", args...)
-	}
-)
+// Diagnosef can be overridden in debugging to see how evaluation progressess.
+var Diagnosef = func(line string, args ...any) {}
 
 // Repo abstracts access to a repository. It assumes that Cody also has access
 // to read and modify files in that repository.
@@ -79,7 +48,7 @@ func Run(r Repo, c Config) error {
 			countPass  int = 0
 		)
 		err := f.Sample(r, func(path string) (wantNext bool, err error) {
-			diagnosef("Testing %q", path)
+			Diagnosef("Testing %q", path)
 			original, err := r.Read(path)
 			if err != nil {
 				return false, err
@@ -90,13 +59,11 @@ func Run(r Repo, c Config) error {
 			if diff == "" {
 				return true, nil
 			}
-			diagnosef("File distorted:\n%s", diff)
+			Diagnosef("File distorted:\n%s", diff)
 			if err := r.Update(path, distorted); err != nil {
 				return false, err
 			}
-			if err := runCody(path); err != nil {
-				return false, err
-			}
+			runCody(path)
 			fixed, err := r.Read(path)
 			if err != nil {
 				return false, err
@@ -113,7 +80,7 @@ func Run(r Repo, c Config) error {
 		if err != nil {
 			return err
 		}
-		diagnosef("Finished %s: %d/%d passed", f, countPass, countTotal)
+		Diagnosef("Finished %s: %d/%d passed", f, countPass, countTotal)
 	}
 	return nil
 }
@@ -137,7 +104,6 @@ func (r LocalRepo) Walk(f func(isDir bool, path string) error) error {
 }
 
 // TODO: Run Cody for real.
-func runCody(filePath string) error {
-	fmt.Printf("Pretending to run Cody on %q\n", filePath)
-	return nil
+func runCody(filePath string) {
+	Diagnosef("Pretending to run Cody on %q", filePath)
 }
