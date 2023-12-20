@@ -5,7 +5,10 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/chatevaluation",
     visibility = ["//visibility:private"],
-    deps = ["//dev/chatevaluation/controller"],
+    deps = [
+        "//dev/chatevaluation/controller",
+        "//dev/chatevaluation/feature",
+    ],
 )
 
 go_binary(

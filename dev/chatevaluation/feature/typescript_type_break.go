@@ -18,6 +18,10 @@ func (err StopWalking) Error() string { return "stop walking" }
 
 type TypeScriptTypeBreak struct{}
 
+func (f TypeScriptTypeBreak) String() string {
+	return "TypeScriptTypeBreak"
+}
+
 // Does not work that well, for instance will replace // TODO: foo with // TODO: string.
 func (f TypeScriptTypeBreak) Distort(contents string) string {
 	typeAnnotation := regexp.MustCompile(`:\s*([a-zA-Z\[\]<>.]+)`)
