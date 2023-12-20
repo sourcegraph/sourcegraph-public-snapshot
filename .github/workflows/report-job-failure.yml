@@ -4,19 +4,19 @@ on:
   workflow_call:
     inputs:
       repo:
-        required: true
+        required: false
         type: string
         default: ${{ github.repository }}
       branch:
-        required: true
+        required: false
         type: string
         default: ${{ github.ref_name }}
       workflow_name:
-        required: true
+        required: false
         type: string
         default: ${{ github.workflow }}
       run_id:
-        required: true
+        required: false
         type: string
         default: ${{ github.run_id }}
 
