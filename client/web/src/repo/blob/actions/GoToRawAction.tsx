@@ -6,10 +6,10 @@ import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetry
 import { encodeRepoRevision, type RepoSpec, type RevisionSpec, type FileSpec } from '@sourcegraph/shared/src/util/url'
 import { Icon, Link } from '@sourcegraph/wildcard'
 
-import { RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
-import type { RepoHeaderContext } from '../RepoHeader'
+import { RepoHeaderActionMenuLink } from '../../components/RepoHeaderActions'
+import type { RepoHeaderContext } from '../../RepoHeader'
 
-import styles from './GoToRawAction.module.scss'
+import styles from './actions.module.scss'
 
 interface Props extends RepoSpec, Partial<RevisionSpec>, FileSpec, RepoHeaderContext, TelemetryProps {}
 
@@ -34,7 +34,7 @@ export class GoToRawAction extends React.PureComponent<Props> {
                 file={true}
                 onSelect={this.onClick.bind(this)}
                 download={true}
-                className={styles.menuLink}
+                className={styles.menuItem}
             >
                 <Icon aria-hidden={true} svgPath={mdiFileDownloadOutline} className={styles.repoActionIcon} />
                 <span>Raw download</span>

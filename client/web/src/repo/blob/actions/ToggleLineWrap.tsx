@@ -11,7 +11,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
 import type { RepoHeaderContext } from '../../RepoHeader'
 
-import styles from './ToggleLineWrap.module.scss'
+import styles from './actions.module.scss'
 
 /**
  * A repository header action that toggles the line wrapping behavior for long lines in code files.

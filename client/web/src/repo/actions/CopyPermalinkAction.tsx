@@ -108,9 +108,9 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
         setTimeout(() => setCopiedLink(false), 1000)
     }
 
-    const copyLinkLabel = copiedLink ? 'Copied!' : 'Links'
-    const copyLinkIcon = copiedLink ? mdiCheckBold : mdiContentCopy
     const isRevisionTheSameAsCommitID = revision === commitID
+    const copyLinkLabel = copiedLink ? 'Copied!' : isRevisionTheSameAsCommitID ? 'Copy Link' : 'Links'
+    const copyLinkIcon = copiedLink ? mdiCheckBold : mdiContentCopy
 
     return (
         <Menu>
@@ -118,10 +118,16 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
                 <Button className={classNames('border', styles.permalinkBtn, 'pt-0 pb-0')} onClick={copyLink}>
                     <RepoActionInfo
                         displayName={copyLinkLabel}
-                        iconClassName={classNames({
-                            [styles.checkedIcon]: copiedLink,
-                        })}
-                        icon={copyLinkIcon}
+                        icon={
+                            <Icon
+                                svgPath={copyLinkIcon}
+                                aria-hidden={true}
+                                className={classNames({
+                                    [styles.checkedIcon]: copiedLink,
+                                    [styles.repoActionIcon]: !copiedLink,
+                                })}
+                            />
+                        }
                     />
                 </Button>
                 {!isRevisionTheSameAsCommitID && (
@@ -143,14 +149,17 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
                         >
                             <RepoActionInfo
                                 displayName={copiedPermalink ? 'Copied' : 'Copy permalink'}
-                                iconClassName={classNames(
-                                    {
-                                        [styles.checkedIcon]: copiedPermalink,
-                                    },
-                                    'mr-1'
-                                )}
-                                icon={copiedPermalink ? mdiCheckBold : mdiContentCopy}
-                                textClassName={styles.permalinkText}
+                                icon={
+                                    <Icon
+                                        aria-hidden={true}
+                                        svgPath={copiedPermalink ? mdiCheckBold : mdiContentCopy}
+                                        className={classNames({
+                                            [styles.checkedIcon]: copiedLink,
+                                            [styles.repoActionIcon]: !copiedLink,
+                                        })}
+                                    />
+                                }
+                                className={styles.permalinkText}
                             />
                         </MenuItem>
                     </MenuList>

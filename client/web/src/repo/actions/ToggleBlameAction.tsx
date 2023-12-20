@@ -11,6 +11,8 @@ import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 import { RepoActionInfo } from '../RepoActionInfo'
 
+import styles from './actions.module.scss'
+
 interface Props {
     source?: 'repoHeader' | 'actionItemsBar'
     actionType?: 'nav' | 'dropdown'
@@ -70,7 +72,10 @@ export const ToggleBlameAction: React.FC<Props> = props => {
                 disabled={disabled}
                 className="d-flex justify-content-center align-items-center"
             >
-                <RepoActionInfo displayName="Blame" icon={mdiGit} />
+                <RepoActionInfo
+                    displayName="Blame"
+                    icon={<Icon aria-hidden={true} svgPath={mdiGit} className={styles.repoActionIcon} />}
+                />
             </RepoHeaderActionAnchor>
         </Tooltip>
     )

@@ -21,6 +21,8 @@ import { RepoActionInfo } from '../../RepoActionInfo'
 import type { RepoHeaderContext } from '../../RepoHeader'
 import type { BlobPanelTabID } from '../panel/BlobPanel'
 
+import styles from './actions.module.scss'
+
 /**
  * A repository header action that toggles the visibility of the history panel.
  */
@@ -116,7 +118,10 @@ export class ToggleHistoryPanel extends React.PureComponent<
                     disabled={disabled}
                     className="d-flex justify-content-center align-items-center"
                 >
-                    <RepoActionInfo displayName="History" icon={mdiHistory} />
+                    <RepoActionInfo
+                        displayName="History"
+                        icon={<Icon aria-hidden={true} svgPath={mdiHistory} className={styles.repoActionIcon} />}
+                    />
                 </RepoHeaderActionButtonLink>
             </Tooltip>
         )

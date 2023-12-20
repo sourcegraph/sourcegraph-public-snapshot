@@ -24,6 +24,8 @@ import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/
 import { RepoActionInfo } from '../RepoActionInfo'
 import type { RepoHeaderContext } from '../RepoHeader'
 
+import styles from './actions.module.scss'
+
 interface Props extends RevisionSpec, Partial<FileSpec> {
     repo?: Pick<RepositoryFields, 'name' | 'defaultBranch' | 'externalURLs' | 'externalRepository'> | null
     filePath?: string
@@ -177,7 +179,10 @@ export const GoToCodeHostAction: React.FunctionComponent<
                 {...commonProps}
                 className={classNames(commonProps.className, 'd-flex justify-content-center align-items-center')}
             >
-                <RepoActionInfo displayName={displayName} icon={exportIcon} />
+                <RepoActionInfo
+                    displayName={displayName}
+                    icon={<Icon as={exportIcon} aria-hidden={true} className={styles.repoActionIcon} />}
+                />
             </RepoHeaderActionAnchor>
         </Tooltip>
     )

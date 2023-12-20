@@ -483,23 +483,23 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                 />
             ))}
 
-            <RepoHeaderContributionPortal
-                position="right"
-                priority={1}
-                id="cody"
-                {...repoHeaderContributionsLifecycleProps}
-            >
-                {() =>
-                    !isCodySidebarOpen ? (
+            {!isCodySidebarOpen && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={1}
+                    id="cody"
+                    {...repoHeaderContributionsLifecycleProps}
+                >
+                    {() => (
                         <AskCodyButton
                             onClick={() => {
                                 logTranscriptEvent(EventName.CODY_SIDEBAR_CHAT_OPENED, { repo, path: filePath })
                                 setIsCodySidebarOpen(true)
                             }}
                         />
-                    ) : null
-                }
-            </RepoHeaderContributionPortal>
+                    )}
+                </RepoHeaderContributionPortal>
+            )}
 
             <RepoHeaderContributionPortal
                 position="right"
