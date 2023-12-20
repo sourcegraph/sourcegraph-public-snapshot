@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import type { ReactNode, FC } from 'react'
 
 import classNames from 'classnames'
 
@@ -8,7 +8,7 @@ import styles from './RepoActionInfo.module.scss'
 
 interface RepoActionInfoProps {
     displayName: string
-    icon: JSX.Element
+    icon: ReactNode
     className?: string
 }
 
