@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/sourcegraph/dev/chatevaluation/feature"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -43,65 +43,69 @@ var (
 	}
 )
 
+// Repo abstracts access to a repository. It assumes that Cody also has access
+// to read and modify files in that repository.
 type Repo interface {
+	// Read returns the contents of a file in the repo given a path.
 	Read(path string) (string, error)
+	// Update overwrites contents of a file at given path with given contents.
 	Update(path string, newContents string) error
-	// Walk the repo by file node. filepath.SkipDir works.
+	// Walk the repo by file node. Callback should filepath.SkipDir to skip directory.
 	Walk(func(isDir bool, name string) error) error
+}
+
+// TestCase represents a single code generating chat interaction that we are testing against.
+// This chat interaction can be applied to multiple files.
+type TestCase interface {
+	// Distort breaks a file contents. Input is a valid file from a repo that builds OK.
+	// A test case is then modifying the file to give Cody opportunity to fix it.
+	Distort(contents string) string
+	// ValidateFile returns true if the file we got after Cody's changes is valid.
+	// We will need to expand that API in order to capture different degrees of validity.
+	ValidateFile(got, want string) bool
 }
 
 // TODO: Extract configuration.
 func Run(repo string) error {
 	// TODO: Move repo to a parameter
 	r := localRepo(repo)
+	f := feature.TypeScriptTypeBreak{}
 	filePaths, err := sample(r, 5)
 	if err != nil {
 		return err
 	}
+	var (
+		countTotal int = 0
+		countPass  int = 0
+	)
 	for _, path := range filePaths {
-		contents, err := r.Read(path)
+		original, err := r.Read(path)
 		if err != nil {
 			return err
 		}
-		distorted := distort(string(contents))
+		distorted := f.Distort(original)
 		if err := r.Update(path, distorted); err != nil {
 			return err
 		}
-		diagnosef("Diff:\n%s", cmp.Diff(distorted, contents))
+		diagnosef("Diff:\n%s", cmp.Diff(distorted, original))
 		if err := runCody(path); err != nil {
 			return err
 		}
-		if err := validateFile(path); err != nil {
+		fixed, err := r.Read(path)
+		if err != nil {
 			return err
+		}
+		countTotal++
+		if f.ValidateFile(fixed, original) {
+			countPass++
 		}
 		// Roll back the file change.
-		if err := r.Update(path, contents); err != nil {
+		if err := r.Update(path, original); err != nil {
 			return err
 		}
 	}
+	diagnosef("Total %d cases, %d passed", countTotal, countPass)
 	return nil
-}
-
-// Distort works on TypeScript files and changes a non-string type declaration it finds to : string.
-// Does not work that well, for instance will replace // TODO: foo with // TODO: string.
-func distort(contents string) string {
-	typeAnnotation := regexp.MustCompile(`:\s*([a-zA-Z\[\]<>.]+)`)
-	matches := typeAnnotation.FindStringSubmatch(contents)
-	if len(matches) > 0 {
-		if matches[1] != ": string" {
-			var replaced bool
-			return typeAnnotation.ReplaceAllStringFunc(contents, func(typ string) string {
-				if replaced {
-					return typ
-				}
-				if typ != ": string" {
-					replaced = true
-				}
-				return ": string"
-			})
-		}
-	}
-	return contents
 }
 
 type localRepo string
@@ -124,10 +128,5 @@ func (r localRepo) Walk(f func(isDir bool, path string) error) error {
 
 func runCody(filePath string) error {
 	fmt.Printf("Pretending to run Cody on %q\n", filePath)
-	return nil
-}
-
-func validateFile(filePath string) error {
-	fmt.Println("Pretending to validate file")
 	return nil
 }
