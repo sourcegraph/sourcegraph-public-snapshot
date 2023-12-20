@@ -1,0 +1,40 @@
+on:
+  # When a reusable workflow is triggered by a caller workflow,
+  # the github context is always associated with the caller workflow.
+  workflow_call:
+    inputs:
+      repo:
+        required: false
+        type: string
+        default: ${{ github.repository }}
+      branch:
+        required: false
+        type: string
+        default: ${{ github.ref_name }}
+      workflow_name:
+        required: false
+        type: string
+        default: ${{ github.workflow }}
+      run_id:
+        required: false
+        type: string
+        default: ${{ github.run_id }}
+
+jobs:
+  send_failure_event:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+      - name: Send Sentry event for failed action
+        run: |
+          npm i -g @sentry/cli
+          sentry-cli send-event -m "A job in the ${{ inputs.workflow_name }} action has failed - see run for exact failure" \
+            -t "github-action:${{ inputs.workflow_name }}" \
+            -t "branch:${{ inputs.branch }}" \
+            -t "repository:${{ inputs.repo }}" \
+            -t "workflow-run: https://github.com/${{ inputs.repo }}/actions/runs/${{ inputs.run_id }}" \
+            --no-environ
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DEV_INFRA_DSN }}
+          SENTRY_ORG: sourcegraph
+          SENTRY_PROJECT: dev-infra

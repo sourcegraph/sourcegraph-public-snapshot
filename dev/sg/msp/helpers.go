@@ -29,7 +29,9 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 		OutputDir: filepath.Join(os.TempDir(), fmt.Sprintf("msp-tfc-%s-%s-%d",
 			service.ID, env.ID, time.Now().Unix())),
 		GCP: managedservicesplatform.GCPOptions{},
-		TFC: managedservicesplatform.TerraformCloudOptions{},
+		TFC: managedservicesplatform.TerraformCloudOptions{
+			Enabled: true, // required to generate all workspaces
+		},
 	}
 	defer os.RemoveAll(renderer.OutputDir)
 

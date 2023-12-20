@@ -13,11 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type tfVariable struct {
-	key   string
-	value string // only string values for now
-}
-
 type CDKTF struct {
 	app    cdktf.App
 	stacks []stack.Stack

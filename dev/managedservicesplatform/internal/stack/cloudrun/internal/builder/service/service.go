@@ -221,7 +221,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 			Member:   pointers.Ptr("allUsers"),
 			Role:     pointers.Ptr("roles/run.invoker"),
 		})
-	} else if vars.Environment.Authentication.Sourcegraph != nil {
+	} else if pointers.DerefZero(vars.Environment.Authentication.Sourcegraph) {
 		_ = cloudrunv2serviceiammember.NewCloudRunV2ServiceIamMember(stack, pointers.Ptr("cloudrun-domain-runinvoker"), &cloudrunv2serviceiammember.CloudRunV2ServiceIamMemberConfig{
 			Name:     svc.Name(),
 			Location: svc.Location(),
@@ -233,7 +233,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 	}
 
 	// Then add whatever the user requested to expose the service publicly
-	switch domain := vars.Environment.Domain; domain.Type {
+	switch domain := pointers.DerefZero(vars.Environment.Domain); domain.Type {
 	case "", spec.EnvironmentDomainTypeNone:
 		// do nothing
 

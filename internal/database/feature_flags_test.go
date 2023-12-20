@@ -6,34 +6,67 @@ import (
 	"testing"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	ff "github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestFeatureFlagStore(t *testing.T) {
-	t.Parallel()
-	t.Run("NewFeatureFlag", testNewFeatureFlagRoundtrip)
-	t.Run("ListFeatureFlags", testListFeatureFlags)
-	t.Run("Overrides", func(t *testing.T) {
-		t.Run("NewOverride", testNewOverrideRoundtrip)
-		t.Run("ListUserOverrides", testListUserOverrides)
-		t.Run("ListOrgOverrides", testListOrgOverrides)
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+
+	t.Run("NewFeatureFlag", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		testNewFeatureFlagRoundtrip(t, db)
 	})
-	t.Run("UserFlags", testUserFlags)
-	t.Run("AnonymousUserFlags", testAnonymousUserFlags)
-	t.Run("UserlessFeatureFlags", testUserlessFeatureFlags)
-	t.Run("OrganizationFeatureFlag", testOrgFeatureFlag)
-	t.Run("GetFeatureFlag", testGetFeatureFlag)
-	t.Run("UpdateFeatureFlag", testUpdateFeatureFlag)
+	t.Run("ListFeatureFlags", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		testListFeatureFlags(t, db)
+	})
+	t.Run("Overrides", func(t *testing.T) {
+		t.Run("NewOverride", func(t *testing.T) {
+			t.Cleanup(cleanup(t, db))
+			testNewOverrideRoundtrip(t, db)
+		})
+		t.Run("ListUserOverrides", func(t *testing.T) {
+			t.Cleanup(cleanup(t, db))
+			testListUserOverrides(t, db)
+		})
+		t.Run("ListOrgOverrides", func(t *testing.T) {
+			t.Cleanup(cleanup(t, db))
+			testListOrgOverrides(t, db)
+		})
+	})
+	t.Run("UserFlags", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		testUserFlags(t, db)
+	})
+	t.Run("AnonymousUserFlags", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		testAnonymousUserFlags(t, db)
+	})
+	t.Run("UserlessFeatureFlags", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		testUserlessFeatureFlags(t, db)
+	})
+	t.Run("OrganizationFeatureFlag", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		testOrgFeatureFlag(t, db)
+	})
+	t.Run("GetFeatureFlag", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		testGetFeatureFlag(t, db)
+	})
+	t.Run("UpdateFeatureFlag", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		testUpdateFeatureFlag(t, db)
+	})
 }
 
 func errorContains(s string) require.ErrorAssertionFunc {
@@ -49,9 +82,9 @@ func cleanup(t *testing.T, db DB) func() {
 			// Retain content on failed tests
 			return
 		}
-		_, err := db.Handle().ExecContext(
+		_, err := db.ExecContext(
 			context.Background(),
-			`truncate feature_flags, feature_flag_overrides, users, orgs, org_members cascade;`,
+			`truncate feature_flag_overrides, feature_flags, users, orgs, org_members, names cascade;`,
 		)
 		require.NoError(t, err)
 	}
@@ -69,11 +102,9 @@ func setupClearRedisCacheTest(t *testing.T, expectedFlagName string) *bool {
 	return &clearRedisCacheCalled
 }
 
-func testNewFeatureFlagRoundtrip(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	flagStore := NewDB(logger, dbtest.NewDB(t)).FeatureFlags()
+func testNewFeatureFlagRoundtrip(t *testing.T, db DB) {
 	ctx := actor.WithInternalActor(context.Background())
+	flagStore := db.FeatureFlags()
 
 	cases := []struct {
 		flag      *ff.FeatureFlag
@@ -126,12 +157,9 @@ func testNewFeatureFlagRoundtrip(t *testing.T) {
 	}
 }
 
-func testListFeatureFlags(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
-	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
+func testListFeatureFlags(t *testing.T, db DB) {
 	ctx := actor.WithInternalActor(context.Background())
+	flagStore := db.FeatureFlags()
 
 	flag1 := &ff.FeatureFlag{Name: "bool_true", Bool: &ff.FeatureFlagBool{Value: true}}
 	flag2 := &ff.FeatureFlag{Name: "bool_false", Bool: &ff.FeatureFlagBool{Value: false}}
@@ -145,7 +173,7 @@ func testListFeatureFlags(t *testing.T) {
 	}
 
 	// Deleted flag4
-	err := flagStore.Exec(ctx, sqlf.Sprintf("DELETE FROM feature_flags WHERE flag_name = 'deletable';"))
+	_, err := db.ExecContext(ctx, "DELETE FROM feature_flags WHERE flag_name = 'deletable'")
 	require.NoError(t, err)
 
 	expected := []*ff.FeatureFlag{flag1, flag2, flag3}
@@ -162,13 +190,11 @@ func testListFeatureFlags(t *testing.T) {
 	require.EqualValues(t, res, expected)
 }
 
-func testNewOverrideRoundtrip(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
-	flagStore := db.FeatureFlags()
+func testNewOverrideRoundtrip(t *testing.T, db DB) {
 	users := db.Users()
 	ctx := actor.WithInternalActor(context.Background())
+
+	flagStore := db.FeatureFlags()
 
 	ff1, err := flagStore.CreateBool(ctx, "t", true)
 	require.NoError(t, err)
@@ -212,11 +238,8 @@ func testNewOverrideRoundtrip(t *testing.T) {
 	}
 }
 
-func testListUserOverrides(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
-	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
+func testListUserOverrides(t *testing.T, db DB) {
+	flagStore := db.FeatureFlags()
 	users := db.Users()
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -274,7 +297,7 @@ func testListUserOverrides(t *testing.T) {
 		u1 := mkUser("u1")
 		f1 := mkFFBool("f", true)
 		mkOverride(u1.ID, f1.Name, false)
-		err := flagStore.Exec(ctx, sqlf.Sprintf("UPDATE feature_flag_overrides SET deleted_at = now()"))
+		_, err := db.ExecContext(ctx, "UPDATE feature_flag_overrides SET deleted_at = now()")
 		require.NoError(t, err)
 		got, err := flagStore.GetUserOverrides(ctx, u1.ID)
 		require.NoError(t, err)
@@ -292,11 +315,9 @@ func testListUserOverrides(t *testing.T) {
 	})
 }
 
-func testListOrgOverrides(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
-	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
+func testListOrgOverrides(t *testing.T, db DB) {
+
+	flagStore := db.FeatureFlags()
 	users := db.Users()
 	orgs := db.Orgs()
 	orgMembers := db.OrgMembers()
@@ -358,7 +379,7 @@ func testListOrgOverrides(t *testing.T) {
 		u1 := mkUser("u", org1.ID)
 		f1 := mkFFBool("f", true)
 		mkOverride(org1.ID, f1.Name, false)
-		err := flagStore.Exec(ctx, sqlf.Sprintf("UPDATE feature_flag_overrides SET deleted_at = now();"))
+		_, err := db.ExecContext(ctx, "UPDATE feature_flag_overrides SET deleted_at = now()")
 		require.NoError(t, err)
 
 		got, err := flagStore.GetOrgOverridesForUser(ctx, u1.ID)
@@ -378,10 +399,7 @@ func testListOrgOverrides(t *testing.T) {
 	})
 }
 
-func testUserFlags(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
+func testUserFlags(t *testing.T, db DB) {
 	flagStore := db.FeatureFlags()
 	users := db.Users()
 	orgs := db.Orgs()
@@ -555,10 +573,8 @@ func testUserFlags(t *testing.T) {
 	})
 }
 
-func testAnonymousUserFlags(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
+func testAnonymousUserFlags(t *testing.T, db DB) {
+
 	flagStore := db.FeatureFlags()
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -600,10 +616,8 @@ func testAnonymousUserFlags(t *testing.T) {
 	// can be defined for an anonymous user.
 }
 
-func testUserlessFeatureFlags(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
+func testUserlessFeatureFlags(t *testing.T, db DB) {
+
 	flagStore := db.FeatureFlags()
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -649,10 +663,8 @@ func testUserlessFeatureFlags(t *testing.T) {
 	})
 }
 
-func testOrgFeatureFlag(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
+func testOrgFeatureFlag(t *testing.T, db DB) {
+
 	flagStore := db.FeatureFlags()
 	orgs := db.Orgs()
 	ctx := actor.WithInternalActor(context.Background())
@@ -725,10 +737,8 @@ func testOrgFeatureFlag(t *testing.T) {
 	})
 }
 
-func testGetFeatureFlag(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
+func testGetFeatureFlag(t *testing.T, db DB) {
+
 	flagStore := db.FeatureFlags()
 	ctx := context.Background()
 	t.Run("no value", func(t *testing.T) {
@@ -752,10 +762,8 @@ func testGetFeatureFlag(t *testing.T) {
 	})
 }
 
-func testUpdateFeatureFlag(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
+func testUpdateFeatureFlag(t *testing.T, db DB) {
+
 	flagStore := db.FeatureFlags()
 	ctx := context.Background()
 	t.Run("invalid input", func(t *testing.T) {
