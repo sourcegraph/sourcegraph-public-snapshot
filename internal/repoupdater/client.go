@@ -73,7 +73,8 @@ func NewClient(serverURL string) *Client {
 				return nil, err
 			}
 
-			return proto.NewRepoUpdaterServiceClient(conn), nil
+			client := &automaticRetryClient{base: proto.NewRepoUpdaterServiceClient(conn)}
+			return client, nil
 		}),
 	}
 }
