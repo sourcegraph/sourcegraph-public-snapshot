@@ -93,7 +93,6 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
         [props.platformContext, userSettingsSubject]
     )
 
-    const shouldShowEditorText = editors?.length === 1
     return editors ? (
         <>
             {editors.map(
@@ -107,7 +106,6 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                                     src={`${assetsRoot}/img/editors/${editor.id}.svg`}
                                     alt={`Open file in ${editor?.name}`}
                                     className={styles.icon}
-                                    // className={classNames(styles.icon, styles.repoActionIcon)}
                                 />
                             }
                             onClick={() => {
@@ -121,7 +119,6 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                             }}
                             source={props.source}
                             actionType={props.actionType}
-                            shouldShowEditorText={shouldShowEditorText}
                         />
                     )
             )}
@@ -153,7 +150,6 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                     onClick={togglePopover}
                     source={props.source}
                     actionType={props.actionType}
-                    shouldShowEditorText={true}
                 />
             </PopoverTrigger>
             <PopoverContent position={Position.leftStart} className="pt-0 pb-0" aria-labelledby="repo-revision-popover">
@@ -193,7 +189,6 @@ interface EditorItemProps {
     isActive?: boolean
     source?: 'repoHeader' | 'actionItemsBar'
     actionType?: 'nav' | 'dropdown'
-    shouldShowEditorText?: boolean
 }
 
 function EditorItem(props: EditorItemProps): JSX.Element {
@@ -217,12 +212,7 @@ function EditorItem(props: EditorItemProps): JSX.Element {
     return (
         <Tooltip content={props.tooltip}>
             <RepoHeaderActionAnchor onSelect={props.onClick} className={styles.item}>
-                <RepoActionInfo
-                    icon={props.icon}
-                    displayName="Editor"
-                    hideActionLabel={!props.shouldShowEditorText}
-                    iconClassName="mr-2"
-                />
+                <RepoActionInfo icon={props.icon} displayName="Editor" iconClassName="mr-2" />
             </RepoHeaderActionAnchor>
         </Tooltip>
     )
