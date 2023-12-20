@@ -896,10 +896,11 @@ func (p *parser) ParseParameter(label labels) (Parameter, bool, error) {
 	}, true, nil
 }
 
-func globToRegex(gob string) string {
+var regexSpecialCharacter = regexp.MustCompile(`[\$\(\)\*\+\.\?\[\\\]\^\{\|\}]`)
+
+func globToRegex(glob string) string {
 	// First, we escape all the regex special characters.
-	re := regexp.MustCompile(`[\$\(\)\*\+\.\?\[\\\]\^\{\|\}]`)
-	r := re.ReplaceAllStringFunc(gob, func(match string) string {
+	r := regexSpecialCharacter.ReplaceAllStringFunc(glob, func(match string) string {
 		if match == "*" {
 			return ".*"
 		}
@@ -961,6 +962,16 @@ func partitionParameters(nodes []Node) []Node {
 
 // parseLeaves scans for consecutive leaf nodes and applies
 // label to patterns.
+//
+// Note: "label" is used both as option for the parser and as an annotation for
+// the nodes the parser returns.
+//
+// Examples of labels that are used as an option are "Standard", "GlobFilters",
+// "QuotesAsLiterals". These options made it very easy to implement new behavior
+// for keyword based search syntax.
+//
+// However, mixing these two concepts makes the code more confusing to read. We
+// might want to separate the two concerns in the future.
 func (p *parser) parseLeaves(label labels) ([]Node, error) {
 	var nodes []Node
 	start := p.pos
