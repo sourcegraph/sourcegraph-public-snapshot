@@ -3,7 +3,7 @@
 set -eu
 
 ## Setting up tools
-gcloud="$(pwd)/$1"
+gcloud="$(pwd)/$1" # used in workdir folder, so need an absolute path
 packer="$(pwd)/$2"
 base="cmd/executor/docker-mirror/"
 

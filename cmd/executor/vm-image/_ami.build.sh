@@ -3,7 +3,7 @@
 set -eu
 
 ## Setting up inputs/data
-gcloud="$(pwd)/$1"
+gcloud="$(pwd)/$1" # used in workdir folder, so need an absolute path
 packer="$(pwd)/$2"
 srccli="$3"
 executor="$4"
