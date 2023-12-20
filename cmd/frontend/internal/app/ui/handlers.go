@@ -84,7 +84,8 @@ type Common struct {
 
 	PreloadedAssets *[]PreloadedAsset
 
-	Manifest *assets.WebBuildManifest
+	Manifest              *assets.WebBuildManifest
+	ManifestDevInjectHTML template.HTML
 
 	WebBuilderDevServer bool // whether the web builder dev server is running (WEB_BUILDER_DEV_SERVER env var)
 
@@ -178,6 +179,10 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		},
 
 		WebBuilderDevServer: webBuilderDevServer,
+	}
+
+	if env.InsecureDev && manifest.DevInjectHTML != "" {
+		common.ManifestDevInjectHTML = template.HTML(manifest.DevInjectHTML)
 	}
 
 	if enableHTMLInject != "true" {
