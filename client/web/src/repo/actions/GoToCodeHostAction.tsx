@@ -177,9 +177,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
                 {...commonProps}
                 className={classNames(commonProps.className, 'd-flex justify-content-center align-items-center')}
             >
-                <Icon as={exportIcon} aria-hidden={true} className={styles.repoActionIcon} />
-                <Text className={styles.repoActionLabel}>{displayName}</Text>
-                {/* <RepoActionInfo displayName={displayName} icon={exportIcon} /> */}
+                <RepoActionInfo displayName={displayName} icon={exportIcon} />
             </RepoHeaderActionAnchor>
         </Tooltip>
     )
