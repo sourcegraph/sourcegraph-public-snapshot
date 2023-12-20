@@ -195,7 +195,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 				_, _ = w.Write([]byte("ok"))
 				return
 			}
-			w.WriteHeader(404)
+			http.NotFoundHandler().ServeHTTP(w, r)
 		})),
 	}
 

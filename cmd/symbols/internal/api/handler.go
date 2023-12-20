@@ -87,7 +87,6 @@ func NewHandler(
 	mux.HandleFunc("/healthz", handleHealthCheck(jsonLogger))
 
 	if handleStatus != nil {
-		// TODO: Can we remove this endpoint or move it to the debug handlers?
 		mux.HandleFunc("/status", handleStatus)
 	}
 
