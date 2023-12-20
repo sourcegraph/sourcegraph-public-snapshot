@@ -13,7 +13,7 @@ import { Badge, Button, Icon, H4, Input, LanguageIcon } from '@sourcegraph/wildc
 
 import styles from './SearchDynamicFilter.module.scss'
 
-const MAX_FILTERS_NUNMBER = 7
+const MAX_FILTERS_NUMBER = 7
 
 interface SearchDynamicFilterProps {
     /**
@@ -123,13 +123,13 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
     }
 
     const filteredFilters = mappedFilters.filter(filter => filter.label.includes(searchTerm))
-    const filtersToShow = showAllFilters ? filteredFilters : filteredFilters.slice(0, MAX_FILTERS_NUNMBER)
+    const filtersToShow = showAllFilters ? filteredFilters : filteredFilters.slice(0, MAX_FILTERS_NUMBER)
 
     return (
         <div className={styles.root}>
             <H4 className={styles.heading}>By {filterType}</H4>
 
-            {mappedFilters.length > MAX_FILTERS_NUNMBER && (
+            {mappedFilters.length > MAX_FILTERS_NUMBER && (
                 <Input
                     variant="small"
                     value={searchTerm}
@@ -166,7 +166,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
                     )
                 })}
             </ul>
-            {filteredFilters.length > MAX_FILTERS_NUNMBER && (
+            {filteredFilters.length > MAX_FILTERS_NUMBER && (
                 <Button variant="link" size="sm" onClick={() => setShowAllFilters(!showAllFilters)}>
                     {showAllFilters ? `Show less ${filterType} filters` : `Show all ${filterType} filters`}
                 </Button>
