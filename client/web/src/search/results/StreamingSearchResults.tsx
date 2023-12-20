@@ -99,7 +99,13 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         }),
         [patternType, caseSensitive, trace, featureOverrides, searchMode, searchOptions]
     )
-    const results = useCachedSearchResults(streamSearch, submittedURLQuery, filterQuery, options, telemetryService)
+    const results = useCachedSearchResults({
+        query: submittedURLQuery,
+        filterQuery,
+        options,
+        streamSearch,
+        telemetryService,
+    })
 
     const { logSearchResultClicked } = useStreamingSearchPings({
         telemetryService,
