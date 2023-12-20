@@ -46,17 +46,19 @@ var (
 // Repo abstracts access to a repository. It assumes that Cody also has access
 // to read and modify files in that repository.
 type Repo interface {
+	feature.Walkable
 	// Read returns the contents of a file in the repo given a path.
 	Read(path string) (string, error)
 	// Update overwrites contents of a file at given path with given contents.
 	Update(path string, newContents string) error
-	// Walk the repo by file node. Callback should filepath.SkipDir to skip directory.
-	Walk(func(isDir bool, name string) error) error
 }
 
 // TestCase represents a single code generating chat interaction that we are testing against.
 // This chat interaction can be applied to multiple files.
 type TestCase interface {
+	// Sample iterates through the repo and selects files relevant for the test case.
+	// Once the callback captures a file, it can request more with wantNext. Errors are propagated.
+	Sample(repo feature.Walkable, callback func(path string) (wantNext bool, err error)) error
 	// Distort breaks a file contents. Input is a valid file from a repo that builds OK.
 	// A test case is then modifying the file to give Cody opportunity to fix it.
 	Distort(contents string) string
@@ -70,40 +72,42 @@ func Run(repo string) error {
 	// TODO: Move repo to a parameter
 	r := localRepo(repo)
 	f := feature.TypeScriptTypeBreak{}
-	filePaths, err := sample(r, 5)
-	if err != nil {
-		return err
-	}
 	var (
 		countTotal int = 0
 		countPass  int = 0
 	)
-	for _, path := range filePaths {
+	f.Sample(r, func(path string) (wantNext bool, err error) {
+		diagnosef("Testing %q", path)
 		original, err := r.Read(path)
 		if err != nil {
-			return err
+			return false, err
 		}
 		distorted := f.Distort(original)
-		if err := r.Update(path, distorted); err != nil {
-			return err
+		diff := cmp.Diff(distorted, original)
+		// Continue to next file if no diff after distorting:
+		if diff == "" {
+			return true, nil
 		}
-		diagnosef("Diff:\n%s", cmp.Diff(distorted, original))
+		diagnosef("Diff:\n%s", diff)
+		if err := r.Update(path, distorted); err != nil {
+			return false, err
+		}
 		if err := runCody(path); err != nil {
-			return err
+			return false, err
 		}
 		fixed, err := r.Read(path)
 		if err != nil {
-			return err
+			return false, err
 		}
 		countTotal++
 		if f.ValidateFile(fixed, original) {
 			countPass++
 		}
-		// Roll back the file change.
 		if err := r.Update(path, original); err != nil {
-			return err
+			return false, err
 		}
-	}
+		return countTotal < 5, nil
+	})
 	diagnosef("Total %d cases, %d passed", countTotal, countPass)
 	return nil
 }
