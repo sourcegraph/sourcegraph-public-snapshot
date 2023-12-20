@@ -1237,6 +1237,7 @@ ts_project(
         "src/repo/DirectImportRepoAlert.tsx",
         "src/repo/FilePathBreadcrumbs.tsx",
         "src/repo/GitReference.tsx",
+        "src/repo/RepoActionInfo.tsx",
         "src/repo/RepoContainer.tsx",
         "src/repo/RepoContainerError.tsx",
         "src/repo/RepoHeader.tsx",
