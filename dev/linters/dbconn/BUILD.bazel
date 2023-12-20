@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dbconn",
+    srcs = ["dbconn.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/linters/dbconn",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/linters/nolint",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
+        "@org_golang_x_tools//go/analysis",
+    ],
+)

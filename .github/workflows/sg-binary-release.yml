@@ -125,3 +125,9 @@ jobs:
         env:
           repo: sourcegraph/sg
           GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}
+
+  report_failure:
+    needs: build
+    if: ${{ failure() }}
+    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@main
+    secrets: inherit

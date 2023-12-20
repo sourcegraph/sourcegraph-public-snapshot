@@ -122,3 +122,9 @@ jobs:
           path: './dist/'
           destination: 'universal_ctags/x86_64-linux'
           glob: 'universal-ctags-*'
+
+  report_failure:
+    needs: [aarch64-darwin, x86_64-darwin, x86_64-linux]
+    if: ${{ failure() }}
+    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@main
+    secrets: inherit

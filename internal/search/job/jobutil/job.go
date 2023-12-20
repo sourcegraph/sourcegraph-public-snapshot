@@ -99,13 +99,14 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, repoOptions, resultTypes, inputs)
 
 		builder := &jobBuilder{
-			query:          b,
-			patternType:    inputs.PatternType,
-			resultTypes:    resultTypes,
-			repoOptions:    repoOptions,
-			features:       inputs.Features,
-			fileMatchLimit: fileMatchLimit,
-			selector:       selector,
+			query:           b,
+			patternType:     inputs.PatternType,
+			resultTypes:     resultTypes,
+			repoOptions:     repoOptions,
+			features:        inputs.Features,
+			fileMatchLimit:  fileMatchLimit,
+			selector:        selector,
+			numContextLines: int(inputs.ContextLines),
 		}
 
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
@@ -353,6 +354,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					UseFullDeadline: useFullDeadline,
 					Features:        *searchInputs.Features,
 					PathRegexps:     getPathRegexpsFromTextPatternInfo(patternInfo),
+					NumContextLines: int(searchInputs.ContextLines),
 				}
 
 				addJob(&repoPagerJob{
@@ -775,13 +777,14 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 // backends, then this builder type _may_ be the right place for it to live.
 // If in doubt, ask the search team.
 type jobBuilder struct {
-	query          query.Basic
-	patternType    query.SearchType
-	resultTypes    result.Types
-	repoOptions    search.RepoOptions
-	features       *search.Features
-	fileMatchLimit int32
-	selector       filter.SelectPath
+	query           query.Basic
+	patternType     query.SearchType
+	resultTypes     result.Types
+	repoOptions     search.RepoOptions
+	features        *search.Features
+	fileMatchLimit  int32
+	selector        filter.SelectPath
+	numContextLines int
 }
 
 func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Job, error) {
@@ -804,12 +807,13 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 		// is therefore set to `nil` below.
 		// Ideally, The ZoektParameters type should not expose this field for Universe text
 		// searches at all, and will be removed once jobs are fully migrated.
-		Query:          nil,
-		Typ:            typ,
-		FileMatchLimit: b.fileMatchLimit,
-		Select:         b.selector,
-		Features:       *b.features,
-		PatternType:    b.patternType,
+		Query:           nil,
+		Typ:             typ,
+		FileMatchLimit:  b.fileMatchLimit,
+		Select:          b.selector,
+		Features:        *b.features,
+		PatternType:     b.patternType,
+		NumContextLines: b.numContextLines,
 	}
 
 	switch typ {
@@ -837,10 +841,11 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 	}
 
 	zoektParams := &search.ZoektParameters{
-		FileMatchLimit: b.fileMatchLimit,
-		Select:         b.selector,
-		Features:       *b.features,
-		PatternType:    b.patternType,
+		FileMatchLimit:  b.fileMatchLimit,
+		Select:          b.selector,
+		Features:        *b.features,
+		PatternType:     b.patternType,
+		NumContextLines: b.numContextLines,
 	}
 
 	switch typ {

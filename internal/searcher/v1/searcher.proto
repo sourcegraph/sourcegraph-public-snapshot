@@ -33,8 +33,9 @@ message SearchRequest {
 
   PatternInfo pattern_info = 5;
 
-  // URL specifies the repository's Git remote URL (for gitserver). It is optional. See
-  // (gitserver.ExecRequest).URL for documentation on what it is used for.
+  // URL specifies the repository's Git remote URL (for gitserver). It is
+  // optional. See (gitserver.ExecRequest).URL for documentation on what it is
+  // used for.
   string url = 6;
 
   // branch is used for structural search as an alternative to Commit
@@ -56,6 +57,10 @@ message SearchRequest {
   // fetch will still happen in the background so future requests don't
   // have to wait.
   google.protobuf.Duration fetch_timeout = 8;
+
+  // num_context_lines is the number of additional lines of context
+  // (before and after the matched lines) to return with the match.
+  int32 num_context_lines = 10;
 }
 
 // SearchResponse is a message in the response stream for Search
@@ -123,14 +128,15 @@ message PatternInfo {
   // is true, otherwise a fixed string. eg "route variable"
   string pattern = 1;
 
-  // is_negated if true will invert the matching logic for regexp searches. IsNegated=true is
-  // not supported for structural searches.
+  // is_negated if true will invert the matching logic for regexp searches.
+  // IsNegated=true is not supported for structural searches.
   bool is_negated = 2;
 
   // is_regexp if true will treat the pattern as a regular expression.
   bool is_regexp = 3;
 
-  // is_structural if true will treat the pattern as a Comby structural search pattern.
+  // is_structural if true will treat the pattern as a Comby structural search
+  // pattern.
   bool is_structural = 4;
 
   // is_word_match if true will only match the pattern at word boundaries.
@@ -159,7 +165,8 @@ message PatternInfo {
   bool path_patterns_are_case_sensitive = 9;
 
   // limit is the cap on the total number of matches returned.
-  // A match is either a path match, or a fragment of a line matched by the query.
+  // A match is either a path match, or a fragment of a line matched by the
+  // query.
   int64 limit = 10;
 
   // pattern_matches_content is whether the pattern should be matched
@@ -172,16 +179,17 @@ message PatternInfo {
 
   // comby_rule is a rule that constrains matching for structural search.
   // It only applies when IsStructuralPat is true.
-  // As a temporary measure, the expression `where "backcompat" == "backcompat"` acts as
-  // a flag to activate the old structural search path, which queries zoekt for the
-  // file list in the frontend and passes it to searcher.
+  // As a temporary measure, the expression `where "backcompat" == "backcompat"`
+  // acts as a flag to activate the old structural search path, which queries
+  // zoekt for the file list in the frontend and passes it to searcher.
   string comby_rule = 13;
 
-  // languages is the list of languages passed via the lang filters (e.g., "lang:c")
+  // languages is the list of languages passed via the lang filters (e.g.,
+  // "lang:c")
   repeated string languages = 14;
 
-  // select is the value of the the select field in the query. It is not necessary to
-  // use it since selection is done after the query completes, but exposing it can enable
-  // optimizations.
+  // select is the value of the the select field in the query. It is not
+  // necessary to use it since selection is done after the query completes, but
+  // exposing it can enable optimizations.
   string select = 15;
 }

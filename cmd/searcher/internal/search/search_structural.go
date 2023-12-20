@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,7 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.FileMatch, error) {
+func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch, contextLines int32) (protocol.FileMatch, error) {
 	file, err := zipReader.Open(combyMatch.URI)
 	if err != nil {
 		return protocol.FileMatch{}, err
@@ -66,8 +67,8 @@ func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.F
 		})
 	}
 
-	chunks := chunkRanges(ranges, 0)
-	chunkMatches := chunksToMatches(fileBuf, chunks)
+	chunks := chunkRanges(ranges, contextLines*2)
+	chunkMatches := chunksToMatches(fileBuf, chunks, contextLines)
 	return protocol.FileMatch{
 		Path:         combyMatch.URI,
 		ChunkMatches: chunkMatches,
@@ -133,7 +134,7 @@ type rangeChunk struct {
 // have no overlapping lines, and the line ranges covered are spaced apart by
 // a minimum of `interChunkLines`. More precisely, for any return value `rangeChunks`:
 // rangeChunks[i].cover.End.Line + interChunkLines < rangeChunks[i+1].cover.Start.Line
-func chunkRanges(ranges []protocol.Range, interChunkLines int) []rangeChunk {
+func chunkRanges(ranges []protocol.Range, interChunkLines int32) []rangeChunk {
 	// Sort by range start
 	sort.Slice(ranges, func(i, j int) bool {
 		return ranges[i].Start.Offset < ranges[j].Start.Offset
@@ -154,7 +155,7 @@ func chunkRanges(ranges []protocol.Range, interChunkLines int) []rangeChunk {
 		}
 
 		lastChunk := &chunks[len(chunks)-1] // pointer for mutability
-		if int(lastChunk.cover.End.Line)+interChunkLines >= int(rr.Start.Line) {
+		if lastChunk.cover.End.Line+interChunkLines >= rr.Start.Line {
 			// The current range overlaps with the current chunk, so merge them
 			lastChunk.ranges = ranges[i-len(lastChunk.ranges) : i+1]
 
@@ -173,33 +174,103 @@ func chunkRanges(ranges []protocol.Range, interChunkLines int) []rangeChunk {
 	return chunks
 }
 
-func chunksToMatches(buf []byte, chunks []rangeChunk) []protocol.ChunkMatch {
+func chunksToMatches(buf []byte, chunks []rangeChunk, contextLines int32) []protocol.ChunkMatch {
 	chunkMatches := make([]protocol.ChunkMatch, 0, len(chunks))
 	for _, chunk := range chunks {
-		firstLineStart := int32(0)
-		if off := bytes.LastIndexByte(buf[:chunk.cover.Start.Offset], '\n'); off >= 0 {
-			firstLineStart = int32(off) + 1
-		}
-
-		lastLineEnd := int32(len(buf))
-		if off := bytes.IndexByte(buf[chunk.cover.End.Offset:], '\n'); off >= 0 {
-			lastLineEnd = chunk.cover.End.Offset + int32(off)
-		}
-
+		extendedRange := extendRangeToLines(chunk.cover, buf)
+		rangeWithContext := addContextLines(extendedRange, buf, contextLines)
 		chunkMatches = append(chunkMatches, protocol.ChunkMatch{
 			// NOTE: we must copy the content here because the reference
 			// must not outlive the backing mmap, which may be cleaned
 			// up before the match is serialized for the network.
-			Content: string(bytes.ToValidUTF8(buf[firstLineStart:lastLineEnd], []byte("�"))),
-			ContentStart: protocol.Location{
-				Offset: firstLineStart,
-				Line:   chunk.cover.Start.Line,
-				Column: 0,
-			},
-			Ranges: chunk.ranges,
+			Content:      string(bytes.ToValidUTF8(buf[rangeWithContext.Start.Offset:rangeWithContext.End.Offset], []byte("�"))),
+			ContentStart: rangeWithContext.Start,
+			Ranges:       chunk.ranges,
 		})
 	}
 	return chunkMatches
+}
+
+// extendRangeWithContext adds contextLines worth of context to the range.
+func extendRangeToLines(inputRange protocol.Range, buf []byte) protocol.Range {
+	firstLineStart := lineStart(buf, inputRange.Start.Offset)
+	lastLineStart := lineStart(buf, inputRange.End.Offset)
+	lastLineEnd := lineEnd(buf, inputRange.End.Offset)
+
+	return protocol.Range{
+		Start: protocol.Location{
+			Offset: firstLineStart,
+			Line:   inputRange.Start.Line,
+			Column: 0,
+		},
+		End: protocol.Location{
+			Offset: lastLineEnd,
+			Line:   inputRange.End.Line,
+			Column: int32(utf8.RuneCount(buf[lastLineStart:lastLineEnd])),
+		},
+	}
+}
+
+func addContextLines(inputRange protocol.Range, buf []byte, contextLines int32) protocol.Range {
+	if contextLines == 0 {
+		return inputRange
+	}
+	firstLineStart := inputRange.Start.Offset
+	lastLineEnd := inputRange.End.Offset
+
+	precedingLinesAdded := 0
+	succeedingLinesAdded := 0
+
+	for i := int32(0); i < contextLines; i++ {
+		if firstLineStart > 0 {
+			firstLineStart = lineStart(buf, firstLineStart-1)
+			precedingLinesAdded += 1
+		}
+
+		rest := buf[lastLineEnd:]
+		if bytes.HasPrefix(rest, []byte("\n")) && len(rest) > 1 {
+			lastLineEnd = lineEnd(buf, lastLineEnd+1)
+			succeedingLinesAdded += 1
+		} else if bytes.HasPrefix(rest, []byte("\r\n")) && len(rest) > 2 {
+			lastLineEnd = lineEnd(buf, lastLineEnd+2)
+			succeedingLinesAdded += 1
+		}
+	}
+
+	lastLineStart := lineStart(buf, lastLineEnd)
+
+	return protocol.Range{
+		Start: protocol.Location{
+			Offset: firstLineStart,
+			Line:   inputRange.Start.Line - int32(precedingLinesAdded),
+			Column: 0,
+		},
+		End: protocol.Location{
+			Offset: lastLineEnd,
+			Line:   inputRange.End.Line + int32(succeedingLinesAdded),
+			Column: int32(utf8.RuneCount(buf[lastLineStart:lastLineEnd])),
+		},
+	}
+
+}
+
+func lineStart(buf []byte, offset int32) int32 {
+	start := int32(0)
+	if loc := bytes.LastIndexByte(buf[:offset], '\n'); loc >= 0 {
+		start = int32(loc) + 1
+	}
+	return start
+}
+
+func lineEnd(buf []byte, offset int32) int32 {
+	end := int32(len(buf))
+	if loc := bytes.IndexByte(buf[offset:], '\n'); loc >= 0 {
+		end = int32(loc) + offset
+		if bytes.HasSuffix(buf[:end], []byte("\r")) {
+			end -= 1
+		}
+	}
+	return end
 }
 
 var isValidMatcher = lazyregexp.New(`\.(s|sh|bib|c|cs|css|dart|clj|elm|erl|ex|f|fsx|go|html|hs|java|js|json|jl|kt|tex|lisp|nim|md|ml|org|pas|php|py|re|rb|rs|rst|scala|sql|swift|tex|txt|ts)$`)
@@ -315,7 +386,7 @@ func structuralSearchWithZoekt(ctx context.Context, logger log.Logger, indexed z
 		p.Branch = "HEAD"
 	}
 	branchRepos := []zoektquery.BranchRepos{{Branch: p.Branch, Repos: roaring.BitmapOf(uint32(p.RepoID))}}
-	err = zoektSearch(ctx, logger, indexed, patternInfo, branchRepos, time.Since, p.Repo, sender)
+	err = zoektSearch(ctx, logger, indexed, patternInfo, branchRepos, p.NumContextLines, time.Since, p.Repo, sender)
 	if err != nil {
 		return err
 	}
@@ -324,18 +395,32 @@ func structuralSearchWithZoekt(ctx context.Context, logger log.Logger, indexed z
 }
 
 // filteredStructuralSearch filters the list of files with a regex search before passing the zip to comby
-func filteredStructuralSearch(ctx context.Context, logger log.Logger, zipPath string, zf *zipFile, p *protocol.PatternInfo, repo api.RepoName, sender matchSender) error {
+func filteredStructuralSearch(
+	ctx context.Context,
+	logger log.Logger,
+	zipPath string,
+	zf *zipFile,
+	p *protocol.PatternInfo,
+	repo api.RepoName,
+	sender matchSender,
+	contextLines int32,
+) error {
 	// Make a copy of the pattern info to modify it to work for a regex search
 	rp := *p
 	rp.Pattern = comby.StructuralPatToRegexpQuery(p.Pattern, false)
 	rp.IsStructuralPat = false
 	rp.IsRegExp = true
-	rg, err := compile(&rp)
+	m, err := compilePattern(&rp)
 	if err != nil {
 		return err
 	}
 
-	fileMatches, _, err := regexSearchBatch(ctx, rg, zf, p.Limit, true, false, false)
+	pm, err := compilePathPatterns(&rp)
+	if err != nil {
+		return err
+	}
+
+	fileMatches, _, err := regexSearchBatch(ctx, m, pm, zf, p.Limit, true, false, false, contextLines)
 	if err != nil {
 		return err
 	}
@@ -353,7 +438,7 @@ func filteredStructuralSearch(ctx context.Context, logger log.Logger, zipPath st
 		extensionHint = filepath.Ext(matchedPaths[0])
 	}
 
-	return structuralSearch(ctx, logger, comby.ZipPath(zipPath), subset(matchedPaths), extensionHint, p.Pattern, p.CombyRule, p.Languages, repo, sender)
+	return structuralSearch(ctx, logger, comby.ZipPath(zipPath), subset(matchedPaths), extensionHint, p.Pattern, p.CombyRule, p.Languages, repo, contextLines, sender)
 }
 
 // toMatcher returns the matcher that parameterizes structural search. It
@@ -392,7 +477,17 @@ var all universalSet = struct{}{}
 
 var mockStructuralSearch func(ctx context.Context, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) error = nil
 
-func structuralSearch(ctx context.Context, logger log.Logger, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) (err error) {
+func structuralSearch(
+	ctx context.Context,
+	logger log.Logger,
+	inputType comby.Input,
+	paths filePatterns,
+	extensionHint, pattern, rule string,
+	languages []string,
+	repo api.RepoName,
+	contextLines int32,
+	sender matchSender,
+) (err error) {
 	if mockStructuralSearch != nil {
 		return mockStructuralSearch(ctx, inputType, paths, extensionHint, pattern, rule, languages, repo, sender)
 	}
@@ -423,9 +518,9 @@ func structuralSearch(ctx context.Context, logger log.Logger, inputType comby.In
 
 	switch combyInput := inputType.(type) {
 	case comby.Tar:
-		return runCombyAgainstTar(ctx, logger, args, combyInput, sender)
+		return runCombyAgainstTar(ctx, logger, args, combyInput, contextLines, sender)
 	case comby.ZipPath:
-		return runCombyAgainstZip(ctx, logger, args, combyInput, sender)
+		return runCombyAgainstZip(ctx, logger, args, combyInput, contextLines, sender)
 	}
 
 	return errors.New("comby input must be either -tar or -zip for structural search")
@@ -434,7 +529,18 @@ func structuralSearch(ctx context.Context, logger log.Logger, inputType comby.In
 // runCombyAgainstTar runs comby with the flags `-tar` and `-chunk-matches 0`. `-chunk-matches 0` instructs comby to return
 // chunks as part of matches that it finds. Data is streamed into stdin from the channel on tarInput and out from stdout
 // to the result stream.
-func runCombyAgainstTar(ctx context.Context, logger log.Logger, args comby.Args, tarInput comby.Tar, sender matchSender) error {
+func runCombyAgainstTar(
+	ctx context.Context,
+	logger log.Logger,
+	args comby.Args,
+	tarInput comby.Tar,
+	// TODO(camdencheek): comby does not expose a way to add context lines to
+	// the returned chunks. When we stream our candidate matches to comby, we
+	// do not retain the original file contents, so we cannot easily add the
+	// context lines.
+	_contextLines int32,
+	sender matchSender,
+) error {
 	cmd, stdin, stdout, stderr, err := comby.SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return err
@@ -504,7 +610,14 @@ func runCombyAgainstTar(ctx context.Context, logger log.Logger, args comby.Args,
 
 // runCombyAgainstZip runs comby with the flag `-zip`. It reads matches from comby's stdout as they are returned and
 // attempts to convert each to a protocol.FileMatch, sending it to the result stream if successful.
-func runCombyAgainstZip(ctx context.Context, logger log.Logger, args comby.Args, zipPath comby.ZipPath, sender matchSender) (err error) {
+func runCombyAgainstZip(
+	ctx context.Context,
+	logger log.Logger,
+	args comby.Args,
+	zipPath comby.ZipPath,
+	contextLines int32,
+	sender matchSender,
+) (err error) {
 	cmd, stdin, stdout, stderr, err := comby.SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return err
@@ -534,7 +647,7 @@ func runCombyAgainstZip(ctx context.Context, logger log.Logger, args comby.Args,
 				return errors.Wrap(err, "ToFileMatch")
 			}
 
-			fm, err := toFileMatch(&zipReader.Reader, cfm.(*comby.FileMatch))
+			fm, err := toFileMatch(&zipReader.Reader, cfm.(*comby.FileMatch), contextLines)
 			if err != nil {
 				return errors.Wrap(err, "toFileMatch")
 			}

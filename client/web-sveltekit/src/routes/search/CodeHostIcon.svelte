@@ -20,6 +20,6 @@
 
 {#if svgPath}
     <Tooltip tooltip={hostName}>
-        <Icon class="text-muted" aria-label={hostName} {svgPath} inline />&nbsp;
+        <Icon aria-label={hostName} {svgPath} inline />&nbsp;
     </Tooltip>
 {/if}

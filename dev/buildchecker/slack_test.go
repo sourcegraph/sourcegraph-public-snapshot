@@ -38,7 +38,6 @@ func TestWeeklySummary(t *testing.T) {
 • Average % of build flakes: *20%*
 • Total incident duration: *150ns*
 
-For a more detailed breakdown, view the dashboards in <https://sourcegraph.grafana.net/d/iBBWbxFnk/buildkite?orgId=1&from=now-7d&to=now|Grafana>.
 `)
 	want.Equal(t, got)
 }

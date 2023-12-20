@@ -1655,6 +1655,8 @@ github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-202
 github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20231121191755-214be625af21/go.mod h1:lQ1E8rSHgTmL8GmtcQFXS75rqQrCmuQRXZWh7A+Fp6s=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20230822024612-edb48c530722 h1:N0OxHqeujHxvVU666KQY9whauLyw4s3BJGBLxx6gKR0=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20230822024612-edb48c530722/go.mod h1:TiUqRvYs/Gah8bGw/toyVWCaP3dnCB4tBh3jf5HGdo0=
+github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20231218231056-4749baca142f h1:sCs3+EDrM4pp7PI0/efZPZZK+u955+gwr0byWGg+AVg=
+github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20231218231056-4749baca142f/go.mod h1:4/c4ky2tQDgGw/mdej89IAqBKVKwIWfEI+It7eIIsiY=
 github.com/sourcegraph/mountinfo v0.0.0-20231018142932-e00da332dac5 h1:2lUb58rz1bq77wL3hb6OBT58uBVtlNs1o23Kahfj/kU=
 github.com/sourcegraph/mountinfo v0.0.0-20231018142932-e00da332dac5/go.mod h1:ghoEiutaNVERt2cu5q/bU3HOo29AHGSPrRZE1sOaA0w=
 github.com/sourcegraph/run v0.12.0 h1:3A8w5e8HIYPfafHekvmdmmh42RHKGVhmiTZAPJclg7I=
@@ -1665,8 +1667,8 @@ github.com/sourcegraph/tiktoken-go v0.0.0-20230905173153-caab340cf008 h1:Wu8W50q
 github.com/sourcegraph/tiktoken-go v0.0.0-20230905173153-caab340cf008/go.mod h1:9NiV+i9mJKGj1rYOT+njbv+ZwA/zJxYdewGl6qVatpg=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20231206165318-7b678e15c348 h1:ODktEWcIYRQHQjbg8X9rZAYcgYuSASZ0nn7nz4MNgS4=
-github.com/sourcegraph/zoekt v0.0.0-20231206165318-7b678e15c348/go.mod h1:DA42q8CujJGj9zLcJfgvVV3VI6rykt/VrjkLaGdmNp4=
+github.com/sourcegraph/zoekt v0.0.0-20231211160200-e92f6c764b56 h1:WhN5CjTjPc4cdv5LD0umuudb6ffvb3cFSo7VGIPvxGc=
+github.com/sourcegraph/zoekt v0.0.0-20231211160200-e92f6c764b56/go.mod h1:DA42q8CujJGj9zLcJfgvVV3VI6rykt/VrjkLaGdmNp4=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v0.0.0-20170901052352-ee1bd8ee15a1/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=

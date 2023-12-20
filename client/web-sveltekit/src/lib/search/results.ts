@@ -7,17 +7,16 @@ import {
     findFilter,
     getMatchUrl,
     omitFilter,
+    truncateGroups,
     type ContentMatch,
     type OwnerMatch,
     type RepositoryMatch,
-    type PerFileResultRanking,
-    type MatchItem,
-    type RankingResult,
+    type MatchGroup,
     type Range,
 } from '$lib/shared'
 
 import type { QueryState } from './state'
-import { resultToMatchItems } from './utils'
+import { resultToMatchGroups } from './utils'
 
 const REPO_DESCRIPTION_CHAR_LIMIT = 500
 
@@ -97,34 +96,30 @@ export function buildSearchURLQueryForOwner(queryState: QueryState, result: Owne
     )
 }
 
-function sumHighlightRanges(count: number, item: MatchItem): number {
-    return count + item.highlightRanges.length
+function sumHighlightRanges(count: number, item: MatchGroup): number {
+    return count + item.matches.length
 }
 
 export function rankContentMatch(
     result: ContentMatch,
-    ranking: PerFileResultRanking,
+    ranking: (groups: MatchGroup[]) => MatchGroup[],
+    maxMatches: number,
     contextLines: number
 ): {
-    expandedMatchGroups: RankingResult
-    collapsedMatchGroups: RankingResult
-    collapsible: boolean
+    expandedMatchGroups: MatchGroup[]
+    collapsedMatchGroups: MatchGroup[]
     hiddenMatchesCount: number
 } {
-    const items = resultToMatchItems(result)
-    const expandedMatchGroups = ranking.expandedResults(items, contextLines)
-    const collapsedMatchGroups = ranking.collapsedResults(items, contextLines)
+    const expandedMatchGroups = ranking(resultToMatchGroups(result))
+    const collapsedMatchGroups = truncateGroups(expandedMatchGroups, maxMatches, contextLines)
 
-    const collapsible = items.length > collapsedMatchGroups.matches.length
-
-    const highlightRangesCount = items.reduce(sumHighlightRanges, 0)
-    const collapsedHighlightRangesCount = collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0)
+    const highlightRangesCount = expandedMatchGroups.reduce(sumHighlightRanges, 0)
+    const collapsedHighlightRangesCount = collapsedMatchGroups.reduce(sumHighlightRanges, 0)
     const hiddenMatchesCount = highlightRangesCount - collapsedHighlightRangesCount
 
     return {
         expandedMatchGroups,
         collapsedMatchGroups,
-        collapsible,
         hiddenMatchesCount,
     }
 }

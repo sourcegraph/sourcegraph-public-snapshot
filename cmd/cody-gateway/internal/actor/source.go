@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-redsync/redsync/v4"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -327,3 +328,18 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 	handleLogger.Info("Running sources sync")
 	return s.sources.SyncAll(ctx, handleLogger)
 }
+
+type FakeSource struct {
+	SourceName codygateway.ActorSource
+}
+
+func (m FakeSource) Name() string {
+	return string(m.SourceName)
+}
+
+func (m FakeSource) Get(_ context.Context, _ string) (*Actor, error) {
+	// TODO implement me
+	panic("implement me")
+}
+
+var _ Source = FakeSource{}

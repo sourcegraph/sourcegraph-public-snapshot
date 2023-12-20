@@ -5,6 +5,8 @@ Owned by the [DevInfra team](https://handbook.sourcegraph.com/departments/engine
 
 More documentation for Sourcegraph teammates is available in the[CI incidents playbook](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci#scenarios).
 
+Buildchecker is deployed as a [GitHub Action](../../.github/workflows/buildchecker.yml).
+
 ## Usage
 
 Available commands:

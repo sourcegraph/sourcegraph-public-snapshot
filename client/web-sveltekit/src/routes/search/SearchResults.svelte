@@ -22,8 +22,8 @@
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { resultTypeFilter } from '$lib/search/sidebar'
     import { submitSearch, type QueryStateStore, getQueryURL } from '$lib/search/state'
-    import type { SidebarFilter } from '$lib/search/utils'
-    import { SearchSidebarSectionID, type AggregateStreamingSearchResults, type SearchMatch } from '$lib/shared'
+    import { groupFilters } from '$lib/search/utils'
+    import { type AggregateStreamingSearchResults, displayRepoName, type SearchMatch } from '$lib/shared'
 
     import Section from './SidebarSection.svelte'
     import StreamingProgress from './StreamingProgress.svelte'
@@ -31,10 +31,12 @@
     import { setSearchResultsContext } from './searchResultsContext'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
     import Icon from '$lib/Icon.svelte'
-    import { mdiCloseOctagonOutline } from '@mdi/js'
+    import { mdiBookOpenVariant, mdiCloseOctagonOutline } from '@mdi/js'
+    import CodeHostIcon from './CodeHostIcon.svelte'
 
     export let stream: Observable<AggregateStreamingSearchResults | undefined>
     export let queryFromURL: string
+    export let queryFilters: string
     export let queryState: QueryStateStore
 
     let resultContainer: HTMLElement | null = null
@@ -48,11 +50,8 @@
     // $stream.state is always "loading". Need to look into this.
     $: loading = !progress?.done
     $: results = $stream?.results
-    $: filters = $stream?.filters
-    $: langFilters =
-        filters
-            ?.filter(filter => filter.kind === 'lang')
-            .map((filter): SidebarFilter => ({ ...filter, runImmediately: true })) ?? []
+    $: filters = groupFilters($stream?.filters)
+    $: hasFilters = filters.lang.length > 0 || filters.repo.length > 0 || filters.file.length > 0
 
     // Logic for maintaining list state (scroll position, rendered items, open
     // items) for backwards navigation.
@@ -92,18 +91,6 @@
         }
     }
 
-    async function updateQuery(event: MouseEvent) {
-        const element = event.currentTarget as HTMLElement
-        // TODO: Replace / update query; editor hints; etc
-        queryState.setQuery(query => query + ' ' + element.dataset.value)
-        if (element.dataset.run) {
-            await tick()
-            submitSearch($queryState)
-        } else {
-            searchInput.focus()
-        }
-    }
-
     // FIXME: Not a great solution since it relies on implementation details of
     // the progress component
     async function onResubmitQuery(event: SubmitEvent) {
@@ -129,7 +116,6 @@
 <div class="search-results">
     <aside class="sidebar" style:width={sidebarWidth}>
         <div class="section">
-            <h4>Filter results</h4>
             <!-- TODO: a11y -->
             <ul>
                 {#each resultTypeFilter as filter}
@@ -150,16 +136,34 @@
                 {/each}
             </ul>
         </div>
-        {#if langFilters.length > 1}
+        {#if hasFilters}
             <div class="section">
-                <Section
-                    id={SearchSidebarSectionID.LANGUAGES}
-                    items={langFilters}
-                    title="By languages"
-                    on:click={updateQuery}
-                />
+                <h4>Filter results</h4>
+                {#if filters.lang.length > 0}
+                    <Section items={filters.lang} title="By languages" {queryFilters} />
+                {/if}
+                {#if filters.repo.length > 0}
+                    <Section items={filters.repo} title="By repositories" {queryFilters}>
+                        <svelte:fragment slot="label" let:label>
+                            <CodeHostIcon repository={label} />
+                            {displayRepoName(label)}
+                        </svelte:fragment>
+                    </Section>
+                {/if}
+                {#if filters.file.length > 0}
+                    <Section items={filters.file} title="By paths" {queryFilters} />
+                {/if}
             </div>
         {/if}
+        <a class="section help" href="/help/code_search/reference/queries" target="_blank">
+            <span class="icon">
+                <Icon svgPath={mdiBookOpenVariant} inline />
+            </span>
+            <div>
+                <h4>Need more advanced filters?</h4>
+                <span>Explore the query syntax docs</span>
+            </div>
+        </a>
     </aside>
     <Separator currentPosition={sidebarSize} />
     <div class="results" bind:this={resultContainer}>
@@ -208,17 +212,25 @@
         flex: 0 0 auto;
         background-color: var(--sidebar-bg);
         overflow-y: auto;
+        display: flex;
+        flex-direction: column;
 
         h4 {
             font-weight: 600;
+            white-space: nowrap;
+            margin-bottom: 1rem;
         }
 
         .section {
             padding: 1rem;
-            border-bottom: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color);
+
+            &:first-child {
+                border-top: none;
+            }
 
             &:last-child {
-                border-bottom: none;
+                margin-top: auto;
             }
         }
 
@@ -243,6 +255,7 @@
 
             li {
                 display: flex;
+                white-space: nowrap;
 
                 &.selected {
                     a {
@@ -285,6 +298,24 @@
             align-items: center;
             margin: auto;
             color: var(--text-muted);
+        }
+    }
+
+    .help {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        text-decoration: none;
+        color: var(--text-muted);
+        font-size: 0.75rem;
+
+        h4 {
+            margin: 0;
+        }
+
+        .icon {
+            flex-shrink: 0;
         }
     }
 </style>

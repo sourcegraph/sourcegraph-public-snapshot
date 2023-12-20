@@ -132,12 +132,12 @@ interface IconInfo {
     iconClass: string
 }
 
-export interface FileInfo {
+interface FileInfo {
     extension: FileExtension
     isTest: boolean
 }
 
-export const getFileInfo = (file: string, isDirectory: boolean): FileInfo => {
+export function getFileInfo(file: string, isDirectory: boolean): FileInfo {
     if (isDirectory) {
         return {
             extension: 'default' as FileExtension,
@@ -161,7 +161,7 @@ export const getFileInfo = (file: string, isDirectory: boolean): FileInfo => {
     }
 }
 
-export const containsTest = (file: string): boolean => {
+export function containsTest(file: string): boolean {
     const f = file.split('.')
     // To account for other test file path structures
     // adjust this regular expression.

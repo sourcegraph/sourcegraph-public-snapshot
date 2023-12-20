@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func Search(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64) (_ []*result.CommitMatch, err error) {
@@ -32,6 +33,7 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, query string
 		query,
 		search.Precise,
 		search.Streaming,
+		pointers.Ptr(int32(0)),
 	)
 	if err != nil {
 		return nil, errcode.MakeNonRetryable(err)
@@ -87,6 +89,7 @@ func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query stri
 		query,
 		search.Precise,
 		search.Streaming,
+		pointers.Ptr(int32(0)),
 	)
 	if err != nil {
 		return nil, err

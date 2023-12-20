@@ -37,6 +37,7 @@ type SearchClient interface {
 		searchQuery string,
 		searchMode search.Mode,
 		protocol search.Protocol,
+		contextLines *int32,
 	) (*search.Inputs, error)
 
 	Execute(
@@ -86,6 +87,7 @@ func (s *searchClient) Plan(
 	searchQuery string,
 	searchMode search.Mode,
 	protocol search.Protocol,
+	contextLines *int32,
 ) (_ *search.Inputs, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchInputs", attribute.String("query", searchQuery))
 	defer tr.EndWithErr(&err)
@@ -126,6 +128,15 @@ func (s *searchClient) Plan(
 	}
 	tr.AddEvent("parsing done")
 
+	var finalContextLines int32
+	if contextLines != nil {
+		finalContextLines = *contextLines
+	} else if settings.SearchContextLines != nil {
+		finalContextLines = int32(*settings.SearchContextLines)
+	} else {
+		finalContextLines = 1 // default
+	}
+
 	inputs := &search.Inputs{
 		Plan:                   plan,
 		Query:                  plan.ToQ(),
@@ -136,6 +147,7 @@ func (s *searchClient) Plan(
 		Features:               ToFeatures(featureflag.FromContext(ctx), s.runtimeClients.Logger),
 		PatternType:            searchType,
 		Protocol:               protocol,
+		ContextLines:           finalContextLines,
 		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.runtimeClients.DB, s.runtimeClients.Logger), // Experimental: check site config to see if search sanitization is enabled
 	}
 

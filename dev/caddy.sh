@@ -29,4 +29,6 @@ chmod +x "${target}"
 
 popd >/dev/null
 
-exec "${target}" "$@"
+trap '${target} stop' EXIT SIGINT
+eval "${target} start"
+"${target}" "$@"

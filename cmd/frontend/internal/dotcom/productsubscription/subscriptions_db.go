@@ -11,9 +11,13 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -83,6 +87,13 @@ INSERT INTO product_subscriptions(id, user_id, account_number) VALUES($1, $2, $3
 	).Scan(&id); err != nil {
 		return "", errors.Wrap(err, "insert")
 	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log an event when a new subscription is created.
+		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionCreated, "", uint32(userID), "", "BACKEND", newUUID); err != nil {
+			log.Error(err)
+		}
+	}
 	return id, nil
 }
 
@@ -130,7 +141,13 @@ func (s dbSubscriptions) List(ctx context.Context, opt dbSubscriptionsListOption
 	if mocks.subscriptions.List != nil {
 		return mocks.subscriptions.List(ctx, opt)
 	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
+		//Log an event when a list of subscriptions is requested.
+		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionsListed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", opt); err != nil {
+			log.Error(err)
+		}
+	}
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
@@ -277,6 +294,13 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 	if nrows == 0 {
 		return errSubscriptionNotFound
 	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log an event when a subscription is updated
+		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", id); err != nil {
+			log.Error(err)
+		}
+	}
 	return nil
 }
 
@@ -298,6 +322,13 @@ func (s dbSubscriptions) Archive(ctx context.Context, id string) error {
 	}
 	if nrows == 0 {
 		return errSubscriptionNotFound
+	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log an event when a subscription is archived
+		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionArchived, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", id); err != nil {
+			log.Error(err)
+		}
 	}
 	return nil
 }

@@ -1,6 +1,7 @@
 package spec
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -9,6 +10,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Spec is a Managed Services Platform (MSP) service.
@@ -80,6 +82,17 @@ func (s Spec) Validate() []error {
 			if e.Instances.Scaling != nil {
 				errs = append(errs, errors.New("'environments.instances.scaling' not supported for 'kind: job'"))
 			}
+		}
+	}
+
+	for _, env := range s.ListEnvironmentIDs() {
+		projectName := fmt.Sprintf("%s - %s",
+			pointers.Deref(s.Service.Name, s.Service.ID), env)
+		if len(projectName) > 30 {
+			errs = append(errs, errors.Newf(
+				"full environment name %q exceeds 30 characters limit - try a shorter service name or environment ID",
+				projectName,
+			))
 		}
 	}
 

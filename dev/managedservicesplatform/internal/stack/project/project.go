@@ -94,9 +94,9 @@ const StackName = "project"
 
 const (
 	// https://cloud.google.com/resource-manager/reference/rest/v1/projects
-	projectIDMaxLength                 = 30
-	projectIDRandomizedSuffixLength    = 6
-	projectIDMinRandomizedSuffixLength = 2
+	projectIDMaxLength                  = 30
+	projectIDRandomizedSuffixByteLength = 2 // real length 4
+	projectIDMinRandomizedSuffixLength  = 2
 )
 
 // NewStack creates a stack that provisions a GCP project.
@@ -113,17 +113,17 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	id := resourceid.New(vars.ProjectIDPrefix)
 
 	// The project ID must leave room for a randomized suffix and a separator.
-	suffixLength := projectIDRandomizedSuffixLength
+	suffixByteLength := projectIDRandomizedSuffixByteLength
 	if vars.ProjectIDSuffixLength != nil {
-		suffixLength = *vars.ProjectIDSuffixLength / 2
+		suffixByteLength = *vars.ProjectIDSuffixLength / 2
 	}
-	realSuffixLength := suffixLength * 2 // after converting to hex
+	realSuffixLength := suffixByteLength * 2 // after converting to hex
 	if afterSuffixLength := len(vars.ProjectIDPrefix) + 1 + realSuffixLength; afterSuffixLength > projectIDMaxLength {
 		return nil, errors.Newf("project ID prefix %q is too long after adding random suffix (%d characters) - got %d characters, but maximum is %d characters",
-			vars.ProjectIDPrefix, projectIDRandomizedSuffixLength, afterSuffixLength, projectIDMaxLength)
+			vars.ProjectIDPrefix, projectIDRandomizedSuffixByteLength, afterSuffixLength, projectIDMaxLength)
 	}
 	projectID := random.New(stack, id, random.Config{
-		ByteLength: suffixLength,
+		ByteLength: suffixByteLength,
 		Prefix:     vars.ProjectIDPrefix,
 	})
 
