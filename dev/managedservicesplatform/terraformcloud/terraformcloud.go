@@ -143,6 +143,13 @@ func (w Workspace) URL() string {
 	return fmt.Sprintf("https://%s/app/sourcegraph/workspaces/%s", Hostname, w.Name)
 }
 
+const MSPWorkspaceTag = "msp"
+
+func ServiceWorkspaceTag(svc spec.ServiceSpec) string { return fmt.Sprintf("msp-service-%s", svc.ID) }
+func EnvironmentWorkspaceTag(svc spec.ServiceSpec, env spec.EnvironmentSpec) string {
+	return fmt.Sprintf("msp-env-%s-%s", svc.ID, env.ID)
+}
+
 // SyncWorkspaces is a bit like the Terraform Cloud Terraform provider. We do
 // this directly instead of using the provider to avoid the chicken-and-egg
 // problem of, if Terraform Cloud workspaces provision our resourcs, who provisions
@@ -249,9 +256,9 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 		}
 
 		wantWorkspaceTags := []*tfe.Tag{
-			{Name: "msp"},
-			{Name: fmt.Sprintf("msp-service-%s", svc.ID)},
-			{Name: fmt.Sprintf("msp-env-%s-%s", svc.ID, env.ID)},
+			{Name: MSPWorkspaceTag},
+			{Name: ServiceWorkspaceTag(svc)},
+			{Name: EnvironmentWorkspaceTag(svc, env)},
 		}
 
 		if existingWorkspace, err := c.client.Workspaces.Read(ctx, c.org, workspaceName); err != nil {
