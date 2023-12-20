@@ -2,80 +2,52 @@ package linters
 
 import (
 	"context"
+	"strings"
+
+	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func docChangesLint() *linter {
 	return runCheck("Stale doc check", func(ctx context.Context, out *std.Output, state *repo.State) error {
-		out.WriteNoticef("HELLO\n")
 		diff, err := state.GetDiff("doc/**/*.md")
 		if err != nil {
 			return err
 		}
+		// If no mardown files were edited, we're can exit early
 		if len(diff) == 0 {
-			out.Write("No diff\n")
+			return nil
 		}
-		for filename, diffs := range diff {
-			out.Writef("diffs %s, hunks %+v\n", filename, diffs)
+		diffset := make(map[string]struct{}, len(diff))
+		for filename := range diff {
+			diffset[filename] = struct{}{}
 		}
-		return errors.New("FAILURE IN DOC CHECK")
+
+		cmd := []string{"bazel", "cquery", `"filter("\.md", deps(//dev/tools:docsite union
+			//doc/admin/observability:doc_files union
+        	//doc/cli/references:doc_files union
+        	//doc/dev/background-information/telemetry:doc_files))"`, "--output=files"}
+		managedDocFiles, err := root.Run(run.Cmd(ctx, cmd...).StdOut()).Lines()
+		if err != nil {
+			return err
+		}
+		for _, managedDoc := range managedDocFiles {
+			delete(diffset, managedDoc)
+		}
+		if len(diffset) > 0 {
+			files := make([]string, 0, len(diffset))
+			for file := range diffset {
+				files = append(files, file)
+			}
+			return errors.Newf(
+				"Your local branch has changes in the doc folder to the listed files:\n%s%s",
+				strings.Join(files, "\n"),
+				"\n\n`./doc` is deprecated, and new documentation should be commited to https://github.com/sourcegraph/docs")
+		}
+		return nil
 	})
-	// runHadolint := func(ctx context.Context, out *std.Output, files []string) error {
-	// 	return run.Cmd(ctx, "xargs "+hadolintBinary).
-	// 		Input(strings.NewReader(strings.Join(files, "\n"))).
-	// 		Run().
-	// 		StreamLines(out.Verbose)
-	// }
-
-	// return runCheck("Hadolint", func(ctx context.Context, out *std.Output, state *repo.State) error {
-	// 	diff, err := state.GetDiff("**/*Dockerfile*")
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	var dockerfiles []string
-	// 	for f := range diff {
-	// 		dockerfiles = append(dockerfiles, f)
-	// 	}
-	// 	if len(dockerfiles) == 0 {
-	// 		out.Verbose("no dockerfiles changed")
-	// 		return nil
-	// 	}
-
-	// 	// If our binary is already here, just go!
-	// 	if _, err := os.Stat(hadolintBinary); err == nil {
-	// 		return runHadolint(ctx, out, dockerfiles)
-	// 	}
-
-	// 	// https://github.com/hadolint/hadolint/releases for downloads
-	// 	var distro, arch string
-	// 	switch runtime.GOARCH {
-	// 	case "arm64":
-	// 		arch = "arm64"
-	// 	default:
-	// 		arch = "x86_64"
-	// 	}
-	// 	switch runtime.GOOS {
-	// 	case "darwin":
-	// 		distro = "Darwin"
-	// 		arch = "x86_64"
-	// 	case "windows":
-	// 		distro = "Windows"
-	// 	default:
-	// 		distro = "Linux"
-	// 	}
-	// 	url := fmt.Sprintf("https://github.com/hadolint/hadolint/releases/download/%s/hadolint-%s-%s",
-	// 		hadolintVersion, distro, arch)
-
-	// 	// Download
-	// 	os.MkdirAll("./.bin", os.ModePerm)
-	// 	std.Out.WriteNoticef("Downloading hadolint from %s", url)
-	// 	if _, err := download.Executable(ctx, url, hadolintBinary, false); err != nil {
-	// 		return errors.Wrap(err, "downloading hadolint")
-	// 	}
-
-	// 	return runHadolint(ctx, out, dockerfiles)
-	// })
 }
