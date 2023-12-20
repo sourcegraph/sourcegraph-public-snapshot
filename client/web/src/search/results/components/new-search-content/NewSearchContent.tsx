@@ -14,7 +14,12 @@ import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { Observable } from 'rxjs'
 
-import { StreamingProgress, StreamingSearchResultsList, useSearchResultState } from '@sourcegraph/branded'
+import {
+    NewSearchFilters,
+    StreamingProgress,
+    StreamingSearchResultsList,
+    useSearchResultState,
+} from '@sourcegraph/branded'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -158,8 +163,22 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         []
     )
 
+    const handleFilterPanelQueryChange = useCallback(
+        (updatedQuery: string): void => {
+            onSearchSubmit([{ type: 'replaceQuery', value: updatedQuery }])
+        },
+        [onSearchSubmit]
+    )
+
     return (
         <div className={styles.root}>
+            <NewSearchFilters
+                query={submittedURLQuery}
+                filters={results?.filters}
+                className={styles.newFilters}
+                onQueryChange={handleFilterPanelQueryChange}
+            />
+
             {!sidebarCollapsed && (
                 <SearchFiltersSidebar
                     as={NewSearchSidebarWrapper}

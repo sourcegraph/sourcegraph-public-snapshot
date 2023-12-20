@@ -21,7 +21,7 @@ export function omitFilter(query: string, filter: Filter): string {
     return `${query.slice(0, start).trimEnd()} ${query.slice(end).trimStart()}`.trim()
 }
 
-const succeedScan = (query: string): Token[] => {
+export const succeedScan = (query: string): Token[] => {
     const result = scanSearchQuery(query)
     if (result.type !== 'success') {
         throw new Error('Internal error: invariant broken: succeedScan callers must be called with a valid query')

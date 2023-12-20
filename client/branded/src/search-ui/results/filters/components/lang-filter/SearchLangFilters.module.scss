@@ -1,0 +1,36 @@
+
+.root {
+  padding: 1rem 0.5rem 0.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.root-list {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding-left: 0.25rem;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  border: none;
+  width: 100%;
+  padding-right: 0.25rem;
+
+  &:not(&-selected):hover {
+    background-color: var(--color-bg-2) !important;
+  }
+
+  &-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: normal;
+    white-space: pre;
+    word-wrap: break-word;
+    margin-right: auto;
+  }
+}

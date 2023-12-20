@@ -9,10 +9,10 @@
 
     display: grid;
     grid-template-rows: auto 1fr;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
     grid-template-areas:
-        'infobar  preview sidebar-header '
-        'contents preview filters';
+        'new-filters infobar  preview sidebar-header '
+        'new-filters contents preview filters';
 
     @media (--md-breakpoint-down) {
         grid-template-columns: minmax(0, 1fr);
@@ -25,6 +25,11 @@
         overflow: auto;
         height: min-content;
     }
+}
+
+.new-filters {
+    grid-area: new-filters;
+    border-right: 1px solid var(--border-color);
 }
 
 .filters {

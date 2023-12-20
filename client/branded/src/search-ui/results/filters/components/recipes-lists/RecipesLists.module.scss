@@ -1,0 +1,21 @@
+
+.recipes-list {
+  padding: 0.5rem;
+  margin: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+
+  &-item {
+    width: 100%;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    &:not(&-selected):hover {
+      background-color: var(--color-bg-2) !important;
+    }
+  }
+}

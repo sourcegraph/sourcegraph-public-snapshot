@@ -52,6 +52,9 @@ export function useCachedSearchResults(
 
     const results = useObservable(
         useMemo(() => {
+            console.log('cached store', cachedResults.current)
+            console.log('current query and options', query, options)
+
             // If query and options have not changed, return cached value
             if (query === cachedResults.current?.query && isEqual(options, cachedResults.current?.options)) {
                 return of(cachedResults.current.results)
@@ -94,6 +97,8 @@ export function useCachedSearchResults(
     // In case of back/forward navigation, log if the cache is being used.
     useEffect(() => {
         const cacheExists = query === cachedResults.current?.query && isEqual(options, cachedResults.current?.options)
+
+        console.log({ cacheExists })
 
         if (navigationType === 'POP') {
             telemetryService.log('SearchResultsCacheRetrieved', { cacheHit: cacheExists }, { cacheHit: cacheExists })
