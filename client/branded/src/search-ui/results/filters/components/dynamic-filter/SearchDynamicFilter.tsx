@@ -1,4 +1,4 @@
-import { FC, ReactNode, useCallback, useMemo } from 'react'
+import { FC, ReactNode, useCallback, useMemo, useState } from 'react'
 
 import { mdiClose, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
@@ -9,9 +9,11 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { succeedScan } from '@sourcegraph/shared/src/search/query/transformer'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
-import { Badge, Button, Icon, H4, LanguageIcon } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, H4, Input, LanguageIcon } from '@sourcegraph/wildcard'
 
 import styles from './SearchDynamicFilter.module.scss'
+
+const MAX_FILTERS_NUNMBER = 7
 
 interface SearchDynamicFilterProps {
     /**
@@ -39,6 +41,10 @@ interface SearchDynamicFilterProps {
      */
     filters?: Filter[]
 
+    /** Controls when we render the filter input for the filter items list */
+    withSearch?: boolean
+
+    /** Exposes render API to render some custom filter item in the list */
     renderItem?: (filter: Filter) => ReactNode
 
     /**
@@ -54,6 +60,9 @@ interface SearchDynamicFilterProps {
  */
 export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
     const { filters, filterType, filterAlias, filterQuery, renderItem, onFilterQueryChange } = props
+
+    const [showAllFilters, setShowAllFilters] = useState(false)
+    const [searchTerm, setSearchTerm] = useState<string>('')
 
     // Scan the filter query (which comes from URL param) and extract
     // all appearances of a filter type that we're looking for in the
@@ -113,11 +122,24 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
         return null
     }
 
+    const filteredFilters = mappedFilters.filter(filter => filter.label.includes(searchTerm))
+    const filtersToShow = showAllFilters ? filteredFilters : filteredFilters.slice(0, MAX_FILTERS_NUNMBER)
+
     return (
         <div className={styles.root}>
             <H4 className={styles.heading}>By {filterType}</H4>
+
+            {mappedFilters.length > MAX_FILTERS_NUNMBER && (
+                <Input
+                    variant="small"
+                    value={searchTerm}
+                    placeholder={`Filter ${filterType}`}
+                    onChange={event => setSearchTerm(event.target.value)}
+                />
+            )}
+
             <ul className={styles.list}>
-                {mappedFilters.map(filter => {
+                {filtersToShow.map(filter => {
                     const isSelectedFilter = isSelected(filter.value)
 
                     return (
@@ -144,6 +166,11 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
                     )
                 })}
             </ul>
+            {filteredFilters.length > MAX_FILTERS_NUNMBER && (
+                <Button variant="link" size="sm" onClick={() => setShowAllFilters(!showAllFilters)}>
+                    {showAllFilters ? `Show less ${filterType} filters` : `Show all ${filterType} filters`}
+                </Button>
+            )}
         </div>
     )
 }
