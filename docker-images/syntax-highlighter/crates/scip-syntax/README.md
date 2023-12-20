@@ -63,6 +63,39 @@ function my_func(x) {
 }
 ```
 
+#### First assignment is Definition
+
+Certain languages (eg. Python or Matlab) do not have special syntactic forms for introducing variables.
+Instead the first assignment of a variable is considered to be its definition, and all further ones are references.
+To support this in our DSL you can can mark a `@definition` as a 'def_ref'.
+
+```scm
+(assignment
+ (identifier) @definition
+ #set! "def_ref")
+```
+
+If you also specify a hoist level, only existing assignments that match the current hoist-level will be considered when deciding between definition and reference.
+As an example here's how Python's hoisted ref_defs would get resolved.
+
+```scm
+(python_assignment
+ (identifier) @definition
+ #set! "def_ref"
+ #set! "hoist" "function")
+```
+
+```python
+a = 10 # definition 1
+def f():
+  # This assignment gets hoisted to the `f` function, which means
+  # it won't consider a binding in parent scopes
+  a = 3 # definition 2
+  if True:
+    a = 4 # reference 2
+a = 4 # reference 1
+```
+
 ### References
 
 References are specified by labeling a capture as a `@reference`.

@@ -33,7 +33,6 @@ use tree_sitter::Node;
 // 1. Missing features at this point
 //   a) Namespacing (Need to figure out what the DSL should be)
 //   b) Marking globals to avoid emitting them into occurrences
-// 2. def_refs (hoisted vs non-hoisted)
 
 // What needs to be documented for a PR
 //
