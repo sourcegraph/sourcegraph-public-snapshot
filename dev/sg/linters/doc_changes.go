@@ -18,7 +18,7 @@ func docChangesLint() *linter {
 		if err != nil {
 			return err
 		}
-		// If no mardown files were edited, we're can exit early
+		// If no mardown files were edited, we can exit early
 		if len(diff) == 0 {
 			return nil
 		}
@@ -36,9 +36,12 @@ func docChangesLint() *linter {
 		if err != nil {
 			return err
 		}
+
+		//remove edited files if they are managed by automation
 		for _, managedDoc := range managedDocFiles {
 			delete(diffset, managedDoc)
 		}
+
 		if len(diffset) > 0 {
 			files := make([]string, 0, len(diffset))
 			for file := range diffset {
