@@ -61,6 +61,13 @@ var Targets = []Target{
 		},
 	},
 	{
+		Name:        "doc-changes",
+		Description: "Ensures that no manual changes have been made to the docs folder (new changes should be made at https://github.com/sourcegraph/docs)",
+		Checks: []*linter{
+			docChangesLint(),
+		},
+	},
+	{
 		Name:        "dockerfiles",
 		Description: "Check Dockerfiles for Sourcegraph best practices",
 		Checks: []*linter{
