@@ -1,14 +1,13 @@
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
-load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@npm//:bundlesize2/package_json.bzl", bundlesize_bin = "bin")
+load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
-load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
-load("//dev:esbuild.bzl", "esbuild_web_app")
-load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
+load("//dev:vite/vite.bzl", "vite_project", "vite_web_app")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -1824,6 +1823,7 @@ ts_project(
         "//:node_modules/copy-to-clipboard",
         "//:node_modules/d3-time-format",
         "//:node_modules/date-fns",
+        "//:node_modules/events",
         "//:node_modules/fast-json-stable-stringify",
         "//:node_modules/focus-visible",
         "//:node_modules/fzf",
@@ -2096,22 +2096,11 @@ vitest_test(
     ],
 )
 
-# esbuild dev environment -------------------
-ESBUILD_CONFIG_DEPS = [
+VITE_PROJECT_DEPS = [
     ":node_modules/@sourcegraph/build-config",
-    "//:node_modules/buffer",
-    "//:node_modules/lodash",
-    "//:node_modules/path-browserify",
-    "//:node_modules/punycode",
-    "//:node_modules/util",
-    "//:node_modules/events",
-    "//:node_modules/monaco-editor",
-    "//:node_modules/esbuild",
-    "//:node_modules/react-visibility-sensor",  # required for https://github.com/joshwnj/react-visibility-sensor/issues/148 workaround
-    "//:postcss_config_js",
-
-    # HACKS: bundle-time css import
     "//:node_modules/open-color",
+    "//:postcss_config_js",
+    "//client/web/dev",
 ]
 
 # Bundled data which was replaced with *.d.ts files at ts compiletime
@@ -2122,50 +2111,40 @@ BUNDLE_DATA_DEPS = [
     # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
     "src/enterprise/codeintel/configuration/schema.json",
     ":enterprise-yaml",
-    "//client/web/dev:esbuild-config-production_bundle",
 ]
 
-esbuild(
+vite_project(
     name = "bundle",
     srcs = BUNDLE_DATA_DEPS + [
         ":web_lib",
         "//:package_json",
     ],
-    config = "//client/web/dev:esbuild-config-production_bundle",
-    entry_points = [
-        "src/enterprise/main.js",
-        "src/enterprise/embed/embedMain.js",
-    ],
-    minify = True,
-    sourcemap = "linked",
-    splitting = True,
+    config = "//client/web/dev:vite-config",
+    data = BUNDLE_DATA_DEPS,
     tags = ["exclusive"],
-    visibility = ["//client/web/dist:__subpackages__"],
-    deps = ESBUILD_CONFIG_DEPS,
+    tsconfig = ":tsconfig",
+    visibility = ["//visibility:public"],
+    deps = VITE_PROJECT_DEPS,
 )
 
 # Used for integration tests.
-esbuild_web_app(
+vite_web_app(
     name = "app",
     srcs = BUNDLE_DATA_DEPS + [
         ":web_lib",
         "//:package_json",
     ],
-    config = "//client/web/dev:esbuild-config-production_bundle",
-    define = {
-        "process.env.INTEGRATION_TESTS": "true",
+    config = "//client/web/dev:vite-config",
+    env = {
+        "INTEGRATION_TESTS": "true",
     },
-    entry_points = [
-        "src/enterprise/main.js",
-        "src/enterprise/embed/embedMain.js",
-    ],
-    sourcemap = "linked",
+    tsconfig = ":tsconfig",
     visibility = ["//visibility:public"],
-    deps = ESBUILD_CONFIG_DEPS,
+    deps = VITE_PROJECT_DEPS,
 )
 
 build_test(
-    name = "esbuild_test",
+    name = "vite_test",
     size = "enormous",
     targets = [
         ":bundle",
