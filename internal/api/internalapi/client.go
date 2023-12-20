@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -38,9 +37,6 @@ var frontendInternal = func() *url.URL {
 var enableGRPC = env.MustGetBool("SRC_GRPC_ENABLE_CONF", false, "Enable gRPC for configuration updates")
 
 func defaultFrontendInternal() string {
-	if deploy.IsSingleBinary() {
-		return "localhost:3090"
-	}
 	return "sourcegraph-frontend-internal"
 }
 

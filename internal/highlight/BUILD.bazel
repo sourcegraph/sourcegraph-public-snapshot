@@ -17,7 +17,6 @@ go_library(
         "//internal/binary",
         "//internal/conf",
         "//internal/conf/conftypes",
-        "//internal/conf/deploy",
         "//internal/gosyntect",
         "//internal/honey",
         "//internal/observation",

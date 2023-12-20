@@ -20,7 +20,6 @@ export interface UserSettingsSidebarItemConditionContext extends BatchChangesPro
     user: UserSettingsAreaUserFields
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
 }
 
 type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditionContext> & {
@@ -32,7 +31,6 @@ export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
 export interface UserSettingsSidebarProps extends UserSettingsAreaRouteContext, BatchChangesProps {
     items: UserSettingsSidebarItems
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
     className?: string
 }
 
@@ -55,7 +53,6 @@ export const UserSettingsSidebar: FC<UserSettingsSidebarProps> = props => {
         user: props.user,
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
-        isCodyApp: props.isCodyApp,
     }
 
     return (
@@ -81,7 +78,7 @@ export const UserSettingsSidebar: FC<UserSettingsSidebarProps> = props => {
                             )
                     )}
                 </SidebarGroup>
-                {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && !props.isCodyApp && (
+                {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
                     <SidebarGroup>
                         <SidebarGroupHeader label="Your organizations" />
                         {props.user.organizations.nodes.map(org => (

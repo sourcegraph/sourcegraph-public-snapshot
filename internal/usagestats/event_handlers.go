@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
@@ -78,9 +77,6 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 	client := "SERVER_BACKEND"
 	if envvar.SourcegraphDotComMode() {
 		client = "DOTCOM_BACKEND"
-	}
-	if deploy.IsApp() {
-		client = "APP_BACKEND"
 	}
 
 	hashedLicenseKey := conf.HashedCurrentLicenseKeyForAnalytics()

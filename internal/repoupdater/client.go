@@ -18,7 +18,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -39,10 +38,6 @@ var (
 func repoUpdaterURLDefault() string {
 	if u := os.Getenv("REPO_UPDATER_URL"); u != "" {
 		return u
-	}
-
-	if deploy.IsSingleBinary() {
-		return "http://127.0.0.1:3182"
 	}
 
 	return "http://repo-updater:3182"

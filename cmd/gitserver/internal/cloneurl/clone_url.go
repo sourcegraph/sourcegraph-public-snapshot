@@ -90,8 +90,6 @@ func cloneURL(ctx context.Context, logger log.Logger, db database.DB, kind strin
 		if r, ok := repo.Metadata.(*extsvc.OtherRepoMetadata); ok {
 			return otherCloneURL(repo, r), nil
 		}
-	case *schema.LocalGitExternalService:
-		return localCloneURL(repo), nil
 	case *schema.GoModulesConnection:
 		return string(repo.Name), nil
 	case *schema.PythonPackagesConnection:
@@ -348,8 +346,4 @@ func phabricatorCloneURL(logger log.Logger, repo *phabricator.Repo, _ *schema.Ph
 
 func otherCloneURL(repo *types.Repo, m *extsvc.OtherRepoMetadata) string {
 	return repo.ExternalRepo.ServiceID + m.RelativePath
-}
-
-func localCloneURL(repo *types.Repo) string {
-	return repo.ExternalRepo.ServiceID
 }

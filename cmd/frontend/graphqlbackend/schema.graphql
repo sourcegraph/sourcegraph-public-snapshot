@@ -3212,7 +3212,6 @@ enum ExternalServiceKind {
     JVMPACKAGES
     NPMPACKAGES
     OTHER
-    LOCALGIT
     PAGURE
     PERFORCE
     PHABRICATOR
@@ -7255,11 +7254,6 @@ type Site implements SettingsSubject {
     """
     allowEditExternalServicesWithFile: Boolean!
     """
-    The number of external services distinguished by local repositories and remote repositories.
-    Local repository code host connections are only supported in Cody App.
-    """
-    externalServicesCounts: ExternalServicesCounts!
-    """
     Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
     Only applies if the site does not have a valid license.
     """
@@ -7373,11 +7367,6 @@ type Site implements SettingsSubject {
     autoUpgradeEnabled: Boolean!
 
     """
-    Wether the current App installation has a connected Sourcegraph.com account.
-    """
-    appHasConnectedDotComAccount: Boolean!
-
-    """
     The quota of completions requests allowed per user in a day. Null, if unlimited.
     """
     perUserCompletionsQuota: Int
@@ -7479,21 +7468,6 @@ type CodyGatewayRateLimitStatus {
     When the rate limit next resets if an interval has already started.
     """
     nextLimitReset: DateTime
-}
-
-"""
-External services count information includes a count of services for remote code host connections and a count of services
-for local code host connections (local is only supported for Cody App).
-"""
-type ExternalServicesCounts {
-    """
-    The count of external services configured for remote code host connections.
-    """
-    remoteExternalServicesCount: Int!
-    """
-    The count of external services configured for local code host connections.
-    """
-    localExternalServicesCount: Int!
 }
 
 """

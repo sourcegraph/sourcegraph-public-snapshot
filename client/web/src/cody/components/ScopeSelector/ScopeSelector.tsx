@@ -21,8 +21,6 @@ export interface ScopeSelectorProps {
     setScope: (scope: CodyClientScope) => void
     toggleIncludeInferredRepository: () => void
     toggleIncludeInferredFile: () => void
-    fetchRepositoryNames: (count: number) => Promise<string[]>
-    isCodyApp?: boolean
     logTranscriptEvent: (eventLabel: string, eventProperties?: { [key: string]: any }) => void
     transcriptHistory: TranscriptJSON[]
     className?: string
@@ -38,8 +36,6 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     setScope,
     toggleIncludeInferredRepository,
     toggleIncludeInferredFile,
-    fetchRepositoryNames,
-    isCodyApp,
     logTranscriptEvent,
     transcriptHistory,
     className,
@@ -116,13 +112,8 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
     const resetScope = useCallback(async (): Promise<void> => {
         logTranscriptEvent(EventName.CODY_CHAT_SCOPE_RESET)
-        if (!isCodyApp) {
-            return setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
-        }
-
-        const repositories = await fetchRepositoryNames(10)
-        return setScope({ ...scope, repositories, includeInferredRepository: true, includeInferredFile: true })
-    }, [scope, setScope, fetchRepositoryNames, isCodyApp, logTranscriptEvent])
+        return setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
+    }, [scope, setScope, logTranscriptEvent])
 
     return (
         <>
@@ -135,7 +126,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                         inferredFilePath={activeEditor?.filePath || null}
                         additionalRepositories={additionalRepositories}
                         addRepository={addRepository}
-                        resetScope={!isCodyApp ? resetScope : null}
+                        resetScope={resetScope}
                         removeRepository={removeRepository}
                         toggleIncludeInferredRepository={toggleIncludeInferredRepository}
                         toggleIncludeInferredFile={toggleIncludeInferredFile}

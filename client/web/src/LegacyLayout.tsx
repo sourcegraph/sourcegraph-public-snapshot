@@ -10,7 +10,6 @@ import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
-import { StartupUpdateChecker } from './cody/update/StartupUpdateChecker'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
 import { RouteError } from './components/ErrorBoundary'
@@ -63,9 +62,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
-    const isAppSetupPage = routeMatch?.startsWith(PageRoutes.AppSetup)
     const isSearchJobsPage = routeMatch?.startsWith(PageRoutes.SearchJobs)
-    const isAppAuthCallbackPage = routeMatch?.startsWith(PageRoutes.AppAuthCallback)
     const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
     const isCodySearchPage = routeMatch === PageRoutes.CodySearch
     const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
@@ -79,14 +76,13 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
 
     // eslint-disable-next-line no-restricted-syntax
     const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
-    const [wasAppSetupFinished] = useLocalStorage('app.setup.finished', false)
 
     const showDeveloperDialog =
         useDeveloperSettings(state => state.showDialog) &&
         (process.env.NODE_ENV === 'development' || isSourcegraphDev(props.authenticatedUser))
     const { fuzzyFinder } = useExperimentalFeatures(features => ({
         // enable fuzzy finder by default unless it's explicitly disabled in settings, or it's the Cody app
-        fuzzyFinder: features.fuzzyFinder ?? !props.isCodyApp,
+        fuzzyFinder: features.fuzzyFinder ?? false,
     }))
     const isSetupWizardPage = location.pathname.startsWith(PageRoutes.SetupWizard)
 
@@ -154,7 +150,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         return <Navigate replace={true} to={{ ...location, pathname: location.pathname.slice(0, -1) }} />
     }
 
-    if (isSetupWizardPage && !!props.authenticatedUser?.siteAdmin && !props.isCodyApp) {
+    if (isSetupWizardPage && !!props.authenticatedUser?.siteAdmin) {
         return (
             <Suspense
                 fallback={
@@ -173,27 +169,8 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     // setup wizard state, since we don't have a good solution for this at the
     // moment, we use mutable window.context object here.
     // TODO remove window.context and use injected context store/props
-    if (
-        !props.isCodyApp &&
-        window.context?.needsRepositoryConfiguration &&
-        !wasSetupWizardSkipped &&
-        props.authenticatedUser?.siteAdmin
-    ) {
+    if (window.context?.needsRepositoryConfiguration && !wasSetupWizardSkipped && props.authenticatedUser?.siteAdmin) {
         return <Navigate to={PageRoutes.SetupWizard} replace={true} />
-    }
-
-    // Redirect to the app setup pages if it's App, we haven't seen setup before,
-    // and it's not already a setup page, NOTE: that we allow rendering AppAuthCallbackPage
-    // because this page is part of setup experience, and we should not interrupt
-    // rendering of this page even if setup hasn't been finished yet
-    if (
-        props.isCodyApp &&
-        !wasAppSetupFinished &&
-        !isAppSetupPage &&
-        !isAppAuthCallbackPage &&
-        !isAuthTokenCallbackPage
-    ) {
-        return <Navigate to={PageRoutes.AppSetup} replace={true} />
     }
 
     // Some routes by their design require rendering on a blank page
@@ -261,12 +238,10 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            <GlobalAlerts authenticatedUser={props.authenticatedUser} isCodyApp={props.isCodyApp} />
-            {!isSiteInit &&
-                !isSignInOrUp &&
-                !props.isSourcegraphDotCom &&
-                !disableFeedbackSurvey &&
-                !props.isCodyApp && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+            <GlobalAlerts authenticatedUser={props.authenticatedUser} />
+            {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
+                <SurveyToast authenticatedUser={props.authenticatedUser} />
+            )}
             {!isSiteInit && !isSignInOrUp && !isGetCodyPage && !isPostSignUpPage && (
                 <>
                     {newSearchNavigation ? (
@@ -295,7 +270,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     )}
                 </>
             )}
-            {props.isCodyApp && <StartupUpdateChecker />}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
             <ApplicationRoutes routes={props.routes} />
             <GlobalContributions

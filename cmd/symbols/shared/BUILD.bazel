@@ -23,7 +23,6 @@ go_library(
         "//internal/actor",
         "//internal/conf",
         "//internal/conf/conftypes",
-        "//internal/conf/deploy",
         "//internal/ctags_config",
         "//internal/database",
         "//internal/database/connections/live",

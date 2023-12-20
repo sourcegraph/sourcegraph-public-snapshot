@@ -27,7 +27,6 @@ import gitlabSchemaJSON from '../../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../../schema/gitolite.schema.json'
 import goModulesSchemaJSON from '../../../../../schema/go-modules.schema.json'
 import jvmPackagesSchemaJSON from '../../../../../schema/jvm-packages.schema.json'
-import localGitSchemaJSON from '../../../../../schema/localgit.schema.json'
 import npmPackagesSchemaJSON from '../../../../../schema/npm-packages.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../../schema/other_external_service.schema.json'
 import pagureSchemaJSON from '../../../../../schema/pagure.schema.json'
@@ -1238,15 +1237,6 @@ const GENERIC_GIT: AddExternalServiceOptions = {
     ],
 }
 
-const LOCAL_GIT: AddExternalServiceOptions = {
-    kind: ExternalServiceKind.LOCALGIT,
-    title: 'Local Git repos',
-    icon: GitIcon,
-    jsonSchema: localGitSchemaJSON,
-    defaultDisplayName: 'Git repositories',
-    defaultConfig: '',
-}
-
 const PERFORCE: AddExternalServiceOptions = {
     kind: ExternalServiceKind.PERFORCE,
     title: 'Perforce',
@@ -1633,7 +1623,6 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
     [ExternalServiceKind.GITOLITE]: GITOLITE,
     [ExternalServiceKind.PHABRICATOR]: PHABRICATOR_SERVICE,
     [ExternalServiceKind.OTHER]: GENERIC_GIT,
-    [ExternalServiceKind.LOCALGIT]: LOCAL_GIT,
     [ExternalServiceKind.AWSCODECOMMIT]: AWS_CODE_COMMIT,
     [ExternalServiceKind.PERFORCE]: PERFORCE,
     [ExternalServiceKind.GERRIT]: GERRIT,

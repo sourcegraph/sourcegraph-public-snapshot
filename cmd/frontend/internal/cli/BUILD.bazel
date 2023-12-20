@@ -99,7 +99,6 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
         "@com_github_throttled_throttled_v2//:throttled",
-        "@com_github_throttled_throttled_v2//store/memstore",
         "@com_github_throttled_throttled_v2//store/redigostore",
         "@org_golang_google_grpc//:go_default_library",
     ],

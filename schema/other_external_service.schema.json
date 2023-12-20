@@ -30,16 +30,10 @@
       }
     },
     "repositoryPathPattern": {
-      "description": "The pattern used to generate the corresponding Sourcegraph repository name for the repositories. In the pattern, the variable \"{base}\" is replaced with the Git clone base URL host and path, and \"{repo}\" is replaced with the repository path taken from the `repos` field.\n\nFor example, if your Git clone base URL is https://git.example.com/repos and `repos` contains the value \"my/repo\", then a repositoryPathPattern of \"{base}/{repo}\" would mean that a repository at https://git.example.com/repos/my/repo is available on Sourcegraph at https://sourcegraph.example.com/git.example.com/repos/my/repo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.\n\nNote: These patterns are ignored if using src-expose / src-serve / src-serve-local.",
+      "description": "The pattern used to generate the corresponding Sourcegraph repository name for the repositories. In the pattern, the variable \"{base}\" is replaced with the Git clone base URL host and path, and \"{repo}\" is replaced with the repository path taken from the `repos` field.\n\nFor example, if your Git clone base URL is https://git.example.com/repos and `repos` contains the value \"my/repo\", then a repositoryPathPattern of \"{base}/{repo}\" would mean that a repository at https://git.example.com/repos/my/repo is available on Sourcegraph at https://sourcegraph.example.com/git.example.com/repos/my/repo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.\n\nNote: These patterns are ignored if using src-expose / src-serve.",
       "type": "string",
       "default": "{base}/{repo}",
       "examples": ["pretty-host-name/{repo}"]
-    },
-    "root": {
-      "description": "The root directory to walk for discovering local git repositories to mirror. To sync with local repositories and use this root property one must run Cody App and define the repos configuration property such as [\"src-serve-local\"].",
-      "type": "string",
-      "default": "",
-      "examples": ["path/to/my/repos"]
     },
     "exclude": {
       "description": "A list of repositories to never mirror by name after applying repositoryPathPattern. Supports excluding by exact name ({\"name\": \"myrepo\"}) or regular expression ({\"pattern\": \".*secret.*\"}).",

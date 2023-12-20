@@ -41,7 +41,6 @@ export interface CodyChatStore
         | 'toggleIncludeInferredRepository'
         | 'toggleIncludeInferredFile'
         | 'abortMessageInProgress'
-        | 'fetchRepositoryNames'
     > {
     readonly transcriptHistory: TranscriptJSON[]
     readonly loaded: boolean
@@ -80,7 +79,6 @@ export const codyChatStoreMock: CodyChatStore = {
     toggleIncludeInferredRepository: () => {},
     toggleIncludeInferredFile: () => {},
     abortMessageInProgress: () => {},
-    fetchRepositoryNames: () => Promise.resolve([]),
 }
 
 interface CodyChatProps {
@@ -94,7 +92,6 @@ interface CodyChatProps {
         initializeNewChat: CodyClient['initializeNewChat']
     ) => void
     autoLoadTranscriptFromHistory?: boolean
-    autoLoadScopeWithRepositories?: boolean
 }
 
 const CODY_TRANSCRIPT_HISTORY_KEY = 'cody.chat.history'
@@ -107,7 +104,6 @@ export const useCodyChat = ({
     onEvent,
     onTranscriptHistoryLoad,
     autoLoadTranscriptFromHistory = true,
-    autoLoadScopeWithRepositories = false,
 }: CodyChatProps): CodyChatStore => {
     const [loadedTranscriptFromHistory, setLoadedTranscriptFromHistory] = useState(false)
     // Read old transcript history from local storage, if any exists. We will use this to
@@ -151,7 +147,6 @@ export const useCodyChat = ({
         submitMessage: submitMessageInternal,
         editMessage: editMessageInternal,
         executeRecipe: executeRecipeInternal,
-        fetchRepositoryNames,
         ...client
     } = useClient({
         config: initialConfig || {
@@ -233,20 +228,6 @@ export const useCodyChat = ({
         const newTranscript = initializeNewChatInternal()
         if (newTranscript) {
             setTranscriptHistoryState([newTranscript.toJSONEmpty()])
-            if (autoLoadScopeWithRepositories) {
-                fetchRepositoryNames(10)
-                    .then(repositories => {
-                        const updatedScope = {
-                            includeInferredRepository: true,
-                            includeInferredFile: true,
-                            repositories,
-                            editor: scope.editor,
-                        }
-                        setScopeInternal(updatedScope)
-                        updateTranscriptInHistory(newTranscript, updatedScope).catch(() => null)
-                    })
-                    .catch(() => null)
-            }
         } else {
             setTranscriptHistoryState([])
         }
@@ -254,8 +235,6 @@ export const useCodyChat = ({
         client.config.needsEmailVerification,
         initializeNewChatInternal,
         setTranscriptHistoryState,
-        fetchRepositoryNames,
-        autoLoadScopeWithRepositories,
         scope,
         setScopeInternal,
         updateTranscriptInHistory,
@@ -278,20 +257,6 @@ export const useCodyChat = ({
 
                         if (newTranscript) {
                             updatedHistory.push(newTranscript.toJSONEmpty())
-                            if (autoLoadScopeWithRepositories) {
-                                fetchRepositoryNames(10)
-                                    .then(repositories => {
-                                        const updatedScope = {
-                                            includeInferredRepository: true,
-                                            includeInferredFile: true,
-                                            repositories,
-                                            editor: scope.editor,
-                                        }
-                                        setScopeInternal(updatedScope)
-                                        updateTranscriptInHistory(newTranscript, updatedScope).catch(() => null)
-                                    })
-                                    .catch(() => null)
-                            }
                         }
                     } else {
                         const transcriptToLoad = updatedHistory[0]
@@ -314,8 +279,6 @@ export const useCodyChat = ({
             initializeNewChatInternal,
             transcript?.id,
             setTranscriptHistoryState,
-            fetchRepositoryNames,
-            autoLoadScopeWithRepositories,
             scope,
             updateTranscriptInHistory,
             logTranscriptEvent,
@@ -365,33 +328,13 @@ export const useCodyChat = ({
 
         pushTranscriptToHistory(newTranscript).catch(noop)
 
-        // If we couldn't populate the scope with repositories from the last chat
-        // conversation and `autoLoadScopeWithRepositories` is enabled, then we fetch 10
-        // to set in the scope.
-        if (scope.repositories.length === 0 && autoLoadScopeWithRepositories) {
-            fetchRepositoryNames(10)
-                .then(repositories => {
-                    const updatedScope = {
-                        includeInferredRepository: true,
-                        includeInferredFile: true,
-                        repositories,
-                        editor: scope.editor,
-                    }
-                    setScopeInternal(updatedScope)
-                    updateTranscriptInHistory(newTranscript, updatedScope).catch(noop)
-                })
-                .catch(noop)
-        }
-
         logTranscriptEvent(EventName.CODY_CHAT_INITIALIZED)
         return newTranscript
     }, [
         initializeNewChatInternal,
         pushTranscriptToHistory,
-        fetchRepositoryNames,
         scope,
         setScopeInternal,
-        autoLoadScopeWithRepositories,
         updateTranscriptInHistory,
         transcript,
         logTranscriptEvent,
@@ -534,7 +477,6 @@ export const useCodyChat = ({
         toggleIncludeInferredRepository,
         toggleIncludeInferredFile,
         abortMessageInProgress,
-        fetchRepositoryNames,
         storageQuotaExceeded,
     }
 }

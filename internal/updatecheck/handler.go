@@ -47,11 +47,6 @@ var (
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
 	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.2.5")
-
-	// latestReleaseApp is only used by sourcegraph.com to tell existing Sourcegraph
-	// App instances what the latest version is. The version here _must_ be available for download/released
-	// before being referenced here.
-	latestReleaseApp = newPingResponse("2023.03.23+205301.ca3646")
 )
 
 func getLatestRelease(deployType string) pingResponse {
@@ -60,8 +55,6 @@ func getLatestRelease(deployType string) pingResponse {
 		return latestReleaseKubernetesBuild
 	case deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return latestReleaseDockerComposeOrPureDocker
-	case deploy.IsDeployTypeApp(deployType):
-		return latestReleaseApp
 	default:
 		return latestReleaseDockerServerImageBuild
 	}
@@ -114,7 +107,7 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter,
 		http.Error(w, "no version specified", http.StatusBadRequest)
 		return
 	}
-	if pr.ClientVersionString == "dev" && !deploy.IsDeployTypeApp(pr.DeployType) {
+	if pr.ClientVersionString == "dev" {
 		// No updates for dev servers.
 		w.WriteHeader(http.StatusNoContent)
 		return
@@ -130,25 +123,10 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter,
 		http.Error(w, pr.ClientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	if deploy.IsDeployTypeApp(pr.DeployType) {
-		pingResponse.Notifications = getNotifications(pr.ClientVersionString)
-		pingResponse.UpdateAvailable = hasUpdate
-	}
 	body, err := json.Marshal(pingResponse)
 	if err != nil {
 		logger.Error("error preparing update check response", log.Error(err))
 		http.Error(w, "", http.StatusInternalServerError)
-		return
-	}
-
-	// Cody App: We always send back a ping response (rather than StatusNoContent) because
-	// the user's instance may have unseen notification messages.
-	if deploy.IsDeployTypeApp(pr.DeployType) {
-		if hasUpdate {
-			meter.RequestHasUpdateCounter.Add(r.Context(), 1)
-		}
-		w.Header().Set("content-type", "application/json; charset=utf-8")
-		_, _ = w.Write(body)
 		return
 	}
 
@@ -167,7 +145,7 @@ func canUpdate(clientVersionString string, latestReleaseBuild pingResponse, depl
 	// Check for a date in the version string to handle developer builds that don't have a semver.
 	// If there is an error parsing a date out of the version string, then we ignore the error
 	// and parse it as a semver.
-	if hasDateUpdate, err := canUpdateDate(clientVersionString); err == nil && !deploy.IsDeployTypeApp(deployType) {
+	if hasDateUpdate, err := canUpdateDate(clientVersionString); err == nil {
 		return hasDateUpdate, nil
 	}
 

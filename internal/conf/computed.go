@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -23,7 +22,7 @@ import (
 func init() {
 	deployType := deploy.Type()
 	if !deploy.IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deploy.App, deployType)
+		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deployType)
 	}
 
 	confdefaults.Default = defaultConfigForDeployment()
@@ -38,19 +37,12 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 		return confdefaults.DockerContainer
 	case deploy.IsDeployTypeKubernetes(deployType), deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return confdefaults.KubernetesOrDockerComposeOrPureDocker
-	case deploy.IsDeployTypeApp(deployType):
-		return confdefaults.App
-	case deploy.IsDeployTypeSingleProgram(deployType):
-		return confdefaults.SingleProgram
 	default:
 		panic("deploy type did not register default configuration: " + deployType)
 	}
 }
 
 func ExecutorsAccessToken() string {
-	if deploy.IsSingleBinary() {
-		return confdefaults.AppInMemoryExecutorPassword
-	}
 	return Get().ExecutorsAccessToken
 }
 
@@ -578,14 +570,6 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		return nil
 	}
 
-	// Additionally, completions in App are disabled if there is no dotcom auth token
-	// and the user hasn't provided their own api token.
-	if deploy.IsApp() {
-		if (siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0) && (siteConfig.Completions == nil || siteConfig.Completions.AccessToken == "") {
-			return nil
-		}
-	}
-
 	completionsConfig := siteConfig.Completions
 	// If no completions configuration is set at all, but cody is enabled, assume
 	// a default configuration.
@@ -817,14 +801,6 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	// If cody is disabled, don't use embeddings.
 	if !codyEnabled(siteConfig) {
 		return nil
-	}
-
-	// Additionally Embeddings in App are disabled if there is no dotcom auth token
-	// and the user hasn't provided their own api token.
-	if deploy.IsApp() {
-		if (siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0) && (siteConfig.Embeddings == nil || siteConfig.Embeddings.AccessToken == "") {
-			return nil
-		}
 	}
 
 	// If embeddings are explicitly disabled (legacy flag, TODO: remove after 5.1),
@@ -1059,21 +1035,12 @@ func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteCon
 	if accessToken != "" {
 		return accessToken
 	}
-	// App generates a token from the api token the user used to connect app to dotcom.
-	if deploy.IsApp() && config.App != nil {
-		if config.App.DotcomAuthToken == "" {
-			return ""
-		}
-		authToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
-		if err != nil {
-			return ""
-		}
-		return authToken
-	}
+
 	// Otherwise, use the current license key to compute an access token.
 	if config.LicenseKey == "" {
 		return ""
 	}
+
 	return license.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
 }
 
