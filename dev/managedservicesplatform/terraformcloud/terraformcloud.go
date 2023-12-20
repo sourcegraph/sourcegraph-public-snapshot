@@ -341,19 +341,6 @@ func (c *Client) DeleteWorkspaces(ctx context.Context, svc spec.ServiceSpec, env
 	return errs
 }
 
-func (c *Client) GetOutputs(ctx context.Context, workspaceName string) ([]*tfe.StateVersionOutput, error) {
-	ws, err := c.client.Workspaces.Read(ctx, c.org, workspaceName)
-	if err != nil {
-		return nil, errors.Wrapf(err, "get workspace %q", workspaceName)
-	}
-	outputs, err := c.client.StateVersionOutputs.ReadCurrent(ctx, ws.ID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "get current outputs for workspace ID %q", ws.ID)
-	}
-	// We  don't need pagination for now, we have very few outputs
-	return outputs.Items, nil
-}
-
 func (c *Client) ensureAccessForTeam(ctx context.Context, project *tfe.Project, currentTeams *tfe.TeamProjectAccessList, teamID string) error {
 	var existingAccessID string
 	for _, a := range currentTeams.Items {

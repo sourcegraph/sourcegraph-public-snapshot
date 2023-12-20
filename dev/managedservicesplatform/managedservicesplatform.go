@@ -22,6 +22,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 )
 
+const (
+	// TODO: re-export for use, maybe we should lift stack packages out of
+	// internal so that we can share consts, including output names.
+	StackNameIAM      = iam.StackName
+	StackNameCloudRun = cloudrun.StackName
+)
+
 type TerraformCloudOptions struct {
 	// Enabled will render all stacks to use a Terraform CLoud workspace as its
 	// Terraform state backend with the following format as the workspace name
