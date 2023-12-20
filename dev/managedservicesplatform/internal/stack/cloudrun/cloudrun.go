@@ -20,13 +20,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privatenetwork"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/redis"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/tfvar"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun/internal/builder"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun/internal/builder/job"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun/internal/builder/service"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/iam"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/cloudflareprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/dynamicvariables"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
@@ -41,8 +41,9 @@ type CrossStackOutput struct {
 }
 
 type Variables struct {
-	ProjectID                      string
-	CloudRunWorkloadServiceAccount *serviceaccount.Output
+	ProjectID string
+
+	IAM iam.CrossStackOutput
 
 	Service     spec.ServiceSpec
 	Image       string
@@ -181,13 +182,15 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	}
 
 	if vars.Environment.Resources != nil && vars.Environment.Resources.PostgreSQL != nil {
+		pgSpec := *vars.Environment.Resources.PostgreSQL
 		sqlInstance, err := cloudsql.New(stack, resourceid.New("postgresql"), cloudsql.Config{
 			ProjectID: vars.ProjectID,
 			Region:    gcpRegion,
-			Spec:      *vars.Environment.Resources.PostgreSQL,
+			Spec:      pgSpec,
 			Network:   privateNetwork().Network,
 
-			WorkloadIdentity: *vars.CloudRunWorkloadServiceAccount,
+			WorkloadIdentity:       *vars.IAM.CloudRunWorkloadServiceAccount,
+			OperatorAccessIdentity: *vars.IAM.OperatorAccessServiceAccount,
 
 			// ServiceNetworkingConnection is required for Cloud SQL to connect
 			// to the private network, so we must wait for it to be provisioned.
@@ -208,7 +211,10 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// Cloud Run.
 
 		// Apply additional runtime configuration
-		pgRoles, err := postgresqlroles.New(stack, id.Group("postgresqlroles"), sqlInstance)
+		pgRoles, err := postgresqlroles.New(stack, id.Group("postgresqlroles"), postgresqlroles.Config{
+			Databases: pgSpec.Databases,
+			CloudSQL:  sqlInstance,
+		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render Cloud SQL PostgreSQL roles")
 		}
@@ -216,6 +222,10 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// We need the workload superuser role to be granted before Cloud Run
 		// can correctly use the database instance
 		cloudRunBuilder.AddDependency(pgRoles.WorkloadSuperuserGrant)
+
+		// Add output for connecting to the instance
+		locals.Add("cloudsql_connection_name", sqlInstance.Instance.ConnectionName(),
+			"Cloud SQL database connection name")
 	}
 
 	// bigqueryDataset is only created and non-nil if BigQuery is configured for
@@ -224,7 +234,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		bigqueryDataset, err := bigquery.New(stack, resourceid.New("bigquery"), bigquery.Config{
 			DefaultProjectID:       vars.ProjectID,
 			ServiceID:              vars.Service.ID,
-			WorkloadServiceAccount: vars.CloudRunWorkloadServiceAccount,
+			WorkloadServiceAccount: vars.IAM.CloudRunWorkloadServiceAccount,
 			Spec:                   *vars.Environment.Resources.BigQueryDataset,
 		})
 		if err != nil {
@@ -250,7 +260,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		Environment:       vars.Environment,
 		GCPProjectID:      vars.ProjectID,
 		GCPRegion:         gcpRegion,
-		ServiceAccount:    vars.CloudRunWorkloadServiceAccount,
+		ServiceAccount:    vars.IAM.CloudRunWorkloadServiceAccount,
 		DiagnosticsSecret: diagnosticsSecret,
 		ResourceLimits:    makeContainerResourceLimits(vars.Environment.Instances.Resources),
 		PrivateNetwork: func() *privatenetwork.Output {

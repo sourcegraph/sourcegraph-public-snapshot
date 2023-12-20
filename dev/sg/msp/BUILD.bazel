@@ -13,6 +13,7 @@ go_library(
         "//dev/managedservicesplatform/googlesecretsmanager",
         "//dev/managedservicesplatform/spec",
         "//dev/managedservicesplatform/terraformcloud",
+        "//dev/sg/cloudsqlproxy",
         "//dev/sg/internal/category",
         "//dev/sg/internal/secrets",
         "//dev/sg/internal/std",
