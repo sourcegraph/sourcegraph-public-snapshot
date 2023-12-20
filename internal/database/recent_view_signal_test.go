@@ -417,26 +417,26 @@ func TestRecentViewSignalStore_InsertPaths_OverBatchSize(t *testing.T) {
 	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
 	require.NoError(t, err)
 
-	// Creating 5500 paths.
+	// Creating 15 paths.
 	var paths []string
-	for i := 1; i <= 5500; i++ {
+	for i := 1; i <= 15; i++ {
 		paths = append(paths, fmt.Sprintf("src/file%d", i))
 	}
 	pathIDs, err := ensureRepoPaths(ctx, storeFrom(t, db), paths, 1)
 	require.NoError(t, err)
 
-	store := RecentViewSignalStoreWith(db, logger)
+	store := &recentViewSignalStore{Store: basestore.NewWithHandle(db.Handle()), Logger: logger}
 
 	counts := map[int]int{}
 	for _, id := range pathIDs {
 		counts[id] = 10
 	}
 
-	err = store.InsertPaths(ctx, 1, counts)
+	err = store.insertPaths(ctx, 1, counts, 10) // batch size of 10 is smaller than the total 15 paths
 	require.NoError(t, err)
 	summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 	require.NoError(t, err)
-	require.Len(t, summaries, 5502) // Two extra entries - repo root and 'src' directory
+	require.Len(t, summaries, 17) // Two extra entries - repo root and 'src' directory
 }
 
 func TestRecentViewSignalStore_List(t *testing.T) {
