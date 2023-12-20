@@ -14,7 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-const CloudSQLProxyVersion = "2.1.1"
+// CloudSQLProxyVersion can be found from https://github.com/GoogleCloudPlatform/cloud-sql-proxy/releases
+const CloudSQLProxyVersion = "2.8.1"
 
 // Init configures the cloud-sql-proxy binary for the current platform
 // optionally downloading if requested
