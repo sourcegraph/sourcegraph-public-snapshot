@@ -20,6 +20,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -34,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	searchzoekt "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -855,7 +855,7 @@ func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, searcherGRPCC
 	}
 
 	foundMatches := false
-	onMatches := func(fm *proto.FileMatch) {
+	onMatch := func(fm *protocol.FileMatch) {
 		foundMatches = true
 	}
 
@@ -872,7 +872,7 @@ func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, searcherGRPCC
 		time.Hour,         // depend on context for timeout
 		search.Features{}, // not using any search features
 		0,                 // don't care about the actual content, so don't fetch extra context
-		onMatches,
+		onMatch,
 	)
 	return foundMatches, err
 }

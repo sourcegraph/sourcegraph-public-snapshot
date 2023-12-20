@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 )
 
 func TestFileContainsFilterJob(t *testing.T) {
@@ -256,9 +256,9 @@ func TestFileContainsFilterJob(t *testing.T) {
 				s.Send(tc.inputEvent)
 				return nil, nil
 			})
-			searcher.MockSearch = func(_ context.Context, _ api.RepoName, _ api.RepoID, _ api.CommitID, p *search.TextPatternInfo, _ time.Duration, onMatch func(*proto.FileMatch)) (limitHit bool, err error) {
+			searcher.MockSearch = func(_ context.Context, _ api.RepoName, _ api.RepoID, _ api.CommitID, p *search.TextPatternInfo, _ time.Duration, onMatch func(*protocol.FileMatch)) (limitHit bool, err error) {
 				if len(p.IncludePatterns) > 0 {
-					onMatch(&proto.FileMatch{Path: []byte("file4")})
+					onMatch(&protocol.FileMatch{Path: "file4"})
 				}
 				return false, nil
 			}

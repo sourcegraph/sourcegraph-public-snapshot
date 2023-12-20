@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/exp/slices"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -18,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -188,8 +188,8 @@ func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherU
 			PatternMatchesContent: true,
 		}
 
-		onMatch := func(fm *proto.FileMatch) {
-			matchedFileCounts[string(fm.GetPath())] += 1
+		onMatch := func(fm *protocol.FileMatch) {
+			matchedFileCounts[fm.Path] += 1
 		}
 
 		_, err := searcher.Search(

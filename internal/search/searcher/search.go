@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -20,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -202,74 +202,79 @@ func (s *TextSearchJob) searchFilesInRepo(
 
 	// TODO: In http, this was a N matches callback, now it's one. Is that causing more
 	// events sent than we expect?
-	onMatch := func(searcherMatch *proto.FileMatch) {
+	onMatch := func(searcherMatch *protocol.FileMatch) {
 		stream.Send(streaming.SearchEvent{
-			Results: []result.Match{convertProtoMatch(repo, commit, &rev, searcherMatch, s.PathRegexps)},
+			Results: convertMatches(repo, commit, &rev, []*protocol.FileMatch{searcherMatch}, s.PathRegexps),
 		})
 	}
 
 	return Search(ctx, searcherURLs, searcherGRPCConnectionCache, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, contextLines, onMatch)
 }
 
-func convertProtoMatch(repo types.MinimalRepo, commit api.CommitID, rev *string, fm *proto.FileMatch, pathRegexps []*regexp.Regexp) result.Match {
-	chunkMatches := make(result.ChunkMatches, 0, len(fm.GetChunkMatches()))
-	for _, cm := range fm.GetChunkMatches() {
-		ranges := make(result.Ranges, 0, len(cm.GetRanges()))
-		for _, rr := range cm.Ranges {
-			ranges = append(ranges, result.Range{
-				Start: result.Location{
-					Offset: int(rr.GetStart().GetOffset()),
-					Line:   int(rr.GetStart().GetLine()),
-					Column: int(rr.GetStart().GetColumn()),
+// convert converts a set of searcher matches into []result.Match
+func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, searcherMatches []*protocol.FileMatch, pathRegexps []*regexp.Regexp) []result.Match {
+	matches := make([]result.Match, 0, len(searcherMatches))
+	for _, fm := range searcherMatches {
+		chunkMatches := make(result.ChunkMatches, 0, len(fm.ChunkMatches))
+
+		for _, cm := range fm.ChunkMatches {
+			ranges := make(result.Ranges, 0, len(cm.Ranges))
+			for _, rr := range cm.Ranges {
+				ranges = append(ranges, result.Range{
+					Start: result.Location{
+						Offset: int(rr.Start.Offset),
+						Line:   int(rr.Start.Line),
+						Column: int(rr.Start.Column),
+					},
+					End: result.Location{
+						Offset: int(rr.End.Offset),
+						Line:   int(rr.End.Line),
+						Column: int(rr.End.Column),
+					},
+				})
+			}
+
+			chunkMatches = append(chunkMatches, result.ChunkMatch{
+				Content: cm.Content,
+				ContentStart: result.Location{
+					Offset: int(cm.ContentStart.Offset),
+					Line:   int(cm.ContentStart.Line),
+					Column: 0,
 				},
-				End: result.Location{
-					Offset: int(rr.GetEnd().GetOffset()),
-					Line:   int(rr.GetEnd().GetLine()),
-					Column: int(rr.GetEnd().GetColumn()),
-				},
+				Ranges: ranges,
 			})
 		}
 
-		chunkMatches = append(chunkMatches, result.ChunkMatch{
-			Content: string(cm.GetContent()),
-			ContentStart: result.Location{
-				Offset: int(cm.GetContentStart().GetOffset()),
-				Line:   int(cm.GetContentStart().GetLine()),
-				Column: 0,
+		var pathMatches []result.Range
+		for _, pathRe := range pathRegexps {
+			pathSubmatches := pathRe.FindAllStringSubmatchIndex(fm.Path, -1)
+			for _, sm := range pathSubmatches {
+				pathMatches = append(pathMatches, result.Range{
+					Start: result.Location{
+						Offset: sm[0],
+						Line:   0,
+						Column: utf8.RuneCountInString(fm.Path[:sm[0]]),
+					},
+					End: result.Location{
+						Offset: sm[1],
+						Line:   0,
+						Column: utf8.RuneCountInString(fm.Path[:sm[1]]),
+					},
+				})
+			}
+		}
+
+		matches = append(matches, &result.FileMatch{
+			File: result.File{
+				Path:     fm.Path,
+				Repo:     repo,
+				CommitID: commit,
+				InputRev: rev,
 			},
-			Ranges: ranges,
+			ChunkMatches: chunkMatches,
+			PathMatches:  pathMatches,
+			LimitHit:     fm.LimitHit,
 		})
-
 	}
-
-	var pathMatches []result.Range
-	for _, pathRe := range pathRegexps {
-		pathSubmatches := pathRe.FindAllStringSubmatchIndex(string(fm.GetPath()), -1)
-		for _, sm := range pathSubmatches {
-			pathMatches = append(pathMatches, result.Range{
-				Start: result.Location{
-					Offset: sm[0],
-					Line:   0,
-					Column: utf8.RuneCountInString(string(fm.GetPath()[:sm[0]])),
-				},
-				End: result.Location{
-					Offset: sm[1],
-					Line:   0,
-					Column: utf8.RuneCountInString(string(fm.GetPath()[:sm[1]])),
-				},
-			})
-		}
-	}
-
-	return &result.FileMatch{
-		File: result.File{
-			Path:     string(fm.GetPath()),
-			Repo:     repo,
-			CommitID: commit,
-			InputRev: rev,
-		},
-		ChunkMatches: chunkMatches,
-		PathMatches:  pathMatches,
-		LimitHit:     fm.GetLimitHit(),
-	}
+	return matches
 }

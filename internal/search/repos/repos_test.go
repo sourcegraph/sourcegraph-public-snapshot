@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -29,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
@@ -649,13 +649,13 @@ func TestRepoHasFileContent(t *testing.T) {
 			},
 		},
 	}
-	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func(*proto.FileMatch)) (limitHit bool, err error) {
+	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatch func(*protocol.FileMatch)) (limitHit bool, err error) {
 		if r, ok := unindexedCorpus[string(repo)]; ok {
 			for path, lines := range r {
 				if len(p.IncludePatterns) == 0 || p.IncludePatterns[0] == path {
 					for line := range lines {
 						if p.Pattern == line || p.Pattern == "" {
-							onMatches(&proto.FileMatch{})
+							onMatch(&protocol.FileMatch{})
 						}
 					}
 				}

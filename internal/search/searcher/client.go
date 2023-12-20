@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	MockSearch func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func(*proto.FileMatch)) (limitHit bool, err error)
+	MockSearch func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatch func(*protocol.FileMatch)) (limitHit bool, err error)
 )
 
 // Search searches repo@commit with p.
@@ -39,7 +39,7 @@ func Search(
 	fetchTimeout time.Duration,
 	features search.Features,
 	contextLines int,
-	onMatch func(*proto.FileMatch),
+	onMatch func(*protocol.FileMatch),
 ) (limitHit bool, err error) {
 	if MockSearch != nil {
 		return MockSearch(ctx, repo, repoID, commit, p, fetchTimeout, onMatch)
@@ -116,7 +116,9 @@ func Search(
 
 			switch v := msg.Message.(type) {
 			case *proto.SearchResponse_FileMatch:
-				onMatch(v.FileMatch)
+				var fm protocol.FileMatch
+				fm.FromProto(v.FileMatch)
+				onMatch(&fm)
 			case *proto.SearchResponse_DoneMessage:
 				return v.DoneMessage.LimitHit, nil
 			default:

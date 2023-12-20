@@ -36,8 +36,6 @@ type Server struct {
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
-// TODO: Technically, we no longer need the HTTP server. Practically, some things
-// might rely on the /healthz endpoint.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", trace.WithRouteName("healthz", func(w http.ResponseWriter, _ *http.Request) {
