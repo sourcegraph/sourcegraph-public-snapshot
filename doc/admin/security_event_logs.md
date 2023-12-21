@@ -93,7 +93,7 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
 - Entity field can be used to filter on all security events.
 - Action field will provide information on the event and can be correlated with the action taken, in this case EmailAdded
 - The actorUID can be used to filter out events from a particular user
-- UseriD can be used to filter out actions taken on a particular user's information
+- UserID can be used to filter out actions taken on a particular user's information
   
 ## FAQ
 What events are currently being logged as security events?
