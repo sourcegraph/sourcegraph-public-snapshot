@@ -277,11 +277,13 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 			// client here, since we are using streamhttp.Writer - see
 			// streamhttp.NewWriter for more details. Instead, we send an error
 			// event, which clients should check as appropriate.
-			if firstEventObserved {
-				if ev := eventWriter(); ev != nil {
-					if err := ev.Event("error", map[string]string{"error": err.Error()}); err != nil {
-						l.Error("error reporting streaming completion error", log.Error(err))
-					}
+			if !firstEventObserved {
+				firstEventObserved = true
+				timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
+			}
+			if ev := eventWriter(); ev != nil {
+				if err := ev.Event("error", map[string]string{"error": err.Error()}); err != nil {
+					l.Error("error reporting streaming completion error", log.Error(err))
 				}
 			}
 			return
