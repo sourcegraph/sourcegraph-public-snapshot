@@ -26,7 +26,6 @@ go_library(
         "//cmd/executor/internal/worker/command",
         "//cmd/executor/internal/worker/runner",
         "//cmd/executor/internal/worker/workspace",
-        "//internal/conf/deploy",
         "//internal/download",
         "//internal/executor",
         "//internal/executor/types",

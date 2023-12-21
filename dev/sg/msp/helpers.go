@@ -18,6 +18,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+// useServiceArgument retrieves the service spec corresponding to the first
+// argument.
+func useServiceArgument(c *cli.Context) (*spec.Spec, error) {
+	serviceID := c.Args().First()
+	if serviceID == "" {
+		return nil, errors.New("argument service is required")
+	}
+	serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
+
+	return spec.Open(serviceSpecPath)
+}
+
 func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, build spec.BuildSpec, env spec.EnvironmentSpec, monitoring spec.MonitoringSpec) error {
 	if os.TempDir() == "" {
 		return errors.New("no temp dir available")

@@ -28,7 +28,6 @@ go_library(
         "//internal/api",
         "//internal/comby",
         "//internal/conf",
-        "//internal/conf/deploy",
         "//internal/diskcache",
         "//internal/errcode",
         "//internal/gitserver",

@@ -75,7 +75,6 @@ func TestCanUpdate(t *testing.T) {
 		now                 time.Time
 		clientVersionString string
 		latestReleaseBuild  pingResponse
-		deployType          string
 		hasUpdate           bool
 		err                 error
 	}{
@@ -131,10 +130,7 @@ func TestCanUpdate(t *testing.T) {
 				timeNow = time.Now
 			}()
 
-			if test.deployType == "" {
-				test.deployType = "kubernetes"
-			}
-			hasUpdate, err := canUpdate(test.clientVersionString, test.latestReleaseBuild, test.deployType)
+			hasUpdate, err := canUpdate(test.clientVersionString, test.latestReleaseBuild)
 			if err != test.err {
 				t.Fatalf("expected error %s; got %s", test.err, err)
 			}

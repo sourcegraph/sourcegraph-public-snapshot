@@ -2,15 +2,19 @@
 package msp
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
+	"github.com/sourcegraph/sourcegraph/dev/sg/cloudsqlproxy"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/example"
@@ -191,11 +195,197 @@ sg msp generate -all <service>
 			},
 		},
 		{
+			Name:    "postgresql",
+			Aliases: []string{"pg"},
+			Usage:   "Interact with PostgreSQL instances provisioned by MSP",
+			Before:  msprepo.UseManagedServicesRepo,
+			Subcommands: []*cli.Command{
+				{
+					Name:  "connect",
+					Usage: "Connect to the PostgreSQL instance",
+					Description: `
+This command runs 'cloud-sql-proxy' authenticated against the specified MSP
+service environment, and provides 'psql' commands for interacting with the
+database through the proxy.
+
+If this is your first time using this command, include the '-download' flag to
+install 'cloud-sql-proxy'.
+
+By default, you will only have 'SELECT' privileges through the connection - for
+full access, use the '-write-access' flag.
+`,
+					ArgsUsage: "<service ID> <environment ID>",
+					Flags: []cli.Flag{
+						&cli.IntFlag{
+							Name:  "port",
+							Value: 5433,
+							Usage: "Port to use for the cloud-sql-proxy",
+						},
+						&cli.BoolFlag{
+							Name:  "download",
+							Usage: "Install or update the cloud-sql-proxy",
+						},
+						&cli.BoolFlag{
+							Name:  "write-access",
+							Usage: "Connect to the database with write access - by default, only select access is granted.",
+						},
+						// db proxy provides privileged access to the database,
+						// so we want to avoid having it dangling around for too long unattended
+						&cli.IntFlag{
+							Name:  "session.timeout",
+							Usage: "Timeout for the proxy session in seconds - 0 means no timeout",
+							Value: 300,
+						},
+					},
+					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
+					Action: func(c *cli.Context) error {
+						service, err := useServiceArgument(c)
+						if err != nil {
+							return err
+						}
+						env := service.GetEnvironment(c.Args().Get(1))
+						if env == nil {
+							return errors.Errorf("environment %q not found", c.Args().Get(1))
+						}
+						if env.Resources.PostgreSQL == nil {
+							return errors.New("no postgresql instance provisioned")
+						}
+
+						err = cloudsqlproxy.Init(c.Bool("download"))
+						if err != nil {
+							return err
+						}
+
+						secretStore, err := secrets.FromContext(c.Context)
+						if err != nil {
+							return err
+						}
+
+						// We use a team token to get workspace details
+						tfcMSPAccessToken, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+							Name:    googlesecretsmanager.SecretTFCMSPTeamToken,
+							Project: googlesecretsmanager.ProjectID,
+						})
+						if err != nil {
+							return errors.Wrap(err, "get TFC OAuth client ID")
+						}
+						tfcClient, err := terraformcloud.NewRunsClient(tfcMSPAccessToken)
+						if err != nil {
+							return errors.Wrap(err, "init Terraform Cloud client")
+						}
+
+						iamOutputs, err := tfcClient.GetOutputs(c.Context,
+							terraformcloud.WorkspaceName(service.Service, *env,
+								managedservicesplatform.StackNameIAM))
+						if err != nil {
+							return errors.Wrap(err, "get IAM outputs")
+						}
+						var serviceAccountEmail string
+						if c.Bool("write-access") {
+							// Use the workload identity if all access is requested
+							workloadSA, err := iamOutputs.Find("cloud_run_service_account")
+							if err != nil {
+								return errors.Wrap(err, "find IAM output")
+							}
+							serviceAccountEmail = workloadSA.Value.(string)
+						} else {
+							// Otherwise, use the operator access account which
+							// is a bit more limited.
+							operatorAccessSA, err := iamOutputs.Find("operator_access_service_account")
+							if err != nil {
+								return errors.Wrap(err, "find IAM output")
+							}
+							serviceAccountEmail = operatorAccessSA.Value.(string)
+						}
+
+						cloudRunOutputs, err := tfcClient.GetOutputs(c.Context,
+							terraformcloud.WorkspaceName(service.Service, *env,
+								managedservicesplatform.StackNameCloudRun))
+						if err != nil {
+							return errors.Wrap(err, "get Cloud Run outputs")
+						}
+						connectionName, err := cloudRunOutputs.Find("cloudsql_connection_name")
+						if err != nil {
+							return errors.Wrap(err, "find Cloud Run output")
+						}
+
+						proxyPort := c.Int("port")
+						proxy, err := cloudsqlproxy.NewCloudSQLProxy(
+							connectionName.Value.(string),
+							serviceAccountEmail,
+							proxyPort)
+						if err != nil {
+							return err
+						}
+
+						for _, db := range env.Resources.PostgreSQL.Databases {
+							std.Out.WriteNoticef("Use this command to connect to database %q:", db)
+
+							saUsername := strings.ReplaceAll(serviceAccountEmail,
+								".gserviceaccount.com", "")
+							if err := std.Out.WriteCode("bash",
+								fmt.Sprintf(`psql -U %s -d %s -h localhost -p %d`,
+									saUsername,
+									db,
+									proxyPort)); err != nil {
+								return errors.Wrapf(err, "write command for db %q", db)
+							}
+						}
+
+						// Run proxy until stopped
+						return proxy.Start(c.Context, c.Int("session.timeout"))
+					},
+				},
+			},
+		},
+		{
 			Name:    "terraform-cloud",
 			Aliases: []string{"tfc"},
 			Usage:   "Manage Terraform Cloud workspaces for a service",
 			Before:  msprepo.UseManagedServicesRepo,
 			Subcommands: []*cli.Command{
+				{
+					Name:        "view",
+					Usage:       "View MSP Terraform Cloud workspaces",
+					Description: "You may need to request access to the workspaces - see https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/#terraform-cloud",
+					UsageText: `
+# View all workspaces for all MSP services
+sg msp tfc view
+
+# View all workspaces for all environments for a MSP service
+sg msp tfc view <service>
+
+# View all workspaces for a specific MSP service environment
+sg msp tfc view <service> <environment>
+`,
+					ArgsUsage:    "[service ID] [environment ID]",
+					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
+					Action: func(c *cli.Context) error {
+						if c.Args().Len() == 0 {
+							std.Out.WriteNoticef("Opening link to all MSP Terraform Cloud workspaces in browser...")
+							return open.URL(fmt.Sprintf("https://app.terraform.io/app/sourcegraph/workspaces?tag=%s",
+								terraformcloud.MSPWorkspaceTag))
+						}
+
+						service, err := useServiceArgument(c)
+						if err != nil {
+							return err
+						}
+						if c.Args().Len() == 1 {
+							std.Out.WriteNoticef("Opening link to service Terraform Cloud workspaces in browser...")
+							return open.URL(fmt.Sprintf("https://app.terraform.io/app/sourcegraph/workspaces?tag=%s",
+								terraformcloud.ServiceWorkspaceTag(service.Service)))
+						}
+
+						env := service.GetEnvironment(c.Args().Get(1))
+						if env == nil {
+							return errors.Wrapf(err, "environment %q not found", c.Args().Get(1))
+						}
+						std.Out.WriteNoticef("Opening link to service environment Terraform Cloud workspaces in browser...")
+						return open.URL(fmt.Sprintf("https://app.terraform.io/app/sourcegraph/workspaces?tag=%s",
+							terraformcloud.EnvironmentWorkspaceTag(service.Service, *env)))
+					},
+				},
 				{
 					Name:  "sync",
 					Usage: "Create or update all required Terraform Cloud workspaces for an environment",
@@ -222,13 +412,7 @@ Supports completions on services and environments.`,
 					},
 					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
-						serviceID := c.Args().First()
-						if serviceID == "" {
-							return errors.New("argument service is required")
-						}
-						serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
-
-						service, err := spec.Open(serviceSpecPath)
+						service, err := useServiceArgument(c)
 						if err != nil {
 							return err
 						}

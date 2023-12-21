@@ -15,7 +15,6 @@ import (
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -68,11 +67,6 @@ func getMode() configurationMode {
 }
 
 func getModeUncached() configurationMode {
-	if deploy.IsSingleBinary() {
-		// When running everything in the same process, use server mode.
-		return modeServer
-	}
-
 	mode := os.Getenv("CONFIGURATION_MODE")
 
 	switch mode {
@@ -234,16 +228,6 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 	}
 
 	siteConfigEscapeHatchPath = os.ExpandEnv(siteConfigEscapeHatchPath)
-	if deploy.IsSingleBinary() {
-		// For single-binary mode, always store the site config on disk, and this is achieved through
-		// making the "escape hatch file" point to our desired location on disk.
-		// The concept of an escape hatch file is not something users care
-		// about (it only makes sense in Docker/Kubernetes, e.g. to edit the config
-		// file if the sourcegraph-frontend container is crashing) - it runs
-		// natively and this mechanism is just a convenient way for us to keep
-		// the file on disk as our source of truth.
-		siteConfigEscapeHatchPath = os.Getenv("SITE_CONFIG_FILE")
-	}
 
 	var (
 		ctx                                        = context.Background()

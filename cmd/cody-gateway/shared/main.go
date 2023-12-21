@@ -193,10 +193,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	})
 
 	// Set up redis-based distributed mutex for the source syncer worker
-	p, ok := redispool.Store.Pool()
-	if !ok {
-		return errors.New("real redis is required")
-	}
+	p := redispool.Store.Pool()
 	sourceWorkerMutex := redsync.New(redigo.NewPool(p)).NewMutex("source-syncer-worker",
 		// Do not retry endlessly becuase it's very likely that someone else has
 		// a long-standing hold on the mutex. We will try again on the next periodic

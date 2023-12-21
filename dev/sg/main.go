@@ -280,7 +280,6 @@ var sg = &cli.App{
 		setupCommand,
 		srcCommand,
 		srcInstanceCommand,
-		appCommand,
 
 		// Company
 		teammateCommand,

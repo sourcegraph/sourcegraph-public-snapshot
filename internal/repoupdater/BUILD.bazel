@@ -12,7 +12,6 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/conf",
-        "//internal/conf/deploy",
         "//internal/grpc/defaults",
         "//internal/httpcli",
         "//internal/repoupdater/protocol",

@@ -361,36 +361,14 @@ declare global {
     }
 }
 
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-
 // Manually configure the MonacoEnvironment for the Monaco editor.
 if (!window.MonacoEnvironment) {
     window.MonacoEnvironment = {
-        // @ts-ignore
-        async getWorker(_, label) {
-            if (process.env.NODE_ENV === 'development') {
-                // In dev mode, we need to use a blob URL and a module worker because (1) the worker
-                // is loaded cross-origin and (2) the worker is not bundled and only module workers
-                // support `import` statements.
-                const workerModule =
-                    label === 'json'
-                        ? new URL('monaco-editor/esm/vs/language/json/json.worker.js', import.meta.url)
-                        : new URL('monaco-editor/esm/vs/editor/editor.worker.js', import.meta.url)
-                const source = `import ${JSON.stringify(workerModule.toString())}`
-                const workerBlobUrl = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }))
-                return new Worker(workerBlobUrl, { type: 'module' })
-            }
-
-            let worker: any
+        getWorkerUrl(_moduleId: string, label: string): string {
             if (label === 'json') {
-                // @ts-ignore
-                worker = await import('monaco-editor/esm/vs/language/json/json.worker?worker')
-            } else {
-                // @ts-ignore
-                worker = await import('monaco-editor/esm/vs/editor/editor.worker?worker')
+                return window.context.assetsRoot + '/scripts/json.worker.bundle.js'
             }
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-            return new worker.default()
+            return window.context.assetsRoot + '/scripts/editor.worker.bundle.js'
         },
     }
 }
