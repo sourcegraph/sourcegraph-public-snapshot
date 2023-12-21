@@ -9,15 +9,15 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
 - Getting a full picture, of how a user moves through the application, in a single location is crucial for many reasons.
 - When a user takes an action on a sensitive part of the application, this should be logged to make sure it can be retraced to a user and time.
 - In Sourcegraph application, we log these sensitive actions as "security event" with relevant information included in the output.
-- These logs can be enabled/disabled as well the location can be set via the [site config settings](./audit_log#configuring)
+- These logs can be enabled/disabled as well as the location can be set via the [site config settings](./audit_log#configuring)
 
 
 ## How to log a security event
-- All the logging for security event is done through our security_event_log.go functions
-- To log an event, the LogSecurityEvent function can be invoked which will create an event with information provided and then submit it for logging to the right place
+- All the logging for security event is done through our [security_event_log.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/security_event_logs.go) functions
+- To log an event, the [LogSecurityEvent](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/security_event_logs.go?L253:34&popover=pinned) function can be invoked which creates an event with information provided and then submits it for logging to the right place
 - This function takes following information to create a log event
   - Context from the where the log is being called
-  - SecurityEventName which is predefined here
+  - SecurityEventName which is predefined [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/security_event_logs.go?L22-101)
   - URL if available
   - userID of the user that the action is applied towards
   - anonymousUserID for unauthenitcated users
