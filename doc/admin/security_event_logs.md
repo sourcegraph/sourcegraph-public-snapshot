@@ -11,7 +11,7 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
 - In Sourcegraph application, these sensitive actions are logged as "security event" with relevant information included in the output.
 - These logs can be enabled/disabled as well as the location can be set via the [site config settings](./audit_log#configuring)
 - Previously, we were logging very selective set of actions. However, through various analyses, it was determined there are numerous actions that should be logged to gather that full picture.
-- New event types are constantly being added to fill these gaps.
+  - New event types are constantly being added to fill these gaps.
 
 
 ## How to log a security event
@@ -30,7 +30,7 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
   
-- With a recent change to streamline the process, to log an event, the [LogSecurityEvent](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/security_event_logs.go?L253:34&popover=pinned) function can be invoked which creates an event with information provided and then submits it for logging to the right place
+- With a recent change to streamline the process, to log an event, the [LogSecurityEvent](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/security_event_logs.go?L253:34&popover=pinned) function can be invoked which takes care of marshalling the arguments and creating the SecurityEvent.
 - This function takes following information to create a log event
   - Context from the where the log is being called
   - SecurityEventName which is predefined [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/security_event_logs.go?L22-101)
