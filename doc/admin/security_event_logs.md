@@ -7,14 +7,29 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
 ## What are Security Event Logs
 - The purpose of Security Event Logs is to allow security specialists to be able to trace the steps of a user or an admin across the application.
 - Getting a full picture, of how a user moves through the application, in a single location is crucial for many reasons.
-- When a user takes an action on a sensitive part of the application, this should be logged to make sure it can be retraced to a user and time.
-- In Sourcegraph application, we log these sensitive actions as "security event" with relevant information included in the output.
+- When a user takes an action on a sensitive information within the application, this should be logged to make sure it can be retraced to the user and time.
+- In Sourcegraph application, these sensitive actions are logged as "security event" with relevant information included in the output.
 - These logs can be enabled/disabled as well as the location can be set via the [site config settings](./audit_log#configuring)
+- 
 
 
 ## How to log a security event
 - All the logging for security event is done through our [security_event_log.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/security_event_logs.go) functions
-- To log an event, the [LogSecurityEvent](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/security_event_logs.go?L253:34&popover=pinned) function can be invoked which creates an event with information provided and then submits it for logging to the right place
+- Previously, events were created within the function where the action was taking place and then pushed to the logging location
+  ```go
+  event := &SecurityEvent{
+		Name:            SecurityEventNameAccessGranted,
+		URL:             "",
+		UserID:          uint32(a.UID),
+		AnonymousUserID: "",
+		Argument:        arg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	db.SecurityEventLogs().LogEvent(ctx, event)
+  
+- With a recent change to streamline the process, to log an event, the [LogSecurityEvent](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/security_event_logs.go?L253:34&popover=pinned) function can be invoked which creates an event with information provided and then submits it for logging to the right place
 - This function takes following information to create a log event
   - Context from the where the log is being called
   - SecurityEventName which is predefined [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/security_event_logs.go?L22-101)
