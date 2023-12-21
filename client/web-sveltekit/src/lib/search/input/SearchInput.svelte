@@ -169,7 +169,7 @@
 >
     <input class="hidden" value={$queryState.query} name="q" />
     <div class="focus-container">
-        <div class="mode-switcher"></div>
+        <div class="mode-switcher" />
         <BaseCodeMirrorQueryInput
             bind:this={input}
             bind:view={editor}

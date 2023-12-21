@@ -7,9 +7,9 @@
     import { type BUTTON_DISPLAY, type BUTTON_SIZES, type BUTTON_VARIANTS, getButtonClassName } from './Button'
 
     interface $$Props extends HTMLButtonAttributes {
-        variant?: (typeof BUTTON_VARIANTS)[number]
-        size?: (typeof BUTTON_SIZES)[number]
-        display?: (typeof BUTTON_DISPLAY)[number]
+        variant?: typeof BUTTON_VARIANTS[number]
+        size?: typeof BUTTON_SIZES[number]
+        display?: typeof BUTTON_DISPLAY[number]
         outline?: boolean
     }
 
