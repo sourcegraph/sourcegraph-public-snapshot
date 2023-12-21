@@ -25,7 +25,6 @@ func defaultEndpoints() *endpoint.Map {
 	})
 }
 
-// TODO: Add gRPC support to the embeddings server.
 var defaultDoer = func() httpcli.Doer {
 	d, err := httpcli.NewInternalClientFactory("embeddings").Doer()
 	if err != nil {
