@@ -60,7 +60,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					return pass.Fset.Position(cg.Pos()).Line == pass.Fset.Position(candidate.Pos()).Line && strings.Contains(cg.Text(), "CI:LOCALHOST_OK")
 				})
 				if !hasOkComment {
-					pass.ReportRangef(candidate, "disallowed instance of 'localhost'")
+					pass.ReportRangef(candidate, "disallowed instance of 'localhost', please use '127.0.0.1' instead or suffix the line with '// CI:LOCALHOST_OK'")
 				}
 			}
 		}
