@@ -18,7 +18,7 @@ changes_count=$(target-determinator \
   --verbose \
   --targets \
   "//cmd/executor/vm-image:ami.build union //cmd/executor/docker-mirror:ami.build" \
-  v5.2.0 \
+  HEAD^ \
   | wc -l
 )
 
