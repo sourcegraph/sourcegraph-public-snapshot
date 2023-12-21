@@ -7,19 +7,6 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "indexRepositoryName": {
-      "description": "Name of the git repository containing the crates.io index. Only set if you intend to sync every crate from the index. Updating this setting does not trigger a sync immediately, you must wait until the next scheduled sync for the value to get picked up.",
-      "title": "RustIndexRepositoryName",
-      "type": "string",
-      "examples": ["github.com/crates.io/index"]
-    },
-    "indexRepositorySyncInterval": {
-      "description": "How frequently to sync with the index repository. String formatted as a Go time.Duration. The Sourcegraph server needs to be restarted to pick up a new value of this configuration option.",
-      "title": "RustIndexRepositorySyncInterval",
-      "type": "string",
-      "examples": ["12h", "10s"],
-      "default": "12h"
-    },
     "rateLimit": {
       "description": "Rate limit applied when making background API requests to the configured Rust repository APIs.",
       "title": "RustRateLimit",

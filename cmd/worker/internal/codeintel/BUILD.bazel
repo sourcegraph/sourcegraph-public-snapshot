@@ -6,7 +6,6 @@ go_library(
         "autoindexing_dependencies.go",
         "autoindexing_scheduler.go",
         "autoindexing_summary.go",
-        "dependencies_crates_syncer.go",
         "dependencies_packages.go",
         "lsifuploadstore_expirer.go",
         "metrics_reporter.go",

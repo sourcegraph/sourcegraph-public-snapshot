@@ -54,6 +54,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The `rateLimit` configuration for Perforce code host connections has been removed to avoid confusion, it was unused. [#58188](https://github.com/sourcegraph/sourcegraph/pull/58188)
 - The feature flag `search-ranking` is now completely removed. [#58156](https://github.com/sourcegraph/sourcegraph/pull/58156)
 - The notepad UI, notebook creation feature. [#58217](https://github.com/sourcegraph/sourcegraph/pull/58217)
+- The experimental `indexRepositoryName` option for the rust packages code host connection has been removed. [#59176](https://github.com/sourcegraph/sourcegraph/pull/59176)
 
 ## Unreleased 5.2.6
 
