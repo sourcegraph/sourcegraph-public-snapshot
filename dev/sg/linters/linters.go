@@ -37,8 +37,8 @@ var Targets = []Target{
 		Description: "Check go code for linting errors, forbidden imports, generated files, etc",
 		Checks: []*linter{
 			goGenerateLinter,
-			goDBConnImport,
-			noLocalHost,
+			onlyLocal(goDBConnImport),
+			onlyLocal(noLocalHost),
 			lintGoDirectives(),
 			lintLoggingLibraries(),
 			onlyLocal(lintTracingLibraries()),
