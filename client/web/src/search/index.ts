@@ -144,11 +144,11 @@ export function parseSearchURL(
     }
 }
 
-export function repoFilterForRepoRevision(repoName: string, revision?: string): string {
+export function filterValueForRepoRevision(repoName: string, revision?: string): string {
     return `${escapeSpaces(`^${escapeRegExp(repoName)}$${revision ? `@${abbreviateOID(revision)}` : ''}`)}`
 }
 
-export function searchQueryForRepoRevision(
+export function repoFilterForRepoRevision(
     repoName: string,
     revision?: string,
     patternType?: SearchPatternType
@@ -156,7 +156,7 @@ export function searchQueryForRepoRevision(
     if (patternType === SearchPatternType.newStandardRC1) {
         return `repo:${quoteIfWhitespace(repoName)}${revision ? `@${abbreviateOID(revision)}` : ''} `
     }
-    return `repo:${repoFilterForRepoRevision(repoName, revision)} `
+    return `repo:${filterValueForRepoRevision(repoName, revision)} `
 }
 
 export function fileFilterForFilePath(filePath: string, patternType?: SearchPatternType): string {

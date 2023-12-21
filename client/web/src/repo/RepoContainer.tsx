@@ -50,7 +50,7 @@ import type { ExternalLinkFields, RepositoryFields } from '../graphql-operations
 import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
-import { searchQueryForRepoRevision, fileFilterForFilePath, type SearchStreamingProps } from '../search'
+import { repoFilterForRepoRevision, fileFilterForFilePath, type SearchStreamingProps } from '../search'
 import { useV2QueryInput } from '../search/useV2QueryInput'
 import { useNavbarQueryState } from '../stores'
 import { EventName } from '../util/constants'
@@ -407,7 +407,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     const patternType = useNavbarQueryState.getState().searchPatternType
     useEffect(() => {
-        let query = queryPrefix + searchQueryForRepoRevision(repoName, revision, patternType)
+        let query = queryPrefix + repoFilterForRepoRevision(repoName, revision, patternType)
         if (filePath) {
             query = `${query.trimEnd()} ${fileFilterForFilePath(filePath, patternType)}`
         }
