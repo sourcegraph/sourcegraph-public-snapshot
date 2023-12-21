@@ -10,7 +10,8 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
 - When a user takes an action on a sensitive information within the application, this should be logged to make sure it can be retraced to the user and time.
 - In Sourcegraph application, these sensitive actions are logged as "security event" with relevant information included in the output.
 - These logs can be enabled/disabled as well as the location can be set via the [site config settings](./audit_log#configuring)
-- 
+- Previously, we were logging very selective set of actions. However, through various analyses, it was determined there are numerous actions that should be logged to gather that full picture.
+- New event types are constantly being added to fill these gaps.
 
 
 ## How to log a security event
@@ -89,8 +90,8 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
   ...
   }
 
-- Entity field can be used to filter out all security events
+- Entity field can be used to filter on all security events.
 - Action field will provide information on the event and can be correlated with the action taken, in this case EmailAdded
 - The actorUID can be used to filter out events from a particular user
 - UseriD can be used to filter out actions taken on a particular user's information
-- 
+  
