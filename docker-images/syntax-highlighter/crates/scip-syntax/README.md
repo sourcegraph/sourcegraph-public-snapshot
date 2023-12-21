@@ -107,4 +107,4 @@ References are specified by labeling a capture as a `@reference`.
 They will be resolved against definitions in the current scope and parent scopes. Non-hoisted definitions are only resolved if they are defined _before_ the reference.
 
 
-[tree-sitter Query language]: https://tree-sitter.github.io/tree-sitter/using-parsers#pattern-matching-with-queries
+[tree-sitter query language]: https://tree-sitter.github.io/tree-sitter/using-parsers#pattern-matching-with-queries

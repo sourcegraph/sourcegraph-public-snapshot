@@ -264,8 +264,8 @@ impl<'a> LocalResolver<'a> {
         self.definition_start_bytes.insert(node.start_byte());
 
         // We delay creation of this definition behind a closure, so
-        // we don't generate fresh definition_id's for def_ref's that
-        // turn out to be references rather than definitions
+        // that we don't generate fresh definition_id's for def_ref's
+        // that turn out to be references rather than definitions
         let mk_def = |this: &mut Self| {
             this.definition_id_supply += 1;
             let def_id = this.definition_id_supply;
@@ -551,8 +551,8 @@ impl<'a> LocalResolver<'a> {
 
     /// This function is probably the most complicated bit in here.
     /// scopes, definitions, and references are sorted to allow us to
-    /// build a tree of scope in pre-traversal order here. We make
-    /// sure to add all definitions and references to their narrowest
+    /// build a tree of scopes in pre-traversal order. We make sure to
+    /// add all definitions and references to their narrowest
     /// enclosing scope, or to hoist them to the closest matching
     /// scope.
     fn build_tree(&mut self, top_scope: ScopeRef<'a>, captures: Captures<'a>) {
