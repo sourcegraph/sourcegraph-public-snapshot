@@ -103,4 +103,22 @@ What if I dont want these events to be logged?
 - To turn off all security event logs, you can [set the variable](https://docs.sourcegraph.com/admin/audit_log#excessive-audit-logging) in the site config
 
 How can I correlate the actorID or userID to a user in the application?
-- This correlation can be done by a site-admin via [graphql query in the API Console](https://docs.sourcegraph.com/admin/audit_log#faq).
+
+- The `audit.actor` node carries ID of the user who performed the action (`actorUID`), but it’s not mapped into a full Sourcegraph user right now. You can, however, obtain the user details by following these steps:
+
+  1. Grab the user ID from the audit log
+  1. Base64 [encode](https://www.base64encode.org) the ID with a "User:" prefix. For example, for Actor with ID 71 use `User:71`, which encodes to `VXNlcjo3MQ==`
+  1. Navigate to Site Admin -> API Console and run the query below
+  1. Find the corresponding user by searching the query results for the encoded ID from above
+
+ GraphQL query:
+ ```
+ {
+   users {
+     nodes {
+       id
+       username
+     }
+   }
+ }
+ ```
