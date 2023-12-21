@@ -128,4 +128,3 @@ How can I investigate all actions take on a user?
 
 How can I investigate all actions taken by a user?
 - The `audit.actor` node has the ID of the user the action was taken by (`actorUID`). Logs can be filtered on this field to get gather all logged actions taken by this user.
-
