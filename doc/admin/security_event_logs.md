@@ -4,7 +4,9 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
 > Here is a guide on how to add logging to Sourcegraph backend
 
 ## What are Security Event Logs
-
+- The purpose of Security Event Logs is to allow security specialists to be able to trace the steps of a user or an admin across the application.
+- When a user takes an action on a sensitive part of the application, this is logged to make sure it can be retraced to a user and time.
+- 
 
 
 ## How to log a security event
