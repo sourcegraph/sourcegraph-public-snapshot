@@ -25,9 +25,10 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
   - arguments relevant to the action
 - Example of invoking the function
   ```go
-  			if err := db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailVerified, r.URL.Path, uint32(actr.UID), "", "BACKEND", email); err != nil {
+  db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailVerified, r.URL.Path, uint32(actr.UID), "", "BACKEND", email)
 
-- 
+- The function sends the log event it creates to be pushed to the right location based on the site-config settings
+- The function also checks to make sure that marshalling the arguments does not cause as error
 
 ## How to find security events in logs
 
