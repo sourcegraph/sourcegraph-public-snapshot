@@ -97,7 +97,7 @@ func TestExecRequest(t *testing.T) {
 			},
 			ExpectedCode: codes.NotFound,
 			ExpectedBody: "repo not found",
-			ExpectedDetails: []any{v1.NotFoundPayload{
+			ExpectedDetails: []any{&v1.NotFoundPayload{
 				Repo:            "github.com/gorilla/doesnotexist",
 				CloneInProgress: false,
 			}},
@@ -110,9 +110,9 @@ func TestExecRequest(t *testing.T) {
 			},
 			ExpectedCode: codes.NotFound,
 			ExpectedBody: "repo not found",
-			ExpectedDetails: []any{v1.NotFoundPayload{
-				Repo:            "github.com/gorilla/doesnotexist",
-				CloneInProgress: false,
+			ExpectedDetails: []any{&v1.NotFoundPayload{
+				Repo:            "github.com/nicksnyder/go-i18n",
+				CloneInProgress: true,
 			}},
 		},
 		{
@@ -125,7 +125,7 @@ func TestExecRequest(t *testing.T) {
 			ExpectedBody: "testerror",
 			ExpectedDetails: []any{&v1.ExecStatusPayload{
 				StatusCode: 1,
-				Stderr:     "testerror",
+				Stderr:     "teststderr",
 			}},
 		},
 		{
@@ -191,6 +191,7 @@ func TestExecRequest(t *testing.T) {
 			_, _ = cmd.Stderr.Write([]byte("teststderr"))
 			return 42, nil
 		case "testerror":
+			_, _ = cmd.Stderr.Write([]byte("teststderr"))
 			return 1, errors.New("testerror")
 		case "testecho", "testcat":
 			// We do an actual exec in this case to test that code path.
@@ -236,10 +237,12 @@ func TestExecRequest(t *testing.T) {
 				s, ok := status.FromError(err)
 				require.True(t, ok)
 				require.Equal(t, test.ExpectedCode, s.Code())
-				// TODO: Enable.
-				// if len(test.ExpectedDetails) > 0 {
-				// 	require.Equal(t, test.ExpectedDetails, s.Details())
-				// }
+
+				if len(test.ExpectedDetails) > 0 {
+					if diff := cmp.Diff(test.ExpectedDetails, s.Details(), cmpopts.IgnoreUnexported(v1.ExecStatusPayload{}, v1.NotFoundPayload{})); diff != "" {
+						t.Fatalf("unexpected error details (-want +got):\n%s", diff)
+					}
+				}
 
 				if strings.TrimSpace(s.Message()) != test.ExpectedBody {
 					t.Errorf("wrong error body: expected %q, got %q", test.ExpectedBody, s.Message())
