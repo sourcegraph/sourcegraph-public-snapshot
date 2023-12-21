@@ -8,7 +8,7 @@ import { stringHuman } from '@sourcegraph/shared/out/src/search/query/printer'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
-import { succeedScan } from '@sourcegraph/shared/src/search/query/transformer'
+import { omitFilter, succeedScan } from '@sourcegraph/shared/src/search/query/transformer'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { Badge, Button, Icon, H4, Input, LanguageIcon } from '@sourcegraph/wildcard'
 
@@ -21,7 +21,7 @@ interface SearchDynamicFilterProps {
      * Specifies which type filter we want to render in this particular
      * filter section, it could be lang filter, repo filter, or file filters.
      */
-    filterType: FilterType
+    filterType: FilterType | FilterType[]
 
     /**
      * Filter query that contains all filter-like query that were applied by users
@@ -36,6 +36,8 @@ interface SearchDynamicFilterProps {
      * because in stream API these filters still have file kind.
      */
     filterAlias?: string
+
+    exclusive?: boolean
 
     /**
      * List of streamed filters from search stream API
@@ -57,19 +59,27 @@ interface SearchDynamicFilterProps {
  * come from the search stream API.
  */
 export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
-    const { filters, filterType, filterAlias, filterQuery, renderItem, onFilterQueryChange } = props
+    const { filters, filterType, filterAlias, filterQuery, exclusive = false, renderItem, onFilterQueryChange } = props
 
     const [showAllFilters, setShowAllFilters] = useState(false)
     const [searchTerm, setSearchTerm] = useState<string>('')
 
+    const filterTypes = useMemo(() => {
+        if (Array.isArray(filterType)) {
+            return filterType
+        }
+
+        return [filterType]
+    }, [filterType])
+
     // Scan the filter query (which comes from URL param) and extract
     // all appearances of a filter type that we're looking for in the
     const filterQueryFilters = useMemo(() => {
-        const typedFilters = findFilters(succeedScan(filterQuery), filterType)
+        const typedFilters = filterTypes.flatMap(filterType => findFilters(succeedScan(filterQuery), filterType))
         const aliasedFilters = filterAlias ? findFilters(succeedScan(filterQuery), filterAlias) : []
 
         return [...typedFilters, ...aliasedFilters]
-    }, [filterQuery, filterAlias, filterType])
+    }, [filterQuery, filterAlias, filterTypes])
 
     // Compares filters stringified value to match selected filters in URL
     const isSelected = useCallback(
@@ -97,17 +107,24 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
                 } as Filter
             })
 
-            const otherFilters =
-                filters?.filter(filter => filter.kind === filterType && !isSelected(filter.value)) ?? []
+            const otherFilters = filterTypes.flatMap(
+                filterType => filters?.filter(filter => filter.kind === filterType && !isSelected(filter.value)) ?? []
+            )
 
             return [...mappedSelectedFilters, ...otherFilters]
         }
 
-        return filters?.filter(filter => filter.kind === filterType) ?? []
-    }, [filters, filterQueryFilters])
+        return filterTypes.flatMap(filterType => filters?.filter(filter => filter.kind === filterType) ?? [])
+    }, [filterTypes, filters, filterQueryFilters])
 
     const handleFilterClick = (filter: string, remove?: boolean) => {
-        const updatedQuery = remove ? filterQuery.replace(filter, '').trim() : `${filterQuery} ${filter}`
+        const preparedFilterQuery = exclusive
+            ? filterQueryFilters.reduce((storeQuery, filter) => omitFilter(storeQuery, filter), filterQuery)
+            : filterQuery
+
+        const updatedQuery = remove
+            ? preparedFilterQuery.replace(filter, '').trim()
+            : `${preparedFilterQuery} ${filter}`
 
         onFilterQueryChange(updatedQuery)
     }
@@ -121,13 +138,13 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
 
     return (
         <div className={styles.root}>
-            <H4 className={styles.heading}>By {filterType}</H4>
+            <H4 className={styles.heading}>By {filterTypes.join(',')}</H4>
 
             {mappedFilters.length > MAX_FILTERS_NUMBER && (
                 <Input
                     variant="small"
                     value={searchTerm}
-                    placeholder={`Filter ${filterType}`}
+                    placeholder={`Filter ${filterTypes.join(',')}`}
                     onChange={event => setSearchTerm(event.target.value)}
                 />
             )}

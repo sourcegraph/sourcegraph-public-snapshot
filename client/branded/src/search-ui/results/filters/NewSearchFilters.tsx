@@ -17,7 +17,7 @@ import {
     toSearchSyntaxTypeFilter,
 } from './components/filter-type-list/FilterTypeList'
 import { useFilterQuery } from './hooks'
-import { SearchFilterType, SYMBOL_KIND_FILTERS } from './types'
+import { COMMIT_DATE_FILTERS, SearchFilterType, SYMBOL_KIND_FILTERS } from './types'
 
 import styles from './NewSearchFilters.module.scss'
 
@@ -84,6 +84,17 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
                     <SearchDynamicFilter
                         filterType={FilterType.select}
                         filters={SYMBOL_KIND_FILTERS}
+                        exclusive={true}
+                        filterQuery={filterQuery}
+                        onFilterQueryChange={setFilterQuery}
+                    />
+                )}
+
+                {type === SearchFilterType.Commits && (
+                    <SearchDynamicFilter
+                        filterType={[FilterType.after, FilterType.before]}
+                        filters={COMMIT_DATE_FILTERS}
+                        exclusive={true}
                         filterQuery={filterQuery}
                         onFilterQueryChange={setFilterQuery}
                     />

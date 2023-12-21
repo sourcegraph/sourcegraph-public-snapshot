@@ -66,3 +66,9 @@ export const SYMBOL_KIND_FILTERS: Filter[] = [
     { kind: 'select', label: 'Class', count: 0, limitHit: false, value: 'select:symbol.class' },
     { kind: 'select', label: 'Enum', count: 0, limitHit: false, value: 'select:symbol.enum' },
 ]
+
+export const COMMIT_DATE_FILTERS: Filter[] = [
+    { kind: 'after', label: 'Last 24 hours', count: 0, limitHit: false, value: 'after:yesterday' },
+    { kind: 'before', label: 'Last week', count: 0, limitHit: false, value: 'before:"1 week ago"' },
+    { kind: 'before', label: 'Last month', count: 0, limitHit: false, value: 'before:"1 month ago"' },
+]
