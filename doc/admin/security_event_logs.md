@@ -23,16 +23,16 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
   - anonymousUserID for unauthenitcated users
   - source of the log
   - arguments relevant to the action
-- Example of invoking the function
+- Example of using the function to logan event
   ```go
-  db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailVerified, r.URL.Path, uint32(actr.UID), "", "BACKEND", email)
+  db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailAdded, r.URL.Path, uint32(actr.UID), "", "BACKEND", email)
 
 - The function sends the log event it creates to be pushed to the right location based on the site-config settings
 - The function also checks to make sure that marshalling the arguments does not cause as error
 
 ## How to find security events in logs
 - Security events are logged with all the relevant information associated with the actions
-- Depending on the location of the log destination, the event log can be either found in your application log output or in the database or both.
+- Depending on the location of the log destination, the event log can be either found in the application log output or in the database or both.
 - A sample output of a logged event from application logs would look similar to this:
   ```JSON
   {
@@ -77,5 +77,5 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
 - Entity field can be used to filter out all security events
 - Action field will provide information on the event and can be correlated with the action taken, in this case EmailAdded
 - The actorUID can be used to filter out events from a particular user
-- UseriD can be used to filter out events taken on a particular user's information
+- UseriD can be used to filter out actions taken on a particular user's information
 - 
