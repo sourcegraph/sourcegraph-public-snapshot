@@ -55,3 +55,13 @@
     align-items: flex-start;
     gap: 0.25rem;
 }
+
+.avatar {
+    margin-right: 0.5rem;
+    font-size: 0.75rem;
+    background: var(--primary);
+
+    &::after {
+        display: none;
+    }
+}

@@ -271,7 +271,7 @@ export const utilityFilter = (filter: Filter) => (filter.count === 0 ? filter.va
 
 export const authorFilter = (filter: Filter) => (
     <>
-        <UserAvatar size={14} user={{ avatarURL: null, displayName: filter.label }} className="mr-2" />
+        <UserAvatar size={14} user={{ avatarURL: null, displayName: filter.label }} className={styles.avatar} />
         {filter.label}
     </>
 )
