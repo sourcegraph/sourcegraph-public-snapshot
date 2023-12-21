@@ -123,7 +123,7 @@ const AddEventNamePopover = ({ eventNames, onSelect }: PopoverProps): JSX.Elemen
             {eventNames.map(eventName =>
                 eventName ? (
                     <Button
-                        className='d-block'
+                        className="d-block"
                         key={eventName}
                         onClick={() => {
                             onSelect(eventName)
