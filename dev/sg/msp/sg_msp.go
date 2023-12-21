@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/cloudsqlproxy"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/example"
@@ -343,6 +344,48 @@ full access, use the '-write-access' flag.
 			Usage:   "Manage Terraform Cloud workspaces for a service",
 			Before:  msprepo.UseManagedServicesRepo,
 			Subcommands: []*cli.Command{
+				{
+					Name:        "view",
+					Usage:       "View MSP Terraform Cloud workspaces",
+					Description: "You may need to request access to the workspaces - see https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/#terraform-cloud",
+					UsageText: `
+# View all workspaces for all MSP services
+sg msp tfc view
+
+# View all workspaces for all environments for a MSP service
+sg msp tfc view <service>
+
+# View all workspaces for a specific MSP service environment
+sg msp tfc view <service> <environment>
+`,
+					ArgsUsage:    "[service ID] [environment ID]",
+					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
+					Action: func(c *cli.Context) error {
+						if c.Args().Len() == 0 {
+							std.Out.WriteNoticef("Opening link to all MSP Terraform Cloud workspaces in browser...")
+							return open.URL(fmt.Sprintf("https://app.terraform.io/app/sourcegraph/workspaces?tag=%s",
+								terraformcloud.MSPWorkspaceTag))
+						}
+
+						service, err := useServiceArgument(c)
+						if err != nil {
+							return err
+						}
+						if c.Args().Len() == 1 {
+							std.Out.WriteNoticef("Opening link to service Terraform Cloud workspaces in browser...")
+							return open.URL(fmt.Sprintf("https://app.terraform.io/app/sourcegraph/workspaces?tag=%s",
+								terraformcloud.ServiceWorkspaceTag(service.Service)))
+						}
+
+						env := service.GetEnvironment(c.Args().Get(1))
+						if env == nil {
+							return errors.Wrapf(err, "environment %q not found", c.Args().Get(1))
+						}
+						std.Out.WriteNoticef("Opening link to service environment Terraform Cloud workspaces in browser...")
+						return open.URL(fmt.Sprintf("https://app.terraform.io/app/sourcegraph/workspaces?tag=%s",
+							terraformcloud.EnvironmentWorkspaceTag(service.Service, *env)))
+					},
+				},
 				{
 					Name:  "sync",
 					Usage: "Create or update all required Terraform Cloud workspaces for an environment",

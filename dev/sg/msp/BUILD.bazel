@@ -15,6 +15,7 @@ go_library(
         "//dev/managedservicesplatform/terraformcloud",
         "//dev/sg/cloudsqlproxy",
         "//dev/sg/internal/category",
+        "//dev/sg/internal/open",
         "//dev/sg/internal/secrets",
         "//dev/sg/internal/std",
         "//dev/sg/msp/example",
