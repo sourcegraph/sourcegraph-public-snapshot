@@ -227,11 +227,7 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                                         </span>
                                     </td>
                                     <td className={classNames(styles.commitDate, 'text-muted')}>
-                                        <Timestamp
-                                            noAbout={true}
-                                            noAgo={true}
-                                            date={getCommitDate(fileHistoryByPath[entry.path])}
-                                        />
+                                        <Timestamp noAbout={true} date={getCommitDate(fileHistoryByPath[entry.path])} />
                                     </td>
                                 </>
                             )}
