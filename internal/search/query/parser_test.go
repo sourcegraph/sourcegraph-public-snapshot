@@ -982,4 +982,16 @@ func TestGlobToRegex(t *testing.T) {
 	}).Equal(t, test(`f:has.content(apple)`))
 	autogold.Expect(value{
 		Result: `{"Kind":1,"Operands":[{"field":"r","value":"go$","negated":false},{"field":"r","value":"has.topic(language)","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`}).Equal(t, test(`r:*go r:has.topic(language)`))
+	autogold.Expect(value{
+		Result:      `{"field":"r","value":"^sourcegraph$@ae3f1c","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":20}}`,
+	}).Equal(t, test(`r:sourcegraph@ae3f1c`))
+	autogold.Expect(value{
+		Result:      `{"field":"r","value":"^sourcegraph$@main","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":18}}`,
+	}).Equal(t, test(`r:sourcegraph@main`))
+	autogold.Expect(value{
+		Result:      `{"field":"r","value":"sourcegraph$@*refs/heads*","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":27}}`,
+	}).Equal(t, test(`r:*sourcegraph@*refs/heads*`))
 }
