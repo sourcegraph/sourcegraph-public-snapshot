@@ -38,26 +38,26 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
   {
   ...
   {
-    "message": "EmailAdded (sampling immunity token: 7100642b-e660-4041-983f-461e42ecda0b)",
+    "message": "EmailAdded (sampling immunity token: 12345-222-3333-5454-9w08fs0s9d8f)",
     "Caller": "audit/audit.go:57",
     "Attributes": {
       "audit": {
         "actor": {
-          "X-Forwarded-For": "108.34.242.215,172.68.54.47,34.36.184.63, 34.127.204.170, 34.120.91.33",
-          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
-          "ip": "130.211.3.155",
-          "actorUID": "223955"
+          "X-Forwarded-For": "127.0.0.1",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ",
+          "ip": "100.211.3.155",
+          "actorUID": "123245"
         },
         "entity": "security events",
-        "auditId": "7100642b-e660-4041-983f-461e42ecda0b",
+        "auditId": "12345-222-3333-5454-9w08fs0s9d8f",
         "action": "EmailAdded"
       },
       "event": {
         "URL": "",
-        "argument": "\"mark@cunningfolk.media\"",
+        "argument": "\"new@sourcegraph.com\"",
         "AnonymousUserID": "",
         "UserID": 223955,
-        "source": "BACKEND",
+        "source": "12345",
         "timestamp": "2023-12-21 02:41:08.649603776 +0000 UTC",
         "version": "255367_2023-12-20_5.2-a3143120c41e"
       }
