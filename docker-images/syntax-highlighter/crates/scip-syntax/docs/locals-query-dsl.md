@@ -1,10 +1,13 @@
 # The Query DSL
 
-For specifying how to resolve local bindings we use the [tree-sitter query] language and a set of custom captures and properties. The three main concepts are _scopes_, _definitions_, and _references_.
+For specifying how to resolve local bindings we use the [tree-sitter query] language and a set of custom captures and properties.
+The three main concepts are _scopes_, _definitions_, and _references_.
 
 ## Scopes
 
-Scopes are specified by labeling a capture as a `@scope[.kind]`. The optional scope kind can be used to hoist definitions to scopes of that kind. There is an implicit top-level scope that is of kind `"global"`
+Scopes are specified by labeling a capture as a `@scope[.kind]`.
+The optional scope kind can be used to hoist definitions to scopes of that kind.
+There is an implicit top-level scope that is of kind `"global"`
 
 ### Examples
 
@@ -42,7 +45,8 @@ If you want a definition to be _hoisted_ to the start of a scope instead, you ca
  #set! "hoist" "function")
 ```
 
-The definition will be visible to the nearest enclosing scope with kind `function`. If no such enclosing scope is found, the definition will be visible in the global scope.
+The definition will be visible to the nearest enclosing scope with kind `function`.
+If no such enclosing scope is found, the definition will be visible in the global scope.
 
 ```js
 my_func(10) // Will be resolved
@@ -93,6 +97,7 @@ References are specified by labeling a capture as a `@reference`.
 (variable_expression (identifier) @reference)
 ```
 
-They will be resolved against definitions in the current scope and parent scopes. Non-hoisted definitions are only resolved if they are defined _before_ the reference.
+They will be resolved against definitions in the current scope and parent scopes.
+Non-hoisted definitions are only resolved if they are defined _before_ the reference.
 
 [tree-sitter query]: https://tree-sitter.github.io/tree-sitter/using-parsers#pattern-matching-with-queries

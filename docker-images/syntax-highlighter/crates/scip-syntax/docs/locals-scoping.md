@@ -24,15 +24,11 @@ Results in the following error:
       File "<stdin>", line 4, in my_fun
     UnboundLocalError: cannot access local variable 'x' where it is not associated with a value
 
-Variables are not exactly lexically scoped. While they can be
-referenced, assigning to a variable from a parent scope in a nested
-function actually creates a new local binding in that function
-instead. This can be circumvented using the `global` or `nonlocal`
-keywords, but I don't know how I'd go about handling that in a
-language-agnostic fashion.
+Variables are not exactly lexically scoped.
+While they can be referenced, assigning to a variable from a parent scope in a nested function actually creates a new local binding in that function instead.
+This can be circumvented using the `global` or `nonlocal` keywords, but I don't know how I'd go about handling that in a language-agnostic fashion.
 
-Notably Python hoists to the function level, assigning a variable in a
-nested-if creates a new function scoped variable
+Notably Python hoists to the function level, so assigning a variable in a nested-if creates a new function scoped variable.
 
 ```python
 y = 0 # def 0
@@ -57,9 +53,7 @@ Results:
 
 ## JS/TS does have hoisting
 
-Here's a program that shows that JS uses hoisting for both let and
-var, but var is hoisted to the nearest function scope, while let is
-block scoped.
+Here's a program that shows that JS uses hoisting for both let and var, but var is hoisted to the nearest function scope, while let is block scoped.
 
 ```js
 let y = 15 // def 1
@@ -95,18 +89,14 @@ Results:
 
 ## Java does not have hoisting, but we can treat it as if it did anyway
 
-While Java does not exactly do hoisting, it also doesn't allow the
-kinds of shadowing one would need to exploit that fact. We can treat
-it as if it did do (block scoped) hoisting, and we'd only 'get it
-wrong' for code that javac wouldn't accept anyway.
+While Java does not exactly do hoisting, it also doesn't allow the kinds of shadowing one would need to exploit that fact.
+We can treat it as if it did do (block scoped) hoisting, and we'd only 'get it wrong' for code that javac wouldn't accept anyway.
 
 
 ## Scala does not have hoisting, but we can treat it as if it did anyway
 
-While Scala is fine with shadowing it still does not allow two
-different references to a variable of the same name in the same block.
-This means it can also be treated as a language with (block scoped)
-hoisting.
+While Scala is fine with shadowing it still does not allow two different references to a variable of the same name in the same block.
+This means it can also be treated as a language with (block scoped) hoisting.
 
 
 ## Go does not have hoisting
@@ -146,9 +136,8 @@ Results:
 
 ## Perl does not have hoisting
 
-Here's a program showing how Perl has full lexical scoping (for `my`
-variables). It also has full on dynamic scoping with the `local`
-keyword, but there's no hope for statically analyzing that.
+Here's a program showing how Perl has full lexical scoping (for `my` variables).
+It also has full on dynamic scoping with the `local` keyword, but there's no hope for statically analyzing that.
 
 ```perl
 my $x = 10; # def 1
