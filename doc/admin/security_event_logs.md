@@ -13,7 +13,21 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
 
 
 ## How to log a security event
-To log a security event, 
+- All the logging for security event is done through our security_event_log.go functions
+- To log an event, the LogSecurityEvent function can be invoked which will create an event with information provided and then submit it for logging to the right place
+- This function takes following information to create a log event
+  - Context from the where the log is being called
+  - SecurityEventName which is predefined here
+  - URL if available
+  - userID of the user that the action is applied towards
+  - anonymousUserID for unauthenitcated users
+  - source of the log
+  - arguments relevant to the action
+- Example of invoking the function
+  ```go
+  			if err := db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailVerified, r.URL.Path, uint32(actr.UID), "", "BACKEND", email); err != nil {
+
+- 
 
 ## How to find security events in logs
 
