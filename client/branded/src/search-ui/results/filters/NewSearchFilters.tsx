@@ -23,6 +23,7 @@ import {
     resolveFilterTypeValue,
     toSearchSyntaxTypeFilter,
 } from './components/filter-type-list/FilterTypeList'
+import { FiltersDocFooter } from './components/filters-doc-footer/FiltersDocFooter'
 import { useFilterQuery } from './hooks'
 import { COMMIT_DATE_FILTERS, SearchFilterType, SYMBOL_KIND_FILTERS } from './types'
 
@@ -143,6 +144,8 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
                     renderItem={utilityFilter}
                     onFilterQueryChange={setFilterQuery}
                 />
+
+                <FiltersDocFooter className={styles.footer} />
             </aside>
         </Panel>
     )
