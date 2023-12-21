@@ -22,7 +22,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
@@ -125,9 +124,6 @@ func (s *Store) Start() {
 		metrics.MustRegisterDiskMonitor(s.Path)
 
 		logger := s.Log
-		if deploy.IsApp() {
-			logger = logger.IncreaseLevel("mountinfo", "", log.LevelError)
-		}
 		o := mountinfo.CollectorOpts{Namespace: "searcher"}
 		m := mountinfo.NewCollector(logger, o, map[string]string{"cacheDir": s.Path})
 		s.ObservationCtx.Registerer.MustRegister(m)

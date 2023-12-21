@@ -1849,14 +1849,6 @@ def go_dependencies():
         version = "v1.0.3",
     )
     go_repository(
-        name = "com_github_fergusstrange_embedded_postgres",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/fergusstrange/embedded-postgres",
-        replace = "github.com/sourcegraph/embedded-postgres",
-        sum = "h1:QcxHhicvH6TFpSmC3vZKWbwLSHmwy72+CESqjjaIsZA=",
-        version = "v1.19.1-0.20230624001757-345a8df15ded",
-    )
-    go_repository(
         name = "com_github_flosch_pongo2_v4",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/flosch/pongo2/v4",
@@ -2584,13 +2576,6 @@ def go_dependencies():
         importpath = "github.com/golang/groupcache",
         sum = "h1:oI5xCqsCo564l8iNU+DwB5epxmsaqB+rhGL0m5jtYqE=",
         version = "v0.0.0-20210331224755-41bb18bfe9da",
-    )
-    go_repository(
-        name = "com_github_golang_jwt_jwt",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/golang-jwt/jwt",
-        sum = "h1:IfV12K8xAKAnZqdXVzCZ+TOjboZ2keLg81eXfW3O+oY=",
-        version = "v3.2.2+incompatible",
     )
     go_repository(
         name = "com_github_golang_jwt_jwt_v4",

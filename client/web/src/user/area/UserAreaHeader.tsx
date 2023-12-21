@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { NavLink } from 'react-router-dom'
 
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { Icon, Link, PageHeader } from '@sourcegraph/wildcard'
+import { Icon, PageHeader } from '@sourcegraph/wildcard'
 
 import type { BatchChangesProps } from '../../batches'
 import type { NavItemWithIconDescriptor } from '../../util/contributions'
@@ -20,7 +20,6 @@ interface Props extends UserAreaRouteContext {
 
 export interface UserAreaHeaderContext extends BatchChangesProps, Pick<Props, 'user'> {
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
 }
 
 export interface UserAreaHeaderNavItem extends NavItemWithIconDescriptor<UserAreaHeaderContext> {}
@@ -40,24 +39,21 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
      * (every location change, for example). This prevents it from flickering.
      */
     const path = useMemo(
-        () =>
-            props.isCodyApp
-                ? { text: 'Settings' }
-                : {
-                      text: (
-                          <span className="align-middle">
-                              {props.user.displayName ? (
-                                  <>
-                                      {props.user.displayName} ({props.user.username})
-                                  </>
-                              ) : (
-                                  props.user.username
-                              )}
-                          </span>
-                      ),
-                      icon: () => <UserAvatar className={styles.avatar} user={props.user} />,
-                  },
-        [props.user, props.isCodyApp]
+        () => ({
+            text: (
+                <span className="align-middle">
+                    {props.user.displayName ? (
+                        <>
+                            {props.user.displayName} ({props.user.username})
+                        </>
+                    ) : (
+                        props.user.username
+                    )}
+                </span>
+            ),
+            icon: () => <UserAvatar className={styles.avatar} user={props.user} />,
+        }),
+        [props.user]
     )
 
     const filteredNavItems = navItems.filter(({ condition = () => true }) => condition(props))
@@ -65,10 +61,7 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
     return (
         <div className={className}>
             <div className="container">
-                <PageHeader
-                    className="mb-3"
-                    actions={props.isCodyApp && <Link to="/site-admin/configuration">Advanced settings</Link>}
-                >
+                <PageHeader className="mb-3">
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <PageHeader.Breadcrumb icon={path.icon}>{path.text}</PageHeader.Breadcrumb>
                     </PageHeader.Heading>

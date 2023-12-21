@@ -26,6 +26,7 @@ const repoDefaults: RepositoryFields = {
     isFork: false,
     metadata: [],
     sourceType: RepositoryType.GIT_REPOSITORY,
+    topics: [],
 }
 
 const queryRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>

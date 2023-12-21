@@ -13,7 +13,7 @@ import { ProgressBar } from '../ProgressBar'
 import { FooterWidget, CustomNextButton } from '../setup-steps'
 
 import { CodeHostDeleteModal, type CodeHostToDelete } from './components/code-host-delete-modal'
-import { AppRemoteNotice, CodeHostsPicker } from './components/code-host-picker'
+import { CodeHostsPicker } from './components/code-host-picker'
 import { CodeHostCreation, CodeHostEdit } from './components/code-hosts'
 import { CodeHostsNavigation } from './components/navigation'
 import { getNextButtonLabel, getNextButtonLogEvent, isAnyConnectedCodeHosts } from './helpers'
@@ -25,7 +25,6 @@ interface RemoteRepositoriesStepProps extends TelemetryProps, HTMLAttributes<HTM
     baseURL: string
     description?: boolean
     progressBar?: boolean
-    isCodyApp: boolean
 }
 
 export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
@@ -34,7 +33,6 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
     baseURL,
     description = true,
     progressBar = true,
-    isCodyApp = false,
     ...attributes
 }) => {
     const location = useLocation()
@@ -80,7 +78,7 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
 
                 <Container className={styles.contentMain}>
                     <Routes>
-                        <Route index={true} element={isCodyApp ? <AppRemoteNotice /> : <CodeHostsPicker />} />
+                        <Route index={true} element={<CodeHostsPicker />} />
                         <Route
                             path=":codeHostType/create"
                             element={<CodeHostCreation telemetryService={telemetryService} />}

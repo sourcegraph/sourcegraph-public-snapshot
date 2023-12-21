@@ -25,7 +25,6 @@ import styles from './GlobalAlerts.module.scss'
 
 interface Props {
     authenticatedUser: AuthenticatedUser | null
-    isCodyApp: boolean
 }
 
 // NOTE: The name of the query is also added in the refreshSiteFlags() function
@@ -50,7 +49,7 @@ const adminOnboardingRemovedAlerts = ['externalURL', 'email.smtp', 'enable repos
 /**
  * Fetches and displays relevant global alerts at the top of the page
  */
-export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser, isCodyApp }) => {
+export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser }) => {
     const settings = useSettings()
     const [isAdminOnboardingEnabled] = useFeatureFlag('admin-onboarding', true)
     const { data } = useQuery<GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables>(QUERY, {
@@ -72,7 +71,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
             {siteFlagsValue && (
                 <>
-                    {siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 && !isCodyApp && (
+                    {siteFlagsValue?.needsRepositoryConfiguration && (
                         <NeedsRepositoryConfigurationAlert className={styles.alert} />
                     )}
                     {siteFlagsValue.freeUsersExceeded && (
@@ -128,7 +127,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                 </DismissibleAlert>
             )}
             {/* Cody app creates a global policy during setup but this alert is flashing during connection to dotcom account */}
-            {showNoEmbeddingPoliciesAlert && authenticatedUser?.siteAdmin && !isCodyApp && (
+            {showNoEmbeddingPoliciesAlert && authenticatedUser?.siteAdmin && (
                 <DismissibleAlert
                     key="no-embeddings-policies-alert"
                     partialStorageKey="no-embeddings-policies-alert"
@@ -145,9 +144,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
             )}
             <Notices alertClassName={styles.alert} location="top" />
 
-            {/* The link in the notice doesn't work in the Cody app since it's rendered by Markdown,
-            so don't show it there for now. */}
-            {!isCodyApp && <VerifyEmailNotices authenticatedUser={authenticatedUser} alertClassName={styles.alert} />}
+            <VerifyEmailNotices authenticatedUser={authenticatedUser} alertClassName={styles.alert} />
         </div>
     )
 }

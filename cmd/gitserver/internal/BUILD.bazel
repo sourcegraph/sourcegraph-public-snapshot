@@ -39,7 +39,6 @@ go_library(
         "//internal/actor",
         "//internal/api",
         "//internal/conf",
-        "//internal/conf/deploy",
         "//internal/database",
         "//internal/database/dbutil",
         "//internal/diskusage",

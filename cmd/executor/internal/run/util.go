@@ -19,7 +19,6 @@ import (
 	apiworker "github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	executorutil "github.com/sourcegraph/sourcegraph/internal/executor/util"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -40,7 +39,7 @@ func newQueueTelemetryOptions(ctx context.Context, runner util.CmdRunner, useFir
 		logger.Error("Failed to get git version", log.Error(err))
 	}
 
-	if !config.IsKubernetes() && !deploy.IsApp() {
+	if !config.IsKubernetes() {
 		t.SrcCliVersion, err = util.GetSrcVersion(ctx, runner)
 		if err != nil {
 			logger.Error("Failed to get src-cli version", log.Error(err))

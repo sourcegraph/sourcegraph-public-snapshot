@@ -15,7 +15,6 @@ import { GlobalNavbar, type GlobalNavbarProps } from './GlobalNavbar'
 
 const defaultProps: GlobalNavbarProps = {
     isSourcegraphDotCom: false,
-    isCodyApp: false,
     settingsCascade: {
         final: null,
         subjects: null,

@@ -25,7 +25,6 @@ client/wildcard/node_modules
 client/vscode/node_modules
 dev/release/node_modules
 client/plugin-backstage/node_modules
-client/app-shell/node_modules
 
 cmd/symbols/squirrel/test_repos/starlark
 

@@ -26,7 +26,6 @@ export const AdminSidebarItems: StoryFn = () => (
     <WebStory>
         {webProps => (
             <Grid columnCount={5}>
-                <Code>isCodyApp=true</Code>
                 <Code>default</Code>
                 <Code>isSourcegraphDotCom=true</Code>
                 <Code>batchChangesEnabled=false</Code>
@@ -35,18 +34,6 @@ export const AdminSidebarItems: StoryFn = () => (
                     {...webProps}
                     groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={false}
-                    isCodyApp={true}
-                    batchChangesEnabled={true}
-                    batchChangesExecutionEnabled={true}
-                    batchChangesWebhookLogsEnabled={true}
-                    codeInsightsEnabled={true}
-                    endUserOnboardingEnabled={false}
-                />
-                <SiteAdminSidebar
-                    {...webProps}
-                    groups={siteAdminSidebarGroups}
-                    isSourcegraphDotCom={false}
-                    isCodyApp={false}
                     batchChangesEnabled={true}
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
@@ -57,7 +44,6 @@ export const AdminSidebarItems: StoryFn = () => (
                     {...webProps}
                     groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={true}
-                    isCodyApp={false}
                     batchChangesEnabled={true}
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
@@ -68,7 +54,6 @@ export const AdminSidebarItems: StoryFn = () => (
                     {...webProps}
                     groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={false}
-                    isCodyApp={false}
                     batchChangesEnabled={false}
                     batchChangesExecutionEnabled={false}
                     batchChangesWebhookLogsEnabled={false}
@@ -79,7 +64,6 @@ export const AdminSidebarItems: StoryFn = () => (
                     {...webProps}
                     groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={false}
-                    isCodyApp={false}
                     batchChangesEnabled={true}
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
