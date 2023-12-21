@@ -170,10 +170,13 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         [onSearchSubmit]
     )
 
+    console.log(results?.results)
+
     return (
         <div className={styles.root}>
             <NewSearchFilters
                 query={submittedURLQuery}
+                results={results?.results}
                 filters={results?.filters}
                 className={styles.newFilters}
                 onQueryChange={handleFilterPanelQueryChange}

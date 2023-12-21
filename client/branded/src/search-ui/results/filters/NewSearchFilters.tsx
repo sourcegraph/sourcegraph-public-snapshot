@@ -7,7 +7,7 @@ import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import type { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter, succeedScan, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import type { Filter as ResultFilter } from '@sourcegraph/shared/src/search/stream'
+import type { Filter as ResultFilter, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { Panel } from '@sourcegraph/wildcard'
 
 import {
@@ -26,18 +26,20 @@ import {
 import { FiltersDocFooter } from './components/filters-doc-footer/FiltersDocFooter'
 import { useFilterQuery } from './hooks'
 import { COMMIT_DATE_FILTERS, SearchFilterType, SYMBOL_KIND_FILTERS } from './types'
+import { generateAuthorFilters } from './utils'
 
 import styles from './NewSearchFilters.module.scss'
 
 interface NewSearchFiltersProps {
     query: string
+    results: SearchMatch[] | undefined
     filters?: ResultFilter[]
     className?: string
     onQueryChange: (nextQuery: string) => void
 }
 
 export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
-    const { query, filters, className, onQueryChange } = props
+    const { query, results, filters, className, onQueryChange } = props
 
     const [filterQuery, setFilterQuery] = useFilterQuery()
 
@@ -57,6 +59,8 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
 
         return SearchFilterType.Code
     }, [query])
+
+    const authorFilters = useMemo(() => generateAuthorFilters(results ?? []), [results])
 
     const handleFilterTypeChange = (filterType: SearchFilterType): void => {
         switch (filterType) {
@@ -101,15 +105,25 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
                 )}
 
                 {type === SearchFilterType.Commits && (
-                    <SearchDynamicFilter
-                        filterType={[FilterType.after, FilterType.before]}
-                        filters={COMMIT_DATE_FILTERS}
-                        exclusive={true}
-                        staticFilters={true}
-                        filterQuery={filterQuery}
-                        renderItem={commitDateFilter}
-                        onFilterQueryChange={setFilterQuery}
-                    />
+                    <>
+                        <SearchDynamicFilter
+                            filterType={FilterType.author}
+                            filters={authorFilters}
+                            exclusive={true}
+                            filterQuery={filterQuery}
+                            onFilterQueryChange={setFilterQuery}
+                        />
+
+                        <SearchDynamicFilter
+                            filterType={[FilterType.after, FilterType.before]}
+                            filters={COMMIT_DATE_FILTERS}
+                            exclusive={true}
+                            staticFilters={true}
+                            filterQuery={filterQuery}
+                            renderItem={commitDateFilter}
+                            onFilterQueryChange={setFilterQuery}
+                        />
+                    </>
                 )}
 
                 <SearchDynamicFilter
