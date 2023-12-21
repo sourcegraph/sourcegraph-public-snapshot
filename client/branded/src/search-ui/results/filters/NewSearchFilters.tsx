@@ -11,6 +11,7 @@ import type { Filter as ResultFilter, SearchMatch } from '@sourcegraph/shared/sr
 import { Panel } from '@sourcegraph/wildcard'
 
 import {
+    authorFilter,
     commitDateFilter,
     languageFilter,
     repoFilter,
@@ -111,6 +112,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
                             filters={authorFilters}
                             exclusive={true}
                             filterQuery={filterQuery}
+                            renderItem={authorFilter}
                             onFilterQueryChange={setFilterQuery}
                         />
 

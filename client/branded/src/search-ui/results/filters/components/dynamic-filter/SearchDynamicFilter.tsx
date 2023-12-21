@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
 import { useExperimentalFeatures } from '@sourcegraph/shared/out/src/settings/settings'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
@@ -267,3 +268,10 @@ export const symbolFilter = (filter: Filter) => {
 }
 
 export const utilityFilter = (filter: Filter) => (filter.count === 0 ? filter.value : filter.label)
+
+export const authorFilter = (filter: Filter) => (
+    <>
+        <UserAvatar size={14} user={{ avatarURL: null, displayName: filter.label }} className="mr-2" />
+        {filter.label}
+    </>
+)
