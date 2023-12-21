@@ -75,9 +75,13 @@ const UpdateMirrorRepositoryActionContainer: FC<UpdateMirrorRepositoryActionCont
     let info: React.ReactNode
     if (props.repo.mirrorInfo.cloneInProgress) {
         title = 'Cloning in progress...'
-        description =
-            <Code>{props.repo.mirrorInfo.cloneProgress}</Code> ||
+        description = props.repo.mirrorInfo.cloneProgress ? (
+            <div className="overflow-auto">
+                <Code>{props.repo.mirrorInfo.cloneProgress}</Code>
+            </div>
+        ) : (
             'This repository is currently being cloned from its remote repository.'
+        )
         buttonLabel = (
             <span>
                 <LoadingSpinner /> Cloning...
@@ -128,7 +132,7 @@ const UpdateMirrorRepositoryActionContainer: FC<UpdateMirrorRepositoryActionCont
         <ActionContainer
             title={title}
             titleAs="h3"
-            description={<div>{description}</div>}
+            description={description}
             buttonLabel={buttonLabel}
             buttonDisabled={buttonDisabled || props.disabled}
             buttonSubtitle={props.disabledReason}
@@ -280,30 +284,34 @@ const CorruptionLogsContainer: FC<CorruptionLogProps> = props => {
 
 interface RepoSettingsMirrorPageProps {
     repo: SettingsAreaRepositoryFields
+    disablePolling?: boolean
 }
 
 /**
  * The repository settings mirror page.
  */
-export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => {
+export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = ({
+    repo: initialRepo,
+    disablePolling = false,
+}) => {
     eventLogger.logPageView('RepoSettingsMirror')
     const [reachable, setReachable] = useState<boolean>()
     const [recloneRepository] = useMutation<RecloneRepositoryResult, RecloneRepositoryVariables>(
         RECLONE_REPOSITORY_MUTATION,
         {
-            variables: { repo: props.repo.id },
+            variables: { repo: initialRepo.id },
         }
     )
 
     const { data, error, refetch } = useQuery<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
         FETCH_SETTINGS_AREA_REPOSITORY_GQL,
         {
-            variables: { name: props.repo.name },
-            pollInterval: 3000,
+            variables: { name: initialRepo.name },
+            pollInterval: disablePolling ? undefined : 3000,
         }
     )
 
-    const repo = data?.repository ? data.repository : props.repo
+    const repo = data?.repository ? data.repository : initialRepo
 
     const onDidUpdateReachability = (reachable: boolean | undefined): void => setReachable(reachable)
 
