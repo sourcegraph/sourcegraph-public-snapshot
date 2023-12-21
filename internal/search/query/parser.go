@@ -883,7 +883,16 @@ func (p *parser) ParseParameter(label labels) (Parameter, bool, error) {
 
 	if label.IsSet(GlobFilters) && !parsedLabels.IsSet(IsPredicate) {
 		switch field {
-		case "r", "repo", "f", "file":
+		case "r", "repo":
+			rev := ""
+			if i := strings.Index(value, "@"); i != -1 {
+				value, rev = value[:i], value[i+1:]
+			}
+			value = globToRegex(value)
+			if rev != "" {
+				value += "@" + rev
+			}
+		case "f", "file":
 			value = globToRegex(value)
 		}
 	}
@@ -899,14 +908,6 @@ func (p *parser) ParseParameter(label labels) (Parameter, bool, error) {
 var regexSpecialCharacter = regexp.MustCompile(`[\$\(\)\*\+\.\?\[\\\]\^\{\|\}]`)
 
 func globToRegex(glob string) string {
-	// Split off the revision, if any.
-	var rev string
-	i := strings.Index(glob, "@")
-	if i != -1 {
-		rev = glob[i+1:]
-		glob = glob[:i]
-	}
-
 	// First, we escape all the regex special characters.
 	r := regexSpecialCharacter.ReplaceAllStringFunc(glob, func(match string) string {
 		if match == "*" {
@@ -931,10 +932,6 @@ func globToRegex(glob string) string {
 		r = strings.TrimSuffix(r, ".*")
 	} else {
 		r = r + "$"
-	}
-
-	if rev != "" {
-		r = r + "@" + rev
 	}
 
 	return r
