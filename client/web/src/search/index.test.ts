@@ -177,7 +177,7 @@ describe('repoFilterForRepoRevision escapes values with spaces', () => {
     })
 })
 
-describe('searchQueryForRepoRevision', () => {
+describe('repoFilterForRepoRevision', () => {
     test('respects pattern type', () => {
         expect(repoFilterForRepoRevision('foo bar', undefined, SearchPatternType.standard)).toStrictEqual(
             'repo:^foo\\ bar$ '
@@ -194,7 +194,7 @@ describe('searchQueryForRepoRevision', () => {
     })
 })
 
-describe('filterForFilePath', () => {
+describe('fileFilterForFilePath', () => {
     test('respects pattern type', () => {
         expect(fileFilterForFilePath('foo/bar/never panic', SearchPatternType.standard)).toStrictEqual(
             'file:^foo/bar/never\\ panic'
