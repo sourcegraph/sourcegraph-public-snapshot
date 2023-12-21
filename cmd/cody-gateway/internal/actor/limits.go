@@ -138,17 +138,28 @@ func (e ErrConcurrencyLimitExceeded) WriteResponse(w http.ResponseWriter) {
 // updateOnErrorLimiter calls Actor.Update if nextLimiter responds with certain
 // access errors.
 type updateOnErrorLimiter struct {
-	actor *Actor
+	logger log.Logger
+	actor  *Actor
 
 	nextLimiter limiter.Limiter
 }
 
 func (u updateOnErrorLimiter) TryAcquire(ctx context.Context) (func(context.Context, int) error, error) {
 	commit, err := u.nextLimiter.TryAcquire(ctx)
+	// If we have an access issue, try to update the actor in case they have
+	// been granted updated access.
 	if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RateLimitExceededError{}) {
 		oteltrace.SpanFromContext(ctx).
 			SetAttributes(attribute.Bool("update-on-error", true))
-		u.actor.Update(ctx) // TODO: run this in goroutine+background context maybe?
+		// Do update transiently, outside request hotpath
+		go func() {
+			if updateErr := u.actor.Update(context.WithoutCancel(ctx)); updateErr != nil &&
+				!IsErrActorRecentlyUpdated(updateErr) {
+				u.logger.Warn("unexpected error updating actor",
+					log.Error(updateErr),
+					log.NamedError("originalError", err))
+			}
+		}()
 	}
 	return commit, err
 }
