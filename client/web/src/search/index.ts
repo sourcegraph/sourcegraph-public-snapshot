@@ -6,7 +6,7 @@ import { startWith, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 import { memoizeObservable } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode } from '@sourcegraph/shared/src/search'
-import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
+import { discreteValueAliases, escapeSpaces, quoteIfWhitespace } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { findFilter, FilterKind, getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
@@ -154,14 +154,14 @@ export function searchQueryForRepoRevision(
     patternType?: SearchPatternType
 ): string {
     if (patternType === SearchPatternType.newStandardRC1) {
-        return `repo:${repoName}${revision ? `@${abbreviateOID(revision)}` : ''}`
+        return `repo:${quoteIfWhitespace(repoName)}${revision ? `@${abbreviateOID(revision)}` : ''}`
     }
     return `repo:${repoFilterForRepoRevision(repoName, revision)} `
 }
 
 export function fileFilterForFilePath(filePath: string, patternType?: SearchPatternType): string {
     if (patternType === SearchPatternType.newStandardRC1) {
-        return `file:${filePath}`
+        return `file:${quoteIfWhitespace(filePath)}`
     }
     return `file:${escapeSpaces('^' + escapeRegExp(filePath))}`
 }
