@@ -6,6 +6,10 @@
 
 set -eu
 
+echo "🧨"
+git status
+echo "🧨"
+
 # target-determinator looks at all the deps for the given targets and only print them back on STDOOUT
 # if it finds that one of inputs (transitive or not) has changed since a given commit.
 #
@@ -13,8 +17,7 @@ set -eu
 changes_count=$(target-determinator \
   --verbose \
   --targets \
-  //cmd/executor/vm-image:ami.push \
-  //cmd/executor/docker-mirror \
+  "//cmd/executor/vm-image:ami.build union //cmd/executor/docker-mirror:ami.build" \
   HEAD^ \
   | wc -l
 )
