@@ -103,8 +103,8 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 
 				outputPath := msprepo.ServiceYAMLPath(c.Args().First())
 
-				_ = os.MkdirAll(filepath.Dir(outputPath), 0755)
-				if err := os.WriteFile(outputPath, exampleSpec, 0644); err != nil {
+				_ = os.MkdirAll(filepath.Dir(outputPath), 0o755)
+				if err := os.WriteFile(outputPath, exampleSpec, 0o644); err != nil {
 					return err
 				}
 
@@ -324,7 +324,7 @@ full access, use the '-write-access' flag.
 							saUsername := strings.ReplaceAll(serviceAccountEmail,
 								".gserviceaccount.com", "")
 							if err := std.Out.WriteCode("bash",
-								fmt.Sprintf(`psql -U %s -d %s -h localhost -p %d`,
+								fmt.Sprintf(`psql -U %s -d %s -h 127.0.0.1 -p %d`,
 									saUsername,
 									db,
 									proxyPort)); err != nil {
@@ -486,7 +486,7 @@ Supports completions on services and environments.`,
 				}
 				if output := c.String("output"); output != "" {
 					_ = os.Remove(output)
-					if err := os.WriteFile(output, jsonSchema, 0644); err != nil {
+					if err := os.WriteFile(output, jsonSchema, 0o644); err != nil {
 						return err
 					}
 					std.Out.WriteSuccessf("Rendered service spec JSON schema in %s", output)
