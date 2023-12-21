@@ -328,7 +328,12 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     )
     const codeIntelExtension = useCodeIntelExtension(
         props.platformContext,
-        { repoName: blobInfo.repoName, filePath: blobInfo.filePath, commitID: blobInfo.commitID },
+        {
+            repoName: blobInfo.repoName,
+            filePath: blobInfo.filePath,
+            commitID: blobInfo.commitID,
+            languages: blobInfo.languages,
+        },
         blobInfo.mode
     )
     const pinnedTooltip = useCompartment(
@@ -543,7 +548,8 @@ function useCodeIntelExtension(
         filePath,
         commitID,
         revision,
-    }: { repoName: string; filePath: string; commitID: string; revision?: string },
+        languages,
+    }: { repoName: string; filePath: string; commitID: string; revision?: string; languages: string[] },
     mode: string
 ): Extension {
     const navigate = useNavigate()
@@ -574,8 +580,7 @@ function useCodeIntelExtension(
                 ? createCodeIntelExtension({
                       api: {
                           api,
-                          documentInfo: { repoName, filePath, commitID, revision },
-                          mode,
+                          documentInfo: { repoName, filePath, commitID, revision, languages },
                           createTooltipView: ({ view, token, hovercardData }) =>
                               new HovercardView(view, token, hovercardData),
                           openImplementations(_view, documentInfo, occurrence) {
