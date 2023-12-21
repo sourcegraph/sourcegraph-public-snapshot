@@ -104,9 +104,9 @@ What if I dont want these events to be logged?
 
 How can I correlate the actorID or userID to a user in the application?
 
-- The `audit.actor` node carries ID of the user who performed the action (`actorUID`), but it’s not mapped into a full Sourcegraph user right now. You can, however, obtain the user details by following these steps:
+- Currently UIDs are available in the log output but it’s not mapped into a full Sourcegraph user. You can, however, obtain the user details by following these steps:
 
-  1. Grab the user ID from the audit log
+  1. Grab the ID from the audit log
   1. Base64 [encode](https://www.base64encode.org) the ID with a "User:" prefix. For example, for Actor with ID 71 use `User:71`, which encodes to `VXNlcjo3MQ==`
   1. Navigate to Site Admin -> API Console and run the query below
   1. Find the corresponding user by searching the query results for the encoded ID from above
@@ -122,3 +122,10 @@ How can I correlate the actorID or userID to a user in the application?
    }
  }
  ```
+
+How can I investigate all actions take on a user?
+- The `audit.event` node has the ID of the user the action was taken on (`UserID`). Logs can be filtered on this field to get gather all logged actions taken on this user's information.
+
+How can I investigate all actions taken by a user?
+- The `audit.actor` node has the ID of the user the action was taken by (`actorUID`). Logs can be filtered on this field to get gather all logged actions taken by this user.
+
