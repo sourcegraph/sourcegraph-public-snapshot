@@ -5,7 +5,7 @@ The three main concepts are _scopes_, _definitions_, and _references_.
 
 ## Scopes
 
-Scopes are specified by labeling a capture as a `@scope[.kind]`.
+Scopes are specified by labeling a capture as a `@scope[.kind]`, where kind can be any string.
 The optional scope kind can be used to [hoist][hoisting] definitions to scopes of that kind.
 There is an implicit top-level scope that is of kind `"global"`
 
