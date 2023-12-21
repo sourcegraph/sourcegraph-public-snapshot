@@ -154,7 +154,7 @@ export function searchQueryForRepoRevision(
     patternType?: SearchPatternType
 ): string {
     if (patternType === SearchPatternType.newStandardRC1) {
-        return `repo:${quoteIfWhitespace(repoName)}${revision ? `@${abbreviateOID(revision)}` : ''}`
+        return `repo:${quoteIfWhitespace(repoName)}${revision ? `@${abbreviateOID(revision)}` : ''} `
     }
     return `repo:${repoFilterForRepoRevision(repoName, revision)} `
 }
