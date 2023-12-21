@@ -85,6 +85,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
                         filterType={FilterType.select}
                         filters={SYMBOL_KIND_FILTERS}
                         exclusive={true}
+                        staticFilters={true}
                         filterQuery={filterQuery}
                         onFilterQueryChange={setFilterQuery}
                     />
@@ -95,6 +96,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
                         filterType={[FilterType.after, FilterType.before]}
                         filters={COMMIT_DATE_FILTERS}
                         exclusive={true}
+                        staticFilters={true}
                         filterQuery={filterQuery}
                         onFilterQueryChange={setFilterQuery}
                     />

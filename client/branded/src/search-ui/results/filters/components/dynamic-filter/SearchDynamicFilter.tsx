@@ -37,7 +37,19 @@ interface SearchDynamicFilterProps {
      */
     filterAlias?: string
 
+    /**
+     * Be default, filters are not exclusive, this means that you can select more
+     * than one filter in the section, exclusive:true means that only one selected
+     * filter is possible .
+     */
     exclusive?: boolean
+
+    /**
+     * When filter is selected, it's automatically rendered as a first element
+     * in the filters list, staticFilters: true means that we don't change order
+     * of the filters when some of them are selected.
+     */
+    staticFilters?: boolean
 
     /**
      * List of streamed filters from search stream API
@@ -59,7 +71,16 @@ interface SearchDynamicFilterProps {
  * come from the search stream API.
  */
 export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
-    const { filters, filterType, filterAlias, filterQuery, exclusive = false, renderItem, onFilterQueryChange } = props
+    const {
+        filters,
+        filterType,
+        filterAlias,
+        filterQuery,
+        staticFilters = false,
+        exclusive = false,
+        renderItem,
+        onFilterQueryChange,
+    } = props
 
     const [showAllFilters, setShowAllFilters] = useState(false)
     const [searchTerm, setSearchTerm] = useState<string>('')
@@ -96,7 +117,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
         // include these filters in the filters array even if they are not
         // presented in filters from search stream API. If the filter is in both
         // places (URL and steam API) merged them to avoid duplicates in the UI
-        if (filterQueryFilters.length > 0) {
+        if (filterQueryFilters.length > 0 && !staticFilters) {
             const mappedSelectedFilters = filterQueryFilters.map(selectedFilter => {
                 const mappedSelectedFilter = filters?.find(filter => isSameFilter(filter.value, selectedFilter))
 
@@ -115,7 +136,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
         }
 
         return filterTypes.flatMap(filterType => filters?.filter(filter => filter.kind === filterType) ?? [])
-    }, [filterTypes, filters, filterQueryFilters])
+    }, [staticFilters, filterTypes, filters, filterQueryFilters])
 
     const handleFilterClick = (filter: string, remove?: boolean) => {
         const preparedFilterQuery = exclusive
