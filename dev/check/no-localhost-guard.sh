@@ -18,7 +18,8 @@ LOCALHOST_MATCHES=$(git grep -n -e localhost --and --not -e '^\s*//' --and --not
   ':(exclude)dev/sg/sg_setup.go' \
   ':(exclude)pkg/conf/confdefaults' \
   ':(exclude)schema' \
-  ':(exclude)vendor')
+  ':(exclude)vendor' \
+  ':(exclude)dev/linters/nolocalhost')
 set -e
 
 if [ -n "$LOCALHOST_MATCHES" ]; then

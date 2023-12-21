@@ -20,6 +20,7 @@ var excludePatterns = []string{
 	"**pkg/conf/confdefaults/**",
 	"**schema**",
 	"**vendor**",
+	"**dev/linters/nolocalhost/**",
 }
 
 var compiledExcludePatterns = make([]glob.Glob, len(excludePatterns))
