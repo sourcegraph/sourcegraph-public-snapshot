@@ -1,110 +1,43 @@
 # scip-syntax
 
-## Globals (To be documented)
-## Symbols (To be documented)
-
 ## Locals
 
-`src/locals.rs` implements an evaluator for our tree-sitter query based DSL to label local definitions and references for various programming languages using purely syntactic information. This data is used to enable fast and lightweight file-local navigation in the blob view.
+[`src/locals.rs`](src/locals.rs) implements an evaluator for our [tree-sitter query] based DSL to label local definitions and references for various programming languages using purely syntactic information.
+This data is used to enable fast and lightweight file-local navigation in the blob view.
 
 Queries describing the local binding structure of various programming languages are maintained in `queries/*/scip-locals.scm`.
 
-### The Query DSL
+### Usage example
 
-For specifying how to resolve local bindings we use the [tree-sitter query language] and a set of custom captures and properties. The three main concepts are _scopes_, _definitions_, and _references_.
+```rust
+use scip_syntax::languages;
+use scip_syntax::locals;
+use scip::types::Document;
+use scip_treesitter_languages::parsers::BundledParser;
 
-### Scopes
+const SOURCE: &[u8] = b"
+package main
 
-Scopes are specified by labeling a capture as a `@scope[.kind]`. The optional scope kind can be used to hoist definitions to scopes of that kind. There is an implicit top-level scope that is of kind `"global"`
+var y = 4
 
-#### Examples
+func my_func(x int) {
+  x + y
+}";
 
-```scm
-(block @scope)
-(function_declaration @scope.function)
-```
-
-### Definitions
-
-Definitions are specified by labeling a capture as a `@definition`.
-
-#### Lexical scoping
-
-```scm
-(variable_definition (identifier) @definition)
-```
-
-The default behaviour for a definition is to be visible to all references that appear lexically _after_ the definition.
-
-```js
-print(my_var) // Will not be resolved
-
-let my_var = 10
-print(my_var) // Will be resolved
-```
-
-#### Hoisting
-
-If you want a definition to be _hoisted_ to the start of a scope instead, you can specify the kind of the nearest enclosing scope it should be hoisted to.
-
-```scm
-(function_definition
- (identifier) @definition
- #set! "hoist" "function")
-```
-
-The definition will be visible to the nearest enclosing scope with kind `function`. If no such enclosing scope is found, the definition will be visible in the global scope.
-
-```js
-my_func(10) // Will be resolved
-
-function my_func(x) {
-  print(x)
+fn main() {
+  let config = languages::get_local_configuration(BundledParser::Go).unwrap();
+  let tree = config.get_parser().parse(SOURCE, None).unwrap();
+  let occurrences = locals::parse_tree(config, &tree, SOURCE);
+  let mut document = Document::new();
+  document.occurrences = occurrences;
+  print!("{:#?}", document);
 }
 ```
 
-#### First assignment is Definition
+### Further documentation
+- Read [locals query DSL] if you're looking to edit, add to, or just understand our locals queries
+- In [locals scoping] we describe how we arrived at the current design of the DSL by analyzing scoping behaviour for a variety of languges
 
-Certain languages (Python, MATLAB etc.) do not have special syntactic forms for introducing variables.
-Instead the first assignment of a variable is considered to be its definition, and all further ones are references.
-To support this in our DSL you can can mark a `@definition` as a 'def_ref'.
-
-```scm
-(assignment
- (identifier) @definition
- #set! "def_ref")
-```
-
-If you also specify a hoist level, only existing assignments that match the current hoist-level will be considered when deciding between definition and reference.
-As an example, here's how local variables in Python functions could be handled.
-
-```scm
-(python_assignment
- (identifier) @definition
- #set! "def_ref"
- #set! "hoist" "function")
-```
-
-```python
-a = 10 # definition 1
-def f():
-  # This assignment gets hoisted to the `f` function, which means
-  # it won't consider a binding in parent scopes
-  a = 3 # definition 2
-  if True:
-    a = 4 # reference 2
-a = 4 # reference 1
-```
-
-### References
-
-References are specified by labeling a capture as a `@reference`.
-
-```scm
-(variable_expression (identifier) @reference)
-```
-
-They will be resolved against definitions in the current scope and parent scopes. Non-hoisted definitions are only resolved if they are defined _before_ the reference.
-
-
-[tree-sitter query language]: https://tree-sitter.github.io/tree-sitter/using-parsers#pattern-matching-with-queries
+[locals query DSL]: docs/locals-query-dsl.md
+[locals scoping]: docs/locals-scoping.md
+[tree-sitter query]: https://tree-sitter.github.io/tree-sitter/using-parsers#pattern-matching-with-queries

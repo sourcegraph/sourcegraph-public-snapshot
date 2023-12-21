@@ -8,13 +8,14 @@ This document contains information about hoisting behaviour for the languages we
 
 ## Python does have hoisting
 
-    x = 10 # def 1
+```python
+x = 10 # def 1
 
-    def my_fun():
-        print(f"global first {x}") # ref 2
-        x = 20 # def 2
-
-    my_fun()
+def my_fun():
+    print(f"global first {x}") # ref 2
+    x = 20 # def 2
+my_fun()
+```
 
 Results in the following error:
 
@@ -33,18 +34,20 @@ language-agnostic fashion.
 Notably Python hoists to the function level, assigning a variable in a
 nested-if creates a new function scoped variable
 
-    y = 0 # def 0
-    x = 10 # def 4
+```python
+y = 0 # def 0
+x = 10 # def 4
 
-    def outer():
-        y = 10 # def 1
-        def inner():
-          y = 20 # def 2
-          print(f"{x} and {y} from inner") # ref 3, ref 2
-        x = 40 # def 3
-        inner()
-        print(f"{x} and {y} from outer") # ref 3, ref 1
-    outer()
+def outer():
+    y = 10 # def 1
+    def inner():
+      y = 20 # def 2
+      print(f"{x} and {y} from inner") # ref 3, ref 2
+    x = 40 # def 3
+    inner()
+    print(f"{x} and {y} from outer") # ref 3, ref 1
+outer()
+```
 
 Results:
 
@@ -58,28 +61,30 @@ Here's a program that shows that JS uses hoisting for both let and
 var, but var is hoisted to the nearest function scope, while let is
 block scoped.
 
-    let y = 15 // def 1
+```js
+let y = 15 // def 1
 
-    function outer() {
-        function inner() {
-            { var y = 20 }; // def 2
-            console.log(`${x} and ${y} from inner`) // ref 5, ref 2
-        };
+function outer() {
+    function inner() {
+        { var y = 20 }; // def 2
+        console.log(`${x} and ${y} from inner`) // ref 5, ref 2
+    };
 
-        function inner2() {
-            { let y = 20 }; // def 3
-            // Captures the y from _outer_ and not the global because of
-            // hoisting
-            console.log(`${x} and ${y} from inner2`) // ref 5, ref 4
-        };
+    function inner2() {
+        { let y = 20 }; // def 3
+        // Captures the y from _outer_ and not the global because of
+        // hoisting
+        console.log(`${x} and ${y} from inner2`) // ref 5, ref 4
+    };
 
-        let y = 10; // def 4
-        var x = 40; // def 5
-        inner();
-        inner2();
-        console.log(`${x} and ${y} from outer`); // ref 5, ref 4
-    }
-    outer()
+    let y = 10; // def 4
+    var x = 40; // def 5
+    inner();
+    inner2();
+    console.log(`${x} and ${y} from outer`); // ref 5, ref 4
+}
+outer()
+```
 
 Results:
 
@@ -108,26 +113,28 @@ hoisting.
 
 Here's a program showing how Go has full lexical scoping.
 
-    package main
+```go
+package main
 
-    import "fmt"
+import "fmt"
 
-    var x = 10 // def 1
+var x = 10 // def 1
 
-    func myFun() {
-            fmt.Printf("global first %v\n", x) // ref 1
-            x = 40 // ref 1
+func myFun() {
+        fmt.Printf("global first %v\n", x) // ref 1
+        x = 40 // ref 1
 
-            var x = 20 // def 2
-            fmt.Printf("local first %v\n", x) // ref 2
-            x = 30 // ref 2
-            fmt.Printf("local second %v\n", x) // ref 2
-    }
+        var x = 20 // def 2
+        fmt.Printf("local first %v\n", x) // ref 2
+        x = 30 // ref 2
+        fmt.Printf("local second %v\n", x) // ref 2
+}
 
-    func main() {
-            myFun()
-            fmt.Printf("global second %v\n", x) // ref 1
-    }
+func main() {
+        myFun()
+        fmt.Printf("global second %v\n", x) // ref 1
+}
+```
 
 Results:
 
@@ -143,21 +150,23 @@ Here's a program showing how Perl has full lexical scoping (for `my`
 variables). It also has full on dynamic scoping with the `local`
 keyword, but there's no hope for statically analyzing that.
 
-    my $x = 10; # def 1
+```perl
+my $x = 10; # def 1
 
-    sub my_fun {
-        print "global first $x\n"; # ref 1
-        $x = 40; # ref 1
+sub my_fun {
+    print "global first $x\n"; # ref 1
+    $x = 40; # ref 1
 
-        my $x = 20; # def 2
-        print "local first $x\n"; # ref 2
-        $x = 30; # ref 2
-        print "local second $x\n"; # ref 2
-    }
+    my $x = 20; # def 2
+    print "local first $x\n"; # ref 2
+    $x = 30; # ref 2
+    print "local second $x\n"; # ref 2
+}
 
-    my_fun();
+my_fun();
 
-    print "global second: $x\n"; # ref 1
+print "global second: $x\n"; # ref 1
+```
 
 Results:
 
