@@ -2492,7 +2492,7 @@ func (c *clientImplementor) RefDescriptions(ctx context.Context, repo api.RepoNa
 			derefField("objectname"),
 			"%(refname)",
 			"%(HEAD)",
-			derefField("creatordate:iso8601-strict"),
+			derefField("creatordate:unix"),
 		}, "%00")
 
 		args := make([]string, 0, len(gitObjs)+3)
@@ -2562,7 +2562,7 @@ var refPrefixes = map[string]gitdomain.RefType{
 // - %(objectname) is the 40-character revhash
 // - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
 // - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
-// - %(creatordate) is the ISO-formatted date the object was created
+// - %(creatordate) is the unix timestamp the object was created
 func parseRefDescriptions(out []byte) (map[string][]gitdomain.RefDescription, error) {
 	refDescriptions := make(map[string][]gitdomain.RefDescription, bytes.Count(out, []byte("\n")))
 
@@ -2603,10 +2603,11 @@ lineLoop:
 		// Some repositories attach tags to non-commit objects, such as trees. In such a situation, one
 		// cannot deference the tag to obtain the commit it points to, and there is no associated creatordate.
 		if createdDatePart != "" {
-			createdDate, err := time.Parse(time.RFC3339, createdDatePart)
+			parsedSeconds, err := strconv.Atoi(createdDatePart)
 			if err != nil {
 				return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
 			}
+			createdDate := time.Unix(int64(parsedSeconds), 0)
 			createdDatePtr = &createdDate
 		}
 
