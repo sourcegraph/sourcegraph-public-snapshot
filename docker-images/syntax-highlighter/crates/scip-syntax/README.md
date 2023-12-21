@@ -1,4 +1,4 @@
-# scip-locals
+# scip-syntax
 
 ## Globals (To be documented)
 ## Symbols (To be documented)
@@ -45,7 +45,7 @@ print(my_var) // Will be resolved
 
 #### Hoisting
 
-If you want a definition to be _hoisted_ instead, you can specify what kind of scope it should be hoisted to.
+If you want a definition to be _hoisted_ to the start of a scope instead, you can specify the kind of the nearest enclosing scope it should be hoisted to.
 
 ```scm
 (function_definition
@@ -53,7 +53,7 @@ If you want a definition to be _hoisted_ instead, you can specify what kind of s
  #set! "hoist" "function")
 ```
 
-It'll then be visible from the closest parent scope with the given kind. If no parent with the given kind is found, the definition will be visible in the global scope.
+The definition will be visible to the nearest enclosing scope with kind `function`. If no such enclosing scope is found, the definition will be visible in the global scope.
 
 ```js
 my_func(10) // Will be resolved
@@ -65,7 +65,7 @@ function my_func(x) {
 
 #### First assignment is Definition
 
-Certain languages (eg. Python or Matlab) do not have special syntactic forms for introducing variables.
+Certain languages (Python, MATLAB etc.) do not have special syntactic forms for introducing variables.
 Instead the first assignment of a variable is considered to be its definition, and all further ones are references.
 To support this in our DSL you can can mark a `@definition` as a 'def_ref'.
 
@@ -76,7 +76,7 @@ To support this in our DSL you can can mark a `@definition` as a 'def_ref'.
 ```
 
 If you also specify a hoist level, only existing assignments that match the current hoist-level will be considered when deciding between definition and reference.
-As an example here's how Python's hoisted ref_defs would get resolved.
+As an example, here's how local variables in Python functions could be handled.
 
 ```scm
 (python_assignment
