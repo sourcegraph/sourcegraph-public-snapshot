@@ -3,7 +3,7 @@ import { type FC, useState } from 'react'
 import { mdiChevronUp, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Icon, Link, ProductStatusBadge, Badge } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import type { AddExternalServiceOptions } from './externalServices'
 
@@ -20,9 +20,6 @@ interface ExternalServiceGroupProps {
 
 export interface AddExternalServiceOptionsWithID extends AddExternalServiceOptions {
     serviceID: string
-    enabled?: boolean
-    badge?: string
-    tooltip?: string
 }
 
 export const ExternalServiceGroup: FC<ExternalServiceGroupProps> = ({
@@ -38,11 +35,7 @@ export const ExternalServiceGroup: FC<ExternalServiceGroupProps> = ({
     if (services.length === 1) {
         const [service] = services
         return (
-            <div
-                className={classNames('mb-3 px-2 border', styles.externalServiceGroupNode, {
-                    [styles.externalServiceGroupEnabledNode]: service.enabled,
-                })}
-            >
+            <div className={classNames('mb-3 px-2 border', styles.externalServiceGroupNode)}>
                 <ExternalServiceGroupNode service={service} renderIcon={true} />
             </div>
         )
@@ -67,12 +60,7 @@ export const ExternalServiceGroup: FC<ExternalServiceGroupProps> = ({
             {isOpen && (
                 <ul className={styles.externalServiceGroupBody}>
                     {services.map((service, index) => (
-                        <li
-                            key={index}
-                            className={classNames(styles.externalServiceGroupNode, {
-                                [styles.externalServiceGroupEnabledNode]: service.enabled,
-                            })}
-                        >
+                        <li key={index} className={classNames(styles.externalServiceGroupNode)}>
                             <ExternalServiceGroupNode service={service} renderIcon={renderIcon} />
                         </li>
                     ))}
@@ -88,27 +76,16 @@ interface ExternalServiceGroupNodeProps {
 }
 
 const ExternalServiceGroupNode: FC<ExternalServiceGroupNodeProps> = ({ service, renderIcon }) => {
-    const isServiceEnabled = service.enabled
     const children = (
-        <div
-            className={classNames(styles.externalServiceGroupNodeWrapper, {
-                'text-muted': !isServiceEnabled,
-                'py-2': !isServiceEnabled,
-            })}
-        >
+        <div className={classNames(styles.externalServiceGroupNodeWrapper)}>
             {renderIcon && <Icon inline={true} className="mb-0 mr-1" as={service.icon} aria-hidden={true} />}
             <div className={styles.externalServiceGroupNodeDisplayName}>
                 <span>{service.title}</span>
                 {'  '}
                 {service.status && <ProductStatusBadge status={service.status} className="mx-1" />}
-                {service.badge && (
-                    <Badge className="mx-1" variant="outlineSecondary">
-                        {service.badge.toUpperCase()}
-                    </Badge>
-                )}
                 <span
                     className={classNames(styles.externalServiceGroupNodeDescription, {
-                        'd-block': Boolean(service.status || service.badge),
+                        'd-block': Boolean(service.status),
                     })}
                 >
                     {service.shortDescription}
@@ -117,7 +94,7 @@ const ExternalServiceGroupNode: FC<ExternalServiceGroupNodeProps> = ({ service, 
         </div>
     )
 
-    return service.enabled ? (
+    return (
         <Link
             className={classNames(styles.externalServiceGroupLink, 'text-left text-body text-decoration-none')}
             to={getAddURL(service.serviceID)}
@@ -125,8 +102,6 @@ const ExternalServiceGroupNode: FC<ExternalServiceGroupNodeProps> = ({ service, 
         >
             {children}
         </Link>
-    ) : (
-        children
     )
 }
 

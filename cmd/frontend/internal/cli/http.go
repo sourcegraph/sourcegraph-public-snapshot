@@ -16,10 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/ipallowlist"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -60,10 +60,8 @@ func newExternalHTTPHandler(
 	if err != nil {
 		return nil, errors.Errorf("create external HTTP API handler: %v", err)
 	}
-	if hooks.PostAuthMiddleware != nil {
-		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
-		apiHandler = hooks.PostAuthMiddleware(apiHandler)
-	}
+	// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
+	apiHandler = authz.PostAuthMiddleware(logger, db, apiHandler)
 	apiHandler = featureflag.Middleware(db.FeatureFlags(), apiHandler)
 	apiHandler = actor.AnonymousUIDMiddleware(apiHandler)
 	apiHandler = authMiddlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
@@ -85,10 +83,8 @@ func newExternalHTTPHandler(
 
 	// App handler (HTML pages), the call order of middleware is LIFO.
 	appHandler := app.NewHandler(db, logger, githubAppSetupHandler)
-	if hooks.PostAuthMiddleware != nil {
-		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
-		appHandler = hooks.PostAuthMiddleware(appHandler)
-	}
+	// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
+	appHandler = authz.PostAuthMiddleware(logger, db, appHandler)
 	appHandler = featureflag.Middleware(db.FeatureFlags(), appHandler)
 	appHandler = actor.AnonymousUIDMiddleware(appHandler)
 	appHandler = authMiddlewares.App(appHandler) // 🚨 SECURITY: auth middleware

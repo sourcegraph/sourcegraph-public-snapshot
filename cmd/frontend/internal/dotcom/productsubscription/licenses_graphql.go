@@ -92,6 +92,7 @@ func (r *productLicense) Info() (*graphqlbackend.ProductLicenseInfo, error) {
 	}
 	hashedKeyValue := conf.HashedLicenseKeyForAnalytics(r.v.LicenseKey)
 	return &graphqlbackend.ProductLicenseInfo{
+		PlanDetails:                   info.Plan().Details(),
 		TagsValue:                     info.Tags,
 		UserCountValue:                info.UserCount,
 		ExpiresAtValue:                info.ExpiresAt,

@@ -32,7 +32,8 @@ const (
 	PlanFree0 Plan = "free-0"
 
 	// PlanFree1 is the default plan if no license key is set from 4.5 onwards.
-	// Deprecated: PlanFree1 has been deprecated and we will stop issuing licenses for it.
+	// Do not issue licenses for this plan directly, Sourcegraph auto-applies this
+	// plan.
 	PlanFree1 Plan = "free-1"
 
 	// PlanAirGappedEnterprise is the same PlanEnterprise1 but with FeatureAllowAirGapped, and works starting from 5.1.
@@ -41,8 +42,6 @@ const (
 
 	PlanCodeSearch           Plan = "code-search"
 	PlanCIP                  Plan = "cip"
-	PlanCodeSearchPro        Plan = "code-search-pro"
-	PlanCodeAIPro            Plan = "code-ai-pro"
 	PlanCodyEnterprise       Plan = "cody-enterprise"
 	PlanCodeSearchEnterprise Plan = "code-search-enterprise"
 	PlanCodeAIEnterprise     Plan = "code-ai-enterprise"
@@ -58,14 +57,12 @@ var AllPlans = []Plan{
 	PlanEnterprise1,
 	PlanEnterpriseExtension,
 	PlanFree0,
-	PlanFree1,
 	PlanAirGappedEnterprise,
 
 	// Current plans:
+	PlanFree1,
 	PlanCodeSearch,
 	PlanCIP,
-	PlanCodeSearchPro,
-	PlanCodeAIPro,
 	PlanCodyEnterprise,
 	PlanCodeSearchEnterprise,
 	PlanCodeAIEnterprise,
@@ -280,29 +277,6 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureNotebooks,
 			FeatureCodeSearch,
 			&FeatureBatchChanges{Unrestricted: true},
-		},
-	},
-	PlanCodeSearchPro: {
-		DisplayName: "Code Search Pro",
-		Features: []Feature{
-			FeatureSSO,
-			FeatureACLs,
-			FeatureSCIM,
-			FeatureCodeSearch,
-			&FeaturePrivateRepositories{MaxNumPrivateRepos: 250}, // TODO: Max total repos, not max private.
-			// TODO: Max code host connections 1
-		},
-	},
-	PlanCodeAIPro: {
-		DisplayName: "Code AI Pro",
-		Features: []Feature{
-			FeatureSSO,
-			FeatureACLs,
-			FeatureSCIM,
-			FeatureCody,
-			&FeaturePrivateRepositories{MaxNumPrivateRepos: 250}, // TODO: Max total repos, not max private.
-			// TODO: Max code host connections 1
-			// TODO: Max cody user count through tag.
 		},
 	},
 	PlanCodyEnterprise: {

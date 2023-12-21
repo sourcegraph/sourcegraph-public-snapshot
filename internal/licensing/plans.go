@@ -10,6 +10,15 @@ import (
 // A Plan is a pricing plan, with an associated set of features that it offers.
 type Plan string
 
+// Details returns the name and features of the plan.
+func (p Plan) Details() PlanDetails {
+	return planDetails[p]
+}
+
+func (p Plan) IsFreePlan() bool {
+	return p == PlanFree0 || p == PlanFree1
+}
+
 // HasFeature returns whether the plan has the given feature.
 // If the target is a pointer, the plan's feature configuration will be
 // set to the target.

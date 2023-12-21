@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
@@ -28,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -114,6 +114,23 @@ type CurrentUser struct {
 	Emails         []UserEmail                  `json:"emails"`
 	LatestSettings *UserLatestSettings          `json:"latestSettings"`
 	Permissions    PermissionsConnection        `json:"permissions"`
+}
+
+// FeatureBatchChanges describes if and how the Batch Changes feature is available on
+// the given license plan. It mirrors the type licensing.FeatureBatchChanges.
+type FeatureBatchChanges struct {
+	// If true, there is no limit to the number of changesets that can be created.
+	Unrestricted bool `json:"unrestricted"`
+	// Maximum number of changesets that can be created per batch change.
+	// If Unrestricted is true, this is ignored.
+	MaxNumChangesets int `json:"maxNumChangesets"`
+}
+
+// LicenseInfo contains non-sensitive information about the legitimate usage of the
+// current license on the instance. It is technically accessible to all users, so only
+// include information that is safe to be seen by others.
+type LicenseInfo struct {
+	BatchChanges *FeatureBatchChanges `json:"batchChanges"`
 }
 
 // JSContext is made available to JavaScript code via the
@@ -203,7 +220,7 @@ type JSContext struct {
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
 
-	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
+	LicenseInfo LicenseInfo `json:"licenseInfo"`
 
 	HashedLicenseKey string `json:"hashedLicenseKey"`
 
@@ -283,12 +300,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	if clientObservability := siteConfig.ObservabilityClient; clientObservability != nil {
 		openTelemetry = clientObservability.OpenTelemetry
 	}
-
-	// License info contains basic, non-sensitive information about the license type. Some
-	// properties are only set for certain license types. This information can be used to
-	// soft-gate features from the UI, and to provide info to admins from site admin
-	// settings pages in the UI.
-	licenseInfo := hooks.GetLicenseInfo()
 
 	var user *types.User
 	temporarySettings := "{}"
@@ -383,7 +394,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 
-		LicenseInfo: licenseInfo,
+		LicenseInfo: licenseInfo(),
 
 		HashedLicenseKey: conf.HashedCurrentLicenseKeyForAnalytics(),
 
@@ -565,4 +576,27 @@ var isBotPat = lazyregexp.New(`(?i:googlecloudmonitoring|pingdom.com|go .* packa
 
 func isBot(userAgent string) bool {
 	return isBotPat.MatchString(userAgent)
+}
+
+func licenseInfo() LicenseInfo {
+	bcFeature := &licensing.FeatureBatchChanges{}
+
+	if err := licensing.Check(bcFeature); err != nil {
+		return LicenseInfo{}
+	}
+	if bcFeature.Unrestricted {
+		return LicenseInfo{
+			BatchChanges: &FeatureBatchChanges{
+				Unrestricted: true,
+				// Superceded by being unrestricted
+				MaxNumChangesets: -1,
+			},
+		}
+	}
+	max := int(bcFeature.MaxNumChangesets)
+	return LicenseInfo{
+		BatchChanges: &FeatureBatchChanges{
+			MaxNumChangesets: max,
+		},
+	}
 }

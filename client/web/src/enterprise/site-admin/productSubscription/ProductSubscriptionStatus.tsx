@@ -1,6 +1,6 @@
 import React, { useMemo, type FC } from 'react'
 
-import { mdiCheckCircle } from '@mdi/js'
+import { mdiCheckCircle, mdiCloseCircle } from '@mdi/js'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import type { Observable } from 'rxjs'
@@ -60,6 +60,7 @@ const queryProductLicenseInfo = (): Observable<{
             expiresAt
             isValid
             licenseInvalidityReason
+            planFeatures
         }
     `).pipe(
         map(dataOrThrowErrors),
@@ -104,6 +105,9 @@ export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithC
     } = statusOrError
 
     const hasTrueUp = license?.tags.some(tag => tag === TAG_TRUEUP.tagValue)
+
+    const isEnabled = (feature: string): boolean =>
+        license.planFeatures.includes(feature) || license.tags.includes(feature)
 
     const numberFormatter = Intl.NumberFormat(navigator.language)
 
@@ -183,28 +187,39 @@ export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithC
             <H3>Your Subscription</H3>
             <Container className="mb-3">
                 <H4>Code Search</H4>
-                <Text className="text-success">
-                    <Icon aria-label="yes" svgPath={mdiCheckCircle} />
+                <Text>
+                    <FeatureCheck enabled={isEnabled('code-search')} />
                 </Text>
                 <H4>Code Monitoring</H4>
-                <Text className="text-success">
-                    <Icon aria-label="yes" svgPath={mdiCheckCircle} />
+                <Text>
+                    <FeatureCheck enabled={isEnabled('code-monitors')} />
                 </Text>
                 <H4>Notebooks</H4>
-                <Text className="text-success">
-                    <Icon aria-label="yes" svgPath={mdiCheckCircle} />
+                <Text>
+                    <FeatureCheck enabled={isEnabled('notebooks')} />
                 </Text>
                 <H4>Batch Changes</H4>
                 <Text className="text-muted">Up to 10 changesets</Text>
-                <H4>
-                    Air Gapped Instance <small>Add On</small>
-                </H4>
-                <Text className="text-success">
-                    <Icon aria-label="yes" svgPath={mdiCheckCircle} />
-                </Text>
+                {isEnabled('allow-air-gapped') && (
+                    <>
+                        <H4>
+                            Air Gapped Instance <small>Add On</small>
+                        </H4>
+                        <Text>
+                            <FeatureCheck enabled={true} />
+                        </Text>
+                    </>
+                )}
             </Container>
         </div>
     )
+}
+
+const FeatureCheck: FC<{ enabled: boolean }> = ({ enabled }) => {
+    if (enabled) {
+        return <Icon aria-label="yes" className="text-success" svgPath={mdiCheckCircle} />
+    }
+    return <Icon aria-label="no" className="text-muted" svgPath={mdiCloseCircle} />
 }
 
 interface LicenseDetailsProps {

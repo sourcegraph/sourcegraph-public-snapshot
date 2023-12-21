@@ -36,20 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// User hooks
-var (
-	// BeforeCreateUser (if set) is a hook called before creating a new user in the DB by any means
-	// (e.g., both directly via Users.Create or via Users.CreateWithExternalAccount).
-	BeforeCreateUser func(ctx context.Context, db DB, spec *extsvc.AccountSpec) error
-	// AfterCreateUser (if set) is a hook called after creating a new user in the DB by any means
-	// (e.g., both directly via Users.Create or via Users.CreateWithExternalAccount).
-	// Whatever this hook mutates in database should be reflected on the `user` argument as well.
-	AfterCreateUser func(ctx context.Context, db DB, user *types.User) error
-	// BeforeSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
-	// site admin.
-	BeforeSetUserIsSiteAdmin func(ctx context.Context, isSiteAdmin bool) error
-)
-
 // UserStore provides access to the `users` table.
 //
 // For a detailed overview of the schema, see schema.md.
@@ -342,11 +328,8 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		return nil, ErrCannotCreateUser{"site_already_initialized"}
 	}
 
-	// Run BeforeCreateUser hook.
-	if BeforeCreateUser != nil {
-		if err := BeforeCreateUser(ctx, NewDBWith(u.logger, u.Store), spec); err != nil {
-			return nil, errors.Wrap(err, "pre create user hook")
-		}
+	if err := enforcement.NewBeforeCreateUserHook()(ctx, NewDBWith(u.logger, u.Store), spec); err != nil {
+		return nil, errors.Wrap(err, "pre create user hook")
 	}
 
 	var siteAdmin bool
@@ -448,11 +431,8 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 			return nil, err
 		}
 
-		// Run AfterCreateUser hook
-		if AfterCreateUser != nil {
-			if err := AfterCreateUser(ctx, NewDBWith(u.logger, u.Store), user); err != nil {
-				return nil, errors.Wrap(err, "after create user hook")
-			}
+		if err := enforcement.NewAfterCreateUserHook()(ctx, NewDBWith(u.logger, u.Store), user); err != nil {
+			return nil, errors.Wrap(err, "after create user hook")
 		}
 	}
 
@@ -926,10 +906,8 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int3
 // SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin. It also assigns the role `SITE_ADMINISTRATOR`
 // to the user when `isSiteAdmin` is true and revokes the role when false.
 func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
-	if BeforeSetUserIsSiteAdmin != nil {
-		if err := BeforeSetUserIsSiteAdmin(ctx, isSiteAdmin); err != nil {
-			return err
-		}
+	if err := enforcement.NewBeforeSetUserIsSiteAdmin()(ctx, isSiteAdmin); err != nil {
+		return err
 	}
 
 	db := NewDBWith(u.logger, u)

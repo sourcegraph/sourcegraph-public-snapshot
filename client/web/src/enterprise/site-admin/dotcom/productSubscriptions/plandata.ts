@@ -7,8 +7,6 @@ export interface Tag {
 export interface Plan {
     name: string
     label: string
-    maxUserCount?: number
-    maxRepositories?: number
     deprecated?: boolean
     cloudOnlyPlan?: boolean
     additionalTags?: Tag[]
@@ -90,22 +88,6 @@ export const DEPRECATED_TAGS: Tag[] = [
 ]
 
 export const ALL_PLANS: Plan[] = [
-    {
-        name: 'Code Search Pro',
-        label: 'code-search-pro',
-        maxUserCount: 100,
-        maxRepositories: 250,
-        cloudOnlyPlan: true,
-        additionalTags: [TAG_TRIAL],
-    },
-    {
-        name: 'Code AI Pro',
-        label: 'code-ai-pro',
-        maxUserCount: 100,
-        maxRepositories: 500,
-        cloudOnlyPlan: true,
-        additionalTags: [TAG_TRIAL],
-    },
     {
         name: 'Code Search',
         label: 'code-search',

@@ -30,11 +30,7 @@ const (
 
 // ProductNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
 // on the license info.
-func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
-	if !hasLicense {
-		return "Sourcegraph Free"
-	}
-
+func ProductNameWithBrand(licenseTags []string) string {
 	info := &Info{
 		Info: license.Info{
 			Tags: licenseTags,

@@ -104,7 +104,7 @@ const AuthenticatedLicenseManagementArea: React.FunctionComponent<
 
     // If not license manager, bail out.
     if (!canReadLicenseManagement(props.authenticatedUser)) {
-        return <NotAllowedPage />
+        return <Navigate to="/search" replace={true} />
     }
 
     const context: LicenseManagementAreaRouteContext = {

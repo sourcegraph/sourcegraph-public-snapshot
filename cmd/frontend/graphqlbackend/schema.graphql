@@ -8597,6 +8597,38 @@ type ProductSubscriptionStatus {
     license: ProductLicenseInfo!
 }
 
+interface ProductLicenseFeature {
+    name: String!
+    description: String!
+}
+
+type OnOffProductLicenseFeature implements ProductLicenseFeature {
+    name: String!
+    description: String!
+}
+
+type BatchChangesProductLicenseFeature implements ProductLicenseFeature {
+    name: String!
+    description: String!
+    maximumChangesetCount: Int!
+}
+
+type RepositoryCountProductLicenseFeature implements ProductLicenseFeature {
+    name: String!
+    description: String!
+    """
+    If true, no restrictions apply to the number of repositories that can be added
+    to a Sourcegraph instance with this license.
+    """
+    unrestricted: Boolean!
+    """
+    The maximum number of private repositories that can be added to a Sourcegraph
+    instance with this license.
+    Always null if unrestricted is true.
+    """
+    maximumPrivateRepos: Int
+}
+
 """
 Information about this site's product license (which activates certain Sourcegraph features).
 """
@@ -8611,6 +8643,10 @@ type ProductLicenseInfo {
     True if the license is for a free plan.
     """
     isFreePlan: Boolean!
+    """
+    Plan features that are activated by the current license.
+    """
+    planFeatures: [ProductLicenseFeature!]!
     """
     Tags indicating the product plan and features activated by this license.
     """
