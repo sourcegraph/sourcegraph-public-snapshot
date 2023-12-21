@@ -28,16 +28,26 @@ use std::slice::Iter;
 use string_interner::{DefaultSymbol, StringInterner};
 use tree_sitter::Node;
 
-// What needs to be documented?
+// Missing features at this point
+// a) Namespacing
 //
-// 1. Missing features at this point
-//   a) Namespacing (Need to figure out what the DSL should be)
-//   b) Marking globals to avoid emitting them into occurrences
-
-// What needs to be documented for a PR
+// The simplest thing I can think of right now is to use
+// `@definition.namespace` and `@reference.namespace`. Because
+// most of the locals queries just declare all `(identifier)` as
+// references we'll probably make it so `@reference` with no
+// namespace matches definitions in any namespace and
+// `@definition` matches any `@reference.namespace`
 //
-// 1. Differences to the old implementation (Feature wise)
-// 2. Performance characteristics (do some benchmarks)
+// b) Marking globals to avoid emitting them into occurrences
+//
+// I've given this an initial try, but tree-sitter queries are
+// difficult to work with.
+//
+// The main problem is that `(source_file (child) @global)` captures
+// all occurences of `(child)` regardless of depth and nesting
+// underneath `source_file`. This makes it very difficult to talk
+// about "toplevel" items. We might need to extend our DSL a little
+// further and do some custom tree-traversal logic to implement this.
 
 pub fn parse_tree<'a>(
     config: &LocalConfiguration,
@@ -63,8 +73,8 @@ pub fn parse_tree_test<'a>(
 
 #[derive(Debug, Clone)]
 struct Definition<'a> {
-    node: Node<'a>,
     id: usize,
+    node: Node<'a>,
     name: Name,
 }
 
