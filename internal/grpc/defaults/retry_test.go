@@ -50,5 +50,4 @@ func TestFuzzFullJitter(t *testing.T) {
 	if err != nil {
 		t.Error(jitterErr)
 	}
-
 }
