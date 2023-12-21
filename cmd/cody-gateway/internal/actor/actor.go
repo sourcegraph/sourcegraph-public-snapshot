@@ -40,6 +40,11 @@ type Actor struct {
 	RateLimits map[codygateway.Feature]RateLimit `json:"rateLimits"`
 	// LastUpdated indicates when this actor's state was last updated.
 	LastUpdated *time.Time `json:"lastUpdated"`
+	// LastUpdateErrorAt indicates when we made the last attempt to update this actor's state has failed
+	// It's set to:
+	// - nil if the last attempt was successful
+	// - the last time we hit an error when updating
+	LastUpdateErrorAt *time.Time `json:"lastUpdateErrorAt"`
 	// Source is a reference to the source of this actor's state.
 	Source Source `json:"-"`
 }

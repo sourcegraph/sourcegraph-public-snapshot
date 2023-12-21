@@ -3,11 +3,13 @@ package dotcomuser
 import (
 	"context"
 	"encoding/json"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Khan/genqlient/graphql"
+	"github.com/aws/smithy-go/ptr"
 	graphqltypes "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -33,7 +35,8 @@ const SourceVersion = "v2"
 const tokenLength = 4 + 64
 
 var (
-	defaultUpdateInterval = 15 * time.Minute
+	defaultUpdateInterval = 1 * time.Second
+	updateGracePeriod     = 1 * time.Hour // we allow 1 hour of grace period if dotcom is down
 	// defaultRefreshInterval is used for updates, which is also called when a
 	// user's rate limit is hit, so we don't want to update every time. We use
 	// a shorter interval than the default in this case.
@@ -152,8 +155,9 @@ func (s *Source) get(ctx context.Context, token string, bypassCache bool) (*acto
 		return s.fetchAndCache(ctx, token)
 	}
 
-	if act.LastUpdated == nil || time.Since(*act.LastUpdated) > defaultUpdateInterval {
-		return s.fetchAndCache(ctx, token)
+	a, err := updateWithGracePeriod(act, func() (*actor.Actor, error) { return s.fetchAndCache(ctx, token) }, time.Now())
+	if err != nil {
+		return a, err
 	}
 
 	act.Source = s
@@ -170,6 +174,32 @@ func (s *Source) get(ctx context.Context, token string, bypassCache bool) (*acto
 		} else {
 			for k, v := range actWithLatestConfig.RateLimits {
 				act.RateLimits[k] = v
+			}
+		}
+	}
+	return act, nil
+}
+
+func updateWithGracePeriod(act *actor.Actor, fetch func() (*actor.Actor, error), updateTime time.Time) (*actor.Actor, error) {
+	if act.LastUpdated == nil || time.Since(*act.LastUpdated) > defaultUpdateInterval {
+		// Retry every 5 minutes with 1m of jitter (so not all actors try to update at the same time)
+		retryWindow := 5*time.Minute - 30*time.Second + time.Duration(rand.Intn(60))*time.Second
+
+		if act.LastUpdateErrorAt == nil || time.Since(*act.LastUpdateErrorAt) > retryWindow {
+			// try an update
+			maybeFailedAct, err := fetch()
+			if err == nil {
+				// update succeeded, nice
+				return maybeFailedAct, nil
+			} else {
+				if act.LastUpdated != nil && time.Since(*act.LastUpdated) < updateGracePeriod {
+					// dotcom is down, make a note of it being down and use current state
+					act.LastUpdateErrorAt = ptr.Time(updateTime)
+					return act, nil
+				} else {
+					// dotcom is down for too long, return the error
+					return maybeFailedAct, err
+				}
 			}
 		}
 	}
