@@ -10,7 +10,6 @@
 ///
 /// [query syntax]: https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax
 use crate::languages::LocalConfiguration;
-use anyhow::Result;
 use core::cmp::Ordering;
 use core::ops::Range;
 use id_arena::{Arena, Id};
@@ -53,9 +52,9 @@ pub fn parse_tree<'a>(
     config: &LocalConfiguration,
     tree: &'a tree_sitter::Tree,
     source_bytes: &'a [u8],
-) -> Result<Vec<Occurrence>> {
+) -> Vec<Occurrence> {
     let resolver = LocalResolver::new(source_bytes);
-    Ok(resolver.process(config, tree, None::<&mut String>))
+    resolver.process(config, tree, None::<&mut String>)
 }
 
 pub fn parse_tree_test<'a>(

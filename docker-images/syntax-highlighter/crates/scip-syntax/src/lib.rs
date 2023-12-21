@@ -31,10 +31,10 @@ pub fn get_globals(
     Some(globals::parse_tree(config, &tree, source_bytes))
 }
 
-pub fn get_locals(parser: BundledParser, source_bytes: &[u8]) -> Option<Result<Vec<Occurrence>>> {
+pub fn get_locals(parser: BundledParser, source_bytes: &[u8]) -> Option<Vec<Occurrence>> {
     let config = languages::get_local_configuration(parser)?;
     let mut parser = config.get_parser();
-    let tree = parser.parse(source_bytes, None).unwrap();
+    let tree = parser.parse(source_bytes, None)?;
     Some(locals::parse_tree(config, &tree, source_bytes))
 }
 

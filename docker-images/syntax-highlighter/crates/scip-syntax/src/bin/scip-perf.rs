@@ -39,7 +39,7 @@ fn parse_files(dir: &Path) -> Vec<ParseTiming> {
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
 
-        locals::parse_tree(config, &tree, source_bytes).unwrap();
+        locals::parse_tree(config, &tree, source_bytes);
         let finish = Instant::now();
 
         timings.push(ParseTiming {
