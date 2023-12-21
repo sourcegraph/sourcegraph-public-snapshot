@@ -5,7 +5,7 @@
 <h2>Default</h2>
 <table>
     <thead>
-        <tr><th>Variant</th><th></th><th>pill=true</th><th>small=true</th><th>pill=true small=true</th></tr>
+        <tr><th>Variant</th><th /><th>pill=true</th><th>small=true</th><th>pill=true small=true</th></tr>
     </thead>
     <tbody>
         {#each BADGE_VARIANTS as variant}
