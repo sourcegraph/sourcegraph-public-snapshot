@@ -113,20 +113,13 @@ func NewRedisStore(secureCookie func() bool) sessions.Store {
 	var store sessions.Store
 	var options *sessions.Options
 
-	if pool, ok := redispool.Store.Pool(); ok {
-		rstore, err := redistore.NewRediStoreWithPool(pool, []byte(sessionCookieKey))
-		if err != nil {
-			waitForRedis(rstore)
-		}
-		store = rstore
-		options = rstore.Options
-	} else {
-		// Redis is not available, we fallback to storing state in cookies.
-		// TODO(keegan) ask why we can't just always use this.
-		cstore := sessions.NewCookieStore([]byte(sessionCookieKey))
-		store = cstore
-		options = cstore.Options
+	pool := redispool.Store.Pool()
+	rstore, err := redistore.NewRediStoreWithPool(pool, []byte(sessionCookieKey))
+	if err != nil {
+		waitForRedis(rstore)
 	}
+	store = rstore
+	options = rstore.Options
 
 	options.Path = "/"
 	options.HttpOnly = true

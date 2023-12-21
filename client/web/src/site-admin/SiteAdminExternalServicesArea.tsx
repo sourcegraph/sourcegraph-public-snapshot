@@ -34,7 +34,6 @@ const AddExternalServicesPage = lazyComponent(
 
 interface Props extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser
-    isCodyApp: boolean
 }
 
 export const SiteAdminExternalServicesArea: FC<Props> = props => {

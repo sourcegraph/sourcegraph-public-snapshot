@@ -70,7 +70,7 @@ export const createWebIntegrationTestContext = async ({
             .intercept((request, response) => {
                 response.type('text/html').send(
                     getIndexHTML({
-                        manifest: getWebBuildManifest(),
+                        manifestFile: getWebBuildManifest(),
                         jsContext: { ...jsContext, ...customContext },
                     })
                 )

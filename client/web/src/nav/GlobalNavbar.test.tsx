@@ -18,7 +18,6 @@ vi.mock('../components/branding/BrandLogo', () => ({ BrandLogo: () => 'BrandLogo
 const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
     isSourcegraphDotCom: false,
-    isCodyApp: false,
     platformContext: {} as any,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     batchChangesEnabled: false,

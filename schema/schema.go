@@ -66,22 +66,6 @@ type AnnotationsResult struct {
 	Items []*OpenCodeGraphItem `json:"items"`
 }
 
-// App description: Configuration options for App only.
-type App struct {
-	// DotcomAuthToken description: Authentication token for Sourcegraph.com. If present, indicates that the App account is connected to a Sourcegraph.com account.
-	DotcomAuthToken string `json:"dotcomAuthToken,omitempty"`
-}
-type AppNotifications struct {
-	// Key description: e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.
-	Key string `json:"key"`
-	// Message description: The Markdown message to display
-	Message string `json:"message"`
-	// VersionMax description: If present, this message will only be shown to Cody App instances in this inclusive version range.
-	VersionMax string `json:"version.max,omitempty"`
-	// VersionMin description: If present, this message will only be shown to Cody App instances in this inclusive version range.
-	VersionMin string `json:"version.min,omitempty"`
-}
-
 // AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 type AuditLog struct {
 	// GitserverAccess description: Capture gitserver access logs as part of the audit log.
@@ -682,8 +666,6 @@ type DequeueCacheConfig struct {
 
 // Dotcom description: Configuration options for Sourcegraph.com only.
 type Dotcom struct {
-	// AppNotifications description: Notifications to display in the Sourcegraph app.
-	AppNotifications []*AppNotifications `json:"app.notifications,omitempty"`
 	// CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
 	CodyGateway *CodyGateway `json:"codyGateway,omitempty"`
 	// MinimumExternalAccountAge description: The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.
@@ -1539,15 +1521,6 @@ type LinkStep struct {
 	Variant any    `json:"variant,omitempty"`
 }
 
-// LocalGitExternalService description: Configuration for integration local Git repositories.
-type LocalGitExternalService struct {
-	Repos []*LocalGitRepoPattern `json:"repos,omitempty"`
-}
-type LocalGitRepoPattern struct {
-	Group   string `json:"group,omitempty"`
-	Pattern string `json:"pattern,omitempty"`
-}
-
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
 	// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
@@ -1911,11 +1884,9 @@ type OtherExternalServiceConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	//
-	// Note: These patterns are ignored if using src-expose / src-serve / src-serve-local.
+	// Note: These patterns are ignored if using src-expose / src-serve.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	// Root description: The root directory to walk for discovering local git repositories to mirror. To sync with local repositories and use this root property one must run Cody App and define the repos configuration property such as ["src-serve-local"].
-	Root string `json:"root,omitempty"`
-	Url  string `json:"url,omitempty"`
+	Url                   string `json:"url,omitempty"`
 }
 type OutputVariable struct {
 	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.
@@ -2626,8 +2597,6 @@ type SettingsOpenInEditor struct {
 type SiteConfiguration struct {
 	// RedirectUnsupportedBrowser description: Prompts user to install new browser for non es5
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser,omitempty"`
-	// App description: Configuration options for App only.
-	App *App `json:"app,omitempty"`
 	// AuthAccessRequest description: The config options for access requests
 	AuthAccessRequest *AuthAccessRequest `json:"auth.accessRequest,omitempty"`
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
@@ -2936,7 +2905,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "RedirectUnsupportedBrowser")
-	delete(m, "app")
 	delete(m, "auth.accessRequest")
 	delete(m, "auth.accessTokens")
 	delete(m, "auth.allowedIpAddress")

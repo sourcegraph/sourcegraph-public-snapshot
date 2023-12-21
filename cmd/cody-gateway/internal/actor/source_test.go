@@ -53,13 +53,10 @@ func (m *mockSourceSingleSyncer) SyncOne(_ context.Context, _ string) error {
 func TestSourcesWorkers(t *testing.T) {
 	logger := logtest.Scoped(t)
 	// Connect to local redis for testing, this is the same URL used in rcache.SetupForTest
-	p, ok := redispool.NewKeyValue("127.0.0.1:6379", &redis.Pool{
+	p := redispool.NewKeyValue("127.0.0.1:6379", &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 5 * time.Second,
 	}).Pool()
-	if !ok {
-		t.Fatal("real redis is required")
-	}
 	rs := redsync.New(redigo.NewPool(p))
 
 	// Randomized lock name to avoid flakiness when running with count>1

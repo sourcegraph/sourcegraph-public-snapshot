@@ -101,7 +101,6 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
                     />
                 ) : (
                     <InlineNavigationPanel
-                        isCodyApp={false}
                         showSearchContext={showSearchContext}
                         showOwn={showOwn}
                         showCodySearch={showCodySearch}
@@ -118,7 +117,6 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
 
                 {authenticatedUser ? (
                     <UserNavItem
-                        isCodyApp={false}
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         authenticatedUser={authenticatedUser}
                         showFeedbackModal={() => {}}

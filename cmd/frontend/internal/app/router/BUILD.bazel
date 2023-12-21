@@ -11,7 +11,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/codyapp",
         "//cmd/frontend/internal/routevar",
         "//internal/api",
         "@com_github_gorilla_mux//:mux",

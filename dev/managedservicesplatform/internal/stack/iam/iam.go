@@ -26,6 +26,7 @@ import (
 
 type CrossStackOutput struct {
 	CloudRunWorkloadServiceAccount *serviceaccount.Output
+	OperatorAccessServiceAccount   *serviceaccount.Output
 }
 
 type Variables struct {
@@ -104,6 +105,29 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			Roles: serviceAccountRoles,
 		})
 
+	// Create a service account for operators to impersonate to access other
+	// provisioned MSP resources
+	operatorAccessServiceAccount := serviceaccount.New(stack,
+		id.Group("operatoraccess"),
+		serviceaccount.Config{
+			ProjectID: vars.ProjectID,
+			AccountID: fmt.Sprintf("%s-operatoraccess", vars.Service.ID),
+			DisplayName: fmt.Sprintf("%s Operator Access Service Account",
+				pointers.Deref(vars.Service.Name, vars.Service.ID)),
+			Roles: []serviceaccount.Role{
+				// Roles for connecting to Cloud SQL
+				{
+					ID:   resourceid.New("role_cloudsql_client"),
+					Role: "roles/cloudsql.client",
+				}, {
+					ID:   resourceid.New("role_cloudsql_instanceuser"),
+					Role: "roles/cloudsql.instanceUser",
+				},
+				// Add roles here for operator access
+			},
+		},
+	)
+
 	// Provision the default Cloud Run robot account so that we can grant it
 	// access to prerequisite resources.
 	cloudRunIdentity := googleprojectserviceidentity.NewGoogleProjectServiceIdentity(stack,
@@ -157,14 +181,16 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 					Member:   &workloadServiceAccount.Member,
 				})
 		}
-
 	}
 
 	// Collect outputs
 	locals.Add("cloud_run_service_account", workloadServiceAccount.Email,
 		"Service Account email used as Cloud Run resource workload identity")
+	locals.Add("operator_access_service_account", operatorAccessServiceAccount.Email,
+		"Service Account email used for operator access to other resources")
 	return &CrossStackOutput{
 		CloudRunWorkloadServiceAccount: workloadServiceAccount,
+		OperatorAccessServiceAccount:   operatorAccessServiceAccount,
 	}, nil
 }
 

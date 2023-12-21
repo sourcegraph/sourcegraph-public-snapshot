@@ -3,6 +3,6 @@
   "compilerOptions": {
     "module": "commonjs",
   },
-  "include": ["vite", "server", "utils", "../src/jscontext.ts", "../src/graphql-operations.ts"],
+  "include": ["esbuild", "server", "utils", "../src/jscontext.ts", "../src/graphql-operations.ts"],
   "exclude": ["vitest.config.ts"],
 }

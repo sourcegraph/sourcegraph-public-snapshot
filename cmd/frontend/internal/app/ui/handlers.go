@@ -27,9 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -86,8 +84,7 @@ type Common struct {
 
 	PreloadedAssets *[]PreloadedAsset
 
-	Manifest              *assets.WebBuildManifest
-	ManifestDevInjectHTML template.HTML
+	Manifest *assets.WebBuildManifest
 
 	WebBuilderDevServer bool // whether the web builder dev server is running (WEB_BUILDER_DEV_SERVER env var)
 
@@ -181,10 +178,6 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		},
 
 		WebBuilderDevServer: webBuilderDevServer,
-	}
-
-	if env.InsecureDev && manifest.DevInjectHTML != "" {
-		common.ManifestDevInjectHTML = template.HTML(manifest.DevInjectHTML)
 	}
 
 	if enableHTMLInject != "true" {
@@ -375,12 +368,6 @@ func serveSignIn(db database.DB) handlerFunc {
 		common.Title = brandNameSubtitle("Sign in")
 
 		return renderTemplate(w, "app.html", common)
-	}
-
-	// For app we use an extra middleware to handle passwordless signin via a
-	// in-memory secret.
-	if deploy.IsApp() {
-		return userpasswd.AppSignInMiddleware(db, handler)
 	}
 
 	return handler

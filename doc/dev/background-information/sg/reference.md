@@ -55,6 +55,7 @@ Available commandsets in `sg.config.yaml`:
 * qdrant
 * single-program
 * web-standalone
+* web-standalone-prod
 * web-sveltekit-standalone
 
 ```sh
@@ -141,6 +142,7 @@ Available commands in `sg.config.yaml`:
 * telemetry-gateway
 * web-integration-build-prod: Build production web application for integration tests
 * web-integration-build: Build development web application for integration tests
+* web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
 * web-standalone-http: Standalone web frontend (dev) with API proxy to a configurable URL
 * web-sveltekit-prod-watch: Builds the prod version of the SvelteKit web app and rebuilds on changes
 * web-sveltekit-standalone: Standalone SvelteKit web frontend (dev) with API proxy to a configurable URL

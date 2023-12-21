@@ -212,151 +212,6 @@ func TestOther_DotComConfig(t *testing.T) {
 	require.False(t, repo.Private)
 }
 
-func TestSrcExpose_SrcServeLocalServer(t *testing.T) {
-	var body string
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/list-repos-for-path" {
-			http.Error(w, r.URL.String()+" not found", http.StatusNotFound)
-			return
-		}
-		_, _ = w.Write([]byte(body))
-	}))
-	defer s.Close()
-
-	cases := []struct {
-		name string
-		body string
-		want []*types.Repo
-		err  string
-	}{{
-		name: "error",
-		body: "boom",
-		err:  "failed to decode response from src-expose: boom",
-	}, {
-		name: "nouri",
-		body: `{"Items":[{"name": "foo"}]}`,
-		err:  "repo without URI",
-	}, {
-		name: "empty",
-		body: `{"items":[]}`,
-		want: []*types.Repo{},
-	}, {
-		name: "minimal",
-		body: `{"Items":[{"uri": "/repos/foo", "clonePath":"/repos/foo/.git"},{"uri":"/repos/bar/baz", "clonePath":"/repos/bar/baz/.git"}]}`,
-		want: []*types.Repo{{
-			URI:  "/repos/foo",
-			Name: "/repos/foo",
-			ExternalRepo: api.ExternalRepoSpec{
-				ServiceID:   s.URL,
-				ServiceType: extsvc.TypeOther,
-				ID:          "/repos/foo",
-			},
-			Sources: map[string]*types.SourceInfo{
-				"extsvc:other:1": {
-					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/repos/foo/.git",
-				},
-			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
-			Private:  true,
-		}, {
-			URI:  "/repos/bar/baz",
-			Name: "/repos/bar/baz",
-			ExternalRepo: api.ExternalRepoSpec{
-				ServiceID:   s.URL,
-				ServiceType: extsvc.TypeOther,
-				ID:          "/repos/bar/baz",
-			},
-			Sources: map[string]*types.SourceInfo{
-				"extsvc:other:1": {
-					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/repos/bar/baz/.git",
-				},
-			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/bar/baz/.git"},
-			Private:  true,
-		}},
-	}, {
-		name: "override",
-		body: `{"Items":[{"uri": "/repos/foo", "name": "foo", "description": "hi", "clonePath":"/repos/foo/.git"}]}`,
-		want: []*types.Repo{{
-			URI:         "/repos/foo",
-			Name:        "foo",
-			Description: "",
-			ExternalRepo: api.ExternalRepoSpec{
-				ServiceID:   s.URL,
-				ServiceType: extsvc.TypeOther,
-				ID:          "/repos/foo",
-			},
-			Sources: map[string]*types.SourceInfo{
-				"extsvc:other:1": {
-					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/repos/foo/.git",
-				},
-			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
-			Private:  true,
-		}},
-	}, {
-		name: "immutable",
-		body: `{"Items":[{"uri": "/repos/foo", "clonePath":"/repos/foo/.git", "enabled": false, "externalrepo": {"serviceid": "x", "servicetype": "y", "id": "z"}, "sources": {"x":{"id":"x", "cloneurl":"y"}}}]}`,
-		want: []*types.Repo{{
-			URI:  "/repos/foo",
-			Name: "/repos/foo",
-			ExternalRepo: api.ExternalRepoSpec{
-				ServiceID:   s.URL,
-				ServiceType: extsvc.TypeOther,
-				ID:          "/repos/foo",
-			},
-			Sources: map[string]*types.SourceInfo{
-				"extsvc:other:1": {
-					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/repos/foo/.git",
-				},
-			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
-			Private:  true,
-		}},
-	}}
-
-	conn := &schema.OtherExternalServiceConnection{
-		Url:   s.URL,
-		Repos: []string{"src-serve-local"},
-		Root:  "/my/directory",
-	}
-	config, err := json.Marshal(conn)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ctx := context.Background()
-	source, err := NewOtherSource(ctx, &types.ExternalService{
-		ID:     1,
-		Kind:   extsvc.KindOther,
-		Config: extsvc.NewUnencryptedConfig(string(config)),
-	}, httpcli.TestExternalClientFactory, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			body = tc.body
-
-			repos, validSrcExposeConfiguration, err := source.srcExpose(context.Background())
-			if got := fmt.Sprintf("%v", err); !strings.Contains(got, tc.err) {
-				t.Fatalf("got error %v, want %v", got, tc.err)
-			}
-			if !validSrcExposeConfiguration {
-				t.Fatal("other source configuration is expected to be compatible with srcExpose requirements")
-			}
-			if !reflect.DeepEqual(repos, tc.want) {
-				t.Fatal("unexpected repos", cmp.Diff(tc.want, repos))
-			}
-		})
-	}
-}
-
 func TestOther_ListRepos(t *testing.T) {
 	// We don't test on the details of what we marshal, instead we just write
 	// some tests based on the repo names that are returned.
@@ -364,7 +219,7 @@ func TestOther_ListRepos(t *testing.T) {
 	// Spin up a src-expose server
 	var srcExposeRepos []string
 	srcExpose := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/list-repos" && r.URL.Path != "/v1/list-repos-for-path" {
+		if r.URL.Path != "/v1/list-repos" {
 			http.Error(w, r.URL.String()+" not found", http.StatusNotFound)
 			return
 		}
@@ -394,14 +249,6 @@ func TestOther_ListRepos(t *testing.T) {
 		SrcExposeRepos: []string{"a", "b/c", "d"},
 		Want:           []string{"a", "b/c", "d"},
 	}, {
-		Name: "src-serve-local/simple",
-		Conn: &schema.OtherExternalServiceConnection{
-			Url:   srcExpose.URL,
-			Repos: []string{"src-serve-local"},
-		},
-		SrcExposeRepos: []string{"a", "b/c", "d"},
-		Want:           []string{"a", "b/c", "d"},
-	}, {
 		Name: "static/simple",
 		Conn: &schema.OtherExternalServiceConnection{
 			Url:   "http://test",
@@ -419,16 +266,6 @@ func TestOther_ListRepos(t *testing.T) {
 		SrcExposeRepos: []string{"a", "b/c", "d"},
 		Want:           []string{"a", "b/c", "d"},
 	}, {
-		// Pattern is ignored for src-serve-local
-		Name: "src-serve-local/pattern",
-		Conn: &schema.OtherExternalServiceConnection{
-			Url:                   srcExpose.URL,
-			Repos:                 []string{"src-serve-local"},
-			RepositoryPathPattern: "pre-{repo}",
-		},
-		SrcExposeRepos: []string{"a", "b/c", "d"},
-		Want:           []string{"a", "b/c", "d"},
-	}, {
 		Name: "static/pattern",
 		Conn: &schema.OtherExternalServiceConnection{
 			Url:                   "http://test",
@@ -441,16 +278,6 @@ func TestOther_ListRepos(t *testing.T) {
 		Conn: &schema.OtherExternalServiceConnection{
 			Url:                   srcExpose.URL,
 			Repos:                 []string{"src-expose"},
-			Exclude:               []*schema.ExcludedOtherRepo{{Name: "not-exact"}, {Name: "exclude/exact"}, {Pattern: "exclude-dir"}},
-			RepositoryPathPattern: "pre-{repo}",
-		},
-		SrcExposeRepos: []string{"keep1", "not-exact/keep2", "exclude-dir/a", "exclude-dir/b", "exclude/exact", "keep3"},
-		Want:           []string{"keep1", "not-exact/keep2", "keep3"},
-	}, {
-		Name: "src-serve-local/exclude",
-		Conn: &schema.OtherExternalServiceConnection{
-			Url:                   srcExpose.URL,
-			Repos:                 []string{"src-serve-local"},
 			Exclude:               []*schema.ExcludedOtherRepo{{Name: "not-exact"}, {Name: "exclude/exact"}, {Pattern: "exclude-dir"}},
 			RepositoryPathPattern: "pre-{repo}",
 		},
@@ -538,16 +365,6 @@ func TestOther_SrcExposeRequest(t *testing.T) {
 		Method:         http.MethodGet,
 		ValidSrcExpose: true,
 	}, {
-		Name: "src-serve-local",
-		Conn: &schema.OtherExternalServiceConnection{
-			Repos: []string{"src-serve-local"},
-			Root:  "/path/to/dir",
-		},
-		ValidRequest:   true,
-		Method:         http.MethodPost,
-		ValidSrcExpose: true,
-		Body:           srcExposeRequestBody{Root: "/path/to/dir"},
-	}, {
 		Name: "invalid src-expose",
 		Conn: &schema.OtherExternalServiceConnection{
 			Repos: []string{"myrepo"},
@@ -555,16 +372,8 @@ func TestOther_SrcExposeRequest(t *testing.T) {
 		ValidRequest:   false,
 		Method:         http.MethodGet,
 		ValidSrcExpose: false,
-	}, {
-		Name: "invalid src-expose ignores root property",
-		Conn: &schema.OtherExternalServiceConnection{
-			Repos: []string{"myrepo"},
-			Root:  "/path/to/dir",
-		},
-		ValidRequest:   false,
-		Method:         http.MethodGet,
-		ValidSrcExpose: false,
-	}}
+	},
+	}
 
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {

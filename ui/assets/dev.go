@@ -42,7 +42,7 @@ func loadWebBuildManifest() (m *WebBuildManifest, err error) {
 		return MockLoadWebBuildManifest()
 	}
 
-	manifestContent, err := os.ReadFile(filepath.Join(assetsDir, "vite-manifest.json"))
+	manifestContent, err := os.ReadFile(filepath.Join(assetsDir, "web.manifest.json"))
 	if err != nil {
 		return nil, errors.Wrap(err, "loading web build manifest file from disk")
 	}
