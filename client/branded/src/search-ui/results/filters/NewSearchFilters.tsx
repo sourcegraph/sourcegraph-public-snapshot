@@ -17,7 +17,7 @@ import {
     toSearchSyntaxTypeFilter,
 } from './components/filter-type-list/FilterTypeList'
 import { useFilterQuery } from './hooks'
-import { SearchFilterType } from './types'
+import { SearchFilterType, SYMBOL_KIND_FILTERS } from './types'
 
 import styles from './NewSearchFilters.module.scss'
 
@@ -79,6 +79,15 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
         >
             <aside className={styles.scrollWrapper}>
                 <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
+
+                {type === SearchFilterType.Symbols && (
+                    <SearchDynamicFilter
+                        filterType={FilterType.select}
+                        filters={SYMBOL_KIND_FILTERS}
+                        filterQuery={filterQuery}
+                        onFilterQueryChange={setFilterQuery}
+                    />
+                )}
 
                 <SearchDynamicFilter
                     filterType={FilterType.lang}

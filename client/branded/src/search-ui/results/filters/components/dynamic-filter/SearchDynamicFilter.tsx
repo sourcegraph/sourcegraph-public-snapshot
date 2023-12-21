@@ -7,6 +7,7 @@ import { upperFirst } from 'lodash'
 import { stringHuman } from '@sourcegraph/shared/out/src/search/query/printer'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
+import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 import { succeedScan } from '@sourcegraph/shared/src/search/query/transformer'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { Badge, Button, Icon, H4, Input, LanguageIcon } from '@sourcegraph/wildcard'
@@ -41,9 +42,6 @@ interface SearchDynamicFilterProps {
      */
     filters?: Filter[]
 
-    /** Controls when we render the filter input for the filter items list */
-    withSearch?: boolean
-
     /** Exposes render API to render some custom filter item in the list */
     renderItem?: (filter: Filter) => ReactNode
 
@@ -76,11 +74,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
     // Compares filters stringified value to match selected filters in URL
     const isSelected = useCallback(
         (filterValue: string): boolean => {
-            const filteredFilter = filterQueryFilters.find(selectedFilter => {
-                const constructedFilterValue = stringHuman([selectedFilter])
-
-                return filterValue === constructedFilterValue
-            })
+            const filteredFilter = filterQueryFilters.find(selectedFilter => isSameFilter(filterValue, selectedFilter))
 
             return filteredFilter !== undefined
         },
@@ -94,7 +88,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
         // places (URL and steam API) merged them to avoid duplicates in the UI
         if (filterQueryFilters.length > 0) {
             const mappedSelectedFilters = filterQueryFilters.map(selectedFilter => {
-                const mappedSelectedFilter = filters?.find(filter => isSelected(filter.value))
+                const mappedSelectedFilter = filters?.find(filter => isSameFilter(filter.value, selectedFilter))
 
                 return {
                     count: mappedSelectedFilter?.count ?? 0,
@@ -173,6 +167,12 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
             )}
         </div>
     )
+}
+
+const isSameFilter = (filterValue: string, filter: QueryFilter): boolean => {
+    const constructedFilterValue = stringHuman([filter])
+
+    return filterValue === constructedFilterValue
 }
 
 export const languageFilter = (filter: Filter) => {

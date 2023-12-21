@@ -1,3 +1,5 @@
+import type { Filter } from '@sourcegraph/shared/src/search/stream'
+
 export enum SearchFilterType {
     Code = 'Code',
     Repositories = 'Repositories',
@@ -56,3 +58,11 @@ export const TYPES_TO_FILTERS = {
         SearchResultFilters.ArchivedAndForked,
     ],
 }
+
+export const SYMBOL_KIND_FILTERS: Filter[] = [
+    { kind: 'select', label: 'Function', count: 0, limitHit: false, value: 'select:symbol.function' },
+    { kind: 'select', label: 'Method', count: 0, limitHit: false, value: 'select:symbol.method' },
+    { kind: 'select', label: 'Module', count: 0, limitHit: false, value: 'select:symbol.module' },
+    { kind: 'select', label: 'Class', count: 0, limitHit: false, value: 'select:symbol.class' },
+    { kind: 'select', label: 'Enum', count: 0, limitHit: false, value: 'select:symbol.enum' },
+]

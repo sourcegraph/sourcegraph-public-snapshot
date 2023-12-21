@@ -270,7 +270,7 @@ export interface Filter {
     label: string
     count: number
     limitHit: boolean
-    kind: 'file' | 'repo' | 'lang' | 'utility'
+    kind: 'file' | 'repo' | 'lang' | 'utility' | 'select'
 }
 
 export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
