@@ -514,6 +514,16 @@ export const escapeSpaces = (value: string): string => {
 }
 
 /**
+ * Helper function to quote a string if it contains whitespace characters.
+ */
+export function quoteIfWhitespace(value: string): string {
+    if (/\s/.test(value)) {
+        return `"${value}"`
+    }
+    return value
+}
+
+/**
  * Helper function to convert a string to a completion item. It quotes the
  * string as necessary.
  */

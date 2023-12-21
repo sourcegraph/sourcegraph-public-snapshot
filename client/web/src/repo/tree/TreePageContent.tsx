@@ -37,7 +37,7 @@ import type {
     TreePageRepositoryFields,
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
-import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
+import { quoteIfNeeded, repoFilterForRepoRevision } from '../../search'
 import { buildSearchURLQueryFromQueryState, useNavbarQueryState } from '../../stores'
 import { canWriteRepoMetadata } from '../../util/rbac'
 import { OWNER_FIELDS, RECENT_CONTRIBUTOR_FIELDS, RECENT_VIEW_FIELDS } from '../blob/own/grapqlQueries'
@@ -524,7 +524,7 @@ const RepositoryContributorNode: React.FC<RepositoryContributorNodeProps> = ({
     sourceType,
 }) => {
     const query: string = [
-        searchQueryForRepoRevision(repoName),
+        repoFilterForRepoRevision(repoName),
         'type:diff',
         `author:${quoteIfNeeded(node.person.email)}`,
         after ? `after:${quoteIfNeeded(after)}` : '',

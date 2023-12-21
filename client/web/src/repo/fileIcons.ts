@@ -61,7 +61,12 @@ export enum FileExtension {
     CLOJURE_CLJC = 'cljc',
     CLOJURE_EDN = 'edn',
     COFFEE = 'coffee',
-    CPP = 'cc',
+    CPP = 'cpp',
+    CPP_CC = 'cc',
+    CPP_CXX = 'cxx',
+    CPP_H = 'h',
+    CPP_HPP = 'hpp',
+    CPP_HXX = 'hxx',
     CSHARP = 'cs',
     CSS = 'css',
     DART = 'dart',
@@ -106,7 +111,6 @@ export enum FileExtension {
     POWERSHELL_PSM1 = 'psm1',
     PYTHON = 'py',
     R = 'r',
-    R_CAP = 'R',
     RUBY = 'rb',
     RUST = 'rs',
     SCALA = 'scala',
@@ -145,7 +149,7 @@ export function getFileInfo(file: string, isDirectory: boolean): FileInfo {
         }
     }
 
-    const extension = file.split('.').at(-1) as FileExtension
+    const extension = file.split('.').at(-1)?.toLowerCase() as FileExtension
     const isValidExtension = Object.values(FileExtension).includes(extension)
 
     if (extension && isValidExtension) {
@@ -194,6 +198,11 @@ export const FILE_ICONS: Map<FileExtension, IconInfo> = new Map([
     [FileExtension.CLOJURE_EDN, { icon: SiClojure, iconClass: styles.blue }],
     [FileExtension.COFFEE, { icon: SiCoffeescript, iconClass: styles.defaultIcon }],
     [FileExtension.CPP, { icon: SiCplusplus, iconClass: styles.blue }],
+    [FileExtension.CPP_CC, { icon: SiCplusplus, iconClass: styles.blue }],
+    [FileExtension.CPP_CXX, { icon: SiCplusplus, iconClass: styles.blue }],
+    [FileExtension.CPP_H, { icon: SiCplusplus, iconClass: styles.blue }],
+    [FileExtension.CPP_HPP, { icon: SiCplusplus, iconClass: styles.blue }],
+    [FileExtension.CPP_HXX, { icon: SiCplusplus, iconClass: styles.blue }],
     [FileExtension.CSHARP, { icon: SiCsharp, iconClass: styles.blue }],
     [FileExtension.CSS, { icon: FaCss3Alt, iconClass: styles.blue }],
     [FileExtension.DART, { icon: SiDart, iconClass: styles.blue }],
@@ -238,7 +247,7 @@ export const FILE_ICONS: Map<FileExtension, IconInfo> = new Map([
     [FileExtension.POWERSHELL_PSM1, { icon: GoTerminal, iconClass: styles.defaultIcon }],
     [FileExtension.PYTHON, { icon: SiPython, iconClass: styles.blue }],
     [FileExtension.R, { icon: SiR, iconClass: styles.red }],
-    [FileExtension.R_CAP, { icon: SiR, iconClass: styles.red }],
+    // [FileExtension.R_CAP, { icon: SiR, iconClass: styles.red }],
     [FileExtension.RUBY, { icon: SiRuby, iconClass: styles.red }],
     [FileExtension.RUST, { icon: SiRust, iconClass: styles.defaultIcon }],
     [FileExtension.SCALA, { icon: SiScala, iconClass: styles.red }],
