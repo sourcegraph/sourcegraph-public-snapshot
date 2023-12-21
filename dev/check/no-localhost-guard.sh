@@ -12,7 +12,7 @@ path_filter() {
 }
 
 set +e
-LOCALHOST_MATCHES=$(git grep -e localhost --and -e '^(?!\s*//)' --and --not -e 'CI\:LOCALHOST_OK' -- '*.go' \
+LOCALHOST_MATCHES=$(git grep -n -e localhost --and --not -e '^\s*//' --and --not -e 'CI\:LOCALHOST_OK' -- '*.go' \
   ':(exclude)*_test.go' \
   ':(exclude)cmd/server/shared/nginx.go' \
   ':(exclude)dev/sg/sg_setup.go' \
@@ -36,7 +36,8 @@ https://github.com/sourcegraph/sourcegraph/issues/9129).
 
 If your usage of "localhost" is valid, then either
 1) add the comment "CI:LOCALHOST_OK" to the line where "localhost" occurs, or
-2) add an exclusion clause in the "git grep" command in  no-localhost-guard.sh
+2) add an exclusion clause in the "git grep" command in no-localhost-guard.sh
+   and dev/linters/nolocalhost/nolocalhost.go
 
 EOF
   echo "^^^ +++"
