@@ -34,7 +34,7 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
 - Security events are logged with all the relevant information associated with the actions
 - Depending on the location of the log destination, the event log can be either found in your application log output or in the database or both.
 - A sample output of a logged event from application logs would look similar to this:
-- ```JSON
+  ```JSON
   {
   ...
   {
@@ -71,8 +71,11 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
       "service.version": "255367_2023-12-20_5.2-a3143120c41e"
     }
   }
-...
-}
+  ...
+  }
 
-
-
+- Entity field can be used to filter out all security events
+- Action field will provide information on the event and can be correlated with the action taken, in this case EmailAdded
+- The actorUID can be used to filter out events from a particular user
+- UseriD can be used to filter out events taken on a particular user's information
+- 
