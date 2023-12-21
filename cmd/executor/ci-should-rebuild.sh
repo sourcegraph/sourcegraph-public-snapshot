@@ -6,6 +6,10 @@
 
 set -eu
 
+echo "🧨"
+git status
+echo "🧨"
+
 # target-determinator looks at all the deps for the given targets and only print them back on STDOOUT
 # if it finds that one of inputs (transitive or not) has changed since a given commit.
 #
