@@ -16,6 +16,7 @@ import {
     repoFilter,
     SearchDynamicFilter,
     symbolFilter,
+    utilityFilter,
 } from './components/dynamic-filter/SearchDynamicFilter'
 import {
     FilterTypeList,
@@ -131,6 +132,15 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
                     filterAlias={NegatedFilters.file}
                     filters={filters}
                     filterQuery={filterQuery}
+                    onFilterQueryChange={setFilterQuery}
+                />
+
+                <SearchDynamicFilter
+                    filterType="utility"
+                    filterAlias={[FilterType.archived, FilterType.fork]}
+                    filters={filters}
+                    filterQuery={filterQuery}
+                    renderItem={utilityFilter}
                     onFilterQueryChange={setFilterQuery}
                 />
             </aside>

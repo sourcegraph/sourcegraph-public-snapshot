@@ -5,7 +5,6 @@ import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
 import { useExperimentalFeatures } from '@sourcegraph/shared/out/src/settings/settings'
-import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
@@ -23,7 +22,7 @@ interface SearchDynamicFilterProps {
      * Specifies which type filter we want to render in this particular
      * filter section, it could be lang filter, repo filter, or file filters.
      */
-    filterType: FilterType | FilterType[]
+    filterType: string | string[]
 
     /**
      * Filter query that contains all filter-like query that were applied by users
@@ -37,7 +36,7 @@ interface SearchDynamicFilterProps {
      * in order to find these filters in the URL we have to specify -file as alias
      * because in stream API these filters still have file kind.
      */
-    filterAlias?: string
+    filterAlias?: string | string[]
 
     /**
      * Be default, filters are not exclusive, this means that you can select more
@@ -87,22 +86,17 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
     const [showAllFilters, setShowAllFilters] = useState(false)
     const [searchTerm, setSearchTerm] = useState<string>('')
 
-    const filterTypes = useMemo(() => {
-        if (Array.isArray(filterType)) {
-            return filterType
-        }
-
-        return [filterType]
-    }, [filterType])
+    const filterTypes = useMemo(() => toArray(filterType), [filterType])
+    const filterAliases = useMemo(() => toArray(filterAlias ?? ''), [filterAlias])
 
     // Scan the filter query (which comes from URL param) and extract
     // all appearances of a filter type that we're looking for in the
     const filterQueryFilters = useMemo(() => {
         const typedFilters = filterTypes.flatMap(filterType => findFilters(succeedScan(filterQuery), filterType))
-        const aliasedFilters = filterAlias ? findFilters(succeedScan(filterQuery), filterAlias) : []
+        const aliasedFilters = filterAliases.flatMap(filterAlias => findFilters(succeedScan(filterQuery), filterAlias))
 
         return [...typedFilters, ...aliasedFilters]
-    }, [filterQuery, filterAlias, filterTypes])
+    }, [filterQuery, filterAliases, filterTypes])
 
     // Compares filters stringified value to match selected filters in URL
     const isSelected = useCallback(
@@ -215,6 +209,14 @@ const isSameFilter = (filterValue: string, filter: QueryFilter): boolean => {
     return filterValue === constructedFilterValue
 }
 
+function toArray<T>(item: T | T[]): T[] {
+    if (Array.isArray(item)) {
+        return item
+    }
+
+    return [item]
+}
+
 export const languageFilter = (filter: Filter) => {
     const languageExtension = filter.value.split(':')[1] ?? ''
 
@@ -263,3 +265,5 @@ export const symbolFilter = (filter: Filter) => {
         </>
     )
 }
+
+export const utilityFilter = (filter: Filter) => (filter.count === 0 ? filter.value : filter.label)
