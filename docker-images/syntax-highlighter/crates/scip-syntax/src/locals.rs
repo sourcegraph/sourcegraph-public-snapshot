@@ -297,6 +297,9 @@ impl<'a> LocalResolver<'a> {
                         break;
                     }
                 }
+
+                // Remove me once let-chains are stabilized
+                // (https://github.com/rust-lang/rust/issues/53667)
                 if_chain! {
                     if is_def_ref;
                     if let Some(previous) = self
