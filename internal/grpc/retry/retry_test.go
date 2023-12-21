@@ -37,7 +37,7 @@ type failingService struct {
 
 	// The following fields are used for failures while consuming the stream.
 	respCounter       uint
-	streamFailureFunc func() bool // If ture, stream.Recv() will fail with streamError.
+	streamFailureFunc func() bool // If true, stream.Recv() will fail with streamError.
 	streamError       codes.Code
 }
 
