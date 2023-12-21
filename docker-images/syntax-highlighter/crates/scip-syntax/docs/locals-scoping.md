@@ -3,8 +3,23 @@
 In order to find a small number of features that support as many languages as possible we analyzed the scoping behaviour of various programming languages.
 This led us to the design of the current implementation of `src/locals.rs`.
 The main axis along which we categorized languages was their "hoisting" behaviour.
+
+## Hoisting
+
 Hoisting means lifting definitions/names to a particular scope thus making them visible even for references lexically preceding them.
-This document contains information about hoisting behaviour for the languages we analyzed.
+
+As an example, consider the following Python code:
+
+```python
+def outer():
+    def inner():
+        print(x)
+    x = 10
+    inner()
+```
+
+Calling `outer()` will print `10`, because Python _hoists_ local variables to the top of their enclosing function.
+This means `inner` is able to reference `x`, even though it is referenced before the definition.
 
 ## Python does have hoisting
 

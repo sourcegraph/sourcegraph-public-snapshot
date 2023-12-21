@@ -35,7 +35,7 @@ fn main() {
 ```
 
 ### Further documentation
-- Read [locals query DSL] if you're looking to edit, add to, or just understand our locals queries
+- Read about our [locals query DSL] if you're looking to edit, add to, or just understand our locals queries
 - In [locals scoping] we describe how we arrived at the current design of the DSL by analyzing scoping behaviour for a variety of languges
 
 [locals query DSL]: docs/locals-query-dsl.md

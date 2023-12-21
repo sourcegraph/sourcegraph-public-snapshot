@@ -6,7 +6,7 @@ The three main concepts are _scopes_, _definitions_, and _references_.
 ## Scopes
 
 Scopes are specified by labeling a capture as a `@scope[.kind]`.
-The optional scope kind can be used to hoist definitions to scopes of that kind.
+The optional scope kind can be used to [hoist][hoisting] definitions to scopes of that kind.
 There is an implicit top-level scope that is of kind `"global"`
 
 ### Examples
@@ -37,6 +37,8 @@ print(my_var) // Will be resolved
 
 ### Hoisting
 
+For more details see [hoisting] in the scoping documentation.
+
 If you want a definition to be _hoisted_ to the start of a scope instead, you can specify the kind of the nearest enclosing scope it should be hoisted to.
 
 ```scm
@@ -49,10 +51,15 @@ The definition will be visible to the nearest enclosing scope with kind `functio
 If no such enclosing scope is found, the definition will be visible in the global scope.
 
 ```js
-my_func(10) // Will be resolved
+// Will be resolved as `global_func` will be visible at the `global` scope
+global_func(10)
 
-function my_func(x) {
-  print(x)
+function global_func(x) {
+  // Will be resolved as `local_func` is hoisted to the top of `global_func`'s scope
+  local_func(10)
+  function local_func(y) {
+    print(y)
+  }
 }
 ```
 
@@ -100,4 +107,5 @@ References are specified by labeling a capture as a `@reference`.
 They will be resolved against definitions in the current scope and parent scopes.
 Non-hoisted definitions are only resolved if they are defined _before_ the reference.
 
+[hoisting]: ./locals-query-dsl.md#hoisting
 [tree-sitter query]: https://tree-sitter.github.io/tree-sitter/using-parsers#pattern-matching-with-queries
