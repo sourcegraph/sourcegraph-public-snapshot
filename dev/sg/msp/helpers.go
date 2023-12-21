@@ -10,8 +10,10 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,6 +30,26 @@ func useServiceArgument(c *cli.Context) (*spec.Spec, error) {
 	serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
 
 	return spec.Open(serviceSpecPath)
+}
+
+func getTFCRunsClient(c *cli.Context) (*terraformcloud.RunsClient, error) {
+	secretStore, err := secrets.FromContext(c.Context)
+	if err != nil {
+		return nil, err
+	}
+	tfcMSPAccessToken, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+		// We use a team token to get workspace runs
+		Name:    googlesecretsmanager.SecretTFCMSPTeamToken,
+		Project: googlesecretsmanager.ProjectID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "get TFC OAuth client ID")
+	}
+	tfcClient, err := terraformcloud.NewRunsClient(tfcMSPAccessToken)
+	if err != nil {
+		return nil, errors.Wrap(err, "init Terraform Cloud client")
+	}
+	return tfcClient, nil
 }
 
 func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, build spec.BuildSpec, env spec.EnvironmentSpec, monitoring spec.MonitoringSpec) error {
