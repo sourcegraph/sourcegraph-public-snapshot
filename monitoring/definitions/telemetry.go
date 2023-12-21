@@ -120,6 +120,7 @@ func Telemetry() *monitoring.Dashboard {
 					Errors: shared.WarningOption(monitoring.Alert().Greater(0), `
 						- Failures indicate that pruning of already-exported telemetry events from the database is failing. This may affect the performance of the database as the export queue table grows.
 						- See worker logs in the 'worker.telemetrygateway-exporter' log scope for more details.
+						- THIS IS A NEW DOCSTRING
 					`),
 				},
 			}),

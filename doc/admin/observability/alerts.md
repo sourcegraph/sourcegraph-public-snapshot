@@ -7595,6 +7595,7 @@ Generated query for warning alert: `max((sum(increase(src_telemetrygatewayexport
 
 - Failures indicate that pruning of already-exported telemetry events from the database is failing. This may affect the performance of the database as the export queue table grows.
 - See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
+- THIS IS A NEW DOCSTRING
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-queue-cleanup-errors-total).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
