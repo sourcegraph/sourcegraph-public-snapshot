@@ -18,6 +18,7 @@
     import { computeFit } from '$lib/dom'
     import { writable } from 'svelte/store'
     import { getButtonClassName } from '@sourcegraph/wildcard'
+    import RepoSearchInput from './RepoSearchInput.svelte'
 
     export let data: LayoutData
 
@@ -100,6 +101,7 @@
             </MenuLink>
         {/each}
     </DropdownMenu>
+    <RepoSearchInput repoName={data.repoName} />
 </nav>
 <slot />
 
