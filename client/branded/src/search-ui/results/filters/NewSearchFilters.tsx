@@ -10,7 +10,13 @@ import { omitFilter, succeedScan, updateFilter } from '@sourcegraph/shared/src/s
 import type { Filter as ResultFilter } from '@sourcegraph/shared/src/search/stream'
 import { Panel } from '@sourcegraph/wildcard'
 
-import { languageFilter, repoFilter, SearchDynamicFilter } from './components/dynamic-filter/SearchDynamicFilter'
+import {
+    commitDateFilter,
+    languageFilter,
+    repoFilter,
+    SearchDynamicFilter,
+    symbolFilter,
+} from './components/dynamic-filter/SearchDynamicFilter'
 import {
     FilterTypeList,
     resolveFilterTypeValue,
@@ -87,6 +93,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
                         exclusive={true}
                         staticFilters={true}
                         filterQuery={filterQuery}
+                        renderItem={symbolFilter}
                         onFilterQueryChange={setFilterQuery}
                     />
                 )}
@@ -98,6 +105,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
                         exclusive={true}
                         staticFilters={true}
                         filterQuery={filterQuery}
+                        renderItem={commitDateFilter}
                         onFilterQueryChange={setFilterQuery}
                     />
                 )}

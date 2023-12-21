@@ -4,13 +4,15 @@ import { mdiClose, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
-import { stringHuman } from '@sourcegraph/shared/out/src/search/query/printer'
+import { useExperimentalFeatures } from '@sourcegraph/shared/out/src/settings/settings'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter, succeedScan } from '@sourcegraph/shared/src/search/query/transformer'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
-import { Badge, Button, Icon, H4, Input, LanguageIcon } from '@sourcegraph/wildcard'
+import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
+import { Badge, Button, Icon, H4, Input, LanguageIcon, Code } from '@sourcegraph/wildcard'
 
 import styles from './SearchDynamicFilter.module.scss'
 
@@ -228,6 +230,35 @@ export const repoFilter = (filter: Filter) => {
     return (
         <>
             <Icon svgPath={mdiSourceRepository} className={styles.icon} aria-hidden={true} />
+            {filter.label}
+        </>
+    )
+}
+
+export const commitDateFilter = (filter: Filter) => {
+    return (
+        <span className={styles.commitDate}>
+            {filter.label}
+            <Code>{filter.value}</Code>
+        </span>
+    )
+}
+
+export const symbolFilter = (filter: Filter) => {
+    const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
+
+    const symbolType = useMemo(() => {
+        const parts = filter.value.split('.')
+        return parts[parts.length - 1]
+    }, [filter])
+
+    return (
+        <>
+            <SymbolKind
+                kind={symbolType.toUpperCase() as any}
+                className={styles.icon}
+                symbolKindTags={symbolKindTags}
+            />
             {filter.label}
         </>
     )

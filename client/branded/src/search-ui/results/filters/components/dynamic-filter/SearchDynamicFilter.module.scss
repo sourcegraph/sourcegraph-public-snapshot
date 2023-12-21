@@ -48,3 +48,10 @@
 .icon {
     margin-right: 0.5rem;
 }
+
+.commit-date {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+}
