@@ -58,6 +58,7 @@ var Targets = []Target{
 		Description: "Documentation checks",
 		Checks: []*linter{
 			onlyLocal(bazelExec("Docsite lint (bazel)", "test //doc:test")),
+			docChangesLint(),
 		},
 	},
 	{
