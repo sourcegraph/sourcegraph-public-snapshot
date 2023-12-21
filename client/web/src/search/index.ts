@@ -148,8 +148,22 @@ export function repoFilterForRepoRevision(repoName: string, revision?: string): 
     return `${escapeSpaces(`^${escapeRegExp(repoName)}$${revision ? `@${abbreviateOID(revision)}` : ''}`)}`
 }
 
-export function searchQueryForRepoRevision(repoName: string, revision?: string): string {
+export function searchQueryForRepoRevision(
+    repoName: string,
+    revision?: string,
+    patternType?: SearchPatternType
+): string {
+    if (patternType === SearchPatternType.newStandardRC1) {
+        return `repo:${repoName}${revision ? `@${abbreviateOID(revision)}` : ''}`
+    }
     return `repo:${repoFilterForRepoRevision(repoName, revision)} `
+}
+
+export function fileFilterForFilePath(filePath: string, patternType?: SearchPatternType): string {
+    if (patternType === SearchPatternType.newStandardRC1) {
+        return `file:${filePath}`
+    }
+    return `file:${escapeSpaces('^' + escapeRegExp(filePath))}`
 }
 
 function abbreviateOID(oid: string): string {
