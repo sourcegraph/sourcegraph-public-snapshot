@@ -44,11 +44,19 @@ type Source interface {
 	Get(ctx context.Context, token string) (*Actor, error)
 }
 
-type ErrActorRecentlyUpdated struct{}
+// ErrActorRecentlyUpdated can be used to indicate that an actor cannot be
+// updated because it was already updated more recently than allowed by a
+// Source implementation.
+type ErrActorRecentlyUpdated struct {
+	RetryAt time.Time
+}
 
 func (e ErrActorRecentlyUpdated) Error() string {
-	return "actor already updated recently - try again later"
+	return fmt.Sprintf("actor was recently updated - try again in %s",
+		time.Until(e.RetryAt).Truncate(time.Second).String())
 }
+
+func IsErrActorRecentlyUpdated(err error) bool { return errors.As(err, &ErrActorRecentlyUpdated{}) }
 
 type SourceUpdater interface {
 	Source

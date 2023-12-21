@@ -34,6 +34,10 @@ const tokenLength = 4 + 64
 
 var (
 	defaultUpdateInterval = 15 * time.Minute
+	// defaultRefreshInterval is used for updates, which is also called when a
+	// user's rate limit is hit, so we don't want to update every time. We use
+	// a shorter interval than the default in this case.
+	defaultRefreshInterval = 5 * time.Minute
 )
 
 type Source struct {
@@ -61,11 +65,10 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 }
 
 func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
-	// Update is also called when a user's rate limit is hit, so we don't want
-	// to update every time. We use a shorter interval than the default in
-	// this case.
-	if act.LastUpdated != nil && time.Since(*act.LastUpdated) < 5*time.Minute {
-		return actor.ErrActorRecentlyUpdated{}
+	if act.LastUpdated != nil && time.Since(*act.LastUpdated) < defaultRefreshInterval {
+		return actor.ErrActorRecentlyUpdated{
+			RetryAt: act.LastUpdated.Add(defaultRefreshInterval),
+		}
 	}
 
 	_, err := s.get(ctx, act.Key, true)

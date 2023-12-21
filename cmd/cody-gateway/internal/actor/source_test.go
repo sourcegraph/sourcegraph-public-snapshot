@@ -168,8 +168,7 @@ func TestSourcesUpdate(t *testing.T) {
 }
 
 func TestIsErrNotFromSource(t *testing.T) {
-	var err error
-	err = ErrNotFromSource{Reason: "foo"}
+	var err error = ErrNotFromSource{Reason: "foo"}
 	assert.True(t, IsErrNotFromSource(err))
 	autogold.Expect("token not from source: foo").Equal(t, err.Error())
 
@@ -179,4 +178,10 @@ func TestIsErrNotFromSource(t *testing.T) {
 
 	err = errors.New("foo")
 	assert.False(t, IsErrNotFromSource(err))
+}
+
+func TestErrActorRecentlyUpdated(t *testing.T) {
+	var err error = ErrActorRecentlyUpdated{RetryAt: time.Now().Add(time.Minute)}
+	assert.True(t, IsErrActorRecentlyUpdated(err))
+	assert.Equal(t, "actor was recently updated - try again in 59s", err.Error())
 }

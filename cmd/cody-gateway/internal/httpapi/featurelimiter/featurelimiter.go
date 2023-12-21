@@ -216,7 +216,7 @@ func RefreshLimitsHandler(baseLogger log.Logger) http.Handler {
 
 		if err := act.Update(r.Context()); err != nil {
 			logger := act.Logger(trace.Logger(r.Context(), baseLogger))
-			if errors.Is(err, actor.ErrActorRecentlyUpdated{}) {
+			if actor.IsErrActorRecentlyUpdated(err) {
 				response.JSONError(logger, w, http.StatusTooManyRequests, err)
 			} else {
 				response.JSONError(logger, w, http.StatusInternalServerError, err)

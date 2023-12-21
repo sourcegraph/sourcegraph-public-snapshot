@@ -116,7 +116,9 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
 	if time.Since(*act.LastUpdated) < minUpdateInterval {
 		// Last update was too recent - do it later.
-		return actor.ErrActorRecentlyUpdated{}
+		return actor.ErrActorRecentlyUpdated{
+			RetryAt: act.LastUpdated.Add(minUpdateInterval),
+		}
 	}
 
 	_, err := s.fetchAndCache(ctx, act.Key)
