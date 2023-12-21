@@ -207,20 +207,20 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
                     .then(({ resetPasswordURL, emailSent }) => {
                         if (resetPasswordURL === null || emailSent) {
                             createOnSuccess(
-                                <Text as="span">
+                                <Text className="mb-0">
                                     Password was reset. The reset link was sent to the primary email of the user:{' '}
                                     <strong>{user.username}</strong>
                                 </Text>
                             )()
                         } else {
                             createOnSuccess(
-                                <>
-                                    <Text>
+                                <div>
+                                    <Text className="mb-2">
                                         Password was reset. You must manually send <strong>{user.username}</strong> this
                                         reset link:
                                     </Text>
                                     <CopyableText text={resetPasswordURL} size={40} />
-                                </>
+                                </div>
                             )()
                         }
                     })

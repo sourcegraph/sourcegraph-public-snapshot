@@ -30,7 +30,7 @@ export const AccountCreatedAlert: React.FunctionComponent<React.PropsWithChildre
             {resetPasswordURL
                 ? window.context.emailEnabled && email
                     ? "A password reset URL has been sent to the new user's email address. If they don't receive it, you can also share the following password reset link: "
-                    : "'You must manually send this password reset link to the new user: '"
+                    : 'You must manually send this password reset link to the new user: '
                 : 'The user must authenticate using a configured authentication provider.'}
         </Text>
         {resetPasswordURL && <CopyableText text={resetPasswordURL} size={40} />}
