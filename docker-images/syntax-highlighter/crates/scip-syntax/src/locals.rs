@@ -183,7 +183,6 @@ struct DefCapture<'a> {
 
 #[derive(Debug)]
 struct RefCapture<'a> {
-    _ty: String,
     node: Node<'a>,
 }
 
@@ -529,13 +528,7 @@ impl<'a> LocalResolver<'a> {
                         node: capture.node,
                     })
                 } else if capture_name.starts_with("reference") {
-                    let ty = capture_name
-                        .strip_prefix("reference.")
-                        .unwrap_or(capture_name);
-                    references.push(RefCapture {
-                        _ty: ty.to_string(),
-                        node: capture.node,
-                    })
+                    references.push(RefCapture { node: capture.node })
                 } else {
                     debug_assert!(false, "Discarded capture: {capture_name}")
                 }
