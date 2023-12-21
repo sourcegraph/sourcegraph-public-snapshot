@@ -11,6 +11,7 @@ import { PageTitle } from '../components/PageTitle'
 import type { SourcegraphContext } from '../jscontext'
 import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
+import { EventName } from '../util/constants'
 
 import { AuthPageWrapper } from './AuthPageWrapper'
 import { CloudSignUpPage, ShowEmailFormQueryParameter } from './CloudSignUpPage'
@@ -79,6 +80,9 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
             if (response.status !== 200) {
                 return response.text().then(text => Promise.reject(new Error(text)))
             }
+
+            const source = query.get('editor') === 'vscode' ? 'ide_extension' : 'web'
+            telemetryService.log(EventName.SIGNUP_COMPLETED, { source }, { source })
 
             // Redirects to the /post-sign-up after successful signup on sourcegraphDotCom.
             window.location.replace(context.sourcegraphDotComMode ? PageRoutes.PostSignUp : returnTo)
