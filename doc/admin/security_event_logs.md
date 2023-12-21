@@ -31,5 +31,48 @@ This guide goes into the details of Securit Event Logging in Sourcegraph
 - The function also checks to make sure that marshalling the arguments does not cause as error
 
 ## How to find security events in logs
+- Security events are logged with all the relevant information associated with the actions
+- Depending on the location of the log destination, the event log can be either found in your application log output or in the database or both.
+- A sample output of a logged event from application logs would look similar to this:
+- ```JSON
+  {
+  ...
+  {
+    "message": "EmailAdded (sampling immunity token: 7100642b-e660-4041-983f-461e42ecda0b)",
+    "Caller": "audit/audit.go:57",
+    "Attributes": {
+      "audit": {
+        "actor": {
+          "X-Forwarded-For": "108.34.242.215,172.68.54.47,34.36.184.63, 34.127.204.170, 34.120.91.33",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+          "ip": "130.211.3.155",
+          "actorUID": "223955"
+        },
+        "entity": "security events",
+        "auditId": "7100642b-e660-4041-983f-461e42ecda0b",
+        "action": "EmailAdded"
+      },
+      "event": {
+        "URL": "",
+        "argument": "\"mark@cunningfolk.media\"",
+        "AnonymousUserID": "",
+        "UserID": 223955,
+        "source": "BACKEND",
+        "timestamp": "2023-12-21 02:41:08.649603776 +0000 UTC",
+        "version": "255367_2023-12-20_5.2-a3143120c41e"
+      }
+    },
+    "Function": "github.com/sourcegraph/sourcegraph/internal/audit.Log",
+    "InstrumentationScope": "frontend.SecurityEvents",
+    "timestampNanos": 1703126468649641000,
+    "Resource": {
+      "service.instance.id": "sourcegraph-frontend-769bdbdd77-p2f8j",
+      "service.name": "frontend",
+      "service.version": "255367_2023-12-20_5.2-a3143120c41e"
+    }
+  }
+...
+}
+
 
 
