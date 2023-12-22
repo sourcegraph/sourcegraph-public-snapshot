@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v2"
+	"github.com/vvakame/gcplogurl"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
@@ -195,6 +196,60 @@ sg msp generate -all <service>
 			},
 		},
 		{
+			Name:   "logs",
+			Usage:  "Quick links for logs of various MSP components",
+			Before: msprepo.UseManagedServicesRepo,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:    "component",
+					Aliases: []string{"c"},
+					Value:   "service",
+				},
+			},
+			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
+			Action: func(c *cli.Context) error {
+				service, env, err := useServiceAndEnvironmentArguments(c)
+				if err != nil {
+					return err
+				}
+
+				tfcClient, err := getTFCRunsClient(c)
+				if err != nil {
+					return err
+				}
+				projectOutputs, err := tfcClient.GetOutputs(c.Context,
+					terraformcloud.WorkspaceName(service.Service, *env,
+						managedservicesplatform.StackNameProject))
+				if err != nil {
+					return errors.Wrap(err, "get IAM outputs")
+				}
+				projectID, err := projectOutputs.Find("project_id")
+				if err != nil {
+					return errors.Wrap(err, "get project ID")
+				}
+
+				switch component := c.String("component"); component {
+				case "service":
+					std.Out.WriteNoticef("Opening link to service logs in browser...")
+					return open.URL((&gcplogurl.Explorer{
+						ProjectID: projectID.Value.(string),
+						Query:     gcplogurl.Query(`resource.type = "cloud_run_revision" jsonPayload.InstrumentationScope != ""`),
+						SummaryFields: &gcplogurl.SummaryFields{
+							Fields: []string{
+								// fields from structured logs by sourcegraph/log
+								"jsonPayload/InstrumentationScope",
+								"jsonPayload/Body",
+								"jsonPayload/Attributes/error",
+							},
+						},
+					}).String())
+
+				default:
+					return errors.Newf("unsupported -component=%s", component)
+				}
+			},
+		},
+		{
 			Name:    "postgresql",
 			Aliases: []string{"pg"},
 			Usage:   "Interact with PostgreSQL instances provisioned by MSP",
@@ -239,13 +294,9 @@ full access, use the '-write-access' flag.
 					},
 					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
-						service, err := useServiceArgument(c)
+						service, env, err := useServiceAndEnvironmentArguments(c)
 						if err != nil {
 							return err
-						}
-						env := service.GetEnvironment(c.Args().Get(1))
-						if env == nil {
-							return errors.Errorf("environment %q not found", c.Args().Get(1))
 						}
 						if env.Resources.PostgreSQL == nil {
 							return errors.New("no postgresql instance provisioned")
@@ -256,24 +307,10 @@ full access, use the '-write-access' flag.
 							return err
 						}
 
-						secretStore, err := secrets.FromContext(c.Context)
+						tfcClient, err := getTFCRunsClient(c)
 						if err != nil {
 							return err
 						}
-
-						// We use a team token to get workspace details
-						tfcMSPAccessToken, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
-							Name:    googlesecretsmanager.SecretTFCMSPTeamToken,
-							Project: googlesecretsmanager.ProjectID,
-						})
-						if err != nil {
-							return errors.Wrap(err, "get TFC OAuth client ID")
-						}
-						tfcClient, err := terraformcloud.NewRunsClient(tfcMSPAccessToken)
-						if err != nil {
-							return errors.Wrap(err, "init Terraform Cloud client")
-						}
-
 						iamOutputs, err := tfcClient.GetOutputs(c.Context,
 							terraformcloud.WorkspaceName(service.Service, *env,
 								managedservicesplatform.StackNameIAM))

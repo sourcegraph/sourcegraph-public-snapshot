@@ -25,6 +25,7 @@ import (
 const (
 	// TODO: re-export for use, maybe we should lift stack packages out of
 	// internal so that we can share consts, including output names.
+	StackNameProject  = project.StackName
 	StackNameIAM      = iam.StackName
 	StackNameCloudRun = cloudrun.StackName
 )
