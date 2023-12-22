@@ -28,12 +28,14 @@ export interface TreeProps<N extends TreeNode>
         props: { className: string; tabIndex: number }
     }) => React.ReactNode
 
-    // A set of node IDs that had their children loaded. This is necessary
-    // because we can not rely on the .length property to know if we're still
-    // loading children.
+    /**
+     * A set of node IDs that had their children loaded. This is necessary
+     * because we can not rely on the .length property to know if we're still
+     * loading children.
+     */
     loadedIds?: Set<number>
 
-    // Optional className that is passed through to the focused nodes
+    /** Optional className that is passed through to the focused nodes. */
     nodeClassName?: string
 }
 

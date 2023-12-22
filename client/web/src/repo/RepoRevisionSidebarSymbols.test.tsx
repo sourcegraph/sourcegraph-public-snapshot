@@ -2,20 +2,21 @@ import type { MockedResponse } from '@apollo/client/testing'
 import { cleanup, fireEvent } from '@testing-library/react'
 import delay from 'delay'
 import { escapeRegExp } from 'lodash'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
-import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+import { stubScrollIntoView } from '@sourcegraph/shared/src/testing/dom-test-helpers'
 
 import type { SymbolsResult } from '../graphql-operations'
 
 import {
     RepoRevisionSidebarSymbols,
-    type RepoRevisionSidebarSymbolsProps,
     SYMBOLS_QUERY,
+    type RepoRevisionSidebarSymbolsProps,
 } from './RepoRevisionSidebarSymbols'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 const location = {
     pathname: '/github.com/sourcegraph/sourcegraph@some-branch/-/blob/src/index.js',
@@ -74,6 +75,8 @@ const symbolsMock: MockedResponse<SymbolsResult> = {
 }
 
 describe('RepoRevisionSidebarSymbols', () => {
+    beforeAll(stubScrollIntoView)
+
     let renderResult: RenderWithBrandedContextResult
     afterEach(cleanup)
 

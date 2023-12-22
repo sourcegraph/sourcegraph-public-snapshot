@@ -12,12 +12,13 @@ import { ParsedRepoRevision, ParsedRepoURI, UIPositionSpec } from '@sourcegraph/
 import { Link, flattenTree, type TreeNode } from '@sourcegraph/wildcard'
 
 import { type SymbolNodeFields, SymbolKind as SymbolKindEnum } from '../graphql-operations'
+import * as BlobAPI from '../repo/blob/use-blob-store'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
-import type { SymbolPlaceholder, SymbolWithChildren } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
+import { SymbolWithChildren, SymbolPlaceholder } from './utils'
 
 interface Props extends FocusableTreeProps {
     symbols: SymbolWithChildren[]
@@ -26,6 +27,19 @@ interface Props extends FocusableTreeProps {
     setSelectedSymbolUrl: (url: string | null) => void
 }
 type SymbolNode = (Omit<SymbolNodeFields, 'children'> & TreeNode) | (Omit<SymbolPlaceholder, 'children'> & TreeNode)
+
+/**
+ * Type-guard for a placeholder {@link SymbolNode}.
+ * @see {@link SymbolPlaceholder}
+ */
+function isPlaceholder(sym: SymbolNode): sym is Omit<SymbolPlaceholder, 'children'> & TreeNode {
+    return sym.__typename === 'SymbolPlaceholder'
+}
+
+/** Type-guard for a non-placeholder {@link SymbolNode}. */
+function isSymbol(sym: SymbolNode): sym is Omit<SymbolNodeFields, 'children'> & TreeNode {
+    return sym.__typename === 'Symbol'
+}
 
 export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
     symbols,
@@ -56,7 +70,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
 
     const onSelect = useCallback(
         ({ element, isSelected }: { element: SymbolNode; isSelected: boolean }) => {
-            if (!isSelected || element.__typename !== 'Symbol' || selectedSymbolUrl === element.url) {
+            if (!isSelected || !isSymbol(element) || selectedSymbolUrl === element.url) {
                 return
             }
 
@@ -70,15 +84,32 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
             setTimeout(
                 () =>
                     flushSync(() => {
-                        onClick()
                         setSelectedSymbolUrl(element.url)
                         navigate(element.url)
                     }),
                 0
             )
         },
-        [navigate, onClick, selectedSymbolUrl, setSelectedSymbolUrl]
+        [navigate, selectedSymbolUrl, setSelectedSymbolUrl]
     )
+
+    // Wrapping onSymbolClick in `useCallback` does not prevent any unnecessary re-renders,
+    // as it isn't passed to FocusableTree as a prop, but is used in a closure instead.
+    const onSymbolClick = (element: SymbolNode) => {
+        if (!isSymbol(element)) {
+            return
+        }
+        onClick() // do not handle clicks on placeholder nodes
+
+        // Scroll the selected code line into view even if the URL has not changed.
+        // This lets the user return to the selected symbol after it's no longer visible
+        // in the code blob (e.g. scrolled away) by clicking the symbol in the sidebar again.
+        // `scrollIntoView` plugin (see linenumbers.ts) ignores this if the line range is already in the viewport.
+        const { position: range } = parseBrowserRepoURL(element.url)
+        if (range) {
+            BlobAPI.scrollIntoView(range)
+        }
+    }
 
     // We need a mutable reference to the tree data since we don't want some
     // hooks to run when the tree data changes.
@@ -123,7 +154,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
         }
 
         for (const node of treeDataRef.current) {
-            if (node.__typename === 'SymbolPlaceholder') {
+            if (isPlaceholder(node)) {
                 continue
             }
             const parsedURL = parseBrowserRepoURL(node.url)
@@ -149,7 +180,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
     }, [location, selectedSymbolUrl, setSelectedSymbolUrl])
 
     const selectedIds = selectedSymbolUrl
-        ? treeData.filter(node => node.__typename === 'Symbol' && node.url === selectedSymbolUrl).map(node => node.id)
+        ? treeData.filter(node => isSymbol(node) && node.url === selectedSymbolUrl).map(node => node.id)
         : []
 
     return (
@@ -171,8 +202,8 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
             }): React.ReactNode => {
                 const { className, ...rest } = props
 
-                const to = element.__typename === 'SymbolPlaceholder' ? '' : element.url
-                const kind = element.__typename === 'SymbolPlaceholder' ? SymbolKindEnum.UNKNOWN : element.kind
+                const to = isPlaceholder(element) ? '' : element.url
+                const kind = isPlaceholder(element) ? SymbolKindEnum.UNKNOWN : element.kind
 
                 return (
                     <Link
@@ -182,6 +213,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
                         onClick={event => {
                             event.preventDefault()
                             handleSelect(event)
+                            onSymbolClick(element)
                         }}
                     >
                         <SymbolKind kind={kind} className="mr-1" symbolKindTags={symbolKindTags} />

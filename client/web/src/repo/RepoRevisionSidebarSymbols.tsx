@@ -19,9 +19,9 @@ import {
 import type { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
 
 import { RepoRevisionSidebarSymbolTree } from './RepoRevisionSidebarSymbolTree'
-import * as util from './utils'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
+import { SymbolWithChildren, hierarchyOf } from './utils'
 
 export const SYMBOLS_QUERY = gql`
     query Symbols($repo: ID!, $revision: String!, $first: Int, $query: String, $includePatterns: [String!]) {
@@ -142,7 +142,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
     const hierarchicalSymbols = useMemo<SymbolWithChildren[]>(
         () =>
             Object.values(groupBy(connection?.nodes ?? [], symbol => symbol.location.resource.path)).flatMap(symbols =>
-                util.hierarchyOf(symbols)
+                hierarchyOf(symbols)
             ),
         [connection?.nodes]
     )
@@ -191,7 +191,3 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
         </ConnectionContainer>
     )
 }
-
-// Forward exports to preserve module signature.
-export interface SymbolPlaceholder extends util.SymbolPlaceholder {}
-export type SymbolWithChildren = util.SymbolWithChildren
