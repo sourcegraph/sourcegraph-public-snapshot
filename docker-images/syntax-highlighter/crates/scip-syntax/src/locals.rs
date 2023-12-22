@@ -272,7 +272,7 @@ impl<'a> LocalResolver<'a> {
         // We delay creation of this definition behind a closure, so
         // that we don't generate fresh definition_id's for def_ref's
         // that turn out to be references rather than definitions
-        let mk_def = |this: &mut Self| {
+        let make_def = |this: &mut Self| {
             this.definition_id_supply += 1;
             let def_id = DefId(this.definition_id_supply);
             let definition = Definition {
@@ -306,7 +306,7 @@ impl<'a> LocalResolver<'a> {
                     then {
                         DefRef::PreviousDefinition(previous.id)
                     } else {
-                        let (def_id, definition) = mk_def(self);
+                        let (def_id, definition) = make_def(self);
                         self.get_scope_mut(target_scope)
                             .hoisted_definitions
                             .insert(definition.name, definition);
@@ -321,7 +321,7 @@ impl<'a> LocalResolver<'a> {
                     then {
                         DefRef::PreviousDefinition(previous.id)
                     } else {
-                        let (def_id, definition) = mk_def(self);
+                        let (def_id, definition) = make_def(self);
                         self.get_scope_mut(scope_id).definitions.push(definition);
                         DefRef::NewDefinition(def_id)
                     }
@@ -448,7 +448,7 @@ impl<'a> LocalResolver<'a> {
         }
     }
 
-    fn mk_name(&mut self, s: &str) -> Name {
+    fn make_name(&mut self, s: &str) -> Name {
         self.interner.get_or_intern(s)
     }
 
@@ -462,7 +462,7 @@ impl<'a> LocalResolver<'a> {
         'a: 'b,
     {
         for ref_capture in references_iter.take_while_ref(|ref_capture| f(ref_capture)) {
-            let name = self.mk_name(
+            let name = self.make_name(
                 ref_capture
                     .node
                     .utf8_text(self.source_bytes)
@@ -487,7 +487,7 @@ impl<'a> LocalResolver<'a> {
         'a: 'b,
     {
         for def_capture in definitions_iter.take_while_ref(|def_capture| f(def_capture)) {
-            let name = self.mk_name(
+            let name = self.make_name(
                 def_capture
                     .node
                     .utf8_text(self.source_bytes)
