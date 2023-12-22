@@ -618,11 +618,13 @@ impl<'a> LocalResolver<'a> {
                 ref_capture.node.start_byte() < scope_end_byte
             });
 
-            if current_scope == top_scope {
+            if let Some(parent) = self.get_scope(current_scope).parent {
+                current_scope = parent
+            } else {
+                // We've made it to the top level scope
                 break;
             }
 
-            current_scope = self.parent(current_scope)
         }
 
         assert!(
