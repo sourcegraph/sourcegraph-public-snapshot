@@ -13,8 +13,8 @@ struct Arguments {
 }
 
 struct ParseTiming {
-    pub filepath: String,
-    pub filesize: usize,
+    pub file_path: String,
+    pub file_size: usize,
     pub duration: std::time::Duration,
 }
 
@@ -53,8 +53,8 @@ fn parse_files(dir: &Path) -> Vec<ParseTiming> {
         let finish = Instant::now();
 
         timings.push(ParseTiming {
-            filepath: entry.file_stem().unwrap().to_string_lossy().to_string(),
-            filesize: source_bytes.len(),
+            file_path: entry.file_stem().unwrap().to_string_lossy().to_string(),
+            file_size: source_bytes.len(),
             duration: finish - start,
         });
     }
@@ -75,8 +75,8 @@ fn measure_parsing() {
     for timing in timings.iter().rev().take(10) {
         println!(
             "{} ({}kb): {:?} ",
-            timing.filepath,
-            timing.filesize / 1000,
+            timing.file_path,
+            timing.file_size / 1000,
             timing.duration
         );
     }
