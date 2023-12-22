@@ -7,10 +7,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/retry"
 )
 
 var (
@@ -26,6 +27,11 @@ var (
 //
 // Only Unary (1:1) and ServerStreaming (1:N) requests are retried. All other types of requests will immediately
 // return an Unimplemented status error. It's up to the caller to manually retry these requests.
+//
+// For ServerStreaming requests, the retry policy will only trigger if we encounter an Unavailable or ResourceExhausted
+// error _before_ the client receives the first message back from the server. After this point, the retry policy will not
+// trigger - it's up to the caller to manually retry the request. (This is because we can't guarantee that the client
+// hasn't already processed the first message and acted on it, so we can't safely generically retry the request).
 //
 // These defaults can be overridden with the following environment variables:
 // - SRC_GRPC_RETRY_DELAY_BASE: Base retry delay duration for internal GRPC requests
