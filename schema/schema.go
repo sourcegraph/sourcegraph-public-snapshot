@@ -676,6 +676,8 @@ type Dotcom struct {
 	SlackLicenseAnomallyWebhook string `json:"slackLicenseAnomallyWebhook,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
+	// SlackLicenseCreationWebhook description: Slack webhook for when a license key is created.
+	SlackLicenseCreationWebhook string `json:"slackLicenseCreationWebhook,omitempty"`
 	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
 	SrcCliVersionCache *SrcCliVersionCache `json:"srcCliVersionCache,omitempty"`
 }
