@@ -12,12 +12,15 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/retry",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/grpc/grpcutil",
+        "//internal/trace",
         "@com_github_grpc_ecosystem_go_grpc_middleware_v2//metadata",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//metadata",
         "@org_golang_google_grpc//status",
-        "@org_golang_x_net//trace",
     ],
 )
 
@@ -30,6 +33,8 @@ go_test(
     embed = [":retry"],
     deps = [
         "@com_github_grpc_ecosystem_go_grpc_middleware_v2//testing/testpb",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
         "@com_github_stretchr_testify//suite",

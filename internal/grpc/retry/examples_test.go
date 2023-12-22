@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
+	logger "github.com/sourcegraph/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -18,8 +19,8 @@ var cc *grpc.ClientConn
 // Simple example of using the default interceptor configuration.
 func Example_initialization() {
 	_, _ = grpc.Dial("myservice.example.com",
-		grpc.WithStreamInterceptor(StreamClientInterceptor()),
-		grpc.WithUnaryInterceptor(UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(StreamClientInterceptor(logger.NoOp())),
+		grpc.WithUnaryInterceptor(UnaryClientInterceptor(logger.NoOp())),
 	)
 }
 
@@ -30,8 +31,8 @@ func Example_initializationWithOptions() {
 		WithCodes(codes.NotFound, codes.Aborted),
 	}
 	_, _ = grpc.Dial("myservice.example.com",
-		grpc.WithStreamInterceptor(StreamClientInterceptor(opts...)),
-		grpc.WithUnaryInterceptor(UnaryClientInterceptor(opts...)),
+		grpc.WithStreamInterceptor(StreamClientInterceptor(logger.NoOp(), opts...)),
+		grpc.WithUnaryInterceptor(UnaryClientInterceptor(logger.NoOp(), opts...)),
 	)
 }
 
@@ -43,8 +44,8 @@ func Example_initializationWithExponentialBackoff() {
 		WithBackoff(BackoffExponential(100 * time.Millisecond)),
 	}
 	_, _ = grpc.Dial("myservice.example.com",
-		grpc.WithStreamInterceptor(StreamClientInterceptor(opts...)),
-		grpc.WithUnaryInterceptor(UnaryClientInterceptor(opts...)),
+		grpc.WithStreamInterceptor(StreamClientInterceptor(logger.NoOp(), opts...)),
+		grpc.WithUnaryInterceptor(UnaryClientInterceptor(logger.NoOp(), opts...)),
 	)
 }
 
