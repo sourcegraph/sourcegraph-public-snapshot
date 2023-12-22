@@ -130,7 +130,11 @@ export const restrictToViewport: Action<HTMLElement, { offset?: number }> = (nod
 
 /**
  * An action to compute the number of elements that fit inside the container.
- * Only works for static element lists (i.e. the first render should .
+ * This works by caching the position of the right hand of each child element,
+ * and then comparing it to the right hand of the container.
+ *
+ * Because of this this action only works for static element lists,
+ * i.e. on initial render the node needs to contain all possible child elements.
  */
 export const computeFit: Action<HTMLElement> = (
     node
