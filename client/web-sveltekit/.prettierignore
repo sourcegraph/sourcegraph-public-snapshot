@@ -13,7 +13,7 @@ pnpm-lock.yaml
 package-lock.json
 yarn.lock
 /static/mockServiceWorker.js
-.gql.d.ts
+*.gql.d.ts
 graphql-operations.ts
 graphql-types.ts
 

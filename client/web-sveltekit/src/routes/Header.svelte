@@ -32,7 +32,7 @@
     <a class="logo" href="/search">
         <img src={mark} alt="Sourcegraph" width="25" height="25" />
     </a>
-    <nav class="ml-2">
+    <nav>
         <ul>
             <HeaderNavLink href="/search" svgIconPath={mdiMagnify}>Code search</HeaderNavLink>
             <HeaderNavLink external href="/cody/chat">
@@ -52,7 +52,7 @@
         </ul>
     </nav>
     <Tooltip tooltip="Disable SvelteKit (go to React)">
-        <a class="app-toggle" href={reactURL} data-sveltekit-reload>
+        <a href={reactURL} data-sveltekit-reload>
             <img src={svelteLogoEnabled} alt="Svelte logo" width="20" height="20" />
         </a>
     </Tooltip>
@@ -71,10 +71,11 @@
     header {
         display: flex;
         align-items: center;
-        border-bottom: 1px solid var(--border-color-2);
+        gap: 0.5rem;
         height: var(--navbar-height);
         min-height: 40px;
         padding: 0 0.5rem;
+        border-bottom: 1px solid var(--border-color-2);
         background-color: var(--color-bg-1);
     }
 
@@ -99,6 +100,7 @@
         display: flex;
         align-self: stretch;
         flex: 1;
+        overflow-y: auto;
     }
 
     ul {
@@ -109,9 +111,5 @@
         justify-content: center;
         list-style: none;
         background-size: contain;
-    }
-
-    .app-toggle {
-        margin-right: 1rem;
     }
 </style>
