@@ -90,7 +90,7 @@ func SearchGRPC(
 			return false, err
 		}
 
-		client := proto.NewSearcherServiceClient(conn)
+		client := &automaticRetryClient{proto.NewSearcherServiceClient(conn)}
 		resp, err := client.Search(ctx, r)
 		if err != nil {
 			return false, err
