@@ -388,6 +388,8 @@ type EnvironmentResourceBigQueryDatasetSpec struct {
 
 	// DatasetID, if provided, configures a custom dataset ID to place all tables
 	// into. By default, we use the service ID as the dataset ID.
+	//
+	// Dataset IDs must be alphanumeric (plus underscores).
 	DatasetID *string `json:"datasetID,omitempty"`
 	// ProjectID can be used to specify a separate project ID from the service's
 	// project for BigQuery resources. If not provided, resources are created
