@@ -87,7 +87,7 @@ type Name = SymbolU32;
 struct DefId(u32);
 
 impl DefId {
-    pub fn to_local_symbol(&self) -> Symbol {
+    pub fn as_local_symbol(&self) -> Symbol {
         Symbol::new_local(self.0 as usize)
     }
 }
@@ -334,7 +334,7 @@ impl<'a> LocalResolver<'a> {
             DefRef::NewDefinition(definition_id) => {
                 self.occurrences.push(scip::types::Occurrence {
                     range: node.to_scip_range(),
-                    symbol: format_symbol(definition_id.to_local_symbol()),
+                    symbol: format_symbol(definition_id.as_local_symbol()),
                     symbol_roles: scip::types::SymbolRole::Definition.value(),
                     ..Default::default()
                 });
@@ -676,7 +676,7 @@ impl<'a> LocalResolver<'a> {
                     continue;
                 };
 
-                let symbol = format_symbol(def_id.to_local_symbol());
+                let symbol = format_symbol(def_id.as_local_symbol());
                 ref_occurrences.push(scip::types::Occurrence {
                     range: node.to_scip_range(),
                     symbol: symbol.clone(),
