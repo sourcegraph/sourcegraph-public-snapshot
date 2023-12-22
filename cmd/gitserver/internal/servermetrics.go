@@ -2,7 +2,6 @@ package internal
 
 import (
 	"os/exec"
-	"runtime"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,12 +17,7 @@ import (
 )
 
 func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.DB) {
-	if runtime.GOOS != "windows" {
-		registerEchoMetric(s.Logger)
-	} else {
-		// See https://github.com/sourcegraph/sourcegraph/issues/54317 for details.
-		s.Logger.Warn("Disabling 'echo' metric")
-	}
+	registerEchoMetric(s.Logger)
 
 	// report the size of the repos dir
 	logger := s.Logger

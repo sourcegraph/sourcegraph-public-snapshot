@@ -8,6 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -19,6 +21,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+)
+
+var (
+	searchRunning = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_search_running",
+		Help: "number of gitserver.Search running concurrently.",
+	})
+	searchDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_gitserver_search_duration_seconds",
+		Help:    "gitserver.Search duration in seconds.",
+		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	}, []string{"error"})
+	searchLatency = promauto.NewHistogram(prometheus.HistogramOpts{
+		Name:    "src_gitserver_search_latency_seconds",
+		Help:    "gitserver.Search latency (time until first result is sent) in seconds.",
+		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	})
 )
 
 func (s *Server) searchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {

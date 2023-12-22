@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/sourcegraph/log"
@@ -163,29 +162,20 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			config.SyncRepoStateBatchSize,
 			config.SyncRepoStateUpdatePerSecond,
 		),
-	}
-
-	if runtime.GOOS == "windows" {
-		// See https://github.com/sourcegraph/sourcegraph/issues/54317 for details.
-		logger.Warn("Janitor is disabled on windows")
-	} else {
-		routines = append(
-			routines,
-			server.NewJanitor(
-				ctx,
-				server.JanitorConfig{
-					ShardID:                        gitserver.Hostname,
-					JanitorInterval:                config.JanitorInterval,
-					ReposDir:                       config.ReposDir,
-					DesiredPercentFree:             config.JanitorReposDesiredPercentFree,
-					DisableDeleteReposOnWrongShard: config.JanitorDisableDeleteReposOnWrongShard,
-				},
-				db,
-				recordingCommandFactory,
-				gitserver.CloneRepo,
-				logger,
-			),
-		)
+		server.NewJanitor(
+			ctx,
+			server.JanitorConfig{
+				ShardID:                        gitserver.Hostname,
+				JanitorInterval:                config.JanitorInterval,
+				ReposDir:                       config.ReposDir,
+				DesiredPercentFree:             config.JanitorReposDesiredPercentFree,
+				DisableDeleteReposOnWrongShard: config.JanitorDisableDeleteReposOnWrongShard,
+			},
+			db,
+			recordingCommandFactory,
+			gitserver.CloneRepo,
+			logger,
+		),
 	}
 
 	// Register recorder in all routines that support it.

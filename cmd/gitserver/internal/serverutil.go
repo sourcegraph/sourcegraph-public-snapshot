@@ -170,3 +170,22 @@ func honeySampleRate(cmd string, actor *actor.Actor) uint {
 		return 8
 	}
 }
+
+// shortGitCommandSlow returns the threshold for regarding an git command as
+// slow. Some commands such as "git archive" are inherently slower than "git
+// rev-parse", so this will return an appropriate threshold given the command.
+func shortGitCommandSlow(args []string) time.Duration {
+	if len(args) < 1 {
+		return time.Second
+	}
+	switch args[0] {
+	case "archive":
+		return 1 * time.Minute
+
+	case "blame", "ls-tree", "log", "show":
+		return 5 * time.Second
+
+	default:
+		return 2500 * time.Millisecond
+	}
+}
