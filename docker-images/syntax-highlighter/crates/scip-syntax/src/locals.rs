@@ -111,9 +111,9 @@ struct Scope<'a> {
     // shouldn't matter anymore, so we might want to turn this into a
     // HashMap for faster lookups
     hoisted_definitions: Vec<Definition<'a>>,
-    /// Definitions that appear in this scope. Sorted lexicographical
+    /// Definitions that appear in this scope. Sorted lexicographically
     definitions: Vec<Definition<'a>>,
-    /// References that appear in this scope. Sorted lexicographical
+    /// References that appear in this scope. Sorted lexicographically
     references: Vec<Reference<'a>>,
 }
 
