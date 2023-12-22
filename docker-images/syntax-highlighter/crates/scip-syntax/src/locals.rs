@@ -236,7 +236,7 @@ impl<'a> LocalResolver<'a> {
         }
     }
 
-    fn _start_byte(&self, id: ScopeRef<'a>) -> usize {
+    fn start_byte(&self, id: ScopeRef<'a>) -> usize {
         self.get_scope(id).node.start_byte()
     }
 
@@ -359,7 +359,7 @@ impl<'a> LocalResolver<'a> {
             .expect("Tried to get the root node's parent")
     }
 
-    fn _print_scope(&self, w: &mut impl Write, id: ScopeRef<'a>, depth: usize) {
+    fn print_scope(&self, w: &mut impl Write, id: ScopeRef<'a>, depth: usize) {
         let scope = self.get_scope(id);
         writeln!(
             w,
@@ -398,7 +398,7 @@ impl<'a> LocalResolver<'a> {
         loop {
             let next_def = definitions_iter.peek().map(|d| d.node.start_byte());
             let next_ref = references_iter.peek().map(|r| r.node.start_byte());
-            let next_scope = children_iter.peek().map(|s| self._start_byte(**s));
+            let next_scope = children_iter.peek().map(|s| self.start_byte(**s));
 
             if next_def.is_none() && next_ref.is_none() && next_scope.is_none() {
                 break;
@@ -432,7 +432,7 @@ impl<'a> LocalResolver<'a> {
                 continue;
             }
             let child = children_iter.next().unwrap();
-            self._print_scope(w, *child, depth + 2)
+            self.print_scope(w, *child, depth + 2)
         }
     }
 
@@ -692,7 +692,7 @@ impl<'a> LocalResolver<'a> {
         self.build_tree(top_scope, captures);
         match test_writer {
             None => {}
-            Some(w) => self._print_scope(w, top_scope, 0),
+            Some(w) => self.print_scope(w, top_scope, 0),
         }
         // Finally we resolve all references against that tree structure
         self.resolve_references();
