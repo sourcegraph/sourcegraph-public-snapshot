@@ -403,111 +403,6 @@ index 51a59ef1c..493090958 100644
 	})
 }
 
-func TestRepository_BlameFile(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	ctx := context.Background()
-
-	gitCommands := []string{
-		"echo line1 > f",
-		"git add f",
-		"git commit -m foo",
-		"echo line2 >> f",
-		"git add f",
-		"git commit -m foo",
-		"git mv f f2",
-		"echo line3 >> f2",
-		"git add f2",
-		"git commit -m foo",
-	}
-	gitWantHunks := []*Hunk{
-		{
-			StartLine: 1, EndLine: 2, StartByte: 0, EndByte: 6, CommitID: "e6093374dcf5725d8517db0dccbbf69df65dbde0",
-			Message: "foo", Author: gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Filename: "f",
-		},
-		{
-			StartLine: 2, EndLine: 3, StartByte: 6, EndByte: 12, CommitID: "fad406f4fe02c358a09df0d03ec7a36c2c8a20f1",
-			Message: "foo", Author: gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Filename: "f",
-		},
-		{
-			StartLine: 3, EndLine: 4, StartByte: 12, EndByte: 18, CommitID: "311d75a2b414a77f5158a0ed73ec476f5469b286",
-			Message: "foo", Author: gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Filename: "f2",
-		},
-	}
-	tests := map[string]struct {
-		repo api.RepoName
-		path string
-		opt  *BlameOptions
-
-		wantHunks []*Hunk
-	}{
-		"git cmd": {
-			repo: MakeGitRepository(t, gitCommands...),
-			path: "f2",
-			opt: &BlameOptions{
-				NewestCommit: "master",
-			},
-			wantHunks: gitWantHunks,
-		},
-	}
-
-	client := NewClient("test")
-	for label, test := range tests {
-		newestCommitID, err := client.ResolveRevision(ctx, test.repo, string(test.opt.NewestCommit), ResolveRevisionOptions{})
-		if err != nil {
-			t.Errorf("%s: ResolveRevision(%q) on base: %s", label, test.opt.NewestCommit, err)
-			continue
-		}
-
-		test.opt.NewestCommit = newestCommitID
-		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, nil, label, test.wantHunks)
-
-		checker := authz.NewMockSubRepoPermissionChecker()
-		ctx = actor.WithActor(ctx, &actor.Actor{
-			UID: 1,
-		})
-		// Sub-repo permissions
-		// Case: user has read access to file, doesn't filter anything
-		checker.EnabledFunc.SetDefaultHook(func() bool {
-			return true
-		})
-		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-			if content.Path == "f2" {
-				return authz.Read, nil
-			}
-			return authz.None, nil
-		})
-		usePermissionsForFilePermissionsFunc(checker)
-		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, checker, label, test.wantHunks)
-
-		// Sub-repo permissions
-		// Case: user doesn't have access to the file, nothing returned.
-		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-			return authz.None, nil
-		})
-		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, checker, label, nil)
-	}
-}
-
-func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path string, opt *BlameOptions,
-	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk,
-) {
-	t.Helper()
-	client := NewTestClient(t).WithChecker(checker)
-	hunks, err := client.BlameFile(ctx, repo, path, opt)
-	if err != nil {
-		t.Errorf("%s: BlameFile(%s, %+v): %s", label, path, opt, err)
-		return
-	}
-	if !reflect.DeepEqual(hunks, wantHunks) {
-		t.Errorf("%s: hunks != wantHunks\n\nhunks ==========\n%s\n\nwantHunks ==========\n%s", label, AsJSON(hunks), AsJSON(wantHunks))
-	}
-}
-
 func TestRepository_ResolveBranch(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
@@ -2865,103 +2760,11 @@ func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker)
 	})
 }
 
-// testGitBlameOutput is produced by running
+// testGitBlameOutputIncremental is produced by running
 //
 //	git blame -w --porcelain release.sh
 //
 // `sourcegraph/src-cli`
-const testGitBlameOutput = `3f61310114082d6179c23f75950b88d1842fe2de 1 1 4
-author Thorsten Ball
-author-mail <mrnugget@gmail.com>
-author-time 1592827635
-author-tz +0200
-committer GitHub
-committer-mail <noreply@github.com>
-committer-time 1592827635
-committer-tz +0200
-summary Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)
-previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
-filename release.sh
-	#!/usr/bin/env bash
-3f61310114082d6179c23f75950b88d1842fe2de 2 2
-
-3f61310114082d6179c23f75950b88d1842fe2de 3 3
-	set -euf -o pipefail
-3f61310114082d6179c23f75950b88d1842fe2de 4 4
-
-fbb98e0b7ff0752798463d9f49d922858a4188f6 5 5 10
-author Adam Harvey
-author-mail <aharvey@sourcegraph.com>
-author-time 1602630694
-author-tz -0700
-committer GitHub
-committer-mail <noreply@github.com>
-committer-time 1602630694
-committer-tz -0700
-summary release: add a prompt about DEVELOPMENT.md (#349)
-previous 18f59760f4260518c29f0f07056245ed5d1d0f08 release.sh
-filename release.sh
-	read -p 'Have you read DEVELOPMENT.md? [y/N] ' -n 1 -r
-fbb98e0b7ff0752798463d9f49d922858a4188f6 6 6
-	echo
-fbb98e0b7ff0752798463d9f49d922858a4188f6 7 7
-	case "$REPLY" in
-fbb98e0b7ff0752798463d9f49d922858a4188f6 8 8
-	  Y | y) ;;
-fbb98e0b7ff0752798463d9f49d922858a4188f6 9 9
-	  *)
-fbb98e0b7ff0752798463d9f49d922858a4188f6 10 10
-	    echo 'Please read the Releasing section of DEVELOPMENT.md before running this script.'
-fbb98e0b7ff0752798463d9f49d922858a4188f6 11 11
-	    exit 1
-fbb98e0b7ff0752798463d9f49d922858a4188f6 12 12
-	    ;;
-fbb98e0b7ff0752798463d9f49d922858a4188f6 13 13
-	esac
-fbb98e0b7ff0752798463d9f49d922858a4188f6 14 14
-
-8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498 15 15 1
-author Adam Harvey
-author-mail <adam@adamharvey.name>
-author-time 1660860583
-author-tz -0700
-committer GitHub
-committer-mail <noreply@github.com>
-committer-time 1660860583
-committer-tz +0000
-summary release.sh: allow -rc.X suffixes (#829)
-previous e6e03e850770dd0ba745f0fa4b23127e9d72ad30 release.sh
-filename release.sh
-	if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$'; then
-3f61310114082d6179c23f75950b88d1842fe2de 6 16 4
-	  echo "\$VERSION is not in MAJOR.MINOR.PATCH format"
-3f61310114082d6179c23f75950b88d1842fe2de 7 17
-	  exit 1
-3f61310114082d6179c23f75950b88d1842fe2de 8 18
-	fi
-3f61310114082d6179c23f75950b88d1842fe2de 9 19
-
-67b7b725a7ff913da520b997d71c840230351e30 10 20 1
-author Thorsten Ball
-author-mail <mrnugget@gmail.com>
-author-time 1600334460
-author-tz +0200
-committer Thorsten Ball
-committer-mail <mrnugget@gmail.com>
-committer-time 1600334460
-committer-tz +0200
-summary Fix goreleaser GitHub action setup and release script
-previous 6e931cc9745502184ce32d48b01f9a8706a4dfe8 release.sh
-filename release.sh
-	# Create a new tag and push it, this will trigger the goreleaser workflow in .github/workflows/goreleaser.yml
-3f61310114082d6179c23f75950b88d1842fe2de 10 21 1
-	git tag "${VERSION}" -a -m "release v${VERSION}"
-67b7b725a7ff913da520b997d71c840230351e30 12 22 2
-	# We use --atomic so that we push the tag and the commit if the commit was or wasn't pushed before
-67b7b725a7ff913da520b997d71c840230351e30 13 23
-	git push --atomic origin main "${VERSION}"
-`
-
 var testGitBlameOutputIncremental = `8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498 15 15 1
 author Adam Harvey
 author-mail <adam@adamharvey.name>
@@ -3148,17 +2951,6 @@ var testGitBlameOutputHunks = []*Hunk{
 		Message:  "Fix goreleaser GitHub action setup and release script",
 		Filename: "release.sh",
 	},
-}
-
-func TestParseGitBlameOutput(t *testing.T) {
-	hunks, err := parseGitBlameOutput(testGitBlameOutput)
-	if err != nil {
-		t.Fatalf("parseGitBlameOutput failed: %s", err)
-	}
-
-	if d := cmp.Diff(testGitBlameOutputHunks, hunks); d != "" {
-		t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
-	}
 }
 
 func TestStreamBlameFile(t *testing.T) {

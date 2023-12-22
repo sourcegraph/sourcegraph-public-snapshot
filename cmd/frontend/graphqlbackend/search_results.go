@@ -242,8 +242,9 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 		// No line match
 		return time.Time{}, nil
 	}
+
 	hm := fm.ChunkMatches[0]
-	hunks, err := gitserver.NewClient("graphql.search.results.blame").BlameFile(ctx, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
+	hr, err := gitserver.NewClient("graphql.search.results.blame").StreamBlameFile(ctx, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    hm.Ranges[0].Start.Line,
 		EndLine:      hm.Ranges[0].Start.Line,
@@ -251,8 +252,16 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 	if err != nil {
 		return time.Time{}, err
 	}
+	defer hr.Close()
 
-	return hunks[0].Author.Date, nil
+	// We are only interested in the first hunk, so we consume one and then return
+	// which calls hr.Close above.
+	hunk, err := hr.Read()
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return hunk.Author.Date, nil
 }
 
 func (sr *SearchResultsResolver) Sparkline(ctx context.Context) (sparkline []int32, err error) {
