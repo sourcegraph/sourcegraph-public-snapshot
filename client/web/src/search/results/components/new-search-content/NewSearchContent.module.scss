@@ -17,10 +17,10 @@
     &--with-new-filters {
         @media (--md-breakpoint-down) {
             grid-template-rows: auto 1fr;
-            grid-template-columns: auto minmax(0, 1fr);
+            grid-template-columns: auto minmax(0, 1fr) auto;
             grid-template-areas:
-                'new-filters infobar'
-                'new-filters contents';
+                'new-filters infobar preview'
+                'new-filters contents preview';
         }
     }
 

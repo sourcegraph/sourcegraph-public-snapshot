@@ -84,6 +84,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
 
             {type === SearchFilterType.Symbols && (
                 <SearchDynamicFilter
+                    title="By symbol kind"
                     filterType={FilterType.select}
                     filters={SYMBOL_KIND_FILTERS}
                     exclusive={true}
@@ -97,6 +98,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
             {(type === SearchFilterType.Commits || type === SearchFilterType.Diffs) && (
                 <>
                     <SearchDynamicFilter
+                        title="By author"
                         filterType={FilterType.author}
                         filters={authorFilters}
                         exclusive={true}
@@ -106,6 +108,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
                     />
 
                     <SearchDynamicFilter
+                        title="By commit date"
                         filterType={[FilterType.after, FilterType.before]}
                         filters={COMMIT_DATE_FILTERS}
                         exclusive={true}
@@ -118,6 +121,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
             )}
 
             <SearchDynamicFilter
+                title="By language"
                 filterType={FilterType.lang}
                 filters={filters}
                 filterQuery={filterQuery}
@@ -126,6 +130,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
             />
 
             <SearchDynamicFilter
+                title="By repositories"
                 filterType={FilterType.repo}
                 filters={filters}
                 filterQuery={filterQuery}
@@ -134,6 +139,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
             />
 
             <SearchDynamicFilter
+                title="By file"
                 filterType={FilterType.file}
                 filterAlias={NegatedFilters.file}
                 filters={filters}
@@ -142,6 +148,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
             />
 
             <SearchDynamicFilter
+                title="Utility"
                 filterType="utility"
                 filterAlias={[FilterType.archived, FilterType.fork]}
                 filters={filters}

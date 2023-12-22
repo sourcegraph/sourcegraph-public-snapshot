@@ -19,6 +19,9 @@ import styles from './SearchDynamicFilter.module.scss'
 const MAX_FILTERS_NUMBER = 7
 
 interface SearchDynamicFilterProps {
+    /** Name title of the filter section */
+    title: string
+
     /**
      * Specifies which type filter we want to render in this particular
      * filter section, it could be lang filter, repo filter, or file filters.
@@ -74,6 +77,7 @@ interface SearchDynamicFilterProps {
  */
 export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
     const {
+        title,
         filters,
         filterType,
         filterAlias,
@@ -156,7 +160,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
 
     return (
         <div className={styles.root}>
-            <H4 className={styles.heading}>By {filterTypes.join(',')}</H4>
+            <H4 className={styles.heading}>{title}</H4>
 
             {mappedFilters.length > MAX_FILTERS_NUMBER && (
                 <Input
