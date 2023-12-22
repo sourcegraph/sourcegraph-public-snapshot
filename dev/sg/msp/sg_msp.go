@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/cloudsqlproxy"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/example"
 	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -58,9 +60,8 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 					Value: "service",
 				},
 				&cli.StringFlag{
-					Name:     "owner",
-					Usage:    "Name of team owning this new service",
-					Required: true,
+					Name:  "owner",
+					Usage: "Name of team owning this new service",
 				},
 				&cli.StringFlag{
 					Name:  "name",
@@ -68,7 +69,12 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 				},
 				&cli.BoolFlag{
 					Name:  "dev",
-					Usage: "Generate a dev environment as the initial environment",
+					Usage: "Generate a dev environment",
+				},
+				&cli.IntFlag{
+					Name:  "project-id-suffix-length",
+					Usage: "Length of random suffix appended to generated project IDs",
+					Value: spec.DefaultSuffixLength,
 				},
 			},
 			Before: msprepo.UseManagedServicesRepo,
@@ -82,6 +88,8 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 					Name:  c.String("name"),
 					Owner: c.String("owner"),
 					Dev:   c.Bool("dev"),
+
+					ProjectIDSuffixLength: c.Int("project-id-suffix-length"),
 				}
 
 				var exampleSpec []byte
@@ -111,6 +119,64 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 
 				std.Out.WriteSuccessf("Rendered %s template spec in %s",
 					c.String("kind"), outputPath)
+				return nil
+			},
+		},
+		{
+			Name:      "init-env",
+			ArgsUsage: "<service ID> <env ID>",
+			Usage:     "Add an environment to an existing Managed Services Platform service",
+			Flags: []cli.Flag{
+				&cli.IntFlag{
+					Name:  "project-id-suffix-length",
+					Usage: "Length of random suffix appended to generated project IDs",
+					Value: spec.DefaultSuffixLength,
+				},
+			},
+			Before: msprepo.UseManagedServicesRepo,
+			BashComplete: completions.CompleteArgs(func() (options []string) {
+				ss, _ := msprepo.ListServices()
+				return ss
+			}),
+			Action: func(c *cli.Context) error {
+				svc, err := useServiceArgument(c)
+				if err != nil {
+					return err
+				}
+				envID := c.Args().Get(0)
+				if envID == "" {
+					return errors.New("second argument <environment ID> is required")
+				}
+				if existing := svc.GetEnvironment(envID); existing != nil {
+					return errors.Newf("environment %q already exists", envID)
+				}
+
+				envNode, err := example.NewEnvironment(example.EnvironmentTemplate{
+					ServiceID:             svc.Service.ID,
+					EnvironmentID:         envID,
+					ProjectIDSuffixLength: c.Int("project-id-suffix-length"),
+				})
+				if err != nil {
+					return errors.Wrap(err, "example.NewEnvironment")
+				}
+
+				specPath := msprepo.ServiceYAMLPath(msprepo.ServiceYAMLPath(svc.Service.ID))
+				specData, err := os.ReadFile(specPath)
+				if err != nil {
+					return errors.Wrap(err, "ReadFile")
+				}
+
+				specData, err = spec.AppendEnvironment(specData, envNode)
+				if err != nil {
+					return errors.Wrap(err, "spec.AppendEnvironment")
+				}
+
+				if err := os.WriteFile(specPath, specData, 0o644); err != nil {
+					return err
+				}
+
+				std.Out.WriteSuccessf("Initialized environment %q in %s",
+					envID, specPath)
 				return nil
 			},
 		},
@@ -208,31 +274,16 @@ sg msp generate -all <service>
 			},
 			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 			Action: func(c *cli.Context) error {
-				service, env, err := useServiceAndEnvironmentArguments(c)
+				_, env, err := useServiceAndEnvironmentArguments(c)
 				if err != nil {
 					return err
-				}
-
-				tfcClient, err := getTFCRunsClient(c)
-				if err != nil {
-					return err
-				}
-				projectOutputs, err := tfcClient.GetOutputs(c.Context,
-					terraformcloud.WorkspaceName(service.Service, *env,
-						managedservicesplatform.StackNameProject))
-				if err != nil {
-					return errors.Wrap(err, "get IAM outputs")
-				}
-				projectID, err := projectOutputs.Find("project_id")
-				if err != nil {
-					return errors.Wrap(err, "get project ID")
 				}
 
 				switch component := c.String("component"); component {
 				case "service":
 					std.Out.WriteNoticef("Opening link to service logs in browser...")
 					return open.URL((&gcplogurl.Explorer{
-						ProjectID: projectID.Value.(string),
+						ProjectID: env.ProjectID,
 						Query:     gcplogurl.Query(`resource.type = "cloud_run_revision" jsonPayload.InstrumentationScope != ""`),
 						SummaryFields: &gcplogurl.SummaryFields{
 							Fields: []string{

@@ -17,6 +17,7 @@ build:
 
 environments:
 - id: {{ if .Dev }}dev{{ else }}prod{{ end }}
+  projectID: {{ if .Dev }}{{ newProjectID .ID "dev" .ProjectIDSuffixLength }}{{ else }}{{ newProjectID .ID "dev" .ProjectIDSuffixLength }}{{ end }}
   # TODO: We initially provision in 'test' to make it easy to access the project
   # during setup. Once done, you should change this to 'external' or 'internal'.
   category: test

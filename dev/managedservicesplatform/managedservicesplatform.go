@@ -79,17 +79,11 @@ func (r *Renderer) RenderEnvironment(
 				},
 			}))
 	}
-
-	var (
-		projectIDPrefix = fmt.Sprintf("%s-%s", svc.ID, env.ID)
-		stacks          = stack.NewSet(r.OutputDir, stackSetOptions...)
-	)
+	stacks := stack.NewSet(r.OutputDir, stackSetOptions...)
 
 	// Render all required CDKTF stacks for this environment
 	projectOutput, err := project.NewStack(stacks, project.Variables{
-		ProjectIDPrefix:       projectIDPrefix,
-		ProjectIDSuffixLength: svc.ProjectIDSuffixLength,
-
+		ProjectID: env.ProjectID,
 		DisplayName: fmt.Sprintf("%s - %s",
 			pointers.Deref(svc.Name, svc.ID), env.ID),
 

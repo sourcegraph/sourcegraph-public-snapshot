@@ -12,7 +12,7 @@ var codeClassPattern = regexp.MustCompile(`\dx+`)
 
 type MonitoringSpec struct {
 	// Alerts is a list of alert configurations for the deployment
-	Alerts MonitoringAlertsSpec `json:"alerts"`
+	Alerts MonitoringAlertsSpec `yaml:"alerts"`
 }
 
 func (s *MonitoringSpec) Validate() []error {
@@ -25,18 +25,18 @@ func (s *MonitoringSpec) Validate() []error {
 }
 
 type MonitoringAlertsSpec struct {
-	ResponseCodeRatios []ResponseCodeRatioSpec `json:"responseCodeRatios"`
+	ResponseCodeRatios []ResponseCodeRatioSpec `yaml:"responseCodeRatios"`
 }
 
 type ResponseCodeRatioSpec struct {
-	ID           string   `json:"id"`
-	Name         string   `json:"name"`
-	Description  *string  `json:"description,omitempty"`
-	Code         *int     `json:"code,omitempty"`
-	CodeClass    *string  `json:"codeClass,omitempty"`
-	ExcludeCodes []string `json:"excludeCodes,omitempty"`
-	Duration     *string  `json:"duration,omitempty"`
-	Ratio        float64  `json:"ratio"`
+	ID           string   `yaml:"id"`
+	Name         string   `yaml:"name"`
+	Description  *string  `yaml:"description,omitempty"`
+	Code         *int     `yaml:"code,omitempty"`
+	CodeClass    *string  `yaml:"codeClass,omitempty"`
+	ExcludeCodes []string `yaml:"excludeCodes,omitempty"`
+	Duration     *string  `yaml:"duration,omitempty"`
+	Ratio        float64  `yaml:"ratio"`
 }
 
 func (s *MonitoringAlertsSpec) Validate() []error {
