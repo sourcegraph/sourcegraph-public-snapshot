@@ -89,6 +89,8 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 		TFC: managedservicesplatform.TerraformCloudOptions{
 			Enabled: true, // required to generate all workspaces
 		},
+		// Avoid external resource access
+		StableGenerate: true,
 	}
 	defer os.RemoveAll(renderer.OutputDir)
 

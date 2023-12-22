@@ -150,7 +150,7 @@ export function getQueryURL(
         queryState.searchMode
     )
 
-    return 'search?' + searchQueryParameter
+    return '/search?' + searchQueryParameter
 }
 
 export function submitSearch(
