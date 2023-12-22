@@ -50,6 +50,10 @@ use tree_sitter::Node;
 // about "toplevel" items. We might need to extend our DSL a little
 // further and do some custom tree-traversal logic to implement this.
 
+// The maximum number of parent scopes we traverse before giving up to
+// prevent infinite loops
+const MAX_SCOPE_DEPTH: i32 = 10000;
+
 pub fn parse_tree(
     config: &LocalConfiguration,
     tree: &tree_sitter::Tree,
@@ -609,7 +613,13 @@ impl<'a> LocalResolver<'a> {
 
         // We need to climb back to the top level scope and add
         // all remaining definitions
+        let mut fuel = MAX_SCOPE_DEPTH;
         loop {
+            fuel -= 1;
+            if fuel <= 0 {
+                eprintln!("Detected a likely infinite loop in scip-syntax::locals::LocalResolver::build_tree");
+                break;
+            }
             let scope_end_byte = self.end_byte(current_scope);
             self.add_defs_while(current_scope, &mut definitions_iter, |def_capture| {
                 def_capture.node.start_byte() < scope_end_byte
@@ -624,7 +634,6 @@ impl<'a> LocalResolver<'a> {
                 // We've made it to the top level scope
                 break;
             }
-
         }
 
         assert!(
@@ -641,14 +650,20 @@ impl<'a> LocalResolver<'a> {
         start_byte: usize,
     ) -> Option<&Definition<'a>> {
         let mut current_scope = scope;
+        let mut fuel = MAX_SCOPE_DEPTH;
         loop {
+            fuel -= 1;
+            if fuel <= 0 {
+                eprintln!("Detected a likely infinite loop in scip-syntax::locals::LocalResolver::find_def");
+                return None;
+            }
             let scope = self.get_scope(current_scope);
             if let Some(def) = scope.find_def(name, start_byte) {
-                break Some(def);
+                return Some(def);
             } else if let Some(parent_scope) = scope.parent {
                 current_scope = parent_scope
             } else {
-                break None;
+                return None;
             }
         }
     }
