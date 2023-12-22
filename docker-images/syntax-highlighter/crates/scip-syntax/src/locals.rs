@@ -525,9 +525,9 @@ impl<'a> LocalResolver<'a> {
                         node: capture.node,
                     })
                 } else if capture_name.starts_with("definition") {
-                    let is_def_ref = properties.iter().any(|p| p.key == "def_ref".into());
+                    let is_def_ref = properties.iter().any(|p| p.key.as_ref() == "def_ref");
                     let mut hoist = None;
-                    if let Some(prop) = properties.iter().find(|p| p.key == "hoist".into()) {
+                    if let Some(prop) = properties.iter().find(|p| p.key.as_ref() == "hoist") {
                         hoist = Some(prop.value.as_ref().unwrap().to_string());
                     }
                     definitions.push(DefCapture {
