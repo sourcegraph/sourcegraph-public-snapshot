@@ -49,6 +49,7 @@ type GitserverServiceClient interface {
 	ListGitolite(ctx context.Context, in *ListGitoliteRequest, opts ...grpc.CallOption) (*ListGitoliteResponse, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
+	// Deprecated: Do not use.
 	P4Exec(ctx context.Context, in *P4ExecRequest, opts ...grpc.CallOption) (GitserverService_P4ExecClient, error)
 	RepoClone(ctx context.Context, in *RepoCloneRequest, opts ...grpc.CallOption) (*RepoCloneResponse, error)
 	RepoCloneProgress(ctx context.Context, in *RepoCloneProgressRequest, opts ...grpc.CallOption) (*RepoCloneProgressResponse, error)
@@ -241,6 +242,7 @@ func (x *gitserverServiceArchiveClient) Recv() (*ArchiveResponse, error) {
 	return m, nil
 }
 
+// Deprecated: Do not use.
 func (c *gitserverServiceClient) P4Exec(ctx context.Context, in *P4ExecRequest, opts ...grpc.CallOption) (GitserverService_P4ExecClient, error) {
 	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[4], GitserverService_P4Exec_FullMethodName, opts...)
 	if err != nil {
@@ -331,6 +333,7 @@ type GitserverServiceServer interface {
 	ListGitolite(context.Context, *ListGitoliteRequest) (*ListGitoliteResponse, error)
 	Search(*SearchRequest, GitserverService_SearchServer) error
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
+	// Deprecated: Do not use.
 	P4Exec(*P4ExecRequest, GitserverService_P4ExecServer) error
 	RepoClone(context.Context, *RepoCloneRequest) (*RepoCloneResponse, error)
 	RepoCloneProgress(context.Context, *RepoCloneProgressRequest) (*RepoCloneProgressResponse, error)

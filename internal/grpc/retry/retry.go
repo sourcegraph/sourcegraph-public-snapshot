@@ -421,7 +421,7 @@ func makeTracingCallback(parentCtx context.Context, logger log.Logger, serviceNa
 			logFields = append(logFields, log.Error(lastErr))
 		}
 
-		logger := logger.Scoped("grpcRetryInterceptor")
+		logger := logger.Scoped("grpcRetryInterceptor", "")
 		trace.Logger(parentCtx, logger).Debug("request",
 			log.Object("retry", logFields...),
 		)
