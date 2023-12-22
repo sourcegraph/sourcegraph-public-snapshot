@@ -2063,6 +2063,11 @@
           "type": "string",
           "group": "Sourcegraph.com"
         },
+        "SlackLicenseCreationWebhook": {
+          "description": "Slack webhook for when a license key is created.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        },
         "srcCliVersionCache": {
           "description": "Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.",
           "type": "object",
