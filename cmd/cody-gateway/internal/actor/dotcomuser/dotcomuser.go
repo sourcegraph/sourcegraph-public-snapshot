@@ -36,7 +36,8 @@ const tokenLength = 4 + 64
 
 var (
 	defaultUpdateInterval = 15 * time.Minute
-	updateGracePeriod     = 1 * time.Hour // we allow 1 hour of grace period if dotcom is down
+	// we allow 1 hour of grace period if dotcom is down
+	updateGracePeriod = 1 * time.Hour
 	// defaultRefreshInterval is used for updates, which is also called when a
 	// user's rate limit is hit, so we don't want to update every time. We use
 	// a shorter interval than the default in this case.
