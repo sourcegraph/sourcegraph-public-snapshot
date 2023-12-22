@@ -1883,16 +1883,3 @@ def staticcheck_targets():
             "@org_golang_x_tools//go/analysis",
         ],
     )
-
-    go_library(
-        name = "staticcheck",
-        srcs = ["staticcheck.go"],
-        importpath = "github.com/sourcegraph/sourcegraph/dev/linters/staticcheck",
-        visibility = ["//visibility:public"],
-        deps = [
-            "//dev/linters/nolint",
-            "@co_honnef_go_tools//simple",
-            "@co_honnef_go_tools//staticcheck",
-            "@org_golang_x_tools//go/analysis",
-        ],
-    )

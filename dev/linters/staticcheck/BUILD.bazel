@@ -1,3 +1,4 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 load("targets.bzl", "staticcheck_targets")
 
@@ -30,3 +31,16 @@ write_generated_to_source_files(
 )
 
 staticcheck_targets()
+
+go_library(
+    name = "staticcheck",
+    srcs = ["staticcheck.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/linters/staticcheck",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/linters/nolint",
+        "@co_honnef_go_tools//simple",
+        "@co_honnef_go_tools//staticcheck",
+        "@org_golang_x_tools//go/analysis",
+    ],
+)
