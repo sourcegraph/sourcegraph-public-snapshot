@@ -34,7 +34,10 @@ fn parse_files(dir: &Path) -> Vec<ParseTiming> {
         }
 
         let start = Instant::now();
-        let source = std::fs::read_to_string(entry).unwrap();
+        let Ok(source) = std::fs::read_to_string(entry) else {
+            eprintln!("Skip non-UTF-8: {}", entry.strip_prefix(dir).unwrap().display());
+            continue;
+        };
         let source_bytes = source.as_bytes();
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
