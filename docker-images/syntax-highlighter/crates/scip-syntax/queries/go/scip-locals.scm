@@ -73,11 +73,3 @@
 ;                  field: (field_identifier) @reference)))
 ;  (set! reference.kind "call"))
 ;
-
-;; ;; TODO: These may not make much sense to have for locals... {{{
-;; ((package_identifier) @reference
-;;   (set! reference.kind "namespace"))
-
-;; (package_clause
-;;    (package_identifier) @definition.namespace)
-;; ;; }}}
