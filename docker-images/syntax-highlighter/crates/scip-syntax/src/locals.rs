@@ -90,6 +90,9 @@ struct Scope<'a> {
     // precede us in the parent, for efficient slicing when searching
     // up the tree
     parent: Option<ScopeRef<'a>>,
+    /// Scopes that appear nested underneath this scope. Sorted
+    /// lexicographically
+    children: Vec<ScopeRef<'a>>,
 
     /// Definitions that have been hoisted to the top of this scope
     // TODO: (perf) for hoisted definitions the lexicographical order
@@ -100,9 +103,6 @@ struct Scope<'a> {
     definitions: Vec<Definition<'a>>,
     /// References that appear in this scope. Sorted lexicographical
     references: Vec<Reference<'a>>,
-    /// Scopes that appear nested underneath this scope. Sorted
-    /// lexicographically
-    children: Vec<ScopeRef<'a>>,
 }
 
 impl<'a> Scope<'a> {
