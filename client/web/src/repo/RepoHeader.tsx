@@ -203,7 +203,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
             <Breadcrumbs
                 breadcrumbs={props.breadcrumbs}
                 className={classNames(
-                    'justify-content-start flex-grow-1',
+                    'justify-content-start flex-grow-1 w-auto m-0',
                     !props.forceWrap ? styles.breadcrumbWrap : ''
                 )}
             />

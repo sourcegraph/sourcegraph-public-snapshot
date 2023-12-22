@@ -14,6 +14,7 @@
 
     @media (--sm-breakpoint-up) and (--lg-breakpoint-down) {
         flex-direction: column;
+        align-items: flex-start;
     }
 
     :global(.navbar-nav) {
@@ -40,6 +41,7 @@
 .action-list {
     gap: 0.625rem;
     margin-left: auto;
+    overflow-x: hidden;
 }
 
 .action-list-item:not(:empty) {
