@@ -166,6 +166,9 @@ fn compare_range(a: Range<usize>, b: Range<usize>) -> Ordering {
     (a.start, b.end).cmp(&(b.start, a.end))
 }
 
+/// Before building the scope tree and resolving references, we first
+/// run the tree-sitter query and extract all capture from all matches
+/// into this structure
 #[derive(Debug)]
 struct Captures<'a> {
     scopes: Vec<ScopeCapture<'a>>,
