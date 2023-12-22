@@ -39,6 +39,8 @@ use tree_sitter::Node;
 //
 // b) Marking globals to avoid emitting them into occurrences
 //
+// https://github.com/sourcegraph/sourcegraph/issues/57791
+//
 // I've given this an initial try, but tree-sitter queries are
 // difficult to work with.
 //
