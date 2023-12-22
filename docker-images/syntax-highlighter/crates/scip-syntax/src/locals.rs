@@ -77,7 +77,7 @@ struct Reference<'a> {
 }
 
 /// We use id_arena to allocate our scopes.
-type ScopeRef<'a> = Id<Scope<'a>>;
+type ScopeId<'a> = Id<Scope<'a>>;
 
 /// We use string_interner to intern variable names
 type Name = SymbolU32;
@@ -101,10 +101,10 @@ struct Scope<'a> {
     // TODO: (perf) we could also remember how many definitions
     // precede us in the parent, for efficient slicing when searching
     // up the tree
-    parent: Option<ScopeRef<'a>>,
+    parent: Option<ScopeId<'a>>,
     /// Scopes that appear nested underneath this scope. Sorted
     /// lexicographically
-    children: Vec<ScopeRef<'a>>,
+    children: Vec<ScopeId<'a>>,
 
     /// Definitions that have been hoisted to the top of this scope
     hoisted_definitions: HashMap<Name, Definition<'a>>,
@@ -115,7 +115,7 @@ struct Scope<'a> {
 }
 
 impl<'a> Scope<'a> {
-    fn new(kind: String, node: Node<'a>, parent: Option<ScopeRef<'a>>) -> Self {
+    fn new(kind: String, node: Node<'a>, parent: Option<ScopeId<'a>>) -> Self {
         Scope {
             kind,
             node,
@@ -198,12 +198,12 @@ struct RefCapture<'a> {
 #[derive(Debug)]
 struct Ancestors<'arena, 'a> {
     arena: &'arena Arena<Scope<'a>>,
-    current_scope: ScopeRef<'a>,
+    current_scope: ScopeId<'a>,
 }
 
 impl<'arena, 'a> Iterator for Ancestors<'arena, 'a> {
-    type Item = ScopeRef<'a>;
-    fn next(&mut self) -> Option<ScopeRef<'a>> {
+    type Item = ScopeId<'a>;
+    fn next(&mut self) -> Option<ScopeId<'a>> {
         let scope = self.arena.get(self.current_scope).unwrap();
         match scope.parent {
             None => None,
@@ -247,21 +247,21 @@ impl<'a> LocalResolver<'a> {
         }
     }
 
-    fn start_byte(&self, id: ScopeRef<'a>) -> usize {
-        self.get_scope(id).node.start_byte()
+    fn start_byte(&self, scope_id: ScopeId<'a>) -> usize {
+        self.get_scope(scope_id).node.start_byte()
     }
 
-    fn end_byte(&self, id: ScopeRef<'a>) -> usize {
-        self.get_scope(id).node.end_byte()
+    fn end_byte(&self, scope_id: ScopeId<'a>) -> usize {
+        self.get_scope(scope_id).node.end_byte()
     }
 
-    fn add_reference(&mut self, id: ScopeRef<'a>, reference: Reference<'a>) {
-        self.get_scope_mut(id).references.push(reference)
+    fn add_reference(&mut self, scope_id: ScopeId<'a>, reference: Reference<'a>) {
+        self.get_scope_mut(scope_id).references.push(reference)
     }
 
     fn add_definition(
         &mut self,
-        id: ScopeRef<'a>,
+        scope_id: ScopeId<'a>,
         name: Name,
         node: Node<'a>,
         hoist: &Option<String>,
@@ -285,10 +285,10 @@ impl<'a> LocalResolver<'a> {
 
         let is_new_definition = match hoist {
             Some(hoist_scope) => {
-                let mut target_scope = id;
+                let mut target_scope = scope_id;
                 // If we don't find any matching scope we hoist all
                 // the way to the top_scope
-                for ancestor in self.ancestors(id) {
+                for ancestor in self.ancestors(scope_id) {
                     target_scope = ancestor;
                     if self.get_scope(ancestor).kind == *hoist_scope {
                         break;
@@ -317,12 +317,12 @@ impl<'a> LocalResolver<'a> {
             None => {
                 if_chain! {
                     if is_def_ref;
-                    if let Some(previous) = self.find_def(id, name, node.start_byte());
+                    if let Some(previous) = self.find_def(scope_id, name, node.start_byte());
                     then {
                         DefRef::PreviousDefinition(previous.id)
                     } else {
                         let (def_id, definition) = mk_def(self);
-                        self.get_scope_mut(id).definitions.push(definition);
+                        self.get_scope_mut(scope_id).definitions.push(definition);
                         DefRef::NewDefinition(def_id)
                     }
                 }
@@ -339,7 +339,7 @@ impl<'a> LocalResolver<'a> {
                 });
             }
             DefRef::PreviousDefinition(definition_id) => {
-                self.get_scope_mut(id).references.push(Reference {
+                self.get_scope_mut(scope_id).references.push(Reference {
                     name,
                     node,
                     resolves_to: Some(definition_id),
@@ -348,29 +348,29 @@ impl<'a> LocalResolver<'a> {
         };
     }
 
-    fn get_scope(&self, id: ScopeRef<'a>) -> &Scope<'a> {
-        self.arena.get(id).unwrap()
+    fn get_scope(&self, scope_id: ScopeId<'a>) -> &Scope<'a> {
+        self.arena.get(scope_id).unwrap()
     }
 
-    fn get_scope_mut(&mut self, id: ScopeRef<'a>) -> &mut Scope<'a> {
-        self.arena.get_mut(id).unwrap()
+    fn get_scope_mut(&mut self, scope_id: ScopeId<'a>) -> &mut Scope<'a> {
+        self.arena.get_mut(scope_id).unwrap()
     }
 
-    fn ancestors(&self, id: ScopeRef<'a>) -> Ancestors<'_, 'a> {
+    fn ancestors(&self, scope_id: ScopeId<'a>) -> Ancestors<'_, 'a> {
         Ancestors {
             arena: &self.arena,
-            current_scope: id,
+            current_scope: scope_id,
         }
     }
 
-    fn parent(&self, id: ScopeRef<'a>) -> ScopeRef<'a> {
-        self.get_scope(id)
+    fn parent(&self, scope_id: ScopeId<'a>) -> ScopeId<'a> {
+        self.get_scope(scope_id)
             .parent
             .expect("Tried to get the root node's parent")
     }
 
-    fn print_scope(&self, w: &mut impl Write, id: ScopeRef<'a>, depth: usize) {
-        let scope = self.get_scope(id);
+    fn print_scope(&self, w: &mut impl Write, scope_id: ScopeId<'a>, depth: usize) {
+        let scope = self.get_scope(scope_id);
         writeln!(
             w,
             "{}scope {} {}-{}",
@@ -454,7 +454,7 @@ impl<'a> LocalResolver<'a> {
 
     fn add_refs_while<'b, F>(
         &mut self,
-        scope: ScopeRef<'a>,
+        scope: ScopeId<'a>,
         references_iter: &mut Iter<'b, RefCapture<'a>>,
         f: F,
     ) where
@@ -479,7 +479,7 @@ impl<'a> LocalResolver<'a> {
 
     fn add_defs_while<'b, F>(
         &mut self,
-        scope: ScopeRef<'a>,
+        scope: ScopeId<'a>,
         definitions_iter: &mut Iter<'b, DefCapture<'a>>,
         f: F,
     ) where
@@ -556,7 +556,7 @@ impl<'a> LocalResolver<'a> {
     /// Build a tree of scopes for pre-order traversal by sorting scopes, definitions
     /// and references. Definitions and references are added or hoisted to the
     /// closest enclosing scope as appropriate.
-    fn build_tree(&mut self, top_scope: ScopeRef<'a>, captures: Captures<'a>) {
+    fn build_tree(&mut self, top_scope: ScopeId<'a>, captures: Captures<'a>) {
         let Captures {
             mut scopes,
             mut definitions,
@@ -634,7 +634,7 @@ impl<'a> LocalResolver<'a> {
     /// Walks up the scope tree and tries to find the definition for a given name
     fn find_def(
         &self,
-        scope: ScopeRef<'a>,
+        scope: ScopeId<'a>,
         name: Name,
         start_byte: usize,
     ) -> Option<&Definition<'a>> {
