@@ -48,26 +48,13 @@ use tree_sitter::Node;
 // about "toplevel" items. We might need to extend our DSL a little
 // further and do some custom tree-traversal logic to implement this.
 
-pub fn parse_tree<'a>(
+pub fn parse_tree(
     config: &LocalConfiguration,
-    tree: &'a tree_sitter::Tree,
-    source_bytes: &'a [u8],
+    tree: &tree_sitter::Tree,
+    source_bytes: &[u8],
 ) -> Vec<Occurrence> {
     let resolver = LocalResolver::new(source_bytes);
     resolver.process(config, tree, None::<&mut String>)
-}
-
-pub fn parse_tree_test<'a>(
-    config: &LocalConfiguration,
-    tree: &'a tree_sitter::Tree,
-    source_bytes: &'a [u8],
-) -> (Vec<Occurrence>, String) {
-    let resolver = LocalResolver::new(source_bytes);
-    let mut tree_output = String::new();
-    (
-        resolver.process(config, tree, Some(&mut tree_output)),
-        tree_output,
-    )
 }
 
 #[derive(Debug, Clone)]
@@ -740,7 +727,10 @@ mod test {
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
 
-        let (occ, tree) = parse_tree_test(config, &tree, source_bytes);
+        let resolver = LocalResolver::new(source_bytes);
+        let mut tree_output = String::new();
+        let occ = resolver.process(config, &tree, Some(&mut tree_output));
+
         let mut doc = Document::new();
         doc.occurrences = occ;
         doc.symbols = doc
@@ -752,7 +742,7 @@ mod test {
             })
             .collect();
 
-        (doc, tree)
+        (doc, tree_output)
     }
 
     #[test]
