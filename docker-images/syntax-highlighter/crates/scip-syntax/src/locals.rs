@@ -61,7 +61,7 @@ pub fn parse_tree(
 
 #[derive(Debug, Clone)]
 struct Definition<'a> {
-    id: usize,
+    id: DefId,
     node: Node<'a>,
     name: Name,
 }
@@ -73,7 +73,7 @@ struct Reference<'a> {
     /// When dealing with def_refs there are references that we've
     /// already resolved to their definitions. Because we don't want
     /// to duplicate that work we store the definition's id here.
-    resolves_to: Option<usize>,
+    resolves_to: Option<DefId>,
 }
 
 /// We use id_arena to allocate our scopes.
@@ -81,6 +81,16 @@ type ScopeRef<'a> = Id<Scope<'a>>;
 
 /// We use string_interner to intern variable names
 type Name = SymbolU32;
+
+/// The id's we create to reference definitions
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct DefId(u32);
+
+impl DefId {
+    pub fn to_local_symbol(&self) -> Symbol {
+        Symbol::new_local(self.0 as usize)
+    }
+}
 
 #[derive(Debug)]
 struct Scope<'a> {
@@ -205,11 +215,10 @@ impl<'arena, 'a> Iterator for Ancestors<'arena, 'a> {
     }
 }
 
-// Can we make these usize's NonZeroUsize to make this enum smaller?
 #[derive(Debug, Clone, Copy)]
 enum DefRef {
-    PreviousDefinition(usize),
-    NewDefinition(usize),
+    PreviousDefinition(DefId),
+    NewDefinition(DefId),
 }
 
 #[derive(Debug)]
@@ -218,7 +227,7 @@ struct LocalResolver<'a> {
     interner: StringInterner,
 
     source_bytes: &'a [u8],
-    definition_id_supply: usize,
+    definition_id_supply: u32,
     // This is a hack to not record references that overlap with
     // definitions. Ideally we'd fix our queries to prevent these
     // overlaps.
@@ -265,7 +274,7 @@ impl<'a> LocalResolver<'a> {
         // that turn out to be references rather than definitions
         let mk_def = |this: &mut Self| {
             this.definition_id_supply += 1;
-            let def_id = this.definition_id_supply;
+            let def_id = DefId(this.definition_id_supply);
             let definition = Definition {
                 id: def_id,
                 name,
@@ -325,7 +334,7 @@ impl<'a> LocalResolver<'a> {
             DefRef::NewDefinition(definition_id) => {
                 self.occurrences.push(scip::types::Occurrence {
                     range: node.to_scip_range(),
-                    symbol: format_symbol(Symbol::new_local(definition_id)),
+                    symbol: format_symbol(definition_id.to_local_symbol()),
                     symbol_roles: scip::types::SymbolRole::Definition.value(),
                     ..Default::default()
                 });
@@ -667,7 +676,7 @@ impl<'a> LocalResolver<'a> {
                     continue;
                 };
 
-                let symbol = format_symbol(Symbol::new_local(def_id));
+                let symbol = format_symbol(def_id.to_local_symbol());
                 ref_occurrences.push(scip::types::Occurrence {
                     range: node.to_scip_range(),
                     symbol: symbol.clone(),
