@@ -84,7 +84,7 @@ type Name = DefaultSymbol;
 struct Scope<'a> {
     /// For a query that captures a "@scope.function" this will
     /// contain the string "function"
-    ty: String,
+    kind: String,
     node: Node<'a>,
     // TODO: (perf) we could also remember how many definitions
     // precede us in the parent, for efficient slicing when searching
@@ -106,9 +106,9 @@ struct Scope<'a> {
 }
 
 impl<'a> Scope<'a> {
-    fn new(ty: String, node: Node<'a>, parent: Option<ScopeRef<'a>>) -> Self {
+    fn new(kind: String, node: Node<'a>, parent: Option<ScopeRef<'a>>) -> Self {
         Scope {
-            ty,
+            kind,
             node,
             parent,
             hoisted_definitions: vec![],
@@ -166,7 +166,7 @@ struct Captures<'a> {
 
 #[derive(Debug)]
 struct ScopeCapture<'a> {
-    ty: &'a str,
+    kind: &'a str,
     node: Node<'a>,
 }
 
@@ -279,7 +279,7 @@ impl<'a> LocalResolver<'a> {
                 // the way to the top_scope
                 for ancestor in self.ancestors(id) {
                     target_scope = ancestor;
-                    if self.get_scope(ancestor).ty == *hoist_scope {
+                    if self.get_scope(ancestor).kind == *hoist_scope {
                         break;
                     }
                 }
@@ -365,7 +365,7 @@ impl<'a> LocalResolver<'a> {
             w,
             "{}scope {} {}-{}",
             str::repeat(" ", depth),
-            scope.ty,
+            scope.kind,
             scope.node.start_position(),
             scope.node.end_position()
         )
@@ -510,9 +510,9 @@ impl<'a> LocalResolver<'a> {
                     continue;
                 };
                 if capture_name.starts_with("scope") {
-                    let ty = capture_name.strip_prefix("scope.").unwrap_or(capture_name);
+                    let kind = capture_name.strip_prefix("scope.").unwrap_or(capture_name);
                     scopes.push(ScopeCapture {
-                        ty,
+                        kind,
                         node: capture.node,
                     })
                 } else if capture_name.starts_with("definition") {
@@ -564,7 +564,7 @@ impl<'a> LocalResolver<'a> {
 
         let mut current_scope = top_scope;
         for ScopeCapture {
-            ty: scope_ty,
+            kind: scope_kind,
             node: scope,
         } in scopes
         {
@@ -591,9 +591,11 @@ impl<'a> LocalResolver<'a> {
                 ref_capture.node.start_byte() < scope.start_byte()
             });
 
-            let new_scope =
-                self.arena
-                    .alloc(Scope::new(scope_ty.to_string(), scope, Some(current_scope)));
+            let new_scope = self.arena.alloc(Scope::new(
+                scope_kind.to_string(),
+                scope,
+                Some(current_scope),
+            ));
             self.get_scope_mut(current_scope).children.push(new_scope);
             current_scope = new_scope
         }
