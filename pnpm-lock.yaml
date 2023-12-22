@@ -1385,8 +1385,8 @@ importers:
   client/web-sveltekit:
     dependencies:
       '@melt-ui/svelte':
-        specifier: ^0.34.3
-        version: 0.34.3(svelte@4.1.1)
+        specifier: ^0.66.2
+        version: 0.66.2(svelte@4.1.1)
       '@popperjs/core':
         specifier: ^2.11.8
         version: 2.11.8
@@ -5090,6 +5090,12 @@ packages:
     resolution: {integrity: sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==}
     dev: true
 
+  /@internationalized/date@3.5.1:
+    resolution: {integrity: sha512-LUQIfwU9e+Fmutc/DpRTGXSdgYZLBegi4wygCWDSVmUdLTaMHsQyASDiJtREwanwKuQLq0hY76fCJ9J/9I2xOQ==}
+    dependencies:
+      '@swc/helpers': 0.5.3
+    dev: false
+
   /@isaacs/cliui@8.0.2:
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
     engines: {node: '>=12'}
@@ -5371,13 +5377,15 @@ packages:
       react: 18.2.0
     dev: true
 
-  /@melt-ui/svelte@0.34.3(svelte@4.1.1):
-    resolution: {integrity: sha512-qJE0+7+8Q8h1UhdqpAWWSJx3vXSjlgAKkfjLC5wn6dtVY70Jkb6Hiu726isZ2yNbPilBmbaLrOzfoMTRurjKXw==}
+  /@melt-ui/svelte@0.66.2(svelte@4.1.1):
+    resolution: {integrity: sha512-ufIhgOYP11A/G3AvW+2Qw74UGudMBJQ2wK+sETpU51VkC63/5D2sctKgXzGl0OUEJBlPHku6LRSry9rIeAVkNw==}
     peerDependencies:
       svelte: '>=3 <5'
     dependencies:
       '@floating-ui/core': 1.4.1
       '@floating-ui/dom': 1.5.1
+      '@internationalized/date': 3.5.1
+      dequal: 2.0.3
       focus-trap: 7.5.2
       nanoid: 4.0.2
       svelte: 4.1.1
@@ -10578,6 +10586,12 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
+
+  /@swc/helpers@0.5.3:
+    resolution: {integrity: sha512-FaruWX6KdudYloq1AHD/4nU+UsMTdNE8CKyrseXWEcgjDAbvkwJg2QGPAnfIJLIWsjZOSPLOAykK6fuYp4vp4A==}
+    dependencies:
+      tslib: 2.1.0
+    dev: false
 
   /@szmarczak/http-timer@1.1.2:
     resolution: {integrity: sha512-XIB2XbzHTN6ieIjfIMV9hlVcfPU26s2vafYWQcZHWXHOxiaRZYEDKEwdl129Zyg50+foYV2jCgtrqSA6qNuNSA==}
