@@ -31,4 +31,4 @@ export {
     type SetStateResult,
     type URLStateOptions,
     type UpdatedSearchQuery,
-} from './useSyncedWithURLState'
+} from './useSyncedWithUrlState'

@@ -404,7 +404,7 @@ ts_project(
         "src/hooks/useSessionStorage.ts",
         "src/hooks/useStopwatch.ts",
         "src/hooks/useStorageHook.ts",
-        "src/hooks/useSyncedWithURLState.ts",
+        "src/hooks/useSyncedWithUrlState.ts",
         "src/hooks/useTimeoutManager.ts",
         "src/hooks/useUpdateEffect.ts",
         "src/hooks/useWildcardTheme.tsx",

@@ -110,36 +110,48 @@ const FilterTypeButton: FC<FilterTypeButtonProps> = props => {
 
 export const resolveFilterTypeValue = (value: string | undefined): SearchFilterType => {
     switch (value) {
-        case 'repo':
+        case 'repo': {
             return SearchFilterType.Repositories
-        case 'path':
+        }
+        case 'path': {
             return SearchFilterType.Paths
-        case 'symbol':
+        }
+        case 'symbol': {
             return SearchFilterType.Symbols
-        case 'commit':
+        }
+        case 'commit': {
             return SearchFilterType.Commits
-        case 'diff':
+        }
+        case 'diff': {
             return SearchFilterType.Diffs
+        }
 
-        default:
+        default: {
             return SearchFilterType.Code
+        }
     }
 }
 
-export const toSearchSyntaxTypeFilter = (value: SearchFilterType) => {
+export const toSearchSyntaxTypeFilter = (value: SearchFilterType): string => {
     switch (value) {
-        case SearchFilterType.Repositories:
+        case SearchFilterType.Repositories: {
             return 'repo'
-        case SearchFilterType.Paths:
+        }
+        case SearchFilterType.Paths: {
             return 'path'
-        case SearchFilterType.Symbols:
+        }
+        case SearchFilterType.Symbols: {
             return 'symbol'
-        case SearchFilterType.Commits:
+        }
+        case SearchFilterType.Commits: {
             return 'commit'
-        case SearchFilterType.Diffs:
+        }
+        case SearchFilterType.Diffs: {
             return 'diff'
+        }
 
-        default:
+        default: {
             return ''
+        }
     }
 }

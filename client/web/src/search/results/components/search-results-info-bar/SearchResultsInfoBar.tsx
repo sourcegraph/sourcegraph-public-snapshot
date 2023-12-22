@@ -85,8 +85,6 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
     const navigate = useNavigate()
     const newFiltersEnabled = useExperimentalFeatures(features => features.newSearchResultFilters)
 
-    console.log('newFiltersEnabled', newFiltersEnabled)
-
     const [aggregationUIMode, setAggregationUIMode] = useAggregationUIMode()
     const [showSavedSearchModal, setShowSavedSearchModal] = useState(false)
     const [showCsvExportModal, setShowCsvExportModal] = useState(false)

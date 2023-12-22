@@ -4,13 +4,13 @@ import { mdiClose, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
-import { useExperimentalFeatures } from '@sourcegraph/shared/out/src/settings/settings'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter, succeedScan } from '@sourcegraph/shared/src/search/query/transformer'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { Badge, Button, Icon, H4, Input, LanguageIcon, Code } from '@sourcegraph/wildcard'
 
@@ -133,9 +133,9 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
         }
 
         return filterTypes.flatMap(filterType => filters?.filter(filter => filter.kind === filterType) ?? [])
-    }, [staticFilters, filterTypes, filters, filterQueryFilters])
+    }, [staticFilters, filterTypes, filters, filterQueryFilters, isSelected])
 
-    const handleFilterClick = (filter: string, remove?: boolean) => {
+    const handleFilterClick = (filter: string, remove?: boolean): void => {
         const preparedFilterQuery = exclusive
             ? filterQueryFilters.reduce((storeQuery, filter) => omitFilter(storeQuery, filter), filterQuery)
             : filterQuery
@@ -218,7 +218,7 @@ function toArray<T>(item: T | T[]): T[] {
     return [item]
 }
 
-export const languageFilter = (filter: Filter) => {
+export const languageFilter = (filter: Filter): ReactNode => {
     const languageExtension = filter.value.split(':')[1] ?? ''
 
     return (
@@ -229,30 +229,28 @@ export const languageFilter = (filter: Filter) => {
     )
 }
 
-export const repoFilter = (filter: Filter) => {
-    return (
-        <>
-            <Icon svgPath={mdiSourceRepository} className={styles.icon} aria-hidden={true} />
-            {filter.label}
-        </>
-    )
-}
+export const repoFilter = (filter: Filter): ReactNode => (
+    <>
+        <Icon svgPath={mdiSourceRepository} className={styles.icon} aria-hidden={true} />
+        {filter.label}
+    </>
+)
 
-export const commitDateFilter = (filter: Filter) => {
-    return (
-        <span className={styles.commitDate}>
-            {filter.label}
-            <Code>{filter.value}</Code>
-        </span>
-    )
-}
+export const commitDateFilter = (filter: Filter): ReactNode => (
+    <span className={styles.commitDate}>
+        {filter.label}
+        <Code>{filter.value}</Code>
+    </span>
+)
 
-export const symbolFilter = (filter: Filter) => {
+export const symbolFilter = (filter: Filter): ReactNode => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const symbolType = useMemo(() => {
         const parts = filter.value.split('.')
-        return parts[parts.length - 1]
+        return parts.at(-1) ?? ''
     }, [filter])
 
     return (
@@ -267,9 +265,9 @@ export const symbolFilter = (filter: Filter) => {
     )
 }
 
-export const utilityFilter = (filter: Filter) => (filter.count === 0 ? filter.value : filter.label)
+export const utilityFilter = (filter: Filter): string => (filter.count === 0 ? filter.value : filter.label)
 
-export const authorFilter = (filter: Filter) => (
+export const authorFilter = (filter: Filter): ReactNode => (
     <>
         <UserAvatar size={14} user={{ avatarURL: null, displayName: filter.label }} className={styles.avatar} />
         {filter.label}

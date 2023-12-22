@@ -29,9 +29,9 @@
             grid-template-columns: minmax(0, 1fr);
             grid-template-rows: auto auto 1fr;
             grid-template-areas:
-            'infobar'
-            'filters'
-            'contents';
+                'infobar'
+                'filters'
+                'contents';
 
             overflow: auto;
             height: min-content;

@@ -40,7 +40,7 @@ export function useSyncedWithURLState<State, SerializedState>(
             }
 
             const search = `?${urlSearchParameters.toString()}`
-            navigate({ search }, { replace: replace })
+            navigate({ search }, { replace })
 
             return search
         },
