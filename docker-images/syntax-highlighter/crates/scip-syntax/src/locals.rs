@@ -553,20 +553,15 @@ impl<'a> LocalResolver<'a> {
         }
     }
 
-    /// This function is probably the most complicated bit in here.
-    /// scopes, definitions, and references are sorted to allow us to
-    /// build a tree of scopes in pre-traversal order. We make sure to
-    /// add all definitions and references to their narrowest
-    /// enclosing scope, or to hoist them to the closest matching
-    /// scope.
+    /// Build a tree of scopes for pre-order traversal by sorting scopes, definitions
+    /// and references. Definitions and references are added or hoisted to the
+    /// closest enclosing scope as appropriate.
     fn build_tree(&mut self, top_scope: ScopeRef<'a>, captures: Captures<'a>) {
         let Captures {
             mut scopes,
             mut definitions,
             mut references,
         } = captures;
-        // In order to do a pre-order traversal we need to sort scopes and definitions
-        // TODO: (perf) Do a pass to check if they're already sorted first?
         scopes.sort_by(|a, b| compare_range(a.node.byte_range(), b.node.byte_range()));
         definitions.sort_by_key(|a| a.node.start_byte());
         references.sort_by_key(|a| a.node.start_byte());
