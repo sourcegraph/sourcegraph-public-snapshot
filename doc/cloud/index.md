@@ -234,7 +234,7 @@ A few things you can ask Cody:
 
 Your managed instance will be accessible over HTTPS/TLS, provide storage volumes that are encrypted at rest, and have access restricted to only your team through your enterprise VPN and/or internal [SSO (single sign-on provider)](../admin/auth/index.md) of choice.
 
-For all managed instances, we will provide security capabilities from Cloudflare such as WAF and rate-limiting to protect your instance from malicious traffic.
+For all managed instances, we will provide security capabilities from Cloudflare such as WAF and rate-limiting to protect your instance from malicious traffic. By default, we permit 1000 requests per minute based on IP address. If you need a higher quota, please reach out to your account manager.
 
 Your instance will be hosted in isolated Google Cloud infrastructure. See our [employee handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/) to learn more about the cloud architecture we use. Both your team and limited Sourcegraph personnel will have application-level administrator access to the instance.
 
