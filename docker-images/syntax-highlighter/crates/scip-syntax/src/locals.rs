@@ -21,7 +21,7 @@ use scip::{
     types::{Occurrence, Symbol},
 };
 use scip_treesitter::prelude::*;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 use std::slice::Iter;
 use string_interner::{symbol::SymbolU32, StringInterner};
@@ -107,11 +107,8 @@ struct Scope<'a> {
     children: Vec<ScopeRef<'a>>,
 
     /// Definitions that have been hoisted to the top of this scope
-    // TODO: (perf) for hoisted definitions the lexicographical order
-    // shouldn't matter anymore, so we might want to turn this into a
-    // HashMap for faster lookups
-    hoisted_definitions: Vec<Definition<'a>>,
-    /// Definitions that appear in this scope. Sorted lexicographically
+    hoisted_definitions: HashMap<Name, Definition<'a>>,
+    /// Definitions that appear in this scope. Sorted lexicographical
     definitions: Vec<Definition<'a>>,
     /// References that appear in this scope. Sorted lexicographically
     references: Vec<Reference<'a>>,
@@ -123,7 +120,7 @@ impl<'a> Scope<'a> {
             kind,
             node,
             parent,
-            hoisted_definitions: vec![],
+            hoisted_definitions: HashMap::new(),
             definitions: vec![],
             references: vec![],
             children: vec![],
@@ -132,7 +129,7 @@ impl<'a> Scope<'a> {
 
     // TODO: Namespacing
     fn find_def(&self, name: Name, start_byte: usize) -> Option<&Definition<'a>> {
-        if let Some(def) = self.hoisted_definitions.iter().find(|def| def.name == name) {
+        if let Some(def) = self.hoisted_definitions.get(&name) {
             return Some(def);
         };
 
@@ -302,15 +299,14 @@ impl<'a> LocalResolver<'a> {
                     if let Some(previous) = self
                         .get_scope(target_scope)
                         .hoisted_definitions
-                        .iter()
-                        .find(|def| def.name == name);
+                        .get(&name);
                     then {
                         DefRef::PreviousDefinition(previous.id)
                     } else {
                         let (def_id, definition) = mk_def(self);
                         self.get_scope_mut(target_scope)
                             .hoisted_definitions
-                            .push(definition);
+                            .insert(definition.name, definition);
                         DefRef::NewDefinition(def_id)
                     }
                 }
@@ -395,7 +391,9 @@ impl<'a> LocalResolver<'a> {
         }
 
         // Hoisted definitions always get printed first
-        for definition in scope.hoisted_definitions.iter() {
+        let mut hoisted_defs: Vec<&Definition<'a>> = scope.hoisted_definitions.values().collect();
+        hoisted_defs.sort_by_key(|def| def.node.start_byte());
+        for definition in hoisted_defs {
             writeln!(
                 w,
                 "{}hoisted_def {} {}-{}",

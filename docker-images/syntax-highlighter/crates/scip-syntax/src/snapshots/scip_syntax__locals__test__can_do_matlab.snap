@@ -99,7 +99,7 @@ expression: dumped
   
   myObject = MyClass(5);
 //^^^^^^^^ definition local 27
-//           ^^^^^^^ reference local 20
+//           ^^^^^^^ reference local 22
   result = myObject.method1();
 //^^^^^^ definition local 28
 //         ^^^^^^^^ reference local 27
