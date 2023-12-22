@@ -129,8 +129,10 @@ func StreamClientInterceptor(optFuncs ...CallOption) grpc.StreamClientIntercepto
 }
 
 // type serverStreamingRetryingStream is the implementation of grpc.ClientStream that acts as a
-// proxy to the underlying call. If any of the RecvMsg() calls fail, it will try to reestablish
-// a new ClientStream according to the retry policy.
+// proxy to the underlying call. If the first RecvMsg() call fails, it will try to reestablish
+// a new ClientStream according to the retry policy. However, if the first RecvMsg() call succeeds
+// but a subsequent RecvMsg() call fails, it not automatically retry and instead return the error directly to
+// the caller (as it is not possible to know if the server processed the message).
 type serverStreamingRetryingStream struct {
 	grpc.ClientStream
 	bufferedSends []any // single message that the client can sen
@@ -138,7 +140,9 @@ type serverStreamingRetryingStream struct {
 	parentCtx     context.Context
 	callOpts      *options
 	streamerCall  func(ctx context.Context) (grpc.ClientStream, error)
-	mu            sync.RWMutex
+
+	successfullyReceivedFirstMessage bool
+	mu                               sync.RWMutex
 }
 
 func (s *serverStreamingRetryingStream) setStream(clientStream grpc.ClientStream) {
@@ -206,10 +210,24 @@ func (s *serverStreamingRetryingStream) RecvMsg(m any) error {
 }
 
 func (s *serverStreamingRetryingStream) receiveMsgAndIndicateRetry(m any) (bool, error) {
+	s.mu.RLock()
+	successfullyReceivedFirstMessage := s.successfullyReceivedFirstMessage
+	s.mu.RUnlock()
+
 	err := s.getStream().RecvMsg(m)
 	if err == nil || err == io.EOF {
+		s.mu.Lock()
+		s.successfullyReceivedFirstMessage = true
+		s.mu.Unlock()
+
+		return false, err
+	} else if successfullyReceivedFirstMessage {
+		// We have already received the first message, so we can't retry automatically since we don't know if
+		// someone has already processed the message.
+		// Instead, we return the error to the user and let them decide if they want to retry.
 		return false, err
 	}
+
 	if isContextError(err) {
 		if s.parentCtx.Err() != nil {
 			logTrace(s.parentCtx, "grpc_retry parent context error: %v", s.parentCtx.Err())
