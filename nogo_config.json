@@ -12,6 +12,7 @@
       ".*_test\\.go$": "ignore test code",
       "internal/batches/testing/.*": "ignore batches testing code",
       "internal/gitserver/mock\\.go$": "ignore deprecation warning of P4Exec",
+      "internal/gitserver/retry\\.go$": "ignore deprecation warning of P4Exec",
       "internal/database/dbmocks": "ignore generated database mocks"
     }
   },

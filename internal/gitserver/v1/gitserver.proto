@@ -8,30 +8,66 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
 service GitserverService {
-  rpc BatchLog(BatchLogRequest) returns (BatchLogResponse) {}
+  rpc BatchLog(BatchLogRequest) returns (BatchLogResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
-  rpc DiskInfo(DiskInfoRequest) returns (DiskInfoResponse) {}
+  rpc DiskInfo(DiskInfoRequest) returns (DiskInfoResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
-  rpc GetObject(GetObjectRequest) returns (GetObjectResponse) {}
-  rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {}
-  rpc ListGitolite(ListGitoliteRequest) returns (ListGitoliteResponse) {}
-  rpc Search(SearchRequest) returns (stream SearchResponse) {}
-  rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
+  rpc GetObject(GetObjectRequest) returns (GetObjectResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc ListGitolite(ListGitoliteRequest) returns (ListGitoliteResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc Search(SearchRequest) returns (stream SearchResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   rpc P4Exec(P4ExecRequest) returns (stream P4ExecResponse) {
     option deprecated = true;
   }
-  rpc RepoClone(RepoCloneRequest) returns (RepoCloneResponse) {}
-  rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {}
+  rpc RepoClone(RepoCloneRequest) returns (RepoCloneResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+  rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
-  rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {}
-  rpc IsPerforcePathCloneable(IsPerforcePathCloneableRequest) returns (IsPerforcePathCloneableResponse) {}
-  rpc CheckPerforceCredentials(CheckPerforceCredentialsRequest) returns (CheckPerforceCredentialsResponse) {}
-  rpc PerforceUsers(PerforceUsersRequest) returns (PerforceUsersResponse) {}
-  rpc PerforceProtectsForUser(PerforceProtectsForUserRequest) returns (PerforceProtectsForUserResponse) {}
-  rpc PerforceProtectsForDepot(PerforceProtectsForDepotRequest) returns (PerforceProtectsForDepotResponse) {}
-  rpc PerforceGroupMembers(PerforceGroupMembersRequest) returns (PerforceGroupMembersResponse) {}
-  rpc IsPerforceSuperUser(IsPerforceSuperUserRequest) returns (IsPerforceSuperUserResponse) {}
-  rpc PerforceGetChangelist(PerforceGetChangelistRequest) returns (PerforceGetChangelistResponse) {}
+  rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+  rpc IsPerforcePathCloneable(IsPerforcePathCloneableRequest) returns (IsPerforcePathCloneableResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc CheckPerforceCredentials(CheckPerforceCredentialsRequest) returns (CheckPerforceCredentialsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc PerforceUsers(PerforceUsersRequest) returns (PerforceUsersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc PerforceProtectsForUser(PerforceProtectsForUserRequest) returns (PerforceProtectsForUserResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc PerforceProtectsForDepot(PerforceProtectsForDepotRequest) returns (PerforceProtectsForDepotResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc PerforceGroupMembers(PerforceGroupMembersRequest) returns (PerforceGroupMembersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc IsPerforceSuperUser(IsPerforceSuperUserRequest) returns (IsPerforceSuperUserResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc PerforceGetChangelist(PerforceGetChangelistRequest) returns (PerforceGetChangelistResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 // DiskInfoRequest is a empty request for the DiskInfo RPC.
