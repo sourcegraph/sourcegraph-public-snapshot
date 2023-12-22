@@ -24,7 +24,7 @@ use scip_treesitter::prelude::*;
 use std::collections::HashSet;
 use std::fmt::Write;
 use std::slice::Iter;
-use string_interner::{DefaultSymbol, StringInterner};
+use string_interner::{symbol::SymbolU32, StringInterner};
 use tree_sitter::Node;
 
 // Missing features at this point
@@ -80,7 +80,7 @@ struct Reference<'a> {
 type ScopeRef<'a> = Id<Scope<'a>>;
 
 /// We use string_interner to intern variable names
-type Name = DefaultSymbol;
+type Name = SymbolU32;
 
 #[derive(Debug)]
 struct Scope<'a> {
