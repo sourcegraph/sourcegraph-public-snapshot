@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -76,6 +77,7 @@ func defaultDialOptions(logger log.Logger, creds credentials.TransportCredential
 	out := []grpc.DialOption{
 		grpc.WithTransportCredentials(creds),
 		grpc.WithChainStreamInterceptor(
+			retry.StreamClientInterceptor(),
 			metrics.StreamClientInterceptor(),
 			messagesize.StreamClientInterceptor,
 			propagator.StreamClientPropagator(actor.ActorPropagator{}),
@@ -88,6 +90,7 @@ func defaultDialOptions(logger log.Logger, creds credentials.TransportCredential
 			contextconv.StreamClientInterceptor,
 		),
 		grpc.WithChainUnaryInterceptor(
+			retry.UnaryClientInterceptor(),
 			metrics.UnaryClientInterceptor(),
 			messagesize.UnaryClientInterceptor,
 			propagator.UnaryClientPropagator(actor.ActorPropagator{}),
