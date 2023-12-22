@@ -107,5 +107,5 @@ References are specified by labeling a capture as a `@reference`.
 They will be resolved against definitions in the current scope and parent scopes.
 Non-hoisted definitions are only resolved if they are defined _before_ the reference.
 
-[hoisting]: ./locals-query-dsl.md#hoisting
+[hoisting]: ./locals-scoping.md#hoisting
 [tree-sitter query]: https://tree-sitter.github.io/tree-sitter/using-parsers#pattern-matching-with-queries
