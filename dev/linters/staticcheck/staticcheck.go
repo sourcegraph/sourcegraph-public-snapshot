@@ -1,5 +1,5 @@
 //go:generate go run ./cmd/gen.go targets.bzl
-//go:generate buildifier -mode=fix targets.bzl analyzers.bzl
+//go:generate truncate -s -1 targets.bzl
 package staticcheck
 
 import (
