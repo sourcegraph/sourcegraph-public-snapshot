@@ -852,3 +852,146 @@ func TestParseNewStandard(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test(`"foo \"bar\""`)))
 	})
 }
+
+func TestGlobToRegex(t *testing.T) {
+	type value struct {
+		Result       string
+		ResultLabels string
+		ResultRange  string
+	}
+
+	test := func(input string) value {
+		parser := &parser{buf: []byte(input), heuristics: parensAsPatterns | allowDanglingParens}
+		result, err := parser.parseLeaves(Standard | Literal | GlobFilters)
+		if err != nil {
+			t.Fatal(fmt.Sprintf("Unexpected error: %s", err))
+		}
+		resultNode := result[0]
+		got, _ := json.Marshal(resultNode)
+
+		var gotRange string
+		switch n := resultNode.(type) {
+		case Pattern:
+			gotRange = n.Annotation.Range.String()
+		case Parameter:
+			gotRange = n.Annotation.Range.String()
+		}
+
+		var gotLabels string
+		if _, ok := resultNode.(Pattern); ok {
+			gotLabels = labelsToString([]Node{resultNode})
+		}
+
+		return value{
+			Result:       string(got),
+			ResultLabels: gotLabels,
+			ResultRange:  gotRange,
+		}
+	}
+
+	autogold.Expect(value{
+		Result:      `{"field":"f","value":"^$","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":2}}`,
+	}).Equal(t, test(`f:`))
+	autogold.Expect(value{
+		Result:      `{"field":"f","value":"^ $","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":5}}`,
+	}).Equal(t, test(`f:" "`))
+	autogold.Expect(value{
+		Result:      `{"field":"f","value":" $","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}`,
+	}).Equal(t, test(`f:"* "`))
+	autogold.Expect(value{
+		Result:      `{"field":"f","value":"^ ","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}`,
+	}).Equal(t, test(`f:" *"`))
+	autogold.Expect(value{
+		Result:      `{"field":"f","value":" ","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":7}}`,
+	}).Equal(t, test(`f:"* *"`))
+	autogold.Expect(value{
+		Result:      `{"field":"f","value":"^foo bar$","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":11}}`,
+	}).Equal(t, test(`f:"foo bar"`))
+	autogold.Expect(value{
+		Result:      `{"field":"r","value":".*","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}`,
+	}).Equal(t, test(`r:*`))
+	autogold.Expect(value{
+		Result:      `{"field":"repo","value":".*","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}`,
+	}).Equal(t, test(`repo:*`))
+	autogold.Expect(value{
+		Result:      `{"field":"f","value":".*","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}`,
+	}).Equal(t, test(`f:*`))
+	autogold.Expect(value{
+		Result:      `{"field":"file","value":".*","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}`,
+	}).Equal(t, test(`file:*`))
+	autogold.Expect(value{
+		Result:      `{"field":"repo","value":"^sourcegraph$","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":16}}`,
+	}).Equal(t, test(`repo:sourcegraph`))
+	autogold.Expect(value{
+		Result:      `{"field":"repo","value":"^github\\.com/","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":17}}`,
+	}).Equal(t, test(`repo:github.com/*`))
+	autogold.Expect(value{
+		Result:      `{"field":"repo","value":"/sourcegraph$","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":18}}`,
+	}).Equal(t, test(`repo:*/sourcegraph`))
+	autogold.Expect(value{
+		Result:      `{"field":"file","value":"^README\\.md$","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
+	}).Equal(t, test(`file:README.md`))
+	autogold.Expect(value{
+		Result:      `{"field":"file","value":"^client/README\\.md$","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":21}}`,
+	}).Equal(t, test(`file:client/README.md`))
+	autogold.Expect(value{
+		Result:      `{"field":"file","value":"/Dockerfile$","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":17}}`,
+	}).Equal(t, test(`file:*/Dockerfile`))
+	autogold.Expect(value{
+		Result:      `{"field":"file","value":"\\.go$","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
+	}).Equal(t, test(`file:*.go`))
+	autogold.Expect(value{
+		Result:      `{"field":"file","value":"^src/","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
+	}).Equal(t, test(`file:src/*`))
+	autogold.Expect(value{Result: `{"Kind":1,"Operands":[{"field":"context","value":"global","negated":false},{"field":"repo","value":"/sourcegraph$","negated":false},{"field":"f","value":"\\.md$","negated":false},{"value":"zoekt","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`}).Equal(t, test(`context:global repo:*/sourcegraph zoekt f:*.md`))
+	autogold.Expect(value{Result: `{"Kind":1,"Operands":[{"field":"f","value":"_test\\.go$","negated":true},{"field":"f","value":"search.*\\.go$","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`}).Equal(t, test(`-f:*_test.go f:*search*.go`))
+	// Make sure we don't convert predicates to regex patterns
+	autogold.Expect(value{
+		Result:      `{"field":"r","value":"has.meta(language)","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":20}}`,
+	}).Equal(t, test(`r:has.meta(language)`))
+	autogold.Expect(value{
+		Result:      `{"field":"r","value":"has.file(go.mod)","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":18}}`,
+	}).Equal(t, test(`r:has.file(go.mod)`))
+	autogold.Expect(value{
+		Result:      `{"field":"r","value":"has.content(apple)","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":20}}`,
+	}).Equal(t, test(`r:has.content(apple)`))
+	autogold.Expect(value{
+		Result:      `{"field":"f","value":"has.content(apple)","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":20}}`,
+	}).Equal(t, test(`f:has.content(apple)`))
+	autogold.Expect(value{
+		Result: `{"Kind":1,"Operands":[{"field":"r","value":"go$","negated":false},{"field":"r","value":"has.topic(language)","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`}).Equal(t, test(`r:*go r:has.topic(language)`))
+	autogold.Expect(value{
+		Result:      `{"field":"r","value":"^sourcegraph$@ae3f1c","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":20}}`,
+	}).Equal(t, test(`r:sourcegraph@ae3f1c`))
+	autogold.Expect(value{
+		Result:      `{"field":"r","value":"^sourcegraph$@main","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":18}}`,
+	}).Equal(t, test(`r:sourcegraph@main`))
+	autogold.Expect(value{
+		Result:      `{"field":"r","value":"sourcegraph$@*refs/heads*","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":27}}`,
+	}).Equal(t, test(`r:*sourcegraph@*refs/heads*`))
+}

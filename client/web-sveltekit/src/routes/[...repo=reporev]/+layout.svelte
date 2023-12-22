@@ -1,24 +1,57 @@
 <script lang="ts">
-    import { mdiAccount, mdiCodeTags, mdiSourceBranch, mdiSourceCommit, mdiSourceRepository, mdiTag } from '@mdi/js'
+    import {
+        mdiAccount,
+        mdiCodeTags,
+        mdiCog,
+        mdiHistory,
+        mdiSourceBranch,
+        mdiSourceCommit,
+        mdiSourceRepository,
+        mdiTag,
+    } from '@mdi/js'
 
     import { page } from '$app/stores'
     import Icon from '$lib/Icon.svelte'
 
     import type { LayoutData } from './$types'
+    import { DropdownMenu, MenuLink } from '$lib/wildcard'
+    import { computeFit } from '$lib/dom'
+    import { writable } from 'svelte/store'
+    import { getButtonClassName } from '@sourcegraph/wildcard'
 
     export let data: LayoutData
 
-    const menu = [
+    const menuOpen = writable(false)
+    const navEntries: { path: string; icon: string; title: string; external?: true }[] = [
+        { path: '', icon: mdiCodeTags, title: 'Code' },
         { path: '/-/commits', icon: mdiSourceCommit, title: 'Commits' },
         { path: '/-/branches', icon: mdiSourceBranch, title: 'Branches' },
         { path: '/-/tags', icon: mdiTag, title: 'Tags' },
         { path: '/-/stats/contributors', icon: mdiAccount, title: 'Contributors' },
-    ] as const
+    ]
+    const menuEntries: { path: string; icon: string; title: string; external?: true }[] = [
+        { path: '/-/compare', icon: mdiHistory, title: 'Compare', external: true },
+        { path: '/-/own', icon: mdiAccount, title: 'Ownership', external: true },
+        { path: '/-/embeddings', icon: '', title: 'Embeddings', external: true },
+        { path: '/-/batch-changes', icon: '', title: 'Batch changes', external: true },
+        { path: '/-/settings', icon: mdiCog, title: 'Settings', external: true },
+    ]
+
+    let visibleNavEntries = navEntries.length
+    $: navEntriesToShow = visibleNavEntries === navEntries.length ? navEntries : navEntries.slice(0, visibleNavEntries)
+    $: overflowMenu = visibleNavEntries !== navEntries.length ? navEntries.slice(visibleNavEntries) : []
+    $: allMenuEntries = [...overflowMenu, ...menuEntries]
 
     function isCodePage(repoURL: string, pathname: string) {
         return (
             pathname === repoURL || pathname.startsWith(`${repoURL}/-/blob`) || pathname.startsWith(`${repoURL}/-/tree`)
         )
+    }
+
+    function isActive(href: string): boolean {
+        return href === data.repoURL
+            ? isCodePage(data.repoURL, $page.url.pathname)
+            : $page.url.pathname.startsWith(href)
     }
 
     $: ({ repoName, displayRepoName } = data)
@@ -28,51 +61,57 @@
     <title>{data.displayRepoName} - Sourcegraph</title>
 </svelte:head>
 
-<div class="header">
-    <nav>
-        <h1><a href="/{repoName}"><Icon svgPath={mdiSourceRepository} inline /> {displayRepoName}</a></h1>
-        <!--
-            TODO: Add back revision
-            {#if revisionLabel}
-                @ <span class="button">{revisionLabel}</span>
-            {/if}
-            -->
-        <ul class="menu">
+<nav>
+    <h1><a href="/{repoName}"><Icon svgPath={mdiSourceRepository} inline /> {displayRepoName}</a></h1>
+    <!--
+        TODO: Add back revision
+        {#if revisionLabel}
+            @ <span class="button">{revisionLabel}</span>
+        {/if}
+        -->
+    <ul use:computeFit on:fit={event => (visibleNavEntries = event.detail.itemCount)}>
+        {#each navEntriesToShow as entry}
+            {@const href = data.repoURL + entry.path}
             <li>
-                <a href={data.repoURL} class:active={isCodePage(data.repoURL, $page.url.pathname)}>
-                    <Icon svgPath={mdiCodeTags} inline /> <span class="ml-1">Code</span>
+                <a {href} class:active={isActive(href)} data-sveltekit-reload={entry.external}>
+                    {#if entry.icon}
+                        <Icon svgPath={entry.icon} inline />
+                    {/if}
+                    <span class="ml-1">{entry.title}</span>
                 </a>
             </li>
-            {#each menu as entry}
-                {@const href = data.repoURL + entry.path}
-                <li>
-                    <a {href} class:active={$page.url.pathname.startsWith(href)}>
-                        <Icon svgPath={entry.icon} inline /> <span class="ml-1">{entry.title}</span>
-                    </a>
-                </li>
-            {/each}
-        </ul>
-    </nav>
-</div>
+        {/each}
+    </ul>
+    <DropdownMenu
+        open={menuOpen}
+        triggerButtonClass={getButtonClassName({ variant: 'secondary', outline: true, size: 'sm' })}
+        aria-label="{$menuOpen ? 'Close' : 'Open'} repo navigation"
+    >
+        <svelte:fragment slot="trigger">&hellip;</svelte:fragment>
+        {#each allMenuEntries as entry}
+            {@const href = data.repoURL + entry.path}
+            <MenuLink {href} data-sveltekit-reload={entry.external}>
+                <span class="overflow-entry" class:active={isActive(href)}>
+                    {#if entry.icon}
+                        <Icon svgPath={entry.icon} inline />
+                    {/if}
+                    <span class="ml-1">{entry.title}</span>
+                </span>
+            </MenuLink>
+        {/each}
+    </DropdownMenu>
+</nav>
 <slot />
 
 <style lang="scss">
-    .header {
-        display: flex;
-        align-items: center;
-        padding: 0.5rem;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    h1 {
-        margin: 0;
-        margin-right: 1rem;
-        font-size: 1.3rem;
-    }
-
     nav {
         display: flex;
         align-items: center;
+        gap: 0.5rem;
+        overflow: hidden;
+        padding: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+        flex-shrink: 0;
 
         a {
             color: var(--body-color);
@@ -80,19 +119,28 @@
         }
     }
 
-    ul.menu {
+    h1 {
+        margin: 0;
+        font-size: 1.3rem;
+        white-space: nowrap;
+    }
+
+    ul {
         list-style: none;
         padding: 0;
         margin: 0;
         display: flex;
+        gap: 0.5rem;
+        overflow: hidden;
+        flex: 1;
 
         li a {
             display: flex;
             height: 100%;
             align-items: center;
             padding: 0.25rem 0.5rem;
-            margin: 0 0.25rem;
             border-radius: var(--border-radius);
+            white-space: nowrap;
 
             &:hover {
                 background-color: var(--color-bg-2);
@@ -102,6 +150,17 @@
                 background-color: var(--color-bg-3);
             }
         }
+    }
+
+    .overflow-entry {
+        width: 100%;
+        display: inline-block;
+        padding: 0 0.25rem;
+        border-radius: var(--border-radius);
+    }
+
+    .active {
+        background-color: var(--color-bg-3);
     }
 
     nav {

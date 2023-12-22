@@ -4,7 +4,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "userpasswd",
     srcs = [
-        "app.go",
         "config.go",
         "config_watch.go",
         "doc.go",
@@ -25,17 +24,14 @@ go_library(
         "//cmd/frontend/hubspot",
         "//cmd/frontend/hubspot/hubspotutil",
         "//internal/actor",
-        "//internal/apptoken",
         "//internal/auth",
         "//internal/auth/providers",
         "//internal/authz",
         "//internal/conf",
         "//internal/conf/conftypes",
-        "//internal/conf/deploy",
         "//internal/cookie",
         "//internal/database",
         "//internal/deviceid",
-        "//internal/env",
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/featureflag",
@@ -64,7 +60,6 @@ go_test(
     name = "userpasswd_test",
     timeout = "short",
     srcs = [
-        "app_test.go",
         "config_test.go",
         "handlers_test.go",
         "lockout_test.go",

@@ -2,13 +2,27 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "msp",
-    srcs = ["command.go"],
+    srcs = [
+        "helpers.go",
+        "sg_msp.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/msp",
     visibility = ["//visibility:public"],
     deps = [
+        "//dev/managedservicesplatform",
+        "//dev/managedservicesplatform/googlesecretsmanager",
+        "//dev/managedservicesplatform/spec",
+        "//dev/managedservicesplatform/terraformcloud",
+        "//dev/sg/cloudsqlproxy",
         "//dev/sg/internal/category",
+        "//dev/sg/internal/open",
+        "//dev/sg/internal/secrets",
         "//dev/sg/internal/std",
+        "//dev/sg/msp/example",
+        "//dev/sg/msp/repo",
+        "//dev/sg/msp/schema",
         "//lib/errors",
+        "//lib/output",
         "@com_github_urfave_cli_v2//:cli",
     ],
 )

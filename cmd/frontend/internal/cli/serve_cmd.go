@@ -14,7 +14,6 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	sglog "github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2"
-	"github.com/throttled/throttled/v2/store/memstore"
 	"github.com/throttled/throttled/v2/store/redigostore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -105,9 +104,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	stdr.SetVerbosity(10)
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		if !deploy.IsSingleBinary() {
-			logger.Warn("Skipping out-of-band migrations check")
-		}
+		logger.Warn("Skipping out-of-band migrations check")
 	} else {
 		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(observationCtx, db, oobmigration.RefreshInterval)
 
@@ -122,11 +119,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	userpasswd.Init()
 	highlight.Init()
-
-	// After our DB, redis is our next most important datastore
-	if err := redispoolRegisterDB(db); err != nil {
-		return errors.Wrap(err, "failed to register postgres backed redis")
-	}
 
 	// override site config first
 	if err := overrideSiteConfig(ctx, logger, db); err != nil {
@@ -256,8 +248,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	logger.Info(fmt.Sprintf("✱ Sourcegraph is ready at: %s", globals.ExternalURL()))
 	ready()
 
-	// We only want to run this task once Sourcegraph is ready to serve user requests.
-	goroutine.Go(func() { bg.AppReady(db, logger) })
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 	return nil
 }
@@ -384,30 +374,13 @@ func isAllowedOrigin(origin string, allowedOrigins []string) bool {
 func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 	var store throttled.GCRAStoreCtx
 	var err error
-	if pool, ok := redispool.Cache.Pool(); ok {
-		store, err = redigostore.NewCtx(pool, "gql:rl:", 0)
-	} else {
-		// If redis is disabled we are in Cody App and can rely on an
-		// in-memory store.
-		store, err = memstore.NewCtx(0)
-	}
+	pool := redispool.Cache.Pool()
+	store, err = redigostore.NewCtx(pool, "gql:rl:", 0)
 	if err != nil {
 		return nil, err
 	}
 
 	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher"), store), nil
-}
-
-// redispoolRegisterDB registers our postgres backed redis. These package
-// avoid depending on each other, hence the wrapping to get Go to play nice
-// with the interface definitions.
-func redispoolRegisterDB(db database.DB) error {
-	kvNoTX := db.RedisKeyValue()
-	return redispool.DBRegisterStore(func(ctx context.Context, f func(redispool.DBStore) error) error {
-		return kvNoTX.WithTransact(ctx, func(tx database.RedisKeyValueStore) error {
-			return f(tx)
-		})
-	})
 }
 
 // GetInternalAddr returns the address of the internal HTTP API server.

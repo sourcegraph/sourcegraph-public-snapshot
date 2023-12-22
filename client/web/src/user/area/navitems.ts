@@ -11,19 +11,18 @@ export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
         to: '/profile',
         label: 'Profile',
         icon: AccountIcon,
-        condition: ({ isCodyApp }) => !isCodyApp,
     },
     {
         to: '/settings',
         label: 'Settings',
         icon: CogOutlineIcon,
-        condition: ({ user: { viewerCanAdminister }, isCodyApp }) => viewerCanAdminister && !isCodyApp,
+        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
     },
     {
         to: '/searches',
         label: 'Saved searches',
         icon: FeatureSearchOutlineIcon,
-        condition: ({ user: { viewerCanAdminister }, isCodyApp }) => viewerCanAdminister && !isCodyApp,
+        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
     },
     ...namespaceAreaHeaderNavItems,
 ]

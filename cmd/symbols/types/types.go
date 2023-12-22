@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 
@@ -60,19 +59,9 @@ func LoadCtagsConfig(baseConfig env.BaseConfig) CtagsConfig {
 		logCtagsErrorsDefault = "true"
 	}
 
-	ctagsCommandDefault := "universal-ctags"
-	if deploy.IsSingleBinary() {
-		ctagsCommandDefault = ""
-	}
-
-	scipCtagsCommandDefault := "scip-ctags"
-	if deploy.IsSingleBinary() {
-		scipCtagsCommandDefault = ""
-	}
-
 	return CtagsConfig{
-		UniversalCommand:   baseConfig.Get("CTAGS_COMMAND", ctagsCommandDefault, "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)"),
-		ScipCommand:        baseConfig.Get("SCIP_CTAGS_COMMAND", scipCtagsCommandDefault, "scip-ctags command"),
+		UniversalCommand:   baseConfig.Get("CTAGS_COMMAND", "universal-ctags", "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)"),
+		ScipCommand:        baseConfig.Get("SCIP_CTAGS_COMMAND", "scip-ctags", "scip-ctags command"),
 		PatternLengthLimit: baseConfig.GetInt("CTAGS_PATTERN_LENGTH_LIMIT", "250", "the maximum length of the patterns output by ctags"),
 		LogErrors:          baseConfig.GetBool("LOG_CTAGS_ERRORS", logCtagsErrorsDefault, "log ctags errors"),
 		DebugLogs:          false,

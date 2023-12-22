@@ -39,7 +39,6 @@ go_library(
         "//cmd/frontend/envvar",
         "//internal/conf",
         "//internal/conf/conftypes",
-        "//internal/conf/deploy",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/env",

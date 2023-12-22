@@ -2,7 +2,6 @@ package redispool
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -13,9 +12,7 @@ import (
 //
 // The purpose of KeyValue is to provide a more ergonomic way to interact with
 // a key value store. Additionally it makes it possible to replace the store
-// with something which is note redis. For example this will be used in
-// Cody App to use in-memory or postgres as a backing store to avoid
-// shipping redis.
+// with something which is not redis.
 //
 // To understand the behaviour of a method in this interface view the
 // corresponding redis documentation at https://redis.io/commands/COMMANDNAME/
@@ -47,11 +44,11 @@ type KeyValue interface {
 	// blocking operations.
 	WithContext(ctx context.Context) KeyValue
 
-	// Pool returns the underlying redis pool if set. If ok is false redis is
-	// disabled and you are in the Cody App. The intention of this API
-	// is Pool is only for advanced use cases and the caller should provide an
-	// alternative if redis is not available.
-	Pool() (pool *redis.Pool, ok bool)
+	// Pool returns the underlying redis pool.
+	// The intention of this API is Pool is only for advanced use cases and the caller
+	// should consider if they need to use it. Pool is very hard to mock, while
+	// the other functions on this interface are trivial to mock.
+	Pool() *redis.Pool
 }
 
 // Value is a response from an operation on KeyValue. It provides convenient
@@ -118,37 +115,11 @@ type redisKeyValue struct {
 	prefix string
 }
 
-// MemoryKeyValue is the special URI which is recognized by NewKeyValue to
-// create an in memory key value.
-const MemoryKeyValueURI = "redis+memory:memory"
-
-const dbKeyValueURIScheme = "redis+postgres"
-
-// DBKeyValueURI returns a URI to connect to the DB backed redis with the
-// specified namespace.
-func DBKeyValueURI(namespace string) string {
-	return dbKeyValueURIScheme + ":" + namespace
-}
-
-// NewKeyValue returns a KeyValue for addr. addr is treated as follows:
-//
-//  1. if addr == MemoryKeyValueURI we use a KeyValue that lives
-//     in memory of the current process.
-//  2. if addr was created by DBKeyValueURI we use a KeyValue that is backed
-//     by postgres.
-//  3. otherwise treat as a redis address.
+// NewKeyValue returns a KeyValue for addr.
 //
 // poolOpts is a required argument which sets defaults in the case we connect
 // to redis. If used we only override TestOnBorrow and Dial.
 func NewKeyValue(addr string, poolOpts *redis.Pool) KeyValue {
-	if addr == MemoryKeyValueURI {
-		return MemoryKeyValue()
-	}
-
-	if schema, namespace, ok := strings.Cut(addr, ":"); ok && schema == dbKeyValueURIScheme {
-		return DBKeyValue(namespace)
-	}
-
 	poolOpts.TestOnBorrow = func(c redis.Conn, t time.Time) error {
 		_, err := c.Do("PING")
 		return err
@@ -264,8 +235,8 @@ func (r *redisKeyValue) WithPrefix(prefix string) KeyValue {
 	}
 }
 
-func (r *redisKeyValue) Pool() (*redis.Pool, bool) {
-	return r.pool, true
+func (r *redisKeyValue) Pool() *redis.Pool {
+	return r.pool
 }
 
 func (r *redisKeyValue) do(commandName string, args ...any) Value {

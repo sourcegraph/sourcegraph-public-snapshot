@@ -125,9 +125,13 @@ const findAncestorPathsFmtstr = `
 // InsertPaths inserts paths and view counts for a given `userID`. This function
 // has a hard limit of 5000 entries per bulk insert. It will issue the len(repoPathIDToCount) % 5000 inserts.
 func (s *recentViewSignalStore) InsertPaths(ctx context.Context, userID int32, repoPathIDToCount map[int]int) error {
+	return s.insertPaths(ctx, userID, repoPathIDToCount, 5000)
+}
+
+func (s *recentViewSignalStore) insertPaths(ctx context.Context, userID int32, repoPathIDToCount map[int]int, maxBatchSize int) error {
 	batchSize := len(repoPathIDToCount)
-	if batchSize > 5000 {
-		batchSize = 5000
+	if batchSize > maxBatchSize {
+		batchSize = maxBatchSize
 	}
 	if batchSize == 0 {
 		return nil

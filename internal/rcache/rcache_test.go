@@ -6,8 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 func TestCache_namespace(t *testing.T) {
@@ -112,10 +113,7 @@ func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 		c.Set(key, []byte(strconv.Itoa(i)))
 	}
 
-	pool, ok := kv().Pool()
-	if !ok {
-		t.Fatal("need redis connection")
-	}
+	pool := kv().Pool()
 
 	conn := pool.Get()
 	defer conn.Close()

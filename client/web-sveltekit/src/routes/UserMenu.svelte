@@ -4,6 +4,7 @@
     import type { AuthenticatedUser } from '$lib/shared'
     import { humanTheme } from '$lib/theme'
     import { DropdownMenu, MenuLink, MenuRadioGroup, MenuSeparator, Submenu } from '$lib/wildcard'
+    import { getButtonClassName } from '$lib/wildcard/Button'
     import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
     import { writable } from 'svelte/store'
 
@@ -15,7 +16,11 @@
     $: organizations = authenticatedUser.organizations.nodes
 </script>
 
-<DropdownMenu {open} aria-label="{$open ? 'Close' : 'Open'} user profile menu">
+<DropdownMenu
+    {open}
+    triggerButtonClass={getButtonClassName({ variant: 'icon' })}
+    aria-label="{$open ? 'Close' : 'Open'} user profile menu"
+>
     <svelte:fragment slot="trigger">
         <UserAvatar user={authenticatedUser} />
         <Icon svgPath={$open ? mdiChevronUp : mdiChevronDown} aria-hidden={true} inline />

@@ -33,7 +33,7 @@ func main() {
 
 	// The defaults.Dial function is a helper function that sets up a gRPC connection with good defaults, including a few monitoring and tracing middlewares.
 	// See internal/grpc/defaults/defaults.go for more information.
-	conn, err := defaults.Dial("localhost:50051", logger)
+	conn, err := defaults.Dial("127.0.0.1:50051", logger)
 	if err != nil {
 		logger.Fatal("Failed to connect", log.Error(err))
 	}

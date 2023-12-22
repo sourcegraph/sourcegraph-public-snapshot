@@ -4,8 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -61,7 +59,6 @@ func NewHandler(
 	authr *auth.Authenticator,
 	promptRecorder completions.PromptRecorder,
 	config *Config,
-	sources *actor.Sources,
 ) (http.Handler, error) {
 	// Initialize metrics
 	counter, err := meter.Int64UpDownCounter("cody-gateway.concurrent_upstream_requests",
@@ -227,7 +224,7 @@ func NewHandler(
 			authr.Middleware(
 				requestlogger.Middleware(
 					logger,
-					featurelimiter.RefreshLimitsHandler(logger, sources),
+					featurelimiter.RefreshLimitsHandler(logger),
 				),
 			),
 			otelhttp.WithPublicEndpoint(),

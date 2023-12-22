@@ -1692,6 +1692,11 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
 	for name, testCase := range map[string]struct {
 		now             time.Time
 		events          []*Event
@@ -1908,9 +1913,11 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			logger := logtest.Scoped(t)
-			db := NewDB(logger, dbtest.NewDB(t))
-			ctx := context.Background()
+			t.Cleanup(func() {
+				_, err := db.ExecContext(ctx, "DELETE FROM event_logs")
+				require.NoError(t, err)
+			})
+
 			for _, e := range testCase.events {
 				//lint:ignore SA1019 existing usage of deprecated functionality.
 				// Use EventRecorder from internal/telemetryrecorder instead.

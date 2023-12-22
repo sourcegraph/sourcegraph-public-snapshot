@@ -2,15 +2,23 @@ load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("//dev:oci_defs.bzl", "image_repository")
 
+pkg_tar(
+    name = "src-cli",
+    srcs = ["@src-cli-linux-amd64"],
+    package_dir = "/usr/local/bin",
+)
+
 oci_image(
     name = "image",
     base = "@legacy_executor-vm_base",
+    tars = [":src-cli"],
 )
 
 oci_tarball(
     name = "image_tarball",
     image = ":image",
     repo_tags = ["executor-vm:candidate"],
+    visibility = ["//visibility:public"],
 )
 
 oci_push(

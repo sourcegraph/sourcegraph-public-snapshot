@@ -9,10 +9,10 @@ import (
 
 type ServiceSpec struct {
 	// ID is an all-lowercase, hyphen-delimited identifier for the service,
-	// e.g. "cody-gateway".
+	// e.g. "cody-gateway". It MUST be at most 20 characters long.
 	ID string `json:"id"`
 	// Name is an optional human-readable display name for the service,
-	// e.g. "Cody Gateway"
+	// e.g. "Cody Gateway".
 	Name *string `json:"name"`
 	// Owners denotes the teams or individuals primarily responsible for the
 	// service.
@@ -37,6 +37,10 @@ type ServiceSpec struct {
 
 func (s ServiceSpec) Validate() []error {
 	var errs []error
+
+	if len(s.ID) > 20 {
+		errs = append(errs, errors.New("id must be at most 20 characters"))
+	}
 
 	if s.ProjectIDSuffixLength != nil && *s.ProjectIDSuffixLength < 4 {
 		errs = append(errs, errors.New("projectIDSuffixLength must be >= 4"))

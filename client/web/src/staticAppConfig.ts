@@ -71,7 +71,6 @@ export interface StaticInjectedAppConfig extends Pick<CodeIntelligenceProps, 'br
  */
 export interface StaticWindowContextComputedAppConfig extends Pick<BatchChangesProps, 'batchChangesEnabled'> {
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
     needsRepositoryConfiguration: boolean
     batchChangesWebhookLogsEnabled: boolean
 }
@@ -82,7 +81,6 @@ export interface StaticWindowContextComputedAppConfig extends Pick<BatchChangesP
  */
 export const windowContextConfig = {
     isSourcegraphDotCom: window.context.sourcegraphDotComMode,
-    isCodyApp: window.context.codyAppMode,
     needsRepositoryConfiguration: window.context.needsRepositoryConfiguration,
     batchChangesWebhookLogsEnabled: window.context.batchChangesWebhookLogsEnabled,
     batchChangesEnabled: window.context.batchChangesEnabled,

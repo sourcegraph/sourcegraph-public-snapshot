@@ -12,8 +12,5 @@ export {
 
 export type { StepConfiguration, StepComponentProps } from './setup-steps'
 
-export type { LocalCodeHost } from './local-repositories-step'
-export { callFilePicker, useLocalExternalServices } from './local-repositories-step'
-
 export { RemoteRepositoriesStep } from './remote-repositories-step'
 export { SyncRepositoriesStep } from './SyncRepositoriesStep'

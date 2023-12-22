@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
@@ -262,9 +261,6 @@ func unsafeSignUp(
 			// information.
 			message = defaultErrorMessage
 			statusCode = http.StatusInternalServerError
-		}
-		if deploy.IsApp() && strings.Contains(err.Error(), "site_already_initialized") {
-			return nil, http.StatusOK, nil
 		}
 		logger.Error("Error in user signup.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
 		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
