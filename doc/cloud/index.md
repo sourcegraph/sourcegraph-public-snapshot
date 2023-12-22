@@ -110,7 +110,7 @@ If you have specific requirements for the region, please reach out to your Sourc
 
 More details about the locations and data storage can be found in [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/multi-region/)
 
-### Private Connectivit (test remote later)
+### Private Connectivity
 
 Sourcegraph Cloud can connect to resources that are publically accessible or protected by IP-based firewall rules out-of-the-box. Sourcegraph can provide static IP addresses for customers to add to their firewall allowlist. Please let your account team know.
 
