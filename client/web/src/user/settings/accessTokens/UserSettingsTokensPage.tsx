@@ -6,7 +6,7 @@ import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader, Button, Link, Icon, Text } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button, Icon, Text, ButtonLink, Tooltip } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -73,6 +73,9 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
     )
 
     const siteAdminViewingOtherUser = authenticatedUser && authenticatedUser.id !== user.id
+    const accessTokensEnabled =
+        (authenticatedUser.siteAdmin && window.context.accessTokensAllow === 'site-admin-create') ||
+        (!siteAdminViewingOtherUser && window.context.accessTokensAllow === 'all-users-create')
 
     return (
         <div className="user-settings-tokens-page">
@@ -82,11 +85,26 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
                 path={[{ text: 'Access tokens' }]}
                 description="Access tokens may be used to access the Sourcegraph API."
                 actions={
-                    !siteAdminViewingOtherUser && (
-                        <Button to="new" variant="primary" as={Link}>
-                            <Icon role="img" aria-hidden={true} svgPath={mdiPlus} /> Generate new token
-                        </Button>
-                    )
+                    <>
+                        {accessTokensEnabled && (
+                            <ButtonLink variant="primary" className="ml-2" to="new">
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate new token
+                            </ButtonLink>
+                        )}
+                        {!accessTokensEnabled && (
+                            <Tooltip
+                                content={
+                                    siteAdminViewingOtherUser
+                                        ? 'Access token creation for other users is disabled in site configuration'
+                                        : 'Access token creation is disabled in site configuration'
+                                }
+                            >
+                                <Button variant="primary" className="ml-2" disabled={true}>
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate new token
+                                </Button>
+                            </Tooltip>
+                        )}
+                    </>
                 }
                 className="mb-3"
             />
