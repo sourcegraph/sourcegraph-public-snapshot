@@ -208,13 +208,9 @@ sg msp generate -all <service>
 			},
 			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 			Action: func(c *cli.Context) error {
-				service, err := useServiceArgument(c)
+				service, env, err := useServiceAndEnvironmentArguments(c)
 				if err != nil {
 					return err
-				}
-				env := service.GetEnvironment(c.Args().Get(1))
-				if env == nil {
-					return errors.Errorf("environment %q not found", c.Args().Get(1))
 				}
 
 				tfcClient, err := getTFCRunsClient(c)
@@ -234,9 +230,10 @@ sg msp generate -all <service>
 
 				switch component := c.String("component"); component {
 				case "service":
+					std.Out.WriteNoticef("Opening link to service logs in browser...")
 					return open.URL((&gcplogurl.Explorer{
 						ProjectID: projectID.Value.(string),
-						Query:     gcplogurl.Query(`resource.type = "cloud_run_revision"`),
+						Query:     gcplogurl.Query(`resource.type = "cloud_run_revision" jsonPayload.InstrumentationScope != ""`),
 						SummaryFields: &gcplogurl.SummaryFields{
 							Fields: []string{
 								// fields from structured logs by sourcegraph/log
@@ -297,13 +294,9 @@ full access, use the '-write-access' flag.
 					},
 					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
-						service, err := useServiceArgument(c)
+						service, env, err := useServiceAndEnvironmentArguments(c)
 						if err != nil {
 							return err
-						}
-						env := service.GetEnvironment(c.Args().Get(1))
-						if env == nil {
-							return errors.Errorf("environment %q not found", c.Args().Get(1))
 						}
 						if env.Resources.PostgreSQL == nil {
 							return errors.New("no postgresql instance provisioned")

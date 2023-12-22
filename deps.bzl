@@ -5243,6 +5243,20 @@ def go_dependencies():
         version = "v0.6.1",
     )
     go_repository(
+        name = "com_github_rickb777_date",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/rickb777/date",
+        sum = "h1:FS47C+yEMgIPE2ZUA67ekpU1CZXMSliHkeB/V+ZFUg4=",
+        version = "v1.14.3",
+    )
+    go_repository(
+        name = "com_github_rickb777_plural",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/rickb777/plural",
+        sum = "h1:4CU5NiUqXSM++2+7JCrX+oguXd2D7RY5O1YisMw1yCI=",
+        version = "v1.2.2",
+    )
+    go_repository(
         name = "com_github_rivo_uniseg",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/rivo/uniseg",
@@ -6125,6 +6139,13 @@ def go_dependencies():
         importpath = "github.com/vultr/govultr/v2",
         sum = "h1:gej/rwr91Puc/tgh+j33p/BLR16UrIPnSr+AIwYWZQs=",
         version = "v2.17.2",
+    )
+    go_repository(
+        name = "com_github_vvakame_gcplogurl",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/vvakame/gcplogurl",
+        sum = "h1:dH55ru2OQOIAKjZi5wwXjNnSfN0oXLFYkMQy908s+tU=",
+        version = "v0.2.0",
     )
     go_repository(
         name = "com_github_wk8_go_ordered_map_v2",

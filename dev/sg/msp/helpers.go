@@ -32,6 +32,29 @@ func useServiceArgument(c *cli.Context) (*spec.Spec, error) {
 	return spec.Open(serviceSpecPath)
 }
 
+// useServiceAndEnvironmentArguments retrieves the service and environment specs
+// corresponding to the first and second arguments respectively. It should only
+// be used if both arguments are required.
+func useServiceAndEnvironmentArguments(c *cli.Context) (*spec.Spec, *spec.EnvironmentSpec, error) {
+	svc, err := useServiceArgument(c)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	environmentID := c.Args().Get(1)
+	if environmentID == "" {
+		return svc, nil, errors.New("second argument <environment ID> is required")
+	}
+
+	env := svc.GetEnvironment(environmentID)
+	if env == nil {
+		return svc, nil, errors.Newf("environment %q not found in service spec, available environments: %+v",
+			environmentID, svc.ListEnvironmentIDs())
+	}
+
+	return svc, env, nil
+}
+
 func getTFCRunsClient(c *cli.Context) (*terraformcloud.RunsClient, error) {
 	secretStore, err := secrets.FromContext(c.Context)
 	if err != nil {
