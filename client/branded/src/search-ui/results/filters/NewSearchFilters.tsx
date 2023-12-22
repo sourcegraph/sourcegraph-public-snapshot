@@ -1,14 +1,11 @@
 import { FC, useMemo } from 'react'
 
-import classNames from 'classnames'
-
 import { FilterType, NegatedFilters, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import type { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter, succeedScan, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { Filter as ResultFilter, SearchMatch } from '@sourcegraph/shared/src/search/stream'
-import { Panel } from '@sourcegraph/wildcard'
 
 import {
     authorFilter,
@@ -82,87 +79,78 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
     }
 
     return (
-        <Panel
-            defaultSize={250}
-            minSize={200}
-            position="left"
-            storageKey="filter-sidebar"
-            ariaLabel="Filters sidebar"
-            className={classNames(styles.root, className)}
-        >
-            <aside className={styles.scrollWrapper}>
-                <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
+        <aside className={styles.scrollWrapper}>
+            <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
 
-                {type === SearchFilterType.Symbols && (
+            {type === SearchFilterType.Symbols && (
+                <SearchDynamicFilter
+                    filterType={FilterType.select}
+                    filters={SYMBOL_KIND_FILTERS}
+                    exclusive={true}
+                    staticFilters={true}
+                    filterQuery={filterQuery}
+                    renderItem={symbolFilter}
+                    onFilterQueryChange={setFilterQuery}
+                />
+            )}
+
+            {(type === SearchFilterType.Commits || type === SearchFilterType.Diffs) && (
+                <>
                     <SearchDynamicFilter
-                        filterType={FilterType.select}
-                        filters={SYMBOL_KIND_FILTERS}
+                        filterType={FilterType.author}
+                        filters={authorFilters}
+                        exclusive={true}
+                        filterQuery={filterQuery}
+                        renderItem={authorFilter}
+                        onFilterQueryChange={setFilterQuery}
+                    />
+
+                    <SearchDynamicFilter
+                        filterType={[FilterType.after, FilterType.before]}
+                        filters={COMMIT_DATE_FILTERS}
                         exclusive={true}
                         staticFilters={true}
                         filterQuery={filterQuery}
-                        renderItem={symbolFilter}
+                        renderItem={commitDateFilter}
                         onFilterQueryChange={setFilterQuery}
                     />
-                )}
+                </>
+            )}
 
-                {type === SearchFilterType.Commits && (
-                    <>
-                        <SearchDynamicFilter
-                            filterType={FilterType.author}
-                            filters={authorFilters}
-                            exclusive={true}
-                            filterQuery={filterQuery}
-                            renderItem={authorFilter}
-                            onFilterQueryChange={setFilterQuery}
-                        />
+            <SearchDynamicFilter
+                filterType={FilterType.lang}
+                filters={filters}
+                filterQuery={filterQuery}
+                renderItem={languageFilter}
+                onFilterQueryChange={setFilterQuery}
+            />
 
-                        <SearchDynamicFilter
-                            filterType={[FilterType.after, FilterType.before]}
-                            filters={COMMIT_DATE_FILTERS}
-                            exclusive={true}
-                            staticFilters={true}
-                            filterQuery={filterQuery}
-                            renderItem={commitDateFilter}
-                            onFilterQueryChange={setFilterQuery}
-                        />
-                    </>
-                )}
+            <SearchDynamicFilter
+                filterType={FilterType.repo}
+                filters={filters}
+                filterQuery={filterQuery}
+                renderItem={repoFilter}
+                onFilterQueryChange={setFilterQuery}
+            />
 
-                <SearchDynamicFilter
-                    filterType={FilterType.lang}
-                    filters={filters}
-                    filterQuery={filterQuery}
-                    renderItem={languageFilter}
-                    onFilterQueryChange={setFilterQuery}
-                />
+            <SearchDynamicFilter
+                filterType={FilterType.file}
+                filterAlias={NegatedFilters.file}
+                filters={filters}
+                filterQuery={filterQuery}
+                onFilterQueryChange={setFilterQuery}
+            />
 
-                <SearchDynamicFilter
-                    filterType={FilterType.repo}
-                    filters={filters}
-                    filterQuery={filterQuery}
-                    renderItem={repoFilter}
-                    onFilterQueryChange={setFilterQuery}
-                />
+            <SearchDynamicFilter
+                filterType="utility"
+                filterAlias={[FilterType.archived, FilterType.fork]}
+                filters={filters}
+                filterQuery={filterQuery}
+                renderItem={utilityFilter}
+                onFilterQueryChange={setFilterQuery}
+            />
 
-                <SearchDynamicFilter
-                    filterType={FilterType.file}
-                    filterAlias={NegatedFilters.file}
-                    filters={filters}
-                    filterQuery={filterQuery}
-                    onFilterQueryChange={setFilterQuery}
-                />
-
-                <SearchDynamicFilter
-                    filterType="utility"
-                    filterAlias={[FilterType.archived, FilterType.fork]}
-                    filters={filters}
-                    filterQuery={filterQuery}
-                    renderItem={utilityFilter}
-                    onFilterQueryChange={setFilterQuery}
-                />
-
-                <FiltersDocFooter className={styles.footer} />
-            </aside>
-        </Panel>
+            <FiltersDocFooter className={styles.footer} />
+        </aside>
     )
 }

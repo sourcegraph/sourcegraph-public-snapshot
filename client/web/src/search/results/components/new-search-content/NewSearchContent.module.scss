@@ -11,19 +11,31 @@
     grid-template-rows: auto 1fr;
     grid-template-columns: auto minmax(0, 1fr) auto auto;
     grid-template-areas:
-        'new-filters infobar  preview sidebar-header '
+        'new-filters infobar preview sidebar-header'
         'new-filters contents preview filters';
 
-    @media (--md-breakpoint-down) {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto auto 1fr;
-        grid-template-areas:
+    &--with-new-filters {
+        @media (--md-breakpoint-down) {
+            grid-template-rows: auto 1fr;
+            grid-template-columns: auto minmax(0, 1fr);
+            grid-template-areas:
+                'new-filters infobar'
+                'new-filters contents';
+        }
+    }
+
+    &:not(&--with-new-filters) {
+        @media (--md-breakpoint-down) {
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: auto auto 1fr;
+            grid-template-areas:
             'infobar'
             'filters'
             'contents';
 
-        overflow: auto;
-        height: min-content;
+            overflow: auto;
+            height: min-content;
+        }
     }
 }
 
