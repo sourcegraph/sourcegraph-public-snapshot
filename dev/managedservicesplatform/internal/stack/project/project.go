@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -89,7 +88,6 @@ const StackName = "project"
 // NewStack creates a stack that provisions a GCP project.
 func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	stack, locals, err := stacks.New(StackName,
-		randomprovider.With(),
 		// The project we want might not exist yet, so omit it when initializing
 		// the provider.
 		googleprovider.With(""))
@@ -97,8 +95,13 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		return nil, err
 	}
 
-	// Name all stack resources after the desired project ID
-	id := resourceid.New(vars.ProjectID)
+	// Name all stack resources after the desired project ID.
+	// HACK: For consistency with what used to be here, we extract the "prefix"
+	// (everything before the last component, '-${randomsuffix}') and use that
+	// as the root resourceid.
+	parts := strings.Split(vars.ProjectID, "-")
+	prefix := parts[:len(parts)-1]
+	id := resourceid.New(strings.Join(prefix, "-"))
 
 	project := project.NewProject(stack,
 		id.TerraformID("project"),
