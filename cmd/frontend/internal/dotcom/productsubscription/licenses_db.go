@@ -99,7 +99,7 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		}
 	}
 
-	postLicenseCreationToSlack(ctx, subscriptionID, licenseKey, version, expiresAt, info)
+	postLicenseCreationToSlack(ctx, subscriptionID, version, expiresAt, info)
 
 	return id, nil
 }
@@ -119,7 +119,7 @@ Reply with a :approved_stamp: when this is approved
 Reply with a :white_check_mark: when this has been sent to the customer
 `
 
-func postLicenseCreationToSlack(ctx context.Context, subscriptionID, licenseKey string, version int, expiresAt *time.Time, info license.Info) {
+func postLicenseCreationToSlack(ctx context.Context, subscriptionID, version int, expiresAt *time.Time, info license.Info) {
 	dotcom := conf.Get().Dotcom
 	if dotcom == nil {
 		return
@@ -143,7 +143,7 @@ func postLicenseCreationToSlack(ctx context.Context, subscriptionID, licenseKey 
 			subscriptionID,
 			strconv.Itoa(version),
 			expiresAt.Format("Jan 2, 2006 3:04pm MST"),
-			strconv.FormatFloat(expiresAt.Sub(time.Now()).Hours()/24, 'f', 1, 64),
+			strconv.FormatFloat(time.Until(expiresAt).Hours()/24, 'f', 1, 64),
 			expiresAt.In(pacificLoc).Format("Jan 2, 2006 3:04pm MST"),
 			strconv.FormatUint(uint64(info.UserCount), 10),
 			"`"+strings.Join(info.Tags, "`, `")+"`",
