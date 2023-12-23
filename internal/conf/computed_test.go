@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/license"
@@ -672,6 +673,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 		siteConfig   schema.SiteConfiguration
 		deployType   string
 		wantConfig   *conftypes.EmbeddingsConfig
+		dotcomMode   bool
 		wantDisabled bool
 	}{
 		{
@@ -692,7 +694,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				LicenseKey:  licenseKey,
 				Embeddings:  &schema.Embeddings{},
 			},
-			wantConfig: zeroConfigDefaultWithLicense,
+			wantDisabled: true,
 		},
 		{
 			name: "cody.enabled set false",
@@ -727,10 +729,10 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 			},
-			wantConfig: zeroConfigDefaultWithLicense,
+			wantDisabled: true,
 		},
 		{
-			name: "Sourcegraph provider",
+			name: "Sourcegraph provider dotcom",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -738,10 +740,11 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Provider: "sourcegraph",
 				},
 			},
+			dotcomMode: true,
 			wantConfig: zeroConfigDefaultWithLicense,
 		},
 		{
-			name: "File filters",
+			name: "File filters (dotcom)",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -754,6 +757,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					},
 				},
 			},
+			dotcomMode: true,
 			wantConfig: &conftypes.EmbeddingsConfig{
 				Provider:                   "sourcegraph",
 				AccessToken:                licenseAccessToken,
@@ -775,7 +779,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "File filters w/o MaxFileSizeBytes",
+			name: "File filters w/o MaxFileSizeBytes (dotcom)",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -787,6 +791,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					},
 				},
 			},
+			dotcomMode: true,
 			wantConfig: &conftypes.EmbeddingsConfig{
 				Provider:                   "sourcegraph",
 				AccessToken:                licenseAccessToken,
@@ -808,7 +813,8 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "Disable exclude failed chunk during indexing",
+			name:       "Disable exclude failed chunk during indexing (dotcom)",
+			dotcomMode: true,
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -843,7 +849,8 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "No provider and no token, assume Sourcegraph",
+			name:       "No provider and no token, assume Sourcegraph (dotcom)",
+			dotcomMode: true,
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -870,7 +877,8 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "Sourcegraph provider without license",
+			name:       "Sourcegraph provider without license (dotcom)",
+			dotcomMode: true,
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  "",
@@ -881,7 +889,8 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			wantDisabled: true,
 		},
 		{
-			name: "OpenAI provider",
+			name:       "OpenAI provider (dotcom)",
+			dotcomMode: true,
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -909,27 +918,29 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "OpenAI provider without access token",
+			name: "OpenAI provider without access token (override)",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Embeddings: &schema.Embeddings{
-					Provider: "openai",
+					Provider:           "openai",
+					EnterpriseOverride: pointers.Ptr(true),
 				},
 			},
 			wantDisabled: true,
 		},
 		{
-			name: "Azure OpenAI provider",
+			name: "Azure OpenAI provider (override)",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Embeddings: &schema.Embeddings{
-					Provider:    "azure-openai",
-					AccessToken: "asdf",
-					Endpoint:    "https://acmecorp.openai.azure.com",
-					Dimensions:  1536,
-					Model:       "the-model",
+					EnterpriseOverride: pointers.Ptr(true),
+					Provider:           "azure-openai",
+					AccessToken:        "asdf",
+					Endpoint:           "https://acmecorp.openai.azure.com",
+					Dimensions:         1536,
+					Model:              "the-model",
 				},
 			},
 			wantConfig: &conftypes.EmbeddingsConfig{
@@ -955,11 +966,13 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			defaultDeploy := deploy.Type()
+			envvar.MockSourcegraphDotComMode(tc.dotcomMode)
 			if tc.deployType != "" {
 				deploy.Mock(tc.deployType)
 			}
 			t.Cleanup(func() {
 				deploy.Mock(defaultDeploy)
+				envvar.MockSourcegraphDotComMode(false)
 			})
 			conf := GetEmbeddingsConfig(tc.siteConfig)
 			if tc.wantDisabled {

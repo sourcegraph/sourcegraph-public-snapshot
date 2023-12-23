@@ -2484,6 +2484,14 @@
       "description": "Configuration for embeddings service.",
       "type": "object",
       "properties": {
+        "enterpriseOverride": {
+          "description": "An override to enable embeddings for enterprise.",
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          },
+          "default": false
+        },
         "enabled": {
           "description": "Toggles whether embedding service is enabled.",
           "type": "boolean",

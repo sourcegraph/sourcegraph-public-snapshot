@@ -56,7 +56,8 @@ var splitOptions = codeintelContext.SplitOptions{
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.RepoEmbeddingJob) (err error) {
 	embeddingsConfig := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
 	if embeddingsConfig == nil {
-		return errors.New("embeddings are not configured or disabled")
+		logger.Info("embeddings are not configured or disabled")
+		return nil
 	}
 
 	ctx = featureflag.WithFlags(ctx, h.db.FeatureFlags())
