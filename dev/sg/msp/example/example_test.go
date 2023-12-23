@@ -1,6 +1,8 @@
 package example
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/hexops/autogold/v2"
@@ -11,19 +13,33 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 )
 
+func mockNewProjectID(t *testing.T) {
+	templateFuncs[newProjectIDFuncKey] = func(s, e string, l int) (string, error) {
+		if len(s) == 0 {
+			return "", errors.New("service ID is required")
+		}
+		if len(e) == 0 {
+			return "", errors.New("environment ID is required")
+		}
+		if l == 0 {
+			return "", errors.New("expected length > 0")
+		}
+		return fmt.Sprintf("%s-%s-%s", s, e, t.Name()), nil
+	}
+	t.Cleanup(func() { templateFuncs[newProjectIDFuncKey] = spec.NewProjectID })
+}
+
 func TestNewService(t *testing.T) {
+	mockNewProjectID(t)
+
 	f, err := NewService(Template{
 		ID:    "msp-example",
 		Dev:   true,
 		Owner: "core-services",
+
+		ProjectIDSuffixLength: 4,
 	})
 	require.NoError(t, err)
-
-	t.Run("is valid", func(t *testing.T) {
-		var s spec.Spec
-		require.NoError(t, yaml.Unmarshal(f, &s))
-		assert.Empty(t, s.Validate())
-	})
 
 	autogold.Expect(`service:
   id: msp-example
@@ -43,6 +59,7 @@ build:
 
 environments:
 - id: dev
+  projectID: msp-example-dev-TestNewService
   # TODO: We initially provision in 'test' to make it easy to access the project
   # during setup. Once done, you should change this to 'external' or 'internal'.
   category: test
@@ -73,21 +90,27 @@ environments:
     # Only enable if your service implements MSP /-/healthz conventions.
     disabled: true
 `).Equal(t, string(f))
-}
-
-func TestNewJob(t *testing.T) {
-	f, err := NewJob(Template{
-		ID:    "msp-example",
-		Dev:   true,
-		Owner: "core-services",
-	})
-	require.NoError(t, err)
 
 	t.Run("is valid", func(t *testing.T) {
 		var s spec.Spec
 		require.NoError(t, yaml.Unmarshal(f, &s))
 		assert.Empty(t, s.Validate())
 	})
+
+	testInsertProdEnvironment(t, "msp-example", f)
+}
+
+func TestNewJob(t *testing.T) {
+	mockNewProjectID(t)
+
+	f, err := NewJob(Template{
+		ID:    "msp-example",
+		Dev:   true,
+		Owner: "core-services",
+
+		ProjectIDSuffixLength: 4,
+	})
+	require.NoError(t, err)
 
 	autogold.Expect(`service:
   kind: job
@@ -108,6 +131,7 @@ build:
 
 environments:
 - id: dev
+  projectID: msp-example-dev-TestNewJob
   # TODO: We initially provision in 'test' to make it easy to access the project
   # during setup. Once done, you should change this to 'external' or 'internal'.
   category: test
@@ -130,4 +154,28 @@ environments:
       cpu: 1
       memory: 1Gi
 `).Equal(t, string(f))
+
+	t.Run("is valid", func(t *testing.T) {
+		var s spec.Spec
+		require.NoError(t, yaml.Unmarshal(f, &s))
+		assert.Empty(t, s.Validate())
+	})
+
+	testInsertProdEnvironment(t, "msp-example", f)
+}
+
+func testInsertProdEnvironment(t *testing.T, serviceID string, specData []byte) {
+	t.Run("testInsertProdEnvironment", func(t *testing.T) {
+		e, err := NewEnvironment(EnvironmentTemplate{
+			ServiceID:             serviceID,
+			EnvironmentID:         "prod",
+			ProjectIDSuffixLength: 4,
+		})
+		require.NoError(t, err)
+
+		updatedSpecData, err := spec.AppendEnvironment(specData, e)
+		require.NoError(t, err)
+
+		autogold.ExpectFile(t, autogold.Raw(string(updatedSpecData)))
+	})
 }

@@ -3407,13 +3407,6 @@ def go_dependencies():
         version = "v1.0.0",
     )
     go_repository(
-        name = "com_github_iancoleman_orderedmap",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/iancoleman/orderedmap",
-        sum = "h1:sq1N/TFpYH++aViPcaKjys3bDClUEU7s5B+z6jq8pNA=",
-        version = "v0.2.0",
-    )
-    go_repository(
         name = "com_github_iancoleman_strcase",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/iancoleman/strcase",
@@ -3459,8 +3452,8 @@ def go_dependencies():
         name = "com_github_invopop_jsonschema",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/invopop/jsonschema",
-        sum = "h1:2vgQcBz1n256N+FpX3Jq7Y17AjYt46Ig3zIWyy770So=",
-        version = "v0.7.0",
+        sum = "h1:6ovsNSuvn9wEQVOyc72aycBMVQFKz7cPdMJn10CvzRI=",
+        version = "v0.12.0",
     )
     go_repository(
         name = "com_github_ionos_cloud_sdk_go_v6",
@@ -6151,8 +6144,8 @@ def go_dependencies():
         name = "com_github_wk8_go_ordered_map_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/wk8/go-ordered-map/v2",
-        sum = "h1:jLbYIFyWQMUwHLO20cImlCRBoNc5lp0nmE2dvwcxc7k=",
-        version = "v2.1.5",
+        sum = "h1:5h/BUHu93oj4gIdvHHHGsScSTMijfx5PeYkE/fJgbpc=",
+        version = "v2.1.8",
     )
     go_repository(
         name = "com_github_wsxiaoys_terminal",

@@ -10,29 +10,25 @@ import (
 type ServiceSpec struct {
 	// ID is an all-lowercase, hyphen-delimited identifier for the service,
 	// e.g. "cody-gateway". It MUST be at most 20 characters long.
-	ID string `json:"id"`
+	ID string `yaml:"id"`
 	// Name is an optional human-readable display name for the service,
 	// e.g. "Cody Gateway".
-	Name *string `json:"name"`
+	Name *string `yaml:"name"`
 	// Owners denotes the teams or individuals primarily responsible for the
 	// service.
-	Owners []string `json:"owners"`
+	Owners []string `yaml:"owners"`
 
 	// Kind is the type of the service, either 'service' or 'job'. Defaults to
 	// 'service'.
-	Kind *ServiceKind `json:"kind,omitempty"`
+	Kind *ServiceKind `yaml:"kind,omitempty"`
 	// Protocol is a protocol other than HTTP that the service communicates
 	// with. If empty, the service uses HTTP. To use gRPC, configure 'h2c':
 	// https://cloud.google.com/run/docs/configuring/http2
-	Protocol *ServiceProtocol `json:"protocol,omitempty"`
-
-	// ProjectIDSuffixLength can be configured to truncate the length of the
-	// service's generated project IDs.
-	ProjectIDSuffixLength *int `json:"projectIDSuffixLength,omitempty"`
+	Protocol *ServiceProtocol `yaml:"protocol,omitempty"`
 
 	// IAM is an optional IAM configuration for the service account on the
 	// service's GCP project.
-	IAM *ServiceIAMSpec `json:"iam,omitempty"`
+	IAM *ServiceIAMSpec `yaml:"iam,omitempty"`
 }
 
 func (s ServiceSpec) Validate() []error {
@@ -42,15 +38,10 @@ func (s ServiceSpec) Validate() []error {
 		errs = append(errs, errors.New("id must be at most 20 characters"))
 	}
 
-	if s.ProjectIDSuffixLength != nil && *s.ProjectIDSuffixLength < 4 {
-		errs = append(errs, errors.New("projectIDSuffixLength must be >= 4"))
-	}
-
 	if s.IAM != nil {
 		errs = append(errs, s.IAM.Validate()...)
 	}
 
-	// TODO: Add validation
 	return errs
 }
 
@@ -72,15 +63,15 @@ func (s *ServiceKind) Is(kind ServiceKind) bool {
 
 type ServiceIAMSpec struct {
 	// Services is a list of GCP services to enable in the service's project.
-	Services []string `json:"services,omitempty"`
+	Services []string `yaml:"services,omitempty"`
 
 	// Roles is a list of IAM roles to grant to the service account.
-	Roles []string `json:"roles,omitempty"`
+	Roles []string `yaml:"roles,omitempty"`
 	// Permissions is a list of IAM permissions to grant to the service account.
 	//
 	// MSP will create a custom role with these permissions and grant it to the
 	// service account.
-	Permissions []string `json:"permissions,omitempty"`
+	Permissions []string `yaml:"permissions,omitempty"`
 }
 
 func (s ServiceIAMSpec) Validate() []error {
