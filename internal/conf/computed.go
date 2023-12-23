@@ -799,7 +799,6 @@ const embeddingsMaxFileSizeBytes = 1000000
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
 func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.EmbeddingsConfig {
-
 	// If cody is disabled, don't use embeddings.
 	if !codyEnabled(siteConfig) {
 		return nil
