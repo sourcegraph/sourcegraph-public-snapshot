@@ -2063,7 +2063,7 @@
           "type": "string",
           "group": "Sourcegraph.com"
         },
-        "SlackLicenseCreationWebhook": {
+        "slackLicenseCreationWebhook": {
           "description": "Slack webhook for when a license key is created.",
           "type": "string",
           "group": "Sourcegraph.com"
