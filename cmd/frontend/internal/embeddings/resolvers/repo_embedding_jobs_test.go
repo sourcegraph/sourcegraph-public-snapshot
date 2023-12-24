@@ -44,7 +44,8 @@ func TestDBPaginationWithRepoFilter(t *testing.T) {
 			CodyEnabled: pointers.Ptr(true),
 			LicenseKey:  "foobar",
 			Embeddings: &schema.Embeddings{
-				Provider: "sourcegraph",
+				Provider:           "sourcegraph",
+				EnterpriseOverride: pointers.Ptr(true),
 			},
 		},
 	})

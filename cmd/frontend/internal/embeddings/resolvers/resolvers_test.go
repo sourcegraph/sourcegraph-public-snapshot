@@ -75,6 +75,9 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 		SiteConfiguration: schema.SiteConfiguration{
 			CodyEnabled: pointers.Ptr(true),
 			LicenseKey:  "asdf",
+			Embeddings: &schema.Embeddings{
+				EnterpriseOverride: pointers.Ptr(true),
+			},
 		},
 	})
 

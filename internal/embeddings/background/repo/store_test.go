@@ -400,6 +400,9 @@ func TestGetEmbeddableRepoOpts(t *testing.T) {
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 		CodyEnabled: pointers.Ptr(true),
 		LicenseKey:  "asdf",
+		Embeddings: &schema.Embeddings{
+			EnterpriseOverride: pointers.Ptr(true),
+		},
 	}})
 
 	opts := GetEmbeddableRepoOpts()
@@ -415,6 +418,7 @@ func TestGetEmbeddableRepoOpts(t *testing.T) {
 		SiteConfiguration: schema.SiteConfiguration{
 			CodyEnabled: pointers.Ptr(true),
 			Embeddings: &schema.Embeddings{
+				EnterpriseOverride:         pointers.Ptr(true),
 				Provider:                   "openai",
 				AccessToken:                "asdf",
 				MinimumInterval:            "1h",

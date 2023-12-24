@@ -19,6 +19,11 @@ func TestNewDBFromConfFunc(t *testing.T) {
 			ServiceConnectionConfig: conftypes.ServiceConnections{
 				Qdrant: "",
 			},
+			SiteConfiguration: schema.SiteConfiguration{
+				Embeddings: &schema.Embeddings{
+					EnterpriseOverride: pointers.Ptr(true),
+				},
+			},
 		})
 		getDB := NewDBFromConfFunc(logtest.Scoped(t), nil)
 		got, err := getDB()
@@ -30,9 +35,10 @@ func TestNewDBFromConfFunc(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				Embeddings: &schema.Embeddings{
-					Provider:    "sourcegraph",
-					AccessToken: "fake",
-					Enabled:     pointers.Ptr(true),
+					EnterpriseOverride: pointers.Ptr(true),
+					Provider:           "sourcegraph",
+					AccessToken:        "fake",
+					Enabled:            pointers.Ptr(true),
 					Qdrant: &schema.Qdrant{
 						Enabled: true,
 					},
