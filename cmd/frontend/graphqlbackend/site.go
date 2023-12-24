@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -585,6 +586,21 @@ func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigu
 
 	return &codyLLMConfigurationResolver{config: c}
 }
+
+func (r *siteResolver) CodyConfigFeatures(ctx context.Context) *codyLLMConfigurationResolver {
+	mySite := conf.Get().SiteConfig()
+	c := conf.GetCompletionsConfig(mySite)
+	if c == nil {
+		return nil
+	}
+
+	wholeConf := conf.GetConfigFeatures(mySite)
+	fmt.Println("This is a reading")
+	fmt.Println(wholeConf)
+	return &codyLLMConfigurationResolver{config: c}
+}
+
+func (c *codyLLMConfigurationResolver) Chat() bool { return false }
 
 type codyLLMConfigurationResolver struct {
 	config *conftypes.CompletionsConfig

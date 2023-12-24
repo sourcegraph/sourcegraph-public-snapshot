@@ -7391,6 +7391,9 @@ type Site implements SettingsSubject {
     """
     codyLLMConfiguration: CodyLLMConfiguration
 
+
+    codyConfigFeatures: CodyConfigFeatures
+
     """
     Returns the status of the Cody Rate limits when using the `sourcegraph` provider.
     If the instance is not using the Cody Gateway there will be no rate limits.
@@ -7433,6 +7436,13 @@ type CodyLLMConfiguration {
     Name of the provider being used for LLM interactions.
     """
     provider: String!
+}
+
+type CodyConfigFeatures {
+    """
+    Name of the model being used for chat
+    """
+    chat: Boolean!
 }
 
 """

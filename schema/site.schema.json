@@ -2866,6 +2866,21 @@
           "perUserDailyLimit": 100
         }
       ]
+    },
+    "configFeatures": {
+      "description": "Configuration for the completions service.",
+      "type": "object",
+      "properties": {
+        "chat": {
+          "description": "The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.",
+          "type": "boolean"
+        }
+      },
+      "examples": [
+        {
+          "chat": true
+        }
+      ]
     }
   },
   "definitions": {

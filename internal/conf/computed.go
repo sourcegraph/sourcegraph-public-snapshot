@@ -2,6 +2,7 @@ package conf
 
 import (
 	"encoding/hex"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -790,6 +791,14 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		PerProUserCodeCompletionsDailyInteractionLimit:         completionsConfig.PerProUserCodeCompletionsDailyInteractionLimit,
 	}
 
+	return computedConfig
+}
+
+func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.ConfigFeatures) {
+	computedConfig := &conftypes.ConfigFeatures{
+		Chat: true,
+	}
+	fmt.Println(computedConfig)
 	return computedConfig
 }
 
