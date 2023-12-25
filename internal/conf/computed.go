@@ -2,7 +2,6 @@ package conf
 
 import (
 	"encoding/hex"
-	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -795,10 +794,19 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 }
 
 func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.ConfigFeatures) {
-	computedConfig := &conftypes.ConfigFeatures{
-		Chat: true,
+	configFeatures := siteConfig.ConfigFeatures
+	// If no completions configuration is set at all, but cody is enabled, assume
+	// a default configuration.
+	if configFeatures == nil {
+		defaultConfig := &conftypes.ConfigFeatures{
+			Chat: true,
+		}
+		return defaultConfig
 	}
-	fmt.Println(computedConfig)
+
+	computedConfig := &conftypes.ConfigFeatures{
+		Chat: configFeatures.Chat,
+	}
 	return computedConfig
 }
 

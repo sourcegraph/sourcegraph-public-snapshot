@@ -587,23 +587,24 @@ func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigu
 	return &codyLLMConfigurationResolver{config: c}
 }
 
-func (r *siteResolver) CodyConfigFeatures(ctx context.Context) *codyLLMConfigurationResolver {
-	mySite := conf.Get().SiteConfig()
-	c := conf.GetCompletionsConfig(mySite)
+func (r *siteResolver) CodyConfigFeatures(ctx context.Context) *codyConfigFeaturesResolver {
+	c := conf.GetConfigFeatures(conf.Get().SiteConfig())
 	if c == nil {
 		return nil
 	}
-
-	wholeConf := conf.GetConfigFeatures(mySite)
 	fmt.Println("This is a reading")
-	fmt.Println(wholeConf)
-	return &codyLLMConfigurationResolver{config: c}
+	fmt.Println(c)
+	return &codyConfigFeaturesResolver{config: c}
 }
 
-func (c *codyLLMConfigurationResolver) Chat() bool { return false }
+func (c *codyConfigFeaturesResolver) Chat() bool { return c.config.Chat }
 
 type codyLLMConfigurationResolver struct {
 	config *conftypes.CompletionsConfig
+}
+
+type codyConfigFeaturesResolver struct {
+	config *conftypes.ConfigFeatures
 }
 
 func (c *codyLLMConfigurationResolver) ChatModel() string { return c.config.ChatModel }
