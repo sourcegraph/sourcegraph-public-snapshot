@@ -2872,7 +2872,15 @@
       "type": "object",
       "properties": {
         "chat": {
-          "description": "The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.",
+          "description": "Enable/Disable Chat for the clients",
+          "type": "boolean"
+        },
+        "autoComplete": {
+          "description": "Enable/Disable AutoComplete for the clients",
+          "type": "boolean"
+        },
+        "commands": {
+          "description": "Enable/Disable special commands for the clients",
           "type": "boolean"
         }
       },

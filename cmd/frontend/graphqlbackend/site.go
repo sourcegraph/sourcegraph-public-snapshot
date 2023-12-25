@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -592,12 +591,14 @@ func (r *siteResolver) CodyConfigFeatures(ctx context.Context) *codyConfigFeatur
 	if c == nil {
 		return nil
 	}
-	fmt.Println("This is a reading")
-	fmt.Println(c)
 	return &codyConfigFeaturesResolver{config: c}
 }
 
 func (c *codyConfigFeaturesResolver) Chat() bool { return c.config.Chat }
+
+func (c *codyConfigFeaturesResolver) AutoComplete() bool { return c.config.AutoComplete }
+
+func (c *codyConfigFeaturesResolver) Commands() bool { return c.config.Commands }
 
 type codyLLMConfigurationResolver struct {
 	config *conftypes.CompletionsConfig

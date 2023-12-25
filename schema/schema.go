@@ -644,8 +644,12 @@ type Completions struct {
 
 // ConfigFeatures description: Configuration for the completions service.
 type ConfigFeatures struct {
-	// Chat description: The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.
+	// AutoComplete description: Enable/Disable AutoComplete for the clients
+	AutoComplete bool `json:"autoComplete,omitempty"`
+	// Chat description: Enable/Disable Chat for the clients
 	Chat bool `json:"chat,omitempty"`
+	// Commands description: Enable/Disable special commands for the clients
+	Commands bool `json:"commands,omitempty"`
 }
 
 // CustomGitFetchMapping description: Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.

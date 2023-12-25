@@ -7391,7 +7391,6 @@ type Site implements SettingsSubject {
     """
     codyLLMConfiguration: CodyLLMConfiguration
 
-
     codyConfigFeatures: CodyConfigFeatures
 
     """
@@ -7440,9 +7439,19 @@ type CodyLLMConfiguration {
 
 type CodyConfigFeatures {
     """
-    Name of the model being used for chat
+    Enable Cody chat feature.
     """
     chat: Boolean!
+
+    """
+    Enable Cody autocomplete feature.
+    """
+    autoComplete: Boolean!
+
+    """
+    Enable Cody special commands feature.
+    """
+    commands: Boolean!
 }
 
 """

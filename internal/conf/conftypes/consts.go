@@ -27,7 +27,9 @@ type CompletionsConfig struct {
 	PerProUserCodeCompletionsDailyInteractionLimit         int
 }
 type ConfigFeatures struct {
-	Chat bool
+	Chat         bool
+	AutoComplete bool
+	Commands     bool
 }
 
 type CompletionsProviderName string
