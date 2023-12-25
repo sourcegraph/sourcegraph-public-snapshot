@@ -60,7 +60,7 @@ pub fn parse_tree(
     source_bytes: &[u8],
 ) -> Vec<Occurrence> {
     let resolver = LocalResolver::new(source_bytes);
-    resolver.process(config, tree, None::<&mut String>)
+    resolver.process(config, tree, None)
 }
 
 #[derive(Debug, Clone)]
@@ -373,7 +373,7 @@ impl<'a> LocalResolver<'a> {
             .expect("Tried to get the root node's parent")
     }
 
-    fn print_scope(&self, w: &mut impl Write, scope_id: ScopeId<'a>, depth: usize) {
+    fn print_scope(&self, w: &mut dyn Write, scope_id: ScopeId<'a>, depth: usize) {
         let scope = self.get_scope(scope_id);
         writeln!(
             w,
@@ -706,7 +706,7 @@ impl<'a> LocalResolver<'a> {
         mut self,
         config: &'a LocalConfiguration,
         tree: &'a tree_sitter::Tree,
-        test_writer: Option<&mut impl Write>,
+        test_writer: Option<&mut dyn Write>,
     ) -> Vec<Occurrence> {
         // First we collect all captures from the tree-sitter locals query
         let captures = Self::collect_captures(config, tree, self.source_bytes);
