@@ -81,6 +81,8 @@ func (r *Renderer) RenderEnvironment(
 	}
 	stacks := stack.NewSet(r.OutputDir, stackSetOptions...)
 
+	preventDestroys := !pointers.DerefZero(env.AllowDestroys)
+
 	// Render all required CDKTF stacks for this environment
 	projectOutput, err := project.NewStack(stacks, project.Variables{
 		ProjectID: env.ProjectID,
@@ -99,6 +101,7 @@ func (r *Renderer) RenderEnvironment(
 			}
 			return nil
 		}(),
+		PreventDestroys: preventDestroys,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create project stack")
@@ -121,6 +124,8 @@ func (r *Renderer) RenderEnvironment(
 		Environment: env,
 
 		StableGenerate: r.StableGenerate,
+
+		PreventDestroys: preventDestroys,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create cloudrun stack")
