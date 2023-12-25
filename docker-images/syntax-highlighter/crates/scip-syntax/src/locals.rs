@@ -336,7 +336,7 @@ impl<'a> LocalResolver<'a> {
         match is_new_definition {
             DefRef::NewDefinition(definition_id) => {
                 self.occurrences.push(scip::types::Occurrence {
-                    range: node.to_scip_range(),
+                    range: node.scip_range(),
                     symbol: format_symbol(definition_id.as_local_symbol()),
                     symbol_roles: scip::types::SymbolRole::Definition.value(),
                     ..Default::default()
@@ -691,7 +691,7 @@ impl<'a> LocalResolver<'a> {
 
                 let symbol = format_symbol(def_id.as_local_symbol());
                 ref_occurrences.push(scip::types::Occurrence {
-                    range: node.to_scip_range(),
+                    range: node.scip_range(),
                     symbol: symbol.clone(),
                     ..Default::default()
                 });
