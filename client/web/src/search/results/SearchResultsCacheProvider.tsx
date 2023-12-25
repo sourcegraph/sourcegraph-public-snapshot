@@ -80,7 +80,7 @@ export function useCachedSearchResults(props: CachedSearchResultsInput): Aggrega
                 return of(cachedResults.current?.cache[filterQuery])
             }
 
-            const stream = streamSearch(of(`${query} ${filterQuery}`), options).pipe(share())
+            const stream = streamSearch(of(`${query} ${filterQuery}`.trim()), options).pipe(share())
 
             // If the throttleTime option `trailing` is set, we will return the
             // final value, but it also removes the guarantee that the output events
