@@ -102,7 +102,6 @@ export const hierarchyOf = (symbols: SymbolNodeFields[]): SymbolWithChildren[] =
                 ...symbol,
                 children,
             })
-            return
         }
 
         const children = containerGroups[fullName(sym)]
