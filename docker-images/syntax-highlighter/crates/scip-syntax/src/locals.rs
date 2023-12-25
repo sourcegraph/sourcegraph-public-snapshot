@@ -689,10 +689,9 @@ impl<'a> LocalResolver<'a> {
                     continue;
                 };
 
-                let symbol = format_symbol(def_id.as_local_symbol());
                 ref_occurrences.push(scip::types::Occurrence {
                     range: node.scip_range(),
-                    symbol: symbol.clone(),
+                    symbol: format_symbol(def_id.as_local_symbol()),
                     ..Default::default()
                 });
             }
