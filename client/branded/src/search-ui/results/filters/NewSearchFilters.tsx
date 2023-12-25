@@ -32,12 +32,11 @@ interface NewSearchFiltersProps {
     query: string
     results: SearchMatch[] | undefined
     filters?: ResultFilter[]
-    className?: string
     onQueryChange: (nextQuery: string) => void
 }
 
 export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
-    const { query, results, filters, className, onQueryChange } = props
+    const { query, results, filters, onQueryChange } = props
 
     const [filterQuery, setFilterQuery] = useFilterQuery()
 

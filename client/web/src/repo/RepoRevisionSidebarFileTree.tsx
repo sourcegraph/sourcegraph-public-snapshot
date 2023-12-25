@@ -412,11 +412,7 @@ function renderNode({
                     handleSelect(event)
                 }}
             >
-                <Icon
-                    svgPath={mdiFolderArrowUp}
-                    className={classNames('mr-1', styles.icon)}
-                    aria-label="Load parent directory"
-                />
+                <Icon svgPath={mdiFolderArrowUp} className="mr-1" aria-label="Load parent directory" />
                 {name}
             </Link>
         )
@@ -438,11 +434,7 @@ function renderNode({
                             handleSelect(event)
                         }}
                     >
-                        <Icon
-                            svgPath={mdiSourceRepository}
-                            className={classNames('mr-1', styles.icon)}
-                            aria-label={tooltip}
-                        />
+                        <Icon svgPath={mdiSourceRepository} className="mr-1" aria-label={tooltip} />
                         {title}
                     </Link>
                 </Tooltip>
@@ -451,11 +443,7 @@ function renderNode({
         return (
             <Tooltip content={tooltip}>
                 <span {...props}>
-                    <Icon
-                        svgPath={mdiSourceRepository}
-                        className={classNames('mr-1', styles.icon)}
-                        aria-label={tooltip}
-                    />
+                    <Icon svgPath={mdiSourceRepository} className="mr-1" aria-label={tooltip} />
                     {title}
                 </span>
             </Tooltip>
@@ -495,7 +483,7 @@ function renderNode({
                                         : mdiFolderOutline
                                     : DEFAULT_FILE_ICON.path
                             }
-                            className={classNames('mr-1', styles.icon)}
+                            className="mr-1"
                             aria-hidden={true}
                         />
                     )}
