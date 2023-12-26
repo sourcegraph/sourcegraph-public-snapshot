@@ -1,5 +1,4 @@
 import type { ErrorLike } from '@sourcegraph/common'
-import type { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 
 import type { ConnectionQueryArguments } from '../components/FilteredConnection'
 import type { UsePreciseCodeIntelForPositionVariables } from '../graphql-operations'
@@ -50,7 +49,7 @@ export interface UseCodeIntelParameters {
     searchToken: string
     fileContent: string
 
-    spec: LanguageSpec | undefined
+    languages: string[]
 
     isFork: boolean
     isArchived: boolean
