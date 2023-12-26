@@ -3,13 +3,13 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"html/template"
 	"io"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/go-enry/go-enry/v2"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
@@ -1057,16 +1057,13 @@ func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) 
 }
 
 func (d *dummyFileResolver) Languages(ctx context.Context) ([]string, error) {
-	filename := d.Name()
-	languages := enry.GetLanguages(filename, nil)
-	if len(languages) <= 1 {
-		return languages, nil
-	}
-	content, err := d.Content(ctx, &GitTreeContentPageArgs{})
-	if err != nil {
-		return nil, err
-	}
-	return enry.GetLanguages(filename, []byte(content)), nil
+	return languages.GetLanguages(d.Name(), func() ([]byte, error) {
+		content, err := d.Content(ctx, &GitTreeContentPageArgs{})
+		if err != nil {
+			return nil, err
+		}
+		return []byte(content), nil
+	})
 }
 
 func (d *dummyFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {

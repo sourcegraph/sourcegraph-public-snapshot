@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"io/fs"
 	"net/url"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-enry/go-enry/v2"
 	"github.com/inconshreveable/log15"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -267,16 +267,21 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 }
 
 func (r *GitTreeEntryResolver) Languages(ctx context.Context) ([]string, error) {
-	filename := r.Name()
-	languages := enry.GetLanguages(filename, nil)
-	if len(languages) <= 1 {
-		return languages, nil
+	// As of now, only GitBlob exposes a language field in the GraphQL
+	// API, but since GitTreeEntry and GitBlob are both implemented
+	// via the same GitTreeEntryResolver in the backend,
+	// add this check to be defensive instead of potentially
+	// returning an incorrect result.
+	if r.IsDirectory() {
+		return nil, nil
 	}
-	_, err := r.Content(ctx, &GitTreeContentPageArgs{})
-	if err != nil {
-		return nil, err
-	}
-	return enry.GetLanguages(filename, r.fullContentBytes), nil
+	return languages.GetLanguages(r.Name(), func() ([]byte, error) {
+		_, err := r.Content(ctx, &GitTreeContentPageArgs{})
+		if err != nil {
+			return nil, err
+		}
+		return r.fullContentBytes, nil
+	})
 }
 
 func (r *GitTreeEntryResolver) Commit() *GitCommitResolver { return r.commit }

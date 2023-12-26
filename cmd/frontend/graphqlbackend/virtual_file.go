@@ -3,11 +3,11 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"io/fs"
 	"path"
 	"strings"
 
-	"github.com/go-enry/go-enry/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -94,16 +94,13 @@ func (r *VirtualFileResolver) Content(ctx context.Context, args *GitTreeContentP
 }
 
 func (r *VirtualFileResolver) Languages(ctx context.Context) ([]string, error) {
-	filename := r.Name()
-	languages := enry.GetLanguages(filename, nil)
-	if len(languages) <= 1 {
-		return languages, nil
-	}
-	content, err := r.fileContent(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return enry.GetLanguages(filename, []byte(content)), nil
+	return languages.GetLanguages(r.Name(), func() ([]byte, error) {
+		content, err := r.fileContent(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return []byte(content), nil
+	})
 }
 
 func (r *VirtualFileResolver) RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {

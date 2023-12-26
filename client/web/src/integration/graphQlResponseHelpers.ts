@@ -22,6 +22,7 @@ export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): T
                 entries: toplevelFiles.map(name => ({
                     name,
                     path: name,
+                    language: '',
                     isDirectory: false,
                     url: `${url}/-/blob/${name}`,
                     submodule: null,
