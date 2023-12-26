@@ -116,9 +116,8 @@ func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfiguratio
 			if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 				// Log an event when site config is viewed by non-admin user.
-				if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigRedactedViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
-					r.logger.Warn("Error logging security event", log.Error(err))
-				}
+				r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigRedactedViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil)
+
 			}
 			return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 		}
@@ -127,9 +126,7 @@ func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfiguratio
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an event when site config is viewed by admin user.
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
-			r.logger.Warn("Error logging security event", log.Error(err))
-		}
+		r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil)
 	}
 	return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 }
@@ -380,9 +377,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an event when site config is updated
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
-			r.logger.Warn("Error logging security event", log.Error(err))
-		}
+		r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil)
 	}
 	return server.NeedServerRestart(), nil
 }

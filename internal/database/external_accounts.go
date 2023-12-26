@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -194,7 +195,15 @@ AND deleted_at IS NULL
 	}
 
 	// This logs an audit event for account changes but only if they are initiated via SCIM
-	logAccountModifiedEvent(ctx, NewDBWith(s.logger, s), userID, "scim")
+	//logAccountModifiedEvent(ctx, NewDBWith(s.logger, s), userID, "scim")
+	arg := struct {
+		Modifier    int32  `json:"modifier"`
+		ServiceType string `json:"service_type"`
+	}{
+		Modifier:    actor.FromContext(ctx).UID,
+		ServiceType: "scim",
+	}
+	NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventNameAccountModified, "", uint32(userID), "", "scim", arg)
 
 	return
 }

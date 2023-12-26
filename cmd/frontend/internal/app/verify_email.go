@@ -1,17 +1,14 @@
 package app
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -62,7 +59,8 @@ func serveVerifyEmail(db database.DB) http.HandlerFunc {
 			}
 		}
 
-		logEmailVerified(ctx, db, r, actr.UID)
+		//logEmailVerified(ctx, db, r, actr.UID)
+		db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailVerified, r.URL.Path, uint32(actr.UID), "", "BACKEND", email)
 
 		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 			UserID: usr.ID,
@@ -76,19 +74,19 @@ func serveVerifyEmail(db database.DB) http.HandlerFunc {
 	}
 }
 
-func logEmailVerified(ctx context.Context, db database.DB, r *http.Request, userID int32) {
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameEmailVerified,
-		URL:       r.URL.Path,
-		UserID:    uint32(userID),
-		Argument:  nil,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
+// func logEmailVerified(ctx context.Context, db database.DB, r *http.Request, userID int32) {
+// 	event := &database.SecurityEvent{
+// 		Name:      database.SecurityEventNameEmailVerified,
+// 		URL:       r.URL.Path,
+// 		UserID:    uint32(userID),
+// 		Argument:  nil,
+// 		Source:    "BACKEND",
+// 		Timestamp: time.Now(),
+// 	}
+// 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
-	db.SecurityEventLogs().LogEvent(ctx, event)
-}
+// 	db.SecurityEventLogs().LogEvent(ctx, event)
+// }
 
 func httpLogAndError(w http.ResponseWriter, logger log.Logger, msg string, code int, errArgs ...log.Field) {
 	logger.Error(msg, errArgs...)

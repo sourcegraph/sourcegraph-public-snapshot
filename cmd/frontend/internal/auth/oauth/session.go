@@ -121,13 +121,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			span.SetError(err)
 			logger.Error("OAuth failed: error looking up or creating user from OAuth token.", log.Error(err), log.String("userErr", safeErrMsg))
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
-			db.SecurityEventLogs().LogEvent(ctx, &database.SecurityEvent{
-				Name:            s.AuthFailedEventName(),
-				URL:             r.URL.Path, // don't log query params w/ OAuth data
-				AnonymousUserID: anonymousId,
-				Source:          "BACKEND",
-				Timestamp:       time.Now(),
-			})
+			db.SecurityEventLogs().LogSecurityEvent(ctx, s.AuthFailedEventName(), r.URL.Path, uint32(actor.FromContext(ctx).UID), anonymousId, "BACKEND", nil)
 			return
 		}
 
@@ -148,13 +142,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			return
 		}
 
-		db.SecurityEventLogs().LogEvent(ctx, &database.SecurityEvent{
-			Name:      s.AuthSucceededEventName(),
-			URL:       r.URL.Path, // don't log query params w/ OAuth data
-			UserID:    uint32(user.ID),
-			Source:    "BACKEND",
-			Timestamp: time.Now(),
-		})
+		db.SecurityEventLogs().LogSecurityEvent(ctx, s.AuthSucceededEventName(), r.URL.Path, uint32(user.ID), "", "BACKEND", nil)
 
 		redirectURL := auth.AddPostAuthRedirectParametersToString(state.Redirect, newUserCreated, "OAuth::"+s.GetServiceID())
 		http.Redirect(w, r, auth.SafeRedirectURL(redirectURL), http.StatusFound)
