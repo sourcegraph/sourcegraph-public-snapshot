@@ -133,7 +133,7 @@ type SecurityEventLogsStore interface {
 	// Bulk "LogEvent" action.
 	LogEventList(ctx context.Context, events []*SecurityEvent)
 	// LogSecurityEvent logs the given security event.
-	LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error
+	LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any)
 }
 
 type securityEventLogsStore struct {
@@ -250,23 +250,23 @@ func (s *securityEventLogsStore) LogEventList(ctx context.Context, events []*Sec
 	}
 }
 
-func (s *securityEventLogsStore) LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error {
-	argsJSON, err := json.Marshal(arguments)
-	if err != nil {
-		return errors.Wrap(err, "error marshalling arguments")
+func (s *securityEventLogsStore) LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) {
 
-	}
-
-	event := SecurityEvent{
+	var event SecurityEvent
+	event = SecurityEvent{
 		Name:            eventName,
 		URL:             url,
 		UserID:          userID,
 		AnonymousUserID: anonymousUserID,
-		Argument:        argsJSON,
 		Source:          source,
 		Timestamp:       time.Now(),
 	}
-
+	argsJSON, err := json.Marshal(arguments)
+	if err != nil {
+		errors.Wrap(err, "error marshalling arguments")
+		event.Argument = nil
+	} else {
+		event.Argument = argsJSON
+	}
 	s.LogEvent(ctx, &event)
-	return nil
 }
