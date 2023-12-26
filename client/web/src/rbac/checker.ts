@@ -2,7 +2,12 @@ import { findIndex } from 'lodash'
 
 import type { AuthenticatedUser } from '../auth'
 
-export const doesUserHavePermission = (user: AuthenticatedUser | null, permissionToCheckFor: string): boolean => {
+import type { RbacPermission } from './constants'
+
+export const doesUserHavePermission = (
+    user: AuthenticatedUser | null,
+    permissionToCheckFor: RbacPermission
+): boolean => {
     if (user === null) {
         return false
     }

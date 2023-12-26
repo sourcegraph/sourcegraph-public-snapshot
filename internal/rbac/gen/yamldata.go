@@ -126,11 +126,15 @@ func loadSchema(filename string) (*schema, error) {
 
 func generateTSConstants(output io.Writer, permissions []permissionNamespace) {
 	fmt.Fprintln(output, TSGeneratedByTarget)
-	for _, permission := range permissions {
+	var permissionNames = make([]string, len(permissions))
+	for index, permission := range permissions {
 		fmt.Fprintln(output)
 		name := permission.zanziBarFormat()
-		fmt.Fprintf(output, "export const %sPermission = '%s'\n", sentencizeNamespace(name), name)
+		permissionNames[index] = fmt.Sprintf("'%s'", name)
+		fmt.Fprintf(output, "export const %sPermission: RbacPermission = '%s'\n", sentencizeNamespace(name), name)
 	}
+	fmt.Fprintln(output)
+	fmt.Fprintf(output, "export type RbacPermission = %s\n", strings.Join(permissionNames, " | "))
 }
 
 func generateGoConstants(output io.Writer, permissions []permissionNamespace) {
