@@ -9,8 +9,8 @@ import { Button, H1, Icon, Link, PageHeader, ProductStatusBadge, ButtonLink } fr
 import { AddOwnerModal } from '../../components/own/AddOwnerModal'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { doesUserHavePermission } from '../../rbac/checker'
 import { OwnershipAssignPermission } from '../../rbac/constants'
+import { doesUserHavePermission } from '../../rbac/permission'
 import { TreeOwnershipPanel } from '../../repo/blob/own/TreeOwnershipPanel'
 import { FilePathBreadcrumbs } from '../../repo/FilePathBreadcrumbs'
 
