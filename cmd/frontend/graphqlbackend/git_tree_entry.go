@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-enry/go-enry/v2"
 	"github.com/inconshreveable/log15"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -263,6 +264,19 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 		RepoName: r.commit.repoResolver.Name(),
 		Revision: string(r.commit.oid),
 	})
+}
+
+func (r *GitTreeEntryResolver) Languages(ctx context.Context) ([]string, error) {
+	filename := r.Name()
+	languages := enry.GetLanguages(filename, nil)
+	if len(languages) <= 1 {
+		return languages, nil
+	}
+	_, err := r.Content(ctx, &GitTreeContentPageArgs{})
+	if err != nil {
+		return nil, err
+	}
+	return enry.GetLanguages(filename, r.fullContentBytes), nil
 }
 
 func (r *GitTreeEntryResolver) Commit() *GitCommitResolver { return r.commit }

@@ -65,6 +65,7 @@ export interface DocumentInfo {
     filePath: string
     commitID: string
     revision?: string
+    languages: string[]
 }
 
 export interface CodeIntelAPIConfig {
@@ -76,7 +77,6 @@ export interface CodeIntelAPIConfig {
      * Information about the current document.
      */
     documentInfo: DocumentInfo
-    mode: string
 
     /**
      * Called to create the code intel tooltip.
@@ -392,7 +392,7 @@ export class CodeIntelAPIAdapter {
                     },
                 })
 
-                if (isPrecise && hasFindImplementationsSupport(this.config.mode)) {
+                if (isPrecise && this.config.documentInfo.languages.some(hasFindImplementationsSupport)) {
                     actions.push({
                         active: true,
                         action: {

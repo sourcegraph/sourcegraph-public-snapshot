@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-enry/go-enry/v2"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
@@ -1053,6 +1054,19 @@ func (d *dummyFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 
 func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	return nil, errors.New("not implemented")
+}
+
+func (d *dummyFileResolver) Languages(ctx context.Context) ([]string, error) {
+	filename := d.Name()
+	languages := enry.GetLanguages(filename, nil)
+	if len(languages) <= 1 {
+		return languages, nil
+	}
+	content, err := d.Content(ctx, &GitTreeContentPageArgs{})
+	if err != nil {
+		return nil, err
+	}
+	return enry.GetLanguages(filename, []byte(content)), nil
 }
 
 func (d *dummyFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {

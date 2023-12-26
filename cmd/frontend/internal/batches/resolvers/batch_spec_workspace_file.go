@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-enry/go-enry/v2"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -90,6 +91,10 @@ func (r *batchSpecWorkspaceFileResolver) IsDirectory() bool {
 
 func (r *batchSpecWorkspaceFileResolver) Content(ctx context.Context, args *graphqlbackend.GitTreeContentPageArgs) (string, error) {
 	return "", errors.New("not implemented")
+}
+
+func (r *batchSpecWorkspaceFileResolver) Languages() ([]string, error) {
+	return enry.GetLanguages(r.file.FileName, r.file.Content), nil
 }
 
 func (r *batchSpecWorkspaceFileResolver) ByteSize(ctx context.Context) (int32, error) {
