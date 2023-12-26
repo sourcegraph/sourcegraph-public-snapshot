@@ -20,7 +20,7 @@ import { RepositoryOwnPageContents } from './RepositoryOwnPageContents'
 export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'>, TelemetryProps {
     /** The active repository. */
     repo: RepositoryFields
-    authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'> | null
+    authenticatedUser: AuthenticatedUser | null
 }
 
 const EDIT_PAGE_BREADCRUMB = { key: 'edit-own', element: 'Upload CODEOWNERS' }
