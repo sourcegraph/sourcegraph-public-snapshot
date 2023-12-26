@@ -263,12 +263,7 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
             key={shouldMixPreciseAndSearchBasedReferences.toString()}
             {...props}
             searchToken={tokenResult}
-            // The file extensions attached to the 'spec' value here are
-            // used for search-based code intel. However, determining
-            // the spec purely based on the file path is wrong.
-            //
-            // See FIXME(id: language-detection).
-            languages={languages}
+            mainBlobLanguages={languages}
         />
     )
 }
@@ -292,7 +287,7 @@ const ReferencesList: React.FunctionComponent<
     React.PropsWithChildren<
         ReferencesPanelPropsWithToken & {
             searchToken: string
-            languages: string[]
+            mainBlobLanguages: string[]
             fileContent: string
             collapsedState: State['collapsedState']
         }
@@ -341,7 +336,7 @@ const ReferencesList: React.FunctionComponent<
         },
         fileContent: props.fileContent,
         searchToken: props.searchToken,
-        languages: props.languages,
+        languages: props.mainBlobLanguages,
         isFork: props.isFork,
         isArchived: props.isArchived,
         getSetting,

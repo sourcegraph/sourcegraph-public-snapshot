@@ -698,7 +698,7 @@ function useCodeIntelExtension(
                   })
                 : [],
         ],
-        [repoName, filePath, commitID, revision, mode, api, navigate, locationRef]
+        [repoName, filePath, commitID, revision, mode, api, navigate, locationRef, languages]
     )
 }
 
