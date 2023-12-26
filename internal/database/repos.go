@@ -154,7 +154,7 @@ var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
 func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
 
 	a := actor.FromContext(ctx)
-	arg, _ := json.Marshal(struct {
+	arg := struct {
 		Resource string       `json:"resource"`
 		Service  string       `json:"service"`
 		Repos    []api.RepoID `json:"repo_ids"`
@@ -162,26 +162,13 @@ func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
 		Resource: "db.repo",
 		Service:  env.MyName,
 		Repos:    ids,
-	})
-
-	event := &SecurityEvent{
-		Name:            SecurityEventNameAccessGranted,
-		URL:             "",
-		UserID:          uint32(a.UID),
-		AnonymousUserID: "",
-		Argument:        arg,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
 	}
 
-	// If this event was triggered by an internal actor we need to ensure that at
-	// least the UserID or AnonymousUserID field are set so that we don't trigger
-	// the security_event_logs_check_has_user constraint
+	anonymousID := ""
 	if a.Internal {
-		event.AnonymousUserID = "internal"
+		anonymousID = "internal"
 	}
-
-	db.SecurityEventLogs().LogEvent(ctx, event)
+	db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventNameAccessGranted, anonymousID, uint32(a.UID), "", "BACKEND", arg)
 }
 
 // GetByName returns the repository with the given nameOrUri from the
@@ -868,6 +855,7 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 	if len(privateIDs) > 0 {
 		counterAccessGranted.Inc()
 		logPrivateRepoAccessGranted(ctx, NewDBWith(s.logger, s), privateIDs)
+
 	}
 
 	return nil

@@ -70,6 +70,7 @@ func serveSignOutHandler(logger log.Logger, db database.DB) http.HandlerFunc {
 
 		if err == nil {
 			recordSecurityEvent(r, db, database.SecurityEventNameSignOutSucceeded, nil)
+
 			recorder.Record(ctx, telemetry.FeatureSignOut, telemetry.ActionSucceeded, nil)
 		}
 
@@ -88,22 +89,12 @@ func recordSecurityEvent(r *http.Request, db database.DB, name database.Security
 	if err != nil {
 		arg.Error = err.Error()
 	}
-
 	marshalled, _ := json.Marshal(arg)
 
-	event := &database.SecurityEvent{
-		Name:      name,
-		URL:       r.URL.Path,
-		UserID:    uint32(a.UID),
-		Argument:  marshalled,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-
 	// Safe to ignore this error
-	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
+	anonymousUserID, _ := cookie.AnonymousUID(r)
 
-	db.SecurityEventLogs().LogEvent(ctx, event)
+	db.SecurityEventLogs().LogSecurityEvent(ctx, name, r.URL.Path, uint32(a.UID), anonymousUserID, "BACKEND", arg)
 
 	// Legacy event - TODO: Remove in 5.3, alongside the teestore.WithoutV1
 	// context.
