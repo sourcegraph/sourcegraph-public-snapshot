@@ -50,6 +50,8 @@ type Variables struct {
 	Environment spec.EnvironmentSpec
 
 	StableGenerate bool
+
+	PreventDestroys bool
 }
 
 const StackName = "cloudrun"
@@ -192,6 +194,8 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			WorkloadIdentity:       *vars.IAM.CloudRunWorkloadServiceAccount,
 			OperatorAccessIdentity: *vars.IAM.OperatorAccessServiceAccount,
 
+			PreventDestroys: vars.PreventDestroys,
+
 			// ServiceNetworkingConnection is required for Cloud SQL to connect
 			// to the private network, so we must wait for it to be provisioned.
 			// See https://cloud.google.com/sql/docs/mysql/private-ip#network_requirements
@@ -236,6 +240,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			ServiceID:              vars.Service.ID,
 			WorkloadServiceAccount: vars.IAM.CloudRunWorkloadServiceAccount,
 			Spec:                   *vars.Environment.Resources.BigQueryDataset,
+			PreventDestroys:        vars.PreventDestroys,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render BigQuery dataset")

@@ -38,6 +38,10 @@ type Variables struct {
 
 	// SecretEnv should be the environment config that sources from secrets.
 	SecretEnv map[string]string
+
+	// PreventDestroys indicates if destroys should be allowed on core components of
+	// this resource.
+	PreventDestroys bool
 }
 
 const StackName = "iam"
@@ -108,6 +112,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			DisplayName: fmt.Sprintf("%s Service Account",
 				pointers.Deref(vars.Service.Name, vars.Service.ID)),
 			Roles: serviceAccountRoles,
+
+			// There may be external references to the service account to allow
+			// the workload access to external resources, so guard it from deletes.
+			PreventDestroys: vars.PreventDestroys,
 		})
 
 	// Create a service account for operators to impersonate to access other

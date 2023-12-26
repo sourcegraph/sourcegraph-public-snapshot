@@ -51,6 +51,11 @@ type Config struct {
 	// Network to connect the created Cloud SQL instance to.
 	Network computenetwork.ComputeNetwork
 
+	// PreventDestroys indicates if destroys should be allowed on core components of
+	// this resource.
+	PreventDestroys bool
+
+	// DependsOn indicates resources that must be provisioned first.
 	DependsOn []cdktf.ITerraformDependable
 }
 
@@ -124,11 +129,11 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			},
 		},
 
-		// More of an inconvenience than anything else - is still delete-able
-		// from the UI.
-		DeletionProtection: pointers.Ptr(false),
-
+		// By default, ensure that we can't destroy a service database by accident.
+		DeletionProtection: &config.PreventDestroys,
 		Lifecycle: &cdktf.TerraformResourceLifecycle{
+			PreventDestroy: &config.PreventDestroys,
+
 			// Autoscaling is typically enabled - no need to worry about it
 			IgnoreChanges: []string{"settings[0].disk_size"},
 		},
@@ -149,6 +154,12 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 				&sqldatabase.SqlDatabaseConfig{
 					Name:     pointers.Ptr(db),
 					Instance: instance.Name(),
+
+					// By default, ensure that we can't destroy a service database by accident.
+					Lifecycle: &cdktf.TerraformResourceLifecycle{
+						PreventDestroy: &config.PreventDestroys,
+					},
+
 					// PostgreSQL cannot delete databases if there are users
 					// other than cloudsqlsuperuser with access
 					DeletionPolicy: pointers.Ptr("ABANDON"),
