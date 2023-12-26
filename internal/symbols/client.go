@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -131,12 +130,10 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 }
 
 func (c *Client) searchGRPC(ctx context.Context, args search.SymbolsParameters) (search.SymbolsResponse, error) {
-	conn, err := c.getGRPCConn(string(args.Repo))
+	grpcClient, err := c.gRPCClient(string(args.Repo))
 	if err != nil {
-		return search.SymbolsResponse{}, errors.Wrap(err, "getting gRPC connection to symbols server")
+		return search.SymbolsResponse{}, errors.Wrap(err, "getting gRPC symbols client")
 	}
-
-	grpcClient := proto.NewSymbolsServiceClient(conn)
 
 	var protoArgs proto.SearchRequest
 	protoArgs.FromInternal(&args)
@@ -193,12 +190,10 @@ func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) 
 }
 
 func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
-	conn, err := c.getGRPCConn(path.Repo)
+	grpcClient, err := c.gRPCClient(path.Repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting gRPC connection to symbols server")
+		return nil, errors.Wrap(err, "getting gRPC symbols client")
 	}
-
-	grpcClient := proto.NewSymbolsServiceClient(conn)
 
 	var rcp proto.RepoCommitPath
 	rcp.FromInternal(&path)
@@ -312,12 +307,10 @@ func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint)
 }
 
 func (c *Client) symbolInfoGRPC(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
-	conn, err := c.getGRPCConn(args.Repo)
+	client, err := c.gRPCClient(args.Repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting gRPC connection to symbols server")
+		return nil, errors.Wrap(err, "getting gRPC symbols client")
 	}
-
-	client := proto.NewSymbolsServiceClient(conn)
 
 	var rcp proto.RepoCommitPath
 	rcp.FromInternal(&args.RepoCommitPath)
@@ -408,13 +401,18 @@ func (c *Client) httpPost(
 	return c.HTTPClient.Do(req)
 }
 
-func (c *Client) getGRPCConn(repo string) (*grpc.ClientConn, error) {
+func (c *Client) gRPCClient(repo string) (proto.SymbolsServiceClient, error) {
 	address, err := c.Endpoints.Get(repo)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting symbols server address for repo %q", repo)
 	}
 
-	return c.GRPCConnectionCache.GetConnection(address)
+	conn, err := c.GRPCConnectionCache.GetConnection(address)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting gRPC connection to symbols server at %q", address)
+	}
+
+	return &automaticRetryClient{base: proto.NewSymbolsServiceClient(conn)}, nil
 }
 
 func (c *Client) url(repo api.RepoName) (string, error) {

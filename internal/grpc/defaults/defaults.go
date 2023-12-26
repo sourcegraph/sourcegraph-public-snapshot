@@ -12,6 +12,7 @@ import (
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/retry"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
@@ -77,25 +78,27 @@ func defaultDialOptions(logger log.Logger, creds credentials.TransportCredential
 	out := []grpc.DialOption{
 		grpc.WithTransportCredentials(creds),
 		grpc.WithChainStreamInterceptor(
-			metrics.StreamClientInterceptor(),
-			messagesize.StreamClientInterceptor,
 			propagator.StreamClientPropagator(actor.ActorPropagator{}),
 			propagator.StreamClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.StreamClientPropagator(requestclient.Propagator{}),
 			propagator.StreamClientPropagator(requestinteraction.Propagator{}),
 			otelgrpc.StreamClientInterceptor(),
+			retry.StreamClientInterceptor(logger),
+			metrics.StreamClientInterceptor(),
+			messagesize.StreamClientInterceptor,
 			internalerrs.PrometheusStreamClientInterceptor,
 			internalerrs.LoggingStreamClientInterceptor(logger),
 			contextconv.StreamClientInterceptor,
 		),
 		grpc.WithChainUnaryInterceptor(
-			metrics.UnaryClientInterceptor(),
-			messagesize.UnaryClientInterceptor,
 			propagator.UnaryClientPropagator(actor.ActorPropagator{}),
 			propagator.UnaryClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.UnaryClientPropagator(requestclient.Propagator{}),
 			propagator.UnaryClientPropagator(requestinteraction.Propagator{}),
 			otelgrpc.UnaryClientInterceptor(),
+			retry.UnaryClientInterceptor(logger),
+			metrics.UnaryClientInterceptor(),
+			messagesize.UnaryClientInterceptor,
 			internalerrs.PrometheusUnaryClientInterceptor,
 			internalerrs.LoggingUnaryClientInterceptor(logger),
 			contextconv.UnaryClientInterceptor,

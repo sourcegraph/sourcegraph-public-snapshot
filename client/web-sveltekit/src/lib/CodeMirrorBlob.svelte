@@ -107,7 +107,7 @@
         temporaryTooltip,
     } from '$lib/web'
     import { goto } from '$app/navigation'
-    import { getModeFromPath, type CodeIntelAPI } from '$lib/shared'
+    import { type CodeIntelAPI } from '$lib/shared'
     import { goToDefinition, openImplementations, openReferences } from './repo/blob'
     import type { LineOrPositionOrRange } from '$lib/common'
 
@@ -134,13 +134,12 @@
         commitID: blobInfo.commitID,
         revision: blobInfo.revision,
         filePath: blobInfo.filePath,
+        languages: blobInfo.languages,
     }
-    $: mode = getModeFromPath(blobInfo.filePath)
     $: codeIntelExtension = createCodeIntelExtension({
         api: {
             api: codeIntelAPI,
             documentInfo: documentInfo,
-            mode,
             goToDefinition: (view, definition, options) => goToDefinition(documentInfo, view, definition, options),
             openReferences,
             openImplementations,

@@ -1,8 +1,8 @@
 package spec
 
 type BuildSpec struct {
-	Image  string          `json:"image"`
-	Source BuildSourceSpec `json:"source"`
+	Image  string          `yaml:"image"`
+	Source BuildSourceSpec `yaml:"source"`
 }
 
 func (s BuildSpec) Validate() []error {
@@ -12,6 +12,6 @@ func (s BuildSpec) Validate() []error {
 }
 
 type BuildSourceSpec struct {
-	Repo string `json:"repo"`
-	Dir  string `json:"dir"`
+	Repo string `yaml:"repo"`
+	Dir  string `yaml:"dir"`
 }

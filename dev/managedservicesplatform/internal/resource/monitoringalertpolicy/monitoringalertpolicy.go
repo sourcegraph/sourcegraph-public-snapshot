@@ -232,7 +232,7 @@ func buildFilter(config *Config) string {
 	case CloudRedis:
 		filters = append(filters,
 			`resource.type = "redis_instance"`,
-			fmt.Sprintf(`resource.labels.redis_instance_id = "%s"`, config.ServiceName),
+			fmt.Sprintf(`resource.labels.instance_id = "%s"`, config.ServiceName),
 		)
 	}
 
