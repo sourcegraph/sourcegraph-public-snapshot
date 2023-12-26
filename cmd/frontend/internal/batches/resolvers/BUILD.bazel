@@ -82,6 +82,7 @@ go_library(
         "//lib/batches",
         "//lib/batches/execution",
         "//lib/errors",
+        "@com_github_go_enry_go_enry_v2//:go-enry",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//relay",
