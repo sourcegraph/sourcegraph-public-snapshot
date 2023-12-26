@@ -137,6 +137,9 @@ interface FileInfo {
     isTest: boolean
 }
 
+/**
+ * @deprecated See FIXME(id: language-detection).
+ */
 export function getFileInfo(file: string, isDirectory: boolean): FileInfo {
     if (isDirectory) {
         return {

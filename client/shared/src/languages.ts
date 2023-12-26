@@ -12,7 +12,8 @@ const PLAINTEXT_MODE = 'plaintext'
 //
 // For example, MATLAB and Objective-C both use the '.m' file extension.
 //
-// See https://github.com/sourcegraph/sourcegraph/issues/56376
+// See https://github.com/sourcegraph/sourcegraph/issues/56376 and
+// https://github.com/sourcegraph/sourcegraph/issues/56377
 
 /**
  * getModeFromPath returns the LSP mode for the provided file path. If the file path does not correspond to any
