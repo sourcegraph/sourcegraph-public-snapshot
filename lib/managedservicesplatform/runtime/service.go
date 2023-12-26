@@ -38,7 +38,7 @@ func Start[
 	ConfigT any,
 	LoaderT ConfigLoader[ConfigT],
 ](service Service[ConfigT]) {
-	passSanityCheck()
+	passSanityCheck(service)
 
 	// Resource representing the service
 	res := log.Resource{
