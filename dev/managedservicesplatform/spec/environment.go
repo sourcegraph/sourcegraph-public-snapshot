@@ -60,6 +60,16 @@ type EnvironmentSpec struct {
 
 	// Resources configures additional resources that a service may depend on.
 	Resources *EnvironmentResourcesSpec `yaml:"resources,omitempty"`
+
+	// AllowDestroys, if false, configures Terraform lifecycle guards against
+	// deletion of potentially critical resources. This includes things like the
+	// environment project and databases.
+	// https://developer.hashicorp.com/terraform/tutorials/state/resource-lifecycle#prevent-resource-deletion
+	//
+	// To tear down an environment, or to apply a change that intentionally
+	// causes deletion on guarded resources, set this to true and apply the
+	// generated Terraform first.
+	AllowDestroys *bool `yaml:"allowDestroys,omitempty"`
 }
 
 func (s EnvironmentSpec) Validate() []error {

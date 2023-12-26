@@ -81,6 +81,10 @@ func (r *Renderer) RenderEnvironment(
 	}
 	stacks := stack.NewSet(r.OutputDir, stackSetOptions...)
 
+	// If destroys are not allowed, configure relevant resources to prevent
+	// destroys.
+	preventDestroys := !pointers.DerefZero(env.AllowDestroys)
+
 	// Render all required CDKTF stacks for this environment
 	projectOutput, err := project.NewStack(stacks, project.Variables{
 		ProjectID: env.ProjectID,
@@ -99,15 +103,17 @@ func (r *Renderer) RenderEnvironment(
 			}
 			return nil
 		}(),
+		PreventDestroys: preventDestroys,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create project stack")
 	}
 	iamOutput, err := iam.NewStack(stacks, iam.Variables{
-		ProjectID: *projectOutput.Project.ProjectId(),
-		Image:     build.Image,
-		Service:   svc,
-		SecretEnv: env.SecretEnv,
+		ProjectID:       *projectOutput.Project.ProjectId(),
+		Image:           build.Image,
+		Service:         svc,
+		SecretEnv:       env.SecretEnv,
+		PreventDestroys: preventDestroys,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create IAM stack")
@@ -121,6 +127,8 @@ func (r *Renderer) RenderEnvironment(
 		Environment: env,
 
 		StableGenerate: r.StableGenerate,
+
+		PreventDestroys: preventDestroys,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create cloudrun stack")
