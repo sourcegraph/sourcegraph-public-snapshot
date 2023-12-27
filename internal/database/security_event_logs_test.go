@@ -158,31 +158,3 @@ func assertEventField(t *testing.T, field map[string]any) {
 // 	})
 
 // }
-
-// func TestLogSecurityEvent(t *testing.T) {
-// 	ctx := context.Background()
-// 	logger, _ := logtest.Captured(t)
-// 	db := NewDB(logger, dbtest.NewDB(t))
-// 	t.Run("valid event", func(t *testing.T) {
-// 		store := db.SecurityEventLogs()
-
-// 		store.LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "/tokens", 123, "anon", "source", nil)
-
-// 		events, err := store.List(ctx, nil)
-// 		assert.NoError(t, err)
-// 		assert.Len(t, events, 1)
-// 		assert.Equal(t, events[0].Name, SecurityEventAccessTokenCreated)
-// 	})
-
-// 	t.Run("error marshalling args", func(t *testing.T) {
-// 		store := db.SecurityEventLogs()
-
-// 		// Pass in unmarshallable arg
-// 		store.LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "/tokens", 123, "anon", "source", make(chan int))
-
-// 		events, err := store.List(ctx, nil)
-// 		assert.NoError(t, err)
-// 		assert.Len(t, events, 1)
-// 		assert.Nil(t, events[0].Argument)
-// 	})
-// }
