@@ -139,6 +139,7 @@ export const fetchBlob = memoizeObservable(
                             serviceKind
                         }
                     }
+                    languages
                 }
             `,
             {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/aws/jsii-runtime-go"
 	"github.com/grafana/regexp"
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectservice"
@@ -81,6 +82,10 @@ type Variables struct {
 
 	// Services is a list of additional GCP services to enable.
 	Services []string
+
+	// PreventDestroys indicates if destroys should be allowed on core components of
+	// this resource.
+	PreventDestroys bool
 }
 
 const StackName = "project"
@@ -124,6 +129,11 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				}
 				return &labels
 			}(vars.Labels),
+
+			// Critical resource that cannot be replaced.
+			Lifecycle: &cdktf.TerraformResourceLifecycle{
+				PreventDestroy: &vars.PreventDestroys,
+			},
 		})
 
 	for _, service := range append(gcpServices, vars.Services...) {
