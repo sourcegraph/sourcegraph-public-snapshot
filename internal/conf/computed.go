@@ -799,7 +799,7 @@ func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.Config
 		return nil
 	}
 	configFeatures := siteConfig.ConfigFeatures
-	// If no completions configuration is set at all, but cody is enabled, assume a default configuration
+	// If no features configuration is set at all, but cody is enabled, assume a default configuration
 	// where all the features are enabled this is to handle edge cases where no config is set etc
 	if configFeatures == nil {
 		return &conftypes.ConfigFeatures{
