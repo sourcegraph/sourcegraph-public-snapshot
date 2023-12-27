@@ -2,9 +2,9 @@
 
 ## General
 
-### `bazel configure` prints out a warning about TSConfig 
+### `bazel configure` prints out a warning about TSConfig
 
-Everytime you run `bazel configure`, you'll see a warning: 
+Everytime you run `bazel configure`, you'll see a warning:
 
 ```
 $ bazel configure
@@ -125,10 +125,10 @@ Bazel uses `xcrun` to locate the SDK and toolchain for iOS/Mac compilation and x
 
 Nonetheless, there is a workaround! Pass the following CLI flag when you try to build a target `--macos_sdk_version=13.3`. With the flag bazel should be able to find the MacOS SDK and you should not get the error anymore. It's recommended to add `build --macos_sdk_version=13.3` to your `.bazelrc` file so that you don't have to add the CLI flag every time you invoke a build.
 
-### I see `error: unable to open mailmap at .mailmap: Too many levels of symbolic links` when running my `bazel run` target (both locally and in CI) 
+### I see `error: unable to open mailmap at .mailmap: Too many levels of symbolic links` when running my `bazel run` target (both locally and in CI)
 
-If you see this, it most probably means that you have a `bazel run //something` that calls `git log`. Git will look for a `.mailmap` at the root of the repository, which we do have in the monorepo. Because 
-`bazel run` runs commands with a working directory which is in the runfiles, symbolic links are getting in the way. 
+If you see this, it most probably means that you have a `bazel run //something` that calls `git log`. Git will look for a `.mailmap` at the root of the repository, which we do have in the monorepo. Because
+`bazel run` runs commands with a working directory which is in the runfiles, symbolic links are getting in the way.
 
 While it says "error", it's to be noted that it doesn't prevent the Git command to continue.
 
@@ -308,7 +308,7 @@ ERROR: Error computing the main repository mapping: no such package '@crate_inde
 
 The current `lockfile` is out of date for 'crate_index'. Please re-run bazel using `CARGO_BAZEL_REPIN=true` if this is expected and the lockfile should be updated.
 ```
-Bazel uses a separate lock file to keep track of the dependencies and needs to be updated. To update the `lockfile` run `CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index`. This command takes a while to execute as it fetches all the dependencies specified in `Cargo.lock` and populates `Cargo.Bazel.lock`.
+Bazel uses a separate lock file to keep track of the dependencies and needs to be updated. To update the `lockfile` run `CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index`. This command takes a while to execute as it fetches all the dependencies specified in `Cargo.lock` and populates `Cargo.Bazel.lock`. This command _might also fail_ in that case [see](#bazel-sync-authentication-failure-when-cloning-syntect).
 
 ### `syntax-highlighter` fails to build and has the error `failed to resolve: use of undeclared crate or module`
 The error looks something like this:
@@ -347,6 +347,42 @@ rust_binary(
     ],
 )
 ```
+
+### `bazel sync` authentication failure when cloning `syntect`
+
+When repinning dependencies with `CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index` it may fail with the following Cargo error:
+
+```
+STDERR ------------------------------------------------------------------------
+
+    Updating crates.io index
+    Updating git repository `https://github.com/sourcegraph/syntect`
+error: failed to get `syntect` as a dependency of package `sg-syntax v0.1.0 (/var/folders/1r/5z42n9p52zv8rfp93gxc1vfr0000gn/T/.tmpyhlucq/crates/sg-syntax)`
+
+Caused by:
+  failed to load source for dependency `syntect`
+
+Caused by:
+  Unable to update https://github.com/sourcegraph/syntect?rev=7e02c5b4085e6d935b960b8106cdd85da04532d2#7e02c5b4
+
+Caused by:
+  failed to clone into: /private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/crate_index/.cargo_home/git/db/syntect-383b2f29eb0ef0d0
+
+Caused by:
+  failed to authenticate when downloading repository: ssh://git@github.com/sourcegraph/syntect
+
+  * attempted ssh-agent authentication, but no usernames succeeded: `git`
+
+  if the git CLI succeeds then `net.git-fetch-with-cli` may help here
+  https://doc.rust-lang.org/cargo/reference/config.html#netgit-fetch-with-cli
+
+Caused by:
+  no authentication methods succeeded
+
+Error: Failed to update lockfile: exit status: 101
+```
+
+You might be able to git ssh clone that repository locally yet in Bazel Cargo it fails. This is because Bazel Cargo doesn't use your `~/.ssh/config` file and thus can't use your SSH private key. The error says you can set `net.git-fetch-with-cli` in `Cargo.toml` or configure a credential helper. All cargo settings also have environment variable variants, so you can do the repinning with `CARGO_NET_GIT_FETCH_WITH_CLI=true CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index` without setting the value in the `Cargo.toml`
 
 ## Docs
 
