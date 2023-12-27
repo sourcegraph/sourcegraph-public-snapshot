@@ -802,12 +802,11 @@ func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.Config
 	// If no completions configuration is set at all, but cody is enabled, assume a default configuration
 	// where all the features are enabled this is to handle edge cases where no config is set etc
 	if configFeatures == nil {
-		defaultConfig := &conftypes.ConfigFeatures{
+		return &conftypes.ConfigFeatures{
 			Chat:         true,
 			AutoComplete: true,
 			Commands:     true,
 		}
-		return defaultConfig
 	}
 
 	computedConfig := &conftypes.ConfigFeatures{
