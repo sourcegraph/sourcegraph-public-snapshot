@@ -2066,8 +2066,12 @@ type RateLimits struct {
 	GraphQLMaxAliases int `json:"graphQLMaxAliases,omitempty"`
 	// GraphQLMaxDepth description: Maximum depth of nested objects allowed for GraphQL queries. Changes to this setting require a restart.
 	GraphQLMaxDepth int `json:"graphQLMaxDepth,omitempty"`
+	// GraphQLMaxDuplicateFieldCount description: Maximum number of duplicate fields allowed in a GraphQL request
+	GraphQLMaxDuplicateFieldCount int `json:"graphQLMaxDuplicateFieldCount,omitempty"`
 	// GraphQLMaxFieldCount description: Maximum number of estimated fields allowed in a GraphQL response
 	GraphQLMaxFieldCount int `json:"graphQLMaxFieldCount,omitempty"`
+	// GraphQLMaxUniqueFieldCount description: Maximum number of unique fields allowed in a GraphQL request
+	GraphQLMaxUniqueFieldCount int `json:"graphQLMaxUniqueFieldCount,omitempty"`
 }
 
 // RepoPurgeWorker description: Configuration for repository purge worker.
