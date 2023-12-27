@@ -46,7 +46,6 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
     }
 
     const objectType = maybeObjectType || 'tree'
-    const mode = getModeFromPath(filePath)
 
     // Redirect OpenGrok-style line number hashes (#123, #123-321) to query parameter (?L123, ?L123-321)
     const hashLineNumberMatch = location.hash.match(/^#?(\d+)(-\d+)?$/)
@@ -103,7 +102,6 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                     repoName={repoName}
                                     repoUrl={repo?.url}
                                     repoServiceType={repo?.externalRepository?.serviceType}
-                                    mode={mode}
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps
                                     }
