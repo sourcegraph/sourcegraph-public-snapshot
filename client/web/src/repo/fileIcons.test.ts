@@ -8,7 +8,9 @@ import { isProbablyTestFile, getFileIconInfo, onlyForTesting } from './fileIcons
 describe('checkValidLanguageNames', () => {
     const allLanguagesSet = new Set(ALL_LANGUAGES)
     for (const [languageName, _] of onlyForTesting.FILE_ICONS_BY_LANGUAGE) {
-        expect(allLanguagesSet.has(languageName)).toBeTruthy()
+        it(languageName, () => {
+            expect(allLanguagesSet.has(languageName)).toBeTruthy()
+        })
     }
 })
 

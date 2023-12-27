@@ -301,12 +301,6 @@ const FILE_ICONS_BY_LANGUAGE: Map<
         },
     ],
     [
-        'Clojure Templates',
-        {
-            react: { icon: SiClojure, className: styles.blue },
-        },
-    ],
-    [
         'CMake',
         {
             react: { icon: SiCmake, className: styles.defaultIcon },
@@ -432,7 +426,7 @@ const FILE_ICONS_BY_LANGUAGE: Map<
         },
     ],
     [
-        'JSONNLD',
+        'JSONLD',
         {
             react: { icon: VscJson, className: styles.defaultIcon },
             svg: mdiCodeJson,
