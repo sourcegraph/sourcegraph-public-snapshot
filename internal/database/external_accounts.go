@@ -195,7 +195,6 @@ AND deleted_at IS NULL
 	}
 
 	// This logs an audit event for account changes but only if they are initiated via SCIM
-	//logAccountModifiedEvent(ctx, NewDBWith(s.logger, s), userID, "scim")
 	arg := struct {
 		Modifier    int32  `json:"modifier"`
 		ServiceType string `json:"service_type"`
