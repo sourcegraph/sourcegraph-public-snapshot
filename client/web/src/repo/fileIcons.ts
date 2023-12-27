@@ -607,21 +607,21 @@ const BINARY_FILE_ICONS_BY_EXTENSION: Map<
     }
 > = new Map([
     [
-        '.gif',
+        'gif',
         {
             react: { icon: MdGif, className: styles.defaultIcon },
             svg: mdiFileGifBox,
         },
     ],
     [
-        '.giff',
+        'giff',
         {
             react: { icon: MdGif, className: styles.defaultIcon },
             svg: mdiFileGifBox,
         },
     ],
     [
-        '.jpg',
+        'jpg',
         {
             react: { icon: SiJpeg, className: styles.yellow },
             svg: mdiFileJpgBox,
@@ -635,7 +635,7 @@ const BINARY_FILE_ICONS_BY_EXTENSION: Map<
         },
     ],
     [
-        '.png',
+        'png',
         {
             react: { icon: PiFilePngLight, className: styles.defaultIcon },
             svg: mdiFilePngBox,
