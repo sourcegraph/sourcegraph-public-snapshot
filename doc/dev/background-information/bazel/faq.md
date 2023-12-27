@@ -382,7 +382,7 @@ Caused by:
 Error: Failed to update lockfile: exit status: 101
 ```
 
-You might be able to git ssh clone that repository locally yet in Bazel Cargo it fails. This is because Bazel Cargo doesn't use your `~/.ssh/config` file and thus can't use your SSH private key. The error says you can set `net.git-fetch-with-cli` in `Cargo.toml` or configure a credential helper. All cargo settings also have environment variable variants, so you can do the repinning with `CARGO_NET_GIT_FETCH_WITH_CLI=true CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index` without setting the value in the `Cargo.toml`
+You might be able to git ssh clone that repository locally yet in Bazel Cargo it fails. This is because Bazel Cargo doesn't use your `~/.ssh/config` file and thus can't use your SSH private key. The error says you can set `net.git-fetch-with-cli` in `Cargo.toml` or configure a credential helper. All cargo settings also have environment variable variants, so you can do the repinning with `CARGO_NET_GIT_FETCH_WITH_CLI=true CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index` without setting the value in the `Cargo.toml`.
 
 ## Docs
 
