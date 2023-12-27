@@ -98,12 +98,11 @@ export const SideBlob: FC<SideBlobProps> = props => {
         )
     }
 
+    const blob = data?.repository?.commit?.blob
     // If there weren't any errors and we just didn't receive any data
-    if (!data?.repository?.commit?.blob?.highlight) {
+    if (!blob || !blob.highlight) {
         return <>Nothing found</>
     }
-
-    const { lsif } = data?.repository?.commit?.blob?.highlight
 
     // TODO: display a helpful message if syntax highlighting aborted, see https://github.com/sourcegraph/sourcegraph/issues/40841
 
@@ -114,13 +113,14 @@ export const SideBlob: FC<SideBlobProps> = props => {
             wrapCode={wrapLines}
             navigateToLineOnAnyClick={navigateToLineOnAnyClick}
             blobInfo={{
-                lsif: lsif ?? '',
+                lsif: blob.highlight.lsif ?? '',
                 commitID,
                 filePath: file,
                 repoName: repository,
                 revision: commitID,
-                content: data?.repository?.commit?.blob?.content ?? '',
+                content: blob.content,
                 mode: 'lspmode',
+                languages: blob.languages,
             }}
             searchPanelConfig={searchPanelConfig}
             className={classNames(className, styles.sideBlobCode)}

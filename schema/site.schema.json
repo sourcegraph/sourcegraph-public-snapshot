@@ -73,6 +73,16 @@
           "description": "Maximum number of estimated fields allowed in a GraphQL response",
           "type": "integer",
           "default": 500000
+        },
+        "graphQLMaxDuplicateFieldCount": {
+          "description": "Maximum number of duplicate fields allowed in a GraphQL request",
+          "type": "integer",
+          "default": 500
+        },
+        "graphQLMaxUniqueFieldCount": {
+          "description": "Maximum number of unique fields allowed in a GraphQL request",
+          "type": "integer",
+          "default": 500
         }
       }
     },
@@ -2053,36 +2063,6 @@
             "type": "string"
           }
         },
-        "app.notifications": {
-          "description": "Notifications to display in the Sourcegraph app.",
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["key", "message"],
-            "properties": {
-              "key": {
-                "description": "e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.",
-                "type": "string",
-                "minLength": 1
-              },
-              "message": {
-                "description": "The Markdown message to display",
-                "type": "string",
-                "minLength": 1
-              },
-              "version.min": {
-                "description": "If present, this message will only be shown to Cody App instances in this inclusive version range.",
-                "type": "string",
-                "minLength": 1
-              },
-              "version.max": {
-                "description": "If present, this message will only be shown to Cody App instances in this inclusive version range.",
-                "type": "string",
-                "minLength": 1
-              }
-            }
-          }
-        },
         "slackLicenseExpirationWebhook": {
           "description": "Slack webhook for upcoming license expiration notifications.",
           "type": "string",
@@ -2168,24 +2148,6 @@
         }
       },
       "group": "Sourcegraph.com"
-    },
-    "app": {
-      "description": "Configuration options for App only.",
-      "type": "object",
-      "properties": {
-        "dotcomAuthToken": {
-          "description": "Authentication token for Sourcegraph.com. If present, indicates that the App account is connected to a Sourcegraph.com account.",
-          "type": "string",
-          "group": "Sourcegraph.com"
-        }
-      },
-      "examples": [
-        {
-          "app": {
-            "dotcomAuthToken": "abc123"
-          }
-        }
-      ]
     },
     "notifications": {
       "description": "Notifications recieved from Sourcegraph.com to display in Sourcegraph.",

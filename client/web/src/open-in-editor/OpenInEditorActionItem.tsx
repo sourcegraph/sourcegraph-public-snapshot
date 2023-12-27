@@ -20,6 +20,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../repo/components/RepoHeaderActions'
+import { RepoActionInfo } from '../repo/RepoActionInfo'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { getEditorSettingsErrorMessage } from './build-url'
@@ -189,6 +190,7 @@ interface EditorItemProps {
     source?: 'repoHeader' | 'actionItemsBar'
     actionType?: 'nav' | 'dropdown'
 }
+
 function EditorItem(props: EditorItemProps): JSX.Element {
     if (props.source === 'actionItemsBar') {
         return (
@@ -210,7 +212,7 @@ function EditorItem(props: EditorItemProps): JSX.Element {
     return (
         <Tooltip content={props.tooltip}>
             <RepoHeaderActionAnchor onSelect={props.onClick} className={styles.item}>
-                {props.icon}
+                <RepoActionInfo icon={props.icon} displayName="Editor" />
             </RepoHeaderActionAnchor>
         </Tooltip>
     )

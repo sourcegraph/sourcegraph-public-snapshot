@@ -16,5 +16,6 @@ a[data-sveltekit-reload='true'] {
         display: inline-block;
         content: '';
         background-image: url('/react-logo.svg');
+        background-repeat: no-repeat;
     }
 }

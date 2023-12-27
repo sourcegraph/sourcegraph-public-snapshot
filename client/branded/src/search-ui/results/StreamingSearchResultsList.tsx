@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom'
 import type { Observable } from 'rxjs'
 
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
@@ -128,7 +127,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
-    const location = useLocation()
     const [rootRef, setRootRef] = useState<HTMLElement | null>(null)
 
     const renderResult = useCallback(
@@ -154,7 +152,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 {result.type === 'content' && (
                                     <FileContentSearchResult
                                         index={index}
-                                        location={location}
                                         telemetryService={telemetryService}
                                         result={result}
                                         onSelect={() => logSearchResultClicked?.(index, 'fileMatch', resultsNumber)}
@@ -255,7 +252,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
         [
             prefetchFileEnabled,
             prefetchFile,
-            location,
             resultsNumber,
             telemetryService,
             allExpanded,

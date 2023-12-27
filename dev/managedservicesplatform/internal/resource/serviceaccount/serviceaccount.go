@@ -2,6 +2,7 @@ package serviceaccount
 
 import (
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/serviceaccount"
 
@@ -22,6 +23,10 @@ type Config struct {
 	AccountID   string
 	DisplayName string
 	Roles       []Role
+
+	// PreventDestroys indicates if destroys should be allowed on this service
+	// account.
+	PreventDestroys bool
 }
 
 type Output struct {
@@ -38,6 +43,10 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 
 			AccountId:   pointers.Ptr(config.AccountID),
 			DisplayName: pointers.Ptr(config.DisplayName),
+
+			Lifecycle: &cdktf.TerraformResourceLifecycle{
+				PreventDestroy: &config.PreventDestroys,
+			},
 		})
 	for _, role := range config.Roles {
 		_ = projectiammember.NewProjectIamMember(scope,

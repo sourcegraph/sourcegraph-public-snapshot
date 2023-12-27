@@ -196,10 +196,9 @@ export const NotebookSymbolBlock: React.FunctionComponent<React.PropsWithChildre
                                 repoName={input.repositoryName}
                                 commitID={input.revision}
                                 filePath={input.filePath}
-                                blobLines={symbolOutput.highlightedLines}
+                                plaintextLines={symbolOutput.highlightedLines}
                                 highlightRanges={[symbolOutput.highlightSymbolRange]}
                                 {...symbolOutput.highlightLineRange}
-                                fetchHighlightedFileRangeLines={() => of([])}
                                 onCopy={logEventOnCopy}
                             />
                         </div>

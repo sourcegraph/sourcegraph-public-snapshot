@@ -15,7 +15,6 @@ import (
 	"k8s.io/client-go/util/homedir"
 	"k8s.io/utils/strings/slices"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -109,12 +108,6 @@ type Config struct {
 	kubernetesJobPodAnnotationsUnmarshalError                    error
 
 	defaultFrontendPassword string
-}
-
-func NewAppConfig() *Config {
-	return &Config{
-		defaultFrontendPassword: confdefaults.AppInMemoryExecutorPassword,
-	}
 }
 
 func (c *Config) Load() {

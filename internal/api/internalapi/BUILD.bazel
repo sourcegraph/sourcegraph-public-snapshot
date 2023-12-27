@@ -3,14 +3,16 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "internalapi",
-    srcs = ["client.go"],
+    srcs = [
+        "client.go",
+        "retry.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/api/internalapi",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
         "//internal/api/internalapi/v1:internalapi",
         "//internal/conf/conftypes",
-        "//internal/conf/deploy",
         "//internal/env",
         "//internal/grpc/defaults",
         "//internal/httpcli",
@@ -18,6 +20,7 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//:go_default_library",
     ],
 )
 

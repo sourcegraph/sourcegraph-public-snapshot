@@ -6,6 +6,7 @@
     import { getSymbolIconPath } from '$lib/search/symbolIcons'
     import type { SymbolMatch } from '$lib/shared'
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
+    import { observeIntersection } from '$lib/intersection-observer'
 
     import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
     import CodeHostIcon from './CodeHostIcon.svelte'
@@ -19,11 +20,14 @@
         endLine: symbol.line,
     }))
 
-    async function fetchHighlightedSymbolMatchLineRanges(startLine: number, endLine: number) {
-        const highlightedSymbols = await fetchFileRangeMatches({ result, ranges })
-        return highlightedSymbols[
-            result.symbols.findIndex(symbol => symbol.line - 1 === startLine && symbol.line === endLine)
-        ]
+    let hasBeenVisible = false
+    let highlightedHTMLRows: string[][] = undefined
+    async function onIntersection(event: { detail: boolean }) {
+        if (hasBeenVisible) {
+            return
+        }
+        hasBeenVisible = true
+        highlightedHTMLRows = await fetchFileRangeMatches({ result, ranges: ranges })
     }
 </script>
 
@@ -36,21 +40,23 @@
         {/if}
     </svelte:fragment>
     <svelte:fragment slot="body">
-        {#each result.symbols as symbol}
-            <a href={symbol.url}>
-                <div class="result">
-                    <div class="symbol-icon--kind-{symbol.kind.toLowerCase()}">
-                        <Icon svgPath={getSymbolIconPath(symbol.kind)} inline />
+        <div use:observeIntersection on:intersecting={onIntersection}>
+            {#each result.symbols as symbol, index}
+                <a href={symbol.url}>
+                    <div class="result">
+                        <div class="symbol-icon--kind-{symbol.kind.toLowerCase()}">
+                            <Icon svgPath={getSymbolIconPath(symbol.kind)} inline />
+                        </div>
+                        <CodeExcerpt
+                            startLine={symbol.line - 1}
+                            plaintextLines={['']}
+                            highlightedHTMLRows={highlightedHTMLRows?.[index]}
+                            --background-color="transparent"
+                        />
                     </div>
-                    <CodeExcerpt
-                        startLine={symbol.line - 1}
-                        endLine={symbol.line}
-                        fetchHighlightedFileRangeLines={fetchHighlightedSymbolMatchLineRanges}
-                        --background-color="transparent"
-                    />
-                </div>
-            </a>
-        {/each}
+                </a>
+            {/each}
+        </div>
     </svelte:fragment>
 </SearchResult>
 

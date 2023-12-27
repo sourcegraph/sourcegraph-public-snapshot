@@ -59,7 +59,6 @@ describe('UserNavItem', () => {
                             showKeyboardShortcutsHelp={() => undefined}
                             authenticatedUser={USER}
                             isSourcegraphDotCom={true}
-                            isCodyApp={false}
                             showFeedbackModal={() => undefined}
                             telemetryService={NOOP_TELEMETRY_SERVICE}
                         />
@@ -76,7 +75,6 @@ describe('UserNavItem', () => {
                     showKeyboardShortcutsHelp={() => undefined}
                     authenticatedUser={USER}
                     isSourcegraphDotCom={true}
-                    isCodyApp={false}
                     showFeedbackModal={() => undefined}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                 />

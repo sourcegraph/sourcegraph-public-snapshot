@@ -6,13 +6,13 @@ go_library(
     srcs = [
         "client.go",
         "errors.go",
+        "retry.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/repoupdater",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
         "//internal/conf",
-        "//internal/conf/deploy",
         "//internal/grpc/defaults",
         "//internal/httpcli",
         "//internal/repoupdater/protocol",
@@ -21,6 +21,7 @@ go_library(
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
     ],

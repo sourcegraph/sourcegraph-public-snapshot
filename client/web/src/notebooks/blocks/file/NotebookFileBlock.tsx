@@ -198,11 +198,10 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                             repoName={input.repositoryName}
                             commitID={input.revision}
                             filePath={input.filePath}
-                            blobLines={blobLines}
+                            plaintextLines={blobLines}
                             highlightRanges={[]}
                             startLine={input.lineRange?.startLine ?? 0}
                             endLine={input.lineRange?.endLine ?? 1}
-                            fetchHighlightedFileRangeLines={() => of([])}
                             onCopy={logEventOnCopy}
                         />
                     </div>

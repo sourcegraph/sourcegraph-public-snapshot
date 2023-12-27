@@ -13,7 +13,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -22,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
@@ -185,70 +183,6 @@ func (r *siteResolver) AllowSiteSettingsEdits() bool {
 	return canUpdateSiteConfiguration()
 }
 
-func (r *siteResolver) ExternalServicesCounts(ctx context.Context) (*externalServicesCountsResolver, error) {
-	// 🚨 SECURITY: Only admins can view repositories counts
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
-	return &externalServicesCountsResolver{db: r.db}, nil
-}
-
-type externalServicesCountsResolver struct {
-	remoteExternalServicesCount int32
-	localExternalServicesCount  int32
-
-	db   database.DB
-	once sync.Once
-	err  error
-}
-
-func (r *externalServicesCountsResolver) compute(ctx context.Context) (int32, int32, error) {
-	r.once.Do(func() {
-		remoteCount, localCount, err := backend.NewAppExternalServices(r.db).ExternalServicesCounts(ctx)
-		if err != nil {
-			r.err = err
-		}
-
-		// if this is not sourcegraph app then local repos count should be zero because
-		// serve-git service only runs in sourcegraph app
-		// see /internal/service/servegit/serve.go
-		if !deploy.IsApp() {
-			localCount = 0
-		}
-
-		r.remoteExternalServicesCount = int32(remoteCount)
-		r.localExternalServicesCount = int32(localCount)
-	})
-
-	return r.remoteExternalServicesCount, r.localExternalServicesCount, r.err
-}
-
-func (r *externalServicesCountsResolver) RemoteExternalServicesCount(ctx context.Context) (int32, error) {
-	remoteCount, _, err := r.compute(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return remoteCount, nil
-}
-
-func (r *externalServicesCountsResolver) LocalExternalServicesCount(ctx context.Context) (int32, error) {
-	_, localCount, err := r.compute(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return localCount, nil
-}
-
-func (r *siteResolver) AppHasConnectedDotComAccount() bool {
-	if !deploy.IsApp() {
-		return false
-	}
-
-	appConfig := conf.SiteConfig().App
-	return appConfig != nil && appConfig.DotcomAuthToken != ""
-}
-
 type siteConfigurationResolver struct {
 	db                    database.DB
 	returnSafeConfigsOnly bool
@@ -385,7 +319,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
 func canUpdateSiteConfiguration() bool {
-	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits || deploy.IsApp()
+	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits
 }
 
 func (r *siteResolver) UpgradeReadiness(ctx context.Context) (*upgradeReadinessResolver, error) {
@@ -627,15 +561,6 @@ func (r *siteResolver) PerUserCodeCompletionsQuota() *int32 {
 }
 
 func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
-	// This section can be removed if dotcom stops requiring verified emails
-	if deploy.IsApp() {
-		c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
-		// App users can specify their own keys using one of the regular providers.
-		// If they use their own keys requests are not going through Cody Gateway
-		// which means a verified email is not needed.
-		return c == nil || c.Provider == conftypes.CompletionsProviderNameSourcegraph
-	}
-
 	// We only require this on dotcom
 	if !envvar.SourcegraphDotComMode() {
 		return false

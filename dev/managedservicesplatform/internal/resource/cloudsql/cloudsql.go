@@ -23,7 +23,7 @@ type Output struct {
 	// Instance is the Cloud SQL database instance. It can be accessed using
 	// WorkloadUser
 	Instance sqldatabaseinstance.SqlDatabaseInstance
-	// AdminUser is a cloudsqlsuperuser on the Cloud SQL instance.
+	// AdminUser is a basic-auth cloudsqlsuperuser on the Cloud SQL instance.
 	AdminUser sqluser.SqlUser
 	// WorkloadUser is the SQL user corresponding to the Cloud Run workload
 	// service account. It should be used for automatic IAM authentication:
@@ -31,6 +31,9 @@ type Output struct {
 	//
 	// Before using WorkloadUser, WorkloadSuperuserGrant should be ready.
 	WorkloadUser sqluser.SqlUser
+	// OperatorAccessUser is the SQL user corresponding to the operator access
+	// service account.
+	OperatorAccessUser sqluser.SqlUser
 }
 
 type Config struct {
@@ -42,9 +45,17 @@ type Config struct {
 	// WorkloadIdentity is the service account attached to the Cloud Run workload.
 	// A database user will be provisioned that can be accessed as this identity.
 	WorkloadIdentity serviceaccount.Output
+	// OpeartorAccessUser is a superuser on the Cloud SQL instance that can be
+	// used by an operator to access the Cloud SQL instance.
+	OperatorAccessIdentity serviceaccount.Output
 	// Network to connect the created Cloud SQL instance to.
 	Network computenetwork.ComputeNetwork
 
+	// PreventDestroys indicates if destroys should be allowed on core components of
+	// this resource.
+	PreventDestroys bool
+
+	// DependsOn indicates resources that must be provisioned first.
 	DependsOn []cdktf.ITerraformDependable
 }
 
@@ -118,11 +129,11 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			},
 		},
 
-		// More of an inconvenience than anything else - is still delete-able
-		// from the UI.
-		DeletionProtection: pointers.Ptr(false),
-
+		// By default, ensure that we can't destroy a service database by accident.
+		DeletionProtection: &config.PreventDestroys,
 		Lifecycle: &cdktf.TerraformResourceLifecycle{
+			PreventDestroy: &config.PreventDestroys,
+
 			// Autoscaling is typically enabled - no need to worry about it
 			IgnoreChanges: []string{"settings[0].disk_size"},
 		},
@@ -143,6 +154,12 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 				&sqldatabase.SqlDatabaseConfig{
 					Name:     pointers.Ptr(db),
 					Instance: instance.Name(),
+
+					// By default, ensure that we can't destroy a service database by accident.
+					Lifecycle: &cdktf.TerraformResourceLifecycle{
+						PreventDestroy: &config.PreventDestroys,
+					},
+
 					// PostgreSQL cannot delete databases if there are users
 					// other than cloudsqlsuperuser with access
 					DeletionPolicy: pointers.Ptr("ABANDON"),
@@ -165,30 +182,37 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		DeletionPolicy: pointers.Ptr("ABANDON"),
 	})
 
-	// Grant access to workload service account
-	workloadUser := sqluser.NewSqlUser(scope, id.TerraformID("workload_service_account_user"), &sqluser.SqlUserConfig{
+	return &Output{
+		Instance:  instance,
+		AdminUser: adminUser,
+		WorkloadUser: newSqlUserForIdentity(scope, id.TerraformID("workload_service_account_user"),
+			instance, config.WorkloadIdentity, databaseResources),
+		OperatorAccessUser: newSqlUserForIdentity(scope, id.TerraformID("operator_access_service_account_user"),
+			instance, config.OperatorAccessIdentity, databaseResources),
+	}, nil
+}
+
+func newSqlUserForIdentity(
+	scope constructs.Construct,
+	id *string,
+	instance sqldatabaseinstance.SqlDatabaseInstance,
+	identity serviceaccount.Output,
+	dependsOn []cdktf.ITerraformDependable,
+) sqluser.SqlUser {
+	return sqluser.NewSqlUser(scope, id, &sqluser.SqlUserConfig{
 		Instance: instance.Name(),
-		Project:  &config.ProjectID,
+		Project:  instance.Project(),
 		Type:     pointers.Ptr("CLOUD_IAM_SERVICE_ACCOUNT"),
 		// Note: for Postgres only, GCP requires omitting the ".gserviceaccount.com" suffix
 		// from the service account email due to length limits on database usernames.
 		// See https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_user
-		Name: cdktf.Fn_Trimsuffix(&config.WorkloadIdentity.Email,
+		Name: cdktf.Fn_Trimsuffix(&identity.Email,
 			pointers.Ptr(".gserviceaccount.com")),
 
 		// PostgreSQL cannot delete users with roles, so we just abandon the
 		// users in a deletion event.
 		DeletionPolicy: pointers.Ptr("ABANDON"),
 
-		// workloadUser's username is required to connect to this instance, so
-		// to ensure database resources are all fully provisioned, we gate the
-		// availability of this secret on all database resources being ready.
-		DependsOn: &databaseResources,
+		DependsOn: &dependsOn,
 	})
-
-	return &Output{
-		Instance:     instance,
-		AdminUser:    adminUser,
-		WorkloadUser: workloadUser,
-	}, nil
 }

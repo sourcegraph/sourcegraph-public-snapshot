@@ -317,6 +317,8 @@ nogo(
             "//dev/linters/ineffassign",
             "//dev/linters/unparam",
             "//dev/linters/tracinglibraries",
+            "//dev/linters/dbconn",
+            "//dev/linters/nolocalhost",
             # Disabled because we currently have a lot of unused code
             # "//dev/linters/unused",
         ] + STATIC_CHECK_ANALYZERS,

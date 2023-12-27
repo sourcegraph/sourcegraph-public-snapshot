@@ -68,8 +68,6 @@ const CodySubscriptionPage = lazyComponent(
     'CodySubscriptionPage'
 )
 const OwnPage = lazyComponent(() => import('./enterprise/own/OwnPage'), 'OwnPage')
-const AppAuthCallbackPage = lazyComponent(() => import('./enterprise/app/AppAuthCallbackPage'), 'AppAuthCallbackPage')
-const AppSetup = lazyComponent(() => import('./enterprise/app/setup/AppSetupWizard'), 'AppSetupWizard')
 const SearchJob = lazyComponent(() => import('./enterprise/search-jobs/SearchJobsPage'), 'SearchJobsPage')
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
@@ -94,16 +92,6 @@ export const routes: RouteObject[] = [
     {
         path: PageRoutes.PostSignUp,
         element: <LegacyRoute render={props => <PostSignUpPage {...props} />} />,
-    },
-    {
-        path: `${PageRoutes.AppSetup}/*`,
-        handle: { isFullPage: true },
-        element: (
-            <LegacyRoute
-                render={props => <AppSetup telemetryService={props.telemetryService} />}
-                condition={({ isCodyApp }) => isCodyApp}
-            />
-        ),
     },
     {
         path: PageRoutes.BatchChanges,
@@ -211,10 +199,6 @@ export const routes: RouteObject[] = [
     {
         path: PageRoutes.Own,
         element: <OwnPage />,
-    },
-    {
-        path: PageRoutes.AppAuthCallback,
-        element: <LegacyRoute render={() => <AppAuthCallbackPage />} condition={({ isCodyApp }) => isCodyApp} />,
     },
     {
         path: PageRoutes.Index,

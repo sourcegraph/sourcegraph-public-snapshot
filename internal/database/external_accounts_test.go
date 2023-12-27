@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -623,11 +623,18 @@ func TestExternalAccounts_TouchExpiredList(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	t.Run("non-empty list", func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		db := NewDB(logger, dbtest.NewDB(t))
-		ctx := context.Background()
 
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
+	t.Run("empty list", func(t *testing.T) {
+		acctIds := []int32{}
+		err := db.UserExternalAccounts().TouchExpired(ctx, acctIds...)
+		require.NoError(t, err)
+	})
+
+	t.Run("non-empty list", func(t *testing.T) {
 		spec := extsvc.AccountSpec{
 			ServiceType: "xa",
 			ServiceID:   "xb",
@@ -672,14 +679,5 @@ func TestExternalAccounts_TouchExpiredList(t *testing.T) {
 		accts, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1, ExcludeExpired: true})
 		require.NoError(t, err)
 		require.Equal(t, 0, len(accts))
-	})
-	t.Run("empty list", func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		db := NewDB(logger, dbtest.NewDB(t))
-		ctx := context.Background()
-
-		acctIds := []int32{}
-		err := db.UserExternalAccounts().TouchExpired(ctx, acctIds...)
-		require.NoError(t, err)
 	})
 }

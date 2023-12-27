@@ -1,19 +1,12 @@
 <script lang="ts">
     import '$lib/highlight.scss'
 
-    import range from 'lodash/range'
-
     import { highlightNodeMultiline } from '$lib/common'
-    import { observeIntersection } from '$lib/intersection-observer'
     import type { MatchGroupMatch } from '$lib/shared'
 
     export let startLine: number
-    export let endLine: number
-    /**
-     * Gets called when the code excerpt is visible in the viewport, to delay potentially expensive
-     * highlighting operations until necessary.
-     */
-    export let fetchHighlightedFileRangeLines: (startLine: number, endLine: number) => Promise<string[]>
+    export let plaintextLines: string[]
+    export let highlightedHTMLRows: string[] | undefined = undefined
     export let matches: MatchGroupMatch[] = []
 
     function highlightMatches(node: HTMLElement, matches: MatchGroupMatch[]) {
@@ -42,47 +35,24 @@
             }
         }
     }
-
-    let isVisible = false
-
-    function onIntersection(event: { detail: boolean }) {
-        // The component stays marked as "visible" if it was once to avoid
-        // refetching highlighted lines and matches
-        isVisible = isVisible || event.detail
-    }
 </script>
 
-<code use:observeIntersection on:intersecting={onIntersection}>
-    {#if isVisible}
-        {#await fetchHighlightedFileRangeLines(startLine, endLine)}
-            <!--create empty space to fill viewport to avoid layout shifts -->
-            <table>
-                <tbody>
-                    {#each range(startLine, endLine) as index}
-                        <tr>
-                            <td class="line" data-line={index + 1} />
-                            <td class="code" />
-                        </tr>
-                    {/each}
-                </tbody>
-            </table>
-        {:then blobLines}
-            {#key matches}
-                <table use:highlightMatches={matches}>
-                    {@html blobLines.join('')}
-                </table>
-            {/key}
-        {/await}
-    {:else}
-        <!--create empty space to fill viewport to avoid layout shifts -->
-        <table>
+<code>
+    {#if highlightedHTMLRows === undefined}
+        <table use:highlightMatches={matches}>
             <tbody>
-                {#each range(startLine, endLine) as index}
+                {#each plaintextLines as line, index}
                     <tr>
-                        <td class="line" data-line={index + 1} />
-                        <td class="code" />
+                        <td class="line" data-line={startLine + index + 1} />
+                        <td class="code">{line}</td>
                     </tr>
                 {/each}
+            </tbody>
+        </table>
+    {:else}
+        <table use:highlightMatches={matches}>
+            <tbody>
+                {@html highlightedHTMLRows.join('')}
             </tbody>
         </table>
     {/if}

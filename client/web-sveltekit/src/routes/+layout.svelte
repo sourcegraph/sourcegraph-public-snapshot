@@ -7,7 +7,7 @@
     import { TemporarySettingsStorage } from '$lib/shared'
     import { isLightTheme, KEY, scrollAll, type SourcegraphContext } from '$lib/stores'
     import { createTemporarySettingsStorage, temporarySetting } from '$lib/temporarySettings'
-    import { humanTheme } from '$lib/theme'
+    import { setThemeFromString } from '$lib/theme'
 
     import Header from './Header.svelte'
 
@@ -18,7 +18,6 @@
     import type { LayoutData, Snapshot } from './$types'
     import { createFeatureFlagStore, fetchEvaluatedFeatureFlags } from '$lib/featureflags'
     import InfoBanner from './InfoBanner.svelte'
-    import { Theme } from '$lib/theme'
 
     export let data: LayoutData
 
@@ -47,7 +46,7 @@
     // on initial page load.
     $: userTheme = temporarySetting('user.themePreference', 'System')
     $: if (!$userTheme.loading && $userTheme.data) {
-        $humanTheme = $userTheme.data
+        setThemeFromString($userTheme.data)
     }
 
     $: if (browser) {

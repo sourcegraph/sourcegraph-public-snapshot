@@ -240,6 +240,7 @@ func searchZoekt(
 		TotalMaxMatchCount: match * 25,
 		MaxDocDisplayCount: match,
 		ChunkMatches:       true,
+		NumContextLines:    0,
 	})
 	if err != nil {
 		return nil, err
