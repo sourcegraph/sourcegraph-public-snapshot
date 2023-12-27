@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
@@ -13,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
