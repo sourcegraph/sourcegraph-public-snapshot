@@ -94,7 +94,9 @@ func recordSecurityEvent(r *http.Request, db database.DB, name database.Security
 	// Safe to ignore this error
 	anonymousUserID, _ := cookie.AnonymousUID(r)
 
-	db.SecurityEventLogs().LogSecurityEvent(ctx, name, r.URL.Path, uint32(a.UID), anonymousUserID, "BACKEND", arg)
+	if errsec := db.SecurityEventLogs().LogSecurityEvent(ctx, name, r.URL.Path, uint32(a.UID), anonymousUserID, "BACKEND", arg); errsec != nil {
+		log.Error(errsec)
+	}
 
 	// Legacy event - TODO: Remove in 5.3, alongside the teestore.WithoutV1
 	// context.

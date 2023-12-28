@@ -121,7 +121,10 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			span.SetError(err)
 			logger.Error("OAuth failed: error looking up or creating user from OAuth token.", log.Error(err), log.String("userErr", safeErrMsg))
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
-			db.SecurityEventLogs().LogSecurityEvent(ctx, s.AuthFailedEventName(), r.URL.Path, uint32(actor.FromContext(ctx).UID), anonymousId, "BACKEND", nil)
+
+			if err = db.SecurityEventLogs().LogSecurityEvent(ctx, s.AuthFailedEventName(), r.URL.Path, uint32(actor.FromContext(ctx).UID), anonymousId, "BACKEND", nil); err != nil {
+				logger.Warn("Error logging security event.", log.Error(err))
+			}
 			return
 		}
 
@@ -142,7 +145,9 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			return
 		}
 
-		db.SecurityEventLogs().LogSecurityEvent(ctx, s.AuthSucceededEventName(), r.URL.Path, uint32(user.ID), "", "BACKEND", nil)
+		if err := db.SecurityEventLogs().LogSecurityEvent(ctx, s.AuthSucceededEventName(), r.URL.Path, uint32(user.ID), "", "BACKEND", nil); err != nil {
+			logger.Warn("Error logging security event.", log.Error(err))
+		}
 
 		redirectURL := auth.AddPostAuthRedirectParametersToString(state.Redirect, newUserCreated, "OAuth::"+s.GetServiceID())
 		http.Redirect(w, r, auth.SafeRedirectURL(redirectURL), http.StatusFound)

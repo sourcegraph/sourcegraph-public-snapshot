@@ -202,7 +202,9 @@ AND deleted_at IS NULL
 		Modifier:    actor.FromContext(ctx).UID,
 		ServiceType: "scim",
 	}
-	NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventNameAccountModified, "", uint32(userID), "", "scim", arg)
+	if err := NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventNameAccountModified, "", uint32(userID), "", "scim", arg); err != nil {
+		s.logger.Warn("Error logging security event", log.Error(err))
+	}
 
 	return
 }

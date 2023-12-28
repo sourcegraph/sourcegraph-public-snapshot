@@ -469,7 +469,9 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 		SiteAdmin:   u.SiteAdmin,
 		ServiceType: serviceType,
 	}
-	db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventNameAccountCreated, "", uint32(u.ID), "", "BACKEND", arg)
+	if err := db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventNameAccountCreated, "", uint32(u.ID), "", "BACKEND", arg); err != nil {
+		log.Error(err)
+	}
 
 	eArg, _ := json.Marshal(struct {
 		Creator     int32  `json:"creator"`
@@ -1624,7 +1626,9 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 		path = r.URL.Path
 		host = r.URL.Host
 	}
-	db.SecurityEventLogs().LogSecurityEvent(ctx, name, path, uint32(userID), "", "BACKEND", args)
+	if err := db.SecurityEventLogs().LogSecurityEvent(ctx, name, path, uint32(userID), "", "BACKEND", args); err != nil {
+		log.Error(err)
+	}
 
 	eArgs, _ := json.Marshal(struct {
 		Requester int32 `json:"requester"`

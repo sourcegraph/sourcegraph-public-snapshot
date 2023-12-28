@@ -8,6 +8,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -66,7 +68,9 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an even when Outbound requests are viewed
-		r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args)
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+		}
 	}
 	return &outboundRequestConnectionResolver{
 		first: args.First,
@@ -89,7 +93,9 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an even when Outbound requests are viewed
-		r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", graphql.ID(key))
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", graphql.ID(key)); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+		}
 	}
 	item, _ := httpcli.GetOutboundRequestLogItem(key)
 	return &OutboundRequestResolver{req: item}, nil

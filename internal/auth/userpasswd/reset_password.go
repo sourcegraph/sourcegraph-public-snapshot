@@ -151,7 +151,9 @@ func HandleResetPasswordCode(logger log.Logger, db database.DB) http.HandlerFunc
 			} else {
 
 				anonymousID, _ := cookie.AnonymousUID(r)
-				db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventNameEmailVerified, r.URL.Path, uint32(params.UserID), anonymousID, "BACKEND", nil)
+				if errsec := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventNameEmailVerified, r.URL.Path, uint32(params.UserID), anonymousID, "BACKEND", nil); errsec != nil {
+					logger.Warn("Error logging security event", log.Error(errsec))
+				}
 
 			}
 		}
