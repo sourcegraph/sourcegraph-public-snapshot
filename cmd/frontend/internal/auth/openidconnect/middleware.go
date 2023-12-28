@@ -147,12 +147,17 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 					SafeErrorMsg: safeErrMsg,
 				}
 
-				db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventOIDCLoginFailed, r.URL.Path, uint32(0), fmt.Sprintf("unknown OIDC @ %s", time.Now()), "BACKEND", arg)
+				if err := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventOIDCLoginFailed, r.URL.Path, uint32(0), fmt.Sprintf("unknown OIDC @ %s", time.Now()), "BACKEND", arg); err != nil {
+					log15.Warn("Error logging security event.", "error", err)
+				}
 
 				return
 			}
 
-			db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventOIDCLoginSucceeded, r.URL.Path, uint32(result.User.ID), "", "BACKEND", nil)
+			if err := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventOIDCLoginSucceeded, r.URL.Path, uint32(result.User.ID), "", "BACKEND", nil); err != nil {
+				log15.Warn("Error logging security event.", "error", err)
+
+			}
 
 			var exp time.Duration
 			// 🚨 SECURITY: TODO(sqs): We *should* uncomment the lines below to make our own sessions

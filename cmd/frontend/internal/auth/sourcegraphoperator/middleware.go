@@ -173,7 +173,9 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				arg := map[string]any{
 					"session_expiry_seconds": int64(expiry.Seconds()),
 				}
-				db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSignInSucceeded, r.URL.Path, uint32(act.UID), "", "BACKEND", arg)
+				if err := db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSignInSucceeded, r.URL.Path, uint32(act.UID), "", "BACKEND", arg); err != nil {
+					logger.Warn("Error logging security event", log.Error(err))
+				}
 
 			}
 

@@ -144,7 +144,9 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 					if !anonCookieSet {
 						anonymousId = fmt.Sprintf("unknown user @ %s", time.Now()) // we don't have a reliable user identifier at the time of the failure
 					}
-					db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventAccessTokenInvalid, r.URL.RequestURI(), uint32(actor.FromContext(r.Context()).UID), anonymousId, "BACKEND", nil)
+					if errsec := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventAccessTokenInvalid, r.URL.RequestURI(), uint32(actor.FromContext(r.Context()).UID), anonymousId, "BACKEND", nil); errsec != nil {
+						logger.Error("Error logging security event", log.Error(errsec))
+					}
 
 					http.Error(w, "Invalid access token.", http.StatusUnauthorized)
 					return
@@ -195,7 +197,9 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 					args := map[string]any{
 						"subject_user_id": subjectUserID,
 					}
-					db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventAccessTokenSubjectNotSiteAdmin, r.URL.RequestURI(), uint32(subjectUserID), "", "BACKEND", args)
+					if errsec := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventAccessTokenSubjectNotSiteAdmin, r.URL.RequestURI(), uint32(subjectUserID), "", "BACKEND", args); errsec != nil {
+						logger.Error("Error logging security event", log.Error(errsec))
+					}
 
 					http.Error(w, "The subject user of a sudo access token must be a site admin.", http.StatusForbidden)
 					return
@@ -250,7 +254,9 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 						SourcegraphOperator: sourcegraphOperator,
 					},
 				)
-				db.SecurityEventLogs().LogSecurityEvent(newContext, database.SecurityEventAccessTokenImpersonated, r.URL.RequestURI(), uint32(subjectUserID), "", "BACKEND", args)
+				if errsec := db.SecurityEventLogs().LogSecurityEvent(newContext, database.SecurityEventAccessTokenImpersonated, r.URL.RequestURI(), uint32(subjectUserID), "", "BACKEND", args); errsec != nil {
+					logger.Error("Error logging security event", log.Error(errsec))
+				}
 
 			}
 

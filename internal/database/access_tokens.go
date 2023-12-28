@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -212,7 +211,7 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 
 	// only log access tokens created by users
 	if !internal {
-		arg, err := json.Marshal(struct {
+		arg := struct {
 			SubjectUserId int32    `json:"subject_user_id"`
 			CreatorUserId int32    `json:"creator_user_id"`
 			Scopes        []string `json:"scopes"`
@@ -222,14 +221,13 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 			CreatorUserId: creatorUserID,
 			Scopes:        scopes,
 			Note:          note,
-		})
-		if err != nil {
-			s.logger.Error("failed to marshall the access token log argument")
 		}
 
 		securityEventStore := NewDBWith(s.logger, s).SecurityEventLogs()
 
-		securityEventStore.LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "", uint32(creatorUserID), "", "BACKEND", arg)
+		if err := securityEventStore.LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "", uint32(creatorUserID), "", "BACKEND", arg); err != nil {
+			s.logger.Warn("Failed to log security event", log.Error(err))
+		}
 
 	}
 
@@ -431,7 +429,9 @@ func (s *accessTokenStore) DeleteByID(ctx context.Context, id int64) error {
 		AccessTokenId int64 `json:"access_token_id"`
 	}{AccessTokenId: id}
 
-	NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg)
+	if err := NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
+		s.logger.Warn("Error logging security event", log.Error(err))
+	}
 
 	return nil
 }
@@ -453,7 +453,10 @@ func (s *accessTokenStore) HardDeleteByID(ctx context.Context, id int64) error {
 		AccessTokenId int64 `json:"access_token_id"`
 	}{AccessTokenId: id}
 
-	NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg)
+	if err := NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
+		s.logger.Warn("Error logging security event", log.Error(err))
+
+	}
 
 	return nil
 }
@@ -475,7 +478,9 @@ func (s *accessTokenStore) DeleteByToken(ctx context.Context, token string) erro
 		AccessTokenSHA256: tokenHash,
 	}
 
-	NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg)
+	if err := NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
+		s.logger.Warn("Error logging security event", log.Error(err))
+	}
 
 	return nil
 }
