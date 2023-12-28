@@ -14,3 +14,4 @@ To use it:
 ## Updates
 
 The [`pr-auditor-patch.yml`](./pr-auditor-patch.yml) spec describes a batch change that can be used to roll out `pr-auditor` workflow updates to repositories that already have it set up by synchronizing them with the source-of-truth script in the batch change spec.
+
