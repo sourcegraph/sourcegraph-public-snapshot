@@ -72,6 +72,9 @@ func GetLanguages(path string, getContent func() ([]byte, error)) ([]string, err
 	if err != nil {
 		return nil, err
 	}
+	if len(content) == 0 {
+		return langs, nil
+	}
 	if enry.IsBinary(content) {
 		return nil, nil
 	}

@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/binary"
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -276,6 +277,19 @@ func (r *GitTreeEntryResolver) Languages(ctx context.Context) ([]string, error) 
 		return nil, nil
 	}
 	return languages.GetLanguages(r.Name(), func() ([]byte, error) {
+		useFileContents := true
+		exptFeatures := conf.SiteConfig().ExperimentalFeatures
+		if exptFeatures != nil && exptFeatures.LanguageDetection != nil {
+			switch exptFeatures.LanguageDetection.GraphQL {
+			case "useFileContents":
+				break
+			case "useFileNamesOnly":
+				useFileContents = false
+			}
+		}
+		if !useFileContents {
+			return nil, nil
+		}
 		_, err := r.Content(ctx, &GitTreeContentPageArgs{})
 		if err != nil {
 			return nil, err

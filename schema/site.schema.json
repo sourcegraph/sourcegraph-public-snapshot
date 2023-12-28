@@ -567,6 +567,20 @@
           "type": "boolean",
           "group": "BatchChanges",
           "default": false
+        },
+        "languageDetection": {
+          "description": "Setting for customizing language detection behavior",
+          "type": "object",
+          "required": ["graphQL"],
+          "additionalProperties": false,
+          "properties": {
+            "graphQL": {
+              "description": "What to take into account for computing 'languages' for the GraphQL API. This setting indirectly affects client-side code attempting to determine languages, such as search-based code navigation and the files sidebar.",
+              "type": "string",
+              "enum": ["useFileContents", "useFileNamesOnly"],
+              "default": "useFileContents"
+            }
+          }
         }
       },
       "examples": [
@@ -591,6 +605,7 @@
       ],
       "group": "Experimental"
     },
+
     "batchChanges.enabled": {
       "description": "Enables/disables the Batch Changes feature.",
       "type": "boolean",
