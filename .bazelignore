@@ -6,6 +6,14 @@ client/browser/node_modules
 client/build-config/node_modules
 client/client-api/node_modules
 client/codeintellify/node_modules
+client/cody/node_modules
+client/cody-agent/node_modules
+client/cody-cli/node_modules
+client/cody-cli/node_modules
+client/cody-slack/node_modules
+client/cody-shared/node_modules
+client/cody-web/node_modules
+client/cody-ui/node_modules
 client/common/node_modules
 client/eslint-plugin-wildcard/node_modules
 client/extension-api/node_modules
