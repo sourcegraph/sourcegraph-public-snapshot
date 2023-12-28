@@ -125,15 +125,11 @@
                 >
                     {#if entry.isDirectory}
                         <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
-                    {:else if entry.__typename == 'GitBlob'}
-                        {@const icon = getFileIconInfo(entry.name, entry.languages)}
-                        {#if icon}
-                            <Icon svgPath={icon.svg.path} inline --color={icon.svg.color} />
-                        {:else}
-                            <Icon svgPath={DEFAULT_FILE_ICON.path} inline --color={DEFAULT_FILE_ICON.color} />
-                        {/if}
                     {:else}
-                        <Icon svgPath={DEFAULT_FILE_ICON.path} inline --color={DEFAULT_FILE_ICON.color} />
+                        {@const icon =
+                            (entry.__typename === 'GitBlob' && getFileIconInfo(entry.name, entry.languages)?.svg) ||
+                            DEFAULT_FILE_ICON}
+                        <Icon svgPath={icon.path} inline --color={icon.color} />
                     {/if}
                     {isRoot ? '..' : entry.name}
                 </a>
