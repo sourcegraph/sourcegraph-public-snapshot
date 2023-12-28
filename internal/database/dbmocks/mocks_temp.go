@@ -70097,7 +70097,7 @@ func NewMockSecurityEventLogsStore() *MockSecurityEventLogsStore {
 			},
 		},
 		LogSecurityEventFunc: &SecurityEventLogsStoreLogSecurityEventFunc{
-			defaultHook: func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{}) {
+			defaultHook: func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{}) (r0 error) {
 				return
 			},
 		},
@@ -70135,7 +70135,7 @@ func NewStrictMockSecurityEventLogsStore() *MockSecurityEventLogsStore {
 			},
 		},
 		LogSecurityEventFunc: &SecurityEventLogsStoreLogSecurityEventFunc{
-			defaultHook: func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{}) {
+			defaultHook: func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{}) error {
 				panic("unexpected invocation of MockSecurityEventLogsStore.LogSecurityEvent")
 			},
 		},
@@ -70693,24 +70693,24 @@ func (c SecurityEventLogsStoreLogEventListFuncCall) Results() []interface{} {
 // the LogSecurityEvent method of the parent MockSecurityEventLogsStore
 // instance is invoked.
 type SecurityEventLogsStoreLogSecurityEventFunc struct {
-	defaultHook func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{})
-	hooks       []func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{})
+	defaultHook func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{}) error
+	hooks       []func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{}) error
 	history     []SecurityEventLogsStoreLogSecurityEventFuncCall
 	mutex       sync.Mutex
 }
 
 // LogSecurityEvent delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockSecurityEventLogsStore) LogSecurityEvent(v0 context.Context, v1 database.SecurityEventName, v2 string, v3 uint32, v4 string, v5 string, v6 interface{}) {
-	m.LogSecurityEventFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
-	m.LogSecurityEventFunc.appendCall(SecurityEventLogsStoreLogSecurityEventFuncCall{v0, v1, v2, v3, v4, v5, v6})
-	return
+func (m *MockSecurityEventLogsStore) LogSecurityEvent(v0 context.Context, v1 database.SecurityEventName, v2 string, v3 uint32, v4 string, v5 string, v6 interface{}) error {
+	r0 := m.LogSecurityEventFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
+	m.LogSecurityEventFunc.appendCall(SecurityEventLogsStoreLogSecurityEventFuncCall{v0, v1, v2, v3, v4, v5, v6, r0})
+	return r0
 }
 
 // SetDefaultHook sets function that is called when the LogSecurityEvent
 // method of the parent MockSecurityEventLogsStore instance is invoked and
 // the hook queue is empty.
-func (f *SecurityEventLogsStoreLogSecurityEventFunc) SetDefaultHook(hook func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{})) {
+func (f *SecurityEventLogsStoreLogSecurityEventFunc) SetDefaultHook(hook func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{}) error) {
 	f.defaultHook = hook
 }
 
@@ -70719,7 +70719,7 @@ func (f *SecurityEventLogsStoreLogSecurityEventFunc) SetDefaultHook(hook func(co
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *SecurityEventLogsStoreLogSecurityEventFunc) PushHook(hook func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{})) {
+func (f *SecurityEventLogsStoreLogSecurityEventFunc) PushHook(hook func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{}) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -70727,20 +70727,20 @@ func (f *SecurityEventLogsStoreLogSecurityEventFunc) PushHook(hook func(context.
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *SecurityEventLogsStoreLogSecurityEventFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{}) {
-		return
+func (f *SecurityEventLogsStoreLogSecurityEventFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{}) error {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *SecurityEventLogsStoreLogSecurityEventFunc) PushReturn() {
-	f.PushHook(func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{}) {
-		return
+func (f *SecurityEventLogsStoreLogSecurityEventFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{}) error {
+		return r0
 	})
 }
 
-func (f *SecurityEventLogsStoreLogSecurityEventFunc) nextHook() func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{}) {
+func (f *SecurityEventLogsStoreLogSecurityEventFunc) nextHook() func(context.Context, database.SecurityEventName, string, uint32, string, string, interface{}) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -70796,6 +70796,9 @@ type SecurityEventLogsStoreLogSecurityEventFuncCall struct {
 	// Arg6 is the value of the 7th argument passed to this method
 	// invocation.
 	Arg6 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -70807,7 +70810,7 @@ func (c SecurityEventLogsStoreLogSecurityEventFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SecurityEventLogsStoreLogSecurityEventFuncCall) Results() []interface{} {
-	return []interface{}{}
+	return []interface{}{c.Result0}
 }
 
 // MockSettingsStore is a mock implementation of the SettingsStore interface

@@ -84,6 +84,7 @@ const (
 	SecurityEventNameDotComSubscriptionUpdated  SecurityEventName = "DotComSubscriptionUpdated"
 
 	SecurityEventNameOrgViewed         SecurityEventName = "OrganizationViewed"
+	SecurityEventNameOrgListViewed     SecurityEventName = "OrganizationListViewed"
 	SecurityEventNameOrgCreated        SecurityEventName = "OrganizationCreated"
 	SecurityEventNameOrgUpdated        SecurityEventName = "OrganizationUpdated"
 	SecurityEventNameOrgSettingsViewed SecurityEventName = "OrganizationSettingsViewed"
@@ -132,8 +133,8 @@ type SecurityEventLogsStore interface {
 	LogEvent(ctx context.Context, e *SecurityEvent)
 	// Bulk "LogEvent" action.
 	LogEventList(ctx context.Context, events []*SecurityEvent)
-	// LogSecurityEvent logs the given security event.
-	LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any)
+	// LogSecurityEvent creates an event and logs it.
+	LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error
 }
 
 type securityEventLogsStore struct {
@@ -250,10 +251,8 @@ func (s *securityEventLogsStore) LogEventList(ctx context.Context, events []*Sec
 	}
 }
 
-func (s *securityEventLogsStore) LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) {
-
-	var event SecurityEvent
-	event = SecurityEvent{
+func (s *securityEventLogsStore) LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error {
+	event := SecurityEvent{
 		Name:            eventName,
 		URL:             url,
 		UserID:          userID,
@@ -263,10 +262,12 @@ func (s *securityEventLogsStore) LogSecurityEvent(ctx context.Context, eventName
 	}
 	argsJSON, err := json.Marshal(arguments)
 	if err != nil {
-		errors.Wrap(err, "error marshalling arguments")
 		event.Argument = nil
+		s.LogEvent(ctx, &event)
+		return errors.Wrap(err, "error marshalling arguments")
 	} else {
 		event.Argument = argsJSON
+		s.LogEvent(ctx, &event)
+		return nil
 	}
-	s.LogEvent(ctx, &event)
 }

@@ -59,7 +59,9 @@ func serveVerifyEmail(db database.DB) http.HandlerFunc {
 			}
 		}
 
-		db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailVerified, r.URL.Path, uint32(actr.UID), "", "BACKEND", email)
+		if err := db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailVerified, r.URL.Path, uint32(actr.UID), "", "BACKEND", email); err != nil {
+			log.Error(err)
+		}
 
 		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 			UserID: usr.ID,

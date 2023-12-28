@@ -487,11 +487,11 @@ func HandleUnlockUserAccount(_ log.Logger, db database.DB, store LockoutStore) h
 
 func recordSignInSecurityEvent(r *http.Request, db database.DB, user *types.User, name *database.SecurityEventName) {
 	var anonymousID string
-
 	// Safe to ignore this error
 	anonymousID, _ = cookie.AnonymousUID(r)
-
-	db.SecurityEventLogs().LogSecurityEvent(r.Context(), *name, r.URL.Path, uint32(user.ID), anonymousID, "BACKEND", nil)
+	if err := db.SecurityEventLogs().LogSecurityEvent(r.Context(), *name, r.URL.Path, uint32(user.ID), anonymousID, "BACKEND", nil); err != nil {
+		log.Error(err)
+	}
 
 	// Legacy event - TODO: Remove in 5.3, alongside the teestore.WithoutV1
 	// context.

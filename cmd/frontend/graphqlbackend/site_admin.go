@@ -2,8 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
 
@@ -263,7 +266,7 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	// eventArgs.By which is used as the UserID in database.SecurityEvent - a required argument to
 	// write an entry into the database.
 	eventName := database.SecurityEventNameRoleChangeDenied
-	defer r.db.SecurityEventLogs().LogSecurityEvent(ctx, eventName, "", uint32(eventArgs.By), "", "BACKEND", eventArgs)
+	defer logRoleChangeAttempt(ctx, r.db, &eventName, &eventArgs, &err)
 
 	// 🚨 SECURITY: Only site admins can promote other users to site admin (or demote from site
 	// admin).
@@ -311,6 +314,30 @@ func (r *schemaResolver) InvalidateSessionsByIDs(ctx context.Context, args *stru
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
+}
+
+func logRoleChangeAttempt(ctx context.Context, db database.DB, name *database.SecurityEventName, eventArgs *roleChangeEventArgs, parentErr *error) {
+	// To avoid a panic, it's important to check for a nil parentErr before we dereference it.
+	if parentErr != nil && *parentErr != nil {
+		eventArgs.Reason = (*parentErr).Error()
+	}
+
+	args, err := json.Marshal(eventArgs)
+	if err != nil {
+		log15.Error("logRoleChangeAttempt: failed to marshal JSON", "eventArgs", eventArgs)
+	}
+
+	event := &database.SecurityEvent{
+		Name:            *name,
+		URL:             "",
+		UserID:          uint32(eventArgs.By),
+		AnonymousUserID: "",
+		Argument:        args,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
 func missingUserIds(id, affectedIds []int32) []graphql.ID {

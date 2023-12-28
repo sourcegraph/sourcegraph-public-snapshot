@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -141,20 +142,20 @@ func assertEventField(t *testing.T, field map[string]any) {
 	assert.NotEmpty(t, field["timestamp"])
 }
 
-// func TestLogSecurityEvent1(t *testing.T) {
-// 	ctx := context.Background()
-// 	logger, _ := logtest.Captured(t)
+func TestLogSecurityEvent1(t *testing.T) {
+	ctx := context.Background()
+	logger, _ := logtest.Captured(t)
 
-// 	db := NewDB(logger, dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
-// 	t.Run("valid event", func(t *testing.T) {
-// 		db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "http://sourcegraph.com", 123, "AnonymousUserID", "source", nil)
-// 		require.NoError(t, err)
-// 	})
+	t.Run("valid event", func(t *testing.T) {
+		err := db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "http://sourcegraph.com", 123, "AnonymousUserID", "source", nil)
+		require.NoError(t, err)
+	})
 
-// 	t.Run("invalid arguments", func(t *testing.T) {
-// 		db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "http://sourcegraph.com", 123, "AnonymousUserID", "source", make(chan int))
-// 		require.Error(t, err)
-// 	})
+	t.Run("invalid arguments", func(t *testing.T) {
+		err := db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "http://sourcegraph.com", 123, "AnonymousUserID", "source", make(chan int))
+		require.Error(t, err)
+	})
 
-// }
+}
