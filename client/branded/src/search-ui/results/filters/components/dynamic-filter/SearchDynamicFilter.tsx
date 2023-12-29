@@ -172,32 +172,15 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
             )}
 
             <ul className={styles.list}>
-                {filtersToShow.map(filter => {
-                    const isSelectedFilter = isSelected(filter.value)
-
-                    return (
-                        <li key={filter.value}>
-                            <Button
-                                variant={isSelectedFilter ? 'primary' : 'secondary'}
-                                outline={!isSelectedFilter}
-                                className={classNames(styles.item, { [styles.itemSelected]: isSelectedFilter })}
-                                onClick={() => handleFilterClick(filter.value, isSelectedFilter)}
-                            >
-                                <span className={styles.itemText}>
-                                    {renderItem ? renderItem(filter) : filter.label}
-                                </span>
-                                {filter.count !== 0 && (
-                                    <Badge variant="secondary" className="ml-2">
-                                        {filter.count}
-                                    </Badge>
-                                )}
-                                {isSelectedFilter && (
-                                    <Icon svgPath={mdiClose} aria-hidden={true} className="ml-1 flex-shrink-0" />
-                                )}
-                            </Button>
-                        </li>
-                    )
-                })}
+                {filtersToShow.map(filter => (
+                    <DynamicFilterItem
+                        key={filter.value}
+                        filter={filter}
+                        selected={isSelected(filter.value)}
+                        renderItem={renderItem}
+                        onClick={handleFilterClick}
+                    />
+                ))}
             </ul>
             {filteredFilters.length > MAX_FILTERS_NUMBER && (
                 <Button variant="link" size="sm" onClick={() => setShowAllFilters(!showAllFilters)}>
@@ -205,6 +188,36 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
                 </Button>
             )}
         </div>
+    )
+}
+
+interface DynamicFilterItemProps {
+    filter: Filter
+    selected: boolean
+    renderItem?: (filter: Filter) => ReactNode
+    onClick: (filter: string, remove?: boolean) => void
+}
+
+const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
+    const { filter, selected, renderItem, onClick } = props
+
+    return (
+        <li key={filter.value}>
+            <Button
+                variant={selected ? 'primary' : 'secondary'}
+                outline={!selected}
+                className={classNames(styles.item, { [styles.itemSelected]: selected })}
+                onClick={() => onClick(filter.value, selected)}
+            >
+                <span className={styles.itemText}>{renderItem ? renderItem(filter) : filter.label}</span>
+                {filter.count !== 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                        {filter.count}
+                    </Badge>
+                )}
+                {selected && <Icon svgPath={mdiClose} aria-hidden={true} className="ml-1 flex-shrink-0" />}
+            </Button>
+        </li>
     )
 }
 
