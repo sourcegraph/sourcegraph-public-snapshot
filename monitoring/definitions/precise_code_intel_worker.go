@@ -23,7 +23,7 @@ func PreciseCodeIntelWorker() *monitoring.Dashboard {
 
 			// Resource monitoring
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerInfraOrg),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
