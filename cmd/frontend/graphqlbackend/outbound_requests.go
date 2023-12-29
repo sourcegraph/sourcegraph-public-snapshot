@@ -96,7 +96,6 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", graphql.ID(key)); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 		}
-
 	}
 	item, _ := httpcli.GetOutboundRequestLogItem(key)
 	return &OutboundRequestResolver{req: item}, nil
