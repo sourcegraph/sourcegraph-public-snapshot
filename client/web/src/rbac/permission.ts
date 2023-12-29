@@ -1,6 +1,6 @@
 import { findIndex } from 'lodash'
 
-import type { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
 import type { RbacPermission } from './constants'
 
