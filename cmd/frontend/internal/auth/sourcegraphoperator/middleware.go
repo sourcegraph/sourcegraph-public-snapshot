@@ -1,6 +1,7 @@
 package sourcegraphoperator
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -170,13 +171,26 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 					log.Error(err),
 				)
 			} else {
-				arg := map[string]any{
+				args, err := json.Marshal(map[string]any{
 					"session_expiry_seconds": int64(expiry.Seconds()),
+				})
+				if err != nil {
+					logger.Error(
+						"failed to marshal JSON for security event log argument",
+						log.String("eventName", string(database.SecurityEventNameSignInSucceeded)),
+						log.Error(err),
+					)
 				}
-				if err := db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSignInSucceeded, r.URL.Path, uint32(act.UID), "", "BACKEND", arg); err != nil {
-					logger.Warn("Error logging security event", log.Error(err))
-				}
-
+				db.SecurityEventLogs().LogEvent(
+					ctx,
+					&database.SecurityEvent{
+						Name:      database.SecurityEventNameSignInSucceeded,
+						UserID:    uint32(act.UID),
+						Argument:  args,
+						Source:    "BACKEND",
+						Timestamp: time.Now(),
+					},
+				)
 			}
 
 			if !result.User.SiteAdmin {
