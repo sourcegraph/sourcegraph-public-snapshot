@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "service",
+    srcs = [
+        "config.go",
+        "server.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/pings/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/frontend/hubspot/hubspotutil",
+        "//internal/httpserver",
+        "//internal/profiler",
+        "//internal/pubsub",
+        "//internal/updatecheck",
+        "//internal/version",
+        "//lib/background",
+        "//lib/errors",
+        "//lib/managedservicesplatform/runtime",
+        "@com_github_gorilla_mux//:mux",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel_metric//:metric",
+    ],
+)
