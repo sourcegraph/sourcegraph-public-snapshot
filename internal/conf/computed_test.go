@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -617,6 +618,135 @@ func TestGetCompletionsConfig(t *testing.T) {
 				deploy.Mock(defaultDeploy)
 			})
 			conf := GetCompletionsConfig(tc.siteConfig)
+			if tc.wantDisabled {
+				if conf != nil {
+					t.Fatalf("expected nil config but got non-nil: %+v", conf)
+				}
+			} else {
+				if conf == nil {
+					t.Fatal("unexpected nil config returned")
+				}
+				if diff := cmp.Diff(tc.wantConfig, conf); diff != "" {
+					t.Fatalf("unexpected config computed: %s", diff)
+				}
+			}
+		})
+	}
+}
+
+func TestGetFeaturesConfig(t *testing.T) {
+	zeroConfigDefaultWithLicense := &conftypes.ConfigFeatures{
+		Chat:         true,
+		AutoComplete: true,
+		Commands:     true,
+	}
+
+	testCases := []struct {
+		name         string
+		siteConfig   schema.SiteConfiguration
+		deployType   string
+		wantConfig   *conftypes.ConfigFeatures
+		wantDisabled bool
+	}{
+		{
+			name: "Only Chat enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				ConfigFeatures: &schema.ConfigFeatures{
+					Chat: true,
+				},
+			},
+			wantConfig: &conftypes.ConfigFeatures{
+				Chat:         true,
+				AutoComplete: false,
+				Commands:     false,
+			},
+		},
+		{
+			name: "Only AutoComplete enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				ConfigFeatures: &schema.ConfigFeatures{
+					AutoComplete: true,
+				},
+			},
+			wantConfig: &conftypes.ConfigFeatures{
+				Chat:         false,
+				AutoComplete: true,
+				Commands:     false,
+			},
+		},
+		{
+			name: "Only Commands enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				ConfigFeatures: &schema.ConfigFeatures{
+					Commands: true,
+				},
+			},
+			wantConfig: &conftypes.ConfigFeatures{
+				Chat:         false,
+				AutoComplete: false,
+				Commands:     true,
+			},
+		},
+		{
+			name: "No config given",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled:    pointers.Ptr(true),
+				ConfigFeatures: nil,
+			},
+			wantConfig: &conftypes.ConfigFeatures{
+				Chat:         true,
+				AutoComplete: true,
+				Commands:     true,
+			},
+		},
+		{
+			name: "All Config Enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				ConfigFeatures: &schema.ConfigFeatures{
+					Commands:     true,
+					Chat:         true,
+					AutoComplete: true,
+				},
+			},
+			wantConfig: &conftypes.ConfigFeatures{
+				Chat:         true,
+				AutoComplete: true,
+				Commands:     true,
+			},
+		},
+		{
+			name: "Commands and Autocomplete Enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				ConfigFeatures: &schema.ConfigFeatures{
+					Commands:     true,
+					Chat:         false,
+					AutoComplete: true,
+				},
+			},
+			wantConfig: &conftypes.ConfigFeatures{
+				Chat:         false,
+				AutoComplete: true,
+				Commands:     true,
+			},
+		},
+	}
+	fmt.Println(testCases, zeroConfigDefaultWithLicense, "what is love")
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			defaultDeploy := deploy.Type()
+			if tc.deployType != "" {
+				deploy.Mock(tc.deployType)
+			}
+			t.Cleanup(func() {
+				deploy.Mock(defaultDeploy)
+			})
+			conf := GetConfigFeatures(tc.siteConfig)
 			if tc.wantDisabled {
 				if conf != nil {
 					t.Fatalf("expected nil config but got non-nil: %+v", conf)
