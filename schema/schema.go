@@ -2496,8 +2496,8 @@ type SettingsExperimentalFeatures struct {
 	GoCodeCheckerTemplates *bool `json:"goCodeCheckerTemplates,omitempty"`
 	// NewSearchNavigationUI description: Enables new experimental search UI navigation
 	NewSearchNavigationUI *bool `json:"newSearchNavigationUI,omitempty"`
-	// NewSearchResultFilters description: Enables new experimental search results filters
-	NewSearchResultFilters *bool `json:"newSearchResultFilters,omitempty"`
+	// NewSearchResultFiltersPanel description: Enables new experimental search results filters panel
+	NewSearchResultFiltersPanel *bool `json:"newSearchResultFiltersPanel,omitempty"`
 	// NewSearchResultsUI description: Enables new experimental search results UI, such as preview panel feature and updated search and filter layouts.
 	NewSearchResultsUI *bool `json:"newSearchResultsUI,omitempty"`
 	// ProactiveSearchResultsAggregations description: Search results aggregations are triggered automatically with a search.
@@ -2565,7 +2565,7 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "fuzzyFinderSymbols")
 	delete(m, "goCodeCheckerTemplates")
 	delete(m, "newSearchNavigationUI")
-	delete(m, "newSearchResultFilters")
+	delete(m, "newSearchResultFiltersPanel")
 	delete(m, "newSearchResultsUI")
 	delete(m, "proactiveSearchResultsAggregations")
 	delete(m, "searchContextsQuery")

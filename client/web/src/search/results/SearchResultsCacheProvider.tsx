@@ -91,13 +91,13 @@ export function useCachedSearchResults(props: CachedSearchResultsInput): Aggrega
             // See: https://github.com/ReactiveX/rxjs/issues/5732
             return merge(stream.pipe(throttleTime(500)), stream.pipe(last())).pipe(
                 tap(results => {
-                    const previosCache = cachedResults.current?.cache ?? {}
-                    cachedResults.current = { query, options, cache: { ...previosCache, [filterQuery]: results } }
+                    const previousCache = cachedResults.current?.cache ?? {}
+                    cachedResults.current = { query, options, cache: { ...previousCache, [filterQuery]: results } }
                 })
             )
             // We also need to pass `queryTimestamp` to the dependency array, because
             // it's used in the `useEffect` below to reset the cache if a new search
-            // is made with the same query. Otherwise the new search will not be executed.
+            // is made with the same query. Otherwise, the new search will not be executed.
             // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [query, filterQuery, options, streamSearch, cachedResults, queryTimestamp])
     )

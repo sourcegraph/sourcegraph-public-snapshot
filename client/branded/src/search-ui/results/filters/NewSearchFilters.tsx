@@ -2,10 +2,10 @@ import { FC, useMemo } from 'react'
 
 import { FilterType, NegatedFilters, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
-import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { scanSearchQuery, succeedScan } from '@sourcegraph/shared/src/search/query/scanner'
 import type { Filter } from '@sourcegraph/shared/src/search/query/token'
-import { omitFilter, succeedScan, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import type { Filter as ResultFilter, SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { omitFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import {
     authorFilter,
@@ -23,7 +23,7 @@ import {
 } from './components/filter-type-list/FilterTypeList'
 import { FiltersDocFooter } from './components/filters-doc-footer/FiltersDocFooter'
 import { useFilterQuery } from './hooks'
-import { COMMIT_DATE_FILTERS, SearchFilterType, SYMBOL_KIND_FILTERS } from './types'
+import { COMMIT_DATE_FILTERS, DynamicClientFilter, SearchFilterType, SYMBOL_KIND_FILTERS } from './types'
 import { generateAuthorFilters } from './utils'
 
 import styles from './NewSearchFilters.module.scss'
@@ -31,7 +31,7 @@ import styles from './NewSearchFilters.module.scss'
 interface NewSearchFiltersProps {
     query: string
     results: SearchMatch[] | undefined
-    filters?: ResultFilter[]
+    filters?: DynamicClientFilter[]
     onQueryChange: (nextQuery: string) => void
 }
 

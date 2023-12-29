@@ -1,13 +1,15 @@
 import { groupBy } from 'lodash'
 
-import { CommitMatch, Filter, SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { CommitMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
-export const generateAuthorFilters = (results: SearchMatch[]): Filter[] => {
+import { DynamicClientFilter } from './types'
+
+export const generateAuthorFilters = (results: SearchMatch[]): DynamicClientFilter[] => {
     const commitMatches = results.filter(match => match.type === 'commit') as CommitMatch[]
     const groupedMatches = groupBy(commitMatches, match => match.authorName)
 
     return Object.keys(groupedMatches)
-        .map<Filter>(authorName => {
+        .map<DynamicClientFilter>(authorName => {
             const commitMatches = groupedMatches[authorName]
 
             return {

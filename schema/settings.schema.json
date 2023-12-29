@@ -13,8 +13,8 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "newSearchResultFilters": {
-          "description": "Enables new experimental search results filters",
+        "newSearchResultFiltersPanel": {
+          "description": "Enables new experimental search results filters panel",
           "type": "boolean",
           "default": false,
           "!go": {

@@ -134,7 +134,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         onLogSearchResultClick,
     } = props
 
-    const newFiltersEnabled = useExperimentalFeatures(features => features.newSearchResultFilters)
+    const newFiltersEnabled = useExperimentalFeatures(features => features.newSearchResultFiltersPanel)
     const submittedURLQueryRef = useRef(submittedURLQuery)
     const containerRef = useRef<HTMLDivElement>(null)
     const { previewBlob, clearPreview } = useSearchResultState()
