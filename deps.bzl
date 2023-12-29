@@ -4834,8 +4834,8 @@ def go_dependencies():
         name = "com_github_opsgenie_opsgenie_go_sdk_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/opsgenie/opsgenie-go-sdk-v2",
-        sum = "h1:nV98dkBpqaYbDnhefmOQ+Rn4hE+jD6AtjYHXaU5WyJI=",
-        version = "v1.2.13",
+        sum = "h1:0h+YoXSyipf6XQGyIaDg6z5jwRik1JSm+sQetnD7vGY=",
+        version = "v1.2.22",
     )
     go_repository(
         name = "com_github_oschwald_maxminddb_golang",
