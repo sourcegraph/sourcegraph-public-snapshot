@@ -85,23 +85,23 @@ func TestShebang(t *testing.T) {
 	cases := []testCase{
 		{
 			Contents: "#!/usr/bin/env python",
-			Expected: "Python",
+			Expected: "python",
 		},
 		{
 			Contents: "#!/usr/bin/env node",
-			Expected: "JavaScript",
+			Expected: "javascript",
 		},
 		{
 			Contents: "#!/usr/bin/env ruby",
-			Expected: "Ruby",
+			Expected: "ruby",
 		},
 		{
 			Contents: "#!/usr/bin/env perl",
-			Expected: "Perl",
+			Expected: "perl",
 		},
 		{
 			Contents: "#!/usr/bin/env php",
-			Expected: "PHP",
+			Expected: "php",
 		},
 		{
 			Contents: "#!/usr/bin/env lua",
@@ -109,7 +109,7 @@ func TestShebang(t *testing.T) {
 		},
 		{
 			Contents: "#!/usr/bin/env tclsh",
-			Expected: "Tcl",
+			Expected: "tcl",
 		},
 		{
 			Contents: "#!/usr/bin/env fish",

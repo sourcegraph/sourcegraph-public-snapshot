@@ -29,7 +29,7 @@ func Postgres() *monitoring.Dashboard {
 						monitoring.Observable{
 							Name:          "connections",
 							Description:   "active connections",
-							Owner:         monitoring.ObservableOwnerDevOps,
+							Owner:         monitoring.ObservableOwnerInfraOrg,
 							DataMustExist: false, // not deployed on docker-compose
 							Query:         `sum by (job) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin"}) OR sum by (job) (pg_stat_activity_count{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`,
 							Panel:         monitoring.Panel().LegendFormat("{{datname}}"),
@@ -39,7 +39,7 @@ func Postgres() *monitoring.Dashboard {
 						monitoring.Observable{
 							Name:          "usage_connections_percentage",
 							Description:   "connection in use",
-							Owner:         monitoring.ObservableOwnerDevOps,
+							Owner:         monitoring.ObservableOwnerInfraOrg,
 							DataMustExist: false,
 							Query:         `sum(pg_stat_activity_count) by (job) / (sum(pg_settings_max_connections) by (job) - sum(pg_settings_superuser_reserved_connections) by (job)) * 100`,
 							Panel:         monitoring.Panel().LegendFormat("{{job}}").Unit(monitoring.Percentage).Max(100).Min(0),
@@ -52,7 +52,7 @@ func Postgres() *monitoring.Dashboard {
 						monitoring.Observable{
 							Name:          "transaction_durations",
 							Description:   "maximum transaction durations",
-							Owner:         monitoring.ObservableOwnerDevOps,
+							Owner:         monitoring.ObservableOwnerInfraOrg,
 							DataMustExist: false, // not deployed on docker-compose
 							// Ignore in codeintel-db because Rockskip processing involves long transactions
 							// during normal operation.
@@ -72,7 +72,7 @@ func Postgres() *monitoring.Dashboard {
 						monitoring.Observable{
 							Name:          "postgres_up",
 							Description:   "database availability",
-							Owner:         monitoring.ObservableOwnerDevOps,
+							Owner:         monitoring.ObservableOwnerInfraOrg,
 							DataMustExist: false, // not deployed on docker-compose
 							Query:         "pg_up",
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
@@ -95,7 +95,7 @@ func Postgres() *monitoring.Dashboard {
 						monitoring.Observable{
 							Name:          "invalid_indexes",
 							Description:   "invalid indexes (unusable by the query planner)",
-							Owner:         monitoring.ObservableOwnerDevOps,
+							Owner:         monitoring.ObservableOwnerInfraOrg,
 							DataMustExist: false, // not deployed on docker-compose
 							Query:         "max by (relname)(pg_invalid_index_count)",
 							Panel:         monitoring.Panel().LegendFormat("{{relname}}"),
@@ -110,7 +110,7 @@ func Postgres() *monitoring.Dashboard {
 						monitoring.Observable{
 							Name:          "pg_exporter_err",
 							Description:   "errors scraping postgres exporter",
-							Owner:         monitoring.ObservableOwnerDevOps,
+							Owner:         monitoring.ObservableOwnerInfraOrg,
 							DataMustExist: false, // not deployed on docker-compose
 							Query:         "pg_exporter_last_scrape_error",
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
@@ -124,7 +124,7 @@ func Postgres() *monitoring.Dashboard {
 						monitoring.Observable{
 							Name:           "migration_in_progress",
 							Description:    "active schema migration",
-							Owner:          monitoring.ObservableOwnerDevOps,
+							Owner:          monitoring.ObservableOwnerInfraOrg,
 							DataMustExist:  false, // not deployed on docker-compose
 							Query:          "pg_sg_migration_status",
 							Panel:          monitoring.Panel().LegendFormat("{{app}}"),
@@ -157,7 +157,7 @@ func Postgres() *monitoring.Dashboard {
 						monitoring.Observable{
 							Name:           "pg_table_size",
 							Description:    "table size",
-							Owner:          monitoring.ObservableOwnerDevOps,
+							Owner:          monitoring.ObservableOwnerInfraOrg,
 							Query:          `max by (relname)(pg_table_bloat_size)`,
 							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Bytes),
 							NoAlert:        true,
@@ -166,7 +166,7 @@ func Postgres() *monitoring.Dashboard {
 						monitoring.Observable{
 							Name:           "pg_table_bloat_ratio",
 							Description:    "table bloat ratio",
-							Owner:          monitoring.ObservableOwnerDevOps,
+							Owner:          monitoring.ObservableOwnerInfraOrg,
 							Query:          `max by (relname)(pg_table_bloat_ratio) * 100`,
 							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Percentage),
 							NoAlert:        true,
@@ -177,7 +177,7 @@ func Postgres() *monitoring.Dashboard {
 						monitoring.Observable{
 							Name:           "pg_index_size",
 							Description:    "index size",
-							Owner:          monitoring.ObservableOwnerDevOps,
+							Owner:          monitoring.ObservableOwnerInfraOrg,
 							Query:          `max by (relname)(pg_index_bloat_size)`,
 							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Bytes),
 							NoAlert:        true,
@@ -186,7 +186,7 @@ func Postgres() *monitoring.Dashboard {
 						monitoring.Observable{
 							Name:           "pg_index_bloat_ratio",
 							Description:    "index bloat ratio",
-							Owner:          monitoring.ObservableOwnerDevOps,
+							Owner:          monitoring.ObservableOwnerInfraOrg,
 							Query:          `max by (relname)(pg_index_bloat_ratio) * 100`,
 							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Percentage),
 							NoAlert:        true,
@@ -196,8 +196,8 @@ func Postgres() *monitoring.Dashboard {
 				},
 			},
 
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerInfraOrg, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerInfraOrg, nil),
 		},
 	}
 }
