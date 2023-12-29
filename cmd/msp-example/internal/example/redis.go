@@ -9,19 +9,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
 )
 
-// newRedisConnection creates a new Redis client from the MSP contract and issues
+// testRedisConnection creates a new Redis client from the MSP contract and issues
 // a PING to check the connection.
-func newRedisConnection(ctx context.Context, c runtime.Contract) (*goredis.Client, error) {
+func testRedisConnection(ctx context.Context, c runtime.Contract) error {
 	if c.RedisEndpoint == nil {
-		return nil, errors.New("no Redis endpoint provided")
+		return errors.New("no Redis endpoint provided")
 	}
 
 	redisOpts, err := goredis.ParseURL(*c.RedisEndpoint)
 	if err != nil {
-		return nil, errors.Wrap(err, "invalid Redis DSN")
+		return errors.Wrap(err, "invalid Redis DSN")
 	}
 
 	client := goredis.NewClient(redisOpts)
 	pong := client.Ping(ctx)
-	return client, pong.Err()
+	return pong.Err()
 }
