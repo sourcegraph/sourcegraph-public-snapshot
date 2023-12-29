@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"testing"
 
 	"github.com/hexops/autogold/v2"
@@ -15,6 +16,7 @@ import (
 	opsgenieteam "github.com/opsgenie/opsgenie-go-sdk-v2/team"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 )
 
 var onlineCheck = flag.Bool("online", false, "Run online checks")
@@ -61,8 +63,15 @@ func TestOwnersOpsgenieTeam(t *testing.T) {
 	// this helps make sure they are included as well.
 	var observabilityAlertsConfig []notifierConfig
 
+	// Count failed subtests for a convenience summary at the end of the test
 	var failed int
-	for _, owner := range allKnownOwners {
+
+	// Range over stable sort of owners for test stability
+	owners := maps.Keys(allKnownOwners)
+	slices.Sort(owners)
+	for _, key := range owners {
+		owner := allKnownOwners[key]
+
 		if t.Run(owner.teamName, func(t *testing.T) {
 			team, err := client.Get(ctx, &opsgenieteam.GetTeamRequest{
 				IdentifierType:  opsgenieteam.Name,
@@ -105,21 +114,6 @@ func TestOwnersOpsgenieTeam(t *testing.T) {
           "responders": [
             {
               "type": "team",
-              "name": "infra-support"
-            }
-          ]
-        },
-        "owners": [
-          "infra-support"
-        ]
-      },
-      {
-        "level": "critical",
-        "notifier": {
-          "type": "opsgenie",
-          "responders": [
-            {
-              "type": "team",
               "name": "code-insights"
             }
           ]
@@ -141,6 +135,21 @@ func TestOwnersOpsgenieTeam(t *testing.T) {
         },
         "owners": [
           "code-intel"
+        ]
+      },
+      {
+        "level": "critical",
+        "notifier": {
+          "type": "opsgenie",
+          "responders": [
+            {
+              "type": "team",
+              "name": "infra-support"
+            }
+          ]
+        },
+        "owners": [
+          "infra-support"
         ]
       },
       {
