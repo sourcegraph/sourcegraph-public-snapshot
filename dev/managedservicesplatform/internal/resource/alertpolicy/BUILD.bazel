@@ -24,3 +24,28 @@ go_test(
         "@com_github_hexops_autogold_v2//:autogold",
     ],
 )
+
+go_library(
+    name = "alertpolicy",
+    srcs = ["alertpolicy.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy",
+    visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    deps = [
+        "//dev/managedservicesplatform/internal/resourceid",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_aws_constructs_go_constructs_v10//:constructs",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//monitoringalertpolicy",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//monitoringnotificationchannel",
+    ],
+)
+
+go_test(
+    name = "alertpolicy_test",
+    srcs = ["alertpolicy_test.go"],
+    embed = [":alertpolicy"],
+    deps = [
+        "//lib/pointers",
+        "@com_github_hexops_autogold_v2//:autogold",
+    ],
+)

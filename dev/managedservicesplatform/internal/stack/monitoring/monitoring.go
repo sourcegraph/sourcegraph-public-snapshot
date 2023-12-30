@@ -1,12 +1,21 @@
 package monitoring
 
 import (
+	"fmt"
+
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringnotificationchannel"
+	opsgenieintegration "github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/apiintegration"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/dataopsgenieteam"
+
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/opsgenieprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -73,8 +82,8 @@ type Variables struct {
 	// configured. In particular, it seems that there is not a well-maintained
 	// Terraform provider for Slack.
 	EnvironmentCategory spec.EnvironmentCategory
-	// EnvironmentName is the name of the service environment.
-	EnvironmentName string
+	// EnvironmentID is the name of the service environment.
+	EnvironmentID string
 	// Owners is a list of team names. Each owner MUST correspond to the name
 	// of a team in Opsgenie.
 	Owners []string
@@ -83,30 +92,124 @@ type Variables struct {
 const StackName = "monitoring"
 
 func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
-	stack, _, err := stacks.New(StackName, googleprovider.With(vars.ProjectID))
+	stack, _, err := stacks.New(StackName,
+		googleprovider.With(vars.ProjectID),
+		opsgenieprovider.With(gsmsecret.DataConfig{
+			Secret:    googlesecretsmanager.SecretOpsgenieAPIToken,
+			ProjectID: googlesecretsmanager.ProjectID,
+		}))
 	if err != nil {
 		return nil, err
 	}
 
 	id := resourceid.New("monitoring")
-	err = commonAlerts(stack, id.Group("common"), vars)
+
+	// Prepare GCP monitoring channels on which to notify on when an alert goes
+	// off.
+	var channels []monitoringnotificationchannel.MonitoringNotificationChannel
+
+	// Configure opsgenie channels
+	var opsgenieAlerts bool
+	switch vars.EnvironmentCategory {
+	case spec.EnvironmentCategoryInternal, spec.EnvironmentCategoryExternal:
+		opsgenieAlerts = true
+	}
+	for i, owner := range vars.Owners {
+		id := id.Group("owner_%d", i)
+		// Opsgenie team corresponding to owner must exist
+		team := dataopsgenieteam.NewDataOpsgenieTeam(stack,
+			id.TerraformID("opsgenie_team"),
+			&dataopsgenieteam.DataOpsgenieTeamConfig{
+				Name: &owner,
+			})
+		// Set up integration for us to post to
+		integration := opsgenieintegration.NewApiIntegration(stack,
+			id.TerraformID("opsgenie_integration"),
+			&opsgenieintegration.ApiIntegrationConfig{
+				// Must be unique, so include the TF team ID in it. Since
+				// the team ID is a Terraform variable we use '%v' format.
+				Name: pointers.Stringf("msp-%s-%s-%v",
+					vars.Service.ID, vars.EnvironmentID, *team.Id()),
+				// https://support.atlassian.com/opsgenie/docs/integration-types-to-be-used-with-the-api/
+				Type: pointers.Ptr("GoogleStackdriver"),
+
+				// Supress all notifications if opsgenieAlerts is disabled -
+				// this allows us to see the alerts, but not necessarily get
+				// paged by it.
+				SuppressNotifications: pointers.Ptr(!opsgenieAlerts),
+
+				// Point the integration at the Opsgenie team.
+				Responders: []*opsgenieintegration.ApiIntegrationResponders{{
+					// Possible values for Type are:
+					// team, user, escalation and schedule
+					Type: pointers.Ptr("team"),
+					Id:   team.Id(),
+				}},
+			})
+
+		channels = append(channels,
+			monitoringnotificationchannel.NewMonitoringNotificationChannel(stack,
+				id.TerraformID("notification_channel"),
+				&monitoringnotificationchannel.MonitoringNotificationChannelConfig{
+					Project:     &vars.ProjectID,
+					DisplayName: pointers.Stringf("Opsgenie - %s", owner),
+					Type:        pointers.Ptr("webhook_tokenauth"),
+					Labels: &map[string]*string{
+						// This is kind of a secret, but we can't put this in
+						// sensitive_labels so here it is. It seems we do this
+						// in Cloud as well.
+						"url": pointers.Stringf(
+							"https://api.opsgenie.com/v1/json/googlestackdriver?apiKey=%v",
+							integration.ApiKey()),
+					},
+				}))
+	}
+
+	// Configure Slack channels
+	slackToken := gsmsecret.Get(stack, id.Group("slack_token"), gsmsecret.DataConfig{
+		Secret:    googlesecretsmanager.SecretSlackOAuthToken,
+		ProjectID: googlesecretsmanager.ProjectID,
+	})
+	for _, channelName := range []string{
+		"#alerts-msp", // central channel
+		fmt.Sprintf("#alers-%s-%s", // service-env-specific channel
+			vars.Service.ID, vars.EnvironmentID),
+	} {
+		channels = append(channels,
+			monitoringnotificationchannel.NewMonitoringNotificationChannel(stack,
+				id.TerraformID("notification_channel"),
+				&monitoringnotificationchannel.MonitoringNotificationChannelConfig{
+					Project:     &vars.ProjectID,
+					DisplayName: pointers.Stringf("Slack - %s", channelName),
+					Type:        pointers.Ptr("slack"),
+					Labels: &map[string]*string{
+						"channel_name": pointers.Ptr(channelName),
+					},
+					SensitiveLabels: &monitoringnotificationchannel.MonitoringNotificationChannelSensitiveLabels{
+						AuthToken: &slackToken.Value,
+					},
+				}))
+	}
+
+	// Set up alerts, configuring each with all our notification channels
+	err = createCommonAlerts(stack, id.Group("common"), vars, channels)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create common alerts")
 	}
 
 	switch pointers.Deref(vars.Service.Kind, spec.ServiceKindService) {
 	case spec.ServiceKindService:
-		if err = serviceAlerts(stack, id.Group("service"), vars); err != nil {
+		if err = createServiceAlerts(stack, id.Group("service"), vars, channels); err != nil {
 			return nil, errors.Wrap(err, "failed to create service alerts")
 		}
 
 		if vars.Monitoring.Alerts.ResponseCodeRatios != nil {
-			if err = responseCodeMetrics(stack, id.Group("response-code"), vars); err != nil {
+			if err = createResponseCodeMetrics(stack, id.Group("response-code"), vars, channels); err != nil {
 				return nil, errors.Wrap(err, "failed to create response code metrics")
 			}
 		}
 	case spec.ServiceKindJob:
-		if err = jobAlerts(stack, id.Group("job"), vars); err != nil {
+		if err = createJobAlerts(stack, id.Group("job"), vars, channels); err != nil {
 			return nil, errors.Wrap(err, "failed to create job alerts")
 		}
 	default:
@@ -114,7 +217,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	}
 
 	if vars.RedisInstanceID != nil {
-		if err = redisAlerts(stack, id.Group("redis"), vars); err != nil {
+		if err = createRedisAlerts(stack, id.Group("redis"), vars, channels); err != nil {
 			return nil, errors.Wrap(err, "failed to create redis alerts")
 		}
 	}
@@ -122,7 +225,12 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	return &CrossStackOutput{}, nil
 }
 
-func commonAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
+func createCommonAlerts(
+	stack cdktf.TerraformStack,
+	id resourceid.ID,
+	vars Variables,
+	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
+) error {
 	// Convert a spec.ServiceKind into a alertpolicy.ServiceKind
 	serviceKind := alertpolicy.CloudRunService
 	kind := pointers.Deref(vars.Service.Kind, "service")
@@ -168,10 +276,10 @@ func commonAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) 
 			},
 		},
 	} {
-
 		config.ProjectID = vars.ProjectID
 		config.ServiceName = vars.Service.ID
 		config.ServiceKind = serviceKind
+		config.NotificationChannels = channels
 		if _, err := alertpolicy.New(stack, id, &config); err != nil {
 			return err
 		}
@@ -180,7 +288,12 @@ func commonAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) 
 	return nil
 }
 
-func serviceAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
+func createServiceAlerts(
+	stack cdktf.TerraformStack,
+	id resourceid.ID,
+	vars Variables,
+	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
+) error {
 	// Only provision if MaxCount is specified above 5
 	if pointers.Deref(vars.MaxInstanceCount, 0) > 5 {
 		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
@@ -196,6 +309,7 @@ func serviceAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables)
 				Reducer: alertpolicy.MonitoringReduceMax,
 				Period:  "60s",
 			},
+			NotificationChannels: channels,
 		}); err != nil {
 			return err
 		}
@@ -203,7 +317,12 @@ func serviceAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables)
 	return nil
 }
 
-func jobAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
+func createJobAlerts(
+	stack cdktf.TerraformStack,
+	id resourceid.ID,
+	vars Variables,
+	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
+) error {
 	// Alert whenever a Cloud Run Job fails
 	if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 		ID:          "job_failures",
@@ -223,6 +342,7 @@ func jobAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) err
 			Period:        "60s",
 			Threshold:     0,
 		},
+		NotificationChannels: channels,
 	}); err != nil {
 		return err
 	}
@@ -230,9 +350,13 @@ func jobAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) err
 	return nil
 }
 
-func responseCodeMetrics(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
+func createResponseCodeMetrics(
+	stack cdktf.TerraformStack,
+	id resourceid.ID,
+	vars Variables,
+	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
+) error {
 	for _, config := range vars.Monitoring.Alerts.ResponseCodeRatios {
-
 		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			ID:          config.ID,
 			ProjectID:   vars.ProjectID,
@@ -246,6 +370,7 @@ func responseCodeMetrics(stack cdktf.TerraformStack, id resourceid.ID, vars Vari
 				Ratio:        config.Ratio,
 				Duration:     config.Duration,
 			},
+			NotificationChannels: channels,
 		}); err != nil {
 			return err
 		}
@@ -254,7 +379,12 @@ func responseCodeMetrics(stack cdktf.TerraformStack, id resourceid.ID, vars Vari
 	return nil
 }
 
-func redisAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
+func createRedisAlerts(
+	stack cdktf.TerraformStack,
+	id resourceid.ID,
+	vars Variables,
+	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
+) error {
 	for _, config := range []alertpolicy.Config{
 		{
 			ID:          "memory",
@@ -298,6 +428,7 @@ func redisAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) e
 		config.ProjectID = vars.ProjectID
 		config.ServiceName = *vars.RedisInstanceID
 		config.ServiceKind = alertpolicy.CloudRedis
+		config.NotificationChannels = channels
 		if _, err := alertpolicy.New(stack, id, &config); err != nil {
 			return err
 		}

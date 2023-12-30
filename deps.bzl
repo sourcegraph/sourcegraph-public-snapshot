@@ -5668,6 +5668,13 @@ def go_dependencies():
         version = "v0.0.0-20231222002716-51aa712b9bcc",
     )
     go_repository(
+        name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_opsgenie",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie",
+        sum = "h1:h0n42wBNI4h28Bb42A7TJbSLwmcpIvYI9NZrprPUt/A=",
+        version = "v0.0.0-20231230001101-a13188f9c749",
+    )
+    go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_postgresql",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql",

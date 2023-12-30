@@ -22,6 +22,8 @@ const (
 	SecretTFCMSPSlackWebhook = "TFC_MSP_SLACK_WEBHOOK"
 
 	SecretCloudflareAPIToken = "CLOUDFLARE_API_TOKEN"
+	SecretOpsgenieAPIToken   = "MSP_OPSGENIE_API_TOKEN"
+	SecretSlackOAuthToken    = "SLACK_BOT_USER_OAUTH_TOKEN"
 
 	SecretSourcegraphWildcardKey  = "SOURCEGRAPH_WILDCARD_KEY"
 	SecretSourcegraphWildcardCert = "SOURCEGRAPH_WILDCARD_CERT"
