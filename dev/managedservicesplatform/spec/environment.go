@@ -45,7 +45,7 @@ type EnvironmentSpec struct {
 	//
 	// Both Slack channels and Opsgenie teams are currently expected to be manually
 	// configured.
-	Category *EnvironmentCategory `yaml:"category,omitempty"`
+	Category EnvironmentCategory `yaml:"category"`
 
 	// Deploy specifies how to deploy revisions.
 	Deploy EnvironmentDeploySpec `yaml:"deploy"`
@@ -101,6 +101,9 @@ func (s EnvironmentSpec) Validate() []error {
 		errs = append(errs, errors.Newf("projectID %q must contain environment ID: expecting format '$SERVICE_ID-$ENVIRONMENT_ID-$RANDOM_SUFFIX'",
 			s.ProjectID))
 	}
+	if err := s.Category.Validate(); err != nil {
+		return append(errs, errors.Wrap(err, "category"))
+	}
 
 	errs = append(errs, s.Deploy.Validate()...)
 	errs = append(errs, s.Resources.Validate()...)
@@ -118,6 +121,19 @@ const (
 	// EnvironmentCategoryExternal is the default category if none is specified.
 	EnvironmentCategoryExternal EnvironmentCategory = "external"
 )
+
+func (c EnvironmentCategory) Validate() error {
+	switch c {
+	case EnvironmentCategoryTest,
+		EnvironmentCategoryInternal,
+		EnvironmentCategoryExternal:
+	case "":
+		return errors.New("no category provided")
+	default:
+		return errors.Newf("invalid category %q", c)
+	}
+	return nil
+}
 
 type EnvironmentDeploySpec struct {
 	Type         EnvironmentDeployType                  `yaml:"type"`

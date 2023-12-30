@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
@@ -115,7 +116,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		opsgenieAlerts = true
 	}
 	for i, owner := range vars.Owners {
-		id := id.Group("owner_%d", i)
+		// Use index because Opsgenie team names has lax character requirements
+		id := id.Group("opsgenie_owner_%d", i)
 		// Opsgenie team corresponding to owner must exist
 		team := dataopsgenieteam.NewDataOpsgenieTeam(stack,
 			id.TerraformID("opsgenie_team"),
@@ -172,9 +174,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	})
 	for _, channelName := range []string{
 		"#alerts-msp", // central channel
-		fmt.Sprintf("#alers-%s-%s", // service-env-specific channel
+		fmt.Sprintf("#alerts-%s-%s", // service-env-specific channel
 			vars.Service.ID, vars.EnvironmentID),
 	} {
+		id := id.Group("slack_%s", strings.TrimPrefix(channelName, "#"))
 		channels = append(channels,
 			monitoringnotificationchannel.NewMonitoringNotificationChannel(stack,
 				id.TerraformID("notification_channel"),
