@@ -128,9 +128,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		integration := opsgenieintegration.NewApiIntegration(stack,
 			id.TerraformID("opsgenie_integration"),
 			&opsgenieintegration.ApiIntegrationConfig{
-				// Must be unique, so include the TF team ID in it. Since
-				// the team ID is a Terraform variable we use '%v' format.
-				Name: pointers.Stringf("msp-%s-%s-%v",
+				// Must be unique, so include the TF team ID in it.
+				Name: pointers.Stringf("msp-%s-%s-%s",
 					vars.Service.ID, vars.EnvironmentID, *team.Id()),
 				// https://support.atlassian.com/opsgenie/docs/integration-types-to-be-used-with-the-api/
 				Type: pointers.Ptr("GoogleStackdriver"),
@@ -161,8 +160,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 						// sensitive_labels so here it is. It seems we do this
 						// in Cloud as well.
 						"url": pointers.Stringf(
-							"https://api.opsgenie.com/v1/json/googlestackdriver?apiKey=%v",
-							integration.ApiKey()),
+							"https://api.opsgenie.com/v1/json/googlestackdriver?apiKey=%s",
+							*integration.ApiKey()),
 					},
 				}))
 	}
