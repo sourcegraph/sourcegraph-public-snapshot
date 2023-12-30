@@ -422,12 +422,10 @@ func createRedisAlerts(
 			Name:        "Cloud Redis - Standard Instance Failover",
 			Description: pointers.Ptr("This alert fires if failover occurs for a standard tier instance."),
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
-				Filters:       map[string]string{"metric.type": "redis.googleapis.com/stats/cpu_utilization_main_thread"},
-				GroupByFields: []string{"resource.label.instance_id", "resource.label.node_id"},
-				Aligner:       alertpolicy.MonitoringAlignStddev,
-				Reducer:       alertpolicy.MonitoringReduceNone,
-				Period:        "300s",
-				Threshold:     0,
+				Filters:   map[string]string{"metric.type": "redis.googleapis.com/replication/role"},
+				Aligner:   alertpolicy.MonitoringAlignStddev,
+				Period:    "300s",
+				Threshold: 0,
 			},
 		},
 	} {
