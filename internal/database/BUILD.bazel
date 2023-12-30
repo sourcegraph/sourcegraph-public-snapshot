@@ -104,7 +104,6 @@ go_library(
         "//internal/conf/confdefaults",
         "//internal/conf/conftypes",
         "//internal/conf/reposource",
-        "//internal/cookie",
         "//internal/database/basestore",
         "//internal/database/batch",
         "//internal/database/dbconn",

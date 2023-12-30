@@ -237,6 +237,7 @@ ts_project(
         "src/extensions/extensionManifest.ts",
         "src/extensions/extensions.ts",
         "src/globals.d.ts",
+        "src/graphql/schema.ts",
         "src/hover/CopyLinkIcon.tsx",
         "src/hover/HoverOverlay.fixtures.ts",
         "src/hover/HoverOverlay.tsx",
