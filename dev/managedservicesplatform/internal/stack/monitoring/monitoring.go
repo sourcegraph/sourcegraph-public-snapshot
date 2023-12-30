@@ -128,18 +128,22 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		integration := opsgenieintegration.NewApiIntegration(stack,
 			id.TerraformID("opsgenie_integration"),
 			&opsgenieintegration.ApiIntegrationConfig{
-				// Must be unique, so include the TF team ID in it.
+				// Must be unique, so include the TF team ID in it. Each team
+				// will only get one integration per service environment.
 				Name: pointers.Stringf("msp-%s-%s-%s",
 					vars.Service.ID, vars.EnvironmentID, *team.Id()),
 				// https://support.atlassian.com/opsgenie/docs/integration-types-to-be-used-with-the-api/
 				Type: pointers.Ptr("GoogleStackdriver"),
+
+				// Let the team own the integration.
+				OwnerTeamId: team.Id(),
 
 				// Supress all notifications if opsgenieAlerts is disabled -
 				// this allows us to see the alerts, but not necessarily get
 				// paged by it.
 				SuppressNotifications: pointers.Ptr(!opsgenieAlerts),
 
-				// Point the integration at the Opsgenie team.
+				// Point alerts sent through this integration at the Opsgenie team.
 				Responders: []*opsgenieintegration.ApiIntegrationResponders{{
 					// Possible values for Type are:
 					// team, user, escalation and schedule
