@@ -137,7 +137,7 @@ func (r *Renderer) RenderEnvironment(
 		ProjectID:  *projectOutput.Project.ProjectId(),
 		Service:    svc,
 		Monitoring: monitoringSpec,
-		MaxCount: func() *int {
+		MaxInstanceCount: func() *int {
 			if env.Instances.Scaling != nil {
 				return env.Instances.Scaling.MaxCount
 			}

@@ -15,7 +15,8 @@ type ServiceSpec struct {
 	// e.g. "Cody Gateway".
 	Name *string `yaml:"name"`
 	// Owners denotes the teams or individuals primarily responsible for the
-	// service.
+	// service. Each owner MUST be a valid Opsgenie team name - this is validated
+	// in each environment's monitoring stack.
 	Owners []string `yaml:"owners"`
 
 	// Kind is the type of the service, either 'service' or 'job'. Defaults to

@@ -1,4 +1,4 @@
-package monitoringalertpolicy
+package alertpolicy
 
 import (
 	"fmt"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringalertpolicy"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringnotificationchannel"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -108,7 +109,7 @@ const (
 // Config for a Monitoring Alert Policy
 // Must define either `ThresholdAggregation` or `ResponseCodeMetric`
 type Config struct {
-	// A unique identifier
+	// ID is unique identifier
 	ID          string
 	Name        string
 	Description *string
@@ -117,6 +118,8 @@ type Config struct {
 	ServiceName string
 	// Type of the service/job/redis
 	ServiceKind CloudService
+	// NotificationChannels to subscribe on this alert
+	NotificationChannels []monitoringnotificationchannel.MonitoringNotificationChannel
 
 	ThresholdAggregation *ThresholdAggregation
 	ResponseCodeMetric   *ResponseCodeMetric
@@ -142,13 +145,13 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 		if _, ok := config.ThresholdAggregation.Filters["metric.type"]; !ok {
 			return nil, errors.New("must specify filter for `metric.type`")
 		}
-		return thresholdAggregation(scope, id, config)
+		return newThresholdAggregationAlert(scope, id, config)
 	}
-	return responseCodeMetric(scope, id, config)
+	return newResponseCodeMetricAlert(scope, id, config)
 }
 
 // threshholdAggregation defines a monitoring alert policy based on a single metric threshold
-func thresholdAggregation(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
+func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
 	// Set some defaults
 	switch config.ServiceKind {
 	case CloudRunService:
@@ -203,6 +206,7 @@ func thresholdAggregation(scope constructs.Construct, id resourceid.ID, config *
 			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
 				AutoClose: pointers.Ptr("604800s"),
 			},
+			NotificationChannels: notificationChannelIDs(config.NotificationChannels),
 		})
 	return &Output{}, nil
 }
@@ -239,10 +243,10 @@ func buildFilter(config *Config) string {
 	return strings.Join(filters, " AND ")
 }
 
-// responseCodeMetric defines the MonitoringAlertPolicy for response code metrics
+// newResponseCodeMetricAlert defines the MonitoringAlertPolicy for response code metrics
 // Supports a single Code e.g. 404 or an entire Code Class e.g. 4xx
 // Optionally when using a Code Class, codes to exclude can be defined
-func responseCodeMetric(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
+func newResponseCodeMetricAlert(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
 	query := responseCodeBuilder(config)
 
 	if config.ResponseCodeMetric.Duration == nil {
@@ -273,6 +277,7 @@ func responseCodeMetric(scope constructs.Construct, id resourceid.ID, config *Co
 			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
 				AutoClose: pointers.Ptr("604800s"),
 			},
+			NotificationChannels: notificationChannelIDs(config.NotificationChannels),
 		})
 	return &Output{}, nil
 }
@@ -311,4 +316,17 @@ func responseCodeBuilder(config *Config) string {
 `)
 	builder.WriteString(fmt.Sprintf("| condition gt(val(), %s)\n", strconv.FormatFloat(config.ResponseCodeMetric.Ratio, 'f', -1, 64)))
 	return builder.String()
+}
+
+// notificationChannelIDs collects the IDs of the given notification channels.
+// Returns nil if there are no channels.
+func notificationChannelIDs(channels []monitoringnotificationchannel.MonitoringNotificationChannel) *[]*string {
+	if len(channels) == 0 {
+		return nil
+	}
+	var ids []*string
+	for _, c := range channels {
+		ids = append(ids, c.Id())
+	}
+	return &ids
 }

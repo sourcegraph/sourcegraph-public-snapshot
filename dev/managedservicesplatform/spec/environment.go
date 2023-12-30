@@ -28,7 +28,23 @@ type EnvironmentSpec struct {
 	// initialized!
 	ProjectID string `yaml:"projectID"`
 
-	// Category is either "test", "internal", or "external".
+	// Category is either "test", "internal", or "external". It informs the
+	// which GCP project folder the environment lives in:
+	//
+	// - 'test': 'Engineering Projects' folder (liberal access)
+	// - 'internal': 'Internal Services' folder (restricted access)
+	// - 'external': 'Managed Services' folder (restricted access)
+	//
+	// It also informs what kind of notification channels are set up out-of-the-box:
+	//
+	// 1. 'test' services only generate Slack notifications.
+	// 2. 'internal' and 'external' services generate Slack and Opsgenie notifications.
+	//
+	// Slack channels are expected to be named '#alerts-<service>-<environmentName>'.
+	// Opsgenie teams are expected to correspond to service owners.
+	//
+	// Both Slack channels and Opsgenie teams are currently expected to be manually
+	// configured.
 	Category *EnvironmentCategory `yaml:"category,omitempty"`
 
 	// Deploy specifies how to deploy revisions.

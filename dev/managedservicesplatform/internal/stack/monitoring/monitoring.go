@@ -3,7 +3,7 @@ package monitoring
 import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/monitoringalertpolicy"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
@@ -55,10 +55,29 @@ type Variables struct {
 	ProjectID  string
 	Service    spec.ServiceSpec
 	Monitoring spec.MonitoringSpec
-	MaxCount   *int
 
+	// MaxInstanceCount informs service scaling alerts.
+	MaxInstanceCount *int
 	// If Redis is enabled we configure alerts for it
 	RedisInstanceID *string
+
+	// EnvironmentCategory dictates what kind of notifications are set up:
+	//
+	// 1. 'test' services only generate Slack notifications.
+	// 2. 'internal' and 'external' services generate Slack and Opsgenie notifications.
+	//
+	// Slack channels are expected to be named '#alerts-<service>-<environmentName>'.
+	// Opsgenie teams are expected to correspond to service owners.
+	//
+	// Both Slack channels and Opsgenie teams are currently expected to be manually
+	// configured. In particular, it seems that there is not a well-maintained
+	// Terraform provider for Slack.
+	EnvironmentCategory spec.EnvironmentCategory
+	// EnvironmentName is the name of the service environment.
+	EnvironmentName string
+	// Owners is a list of team names. Each owner MUST correspond to the name
+	// of a team in Opsgenie.
+	Owners []string
 }
 
 const StackName = "monitoring"
@@ -104,22 +123,22 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 }
 
 func commonAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
-	// Convert a spec.ServiceKind into a monitoringalertpolicy.ServiceKind
-	serviceKind := monitoringalertpolicy.CloudRunService
+	// Convert a spec.ServiceKind into a alertpolicy.ServiceKind
+	serviceKind := alertpolicy.CloudRunService
 	kind := pointers.Deref(vars.Service.Kind, "service")
 	if kind == spec.ServiceKindJob {
-		serviceKind = monitoringalertpolicy.CloudRunJob
+		serviceKind = alertpolicy.CloudRunJob
 	}
 
-	for _, config := range []monitoringalertpolicy.Config{
+	for _, config := range []alertpolicy.Config{
 		{
 			ID:          "cpu",
 			Name:        "High Container CPU Utilization",
 			Description: pointers.Ptr("High CPU Usage - it may be neccessaru to reduce load or increase CPU allocation"),
-			ThresholdAggregation: &monitoringalertpolicy.ThresholdAggregation{
+			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters:   map[string]string{"metric.type": "run.googleapis.com/container/cpu/utilizations"},
-				Aligner:   monitoringalertpolicy.MonitoringAlignPercentile99,
-				Reducer:   monitoringalertpolicy.MonitoringReduceMax,
+				Aligner:   alertpolicy.MonitoringAlignPercentile99,
+				Reducer:   alertpolicy.MonitoringReduceMax,
 				Period:    "300s",
 				Threshold: 0.8,
 			},
@@ -128,10 +147,10 @@ func commonAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) 
 			ID:          "memory",
 			Name:        "High Container Memory Utilization",
 			Description: pointers.Ptr("High Memory Usage - it may be neccessary to reduce load or increase memory allocation"),
-			ThresholdAggregation: &monitoringalertpolicy.ThresholdAggregation{
+			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters:   map[string]string{"metric.type": "run.googleapis.com/container/memory/utilizations"},
-				Aligner:   monitoringalertpolicy.MonitoringAlignPercentile99,
-				Reducer:   monitoringalertpolicy.MonitoringReduceMax,
+				Aligner:   alertpolicy.MonitoringAlignPercentile99,
+				Reducer:   alertpolicy.MonitoringReduceMax,
 				Period:    "300s",
 				Threshold: 0.8,
 			},
@@ -140,10 +159,10 @@ func commonAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) 
 			ID:          "startup",
 			Name:        "Container Startup Latency",
 			Description: pointers.Ptr("Instance is taking a long time to start up - something may be blocking startup"),
-			ThresholdAggregation: &monitoringalertpolicy.ThresholdAggregation{
+			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters:   map[string]string{"metric.type": "run.googleapis.com/container/startup_latencies"},
-				Aligner:   monitoringalertpolicy.MonitoringAlignPercentile99,
-				Reducer:   monitoringalertpolicy.MonitoringReduceMax,
+				Aligner:   alertpolicy.MonitoringAlignPercentile99,
+				Reducer:   alertpolicy.MonitoringReduceMax,
 				Period:    "60s",
 				Threshold: 10000,
 			},
@@ -153,7 +172,7 @@ func commonAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) 
 		config.ProjectID = vars.ProjectID
 		config.ServiceName = vars.Service.ID
 		config.ServiceKind = serviceKind
-		if _, err := monitoringalertpolicy.New(stack, id, &config); err != nil {
+		if _, err := alertpolicy.New(stack, id, &config); err != nil {
 			return err
 		}
 	}
@@ -163,18 +182,18 @@ func commonAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) 
 
 func serviceAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
 	// Only provision if MaxCount is specified above 5
-	if pointers.Deref(vars.MaxCount, 0) > 5 {
-		if _, err := monitoringalertpolicy.New(stack, id, &monitoringalertpolicy.Config{
+	if pointers.Deref(vars.MaxInstanceCount, 0) > 5 {
+		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			ID:          "instance_count",
 			Name:        "Container Instance Count",
 			Description: pointers.Ptr("There are a lot of Cloud Run instances running - we may need to increase per-instance requests make make sure we won't hit the configured max instance count"),
 			ProjectID:   vars.ProjectID,
 			ServiceName: vars.Service.ID,
-			ServiceKind: monitoringalertpolicy.CloudRunService,
-			ThresholdAggregation: &monitoringalertpolicy.ThresholdAggregation{
+			ServiceKind: alertpolicy.CloudRunService,
+			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters: map[string]string{"metric.type": "run.googleapis.com/container/instance_count"},
-				Aligner: monitoringalertpolicy.MonitoringAlignMax,
-				Reducer: monitoringalertpolicy.MonitoringReduceMax,
+				Aligner: alertpolicy.MonitoringAlignMax,
+				Reducer: alertpolicy.MonitoringReduceMax,
 				Period:  "60s",
 			},
 		}); err != nil {
@@ -186,21 +205,21 @@ func serviceAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables)
 
 func jobAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
 	// Alert whenever a Cloud Run Job fails
-	if _, err := monitoringalertpolicy.New(stack, id, &monitoringalertpolicy.Config{
+	if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 		ID:          "job_failures",
 		Name:        "Cloud Run Job Failures",
 		Description: pointers.Ptr("Failed executions of Cloud Run Job"),
 		ProjectID:   vars.ProjectID,
 		ServiceName: vars.Service.ID,
-		ServiceKind: monitoringalertpolicy.CloudRunJob,
-		ThresholdAggregation: &monitoringalertpolicy.ThresholdAggregation{
+		ServiceKind: alertpolicy.CloudRunJob,
+		ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 			Filters: map[string]string{
 				"metric.type":          "run.googleapis.com/job/completed_task_attempt_count",
 				"metric.labels.result": "failed",
 			},
 			GroupByFields: []string{"metric.label.result"},
-			Aligner:       monitoringalertpolicy.MonitoringAlignCount,
-			Reducer:       monitoringalertpolicy.MonitoringReduceSum,
+			Aligner:       alertpolicy.MonitoringAlignCount,
+			Reducer:       alertpolicy.MonitoringReduceSum,
 			Period:        "60s",
 			Threshold:     0,
 		},
@@ -214,13 +233,13 @@ func jobAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) err
 func responseCodeMetrics(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
 	for _, config := range vars.Monitoring.Alerts.ResponseCodeRatios {
 
-		if _, err := monitoringalertpolicy.New(stack, id, &monitoringalertpolicy.Config{
+		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			ID:          config.ID,
 			ProjectID:   vars.ProjectID,
 			Name:        config.Name,
 			ServiceName: vars.Service.ID,
-			ServiceKind: monitoringalertpolicy.CloudRunService,
-			ResponseCodeMetric: &monitoringalertpolicy.ResponseCodeMetric{
+			ServiceKind: alertpolicy.CloudRunService,
+			ResponseCodeMetric: &alertpolicy.ResponseCodeMetric{
 				Code:         config.Code,
 				CodeClass:    config.CodeClass,
 				ExcludeCodes: config.ExcludeCodes,
@@ -236,15 +255,15 @@ func responseCodeMetrics(stack cdktf.TerraformStack, id resourceid.ID, vars Vari
 }
 
 func redisAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) error {
-	for _, config := range []monitoringalertpolicy.Config{
+	for _, config := range []alertpolicy.Config{
 		{
 			ID:          "memory",
 			Name:        "Cloud Redis - System Memory Utilization",
 			Description: pointers.Ptr("This alert fires if the system memory utilization is above the set threshold. The utilization is measured on a scale of 0 to 1."),
-			ThresholdAggregation: &monitoringalertpolicy.ThresholdAggregation{
+			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters:   map[string]string{"metric.type": "redis.googleapis.com/stats/memory/system_memory_usage_ratio"},
-				Aligner:   monitoringalertpolicy.MonitoringAlignMean,
-				Reducer:   monitoringalertpolicy.MonitoringReduceNone,
+				Aligner:   alertpolicy.MonitoringAlignMean,
+				Reducer:   alertpolicy.MonitoringReduceNone,
 				Period:    "300s",
 				Threshold: 0.8,
 			},
@@ -253,11 +272,11 @@ func redisAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) e
 			ID:          "cpu",
 			Name:        "Cloud Redis - System CPU Utilization",
 			Description: pointers.Ptr("This alert fires if the Redis Engine CPU Utilization goes above the set threshold. The utilization is measured on a scale of 0 to 1."),
-			ThresholdAggregation: &monitoringalertpolicy.ThresholdAggregation{
+			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters:       map[string]string{"metric.type": "redis.googleapis.com/stats/cpu_utilization_main_thread"},
 				GroupByFields: []string{"resource.label.instance_id", "resource.label.node_id"},
-				Aligner:       monitoringalertpolicy.MonitoringAlignRate,
-				Reducer:       monitoringalertpolicy.MonitoringReduceSum,
+				Aligner:       alertpolicy.MonitoringAlignRate,
+				Reducer:       alertpolicy.MonitoringReduceSum,
 				Period:        "300s",
 				Threshold:     0.9,
 			},
@@ -266,11 +285,11 @@ func redisAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) e
 			ID:          "failover",
 			Name:        "Cloud Redis - Standard Instance Failover",
 			Description: pointers.Ptr("This alert fires if failover occurs for a standard tier instance."),
-			ThresholdAggregation: &monitoringalertpolicy.ThresholdAggregation{
+			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters:       map[string]string{"metric.type": "redis.googleapis.com/stats/cpu_utilization_main_thread"},
 				GroupByFields: []string{"resource.label.instance_id", "resource.label.node_id"},
-				Aligner:       monitoringalertpolicy.MonitoringAlignStddev,
-				Reducer:       monitoringalertpolicy.MonitoringReduceNone,
+				Aligner:       alertpolicy.MonitoringAlignStddev,
+				Reducer:       alertpolicy.MonitoringReduceNone,
 				Period:        "300s",
 				Threshold:     0,
 			},
@@ -278,8 +297,8 @@ func redisAlerts(stack cdktf.TerraformStack, id resourceid.ID, vars Variables) e
 	} {
 		config.ProjectID = vars.ProjectID
 		config.ServiceName = *vars.RedisInstanceID
-		config.ServiceKind = monitoringalertpolicy.CloudRedis
-		if _, err := monitoringalertpolicy.New(stack, id, &config); err != nil {
+		config.ServiceKind = alertpolicy.CloudRedis
+		if _, err := alertpolicy.New(stack, id, &config); err != nil {
 			return err
 		}
 	}
