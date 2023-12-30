@@ -117,7 +117,7 @@ func TestNewJob(t *testing.T) {
   id: msp-example
   name: Msp Example
   owners:
-  - core-services
+    - core-services
 
 build:
   # TODO: Configure the correct image for your job here. If you use a private
@@ -130,29 +130,29 @@ build:
     dir: cmd/msp-example
 
 environments:
-- id: dev
-  projectID: msp-example-dev-TestNewJob
-  # TODO: We initially provision in 'test' to make it easy to access the project
-  # during setup. Once done, you should change this to 'external' or 'internal'.
-  category: test
-  # Specify a strategy for updating the image.
-  deploy:
-    type: manual
-    manual:
-      tag: insiders
-  # Specify the schedule at which to run your job.
-  schedule:
-    cron: 0 * * * *
-    deadline: 600 # 10 minutes
-  # Specify environment configuration your service needs to operate.
-  env:
-    SRC_LOG_LEVEL: info
-    SRC_LOG_FORMAT: json_gcp
-  # Specify the resources your job gets.
-  instances:
-    resources:
-      cpu: 1
-      memory: 1Gi
+  - id: dev
+    projectID: msp-example-dev-TestNewJob
+    # TODO: We initially provision in 'test' to make it easy to access the project
+    # during setup. Once done, you should change this to 'external' or 'internal'.
+    category: test
+    # Specify a strategy for updating the image.
+    deploy:
+      type: manual
+      manual:
+        tag: insiders
+    # Specify the schedule at which to run your job.
+    schedule:
+      cron: 0 * * * *
+      deadline: 600 # 10 minutes
+    # Specify environment configuration your service needs to operate.
+    env:
+      SRC_LOG_LEVEL: info
+      SRC_LOG_FORMAT: json_gcp
+    # Specify the resources your job gets.
+    instances:
+      resources:
+        cpu: 1
+        memory: 1Gi
 `).Equal(t, string(f))
 
 	t.Run("is valid", func(t *testing.T) {
