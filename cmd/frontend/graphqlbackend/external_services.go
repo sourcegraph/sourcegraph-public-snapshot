@@ -92,9 +92,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 			Namespace:   args.Input.Namespace,
 		}
 		// Log action of Code Host Connection being added
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionAdded, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
-			r.logger.Warn("Error logging security event", log.Error(err))
-		}
+		r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionAdded, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg)
 	}
 	// Now, schedule the external service for syncing immediately.
 	s := repos.NewStore(r.logger, r.db)
@@ -184,10 +182,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 			UpdaterID:   &userID,
 		}
 		// Log action of Code Host Connection being updated
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
-			r.logger.Warn("Error logging security event", log.Error(err))
-		}
-
+		r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg)
 	}
 	// Fetch from database again to get all fields with updated values.
 	es, err = r.db.ExternalServices().GetByID(ctx, id)
@@ -305,17 +300,9 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-		arguments := struct {
-			GraphQLID         graphql.ID `json:"GraphQL ID"`
-			ExternalServiceID int64      `json:"External Service ID"`
-		}{
-			GraphQLID:         args.ExternalService,
-			ExternalServiceID: id,
-		}
+
 		// Log action of Code Host Connection being deleted
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arguments); err != nil {
-			r.logger.Warn("Error logging security event", log.Error(err))
-		}
+		r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args)
 	}
 	return &EmptyResponse{}, nil
 }

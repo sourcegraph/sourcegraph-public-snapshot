@@ -141,28 +141,18 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log15.Error("Failed to authenticate with OpenID connect.", "error", err)
 				http.Error(w, safeErrMsg, errStatus)
-				arg, _ := json.Marshal(struct {
+				arg := struct {
 					SafeErrorMsg string `json:"safe_error_msg"`
 				}{
 					SafeErrorMsg: safeErrMsg,
-				})
-				db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
-					Name:            database.SecurityEventOIDCLoginFailed,
-					URL:             r.URL.Path,                                   // Don't log OIDC query params
-					AnonymousUserID: fmt.Sprintf("unknown OIDC @ %s", time.Now()), // we don't have a reliable user identifier at the time of the failure
-					Source:          "BACKEND",
-					Timestamp:       time.Now(),
-					Argument:        arg,
-				})
+				}
+
+				db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventOIDCLoginFailed, r.URL.Path, uint32(0), fmt.Sprintf("unknown OIDC @ %s", time.Now()), "BACKEND", arg)
+
 				return
 			}
-			db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
-				Name:      database.SecurityEventOIDCLoginSucceeded,
-				URL:       r.URL.Path, // Don't log OIDC query params
-				UserID:    uint32(result.User.ID),
-				Source:    "BACKEND",
-				Timestamp: time.Now(),
-			})
+
+			db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventOIDCLoginSucceeded, r.URL.Path, uint32(result.User.ID), "", "BACKEND", nil)
 
 			var exp time.Duration
 			// 🚨 SECURITY: TODO(sqs): We *should* uncomment the lines below to make our own sessions
