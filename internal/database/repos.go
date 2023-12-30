@@ -168,9 +168,7 @@ func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
 	if a.Internal {
 		anonymousID = "internal"
 	}
-	if err := db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventNameAccessGranted, anonymousID, uint32(a.UID), "", "BACKEND", arg); err != nil {
-		log.Error(err)
-	}
+	db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventNameAccessGranted, anonymousID, uint32(a.UID), "", "BACKEND", arg)
 }
 
 // GetByName returns the repository with the given nameOrUri from the
