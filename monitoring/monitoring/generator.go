@@ -133,13 +133,13 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 
 	// Set up disk directories
 	if opts.GrafanaDir != "" {
-		os.MkdirAll(opts.GrafanaDir, os.ModePerm)
+		_ = os.MkdirAll(opts.GrafanaDir, os.ModePerm)
 	}
 	if opts.PrometheusDir != "" {
-		os.MkdirAll(opts.PrometheusDir, os.ModePerm)
+		_ = os.MkdirAll(opts.PrometheusDir, os.ModePerm)
 	}
 	if opts.DocsDir != "" {
-		os.MkdirAll(opts.DocsDir, os.ModePerm)
+		_ = os.MkdirAll(opts.DocsDir, os.ModePerm)
 	}
 
 	// Generate the goods

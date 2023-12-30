@@ -2003,6 +2003,7 @@ ts_project(
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/state",
         "//:node_modules/@codemirror/view",
+        "//:node_modules/@mdi/js",
         "//:node_modules/@testing-library/dom",
         "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@testing-library/react",

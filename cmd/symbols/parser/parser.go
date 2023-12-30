@@ -141,7 +141,7 @@ func (p *parser) handleParseRequest(
 	}})
 	defer endObservation(1, observation.Args{})
 
-	language, found := languages.GetLanguage(parseRequest.Path, string(parseRequest.Data))
+	language, found := languages.GetMostLikelyLanguage(parseRequest.Path, string(parseRequest.Data))
 	if !found {
 		return nil
 	}
