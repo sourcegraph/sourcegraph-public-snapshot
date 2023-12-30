@@ -153,8 +153,7 @@ func (t *Test) DisplayErrors() {
 	}
 }
 
-// TODO godoc should always start with the function/method name.
-// Print logs to stdout
+// DisplayLog prints logs to stdout
 func (t *Test) DisplayLog() {
 	for _, log := range t.LogLines {
 		fmt.Println(log)
@@ -169,21 +168,21 @@ type TestResults struct {
 	Mutex                sync.Mutex
 }
 
-// Add a standard test to the results
+// AddStdTest adds a standard test to the results
 func (r *TestResults) AddStdTest(test Test) {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 	r.StandardUpgradeTests = append(r.StandardUpgradeTests, test)
 }
 
-// Add a multiversion upgrade test to the results
+// AddMVUTest adds a multiversion upgrade test to the results
 func (r *TestResults) AddMVUTest(test Test) {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 	r.MVUUpgradeTests = append(r.MVUUpgradeTests, test)
 }
 
-// Add an autoupgrade test to the results
+// AddAutoTest adds an autoupgrade test to the results
 func (r *TestResults) AddAutoTest(test Test) {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
@@ -206,7 +205,7 @@ var knownBugVersions = []string{
 	"4.4.2",
 }
 
-// Display quick view of test resutls, errors will log the first error line only.
+// PrintSimpleResults prints a quick view of test results, on an errored test only the first line of the error is printed.
 func (r *TestResults) PrintSimpleResults() {
 	stdRes := []string{}
 	for _, test := range r.StandardUpgradeTests {
@@ -240,7 +239,7 @@ func (r *TestResults) PrintSimpleResults() {
 	fmt.Println(strings.Join(autoRes, "\n"))
 }
 
-// Display test Errors, prints errors for all tests that errored.
+// DisplayErrrors, prints errors for all tests that errored.
 func (r *TestResults) DisplayErrors() {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
@@ -264,7 +263,7 @@ func (r *TestResults) DisplayErrors() {
 	}
 }
 
-// Sort tests TestResults by their test.Version value
+// OrderByVersion orders tests TestResults by their test.Version value
 func (r *TestResults) OrderByVersion() {
 	sort.Slice(r.StandardUpgradeTests, func(i, j int) bool {
 		return r.StandardUpgradeTests[i].Version.LessThan(&r.StandardUpgradeTests[j].Version)
@@ -348,7 +347,7 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, latestVersion *se
 
 	// Run multiversion upgrade using candidate image
 	// TODO: target the schema of the candidate version rather than latest released tag on branch, this has less effect than you might expect.
-	// migrator upgrade only applies migrations defined between first minor versions i.e. 5.1 -> 5.2, migrator `up` incorperates migrations defined in a patch version and is run later in the test.
+	// The migrator "upgrade" command only applies migrations defined between first minor versions i.e. 5.1 -> 5.2, migrator `up` incorperates migrations defined in a patch version and is run later in the test.
 	// We may be able to work around this furhter in CI
 	test.AddLog(fmt.Sprintf("-- ⚙️  performing multiversion upgrade (--from %s --to %s)", initVersion.String(), latestVersion.String()))
 	out, err := run.Cmd(ctx,
@@ -407,7 +406,7 @@ type testDB struct {
 	ContainerHostPort string
 }
 
-// Initialize a test environment ad object. Create a docker network for testing as well as instances of our three databases. Returning a cleanup function.
+// setupTestEnv initializeses a test environment and object. Creates a docker network for testing as well as instances of our three databases. Returning a cleanup function.
 // An instance of Sourcegraph-Frontend is also started to initialize the versions table of the database.
 // TODO: setupTestEnv should seed some initial data at the target initVersion. This will be usefull for testing OOB migrations
 func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Version) (test Test, networkName string, dbs []*testDB, cleanup func(), err error) {
@@ -486,7 +485,6 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 	for _, db := range dbs {
 		db := db // this closure locks the index for the inner for loop
 		wgDbPing.Go(func(ctx context.Context) error {
-			// TODO only ping codeinsights after timescaleDB is deprecated in v3.39
 			dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@%s/sg?sslmode=disable", db.ContainerHostPort))
 			if err != nil {
 				test.AddError(fmt.Errorf("🚨 failed to connect to %s: %s", db.DbName, err))
@@ -832,7 +830,7 @@ func dockerMigratorBaseString(test Test, cmd, migratorImage, networkName string,
 	}
 }
 
-// Generate random hash for naming containers in test, used for frontend and migrator
+// newContainerHash generates a random hash for naming containers in test, used for frontend and migrator
 func newContainerHash() ([]byte, error) {
 	hash := make([]byte, 4)
 	_, err := rand.Read(hash)
@@ -842,7 +840,7 @@ func newContainerHash() ([]byte, error) {
 	return hash, nil
 }
 
-// getLatestVersions returns the latest minor semver version, as well as the latest full semver version.
+// getVersions returns the latest minor semver version, as well as the latest full semver version.
 //
 // Technically MVU is supported v3.20 and forward, but in older versions codeinsights-db didnt exist and postgres was using version 11.4
 // so we reduced the scope of the test.

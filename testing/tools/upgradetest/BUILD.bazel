@@ -29,6 +29,7 @@ go_cross_binary(
     visibility = ["//testing:__pkg__"],
 )
 
+# Run with bazel test //testing/tools/upgradetest:sh_upgradetest --config darwin-docker
 sh_test(
     name = "sh_upgradetest",
     timeout = "eternal",
