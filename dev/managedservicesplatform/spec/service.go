@@ -35,8 +35,22 @@ type ServiceSpec struct {
 func (s ServiceSpec) Validate() []error {
 	var errs []error
 
+	if s.ID == "" {
+		errs = append(errs, errors.New("id is required"))
+	}
 	if len(s.ID) > 20 {
 		errs = append(errs, errors.New("id must be at most 20 characters"))
+	}
+	if !regexp.MustCompile(`^[a-z0-9-]+$`).MatchString(s.ID) {
+		errs = append(errs, errors.New("id can only contain lowercase alphanumeric characters and hyphens"))
+	}
+	if len(s.Owners) == 0 {
+		errs = append(errs, errors.New("owners requires at least one value"))
+	}
+	for i, o := range s.Owners {
+		if o == "" {
+			errs = append(errs, errors.Newf("owners[%d] is invalid", i))
+		}
 	}
 
 	if s.IAM != nil {

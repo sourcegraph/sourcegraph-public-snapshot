@@ -91,6 +91,9 @@ type EnvironmentSpec struct {
 func (s EnvironmentSpec) Validate() []error {
 	var errs []error
 
+	if s.ID == "" {
+		errs = append(errs, errors.New("id is required"))
+	}
 	if s.ProjectID == "" {
 		errs = append(errs, errors.New("projectID is required"))
 	}
