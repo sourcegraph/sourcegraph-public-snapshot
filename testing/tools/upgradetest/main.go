@@ -51,7 +51,7 @@ func main() {
 	}
 
 	// Get init versions to use for initializing upgrade environments for tests
-	latestMinorVersion, latestVersion, stdVersions, mvuVersions, err := getVersions(ctx)
+	latestMinorVersion, latestVersion, stdVersions, mvuVersions, autoVersions, err := getVersions(ctx)
 	if err != nil {
 		fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 		os.Exit(1)
@@ -61,6 +61,7 @@ func main() {
 	fmt.Println("Latest minor version: ", latestMinorVersion)
 	fmt.Println("Standard Versions:", stdVersions)
 	fmt.Println("MVU Versions:", mvuVersions)
+	fmt.Println("Auto Versions:", autoVersions)
 
 	// Get the release candidate image tarball
 	args := os.Args
@@ -114,10 +115,24 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// TODO
-	if err := autoUpgradeTest(ctx); err != nil {
-		fmt.Println("--- 🚨 Auto Upgrade Test Failed: ", err)
-		os.Exit(1)
+	// Run Autoupgrade Tests
+	autoTestPool := pool.New().WithMaxGoroutines(10).WithErrors()
+	for _, version := range autoVersions {
+		version := version
+		if slices.Contains(knownBugVersions, version.String()) {
+			continue
+		}
+		autoTestPool.Go(func() error {
+			fmt.Println("auto: ", version)
+			start := time.Now()
+			result := autoUpgradeTest(ctx, version, latestVersion)
+			result.Runtime = time.Since(start)
+			results.AddAutoTest(result)
+			return nil
+		})
+	}
+	if err := autoTestPool.Wait(); err != nil {
+		log.Fatal(err)
 	}
 
 	// This is where we do the majority of our printing to stdout.
@@ -231,11 +246,11 @@ func (r *TestResults) PrintSimpleResults() {
 			autoRes = append(autoRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version.String(), test.Runtime))
 		}
 	}
-	fmt.Println("--- Standard Upgrade Tests:")
+	fmt.Println("--- 🕵️ Standard Upgrade Tests:")
 	fmt.Println(strings.Join(stdRes, "\n"))
-	fmt.Println("--- Multiversion Upgrade Tests:")
+	fmt.Println("--- 🕵️ Multiversion Upgrade Tests:")
 	fmt.Println(strings.Join(mvuRes, "\n"))
-	fmt.Println("--- Auto Upgrade Tests:")
+	fmt.Println("--- 🕵️ Auto Upgrade Tests:")
 	fmt.Println(strings.Join(autoRes, "\n"))
 }
 
@@ -282,7 +297,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, migratorVersion *semv
 	//start test env
 	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "standard", initVersion)
 	if err != nil {
-		test.AddError(fmt.Errorf("failed to setup env: %w", err))
+		test.AddError(fmt.Errorf("🚨 failed to setup env: %w", err))
 		cleanup()
 		return test
 	}
@@ -297,7 +312,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, migratorVersion *semv
 	test.AddLog("-- ⚙️  performing standard upgrade")
 
 	// Run standard upgrade via migrators "up" command
-	out, err := run.Cmd(ctx, dockerMigratorBaseString(test, "up", "migrator:candidate", networkName, dbs)...).Run().String()
+	out, err := run.Cmd(ctx, dockerMigratorBaseString(test, "up", "migrator:candidate", networkName, false, false, dbs)...).Run().String()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to upgrade: %w", err))
 		cleanup()
@@ -307,7 +322,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, migratorVersion *semv
 
 	// Start frontend with candidate
 	var cleanFrontend func()
-	cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, dbs)
+	cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, false, dbs)
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start candidate frontend: %w", err))
 		cleanFrontend()
@@ -322,7 +337,6 @@ func standardUpgradeTest(ctx context.Context, initVersion, migratorVersion *semv
 		return test
 	}
 
-	// test.DisplayLog()
 	return test
 }
 
@@ -332,7 +346,7 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, latestVersion *se
 
 	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "multiversion", initVersion)
 	if err != nil {
-		fmt.Println("failed to setup env: ", err)
+		fmt.Println("🚨 failed to setup env: ", err)
 		cleanup()
 		return test
 	}
@@ -351,7 +365,7 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, latestVersion *se
 	// We may be able to work around this furhter in CI
 	test.AddLog(fmt.Sprintf("-- ⚙️  performing multiversion upgrade (--from %s --to %s)", initVersion.String(), latestVersion.String()))
 	out, err := run.Cmd(ctx,
-		dockerMigratorBaseString(test, fmt.Sprintf("upgrade --from %s --to %s", initVersion.String(), latestVersion.String()), "migrator:candidate", networkName, dbs)...).
+		dockerMigratorBaseString(test, fmt.Sprintf("upgrade --from %s --to %s", initVersion.String(), latestVersion.String()), "migrator:candidate", networkName, false, false, dbs)...).
 		Run().String()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to upgrade: %w", err))
@@ -362,7 +376,7 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, latestVersion *se
 
 	// Run migrator up with migrator candidate to apply any patch migrations defined on the candidate version
 	out, err = run.Cmd(ctx,
-		dockerMigratorBaseString(test, "up", "migrator:candidate", networkName, dbs)...).
+		dockerMigratorBaseString(test, "up", "migrator:candidate", networkName, false, false, dbs)...).
 		Run().String()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to upgrade: %w", err))
@@ -373,7 +387,7 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, latestVersion *se
 
 	// Start frontend with candidate
 	var cleanFrontend func()
-	cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, dbs)
+	cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, false, dbs)
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start candidate frontend: %w", err))
 		cleanFrontend()
@@ -388,14 +402,46 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, latestVersion *se
 		return test
 	}
 
-	// test.DisplayLog()
 	return test
 }
 
 // TODO
-func autoUpgradeTest(ctx context.Context) error {
-	fmt.Println("--- 🕵️  auto upgrade test")
-	return nil
+func autoUpgradeTest(ctx context.Context, initVersion, latestVersion *semver.Version) Test {
+	//start test env
+	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "auto", initVersion)
+	if err != nil {
+		test.AddError(fmt.Errorf("failed to setup env: %w", err))
+		cleanup()
+		return test
+	}
+	defer cleanup()
+
+	// ensure env correctly initialized, always use latest migrator for drift check,
+	// this allows us to avoid issues from changes in migrators invocation
+	if err := validateDBs(ctx, &test, initVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestVersion.String()), networkName, dbs, false); err != nil {
+		test.AddError(fmt.Errorf("🚨 Initializing env in multiversion test failed: %w", err))
+		return test
+	}
+
+	// Set SRC_AUTOUPGRADE=true on Migrator and Frontend containers. Then start the frontend container.
+	test.AddLog("-- ⚙️  performing auto upgrade")
+	var cleanFrontend func()
+	cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, true, dbs)
+	if err != nil {
+		test.AddError(fmt.Errorf("🚨 failed to start candidate frontend: %w", err))
+		cleanFrontend()
+		return test
+	}
+	defer cleanFrontend()
+
+	test.AddLog("-- ⚙️  post upgrade validation")
+	// Validate the upgrade
+	if err := validateDBs(ctx, &test, "0.0.0+dev", "migrator:candidate", networkName, dbs, true); err != nil {
+		test.AddError(fmt.Errorf("🚨 Upgrade failed: %w", err))
+		return test
+	}
+
+	return test
 }
 
 // testDB is an organizational type to make orchestrating the three dbs easier, and also to store a dynamically allocated port for postgres
@@ -422,6 +468,9 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 	}
 	if testType == "multiversion" {
 		test.AddLog("--- 🕵️  multiversion upgrade test")
+	}
+	if testType == "auto" {
+		test.AddLog("--- 🕵️  auto upgrade test")
 	}
 	test.AddLog(fmt.Sprintf("Upgrading from version (%s) to release candidate.", initVersion))
 	test.AddLog("-- 🏗️  setting up test environment")
@@ -518,7 +567,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 
 	// Initialize the databases by running migrator with the `up` command.
 	test.LogLines = append(test.LogLines, "-- 🏗️  initializing database schemas with migrator")
-	out, err = run.Cmd(ctx, dockerMigratorBaseString(test, "up", fmt.Sprintf("sourcegraph/migrator:%s", initVersion), networkName, dbs)...).Run().String()
+	out, err = run.Cmd(ctx, dockerMigratorBaseString(test, "up", fmt.Sprintf("sourcegraph/migrator:%s", initVersion), networkName, false, false, dbs)...).Run().String()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to initialize database: %w", err))
 	}
@@ -551,7 +600,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 
 	//start frontend and poll db until initial version is set by frontend
 	var cleanFrontend func()
-	cleanFrontend, err = startFrontend(ctx, test, "sourcegraph/frontend", initVersion.String(), networkName, dbs)
+	cleanFrontend, err = startFrontend(ctx, test, "sourcegraph/frontend", initVersion.String(), networkName, false, dbs)
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start frontend: %w", err))
 	}
@@ -652,7 +701,7 @@ func validateDBs(ctx context.Context, test *Test, version, migratorImage, networ
 		test.AddLog(fmt.Sprintf("Latest commit on candidate branch: %s", candidateGitHead.String()))
 		for _, db := range dbs {
 			out, err := run.Cmd(ctx, dockerMigratorBaseString(*test, fmt.Sprintf("drift --db %s --version %s --ignore-migrator-update --skip-version-check", db.DbName, candidateGitHead.String()),
-				migratorImage, networkName, dbs)...).Run().String()
+				migratorImage, networkName, false, false, dbs)...).Run().String()
 			if err != nil {
 				test.AddError(fmt.Errorf("🚨 failed to check drift on %s: %s", db.DbName, err))
 			}
@@ -661,7 +710,7 @@ func validateDBs(ctx context.Context, test *Test, version, migratorImage, networ
 	} else {
 		for _, db := range dbs {
 			out, err := run.Cmd(ctx, dockerMigratorBaseString(*test, fmt.Sprintf("drift --db %s --version v%s --ignore-migrator-update", db.DbName, version),
-				migratorImage, networkName, dbs)...).Run().String()
+				migratorImage, networkName, false, false, dbs)...).Run().String()
 			if err != nil {
 				test.AddError(fmt.Errorf("🚨 failed to check drift on %s: %w", db.DbName, err))
 			}
@@ -673,7 +722,7 @@ func validateDBs(ctx context.Context, test *Test, version, migratorImage, networ
 }
 
 // startFrontend starts the frontend container in the CI test env.
-func startFrontend(ctx context.Context, test Test, image, version, networkName string, dbs []*testDB) (cleanup func(), err error) {
+func startFrontend(ctx context.Context, test Test, image, version, networkName string, auto bool, dbs []*testDB) (cleanup func(), err error) {
 	hash, err := newContainerHash()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to get container hash: %w", err))
@@ -698,25 +747,38 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 		test.AddLog(out)
 	}
 
-	// Start the frontend container
-	err = run.Cmd(ctx, "docker", "run",
+	// construct docker command for running frontend container
+	baseString := []string{
+		"docker", "run",
 		"--detach",
 		"--platform", "linux/amd64",
 		"--name", fmt.Sprintf("wg_frontend_%x", hash),
+	}
+	envString := []string{
 		"-e", "DEPLOY_TYPE=docker-compose",
 		"-e", fmt.Sprintf("PGHOST=%s", dbs[0].ContainerName),
 		"-e", fmt.Sprintf("CODEINTEL_PGHOST=%s", dbs[1].ContainerName),
 		"-e", fmt.Sprintf("CODEINSIGHTS_PGDATASOURCE=postgres://sg@%s:5432/sg?sslmode=disable", dbs[2].ContainerName),
+	}
+	if auto {
+		envString = append(envString, "-e", "SRC_AUTOUPGRADE=true")
+	}
+	cmdString := []string{
 		"--network", networkName,
 		fmt.Sprintf("%s:%s", image, version),
-	).Run().Wait()
+	}
+	baseString = append(baseString, envString...)
+	cmdString = append(baseString, cmdString...)
+
+	// Start the frontend container
+	err = run.Cmd(ctx, cmdString...).Run().Wait()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start frontend: %w", err))
 		return cleanup, err
 	}
 
 	// poll db until initial versions.version is set
-	setInitTimeout, cancel := context.WithTimeout(ctx, time.Second*60)
+	setInitTimeout, cancel := context.WithTimeout(ctx, time.Second*360)
 	defer cancel()
 	test.AddLog("🔎 checking db initialization complete")
 
@@ -796,16 +858,18 @@ LIMIT 1
 `
 
 // dockerMigratorBaseString a slice of strings constituting the necessary arguments to run the migrator via docker container the CI test env.
-func dockerMigratorBaseString(test Test, cmd, migratorImage, networkName string, dbs []*testDB) []string {
+func dockerMigratorBaseString(test Test, cmd, migratorImage, networkName string, debug, auto bool, dbs []*testDB) []string {
 	hash, err := newContainerHash()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to get container hash: %w", err))
 		return nil
 	}
-	return []string{"docker", "run", "--rm",
+	baseString := []string{
+		"docker", "run", "--rm",
 		"--platform", "linux/amd64",
 		"--name", fmt.Sprintf("wg_migrator_%x", hash),
-		// "-e", "SRC_LOG_LEVEL=debug",
+	}
+	envString := []string{
 		"-e", fmt.Sprintf("PGHOST=%s", dbs[0].ContainerName),
 		"-e", "PGPORT=5432",
 		"-e", "PGUSER=sg",
@@ -824,10 +888,21 @@ func dockerMigratorBaseString(test Test, cmd, migratorImage, networkName string,
 		"-e", "CODEINSIGHTS_PGPASSWORD=password",
 		"-e", "CODEINSIGHTS_PGDATABASE=sg", // starting codeinsights without frontend initializes with database name as sg rather than postgres
 		"-e", "CODEINSIGHTS_PGSSLMODE=disable",
+	}
+	if debug {
+		envString = append(envString, "-e", "SRC_LOG_LEVEL=debug")
+	}
+	if auto {
+		envString = append(envString, "-e", "SRC_AUTOUPGRADE=true")
+	}
+	cmdString := []string{
 		"--network", networkName,
 		migratorImage,
 		cmd,
 	}
+	// append base string, env string, and cmd string and return the result
+	baseString = append(baseString, envString...)
+	return append(baseString, cmdString...)
 }
 
 // newContainerHash generates a random hash for naming containers in test, used for frontend and migrator
@@ -843,14 +918,14 @@ func newContainerHash() ([]byte, error) {
 // getVersions returns the latest minor semver version, as well as the latest full semver version.
 //
 // Technically MVU is supported v3.20 and forward, but in older versions codeinsights-db didnt exist and postgres was using version 11.4
-// so we reduced the scope of the test.
-func getVersions(ctx context.Context) (latestMinor, latestFull *semver.Version, stdVersions, mvuVersions []*semver.Version, err error) {
+// so we reduce the scope of the test, to cover only v3.39 and forward, for MVU and Auto upgrade testing.
+func getVersions(ctx context.Context) (latestMinor, latestFull *semver.Version, stdVersions, mvuVersions, autoVersions []*semver.Version, err error) {
 	tags, err := run.Cmd(ctx, "git",
 		"for-each-ref",
 		"--format", "'%(refname:short)'",
 		"refs/tags").Run().Lines()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	var validTags []*semver.Version
@@ -886,7 +961,7 @@ func getVersions(ctx context.Context) (latestMinor, latestFull *semver.Version, 
 		}
 		latestMinorVer, err = semver.NewVersion(fmt.Sprintf("%d.%d.0", latestFullVer.Major(), latestFullVer.Minor()))
 		if err != nil {
-			return nil, nil, nil, nil, err
+			return nil, nil, nil, nil, nil, err
 		}
 	}
 
@@ -902,15 +977,17 @@ func getVersions(ctx context.Context) (latestMinor, latestFull *semver.Version, 
 		} else {
 			mvuVersions = append(mvuVersions, tag)
 		}
+		// Auto upgrade tests cover all versions
+		autoVersions = append(autoVersions, tag)
 	}
 
 	if latestMinorVer == nil {
-		return nil, nil, nil, nil, errors.New("No valid minor semver tags found")
+		return nil, nil, nil, nil, nil, errors.New("No valid minor semver tags found")
 	}
 	if latestFullVer == nil {
-		return nil, nil, nil, nil, errors.New("No valid full semver tags found")
+		return nil, nil, nil, nil, nil, errors.New("No valid full semver tags found")
 	}
 
-	return latestMinorVer, latestFullVer, stdVersions, mvuVersions, nil
+	return latestMinorVer, latestFullVer, stdVersions, mvuVersions, autoVersions, nil
 
 }
