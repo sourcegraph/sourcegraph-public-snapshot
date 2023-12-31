@@ -126,7 +126,7 @@ func (c *Config) Load() {
 	c.OpenAI.AccessToken = c.GetOptional("CODY_GATEWAY_OPENAI_ACCESS_TOKEN", "The OpenAI access token to be used.")
 	c.OpenAI.OrgID = c.GetOptional("CODY_GATEWAY_OPENAI_ORG_ID", "The OpenAI organization to count billing towards. Setting this ensures we always use the correct negotiated terms.")
 	c.OpenAI.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_OPENAI_ALLOWED_MODELS",
-		strings.Join([]string{"gpt-4", "gpt-3.5-turbo", "gpt-4-1106-preview"}, ","),
+		strings.Join([]string{"gpt-4", "gpt-3.5-turbo", "gpt-4-vision-preview"}, ","),
 		"OpenAI models that can to be used."),
 	)
 	if c.OpenAI.AccessToken != "" && len(c.OpenAI.AllowedModels) == 0 {

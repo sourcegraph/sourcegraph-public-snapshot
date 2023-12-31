@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -126,6 +127,14 @@ func (c *openAIChatCompletionStreamClient) Stream(
 	return dec.Err()
 }
 
+type complexContent struct {
+	Type     string `json:"type"`
+	Text     string `json:"text,omitempty"`
+	ImageURL struct {
+		URL string `json:"url,omitempty"`
+	} `json:"image_url,omitempty"`
+}
+
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
 func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
 	if requestParams.TopK < 0 {
@@ -149,6 +158,27 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 		// for OpenAI.
 		Stop: requestParams.StopSequences,
 	}
+	// Create the complex content slice
+	contentItems := []complexContent{
+		{
+			Type: "text",
+			Text: "What’s in this image?",
+		},
+		{
+			Type: "image_url",
+			ImageURL: struct {
+				URL string `json:"url,omitempty"`
+			}{
+				URL: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+			},
+		},
+	}
+
+	// Serialize the complex content to a JSON string
+	contentBytes, err := json.Marshal(contentItems)
+	if err != nil {
+		fmt.Println("This didn´t work")
+	}
 	for _, m := range requestParams.Messages {
 		// TODO(sqs): map these 'roles' to openai system/user/assistant
 		var role string
@@ -163,7 +193,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 		}
 		payload.Messages = append(payload.Messages, message{
 			Role:    role,
-			Content: m.Text,
+			Content: string(contentBytes),
 		})
 	}
 

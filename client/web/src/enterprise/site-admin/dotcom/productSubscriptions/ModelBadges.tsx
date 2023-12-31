@@ -46,7 +46,7 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             // allow list the models on the Cody Gateway side.
             case 'openai/gpt-4':
             case 'openai/gpt-3.5-turbo':
-            case 'openai/gpt-4-1106-preview':
+            case 'openai/gpt-4-vision-preview':
             // Bespoken models hosted for us by Fireworks. These are also allowed on the Cody
             // Gateway side
             case 'fireworks/accounts/fireworks/models/starcoder-16b-w8a16':
