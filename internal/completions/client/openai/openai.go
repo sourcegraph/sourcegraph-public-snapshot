@@ -159,28 +159,29 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 		Stop: requestParams.StopSequences,
 	}
 	// Create the complex content slice
-	contentItems := []complexContent{
-		{
-			Type: "text",
-			Text: "What’s in this image?",
-		},
-		{
-			Type: "image_url",
-			ImageURL: struct {
-				URL string `json:"url,omitempty"`
-			}{
-				URL: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-			},
-		},
-	}
 
-	// Serialize the complex content to a JSON string
-	contentBytes, err := json.Marshal(contentItems)
-	if err != nil {
-		fmt.Println("This didn´t work")
-	}
 	for _, m := range requestParams.Messages {
 		// TODO(sqs): map these 'roles' to openai system/user/assistant
+		contentItems := []complexContent{
+			{
+				Type: "text",
+				Text: m.Text,
+			},
+			{
+				Type: "image_url",
+				ImageURL: struct {
+					URL string `json:"url,omitempty"`
+				}{
+					URL: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+				},
+			},
+		}
+
+		// Serialize the complex content to a JSON string
+		contentBytes, err := json.Marshal(contentItems)
+		if err != nil {
+			fmt.Println("This didn´t work")
+		}
 		var role string
 		switch m.Speaker {
 		case types.HUMAN_MESSAGE_SPEAKER:
